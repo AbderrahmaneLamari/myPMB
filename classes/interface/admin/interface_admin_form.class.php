@@ -1,0 +1,71 @@
+<?php
+// +-------------------------------------------------+
+// | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// +-------------------------------------------------+
+// $Id: interface_admin_form.class.php,v 1.15 2021/03/18 08:15:12 jlaurent Exp $
+
+if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+global $class_path;
+require_once($class_path.'/interface/interface_form.class.php');
+
+class interface_admin_form extends interface_form {
+	
+	protected function get_submit_action() {
+		return $this->get_url_base()."&action=update&id=".$this->object_id;
+	}
+	
+	protected function get_delete_action() {
+		return $this->get_url_base()."&action=del&id=".$this->object_id;
+	}
+	
+	protected function get_submit_action_parameters() {
+		return $this->get_url_base()."&action=update".(!empty($this->object_id) ? "&id=".$this->object_id : "");
+	}
+	
+	protected function get_display_label() {
+		switch ($this->name) {
+			case 'es_rights':
+				return "<h3>".$this->label."</h3>";
+			default:
+				return parent::get_display_label();
+		}
+	}
+	
+	protected function get_display_parameters_actions() {
+		global $action;
+		
+		$display = "
+		<div class='left'>
+			".(!empty($action) ? "<input type='button' class='bouton' name='cancel_button' id='cancel_button' value='".$this->get_action_cancel_label()."'  onclick=\"document.location='".$this->get_url_base()."'\"  />" : "")."
+			".$this->get_display_submit_action()."
+		</div>";
+		return $display;
+	}
+	
+	protected function get_display_delete_action() {
+	    global $charset, $msg;
+	    if($this->block_delete) {
+	        return "<input type='button' class='bouton' name='delete_button' id='delete_button' value='".htmlentities($this->get_action_delete_label(), ENT_QUOTES, $charset)."' onclick=\"alert('".$msg["animation_mailtpl_use"]."')\" />";
+	    } else {
+	        return "<input type='button' class='bouton' name='delete_button' id='delete_button' value='".htmlentities($this->get_action_delete_label(), ENT_QUOTES, $charset)."' onclick=\"if(confirm('".htmlentities(addslashes($this->confirm_delete_msg), ENT_QUOTES, $charset)."')){document.location='".$this->get_delete_action()."';}\" />";
+	    }
+	}
+	
+	public function get_display_parameters() {
+		global $current_module;
+		
+		$display = "
+		<form class='form-".$current_module."' id='".$this->name."' name='".$this->name."'  method='post' action=\"".$this->get_submit_action_parameters()."\" >
+			".$this->get_display_label()."
+			<div class='form-contenu'>
+				".$this->content_form."
+			</div>
+			<div class='row'>
+				".$this->get_display_parameters_actions()."
+			</div>
+		<div class='row'></div>
+		</form>";
+		return $display;
+	}
+}

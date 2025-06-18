@@ -1,0 +1,8 @@
+172.21.0.1 - - [18/Jun/2025:20:20:39 +0000] "GET / HTTP/1.1" 403 400 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
+172.21.0.1 - - [18/Jun/2025:20:20:39 +0000] "GET /favicon.ico HTTP/1.1" 404 396 "http://localhost:14070/" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
+172.21.0.1 - - [18/Jun/2025:20:20:42 +0000] "GET / HTTP/1.1" 403 400 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
+172.21.0.1 - - [18/Jun/2025:20:20:52 +0000] "GET /adminEstin HTTP/1.1" 404 397 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
+172.21.0.1 - - [18/Jun/2025:20:21:02 +0000] "GET /pmb HTTP/1.1" 404 397 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
+172.21.0.1 - - [18/Jun/2025:20:21:56 +0000] "GET /pmb HTTP/1.1" 404 397 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
+172.21.0.1 - - [18/Jun/2025:20:21:59 +0000] "GET / HTTP/1.1" 403 399 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"
+172.21.0.1 - - [18/Jun/2025:20:22:02 +0000] "GET / HTTP/1.1" 403 399 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0"

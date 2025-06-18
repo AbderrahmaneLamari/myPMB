@@ -1,0 +1,7 @@
+{% block isbd %}
+	{% if contribution.displayLabel %}
+		{{ contribution.displayLabel }}
+	{% else %}
+		{{ msg.contribution_draft_name }}
+	{% endif %}
+{% endblock %}

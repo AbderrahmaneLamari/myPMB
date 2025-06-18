@@ -1,0 +1,71 @@
+<!-- $Id: printRegistrationList.tpl.html,v 1.4 2020/10/06 15:12:23 qvarin Exp $ -->
+<html>
+	<head>
+		<style>
+			table {
+				margin-bottom: 50px
+			}
+			table, th, tr {
+			  width: 100%;
+			}
+			th, td {
+			  border: 1px solid black;
+			  padding: 5px;
+			}
+			.contact-person {
+			  background-color: #dddddd;
+			}
+			.sign {
+			  width: 15%;
+			  border: 1px solid black;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>{{ animation.name }}</h1>
+		<p>
+			{{ msg.animation_date_print }} <strong>{{ animation.event.startDate }} - {{ animation.event.endDate }}</strong>
+			<br>
+			{{ msg.animation_quota_reserved_print }} <strong>{{ allQuotas.reserved.global }} / {{ allQuotas.animationQuotas.global }}</strong>
+		</p>
+		<p>
+			{{ msg.animation_summary_price_print }}
+			<br>
+			{% for namePrice, sum in summaryPrice %}
+					{{ namePrice }} : {{ sum }}<br>
+			{% endfor %}
+		</p>
+		
+		
+		<table>
+			<thead>
+				<tr>
+					<th colspan="4">{{ msg.animation_registration_list_print }}</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for registration in registrationList %}
+					<tr class="contact-person">
+						<td>{{ registration.name }}</td>
+						<td>{{ registration.email }}</td>
+						<td>{{ registration.phoneNumber }}</td>
+						<td>{{ msg.animation_point_print }}</td>
+					</tr>
+					{% if registration.registrationListPerson %}
+						{% for index, person in registration.registrationListPerson %}
+							<tr>
+								<td style="text-align:center;">
+									<barcode dimension="1D" type="C39" value="{{ person.barcode }}" style="width:200px; height:50px; font-size: 10px"></barcode>
+								</td>
+								<td colspan="2" style="width: 10%;">
+									{{ person.personName }} ( {{ person.price.name }} )
+								</td>
+								<td class="sign"></td>
+							</tr>
+						{% endfor %}
+					{% endif %}
+				{% endfor %}
+			</tbody>
+		</table>
+	</body>
+</html>

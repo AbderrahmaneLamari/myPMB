@@ -1,0 +1,59 @@
+<!-- $Id: animations_list.tpl.html,v 1.4 2021/03/18 11:04:22 qvarin Exp $ -->
+
+{% if animations %}
+	<div class="AnimList">
+		<h3>{{msg.animations_see_title }}</h3>
+		<table class="animationsList">
+			<thead>
+				<tr>
+					<th>{{ msg.animation_title }}</th>
+					<th>{{ msg.animation_date }}</th>
+					<th>{{ msg.animation_quota_available }}</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for animation in animations %}
+				<tr class="descr_animation {% cycle 'odd', 'even' %}">
+					{% block name %}
+						<td>
+							<a href="./index.php?lvl=animation_see&id={{ animation.id }}">
+								{{ animation.name }}
+							</a>
+						</td>
+					{% endblock %}
+					
+					{% block date %}
+						<td>
+							{{ animation.event.startDate }} 
+							{% if animation.event.startHour != '00:00' %}
+								{{ animation.event.startHour }}
+							{% endif %}<br>
+							{{ msg.animations_date_to }} {{ animation.event.endDate }} 
+							{% if animation.event.endHour != '00:00' %}
+								{{ animation.event.endHour }}
+							{% endif %}
+						</td>
+					{% endblock %}
+					{% block quota %}
+						<td class="labelContent">
+							{% if !animation.hasChildrens and animation.hasQuotas %}
+								{% if animation.allQuotas.animationQuotas.global %}
+									<span>
+										{{ animation.allQuotas.availableQuotas.global }} / {{ animation.globalQuota }}
+									</span>
+								{% else %}
+									<span>
+										{{ msg.animation_quota_no_limit }}
+									</span>
+								{% endif %}
+							{% endif %}
+						</td>
+					{% endblock %}
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+{% else %}
+	<h3>{{ msg.animation_unavailable }}</h3>
+{% endif %}

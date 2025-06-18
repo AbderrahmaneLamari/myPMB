@@ -1,0 +1,70 @@
+<!-- $Id: gabarit.html,v 1.4.2.4 2021/12/02 14:16:53 rtigero Exp $ -->
+<div class="aut_container">
+	<div class="title_aut"  class="title_aut" id="el{{ list_element.uid }}{{ list_element.id }}Parent" >
+		<h3>
+			<span class="tit1_autCourte">
+				{% block status %}
+					<small>
+						<span class='{{list_element.statut_class_html}}' style='margin-right: 3px;'>
+							<a href=# onmouseover="z=document.getElementById('zoom_statut{{ list_element.id }}'); z.style.display='';" onmouseout="z=document.getElementById('zoom_statut{{list_element.id}}'); z.style.display='none';">
+								<img src="{{ img.spacer.gif }}" width="10" height="10" />
+							</a>
+						</span>
+					</small>
+				{% endblock %}
+				{% if list_element.context_parameters.in_selector %}
+					<a href="#" data-element-id="{{ list_element.id }}" data-element-type="authorities" onclick="set_parent('{{ global.caller }}', '{{ list_element.num_object }}', '{{ list_element.isbd |  escape true }}','{{ global.callback }}')">
+				{% else %}
+					<a href="{{ list_element.permalink }}" data-element-id="{{ list_element.id }}" data-element-type="authorities">
+				{% endif %}
+					{% block element_title %}
+						
+						{% if list_element.type_icon %}
+							<img class="align_top" src="{{ list_element.type_icon }}" title="{{ list_element.type_label }}" alt="{{ list_element.type_label }}"/>
+						{% endif %}
+						
+						<div id="zoom_statut{{ list_element.id }}" style="border: solid 2px #555555; background-color: #FFFFFF; position: absolute; display:none; z-index: 2000;">
+							<b>
+								{{ list_element.statut_label }}
+							</b>
+						</div>
+						{% if list_element.display %}
+							{{ list_element.display | safe}}
+						{% else %}
+							{{list_element.isbd | safe}}
+						{% endif %}
+						
+					{% endblock %}
+				</a>
+			</span>
+		</h3>
+	</div>
+    {% block aut_subtitle %}
+    {% endblock %}
+	<div style="margin-bottom: 6px; display: block;" class="parentAutCourte uk-clearfix" startOpen="Yes" id="el{{ list_element.uid }}{{ list_element.id }}Child">
+		<!-- Vignette -->
+		<div class="vignetteimgAut">
+			{% block aut_picture %}
+				<div class="vignetteDocAut">
+					{% if list_element.thumbnail_url %}
+				    	<div class="vignAut">{{list_element.thumbnail}}</div>
+			    	{% else %}
+			    		<div class="vignAut">
+							{% block aut_no_image %}
+							{% endblock%}
+						</div>
+				    {% endif %}
+				</div>
+			{% endblock %}
+		</div>
+
+		<img class="align_middle" href="#"/>
+		{{ list_element.caddie }}
+		<div style="overflow:hidden;">
+			{% block element_content %}
+				{{ list_element.detail | safe }}
+			{% endblock element_content %}
+		</div>
+		<div class="clear"></div>
+	</div>
+</div>

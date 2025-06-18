@@ -1,0 +1,64 @@
+networks:
+  pmb_network:
+    driver: bridge
+
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: biblio-mysql
+    restart: always
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - pmb_network
+
+  php-apache:
+    build: ./
+    container_name: biblio-web
+    restart: always
+    depends_on:
+      - mysql
+    ports:
+      - "${APACHE_PORT}:80"
+    environment:
+      - APACHE_RUN_USER=www-data
+      - APACHE_RUN_GROUP=www-data
+    volumes:
+      - ./biblio:/var/www/html
+      - apache_logs:/var/log/apache2
+      - ./logs:/var/log/apache2
+      - ./logs/php_errors.log:/var/log/apache2/php_errors.log
+    networks:
+      - pmb_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: biblio-phpmyadmin
+    restart: always
+    depends_on:
+      - mysql
+    env_file: .env
+    environment:
+      PMA_HOST: biblio-mysql
+      PMA_PORT: ${MYSQL_PORT}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./config/phpmyadmin.ini:/usr/local/etc/php/conf.d/phpmyadmin.ini
+
+    ports:
+      - "${PHPMYADMIN_PORT}:${APACHE_PORT}"
+    networks:
+      - pmb_network
+
+volumes:
+  mysql_data:
+  apache_logs:

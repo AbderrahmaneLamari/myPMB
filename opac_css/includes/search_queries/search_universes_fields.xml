@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- $Id: search_universes_fields.xml,v 1.1.2.3 2021/12/11 09:47:05 tsamson Exp $ -->
+<pmbfields>
+	<memoryEngineAllowed>yes</memoryEngineAllowed>
+	<universesFields>
+		<field id='1' group='1' title='msg:title'>
+			<input type="text"/>
+			<segments>
+				<segment id="25" field="f_1"/>
+				<segment id="24" field="f_1"/>
+				<segment id="27" field="f_1"/>
+				<segment id="28" field="f_1"/>
+				<segment id="26" field="f_1"/>
+				<segment id="29" field="f_1"/>
+				<segment id="2" field="f_7003"/>
+				<segment id="20" field="f_7003"/>
+				<segment id="18" field="f_7003"/>
+			</segments>
+			<operators>
+				<operator type="BOOLEAN"/>
+				<operator type="STARTWITH"/>
+			</operators>
+		</field>
+		<field id='2' group='1' title='msg:234'>
+			<input type="text"/>
+			<segments>
+				<segment id="25" field="f_2"/>
+				<segment id="24" field="f_2"/>
+				<segment id="27" field="f_2"/>
+				<segment id="28" field="f_2"/>
+				<segment id="26" field="f_2"/>
+				<segment id="29" field="f_2"/>
+				<segment id="2" field="f_7007"/>
+				<segment id="20" field="f_7007"/>
+				<segment id="18" field="f_7007"/>
+				<segment id="3" field="f_1102"/>
+				<segment id="43" field="f_1102"/>
+				<segment id="44" field="f_1102"/>
+			</segments>
+			<operators>
+				<operator type="BOOLEAN"/>
+			</operators>
+		</field>
+	</universesFields>
+	
+	<specialFields>
+	</specialFields>
+	
+	<operators>
+		<operator name="BOOLEAN">msg:expr_bool_query</operator>
+		<operator name="CONTAINS">msg:contient_search</operator>
+		<operator name="CONTAINS_ALL">msg:contient_tous_mots_query</operator>
+		<operator name="CONTAINS_AT_LEAST">msg:contient_plus_un_mot_query</operator>
+		<operator name="STARTWITH">msg:commence_par_query</operator>
+		<operator name="ENDWITH">msg:finit_par_query</operator>
+		<operator name="EXACT">msg:exactement_comme_query</operator>
+		<operator name="EQ">msg:eq_query</operator>
+		<operator name="NOTEQ">msg:noteq_query</operator>
+		<operator name="GT">msg:gt_query</operator>
+		<operator name="LT">msg:lt_query</operator>
+		<operator name="GTEQ">msg:gteq_query</operator>
+		<operator name="LTEQ">msg:lteq_query</operator>
+		<operator name="ISEMPTY" emptyAllowed="yes">msg:est_vide_query</operator>
+		<operator name="ISNOTEMPTY" emptyAllowed="yes">msg:pas_vide_query</operator>
+		<operator name="AUTHORITY">msg:authority_query</operator>
+		<operator name="AERASUP">msg:map_multisearch_aerasup</operator>
+		<operator name="AERAINF">msg:map_multisearch_aerainf</operator>
+		<operator name="INTERSECTS">msg:map_multisearch_intersects</operator>
+		<operator name="BETWEEN">msg:search_between_query</operator>
+		<operator name="NEAR">msg:parperso_option_duration_type0</operator>
+		<operator name="LESS_THAN_DAYS">msg:less_than_days_query</operator>
+		<operator name="MORE_THAN_DAYS">msg:more_than_days_query</operator>
+		<operator name="THIS_WEEK" emptyAllowed="yes">msg:this_week_query</operator>
+		<operator name="LAST_WEEK" emptyAllowed="yes">msg:last_week_query</operator>
+		<operator name="THIS_MONTH" emptyAllowed="yes">msg:this_month_query</operator>
+		<operator name="LAST_MONTH" emptyAllowed="yes">msg:last_month_query</operator>
+		<operator name="THIS_YEAR" emptyAllowed="yes">msg:this_year_query</operator>
+		<operator name="CUSTOM_SEARCH" special="yes">msg:custom_search</operator> 	
+	</operators>
+	
+	<!-- Les groupes sont associés aux champs (fields) et permettent d'amener une notion de classement -->
+	<groups>
+		<group id="1">
+			<order>1</order>
+			<label>msg:champs_principaux_query</label>
+		</group>
+	</groups>
+</pmbfields>

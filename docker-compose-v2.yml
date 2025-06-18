@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  pmb:
+    build: .
+    container_name: pmb
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html/pmb
+    depends_on:
+      - db
+    environment:
+      PMB_DB_HOST: db
+      PMB_DB_NAME: pmb
+      PMB_DB_USER: pmb
+      PMB_DB_PASS: pmb
+
+  db:
+    image: mysql:5.7
+    container_name: pmb_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: pmb
+      MYSQL_USER: pmb
+      MYSQL_PASSWORD: pmb
+      MYSQL_ROOT_PASSWORD: rootpass
+    volumes:
+      - pmb_db_data:/var/lib/mysql
+
+volumes:
+  pmb_db_data:

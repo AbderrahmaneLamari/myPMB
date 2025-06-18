@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE XMLlist SYSTEM "../XMLlist.dtd" [<!ENTITY nbsp "&amp;nbsp;">]>
+
+<!-- messages localisés en français pour le module de recherche
+****************************************************************************************
+© 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+****************************************************************************************
+$Id: cms_module_search.xml,v 1.3.8.1 2021/10/12 07:29:33 rtigero Exp $ -->
+
+<XMLlist>
+	<entry code='cms_module_search_admin_form_label'>Configuration of the search destination</entry>
+	<entry code='cms_module_search_add_search_dest'>Add</entry>
+	<entry code='cms_module_search_search_dest_name'>Name</entry>
+	<entry code='cms_module_search_search_dest_page'>Destination page</entry>
+	<entry code='cms_module_search_classique_dest'>Classic search in the catalogue</entry>
+	<entry code='cms_module_search_opac_views'>OPAC views</entry>
+	<entry code='cms_module_search_opac_view_any'>All views</entry>
+	<entry code='cms_module_search_opac_view_current'>Current view</entry>
+	<entry code='cms_module_search_cms_pages'>Pages</entry>
+    <entry code='cms_module_search_search_dest_search'>Search target</entry>
+    <entry code='cms_module_search_search_dest_search_opac'>Classic OPAC search</entry>
+    <entry code='cms_module_search_delete_search_dest'>Do you really want to delete this search?</entry>
+</XMLlist>

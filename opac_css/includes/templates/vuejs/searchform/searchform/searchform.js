@@ -1,0 +1,24 @@
+import Vue from "vue";
+import searchform from "./components/searchform.vue";
+
+window.addEventListener('DOMContentLoaded', function(event) {
+	new Vue({
+		el: "#searchform",
+		components: {
+			searchform : searchform
+		},
+		data : {
+			form_url : $data.form_url,
+			criterias : $data.criterias,
+			search : $data.search ?? [],
+			inter : $data.inter,
+			intervalues : $data.inter_values,
+			defaultinter : $data.default_inter,
+			hidden : $data.hidden,
+			pmb : pmbDojo.messages,
+			showfieldvars : $data.show_fieldvars,
+			images : pmbDojo.images,
+			criterias_hidden : $data.criterias_hidden ?? []
+		}
+	});
+})

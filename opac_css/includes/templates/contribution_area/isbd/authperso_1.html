@@ -1,0 +1,6 @@
+{% extends 'gabarit.html' %}
+{% block isbd %}
+{% if contribution.authperso_cp_event_title %}{{ contribution.authperso_cp_event_title }}{% else %}
+{{ msg.contribution_draft_name }}{% endif %}
+{% endblock %}
+<!-- exemple de champ : "contribution.authperso_" + nom du cp -->

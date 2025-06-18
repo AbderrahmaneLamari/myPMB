@@ -1,0 +1,24 @@
+<!-- $Id: contribution_area_attachment.tpl.html,v 1.2 2020/08/20 14:05:04 qvarin Exp $ -->
+
+{% block contributionDivContainer %}
+<div class="contributionDivContainer">
+	{% if attachment.question %}
+		<h3>{{ attachment.question }}</h3>
+	{% endif %}
+	<div class="row">
+		{% for scenario in attachment.scenarios %}
+			<div class='row'>
+				{% block link_scenario %}
+					<a href="#" title="{{ scenario.name }}" data-form_url="{{ scenario.ajax_link }}">
+						{% if scenario.response %}
+							{{ scenario.response }}
+						{% else %}
+							{{ scenario.name }}
+						{% endif %}
+					</a>
+				{% endblock %}
+			</div>		
+		{% endfor %}
+	</div>
+</div>
+{% endblock %}

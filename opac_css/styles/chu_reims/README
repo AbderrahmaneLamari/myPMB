@@ -1,0 +1,78 @@
+
+/*****************************************************************************************
+	Note explicative
+
+	Les contenus decrits ici ont pour but de renseigner les parametres
+	dans la partie gestion de l'opac PMB. Les valeurs sont a renseigner 
+	suivant les directives #obligatoire #recommande...
+
+	Il est possible que certains parametres non decrits ci-dessous n'aient pas l'affichage 
+	souhaite, auquel cas il vous faudra contacter le realisateur de cette charte pour
+	implementer le parametre en question.
+	
+	Une sauvegarde des valeurs est toujours souhaitee avant modification, 
+	communement en collant le contenu du champ "Valeur" dans le champ "Explication"
+	
+*****************************************************************************************/
+
+
+/*********************************
+      biblio_main_header
+*********************************/
+
+
+/*********************************
+      biblio_preamble_p1
+            logo
+*********************************/
+<a href="./index.php"><img src="./styles/chu_reims/images/logo.png" /></a>
+
+<a id="btn_accueil" href="./index.php">Accueil</a>
+
+
+/*********************************
+      biblio_preamble_p2
+             menu
+*********************************/
+<ul id="menuDeroulant">
+<li>
+<a href="./index.php?lvl=infopages&pagesid=3">Actualités</a>
+<ul class="sousMenu">
+<li><a href="./index.php?lvl=infopages&pagesid=3">Actualités 1</a></li>
+<li><a href="./index.php?lvl=infopages&pagesid=3">Actualités 2</a></li>
+<li><a href="./index.php?lvl=infopages&pagesid=3">Actualités 3</a></li>
+</ul>
+</li>
+<li>
+<a href="./index.php?lvl=infopages&pagesid=2">Reglement</a>
+</li>
+<li>
+<a href="./index.php">Nous trouver</a>
+</li>
+</ul>
+
+
+/*********************************
+      biblio_important_p1
+*********************************/
+<h4>annuaire chu & liens</h4>
+<ul>
+<li><a href="#">Site internet du CHU</a></li>
+<li><a href="#">GED Gestion Documentaire</a></li>
+<li><a href="#">GMAO</a></li>
+<li><a href="#">Site internet du CHU</a></li>
+<li><a href="#">GED Gestion Documentaire</a></li>
+<li><a href="#">GMAO</a></li>
+<li><a href="#">Site internet du CHU</a></li>
+<li><a href="#">GED Gestion Documentaire</a></li>
+<li><a href="#">GMAO</a></li>
+</ul>
+
+
+/*********************************
+      biblio_important_p2
+*********************************/
+<h4>informations pratiques</h4>
+<p>Les documents sont à votre disposition pendant les heures d’ouverture de celle-ci.
+A consulter sur place ou sous réservation.</p>
+

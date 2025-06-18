@@ -1,0 +1,694 @@
+<?php
+// +-------------------------------------------------+
+// | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// +-------------------------------------------------+
+// $Id: list_demandes_ui.class.php,v 1.13.2.3 2021/09/21 16:43:41 dgoron Exp $
+
+if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+global $class_path;
+require_once($class_path."/demandes_types.class.php");
+
+class list_demandes_ui extends list_ui {
+	
+	protected $demandes;
+	
+	protected $themes;
+	
+	protected $types;
+	
+	protected function _get_query_base() {
+		$query = 'select id_demande
+				from demandes d 
+				join demandes_type dy on d.type_demande=dy.id_type
+				join demandes_theme dt on d.theme_demande=dt.id_theme				
+				left join demandes_users du on du.num_demande=d.id_demande
+				left join users on (du.num_user=userid) 	
+				';
+		return $query;
+	}
+	
+	protected function get_object_instance($row) {
+		return new demandes($row->id_demande);
+	}
+		
+	protected function get_form_title() {
+		global $msg;
+		
+		return $msg['demandes_search_filtre_form'];
+	}
+	
+	/**
+	 * Initialisation des filtres disponibles
+	 */
+	protected function init_available_filters() {
+		global $pmb_lecteurs_localises;
+		
+		$this->available_filters =
+		array('main_fields' =>
+				array(
+						'user_input' => 'demandes_titre',
+						'demandeur' => 'demandes_user_filtre',
+						'state' => 'demandes_etat_filtre',
+						'date' => 'demandes_periode_filtre',
+						'affectation' => 'demandes_affectation_filtre',
+						'theme' => 'demandes_theme_filtre',
+						'type' => 'demandes_type_filtre'
+				)
+		);
+		if($pmb_lecteurs_localises) {
+			$this->available_filters['main_fields']['location'] = 'demandes_localisation_filtre';
+		}
+		$this->available_filters['custom_fields'] = array();
+		$this->add_custom_fields_available_filters('demandes', 'id_demande');
+	}
+	
+	/**
+	 * Initialisation des filtres de recherche
+	 */
+	public function init_filters($filters=array()) {
+		global $pmb_lecteurs_localises;
+		
+		$this->filters = array(
+				'user_input' => '',
+				'demandeur' => '',
+				'state' => 0,
+				'date_start' => '',
+				'date_end' => '',
+				'affectation' => 0,
+                'theme' => 0,
+                'type' => 0,
+				'type_action' => 0,
+				'statut_action' => array(),
+				'id_demande' => 0
+		);
+		
+		if($pmb_lecteurs_localises || array_key_exists('location', $this->selected_filters)) {
+		    $this->filters['location'] = 0;
+		}
+		parent::init_filters($filters);
+	}
+	
+	protected function init_default_selected_filters() {
+		global $pmb_lecteurs_localises;
+		
+		$this->add_selected_filter('user_input');
+		$this->add_empty_selected_filter();
+		$this->add_empty_selected_filter();
+		$this->add_selected_filter('demandeur');
+		$this->add_selected_filter('state');
+		$this->add_selected_filter('date');
+		$this->add_selected_filter('affectation');
+		$this->add_selected_filter('theme');
+		$this->add_selected_filter('type');
+		if($pmb_lecteurs_localises) {
+			$this->add_selected_filter('location');
+		}
+		if(count($this->available_filters['custom_fields'])) {
+			foreach ($this->available_filters['custom_fields'] as $property=>$label) {
+				$this->add_selected_filter($property, $label);
+			}
+		}
+	}
+	
+	protected function init_default_applied_sort() {
+	    $this->add_applied_sort('date_demande', 'desc');
+	}
+	
+	/**
+	 * Initialisation des colonnes disponibles
+	 */
+	protected function init_available_columns() {
+		$this->available_columns =
+		array('main_fields' =>
+				array(
+						'see' => '210',
+						'theme_demande' => 'demandes_theme',
+						'type_demande' => 'demandes_type',
+						'titre_demande' => 'demandes_titre',
+						'etat_demande' => 'demandes_etat',
+						'date_demande' => 'demandes_date_dmde',
+						'date_prevue' => 'demandes_date_prevue',
+						'deadline_demande' => 'demandes_date_butoir',
+						'demandeur' => 'demandes_demandeur',
+						'attribution' => 'demandes_attribution',
+				        'progression' => 'demandes_progression',
+						'record' => 'demandes_notice'
+				)
+		);
+		
+		$this->available_columns['custom_fields'] = array();
+		$this->add_custom_fields_available_columns('demandes', 'id_demande');
+	}
+	
+	protected function add_column_more_details() {
+		$this->columns[] = array(
+				'property' => '',
+				'label' => "",
+				'html' => "<img hspace=\"3\" border=\"0\" onclick=\"expand_action('action!!id!!','!!id!!', true); return false;\" title=\"\" id=\"action!!id!!Img\" name=\"imEx\" class=\"img_plus\" src=\"".get_url_icon('plus.gif')."\">",
+				'exportable' => false
+		);
+	}
+	
+	protected function get_display_html_content_selection() {
+		return "<div class='center'><input type='checkbox' id='chk_!!id!!' name='chk[!!id!!]' class='".$this->objects_type."_selection' value='!!id!!'></div>";
+	}
+	
+	protected function init_default_columns() {
+		$this->add_column_more_details();
+		$this->add_column('see');
+		$this->add_column('theme_demande');
+		$this->add_column('type_demande');
+		$this->add_column('titre_demande');
+		$this->add_column('etat_demande');
+		$this->add_column('date_demande');
+		$this->add_column('date_prevue');
+		$this->add_column('deadline_demande');
+		$this->add_column('demandeur');
+		$this->add_column('attribution');
+		$this->add_column('progression');
+		if(count($this->available_columns['custom_fields'])) {
+			foreach ($this->available_columns['custom_fields'] as $property=>$label) {
+				$this->add_column($property, $label);
+			}
+		}
+		$this->add_column('record');
+		$this->add_column_selection();
+	}
+	
+	protected function init_default_settings() {
+		parent::init_default_settings();
+		$this->set_setting_display('search_form', 'unfolded_filters', true);
+		$this->set_setting_display('search_form', 'export_icons', false);
+		$this->set_setting_column('date_demande', 'datatype', 'date');
+		$this->set_setting_column('date_prevue', 'datatype', 'date');
+		$this->set_setting_column('deadline_demande', 'datatype', 'date');
+	}
+	
+	public function get_display_list() {
+		global $msg;
+		
+		$display = parent::get_display_list();
+		$display .= "
+			<script src='./javascript/dynamic_element.js' type='text/javascript'></script>
+			<script src='./javascript/demandes_form.js' type='text/javascript'></script>
+			<script type='text/javascript'>
+				var msg_demandes_note_confirm_demande_end='".addslashes($msg['demandes_note_confirm_demande_end'])."'; 
+				var msg_demandes_actions_nocheck='".addslashes($msg['demandes_actions_nocheck'])."'; 
+				var msg_demandes_confirm_suppr = '".addslashes($msg['demandes_confirm_suppr'])."';
+				var msg_demandes_note_confirm_suppr = '".addslashes($msg['demandes_note_confirm_suppr'])."';
+			</script>
+			<script type='text/javascript'>
+				function alert_progressiondemande(){
+					alert(\"".$msg['demandes_progres_ko']."\");
+				}
+			</script>
+			<script>parse_dynamic_elts();</script>
+		";
+		return $display;	
+	}
+	
+	public function get_error_message_empty_list() {
+		global $msg, $charset;
+		return htmlentities($msg["demandes_liste_vide"], ENT_QUOTES, $charset);
+	}
+	
+	protected function get_selection_actions() {
+		global $msg;
+		
+		
+		//TODO : Revoir les actions
+		
+		
+		if(!isset($this->selection_actions)) {
+			$this->selection_actions = array();
+			//afficher la liste des boutons de changement d'état
+			if($this->filters['state']){
+				$states = $this->get_demandes()->workflow->getStateList($this->filters['state']);
+				for($i=0;$i<count($states);$i++){
+					$state_link = array(
+							'href' => static::get_controller_url_base()."&act=change_state&state=".$states[$i]['id'],
+					);
+					$this->selection_actions[] = $this->get_selection_action('state_'.$states[$i]['id'], $states[$i]['comment'], '', $state_link);
+				}
+				
+			}
+			if($this->filters['affectation'] == -1){
+				$affectation_link = array(
+						'href' => static::get_controller_url_base()."&act=affecter",
+				);
+// 				$affectation_btn = "<input type='submit' class='bouton' name='affect_btn' id='affect_btn' onclick='this.form.act.value=\"affecter\";return verifChk();' value='".htmlentities($msg['demandes_attribution_checked'],ENT_QUOTES,$charset)."' />&nbsp;".$this->getUsersSelector();
+				$this->selection_actions[] = $this->get_selection_action('affectation', $msg['demandes_attribution_checked'], '', $affectation_link);
+			}
+			
+			/* Ajouté dans other_actions pour le décalage à droite
+			 * 
+			 * $delete_link = array(
+					'href' => static::get_controller_url_base()."&act=suppr_noti",
+					'confirm' => $msg['demandes_confirm_suppr']
+			);
+			$this->selection_actions[] = $this->get_selection_action('delete', $msg['63'], 'interdit.gif', $delete_link);
+			*/
+		}
+		return $this->selection_actions;
+	}
+	
+	protected function get_display_selection_action($action) {
+		$display = parent::get_display_selection_action($action);
+		if($action['name'] == 'affectation') {
+			$display .= "&nbsp;".$this->get_demandes()->getUsersSelector();
+		}
+		return $display;
+	}
+	
+	protected function get_display_others_actions() {
+		global $msg;
+		
+		return "
+		<div id='list_ui_others_actions' class='list_ui_others_actions ".$this->objects_type."_others_actions'>
+		<span class='right list_ui_other_action_delete ".$this->objects_type."_other_action_delete'>
+			<input type='button' id='".$this->objects_type."_other_action_delete' class='bouton_small' value='".$msg['63']."' />
+		</span>
+		<script type='text/javascript'>
+		require([
+				'dojo/on',
+				'dojo/dom',
+				'dojo/query',
+				'dojo/dom-construct',
+		], function(on, dom, query, domConstruct){
+			on(dom.byId('".$this->objects_type."_other_action_delete'), 'click', function() {
+				var selection = new Array();
+				query('.".$this->objects_type."_selection:checked').forEach(function(node) {
+					selection.push(node.value);
+				});
+				if(selection.length) {
+					var confirm_msg = '".addslashes($msg['demandes_confirm_suppr'])."';
+					if(!confirm_msg || confirm(confirm_msg)) {
+						var selected_objects_form = domConstruct.create('form', {
+							action : '".static::get_controller_url_base()."&act=suppr_noti',
+							name : '".$this->objects_type."_selected_objects_form',
+							id : '".$this->objects_type."_selected_objects_form',
+							method : 'POST'
+						});
+						selection.forEach(function(selected_option) {
+							var selected_objects_hidden = domConstruct.create('input', {
+								type : 'hidden',
+								name : '".$this->get_name_selected_objects()."[]',
+								value : selected_option
+							});
+							domConstruct.place(selected_objects_hidden, selected_objects_form);
+						});
+						domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
+						dom.byId('".$this->objects_type."_selected_objects_form').submit();
+					}
+				} else {
+					alert('".addslashes($msg['list_ui_no_selected'])."');
+				}
+			});
+		});
+		</script>";
+	}
+	
+	protected function get_selection_mode() {
+		return 'button';
+	}
+	
+	protected function get_name_selected_objects() {
+		return "chk";
+	}
+	
+	protected function add_event_on_selection_action($action=array()) {
+		$display = "
+			on(dom.byId('".$this->objects_type."_selection_action_".$action['name']."_link'), 'click', function() {
+				var selection = new Array();
+				query('.".$this->objects_type."_selection:checked').forEach(function(node) {
+					selection.push(node.value);
+				});
+				if(selection.length) {
+					var confirm_msg = '".(isset($action['link']['confirm']) ? addslashes($action['link']['confirm']) : '')."';
+					if(!confirm_msg || confirm(confirm_msg)) {
+						".(isset($action['link']['href']) && $action['link']['href'] ? "
+							var selected_objects_form = domConstruct.create('form', {
+								action : '".$action['link']['href']."',
+								name : '".$this->objects_type."_selected_objects_form',
+								id : '".$this->objects_type."_selected_objects_form',
+								method : 'POST'
+							});
+							selection.forEach(function(selected_option) {
+								var selected_objects_hidden = domConstruct.create('input', {
+									type : 'hidden',
+									name : '".$this->get_name_selected_objects()."[]',
+									value : selected_option
+								});
+								domConstruct.place(selected_objects_hidden, selected_objects_form);
+							});
+							domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
+							
+							var affectation_iduser_hidden = domConstruct.create('input', {
+								type : 'hidden',
+								name : 'iduser',
+								value : dom.byId('iduser').value
+							});
+							domConstruct.place(affectation_iduser_hidden, selected_objects_form);
+
+							dom.byId('".$this->objects_type."_selected_objects_form').submit();
+							"
+								: "")."
+						".(isset($action['link']['openPopUp']) && $action['link']['openPopUp'] ? "openPopUp('".$action['link']['openPopUp']."&selected_objects='+selection.join(','), '".$action['link']['openPopUpTitle']."'); return false;" : "")."
+						".(isset($action['link']['onClick']) && $action['link']['onClick'] ? $action['link']['onClick']."(selection); return false;" : "")."
+					}
+				} else {
+					alert('".addslashes($this->get_error_message_empty_selection($action))."');
+				}
+			});
+		";
+		return $display;
+	}
+	
+	protected function get_message_for_selection() {
+		global $msg;
+		return $msg['demandes_change_checked_states'];
+	}
+	
+	protected function init_no_sortable_columns() {
+	    $this->no_sortable_columns = array(
+	        'see'
+	    );
+	}
+		
+	/**
+	 * Filtres provenant du formulaire
+	 */
+	public function set_filters_from_form() {
+		global $user_input;
+		global $idetat, $idempr, $date_debut,$date_fin;
+		global $iduser, $id_type, $id_theme;
+		global $dmde_loc;
+		
+		if(isset($user_input)) {
+			$this->filters['user_input'] = stripslashes($user_input);
+		}
+		if(isset($idetat)) {
+			$this->filters['state'] = intval($idetat);
+		}
+		if(isset($idempr)) {
+			$this->filters['demandeur'] = intval($idempr);
+		}
+		if(isset($date_debut)) {
+			$this->filters['date_start'] = $date_debut;
+		}
+		if(isset($date_fin)) {
+			$this->filters['date_end'] = $date_fin;
+		}
+		if(isset($iduser)) {
+			$this->filters['affectation'] = intval($iduser);
+		}
+		if(isset($id_type)) {
+			$this->filters['type'] = intval($id_type);
+		}
+		if(isset($id_theme)) {
+			$this->filters['theme'] = intval($id_theme);
+		}
+		if(isset($dmde_loc)) {
+			$this->filters['location'] = intval($dmde_loc);
+		}
+		parent::set_filters_from_form();
+	}
+	
+	protected function get_search_filter_user_input() {
+		global $charset;
+		
+		return "<input type='text' class='saisie-30em' name='user_input' id='user_input' value='".htmlentities($this->filters['user_input'], ENT_QUOTES, $charset)."'/>";
+	}
+	
+	protected function get_search_filter_demandeur() {
+		global $charset;
+		global $pmb_lecteurs_localises;
+		
+		return "
+			<input type='hidden' id='idempr' name='idempr' value='".$this->filters['demandeur']."' />
+			<input type='text' id='empr_txt' name='empr_txt' class='saisie-20emr' value='".htmlentities(emprunteur::get_name($this->filters['demandeur'], 1), ENT_QUOTES, $charset)."' completion='empr' autfield='idempr' autocomplete='off' tabindex='1'/>
+			<input type='button' class='bouton_small' value='...' onclick=\"openPopUp('./select.php?what=origine&caller=".$this->get_form_name()."&param1=idempr&param2=empr_txt&deb_rech='+".pmb_escape()."(this.form.empr_txt.value)+'&filtre=ONLY_EMPR&callback=filtrer_user".($pmb_lecteurs_localises ? "&empr_loca='+this.form.dmde_loc.value": "'").", 'selector')\" />
+			<input type='button' class='bouton_small' value='X' onclick=\"document.getElementById('idempr').value=0;document.getElementById('empr_txt').value='';\" />
+		";
+	}
+	
+	protected function get_search_filter_state() {
+		return $this->get_demandes()->getStateSelector($this->filters['state'],'',true);
+	}
+	
+	protected function get_search_filter_date() {
+		global $msg;
+		
+		//Formulaire des filtres
+		$date_deb="<input type='date' id='date_debut' name='date_debut' value='".$this->filters['date_start']."' />";
+		$date_but="<input type='date' id='date_fin' name='date_fin' value='".$this->filters['date_end']."' />";
+		return sprintf($msg['demandes_filtre_periode_lib'],$date_deb,$date_but);
+	}
+	
+	protected function get_search_filter_affectation() {
+		return $this->get_demandes()->getUsersSelector('',true,false,true);
+	}
+	
+	protected function get_search_filter_theme() {
+		$themes = new demandes_themes('demandes_theme','id_theme','libelle_theme',$this->filters['theme']);
+		return $themes->getListSelector($this->filters['theme'],'',true);
+	}
+	
+	protected function get_search_filter_type() {
+		$types = new demandes_types('demandes_type','id_type','libelle_type',$this->filters['type']);
+		return $types->getListSelector($this->filters['type'],'',true);
+	}
+	
+	protected function get_search_filter_location() {
+		global $msg, $charset;
+		
+		$req_loc = "select idlocation, location_libelle from docs_location";
+		$res_loc = pmb_mysql_query($req_loc);
+		$sel_loc = "<select id='dmde_loc' name='dmde_loc' onchange='this.form.act.value=\"search\";submit()' >";
+		$sel_loc .= "<option value='0' ".(!$this->filters['location'] ? 'selected' : '').">".htmlentities($msg['demandes_localisation_all'],ENT_QUOTES,$charset)."</option>";
+		while($loc = pmb_mysql_fetch_object($res_loc)){
+			$sel_loc .= "<option value='".$loc->idlocation."' ".(($this->filters['location']==$loc->idlocation) ? 'selected' : '').">".htmlentities($loc->location_libelle,ENT_QUOTES,$charset)."</option>";
+		}
+		$sel_loc.= "</select>";
+		return $sel_loc;
+	}
+	
+	/**
+	 * Affichage du formulaire de recherche
+	 */
+	public function get_display_search_form() {
+		$this->is_displayed_add_filters_block = false;
+		$display_search_form = parent::get_display_search_form();
+		return $display_search_form;
+	}
+		
+	/**
+	 * Jointure externes SQL pour les besoins des filtres
+	 */
+	protected function _get_query_join_filters() {
+	    $filter_join_query = '';
+	    if($this->filters['location']) {
+	        $filter_join_query .= " left join empr on (num_demandeur=id_empr) ";
+	    }
+	    return $filter_join_query;
+	}
+	
+	/**
+	 * Filtre SQL
+	 */
+	protected function _get_query_filters() {
+		$filter_query = '';
+		
+		$this->set_filters_from_form();
+		
+		$filters = array();
+		if($this->filters['user_input']) {
+			$user_input = str_replace('*','%',$this->filters['user_input']);
+			$filters [] = "titre_demande like '%".$user_input."%'";
+		}
+		if($this->filters['demandeur']) {
+			$filters [] = 'num_demandeur = "'.$this->filters['demandeur'].'"';
+		}
+		if($this->filters['state']) {
+			$filters [] = 'etat_demande = "'.$this->filters['state'].'"';
+		}
+		//Filtre date
+		if($this->filters['date_start']<$this->filters['date_end']){
+			$filters [] = "(date_demande >= '".$this->filters['date_start']."' and deadline_demande <= '".$this->filters['date_end']."' )";
+		}
+		if($this->filters['theme']) {
+			$filters [] = 'theme_demande = "'.$this->filters['theme'].'"';
+		}
+		if($this->filters['type']) {
+			$filters [] = 'type_demande = "'.$this->filters['type'].'"';
+		}
+		if($this->filters['location']) {
+			$filters [] = 'empr_location = "'.$this->filters['location'].'"';
+		}
+		if($this->filters['type_action']) {
+			$filters [] = 'type_action = "'.$this->filters['type_action'].'"';
+		}
+		if(!empty($this->filters['statut_action'])) {
+			$filters [] = 'statut_action IN ('.implode(',', $this->filters['statut_action']).')';
+		}
+		if($this->filters['affectation']) {
+			if($this->filters['affectation'] == -1){
+				$filters [] = 'num_user IS NULL';
+			} else {
+				$filters [] = 'num_user = "'.$this->filters['affectation'].'"';
+			}
+		}
+		if($this->filters['id_demande']) {
+			$filters [] = 'id_demande = "'.$this->filters['id_demande'].'"';
+		}
+		if(count($filters)) {
+		    $filter_query .= $this->_get_query_join_filters();
+			$filter_query .= ' where '.implode(' and ', $filters);		
+		}
+		return $filter_query;
+	}
+	
+	protected function _get_object_property_theme_demande($object) {
+		return $this->get_themes()->getLabel($object->theme_demande);
+	}
+	
+	protected function _get_object_property_type_demande($object) {
+		return $this->get_types()->getLabel($object->type_demande);
+	}
+	
+	protected function _get_object_property_etat_demande($object) {
+		return $object->workflow->getStateCommentById($object->etat_demande);
+	}
+	
+	protected function _get_object_property_demandeur($object) {
+		return emprunteur::get_name($object->num_demandeur, 1);
+	}
+	
+	protected function get_cell_content($object, $property) {
+		global $msg, $charset;
+		
+		$content = '';
+		switch($property) {
+			case 'see':
+				if($object->dmde_read_gestion == 1){
+					// remplacer $action le jour où on décide d'activer la modif d'état manuellement par onclick=\"change_read_dmde('dmde".$dmde->id_demande."','$dmde->id_demande', true); return false;\"
+					$content .= "<img hspace=\"3\" border=\"0\" title=\"\" onclick=\"document.location='".$object->get_gestion_link()."'\" id=\"dmde".$object->id_demande."Img1\" class=\"img_plus\" src='".get_url_icon('notification_empty.png')."' style='display:none'>
+								<img hspace=\"3\" border=\"0\" title=\"" . $msg['demandes_new']. "\" onclick=\"document.location='".$object->get_gestion_link()."'\" id=\"dmde".$object->id_demande."Img2\" class=\"img_plus\" src='".get_url_icon('notification_new.png')."'>";
+				} else {
+					// remplacer $action le jour où on décide d'activer la modif d'état manuellement par onclick=\"change_read_dmde('dmde".$dmde->id_demande."','$dmde->id_demande', true); return false;\"
+					$content .= "<img hspace=\"3\" border=\"0\" title=\"\" onclick=\"document.location='".$object->get_gestion_link()."'\" id=\"dmde".$object->id_demande."Img1\" class=\"img_plus\" src='".get_url_icon('notification_empty.png')."' >
+								<img hspace=\"3\" border=\"0\" title=\"" . $msg['demandes_new']. "\" onclick=\"document.location='".$object->get_gestion_link()."'\" id=\"dmde".$object->id_demande."Img2\" class=\"img_plus\" src='".get_url_icon('notification_new.png')."' style='display:none'>";
+				}
+				break;
+			case 'attribution':
+				$nom_user = '';
+				if (!empty($object->users)) {
+					foreach ($object->users as $user) {
+						if ($user['statut'] == 1) {
+							if (!empty($nom_user)) {
+								$nom_user .= "/ ";
+							}
+							$nom_user .= $user['nom'];
+						}
+					}
+				}
+				$content .= $nom_user;
+				break;
+			case 'progression':
+				$content .= "
+					<span id='progressiondemande_".$object->id_demande."'  dynamics='demandes,progressiondemande' dynamics_params='img/img' >
+						<img src='".get_url_icon('jauge.png')."' height='15px' width=\"".$object->progression."%\" title='".$object->progression."%' />
+					</span>";
+				break;
+			case 'record':
+				if($object->get_num_linked_notice()) {
+					$content .= "<a href='".notice::get_permalink($object->get_num_linked_notice())."'><img style='border:0px' class='align_middle' src='".get_url_icon('notice.gif')."' alt='".htmlentities($msg['demandes_see_notice'],ENT_QUOTES,$charset)."' title='".htmlentities($msg['demandes_see_notice'],ENT_QUOTES,$charset)."'></a>";
+				}
+				break;
+			default :
+				$content .= parent::get_cell_content($object, $property);
+				break;
+		}
+		return $content;
+	}
+	
+	protected function get_display_cell($object, $property) {
+		$attributes = array(
+				'onclick' => "window.location=\"".$object->get_gestion_link()."\""
+		);
+		$content = $this->get_cell_content($object, $property);
+		$display = $this->get_display_format_cell($content, $property, $attributes);
+		return $display;
+	}
+	
+	protected function get_display_content_object_list($object, $indice) {
+		if(static::class == 'list_demandes_ui') {
+			// affichage en gras si nouveauté du côté des notes ou des actions
+			$object->dmde_read_gestion = demandes::dmde_majRead($object->id_demande,"_gestion");
+			if($object->dmde_read_gestion == 1){
+				$style=" style='cursor: pointer; font-weight:bold'";
+			} else {
+				$style=" style='cursor: pointer'";
+			}
+			$display = "
+						<tr id='dmde".$object->id_demande."' class='".($indice % 2 ? 'odd' : 'even')."' onmouseover=\"this.className='surbrillance'\" onmouseout=\"this.className='".($indice % 2 ? 'odd' : 'even')."'\" ".$style.">";
+			foreach ($this->columns as $column) {
+				if($column['html']) {
+					$display .= $this->get_display_cell_html_value($object, $column['html']);
+				} else {
+					$display .= $this->get_display_cell($object, $column['property']);
+				}
+			}
+			$display .= "</tr>";
+			//Le détail de l'action, contient les notes
+			$display .="<tr id=\"action".$object->id_demande."Child\" style=\"display:none\">
+					<td></td>
+					<td colspan=\"".(count($this->columns))."\" id=\"action".$object->id_demande."ChildTd\">";
+			
+			$display .="</td>
+					</tr>";
+			return $display;
+		} else {
+			return parent::get_display_content_object_list($object, $indice);
+		}
+	}
+	
+	protected function _get_query_human() {
+		global $msg;
+		
+		return "<h3>".$msg['demandes_liste']." (".$this->pager['nb_results'].")</h3>";
+	}	
+	
+	public function get_demandes() {
+		if(!isset($this->demandes)) {
+			$this->demandes = new demandes();
+		}
+		return $this->demandes;
+	}
+	
+	public function get_themes() {
+		if(!isset($this->themes)) {
+			$this->themes = new demandes_themes('demandes_theme','id_theme','libelle_theme',$this->filters['theme']);
+		}
+		return $this->themes;
+	}
+	
+	public function get_types() {
+		if(!isset($this->types)) {
+			$this->types = new demandes_types('demandes_type','id_type','libelle_type',$this->filters['type']);
+		}
+		return $this->types;
+	}
+	
+	protected function get_button_add() {
+		global $msg, $charset;
+		
+		return "<input class='bouton' type='button' name='new_dmd' id='new_dmd' value='".htmlentities($msg['demandes_new'], ENT_QUOTES, $charset)."' onClick=\"document.location='".static::get_controller_url_base()."&act=new';\" />";
+	}
+	
+	public static function get_ajax_controller_url_base() {
+		global $base_path, $current_module;
+		return $base_path.'/ajax.php?module='.$current_module.'&categ=dmde';
+	}
+}

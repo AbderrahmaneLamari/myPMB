@@ -1,0 +1,26 @@
+{
+  "name": "pmb",
+  "version": "1.0.0",
+  "keywords": [],
+  "author": "PMB Services",
+  "contributors": [],
+  "dependencies": {},
+  "devDependencies": {
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.4.0",
+    "@babel/preset-env": "^7.4.2",
+    "babel-loader": "^8.0.5",
+    "css-loader": "*",
+    "vue": "*",
+    "vue-loader": "^15.9.1",
+    "vue-template-compiler": "^2.0.0",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0",
+    "vue-nestable": "*"
+  },
+  "scripts": {
+    "dev": "webpack -w --config ./webpack.config.dev.js",
+    "prod": "webpack --config ./webpack.config.prod.js",
+    "watch": "webpack -w --config ./webpack.config.watch.js"
+  }
+}

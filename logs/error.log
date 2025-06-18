@@ -1,0 +1,10 @@
+[Wed Jun 18 20:20:09.720160 2025] [mpm_prefork:notice] [pid 1] AH00163: Apache/2.4.54 (Debian) configured -- resuming normal operations
+[Wed Jun 18 20:20:09.720262 2025] [core:notice] [pid 1] AH00094: Command line: 'apache2 -D FOREGROUND'
+[Wed Jun 18 20:20:39.474841 2025] [autoindex:error] [pid 16] [client 172.21.0.1:35020] AH01276: Cannot serve directory /var/www/html/: No matching DirectoryIndex (index.php,index.html) found, and server-generated directory index forbidden by Options directive
+[Wed Jun 18 20:20:42.348854 2025] [autoindex:error] [pid 17] [client 172.21.0.1:35036] AH01276: Cannot serve directory /var/www/html/: No matching DirectoryIndex (index.php,index.html) found, and server-generated directory index forbidden by Options directive
+[Wed Jun 18 20:21:22.694443 2025] [mpm_prefork:notice] [pid 1] AH00170: caught SIGWINCH, shutting down gracefully
+[Wed Jun 18 20:21:34.552263 2025] [mpm_prefork:notice] [pid 1] AH00163: Apache/2.4.54 (Debian) configured -- resuming normal operations
+[Wed Jun 18 20:21:34.552376 2025] [core:notice] [pid 1] AH00094: Command line: 'apache2 -D FOREGROUND'
+[Wed Jun 18 20:21:59.337933 2025] [autoindex:error] [pid 17] [client 172.21.0.1:55516] AH01276: Cannot serve directory /var/www/html/: No matching DirectoryIndex (index.php,index.html) found, and server-generated directory index forbidden by Options directive
+[Wed Jun 18 20:22:02.715636 2025] [autoindex:error] [pid 17] [client 172.21.0.1:55516] AH01276: Cannot serve directory /var/www/html/: No matching DirectoryIndex (index.php,index.html) found, and server-generated directory index forbidden by Options directive
+[Wed Jun 18 20:25:13.469253 2025] [mpm_prefork:notice] [pid 1] AH00170: caught SIGWINCH, shutting down gracefully

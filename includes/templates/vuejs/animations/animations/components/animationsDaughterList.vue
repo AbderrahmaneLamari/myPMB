@@ -1,0 +1,27 @@
+<template>
+	<div id="animationDaughterList">
+		<div id="animationDaughter" class="notice-parent">
+			<img id="animationDaughterImg" class="img_plus" name="imEx" :src='img.plus' onClick="expandBase('animationDaughter', true); return false;">
+			<span class="notice-heada">{{ pmb.getMessage("animation", "animation_daughter_list") }} ({{ animations.length }})</span>
+		</div>
+		<div id="animationDaughterChild" class="child" style="display: none;">
+			<animations :animations="animations" :pmb="pmb" :action="action" :formdata="formdata"></animations>
+		</div>
+	</div>
+</template>
+
+<script>
+	import animations from "./animations.vue";
+	
+	export default {
+		props : ["animations", "img", "pmb", "action", "formdata"],
+		
+		components : {
+			animations
+		},
+		
+		ready : function() {
+			this.action = "daughter";
+		} 
+	}
+</script>

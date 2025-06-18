@@ -1,0 +1,631 @@
+<?php
+// +-------------------------------------------------+
+// | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// +-------------------------------------------------+
+// $Id: list_serialcirc_expl_ui.class.php,v 1.1.2.6 2022/01/17 13:28:03 dgoron Exp $
+
+if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+global $class_path;
+require_once($class_path."/serialcirc/serialcirc_expl.class.php");
+require_once($class_path."/expl.class.php");
+
+class list_serialcirc_expl_ui extends list_serialcirc_ui {
+	
+	protected function _get_query_base() {
+		$query = 'SELECT * FROM serialcirc_expl 
+				JOIN exemplaires ON serialcirc_expl.num_serialcirc_expl_id = exemplaires.expl_id
+				JOIN bulletins ON exemplaires.expl_bulletin = bulletins.bulletin_id
+				JOIN serialcirc ON serialcirc_expl.num_serialcirc_expl_serialcirc = serialcirc.id_serialcirc
+				left JOIN abts_abts ON exemplaires.expl_abt_num = abts_abts.abt_id ';
+		return $query;
+	}
+		
+	protected function get_object_instance($row) {
+		$object_instance = new serialcirc_expl($row->id_serialcirc_expl);
+		
+		$object_instance->set_abt_num($row->expl_abt_num);
+		$object_instance->set_abt_name($row->abt_name);
+		
+		$object_instance->set_bulletin_numero($row->bulletin_numero);
+		$object_instance->set_mention_date($row->mention_date);
+		$object_instance->set_bulletin_notice($row->bulletin_notice);
+		$object_instance->set_bulletin_id($row->bulletin_id);
+		$object_instance->set_num_notice($row->num_notice);
+		
+		$object_instance->set_serialcirc_type($row->serialcirc_type);
+		$object_instance->set_serialcirc_checked($row->serialcirc_checked);
+		
+		return $object_instance;
+	}
+	
+	protected function add_object($row) {
+		$object_instance = $this->get_object_instance($row);
+		if($this->is_visible_by_fast_filters($object_instance)) {
+			$classements = $object_instance->get_classements();
+			if(!empty($classements)) {
+				foreach ($classements as $classement) {
+					$object_instance->set_classement($classement);
+					$this->objects[] = clone($object_instance);
+				}
+			}
+		}
+	}
+	
+	protected function fetch_data() {
+		parent::fetch_data();
+		$this->pager['nb_results'] = count($this->objects);
+	}
+	
+	/**
+	 * Initialisation du tri par défaut appliqué
+	 */
+	protected function init_default_applied_sort() {
+		$this->add_applied_sort('date_date', 'desc');
+	}
+	
+	/**
+	 * Initialisation des colonnes disponibles
+	 */
+	protected function init_available_columns() {
+		$this->available_columns =
+		array('main_fields' =>
+				array(
+						'periode' => 'serialcirc_circ_list_bull_circulation_periode',
+						'serial' => 'serialcirc_circ_list_bull_circulation_perodique',
+						'bulletin_numero' => 'serialcirc_circ_list_bull_circulation_numero',
+						'abonnement' => 'serialcirc_circ_list_bull_circulation_abonnement',
+						'expl_cb' => 'serialcirc_circ_list_bull_circulation_cb',
+						'destinataire' => 'serialcirc_circ_list_bull_circulation_destinataire',
+						'actions' => 'serialcirc_circ_list_bull_circulation_actions',
+				)
+		);
+		$this->available_columns['custom_fields'] = array();
+	}
+	
+	protected function get_form_title() {
+		global $msg, $charset;
+		return htmlentities($msg['serialcirc_circ_list_bull_title'], ENT_QUOTES, $charset);
+	}
+	
+	protected function get_display_html_content_selection() {
+		return "<div class='center'><input type='checkbox' id='".$this->objects_type."_selection_!!expl_id!!' name='".$this->objects_type."_selection[!!expl_id!!]' class='".$this->objects_type."_selection' value='!!expl_id!!' data-classement='!!classement!!'></div>";
+	}
+	
+	protected function get_display_cell_html_value($object, $value) {
+		$value = str_replace('!!expl_id!!', $object->get_expl_id(), $value);
+		$value = str_replace('!!classement!!', $object->get_classement(), $value);
+		return parent::get_display_cell_html_value($object, $value);
+	}
+	
+	protected function init_default_columns() {
+		$this->add_column_selection();
+		$this->add_column('periode');
+		$this->add_column('serial');
+		$this->add_column('bulletin_numero');
+		$this->add_column('abonnement');
+		$this->add_column('expl_cb');
+		$this->add_column('destinataire');
+		$this->add_column('actions');
+	}
+	
+	protected function init_default_settings() {
+		parent::init_default_settings();
+		$this->set_setting_display('search_form', 'unfolded_filters', true);
+		$this->set_setting_display('grouped_objects', 'display_counter', true);
+		$this->set_setting_display('query', 'human', false);
+		$this->set_setting_display('pager', 'visible', false);
+		$this->set_setting_column('default', 'align', 'left');
+		$this->settings['objects']['default']['display_mode'] = 'expandable_table';
+		$this->settings['grouped_objects']['level_1']['display_mode'] = 'expandable_table';
+	}
+	
+	protected function init_no_sortable_columns() {
+		$this->no_sortable_columns = array(
+				'destinataire', 'actions'
+		);
+	}
+	
+	/**
+	 * Initialisation des filtres disponibles
+	 */
+	protected function init_available_filters() {
+		global $pmb_lecteurs_localises;
+		
+		$this->available_filters =
+		array('main_fields' =>
+				array(
+						'no_ret' => 'serialcirc_no_ret_circ',
+				)
+		);
+		if($pmb_lecteurs_localises){
+			$this->available_filters['main_fields']['location'] = 'serialcirc_circ_list_location_title';
+		}
+		$this->available_filters['custom_fields'] = array();
+	}
+	
+	/**
+	 * Initialisation des filtres de recherche
+	 */
+	public function init_filters($filters=array()) {
+		global $pmb_lecteurs_localises, $deflt_docs_location;
+		
+		$this->filters = array(
+				'location' => ($pmb_lecteurs_localises ? $deflt_docs_location : 0),
+				'no_ret' => -1,
+				'point_expl_id' => 0
+		);
+		parent::init_filters($filters);
+	}
+	
+	public function init_applied_group($applied_group=array()) {
+		$this->applied_group = array(0 => 'classement');
+	}
+	
+	protected function init_default_selected_filters() {
+		global $pmb_lecteurs_localises;
+		
+		if($pmb_lecteurs_localises){
+			$this->add_selected_filter('location');
+		}
+		$this->add_selected_filter('no_ret');
+	}
+	
+	protected function init_default_selection_actions() {
+		global $msg;
+		
+		parent::init_default_selection_actions();
+		$print_link = array(
+				'onClick' => "my_serialcirc_print_all_sel_list_diff",
+				'confirm' => '',
+				'classement' => 'to_be_circ'
+		);
+		$this->add_selection_action('print', $msg['serialcirc_circ_list_imprimer_bt'], '', $print_link);
+		
+		$comeback_link = array(
+				'onClick' => "my_serialcirc_comeback_multiple_expl",
+				'confirm' => '',
+				'classement' => 'in_circ'
+		);
+		$this->add_selection_action('comeback', $msg['serialcirc_circ_list_bull_circulation_comeback_multiple_bt'], '', $comeback_link);
+	}
+	
+	/**
+	 * Filtres provenant du formulaire
+	 */
+	public function set_filters_from_form() {
+		$this->set_filter_from_form('location', 'integer');
+		$this->set_filter_from_form('no_ret', 'integer');
+		parent::set_filters_from_form();
+	}
+	
+	protected function get_search_filter_location() {
+		return gen_liste("select distinct idlocation, location_libelle from docs_location, docsloc_section where num_location=idlocation order by 2 ", "idlocation", "location_libelle", $this->objects_type.'_location', "", $this->filters['location'], "", "", 0, "");
+	}
+	
+	protected function get_search_filter_no_ret() {
+		global $msg;
+		
+		$options = array(
+				-1 => $msg['all'],
+				0 => $msg['40'],
+				1 => $msg['39'],
+		);
+		return $this->get_search_filter_simple_selection('', 'no_ret', '', $options);
+	}
+	
+	/**
+	 * Filtre SQL
+	 */
+	protected function _get_query_filters() {
+		$filter_query = '';
+		
+		$this->set_filters_from_form();
+		
+		$filters = array();
+		if($this->filters['location']) {
+			$filters [] = 'expl_location = "'.$this->filters['location'].'"';
+		}
+		if($this->filters['no_ret'] !== -1) {
+			$filters [] = 'serialcirc_no_ret = "'.$this->filters['no_ret'].'"';
+		}
+		if($this->filters['point_expl_id']) {
+			$filters [] = 'expl_id = "'.$this->filters['point_expl_id'].'"';
+		}
+		if(count($filters)) {
+			$filter_query .= ' where '.implode(' and ', $filters);
+		}
+		return $filter_query;
+	}
+
+	protected function _get_object_property_classement($object) {
+		global $msg;
+		
+		switch ($object->get_classement()) {
+			case 'alert':
+				return $msg["serialcirc_circ_list_bull_alerter"];
+			case 'to_be_circ':
+				return $msg["serialcirc_circ_list_bull_circuler"];
+			case 'in_circ':
+				return $msg["serialcirc_circ_list_bull_circulation"];
+			case 'in_late':
+				return $msg["serialcirc_circ_list_bull_retards"];
+		}
+		return $object->get_classement();
+	}
+	
+	protected function _get_object_property_periode($object) {
+		return $object->get_mention_date();
+	}
+	
+	protected function _get_object_property_serial($object) {
+		return serial::get_notice_title($object->get_bulletin_notice());
+	}
+	
+	protected function _get_object_property_bulletin_numero($object) {
+		return $object->get_bulletin_numero();
+	}
+	
+	protected function _get_object_property_abonnement($object) {
+		return $object->get_abt_name();
+	}
+	
+	protected function _get_object_property_expl_cb($object) {
+		return $object->get_exemplaire()->cb;
+	}
+	
+	protected function get_cell_content($object, $property) {
+	    global $msg, $charset;
+		
+		$content = '';
+		switch($property) {
+			case 'serial':
+				$serial = $this->_get_object_property_serial($object);
+				$content .= "<a href='".serial::get_permalink($object->get_bulletin_notice())."'>". htmlentities($serial,ENT_QUOTES,$charset)."</a>";
+				break;
+			case 'bulletin_numero':
+				$bulletin_numero = $this->_get_object_property_bulletin_numero($object);
+				$content .= "<a href='".bulletinage::get_permalink($object->get_bulletin_id())."'>". htmlentities($bulletin_numero,ENT_QUOTES,$charset)."</a>";
+				break;
+			case 'expl_cb':
+				$expl_cb = $this->_get_object_property_expl_cb($object);
+				$content .= exemplaire::get_cb_link($expl_cb);
+				break;
+			case 'abonnement':
+				$abonnement = $this->_get_object_property_abonnement($object);
+				$content .= "<a href='./catalog.php?categ=serialcirc_diff&sub=view&num_abt=".$object->get_abt_num()."'>".htmlentities($abonnement,ENT_QUOTES,$charset)."</a>";
+				break;
+			case 'destinataire':
+				$content .= $object->build_diff_sel();
+				switch ($object->get_classement()) {
+					case 'alert':
+						$content .= "<div id='circ_actions_alert_".$object->get_expl_id()."' class='erreur'></div>";
+						break;
+					case 'to_be_circ':
+						break;
+					case 'in_circ':
+						if($content != "") {
+							$content .= "<img src='".get_url_icon('plus.gif')."' class='img_plus' name='imEx' id='".$object->get_expl_id().""."Img' title='".$msg['plus_detail']."' border='0' onClick=\" expandBase('circ_detail_in_circ_".$object->get_expl_id()."', true); return false;\" hspace='3'>";
+							$content .= "<div id='circ_detail_in_circ_".$object->get_expl_id()."Child' style='display:none;'>";
+							$content .= $object->build_empr_list();
+							$content .= "</div>";
+						}
+						break;
+					case 'in_late':
+						if($content != "") {
+							$content .= "<img src='".get_url_icon('plus.gif')."' class='img_plus' name='imEx' id='".$object->get_expl_id().""."Img' title='".$msg['plus_detail']."' border='0' onClick=\" expandBase('circ_detail_in_late_".$object->get_expl_id()."', true); return false;\" hspace='3'>";
+							$content .= "<div id='circ_detail_in_late_".$object->get_expl_id()."Child' style='display:none;'>";
+							$content .= $object->build_empr_list();
+							$content .= "</div>";
+						}
+						break;
+				}
+				break;
+			case 'actions':
+				switch ($object->get_classement()) {
+					case 'alert':
+						if($object->is_alerted()) {
+							$content .= "
+								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_ajouter_sommaire_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_circ_list_bull_ajouter_sommaire('alert','".$object->get_bulletin_id()."'); return false;\"/>&nbsp;
+							";
+						} else {
+							$content .= "
+								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_ajouter_sommaire_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_circ_list_bull_ajouter_sommaire('alert','".$object->get_bulletin_id()."'); return false;\"/>&nbsp;
+								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_envoyer_alert_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_circ_list_bull_envoyer_alert('alert','".$object->get_expl_id()."'); return false;\"/>&nbsp;
+							";
+						}
+						break;
+					case 'to_be_circ':
+						$content .= "
+							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_imprimer_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_print_list_circ('to_be_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
+							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_annuler_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_delete_circ('to_be_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
+						";
+						break;
+					case 'in_circ':
+						if ($object->get_serialcirc_checked()) {
+							$content .= "<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_call_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_call_expl('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;";
+							$content .= "<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_go_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_do_trans('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;";
+						}
+						$content .= "
+							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_annuler_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_delete_circ('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
+							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_comeback_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_comeback_expl('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
+							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_imprimer_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_print_list_circ('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
+						";
+						$content .= "<div id='circ_actions_in_circ_".$object->get_expl_id()."' class='erreur'></div>";
+						break;
+					case 'in_late':
+						$content .= "
+								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_call_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_call_expl('in_late','".$object->get_expl_id()."'); return false;\"/>&nbsp;
+						";
+						if($object->get_serialcirc_type() == SERIALCIRC_TYPE_rotative){
+							$content .= "
+								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_go_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_do_trans('in_late','".$object->get_expl_id()."'); return false;\"/>&nbsp;
+							";
+						}else{
+							$content .= "
+								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_go_return_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_callinsist_expl('in_late','".$object->get_expl_id()."'); return false;\"/>&nbsp;
+							";
+						}
+						$content .= "<div id='circ_actions_in_late_".$object->get_expl_id()."' class='erreur'></div>";
+						break;
+				}
+				break;
+			default :
+				$content .= parent::get_cell_content($object, $property);
+				break;
+		}
+		return $content;
+	}
+	
+	protected function _get_query_human_location() {
+		if($this->filters['location']) {
+			$docs_location = new docs_location($this->filters['location']);
+			return $docs_location->libelle;
+		}
+		return '';
+	}
+	
+	protected function _get_query_human_no_ret() {
+		global $msg;
+		if($this->filters['no_ret'] !== -1) {
+			if($this->filters['no_ret']) {
+				$msg['39'];
+			} else {
+				$msg['40'];
+			}
+		}
+		return '';
+	}
+	
+	protected function get_js_actions_script() {
+		global $msg;
+		
+		$js_script = "
+			<script type='text/javascript' src='./javascript/serialcirc.js'></script>
+			<script type='text/javascript'>
+				
+				function my_serialcirc_circ_list_bull_ajouter_sommaire(zone,bull_id){
+					var url = './catalog.php?categ=serials&sub=bulletinage&action=view&bul_id='+bull_id;
+					window.open(url,'blank');
+				}
+				
+				function my_serialcirc_circ_list_bull_envoyer_alert	(zone,expl_id){
+					if (confirm('".addslashes($msg["serialcirc_envoyer_alert"])."')){
+						serialcirc_circ_list_bull_envoyer_alert(expl_id);
+						var  obj=document.getElementById('circ_actions_'+ zone + '_' + expl_id);
+						if(obj) obj.innerHTML='".addslashes($msg["serialcirc_info_alert"])."';
+					}else{
+								
+					}
+				}
+								
+				function my_serialcirc_print_list_circ(zone,expl_id){
+					var start_diff_id=0;
+					if(document.getElementById(zone + '_group_circ_select_' + expl_id)) {		
+						var  obj=document.getElementById(zone + '_group_circ_select_' + expl_id);
+						for(var i=0 ; i<obj.options.length; i++){
+							if(obj.options[i].selected){
+								start_diff_id=obj.options[i].value;
+							}
+						}
+					}
+					serialcirc_print_list_circ(expl_id,start_diff_id);
+				}
+								
+				function my_serialcirc_comeback_expl(zone,expl_id){
+					if (confirm('".addslashes($msg["serialcirc_confirm_retour"])."')){
+						var info = serialcirc_comeback_expl(expl_id);
+						var  obj=document.getElementById('circ_actions_'+ zone + '_' + expl_id);
+						if(obj) obj.innerHTML=info;
+					}else{
+							
+					}
+				}
+							
+				function my_serialcirc_comeback_multiple_expl(selection){
+					if (selection.length > 0) {
+						if (confirm('".addslashes($msg["serialcirc_multiple_expl_confirm_retour"])."')){
+							document.getElementById('bt_retour_expl_multiple').disabled=true;
+							for (var i = 0; i < selection.length; i++) {
+								var info = serialcirc_comeback_expl(selection[i]);
+								var obj=document.getElementById('circ_actions_'+ zone + '_' + selection[i]);
+								if(obj){
+									obj.innerHTML=info;
+								}
+							}
+							document.getElementById('bt_retour_expl_multiple').disabled=false;
+						}else{
+								
+						}
+					} else {
+						alert('".addslashes($msg["serialcirc_multiple_expl_retour_no_selected"])."');
+					}
+				}
+								
+				function my_serialcirc_call_expl(zone,expl_id){
+					if (confirm('".addslashes($msg["serialcirc_confirm_call_expl"])."')){
+						serialcirc_call_expl(expl_id);
+						var  obj=document.getElementById('circ_actions_'+ zone + '_' + expl_id);
+						if(obj) obj.innerHTML='".addslashes($msg["serialcirc_info_call_expl"])."';
+					}else{
+								
+					}
+				}
+								
+				function my_serialcirc_do_trans(zone,expl_id){
+					if (confirm('".addslashes($msg["serialcirc_confirm_do_trans"])."')){
+						serialcirc_do_trans(expl_id);
+						var  obj=document.getElementById('circ_actions_'+ zone + '_' + expl_id);
+						if(obj) obj.innerHTML='".addslashes($msg["serialcirc_info_do_trans"])."';
+					}else{
+								
+					}
+				}
+								
+				function my_serialcirc_delete_circ(zone,expl_id){
+								
+					if (confirm('".addslashes($msg["serialcirc_confirm_delete"])."')){
+						serialcirc_delete_circ(expl_id);
+						if(document.getElementById('tr_'+zone+'_'+expl_id))document.getElementById('tr_'+zone+'_'+expl_id).parentNode.removeChild(document.getElementById('tr_'+zone+'_'+expl_id));
+					}else{
+							
+					}
+				}
+							
+				function my_serialcirc_callinsist_expl(zone,expl_id){
+					serialcirc_callinsist_expl(expl_id);
+				}
+							
+				function my_serialcirc_copy_accept(zone,copy_id){
+					if (confirm('".addslashes($msg["serialcirc_confirm_copy"])."')){
+						serialcirc_copy_accept(copy_id);
+						var  obj=document.getElementById('circ_actions_'+ zone + '_' + copy_id);
+						if(obj) obj.innerHTML='".addslashes($msg["serialcirc_info_copy"])."';
+					}
+				}
+								
+				function my_serialcirc_copy_none(zone,copy_id){
+					if (confirm('".addslashes($msg["serialcirc_confirm_copy_none"])."')){
+						serialcirc_copy_none(copy_id);
+						var  obj=document.getElementById('circ_actions_'+ zone + '_' + copy_id);
+						if(obj) obj.innerHTML='".addslashes($msg["serialcirc_info_copy_none"])."';
+					}
+				}
+								
+				function my_serialcirc_resa_accept(zone,expl_id,empr_id){
+					if (confirm('".addslashes($msg["serialcirc_confirm_resa"])."')){
+						serialcirc_resa_accept(expl_id,empr_id);
+						var  obj=document.getElementById('circ_actions_'+ zone + '_' + expl_id+ '_' + empr_id);
+						if(obj) obj.innerHTML='".addslashes($msg["serialcirc_info_resa"])."';
+					}
+				}
+								
+				function my_serialcirc_resa_none(zone,expl_id,empr_id){
+					if (confirm('".addslashes($msg["serialcirc_confirm_resa_none"])."')){
+						serialcirc_resa_none(expl_id,empr_id);
+						var  obj=document.getElementById('circ_actions_'+ zone + '_' + expl_id+ '_' + empr_id);
+						if(obj) obj.innerHTML='".addslashes($msg["serialcirc_info_resa_none"])."';
+					}
+				}
+								
+				function my_serialcirc_print_all_sel_list_diff(selection){
+					var expl_start_empr= new Array();
+					if(!selection.length) return;
+					var cpt=0;
+					for(var i=0 ; i<selection.length ; i++){
+						var expl_id=selection[i];
+						if(document.getElementById('to_be_circ_group_circ_select_' + expl_id)) {
+							var start_diff_id=document.getElementById('to_be_circ_group_circ_select_' + expl_id).value;
+						} else {
+							var start_diff_id=0;
+						}
+						expl_start_empr[cpt]= new Array();
+						expl_start_empr[cpt]['expl_id']=expl_id;
+						expl_start_empr[cpt]['start_diff_id']=start_diff_id;
+						cpt++;
+					}
+					if(cpt>0) serialcirc_print_all_sel_list_diff(expl_start_empr);
+				}
+			</script>
+			<script type='text/javascript' src='./javascript/tablist.js'></script>
+		";
+		return $js_script;
+	}
+	
+	/**
+	 * Affichage de la liste des objets
+	 * @return string
+	 */
+	public function get_display_objects_list() {
+		$display = parent::get_display_objects_list();
+		if(static::class != 'list_serialcirc_expl_pointage_ui') {
+			$display .= list_serialcirc_copy_ui::get_instance()->get_display_objects_list();
+			$display .= list_serialcirc_circ_ui::get_instance(array('hold_asked' => 1))->get_display_objects_list();
+		}
+		return $display;
+	}
+	
+	public function get_display_list() {
+		global $msg, $charset;
+		
+		$display = parent::get_display_list();
+		$display .= "
+			<br />
+			<div class='row'>
+				<input type=\"submit\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_actualiser_bt"],ENT_QUOTES,$charset)."' onClick=\"document.location='".static::get_controller_url_base()."'; return false;\"/>&nbsp;
+			</div>";
+		$display .= $this->get_js_actions_script();
+		return $display;
+	}
+	
+	protected function add_event_on_selection_action($action=array()) {
+		$display = "
+			on(dom.byId('".$this->objects_type."_selection_action_".$action['name']."_link'), 'click', function(event) {
+				var selection = new Array();
+				query('.".$this->objects_type."_selection:checked').forEach(function(node) {
+					if(node.getAttribute('data-classement') == '".$action['link']['classement']."') {
+						selection.push(node.value);
+					}
+				});
+				if(selection.length) {
+					var confirm_msg = '".(isset($action['link']['confirm']) ? addslashes($action['link']['confirm']) : '')."';
+					if(!confirm_msg || confirm(confirm_msg)) {
+						".(isset($action['link']['href']) && $action['link']['href'] ? "
+							var selected_objects_form = domConstruct.create('form', {
+								action : '".$action['link']['href']."',
+								name : '".$this->objects_type."_selected_objects_form',
+								id : '".$this->objects_type."_selected_objects_form',
+								method : 'POST'
+							});
+							selection.forEach(function(selected_option) {
+								var selected_objects_hidden = domConstruct.create('input', {
+									type : 'hidden',
+									name : '".$this->get_name_selected_objects()."[]',
+									value : selected_option
+								});
+								domConstruct.place(selected_objects_hidden, selected_objects_form);
+							});
+							domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
+							dom.byId('".$this->objects_type."_selected_objects_form').submit();
+							"
+								: "")."
+						".(isset($action['link']['openPopUp']) && $action['link']['openPopUp'] ? "openPopUp('".$action['link']['openPopUp']."&selected_objects='+selection.join(','), '".$action['link']['openPopUpTitle']."'); return false;" : "")."
+						".(isset($action['link']['onClick']) && $action['link']['onClick'] ? $action['link']['onClick']."(selection); return false;" : "")."
+						".(isset($action['link']['showConfiguration']) && $action['link']['showConfiguration'] ? $this->objects_type."_show_configuration('".$action['name']."'); event.preventDefault(); return false;" : "")."
+					}
+				} else {
+					alert('".addslashes($this->get_error_message_empty_selection($action))."');
+					event.preventDefault();
+					return false;
+				}
+			});
+		";
+		return $display;
+	}
+	
+	public static function get_controller_url_base() {
+		global $base_path;
+		
+		return $base_path.'/circ.php?categ=serialcirc';
+	}
+}

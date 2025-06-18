@@ -1,0 +1,121 @@
+
+/*****************************************************************************************
+	Note explicative
+
+	Les contenus decrits ici ont pour but de renseigner les parametres
+	dans la partie gestion de l'opac PMB. Les valeurs sont a renseigner 
+	suivant les directives #obligatoire #recommande...
+
+	Il est possible que certains parametres non decrits ci-dessous n'aient pas l'affichage 
+	souhaite, auquel cas il vous faudra contacter le realisateur de cette charte pour
+	implementer le parametre en question.
+	
+	Une sauvegarde des valeurs est toujours souhaitee avant modification, 
+	communement en collant le contenu du champ "Valeur" dans le champ "Explication"
+
+	/!\ cette charte dépend de la présence de la charte du reseau
+	"reseauandorre" dans vos styles !	
+*****************************************************************************************/
+
+
+
+/*************************
+biblio_important_p1
+#obligatoire
+*************************/
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.2.6/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.5.2/jquery-ui.min.js"></script>
+<script type="text/javascript" src="styles/reseauandorre/andorre.js"></script>
+<script src="styles/reseauandorre/carousel_behavior_min.js"></script>
+<div id="slide_holder"><img class="loading" src="styles/reseauandorre/images/ajax_loader.gif" alt=""></div>
+<script type="text/javascript">
+$('#slide_holder').agile_carousel({
+	first_last_buttons: "no",
+	hover_next_prev_buttons: "no",
+	next_prev_buttons: "no",
+	pause_button: "no",
+	slide_buttons: "no",
+	slide_captions: 
+	"Biblioteca Comunal del Pas de la Casa"+
+	"|Biblioteca Comunal del Pas de la Casa"+
+	"|Biblioteca Comunal del Pas de la Casa"+
+	"|Biblioteca Pública del Govern"+
+	"|Biblioteca Comunal d'Encamp"+
+	"|Biblioteca Comunal d'Encamp"+
+	"|Biblioteca Comunal de Sant Julià de Lòria"+
+	"|Biblioteca Comunal de Sant Julià de Lòria"+
+	"|Biblioteca Pública del Govern"+
+	"|Biblioteca Pública del Govern"+
+	"|Biblioteca Comunal de la Massana"+
+	"|Biblioteca Comunal de la Massana"+
+	"|Biblioteca Comunal de la Massana"+
+	"|Biblioteca Comunal d'Escaldes-Engordany"+
+	"|Biblioteca Comunal d'Escaldes-Engordany"+
+	"|Biblioteca Comunal d'Escaldes-Engordany"+
+	"|Biblioteca Comunal de Canillo"+
+	"|Biblioteca Comunal de Canillo"+
+	"|Biblioteca Comunal de Canillo"+
+        "|Biblioteca Comunal d'Ordino"+
+	"|Biblioteca Comunal d'Ordino"+
+	"|Biblioteca Comunal d'Ordino",	
+	path_to_slides: "styles/reseauandorre/slides",
+	slide_directory: "slides",
+	php_doc_location: "styles/reseauandorre/make_slides.php",
+	slide_number_display: "no",
+	timer_length: "5000",
+	transition_duration: 1000,
+	transition_type: "fade",
+	water_mark: "no"
+});
+</script>
+<div id="bandecouleur"></div>
+<div id="ongletmenu"></div>
+<div id="logopastille"></div>
+<ul id="menuBandulaire">
+      <li class="encamp"><a href="?opac_css=encamp"></a><span>Encamp</span></li>
+      <li class="pasdelacasa"><a href="?opac_css=pasdelacasa"></a><span>Biblioteca del Pas de la Casa</span></li>
+      <li class="ordino"><a href="?opac_css=ordino"></a><span>Ordino</span></li>
+      <li class="canillo"><a href="?opac_css=canillo"></a><span>Canillo</span></li>
+      <li class="massana"><a href="?opac_css=massana"></a><span>La Massana</span></li>
+      <li class="andorra"><a href="?opac_css=andorra"></a><span>Andorra</span></li>
+      <li class="santjulia"><a href="?opac_css=santjulia"></a><span>Sant Julià de Lòria</span></li>
+      <li class="escaldes"><a href="?opac_css=escaldes"></a><span>Escaldes-Engordany</span></li>
+</ul>
+
+/*************************
+lien_moteur_recherche
+#facultatif
+*************************/
+Xarxa de biblioteques d'Andorrar - Tous droits réservés 2008
+<a href="url_lien1">Lien facultatif...</a>
+
+/*************************
+ biblio_post_adress
+ *************************/
+<div id="ongletmenubas"></div>
+
+/*************************
+biblio_important_p2
+*************************/
+<ul>
+<li><a href="./index.php?lvl=infopages&pagesid=1">Xarxa de Biblioteques d'Andorra</a></li>
+<li><a href="./index.php?lvl=infopages&pagesid=2">Agenda del mes</a></li>
+<li><a href="https://gestion4.bibli.fr/andorre/opac_css/index.php?lvl=etageres_see">Avui destaquem...</a></li>
+<li><a href="./index.php?lvl=infopages&pagesid=5">Concursos</a></li>
+<li><a href="./index.php?lvl=infopages&pagesid=6">Préstecs Interbibliotecaris</a></li>
+<li><a href="./index.php?lvl=infopages&pagesid=7">Concursos: textos guanyadors</a></li>
+</ul>
+<style type="text/css">
+#intro_message .p2 ul{
+	padding-left:70px;
+}
+
+#intro_message .p2 li{
+	margin-left:10px;
+}
+
+#intro_message .p2{
+	width:1080px;
+}
+</style>
+

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="yes"?>
+<manifest>
+	<name>veille</name>
+	<repository>no</repository>
+	<comment>Items de veille</comment>
+	<author>Gregor NEVEU | Julien LAURENT</author>
+	<org>PMB Services</org>
+	<date>2021-04-22</date>
+	<status>open</status>
+	<url>http://www.sigb.net</url>
+</manifest>

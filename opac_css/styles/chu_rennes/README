@@ -1,0 +1,230 @@
+
+/*****************************************************************************************
+	Note explicative
+
+	Les contenus decrits ici ont pour but de renseigner les parametres
+	dans la partie gestion de l'opac PMB. Les valeurs sont a renseigner 
+	suivant les directives #obligatoire #recommande...
+
+	Il est possible que certains parametres non decrits ci-dessous n'aient pas l'affichage 
+	souhaite, auquel cas il vous faudra contacter le realisateur de cette charte pour
+	implementer le parametre en question.
+	
+	Une sauvegarde des valeurs est toujours souhaitee avant modification, 
+	communement en collant le contenu du champ "Valeur" dans le champ "Explication"
+	
+*****************************************************************************************/
+
+
+/*********************************
+      biblio_preamble_p1
+      bandeau haut
+*********************************/
+<h1>Instituts de formation et<br />
+Ecoles CHU de Rennes</h1>
+
+<div id="banniere_logos">
+<a target="_blank" href="http://www.chu-rennes.fr/"><img src="./styles/chu_rennes/images/chu.jpg" /></a>
+<a target="_blank" href="http://www.bretagne.fr"><img src="./styles/chu_rennes/images/bretagne.jpg" /></a>
+<div id="banniere_ent"><a href="http://www.ifchurennes.fr/ent">Espace Numérique de Travail</a></div>
+
+</div>
+
+
+/*********************************
+      biblio_preamble_p2
+      menu vers liens externes
+*********************************/
+<ul id="menuDeroulant">
+<li>
+<a href="http://www.ifchurennes.fr/">Accueil</a>
+<li>
+<li>
+<a href="http://www.ifchurennes.fr/ifsi/">IFSI</a>
+<li>
+<li>
+<a href="http://www.ifchurennes.fr/ifas/">IFAS</a>
+<li>
+<li>
+<a href="http://www.ifchurennes.fr/ifa/">IFA</a>
+<li>
+<li>
+<a href="http://www.ifchurennes.fr/ifmem/">IFMEM</a>
+<li>
+<li>
+<a href="http://www.ifchurennes.fr/iade/">IADE</a>
+<li>
+<li>
+<a href="http://www.ifchurennes.fr/ibode/">IBODE</a>
+<li>
+<li>
+<a href="http://www.ifchurennes.fr/puericultrices/">Puéricultrices</a>
+<li>
+<li>
+<a href="http://www.ifchurennes.fr/sagesfemmes/">Sages-femme</a>
+<li>
+</ul>
+
+
+/*********************************
+      biblio_important_p1
+      menu interne PMB
+*********************************/
+<ul>
+<li>
+<a href="./index.php">Accueil</a>
+</li>
+<li>
+<a href="./index.php">Infopage 1</a>
+</li>
+<li>
+<a href="./index.php">Infopage 2</a>
+</li>
+<li>
+<a href="./index.php">Infopage 3</a>
+</li>
+</ul>
+
+
+/*********************************
+      biblio_important_p2
+      bloc actualités
+*********************************/
+<h2>actualités</h2>
+<img src="#" />
+Les documents sont à votre disposition pendant les heures d'ouverture de celle-ci.
+A consulter sur place ou sous réservation.
+
+
+/*********************************
+    lien_bas_supplementaire
+*********************************/
+<div id="credits">
+<ul>
+<li><a href="#">© Instituts de formation du CHU de Rennes</a></li>
+<li><a href="#">Plan du site</a></li>
+<li><a href="#">Informations légales</a></li>
+</ul>
+</div>
+
+
+/*********************************
+    infopage infos pratiques
+*********************************/
+<div class="infopage">
+<h3>Informations Pratiques</h3>
+<div style="float: left">
+<img src="./styles/chu_rennes/images/cde_pc.jpg" alt="Cde" width="412" height="247" />
+</div>
+<div class="bloc_200_round">
+<h6><img src="./styles/chu_rennes/images/clock_blue.png" alt="Horaires" width="32" height="32" />Horaires</h6>
+<p>
+Lundi : 9h00 - 18h00<br />
+Mardi : 9h00 - 18h00<br />
+Mercredi : 9h00 - 18h00<br />
+Jeudi : 9h00 - 18h00<br />
+Vendredi : 9h00 - 15h00
+</p>
+<p>
+<a href="agenda.php">Consulter l'agenda</a>
+</p>
+</div>
+<div class="bloc_200_round">
+<h6>Nous contacter</h6>
+<p>
+<img src="./styles/chu_rennes/images/phone.png" alt="Telephone" width="36" height="36" align="left" /><span style="font-weight: bold; font-size: 16px">02 99 28 93 07</span>
+</p>
+<p>
+<img src="./styles/chu_rennes/images/mail.png" alt="Nous contacter" width="28" height="33" align="left" /><span><a href="formulaire_contact.php">Formulaire de contact</a></span> 
+</p>
+</div>
+<br />
+<h4>Conditions de pr&ecirc;t</h4>
+<p>
+Les &eacute;tudiants du CHU de Rennes, ainsi que les &eacute;tudiants b&eacute;n&eacute;ficiant d'une convention.<br />
+<img src="./styles/chu_rennes/images/15.gif" alt="bullet" width="12" height="12" /> Droit de pr&ecirc;t : <strong>3 documents pour 21 jours, 2 revues pour 7 jours</strong>
+</p>
+<p>
+Le personnel du CHU de Rennes<br />
+<img src="./styles/chu_rennes/images/15.gif" alt="bullet" width="12" height="12" /> Droit de pr&ecirc;t : <strong>2 documents pour 21 jours</strong>  
+</p>
+<p>
+Consulter le <a href="download.php?id=5">r&egrave;glement int&eacute;rieur</a>
+</p>
+<br />
+<h4>Contacts</h4>
+<p>
+Micha&euml;l LE CORVIC, Youna LE GALLO, Karine TIREL, Marion GHO
+</p>
+<p>
+<strong>Centre de Documentation Des Ecoles</strong><br />
+Rue Henri Le Guilloux<br />
+35033 RENNES Cedex 9<br />
+TEL : 02 99 28 93 07<br />
+FAX: 02 99 28 43 38
+</p>
+</div>
+
+
+/*********************************
+          infopage CDE
+*********************************/
+<div class="infopage">
+<h3>A propos du CDE</h3>
+<table border="0">
+<tbody>
+<tr>
+<td width="30%" valign="top">
+<h6>Documents</h6>
+<p>
+6500 ouvrages<br />
+<a href="http://www.ifchurennes.fr/cde/download.php?id=6">40 p&eacute;riodiques</a><br />
+150 vid&eacute;os
+</p>
+</td>
+<td width="30%" valign="top">
+<h6>Domaines</h6>
+<p>
+Philosophie<br />
+Psychologie<br />
+Sciences Sociales<br />
+P&eacute;dagogie<br />
+Gestion hospitali&egrave;re<br />
+Soins infirmiers<br />
+Management
+</p>
+</td>
+<td width="30%" valign="top">
+<h6><strong>6 postes informatiques</strong></h6>
+<p>
+Acc&egrave;s &agrave; la base de donn&eacute;es ( 16 500 notices)<br />
+Connexion &agrave; Internet<br />
+Outils bureautiques
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>
+<img src="./styles/chu_rennes/images/15.gif" alt="bullet" width="12" height="12" />
+<a href="http://www.ifchurennes.fr/cde/docs/Rapport%20annuel%202010.pdf" target="_new">Rapport annuel 2010</a>
+</p>
+<h3>Une comp&eacute;tence documentaire</h3>
+<h4>Les missions</h4>
+<p>
+- Mettre &agrave; disposition une information actualis&eacute;e pertinente et adapt&eacute;e<br />
+- D&eacute;velopper l'autonomie des usagers<br />
+- Favoriser l'ouverture vers d'autres sources d'information
+</p>
+<h4>Les services</h4>
+<p>
+- Accueil et orientation des usagers<br />
+-Formation des usagers<br />
+- Aide &agrave; la recherche documentaire<br />
+- Mise &agrave; disposition de produits documentaires<br />
+- Un photocopieur &agrave; cartes est &agrave; disposition &agrave; l'entr&eacute;e du CDE.
+</p>
+</div>
+
+
+
