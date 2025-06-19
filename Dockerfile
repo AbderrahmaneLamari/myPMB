@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         session \
     && rm -rf /var/lib/apt/lists/*
 
+RUN cp ./entry.sh /usr/bin/entry.sh \
+    && chmod +x /usr/bin/entry.sh
 # Enable Apache mod_rewrite and harden Apache
 RUN a2enmod rewrite \
     && echo "ServerTokens Prod\nServerSignature Off" >> /etc/apache2/conf-enabled/security.conf \
@@ -44,8 +46,6 @@ RUN mkdir -p /var/lib/php/sessions \
     && chown -R www-data:www-data /var/lib/php/sessions \
     && chmod 770 /var/lib/php/sessions
 
-RUN cp ./entry.sh /usr/bin/entry.sh \
-    && chmod +x /usr/bin/entry.sh
 # Expose port 80
 EXPOSE 80
 
