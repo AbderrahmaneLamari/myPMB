@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   pmb:
     build: .
     container_name: pmb_shell
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - .:/var/www/html/pmb
     depends_on:
@@ -16,7 +14,7 @@ services:
       PMB_DB_USER: pmb
       PMB_DB_PASS: pmb
     networks:
-      - pmb_network
+      - pmb_shell_network
     command: "./entry.sh"
 
   db:
@@ -31,11 +29,11 @@ services:
     volumes:
       - pmb_db_data:/var/lib/mysql
     networks:
-      - pmb_network
+      - pmb_shell_network
 
 volumes:
   pmb_db_data:
 
 networks:
-  pmb_network:
+  pmb_shell_network:
     driver: bridge
