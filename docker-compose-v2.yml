@@ -15,6 +15,8 @@ services:
       PMB_DB_NAME: pmb
       PMB_DB_USER: pmb
       PMB_DB_PASS: pmb
+    networks:
+      - pmb_network
 
   db:
     image: mysql:8.0
@@ -27,6 +29,12 @@ services:
       MYSQL_ROOT_PASSWORD: rootpass
     volumes:
       - pmb_db_data:/var/lib/mysql
+    networks:
+      - pmb_network
 
 volumes:
   pmb_db_data:
+
+networks:
+  pmb_network:
+    driver: bridge
