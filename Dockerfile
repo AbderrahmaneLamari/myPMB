@@ -35,9 +35,9 @@ COPY php.ini /usr/local/etc/php/php.ini
 COPY --chown=www-data:www-data . /var/www/html/pmb
 
 # Set permissions
-RUN chmod -R 755 /var/www/html \
-    && chmod g+s /var/www/html \
-    && chmod o-rwx /var/www/html
+RUN chown -R www-data:www-data /var/www/html/pmb \
+ && chmod -R u+rwX /var/www/html/pmb
+
 
 # Create PHP session dir
 RUN mkdir -p /var/lib/php/sessions \
