@@ -15,7 +15,7 @@ services:
       PMB_DB_PASS: pmb
     networks:
       - pmb_shell_network
-    command: "./entry.sh"
+    command: "/usr/bin/entry.sh"
 
   db:
     image: mysql:8.0
