@@ -20,8 +20,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         session \
     && rm -rf /var/lib/apt/lists/*
 
-RUN cp ./entry.sh /usr/bin/entry.sh \
-    && chmod +x /usr/bin/entry.sh
 # Enable Apache mod_rewrite and harden Apache
 RUN a2enmod rewrite \
     && echo "ServerTokens Prod\nServerSignature Off" >> /etc/apache2/conf-enabled/security.conf \
@@ -29,6 +27,9 @@ RUN a2enmod rewrite \
 
 # Set working directory
 WORKDIR /var/www/html
+
+COPY entry.sh /usr/local/bin/entry.sh
+RUN chmod +x  /usr/local/bin/entry.sh
 
 # Copy custom PHP config
 COPY php.ini /usr/local/etc/php/php.ini
