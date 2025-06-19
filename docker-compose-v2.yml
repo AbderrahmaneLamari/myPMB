@@ -3,7 +3,7 @@ version: '3.8'
 services:
   pmb:
     build: .
-    container_name: pmb
+    container_name: pmb_shell
     ports:
       - "8080:80"
     volumes:
@@ -21,7 +21,7 @@ services:
 
   db:
     image: mysql:8.0
-    container_name: pmb_db
+    container_name: pmb_shell_db
     restart: always
     environment:
       MYSQL_DATABASE: pmb
