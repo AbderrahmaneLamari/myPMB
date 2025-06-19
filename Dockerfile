@@ -31,13 +31,13 @@ WORKDIR /var/www/html
 # Copy custom PHP config
 COPY php.ini /usr/local/etc/php/php.ini
 
-# Copy PMB source code into /var/www/html/pmb
+# Copy PMB source code
 COPY --chown=www-data:www-data . /var/www/html/pmb
 
-# Set secure, correct permissions (fixes .htaccess 403 error!)
-RUN chown -R www-data:www-data /var/www/html/pmb && \
-    find /var/www/html/pmb -type d -exec chmod 755 {} \; && \
-    find /var/www/html/pmb -type f -exec chmod 644 {} \;
+# Set permissions
+RUN chmod -R 755 /var/www/html \
+    && chmod g+s /var/www/html \
+    && chmod o-rwx /var/www/html
 
 # Create PHP session dir
 RUN mkdir -p /var/lib/php/sessions \
