@@ -44,7 +44,8 @@ RUN mkdir -p /var/lib/php/sessions \
     && chown -R www-data:www-data /var/lib/php/sessions \
     && chmod 770 /var/lib/php/sessions
 
-COPY ./entry.sh /usr/bin/entry.sh && chmod +x /usr/bin/entry.sh
+RUN cp ./entry.sh /usr/bin/entry.sh \
+    && chmod +x /usr/bin/entry.sh
 # Expose port 80
 EXPOSE 80
 
