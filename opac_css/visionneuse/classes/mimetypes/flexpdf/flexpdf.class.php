@@ -2,8 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: flexpdf.class.php,v 1.11 2020/07/23 08:44:38 dgoron Exp $
+// $Id: flexpdf.class.php,v 1.12 2022/03/07 14:35:10 dgoron Exp $
 
+global $visionneuse_path;
 require_once($visionneuse_path."/classes/mimetypes/affichage.class.php");
 require_once($visionneuse_path."/classes/mimetypes/converter_factory.class.php");
 
@@ -25,7 +26,7 @@ class flexpdf extends affichage{
     }
     
     public function fetchDisplay(){
-    	global $visionneuse_path,$base_path;
+    	global $visionneuse_path;
      	//le titre
     	$this->toDisplay["titre"] = $this->doc->titre;
     	//la visionneuse pdf
@@ -103,7 +104,13 @@ class flexpdf extends affichage{
     }
     
     public function getTabParam(){
-
+    	if(!isset($this->parameters['size_x'])) $this->parameters['size_x'] = '';
+    	if(!isset($this->parameters['size_y'])) $this->parameters['size_y'] = '';
+    	if(!isset($this->parameters['pdftotext_cmd'])) $this->parameters['pdftotext_cmd'] = '';
+    	if(!isset($this->parameters['pdf2swf_cmd'])) $this->parameters['pdf2swf_cmd'] = '';
+    	if(!isset($this->parameters['pyodconverter_cmd'])) $this->parameters['pyodconverter_cmd'] = '';
+    	if(!isset($this->parameters['jodconverter_cmd'])) $this->parameters['jodconverter_cmd'] = '';
+    	if(!isset($this->parameters['jodconverter_url'])) $this->parameters['jodconverter_url'] = '';
     	$this->tabParam = array(
 			"size_x"=>array("type"=>"text","name"=>"size_x","value"=>$this->parameters['size_x'],"desc"=>"Largeur du document en % de l'espace visible"),
 			"size_y"=>array("type"=>"text","name"=>"size_y","value"=>$this->parameters['size_y'],"desc"=>"Hauteur du document en % de l'espace visible"),

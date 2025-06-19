@@ -2,20 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: netbase_authorities.class.php,v 1.2 2020/04/22 12:57:36 arenou Exp $
-if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
-    die("no access");
+// $Id: netbase_authorities.class.php,v 1.2.6.2 2023/06/15 11:57:48 dgoron Exp $
+if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once ($class_path . "/indexations_collection.class.php");
 
-class netbase_authorities
-{
+class netbase_authorities {
 
-    public function __construct()
-    {}
-
-    public static function index_from_query($query, $object_type)
-    {
+    public static function index_from_query($query, $object_type=0) {
         $result = pmb_mysql_query($query);
         $nb_indexed = pmb_mysql_num_rows($result);
         if ($nb_indexed) {
@@ -28,5 +23,18 @@ class netbase_authorities
             pmb_mysql_free_result($result);
         }
         return $nb_indexed;
+    }
+    
+    public static function index($object_type=0) {
+    	$indexation_authorities = new indexation_authorities(indexations_collection::get_xml_file_path($object_type), "authorities", $object_type);
+		$indexation_authorities->launch_indexation();
+    }
+    
+    public static function index_by_step($object_type=0, $step=0) {
+    	$indexation_authorities = new indexation_authorities(indexations_collection::get_xml_file_path($object_type), "authorities", $object_type);
+    	if($step == 0) {
+    		netbase_entities::clean_files($indexation_authorities->get_directory_files());
+    	}
+    	return $indexation_authorities->maj_by_step($step);
     }
 } // fin de déclaration de la classe netbase

@@ -1,0 +1,172 @@
+/*---------------------
+- AFFICHAGE DES INPUTS -
+ ---------------------*/
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    background-color: var(--c-white);
+    padding: 4px 16px;
+    color: var(--c-black);
+    font: normal normal normal 1.6rem/2.1rem var(--font);
+    border: 1px solid var(--c-primary);
+    border-radius: var(--border-radius);
+    transition: 0.3s;
+    height: 48px;
+    width: 100%;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus {
+    border: 1px solid var(--c-thirdly)!important;
+    box-shadow: none!important;
+    outline: none;
+}
+
+input[type="submit"],
+input[type="button"] {
+    cursor: pointer;
+}
+
+input[type="submit"]:hover,
+input[type="button"]:hover {
+    filter: brightness(1.2);
+}
+
+input[value="X"],
+input[value="X"]:hover {
+    color: var(--c-black);
+    font-weight: 600;
+    height: 30px;
+    width: 30px;
+    line-height: 12px;
+    background-color: var(--c-secondary);
+    border-radius: 32px;
+}
+
+input[value="+"],
+input[value="+"]:hover {
+    color: var(--c-white);
+    font-weight: 600;
+    height: 30px;
+    width: 30px;
+    line-height: 12px;
+    background-color: var(--c-primary);
+    border-radius: 32px;
+}
+
+input[type="file"]::file-selector-button {
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    border: none;
+    border-radius: 4px;
+    padding: 2px 16px;
+    font: var(--font-link-variant-1);
+}
+
+input[type="file"]::-ms-browse {
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    border: none;
+    border-radius: 4px;
+    padding: 2px 16px;
+    font: var(--font-link-variant-1);
+}
+
+input[type="file"]::-webkit-file-upload-button {
+    background-color: var(--c-primary);
+    color: var(--c-text-2);
+    border: none;
+    border-radius: 4px;
+    padding: 2px 16px;
+    font: var(--font-link-variant-1);
+}
+
+input[type="file"]:focus {
+    outline-color: var(--c-thirdly);
+}
+
+input[type="file"]:focus::file-selector-button {
+    background-color: var(--c-thirdly);
+}
+
+input[type='checkbox']:checked {
+    background-color: var(--c-thirdly);
+    border: 1px solid var(--c-thirdly);
+}
+
+@supports (-moz-appearance:none) {
+    input[type='checkbox']:checked:after {
+        content: '\2713';
+        color: var(--c-white);
+        position: absolute;
+        top: -6px;
+        font-size: 16px;
+        width: 100%;
+        left: 1px;
+    }
+
+    input[type='checkbox'] {
+        appearance: none;
+        position: relative;
+        width: 15px !important;
+        height: 15px !important;
+        border-radius: 2px;
+        border: 1px solid var(--c-black);
+        overflow: hidden;
+    }
+
+    input[type='checkbox']:focus {
+        outline: 0;
+        border-color: var(--c-thirdly);
+    }
+}
+
+@supports (-webkit-appearance:none) {
+    input[type='checkbox']:checked:after {
+        content: '\2713';
+        color: var(--c-white);
+        position: absolute;
+        top: -2px;
+        font-size: 12px;
+        left: 2px;
+    }
+
+    input[type='checkbox'] {
+        appearance: none;
+        position: relative;
+        width: 16px !important;
+        height: 16px !important;
+        border-radius: 2px;
+        border: 1px solid var(--c-black);
+        overflow: hidden;
+    }
+
+    input[type='checkbox']:focus {
+        outline: 0;
+        border-color: var(--c-thirdly);
+    }
+}
+
+
+/* checkbox panier */
+
+.parentNotCourte input[type='checkbox'] {
+    position: absolute !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 5px;
+    left: 16px;
+}
+
+.parentNotCourte input[type='checkbox']:checked:after {
+    content: '\2713';
+    color: var(--c-white);
+    position: absolute;
+    top: -2px;
+    font-size: 16px;
+    width: 100%;
+    left: 4px;
+}

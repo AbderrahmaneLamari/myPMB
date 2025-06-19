@@ -149,17 +149,17 @@ class convert extends fpdf{
 		$this->_out('endobj');
 	}
 	
-	public function _putresources(){
+	protected function _putresources(){
 		parent::_putresources();
 		$this->_putbookmarks();
 	}
 	
-	public function _putcatalog(){
+	protected function _putcatalog(){
 		parent::_putcatalog();
 		if(count($this->outlines)>0)
 		{
-			$this->_out('/Outlines '.$this->OutlineRoot.' 0 R');
-			$this->_out('/PageMode /UseOutlines');
+			$this->_put('/Outlines '.$this->OutlineRoot.' 0 R');
+			$this->_put('/PageMode /UseOutlines');
 		}
 	}
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: RegistrationController.php,v 1.26 2021/04/07 14:35:29 btafforeau Exp $
+// $Id: RegistrationController.php,v 1.27 2023/02/16 10:05:36 gneveu Exp $
 
 namespace Pmb\Animations\Controller;
 
@@ -11,6 +11,7 @@ use Pmb\Animations\Views\AnimationsView;
 use Pmb\Animations\Models\AnimationModel;
 use Pmb\Common\Controller\Controller;
 use Pmb\Animations\Models\RegistrationStatusModel;
+use Pmb\Common\Models\DocsLocationModel;
 
 class RegistrationController extends Controller
 {
@@ -44,6 +45,7 @@ class RegistrationController extends Controller
             'registrationList' => RegistrationModel::getRegistrations(),
             'animationList' => AnimationModel::getAnimationsList(true),
             'statusRegistrationlist' => RegistrationStatusModel::getRegistrationStatuses(),
+            'localisationList' => DocsLocationModel::getLocationList(),
             'selectedStatusRegistration' => $numStatus,
             'action' => 'list'
         ]);

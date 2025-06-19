@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interface_demandes_form.class.php,v 1.2 2021/03/30 16:34:05 dgoron Exp $
+// $Id: interface_demandes_form.class.php,v 1.2.6.2 2023/12/28 11:16:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -26,7 +26,7 @@ class interface_demandes_form extends interface_form {
 				break;
 			case 'demandes_actions':
 				if($this->object_id){
-					return $this->get_url_base()."&act=see&idaction=".$this->object_id;
+					return $this->get_url_base()."&act=see&iddemande=".$this->num_demande."&idaction=".$this->object_id;
 				} else {
 					return "./demandes.php?categ=gestion&act=see_dmde&iddemande=".$this->num_demande;
 				}
@@ -52,11 +52,11 @@ class interface_demandes_form extends interface_form {
 					return "./demandes.php?categ=gestion&act=save";
 				}
 			case 'demandes_actions':
-				return $this->get_url_base()."&act=save_action&idaction=".$this->object_id;
+				return $this->get_url_base()."&act=save_action&iddemande=".$this->num_demande."&idaction=".$this->object_id;
 			case 'demandes_notes':
 				return $this->get_url_base()."&act=save_note&idnote=".$this->object_id."#fin";
 			case 'explnum_doc':
-				return $this->get_url_base()."&act=save_docnum&iddocnum=".$this->object_id;
+				return $this->get_url_base()."&act=save_docnum&iddocnum=".$this->object_id."&idaction=".$this->num_action;
 			default:
 				return parent::get_submit_action();
 		}
@@ -71,7 +71,7 @@ class interface_demandes_form extends interface_form {
 			case 'demandes_notes':
 				return $this->get_url_base()."&act=suppr_note&idnote=".$this->object_id."#fin";
 			case 'explnum_doc':
-				return $this->get_url_base()."&act=suppr_docnum&iddocnum=".$this->object_id;
+			    return $this->get_url_base()."&act=suppr_docnum&iddocnum=".$this->object_id."&idaction=".$this->num_action;
 			default:
 				return parent::get_delete_action();
 		}

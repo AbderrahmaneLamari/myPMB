@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: common.class.php,v 1.1.2.4 2021/10/06 12:32:34 dgoron Exp $
+// $Id: common.class.php,v 1.3 2021/10/06 12:30:23 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

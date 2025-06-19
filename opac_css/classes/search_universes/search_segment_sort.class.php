@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_sort.class.php,v 1.10.2.8 2021/12/20 13:58:35 moble Exp $
+// $Id: search_segment_sort.class.php,v 1.23.2.3 2023/04/27 09:40:13 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -28,7 +28,13 @@ class search_segment_sort extends sort {
 	public function __construct($num_segment = 0) {
 		$this->num_segment = (int) $num_segment;
 		$this->fetch_data();
-		$const_type = ($this->type >= 1000) ? TYPE_AUTHPERSO : $this->type;
+		if($this->type >= 10000){
+		    $const_type = TYPE_ONTOLOGY;
+		}else if ($this->type >= 1000){
+		    $const_type = TYPE_AUTHPERSO;
+		}else{
+		    $const_type = $this->type;
+		}
 		$type = entities::get_string_from_const_type($const_type);
 		parent::__construct($type, 'session');
 	}
@@ -127,6 +133,8 @@ class search_segment_sort extends sort {
 	            break;
 	        case 'notices' :
 	            return $include_path."/indexation/notices/champs_base.xml";
+	        case 'animations' :
+	            return $include_path."/indexation/animations/champs_base.xml";
 	        default :
 	            return $include_path."/indexation/authorities/$string_type/champs_base.xml";
 	    }
@@ -136,7 +144,14 @@ class search_segment_sort extends sort {
 	    switch ($this->type) {
 	        case TYPE_NOTICE :
 	            return "notices";
+	        case TYPE_ANIMATION :
+	            return "animations";
+	        case TYPE_CMS_EDITORIAL :
+	            return "cms_editorial";
 	        default :
+	            if($this->type> 10000){
+	                return "ontologies";
+	            }
 	            return "authorities";
 	    }
 	}
@@ -153,7 +168,7 @@ class search_segment_sort extends sort {
 	        while ($row = pmb_mysql_fetch_object($res)) {
         	    $this->result[] = $row->{ $this->params["REFERENCEKEY"] };
 	        } 
-	    }	
+	    }
 	    return $this->result;
 	}
 	
@@ -192,7 +207,7 @@ class search_segment_sort extends sort {
         } else {
             $segment_history = 0;
         }
-        $location = "&action=segment_results&id=".$this->num_segment."&universe_history=".$search_index."&segment_history=".$segment_history."&search_index=".search_universe::$start_search["search_index"];
+        $location = "&action=segment_results&id=".$this->num_segment."&universe_history=".$search_index."&segment_history=".$segment_history;
 
 	    $html .= "</select></span>
             <script>
@@ -249,41 +264,70 @@ class search_segment_sort extends sort {
 	}
 	
 	public function recupTriParId($id) {
-		// tri par défaut...
-		$tab = array();
-		if($id == "default"){
-			return $this->recupTriParDefaultId();
+		$tab["nom_tri"] = "";
+		//Ajout des tri de session pour les segments
+		if (!empty($_SESSION["sort_segment_".$id])) {
+    	    if (isset($_SESSION['sort_segment_'.$id.'currentSort'])){
+    	        $segment_sort = $_SESSION['sort_segment_'.$id.'currentSort'];
+    	    } else {
+    	        $segment_sort = $this->get_segment_default_sort();
+    	    }
+		    $tab["nom_tri"] = $_SESSION["sort_segment_".$id][$segment_sort]['name'];
+		    $tab["tri_par"] = $_SESSION["sort_segment_".$id][$segment_sort]['des'];
 		}
-		switch($this->typeData) {
-			case 'base':
-				$result = pmb_mysql_query("SELECT nom_tri, tri_par FROM tris WHERE id_tri=" . $id);
-				if ($result) {
-					$tab = pmb_mysql_fetch_assoc($result);
-					pmb_mysql_free_result($result);
-					return $tab;
-				}
-				return null;
-			case 'session':
-				$tab["nom_tri"] = "";
-				//Ajout des tri de session pour les segments
-				if (!empty($_SESSION["sort_segment_".$id])) {
-		    	    if (!empty($_SESSION['sort_segment_'.$id.'currentSort'])){
-		    	        $segment_sort = $_SESSION['sort_segment_'.$id.'currentSort'];
-		    	    } else {
-		    	        $segment_sort = 0;
-		    	    }
-				    $tab["nom_tri"] = $_SESSION["sort_segment_".$id][$segment_sort]['name'];
-				    $tab["tri_par"] = $_SESSION["sort_segment_".$id][$segment_sort]['des'];
-				}
-				return $tab;
-		}
+		return $tab;
 	}
 		
 	public function parse() {
-	    if ($this->type >= 1000) {
+	    if ($this->type >= 10000) {
+	        $this->parse_ontology();
+	    } elseif ($this->type >= 1000) {
 	        $this->parse_authperso();
 	    } else {
 	        parent::parse();
+	    }
+	}	
+	
+	private function parse_ontology() {
+	    
+	    $params_name = $this->dSort->sortName . "_params";
+	    global ${$params_name};
+	    $params = ${$params_name};
+	    if ($params) {
+	        $this->params = $params;
+	    }
+	    $this->params['REFERENCEKEY'] = 'id_item';
+	    
+	    $class_uri = onto_common_uri::get_uri(($this->type-10000));
+	    $ontology = new ontology(ontologies::get_ontology_id_from_class_uri($class_uri));
+	    $onto = $ontology->get_onto();
+	    foreach ($onto->get_classes() as $c) {
+	        if($class_uri != $c->uri){
+	            continue;
+	        }
+	        $class = $onto->get_class($c->uri); 
+	        foreach ($class->get_properties() as $uri_property) {
+	            $property = $class->get_property($uri_property);
+	            switch ($property->pmb_datatype) {
+	                case "http://www.pmbservices.fr/ontology#integer";
+	                $type = "num";
+	                break;
+	                default :
+	                    $type = "text";
+	                    break;
+	            }
+	            $p_tri = array(
+	                'SOURCE' => 'onto',
+	                'TYPEFIELD' => $property->pmb_datatype,
+	                'ID' => onto_common_uri::get_id($property->uri),
+	                'TYPE' => $type,
+	                'NAME' => $property->pmb_name,
+	                'LABEL' => $property->get_label()
+	            );
+                if (!empty($p_tri)) {
+                   $this->params['FIELD'][] = $p_tri;
+                }
+	        }
 	    }
 	}
 	

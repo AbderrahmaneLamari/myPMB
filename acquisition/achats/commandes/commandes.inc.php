@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: commandes.inc.php,v 1.116 2021/04/22 09:00:55 dgoron Exp $
+// $Id: commandes.inc.php,v 1.118 2022/08/01 06:44:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -35,7 +35,6 @@ require_once("$base_path/acquisition/achats/func_achats.inc.php");
 require_once("$base_path/acquisition/suggestions/func_suggestions.inc.php");
 require_once("$base_path/acquisition/achats/commandes/lettre_commande.class.php");
 require_once($class_path.'/accounting/accounting_commandes_controller.class.php');
-require_once($class_path."/mail/accounting/mail_accounting_commande.class.php");
 require_once("$class_path/user.class.php");
 
 //Affiche la liste des commandes pour une bibliotheque
@@ -2009,7 +2008,9 @@ function print_cde($id_bibli=0, $id_cde=0, $by_mail=FALSE) {
 		$no_mail=TRUE;
 	} else {
 	    $mail_accounting_commande = new mail_accounting_commande();
-	    $res_envoi = $mail_accounting_commande->send_mail($id_bibli, $id_cde);
+	    $mail_accounting_commande->set_id_bibli($id_bibli);
+	    $mail_accounting_commande->set_id_acte($id_cde);
+	    $res_envoi = $mail_accounting_commande->send_mail();
 		if (!$res_envoi) {
 			$no_mail=TRUE;
 		}

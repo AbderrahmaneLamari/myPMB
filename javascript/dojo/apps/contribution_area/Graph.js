@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Graph.js,v 1.36 2020/11/25 10:02:12 qvarin Exp $
+// $Id: Graph.js,v 1.37 2022/03/03 15:03:35 gneveu Exp $
 
 define(["dojo/_base/declare", 
         "dijit/layout/ContentPane",
@@ -456,8 +456,12 @@ define(["dojo/_base/declare",
 				var scenarioStatus = this.generateSelector('scenarioStatus', this.generateOptionsFromQuery({type:'contributionStatus'}, availableEntities), params.statusRequested, false);
 				popupContent = popupContent.replace("!!scenarioStatus!!",scenarioStatus);
 				popupContent = popupContent.replace("!!msg_scenario_status!!",pmbDojo.messages.getMessage('contribution_area','contribution_area_status'));
-				popupContent = popupContent.replace("!!formResponse!!",params.response ? params.response : '');
+				
 		    	popupContent = popupContent.replace("!!msg_form_response!!", pmbDojo.messages.getMessage('contribution_area','contribution_area_response'));
+				popupContent = popupContent.replace("!!formResponse!!",params.response ? params.response : '');
+		    	
+		    	popupContent = popupContent.replace("!!msg_order_response!!", pmbDojo.messages.getMessage('contribution_area','contribution_area_order_response_label'));
+				popupContent = popupContent.replace("!!formOrderResponse!!",params.orderResponse ? params.orderResponse : '');
 	
 	
 				xhr.post("./ajax.php?module=modelling&categ=contribution_area&sub=scenario&action=get_rights_form&current_scenario="+params.id,{
@@ -491,12 +495,10 @@ define(["dojo/_base/declare",
     		var formNode = availableEntities.query({"type":"form", "form_id":form.eltId});
 
     		var popupContent = createFormTpl.replace("!!msg_form_name!!", pmbDojo.messages.getMessage('contribution_area','admin_contribution_area_name_form_fields_opac'));
-	    	popupContent = popupContent.replace("!!msg_form_response!!", pmbDojo.messages.getMessage('contribution_area','contribution_area_response'));
 	    	popupContent = popupContent.replace("!!msg_form_comment!!", pmbDojo.messages.getMessage('contribution_area','contribution_area_comment'));
 	    	popupContent = popupContent.replace("!!msg_form_validate!!", pmbDojo.messages.getMessage('contribution_area','contribution_area_validate'));
 	    	popupContent = popupContent.replace("!!formName!!", form.name);
 	    	popupContent = popupContent.replace("!!idForm!!", form.id);
-	    	popupContent = popupContent.replace("!!formResponse!!", form.response ? form.response : '');
 	    	popupContent = popupContent.replace("!!formComment!!", form.comment ? form.comment : '');
 	    	popupContent = popupContent.replace("!!admin_contribution_area_form_name!!", pmbDojo.messages.getMessage('contribution_area','admin_contribution_area_form_name'));
 	    	popupContent = popupContent.replace("!!admin_contribution_area_edit_form_fields!!", pmbDojo.messages.getMessage('contribution_area','admin_contribution_area_edit_form_fields'));
@@ -504,6 +506,12 @@ define(["dojo/_base/declare",
 	    	popupContent = popupContent.replace("!!formNameValue!!", formNode[0].name);
 	    	popupContent = popupContent.replace("!!formType!!", form.entityType);
 	    	popupContent = popupContent.replace("!!formId!!", form.eltId);
+
+	    	popupContent = popupContent.replace("!!msg_form_response!!", pmbDojo.messages.getMessage('contribution_area','contribution_area_response'));
+	    	popupContent = popupContent.replace("!!formResponse!!", form.response ? form.response : '');
+	    	
+	    	popupContent = popupContent.replace("!!msg_order_response!!", pmbDojo.messages.getMessage('contribution_area','contribution_area_order_response_label'));
+			popupContent = popupContent.replace("!!formOrderResponse!!",form.orderResponse ? form.orderResponse : '');
 	    	
 	    	
 	    	this.currentDialog = new Dialog({

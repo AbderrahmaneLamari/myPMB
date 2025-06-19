@@ -2,15 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: collections_state.inc.php,v 1.15 2020/11/05 12:48:01 dgoron Exp $
+// $Id: collections_state.inc.php,v 1.16 2022/02/11 09:39:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $class_path, $action, $object_type, $fname;
 
 require_once($class_path.'/caddie.class.php');
 require_once($class_path.'/encoding_normalize.class.php');
 
 function ajax_calculate_collections_state() {
-	global $msg,$id_location,$id_serial, $bulletins;
+	global $id_location,$id_serial, $bulletins;
 	
 	if($bulletins != '') {
 		$rqt="select bulletin_id,bulletin_numero,mention_date from bulletins where bulletin_id IN (".$bulletins.") order by date_date";
@@ -99,7 +101,8 @@ function ajax_calculate_collections_state() {
 }
 
 function ajax_modify_collections_state() {
-	global $id_serial,$id_location,$texte_coll_state,$charset;
+	global $id_serial,$id_location,$texte_coll_state;
+	
 	if ($id_location) $restrict_location=" and location_id=$id_location";
 	$rqt1="select state_collections from collections_state where id_serial=$id_serial $restrict_location";
 	$execute_query1=pmb_mysql_query($rqt1);
@@ -115,8 +118,8 @@ function ajax_modify_collections_state() {
 function ajax_add_expl_to_carts() {
 	global $id_caddie_bull, $id_caddie_expl, $cb_expl;
 	
-	$id_caddie_bull += 0;
-	$id_caddie_expl += 0;
+	$id_caddie_bull = intval($id_caddie_bull);
+	$id_caddie_expl = intval($id_caddie_expl);
 	
 	if (!$cb_expl || !$id_caddie_bull || !$id_caddie_expl) {
 		return 0;
@@ -146,9 +149,9 @@ function ajax_add_expl_to_carts() {
 function ajax_get_data_expl_list() {
 	global $id_caddie_expl, $id_caddie_bull, $id_location;
 	
-	$id_caddie_bull += 0;
-	$id_caddie_expl += 0;
-	$id_location += 0;
+	$id_caddie_bull = intval($id_caddie_bull);
+	$id_caddie_expl = intval($id_caddie_expl);
+	$id_location = intval($id_location);
 	
 	$data = array(
 		'caddie_bull' => array(),

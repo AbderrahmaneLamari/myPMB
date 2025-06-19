@@ -23,46 +23,46 @@ Structure :
 </rules
  -->
 <rules>
-	<rule>
-		<id>min_length</id>
-		<type>regexp</type>
-		<regexp>^.{VAR,}$</regexp>
-		<var>
-			<type>integer</type>
-			<default>2</default>
-		</var>
-	</rule>
-	<rule>
-		<id>min_uppercase_chars</id>
-		<type>regexp</type>
-		<regexp>[A-Z]{VAR,}</regexp>
-		<var>
-			<type>integer</type>
-			<default>1</default>
-		</var>
-	</rule>
-	<rule>
-        <id>min_lowercase_chars</id>
+    <rule>
+        <id>min_length</id>
         <type>regexp</type>
-        <regexp>[a-z]{VAR,}</regexp>
+        <regexp>^.{VAR,}$</regexp>
+        <var>
+            <type>integer</type>
+            <default>2</default>
+        </var>
+    </rule>
+    <rule>
+        <id>min_uppercase_chars</id>
+        <type>regexp</type>
+        <regexp>(?=(?:.*[A-Z]){VAR,}).*</regexp>
         <var>
             <type>integer</type>
             <default>1</default>
         </var>
     </rule>
-	<rule>
-	    <id>min_numbers</id>
-	    <type>regexp</type>
-	    <regexp>[0-9]{VAR,}</regexp>
-	    <var>
+    <rule>
+        <id>min_lowercase_chars</id>
+        <type>regexp</type>
+        <regexp>(?=(?:.*[a-z]){VAR,}).*</regexp>
+        <var>
             <type>integer</type>
             <default>1</default>
         </var>
-	</rule>
+    </rule>
+    <rule>
+        <id>min_numbers</id>
+        <type>regexp</type>
+        <regexp>(?=(?:.*[0-9]){VAR,}).*</regexp>
+        <var>
+            <type>integer</type>
+            <default>1</default>
+        </var>
+    </rule>
     <rule>
         <id>min_special_chars</id>
         <type>regexp</type>
-        <regexp>[#\$_\{\}\(\)!]]{VAR,}</regexp>
+        <regexp><![CDATA[(?=(?:.*[=?@#\$_\{\}\(\)!&]){VAR,}).*]]></regexp>
         <var>
             <type>integer</type>
             <default>1</default>
@@ -78,6 +78,7 @@ Structure :
         <type>class</type>
         <class>is_different_from_year</class>
     </rule>
+<!--
     <rule>
         <id>custom_regexp</id>
         <type>regexp</type>
@@ -87,4 +88,5 @@ Structure :
             <default></default>
         </var>
     </rule>
+-->
 </rules>

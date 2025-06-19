@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: netbase_cache.class.php,v 1.2 2021/04/15 13:55:00 dgoron Exp $
+// $Id: netbase_cache.class.php,v 1.3.2.1 2023/06/14 14:59:25 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -41,8 +41,21 @@ class netbase_cache {
 		//Vidons également le cache APCU s'il est activé
 		$cache_php=cache_factory::getCache();
 		if(is_object($cache_php) && get_class($cache_php) == 'cache_apcu') {
-			return $cache_php->deleteCache();
+			return $cache_php->clearCache();
 		}
 		return false;
+	}
+	
+	public static function clean_autoload_files() {
+		// Suppression des fichiers d'autoload back office
+		@unlink(__DIR__ . "/../../temp/classLoader_paths.php");
+		@unlink(__DIR__ . "/../../temp/classLoader_duplicates.php");
+		@unlink(__DIR__ . "/../../temp/classLoader.lock");
+		
+		// Suppression des fichiers d'autoload front office
+		@unlink(__DIR__ . "/../../opac_css/temp/classLoader_paths.php");
+		@unlink(__DIR__ . "/../../opac_css/temp/classLoader_duplicates.php");
+		@unlink(__DIR__ . "/../../opac_css/temp/classLoader.lock");
+		return true;
 	}
 } // fin de déclaration de la classe netbase

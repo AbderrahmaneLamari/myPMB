@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area_attachment.class.php,v 1.3 2021/01/04 14:21:10 qvarin Exp $
+// $Id: contribution_area_attachment.class.php,v 1.7 2022/05/17 07:31:52 gneveu Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
     die("no access");
 
@@ -80,15 +80,19 @@ class contribution_area_attachment
         $contribution_area_store = new contribution_area_store();
         $this->uri = $contribution_area_store->get_uri_from_id($this->id);
         $infos = $contribution_area_store->get_infos($this->uri);
-        $this->name = $infos['name'];
-        $this->entity_type = $infos['entityType'];
-        $this->question = $infos['question'];
-        $this->comment = $infos['comment'];
-        $this->get_scenarios();
+        $this->name = $infos['name'] ?? "";
+        $this->entity_type = $infos['entityType'] ?? "";
+        $this->question = $infos['question'] ?? "";
+        $this->comment = $infos['comment'] ?? "";
+        //$this->get_scenarios();
     }
 
     public function get_scenarios()
     {
+        if (!empty($this->scenarios)) {
+            return $this->scenarios;
+        }
+        
         $this->scenarios = array();
         $contribution_area_store = new contribution_area_store();
         $graphstore = $contribution_area_store->get_graphstore();
@@ -112,6 +116,9 @@ class contribution_area_attachment
             $length = count($results);
             for ($i = 0; $i < $length; $i ++) {
                 $infos = $contribution_area_store->get_infos($results[$i]->uri);
+                if (!empty($infos["entityType"]) && !empty($this->entity_type) && ($infos["entityType"] != $this->entity_type)) {
+                    continue;
+                }
                 $scenario = new contribution_area_scenario($infos["id"], $this->area->get_id());
                 $scenario->get_name();
                 $scenario->get_ajax_link();
@@ -139,6 +146,12 @@ class contribution_area_attachment
         if (count($this->scenarios) == 1) {
             return $this->scenarios[0]->sub_render();
         } else {
+            usort($this->scenarios,  function($a,$b){
+                if ($a->get_orderResponse() == $b->get_orderResponse()) {
+                    return 0;
+                }
+                return (intval($a->get_orderResponse()) < intval($b->get_orderResponse()) ? -1 : 1);
+            });
             $h2o = H2o_collection::get_instance($include_path . '/templates/contribution_area/contribution_area_attachment.tpl.html');
             return $h2o->render(array(
                 'attachment' => $this
@@ -184,5 +197,9 @@ class contribution_area_attachment
             return $this->area->get_area_uri();
         }
         return '';
+    }
+    
+    public function set_entity_type($entity_type) {
+        $this->entity_type = $entity_type;
     }
 }

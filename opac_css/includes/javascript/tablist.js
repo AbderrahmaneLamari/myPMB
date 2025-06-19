@@ -1,7 +1,7 @@
 //+-------------------------------------------------+
 //© 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 //+-------------------------------------------------+
-//$Id: tablist.js,v 1.28.2.1 2021/08/13 07:07:54 qvarin Exp $
+//$Id: tablist.js,v 1.29.4.1 2023/09/01 15:20:54 tsamson Exp $
 
 //gestion des listes "collapsibles" en Javascript
 
@@ -139,7 +139,13 @@ function initIt(){
 	for (var i = 0; i < tempCollCnt; i++) {
 		if (tempColl[i].className == 'notice-child') {
 			if (tempColl[i].getAttribute('startOpen') == 'Yes' ) {
-				expandBase (tempColl[i].id.substring(0,tempColl[i].id.indexOf('Child')), true);
+				if (tempColl[i].hasAttribute('data-expand-ajax')) {
+					let elId = tempColl[i].id.substring(0,tempColl[i].id.indexOf('Child'));
+					let expandImg = document.getElementById(elId + 'Img');
+					expandBase_ajax(elId,true,expandImg.getAttribute('param'));
+				} else {
+					expandBase (tempColl[i].id.substring(0,tempColl[i].id.indexOf('Child')), true);
+				}
 			} else tempColl[i].style.display = 'none';
 		}
 	}

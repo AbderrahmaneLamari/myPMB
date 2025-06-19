@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records.class.php,v 1.18 2016/09/21 13:09:44 vtouchard Exp $
+// $Id: cms_module_common_datasource_records.class.php,v 1.19 2022/09/06 07:52:18 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,6 +11,7 @@ class cms_module_common_datasource_records extends cms_module_common_datasource_
 	public function __construct($id=0){
 		parent::__construct($id);
 		$this->limitable = true;
+		$this->paging = true;
 	}
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
@@ -38,30 +39,46 @@ class cms_module_common_datasource_records extends cms_module_common_datasource_
 				}
 			}
 			$shelves = $selector->get_value();
+			$source_infos = array();
+			$records = array();
 			if(is_array($shelves) && count($shelves)){
 				foreach ($shelves as $shelve_id){
-					$query = "select id_tri from etagere where idetagere ='".($shelve_id*1)."'";
+					$query = "select id_tri, name, thumbnail_url from etagere where idetagere = '".($shelve_id*1)."'";
 					$result = pmb_mysql_query($query);
-					$records = $notices = array();
+					$notices = array();
 					if($result && pmb_mysql_num_rows($result)){
-						while($row = pmb_mysql_fetch_object($result)){
-							notices_caddie($shelve_id, $notices, '', '', '',0,$row->id_tri);
+						$row = pmb_mysql_fetch_object($result);
+						notices_caddie($shelve_id, $notices, '', '', '',0,$row->id_tri);						
+						
+						foreach($notices as $id => $niv){
+							$records[]=$id;
 						}
-					}
-					foreach($notices as $id => $niv){
-						$records[]=$id;
-					}
+						$etagere_instance = new etagere($shelve_id);
+						$source_infos[] = array(
+								'type' => 'shelve',
+								'id' => $shelve_id,
+								'name' => $etagere_instance->get_translated_name(),
+								'thumbnail_url' => $row->thumbnail_url,
+								'url' => './index.php?lvl=etagere_see&id='.$shelve_id,
+						);
+					}					
 				}
 			}
-			$records = $this->filter_datas("notices",$records);
-			if($this->parameters['nb_max_elements'] > 0){
+			$records = $this->filter_datas("notices", $records);
+			// Pagination
+			if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+			    $return["paging"] = $this->inject_paginator($records);
+			    $records = $this->cut_paging_list($records, $return["paging"]);
+			}else if(isset($this->parameters['nb_max_elements']) && $this->parameters['nb_max_elements'] > 0){
 				$records = array_slice($records, 0, $this->parameters['nb_max_elements']);
 			}
-			$return = array(
-					'title'=> 'Liste de Notices',
-					'records' => $records
-			);
 			
+			$return_records = array(
+					'title'=> 'Liste de Notices',
+					'records' => $records,
+					'source_infos' => $source_infos
+			);
+			$return = array_merge(isset($return) ? $return : [], $return_records);
 			return $return;
 		}
 		return false;

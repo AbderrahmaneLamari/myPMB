@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: skos_onto.class.php,v 1.3.2.1 2021/08/12 07:50:18 qvarin Exp $
+// $Id: skos_onto.class.php,v 1.4 2021/08/12 08:17:06 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.8 2020/05/25 12:20:28 dgoron Exp $
+// $Id: search.class.php,v 1.9 2022/10/18 07:04:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,7 +34,6 @@ class avis_search {
     
     //fonction de récupération de l'affichage de la saisie du critère
     public function get_input_box() {
-    	global $msg;
     	global $charset;
 
     	//Récupération de la valeur de saisie
@@ -43,7 +42,7 @@ class avis_search {
     	$valeur=${$valeur_};
 
     	$user_query="<span class='search_value'><input type='text' name='field_".$this->n_ligne."_s_".$this->id."[]' value='".htmlentities($valeur[0],ENT_QUOTES,$charset)."' /></span>";
-    	return $select.$user_query;
+    	return $user_query;
     }
     
     //fonction de conversion de la saisie en quelque chose de compatible avec l'environnement
@@ -114,9 +113,7 @@ class avis_search {
     
     //fonction de traduction littérale de la requête effectuée (renvoie un tableau des termes saisis)
     public function make_human_query() {
-    	global $msg;
-    	global $include_path;
-    			
+    	$tit=array();
     	//Récupération de la valeur de saisie 
     	$valeur_="field_".$this->n_ligne."_s_".$this->id;
     	global ${$valeur_};

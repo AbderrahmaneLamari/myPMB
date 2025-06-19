@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_bannette_view_bannette_from_tpl.class.php,v 1.5.6.1 2021/11/19 10:24:14 dgoron Exp $
+// $Id: cms_module_bannette_view_bannette_from_tpl.class.php,v 1.6 2021/11/19 10:22:07 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

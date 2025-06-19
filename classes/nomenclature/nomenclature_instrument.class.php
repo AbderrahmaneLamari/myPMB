@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_instrument.class.php,v 1.18.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: nomenclature_instrument.class.php,v 1.21.4.3 2023/12/20 08:11:55 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -93,6 +93,13 @@ class nomenclature_instrument{
 	 * @access protected
 	 */
 	protected $musicstand_num;
+	
+	/**
+	 * Tableau d'instances
+	 * @var array
+	 */
+	protected static $instances = array();
+	
 	/**
 	 * Constructeur
 	 *
@@ -130,16 +137,31 @@ class nomenclature_instrument{
 					$this->set_musicstand_num($row->instrument_musicstand_num);
 					$this->set_standard($row->instrument_standard);
 				}
+				pmb_mysql_free_result($result);
 			}
 		}
 	}
 	
-	public function get_form() {
-		global $nomenclature_instrument_content_form_tpl,$msg,$charset;
+	public function get_content_form() {
 		global $msg;
 		
-		$content_form = $nomenclature_instrument_content_form_tpl;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('code', 'admin_nomenclature_instrument_form_code')
+		->add_input_node('text', $this->code);
+		$interface_content_form->add_element('name', 'admin_nomenclature_instrument_form_name')
+		->add_input_node('text', $this->name);
+		$interface_content_form->add_element('id_musicstand', 'admin_nomenclature_instrument_form_musicstand')
+		->add_query_node('select', "select id_musicstand as id, concat(musicstand_name,' ( ',family_name,' )') as label from nomenclature_musicstands,nomenclature_families where musicstand_famille_num=id_family order by musicstand_name", $this->musicstand_num ?? 0)
+		->set_empty_option(0, $msg['admin_nomenclature_instrument_form_musicstand_no'])
+		->set_first_option(0, $msg['admin_nomenclature_instrument_form_musicstand_no_sel']);
+		$interface_content_form->add_element('standard', 'admin_nomenclature_instrument_form_standard')
+		->add_input_node('boolean', $this->standard);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
+		global $nomenclature_instrument_js_content_form_tpl;
 		
 		$interface_form = new interface_admin_nomenclature_form('nomenclature_instrument_form');
 		if(!$this->id){
@@ -147,19 +169,10 @@ class nomenclature_instrument{
 		}else{
 			$interface_form->set_label($msg['admin_nomenclature_instrument_form_edit']);
 		}
-		$content_form = str_replace('!!name!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!code!!', htmlentities($this->code, ENT_QUOTES, $charset), $content_form);
-		$content_form=str_replace('!!checked!!',($this->standard ? "checked='checked'" : ""), $content_form);
-		
-		$req = "select id_musicstand, concat(musicstand_name,' ( ',family_name,' )')as label from nomenclature_musicstands,nomenclature_families where musicstand_famille_num=id_family order by musicstand_name";
-		$selected = (isset($this->musicstand_num)) ? $this->musicstand_num : '';
-		$musicstand = gen_liste($req, "id_musicstand", "label", "id_musicstand", "", $selected, 0, $msg["admin_nomenclature_instrument_form_musicstand_no"], 0, $msg["admin_nomenclature_instrument_form_musicstand_no_sel"]);
-		$content_form = str_replace('!!musicstand!!', $musicstand, $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_object_type('instrument')
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($nomenclature_instrument_js_content_form_tpl.$this->get_content_form())
 		->set_table_name('nomenclature_instruments')
 		->set_field_focus('code');
 		return $interface_form->get_display();
@@ -541,7 +554,7 @@ class nomenclature_instrument{
 				'id' => $this->get_id(),
 				'code' => $this->get_code(),
 				'name' => $this->get_name(),
-		        'effective' => $this->get_effective() 
+		        'effective' => intval($this->get_effective()) 
 		);
 		return $tree;
 	}
@@ -563,8 +576,8 @@ class nomenclature_instrument{
 		global $code, $name, $id_musicstand, $standard;
 		
 		$return = array();
-		$id_musicstand += 0;
-		$standard +=0;
+		$id_musicstand = intval($id_musicstand);
+		$standard = intval($standard);
 		if($code && $name) {
 			$query = "select * from nomenclature_instruments where instrument_code='".$code."'";
 			$result = pmb_mysql_query($query);
@@ -619,5 +632,12 @@ class nomenclature_instrument{
 			$instrument_name = $row->instrument_name;
 		}
 		return $instrument_name;
-	} 
+	}
+	
+	public static function get_instance($id) {
+		if(!isset(static::$instances[$id])) {
+			static::$instances[$id] = new nomenclature_instrument($id);
+		}
+		return static::$instances[$id];
+	}
 } // end of nomenclature_instrument

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_pro.inc.php,v 1.58.2.1 2021/12/01 13:11:32 dgoron Exp $
+// $Id: func_pro.inc.php,v 1.59 2021/12/01 13:09:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

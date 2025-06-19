@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_workshop.class.php,v 1.16.4.2 2022/01/21 08:46:17 dgoron Exp $
+// $Id: nomenclature_workshop.class.php,v 1.18.4.1 2023/05/05 13:45:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -35,6 +35,11 @@ class nomenclature_workshop{
 	protected $instruments =array();
 	protected $instruments_data =array();
 
+	/**
+	 * Tableau d'instances
+	 * @var array
+	 */
+	protected static $instances = array();
 
 	/**
 	 * Constructeur
@@ -71,7 +76,7 @@ class nomenclature_workshop{
 					$result = pmb_mysql_query($query);
 					if(pmb_mysql_num_rows($result)){
 						while($row = pmb_mysql_fetch_object($result)){
-							$this->add_instrument($row->id_workshop_instrument, new nomenclature_instrument($row->workshop_instrument_num_instrument));							
+							$this->add_instrument($row->id_workshop_instrument, nomenclature_instrument::get_instance($row->workshop_instrument_num_instrument));							
 							$this->instruments_data[$row->id_workshop_instrument]['effective']=$row->workshop_instrument_number;
 							$this->instruments_data[$row->id_workshop_instrument]['order']=$row->workshop_instrument_order;
 							$this->instruments_data[$row->id_workshop_instrument]['id_workshop_instrument'] = $row->id_workshop_instrument;
@@ -279,7 +284,7 @@ class nomenclature_workshop{
 		$tmusicstands = array();
 		if(is_array($this->instruments)) {
 // 			foreach ($this->musicstands as $musicstand) {
-// 				$nomenclature_musicstand = new nomenclature_musicstand($musicstand->get_id());
+// 				$nomenclature_musicstand = nomenclature_musicstand::get_instance($musicstand->get_id());
 // 				$nomenclature_musicstand->calc_abbreviation();
 // 				$tmusicstands[] = $nomenclature_musicstand->get_abbreviation();
 // 			}
@@ -306,5 +311,12 @@ class nomenclature_workshop{
 				}
 			}
 		}
+	}
+	
+	public static function get_instance($id) {
+		if(!isset(static::$instances[$id])) {
+			static::$instances[$id] = new nomenclature_workshop($id);
+		}
+		return static::$instances[$id];
 	}
 } // end of nomenclature_workshop

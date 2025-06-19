@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: integre_notices.inc.php,v 1.18 2021/03/19 08:49:02 dgoron Exp $
+// $Id: integre_notices.inc.php,v 1.19.4.1 2023/09/06 07:04:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -63,18 +63,9 @@ if (is_array($external_notice_to_integer) && count($external_notice_to_integer) 
 					//affichage de l'erreur, en passant tous les param postes (serialise) pour l'eventuel forcage 	
 					require_once("$class_path/mono_display.class.php");
 					print "
-						<br />
 						<div id='notice_externe_".$external_notice."'>
-						<div class='erreur'>$msg[540]</div>
 						<script type='text/javascript' src='./javascript/tablist.js'></script>
-						<div class='row'>
-							<div class='colonne10'>
-								<img src='".get_url_icon('error.gif')."' class='align_left' />
-							</div>
-							<div class='colonne80'>
-								<strong>".$msg["gen_signature_erreur_similaire"]."</strong>
-							</div>
-						</div>
+						".return_error_message('', $msg["gen_signature_erreur_similaire"])."
 						<div class='row'>
 							<input type='button' class='bouton' onclick='force_integer(".$external_notice.")' value=' ".htmlentities($msg["gen_signature_forcage"], ENT_QUOTES,$charset)." '/>
 						</div>";
@@ -108,16 +99,22 @@ if (is_array($external_notice_to_integer) && count($external_notice_to_integer) 
 			if($infos['source_id']) $z->source_id = $infos['source_id'];
 			$z->var_to_post();
 			$ret=$z->insert_in_database();
-			$id_notice = $ret[1];
-			$rqt = "select recid from external_count where rid = '$external_notice'";
+			$id_notice = intval($ret[1]);
+			$rqt = "select recid from external_count where rid = '".addslashes($external_notice)."'";
 			$res = pmb_mysql_query($rqt);
-			if(pmb_mysql_num_rows($res)) $recid = pmb_mysql_result($res,0,0);
-			$req= "insert into notices_externes set num_notice = '".$id_notice."', recid = '".$recid."'";
-			pmb_mysql_query($req);
+			if(pmb_mysql_num_rows($res)) {
+			    $recid = pmb_mysql_result($res,0,0);
+			}
+			if($id_notice && $recid) {
+			    $req= "insert into notices_externes set num_notice = '".$id_notice."', recid = '".addslashes($recid)."'";
+			    pmb_mysql_query($req);
+			}
 			if ($ret[0]) {
 				if($z->bull_id && $z->perio_id){
 					$notice_display=new serial_display($ret[1],6);
-				} else $notice_display=new mono_display($ret[1],6);
+				} else {
+				    $notice_display=new mono_display($ret[1],6);
+				}
 				$retour = "
 				<script src='javascript/tablist.js'></script>
 				<br /><div class='erreur'></div>
@@ -140,7 +137,9 @@ if (is_array($external_notice_to_integer) && count($external_notice_to_integer) 
 			} else if ($ret[1]){
 				if($z->bull_id && $z->perio_id){
 					$notice_display=new serial_display($ret[1],6);
-				} else $notice_display=new mono_display($ret[1],6);
+				} else {
+				    $notice_display=new mono_display($ret[1],6);
+				}
 				$retour = "
 				<script src='javascript/tablist.js'></script>
 				<br /><div class='erreur'>$msg[540]</div>
@@ -153,8 +152,11 @@ if (is_array($external_notice_to_integer) && count($external_notice_to_integer) 
 						".$notice_display->result."
 					</div>
 				</div>";
-				if($z->bull_id && $z->perio_id) $url_view = analysis::get_permalink($ret[1], $z->bull_id);
-				else $url_view = notice::get_permalink($ret[1]);
+				if($z->bull_id && $z->perio_id) {
+				    $url_view = analysis::get_permalink($ret[1], $z->bull_id);
+				} else {
+				    $url_view = notice::get_permalink($ret[1]);
+				}
 				$retour .= "
 				<div class='row'>
 					<input type='button' name='cancel' class='bouton' value='".$msg["z3950_integr_not_lavoir"]."' onClick=\"window.open('".$url_view."');\"/>
@@ -165,8 +167,7 @@ if (is_array($external_notice_to_integer) && count($external_notice_to_integer) 
 				</div>
 				";
 				print $retour;
-			}
-			else {
+			} else {
 				$retour = "<script src='javascript/tablist.js'></script>";
 				$retour .= form_error_message($msg["connecteurs_cant_integrate_title"], ($ret[1]?$msg["z3950_integr_not_existait"]:$msg["z3950_integr_not_newrate"]), $msg["connecteurs_back_to_list"], "catalog.php?categ=search&mode=7&sub=launch",array("serialized_search"=>$sc->serialize_search()));
 				print $retour;

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: dsi_auto.php,v 1.6.10.1 2021/12/01 13:11:33 dgoron Exp $
+// $Id: dsi_auto.php,v 1.7.4.1 2023/09/25 12:47:56 dbellamy Exp $
 
 // définition du minimum nécéssaire 
 $base_path=".";                            
@@ -14,6 +14,8 @@ $base_nocheck = 1 ;
 
 require_once ("$base_path/includes/init.inc.php");  
 
+use Pmb\Common\Helper\MySQL;
+
 if (!$user) $user=$argv[1];
 if (!$password) $password=$argv[2];
 if (!$database) $database=$argv[3];
@@ -23,7 +25,7 @@ require_once("$include_path/db_param.inc.php");
 require_once("$include_path/mysql_connect.inc.php");
 $dbh = connection_mysql();
 // on checke si l'utilisateur existe et si le mot de passe est OK
-$query = "SELECT count(1) FROM users WHERE username='$user' AND pwd=password('$password') ";
+$query = "SELECT count(1) FROM users WHERE username='$user' AND pwd='".MySQL::password($password)."' ";
 $result = pmb_mysql_query($query, $dbh);
 $valid_user = pmb_mysql_result($result, 0, 0);
 if (!$valid_user) die("Interdit : utilisateur invalide ");

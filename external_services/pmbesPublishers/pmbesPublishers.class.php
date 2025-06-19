@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesPublishers.class.php,v 1.7.10.1 2022/01/03 10:36:11 dgoron Exp $
+// $Id: pmbesPublishers.class.php,v 1.8.4.1 2023/03/16 11:03:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,18 +10,6 @@ global $class_path;
 require_once($class_path."/external_services.class.php");
 
 class pmbesPublishers extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	public function list_publisher_notices($publisher_id, $OPACUserId=-1) {
 		$result = array();
@@ -73,6 +61,7 @@ class pmbesPublishers extends external_services_api_class {
 	}
 
 	public function get_publisher_information_and_notices($publisher_id, $OPACUserId=-1) {
+		$publisher_id = intval($publisher_id);
 		return array(
 			"information" => $this->get_publisher_information($publisher_id),
 			"notice_ids" => $this->list_publisher_notices($publisher_id, $OPACUserId=-1)

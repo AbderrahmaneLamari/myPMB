@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_reservations_ui.class.php,v 1.43.2.6 2021/10/28 08:27:30 dgoron Exp $
+// $Id: list_reservations_ui.class.php,v 1.57.2.3 2023/09/29 09:55:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -173,6 +173,55 @@ class list_reservations_ui extends list_ui {
 	    return true;
 	}
 	
+	protected function is_visible_exemplaire_from_resa($resa_idnotice=0, $resa_idbulletin=0) {
+		$resa_idnotice = intval($resa_idnotice);
+		$resa_idbulletin = intval($resa_idbulletin);
+		
+		$is_visible = false;
+		$query = "SELECT expl_codestat as codestat_id, expl_section as section_id, expl_statut as statut_id, expl_typdoc as typdoc_id
+			, expl_cote as type, expl_location as location_id
+			FROM exemplaires
+			WHERE expl_notice='$resa_idnotice' and expl_bulletin='$resa_idbulletin'";
+		$result = pmb_mysql_query($query);
+		if(pmb_mysql_num_rows($result)) {
+			while($row = pmb_mysql_fetch_object($result)) {
+				$flag = $this->is_visible_exemplaire($row);
+				if($flag) {
+					$is_visible = true;
+					break;
+				}
+			}
+		}
+		return $is_visible;
+	}
+	
+	protected function is_filter_emprunteur() {
+		if($this->filters['empr_statut']
+				|| $this->filters['empr_categ']
+				|| $this->filters['empr_codestat']
+				) {
+					return true;
+				}
+				return false;
+	}
+	
+	/**
+	 * @param emprunteur $emprunteur
+	 * @return boolean
+	 */
+	protected function is_visible_emprunteur($emprunteur) {
+		if($this->filters['empr_statut'] && ($emprunteur->empr_statut != $this->filters['empr_statut'])) {
+			return false;
+		}
+		if($this->filters['empr_categ'] && ($emprunteur->categ != $this->filters['empr_categ'])) {
+			return false;
+		}
+		if($this->filters['empr_codestat'] && ($emprunteur->cstat != $this->filters['empr_codestat'])) {
+			return false;
+		}
+		return true;
+	}
+	
 	protected function get_object_instance($row) {
 		$resa = new reservation($row->resa_idempr, $row->resa_idnotice, $row->resa_idbulletin, $row->resa_cb);
 		$resa->get_resa_cb();
@@ -203,11 +252,21 @@ class list_reservations_ui extends list_ui {
 			$empr_location = emprunteur::get_location($row->resa_idempr)->id;
 			if($this->is_visible_object($empr_location, $row->resa_loc_retrait)) {
 			    $is_filter_exemplaire = $this->is_filter_exemplaire();
-			    if($is_filter_exemplaire || !empty($this->on_expl_location)) {
-			        $object_instance = $this->get_object_instance($row);
-			        if($is_filter_exemplaire && !$this->is_visible_exemplaire($object_instance->get_exemplaire())) {
+			    //$is_filter_emprunteur = $this->is_filter_emprunteur();
+			    $is_filter_emprunteur = false;
+			    if($is_filter_exemplaire || $is_filter_emprunteur || !empty($this->on_expl_location)) {
+			    	$object_instance = $this->get_object_instance($row);
+			    	$exemplaire = $object_instance->get_exemplaire();
+			    	if($is_filter_exemplaire && !empty($exemplaire->expl_id) && !$this->is_visible_exemplaire($exemplaire)) {
 			            return false;
+			    	}
+			    	if($is_filter_exemplaire && empty($exemplaire->expl_id) && !$this->is_visible_exemplaire_from_resa($row->resa_idnotice, $row->resa_idbulletin)) {
+			        	return false;
 			        }
+			        /*$emprunteur = $object_instance->get_emprunteur();
+			        if($is_filter_emprunteur && !empty($emprunteur->id) && !$this->is_visible_emprunteur($emprunteur)) {
+			        	return false;
+			        }*/
 			        if(!empty($this->on_expl_location)) {
 			            if(!$this->filters['id_notice'] && !$this->filters['id_bulletin']) {
 			                $resa_situation = $this->get_resa_situation($object_instance);
@@ -249,43 +308,33 @@ class list_reservations_ui extends list_ui {
 	}
 	
 	/**
+	 * Champ(s) du tri SQL
+	 */
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'index_sew':
+	            return 'notices_m.index_sew, resa_date';
+	        case 'record':
+	            return 'tit, resa_date';
+	        case 'resa_validee' :
+	            return 'resa_cb';
+	        case 'expl_cote' :
+	        case 'resa_date' :
+	        case 'resa_date_debut' :
+	        case 'resa_date_fin' :
+	        case 'resa_confirmee' :
+	        case 'expl_cb' :
+	            return $sort_by;
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
+	}
+	
+	/**
 	 * Tri SQL
 	 */
 	protected function _get_query_order() {
-		
-		if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'index_sew':
-					$order .= 'notices_m.index_sew, resa_date';
-					break;
-				case 'record':
-					$order .= 'tit, resa_date';
-					break;
-				case 'resa_validee' :
-					$order .= 'resa_cb';
-					break;
-				case 'expl_cote' :
-				case 'resa_date' :
-				case 'resa_date_debut' :
-				case 'resa_date_fin' :
-				case 'resa_confirmee' :
-				case 'expl_cb' :
-					$order .= $sort_by;
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				$this->applied_sort_type = 'SQL';
-				$order_sql = $this->_get_query_order_sql_build($order);
-				return " group by resa_idnotice, resa_idbulletin, resa_idempr ".$order_sql;
-			} else {
-				return " group by resa_idnotice, resa_idbulletin, resa_idempr";
-			}
-		}
+	    return " group by resa_idnotice, resa_idbulletin, resa_idempr ".parent::_get_query_order();
 	}
 	
 	/**
@@ -316,7 +365,10 @@ class list_reservations_ui extends list_ui {
 						'expl_type' => 'editions_datasource_expl_type',
 						'expl_types' => 'editions_datasource_expl_types',
 						'expl_cote' => '296',
-						'groups' => 'dsi_ban_form_groupe_lect',
+						'groups' => '903',
+// 						'empr_statut' => 'editions_filter_empr_statut',
+//						'empr_categ' => 'editions_filter_empr_categ',
+//						'empr_codestat' => 'editions_filter_empr_codestat',
 //						'resa_condition' => 'resa_condition'
 				)
 		);
@@ -382,6 +434,7 @@ class list_reservations_ui extends list_ui {
     		    'id_bulletin' => 0,
 				'id_empr' => (!empty($filters['id_empr']) ? $filters['id_empr'] : 0),
     		    'montrerquoi' => 'all',
+				'my_home_location' => $deflt_resas_location,
 				'f_loc' => ($f_loc == '' ? $deflt_resas_location : $f_loc),
 				'empr_location' => '',
 				'removal_location' => '',
@@ -402,6 +455,7 @@ class list_reservations_ui extends list_ui {
                 'resa_condition' => ''
 		);
 		$this->init_location_filters();
+		$filters['my_home_location'] = $deflt_resas_location;
 		parent::init_filters($filters);
 	}
 	
@@ -430,6 +484,7 @@ class list_reservations_ui extends list_ui {
 						'record' => '233',
 						'expl_cote' => '296',
 						'empr' => 'empr_nom_prenom',
+						'empr_cb' => '35',
 						'empr_location' => 'editions_datasource_empr_location',
 						'rank' => '366',
 						'resa_date' => '374',
@@ -444,10 +499,13 @@ class list_reservations_ui extends list_ui {
 						'support' => '294',
 						'expl_cb' => '232',
 						'codestat' => '299',
-						'groups' => 'groupe_empr'
+						'groups' => 'groupe_empr',
+//						'empr_statut_libelle' => 'editions_datasource_empr_statut',
+//						'empr_categ_libelle' => 'editions_datasource_empr_categ',
+//						'empr_codestat_libelle' => 'editions_datasource_empr_codestat',
 				)
 		);
-		if ($pmb_transferts_actif=='1') {
+		if ($pmb_transferts_actif) {
 			$this->available_columns['main_fields']['resa_loc_retrait'] = 'resa_loc_retrait';
 			$this->available_columns['main_fields']['transfert_location_source'] = 'transfert_location_source';
 		}
@@ -467,8 +525,16 @@ class list_reservations_ui extends list_ui {
 		$this->set_setting_column('expl_cb', 'text', array('bold' => true));
 		$this->set_setting_column('record', 'align', 'left');
 		$this->set_setting_column('record', 'text', array('bold' => true));
+		$this->set_setting_column('rank', 'datatype', 'integer');
+		$this->set_setting_column('resa_date', 'datatype', 'date');
+		$this->set_setting_column('resa_date_debut', 'datatype', 'date');
+		$this->set_setting_column('resa_date_fin', 'datatype', 'date');
+		$this->set_setting_column('resa_validee', 'datatype', 'boolean');
 		$this->set_setting_column('resa_validee', 'text', array('strong' => true));
+		$this->set_setting_column('resa_validee', 'text_color', 'red');
+		$this->set_setting_column('resa_confirmee', 'datatype', 'boolean');
 		$this->set_setting_column('resa_confirmee', 'text', array('strong' => true));
+		$this->set_setting_column('resa_confirmee', 'text_color', 'red');
 	}
 	
 	/**
@@ -502,6 +568,9 @@ class list_reservations_ui extends list_ui {
 		$this->set_filter_from_form('expl_location');
 		$this->set_filter_from_form('expl_locations');
 		$this->set_filter_from_form('groups');
+//		$this->set_filter_from_form('empr_statut');
+//		$this->set_filter_from_form('empr_categ');
+//		$this->set_filter_from_form('empr_codestat');
 		$this->set_filter_from_form('resa_condition');
 		parent::set_filters_from_form();
 	}
@@ -510,8 +579,6 @@ class list_reservations_ui extends list_ui {
 	 * Sauvegarde de la pagination en session
 	 */
 	public function set_pager_in_session() {
-	    global $sub;
-	    
 	    parent::set_pager_in_session();
 	    if($this->pager['nb_results'] >= ($this->pager['page']*$this->pager['nb_per_page'])) {
 	        $_SESSION['list_'.$this->objects_type.'_pager']['page'] = $this->pager['page'];
@@ -543,6 +610,15 @@ class list_reservations_ui extends list_ui {
 			    break;
 			case 'groups':
 				$query = 'select id_groupe as id, libelle_groupe as label from groupe order by label';
+				break;
+			case 'empr_statut':
+				$query = 'select idstatut as id, statut_libelle as label from empr_statut order by label';
+				break;
+			case 'empr_categ':
+				$query = 'select id_categ_empr as id, libelle as label from empr_categ order by label';
+				break;
+			case 'empr_codestat':
+				$query = 'select idcode as id, libelle as label from empr_codestat order by label';
 				break;
 		}
 		return $query;
@@ -627,8 +703,7 @@ class list_reservations_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_expl_cote() {
-		global $charset;
-		return "<input type='text' class='saisie-20em' name='".$this->objects_type."_expl_cote' value='".htmlentities($this->filters['expl_cote'], ENT_QUOTES, $charset)."' />";
+		return $this->get_search_filter_simple_text('expl_cote', 20);
 	}
 	
 	protected function get_search_filter_expl_codestat() {
@@ -697,6 +772,24 @@ class list_reservations_ui extends list_ui {
 		return $this->get_search_filter_multiple_selection($this->get_selection_query('groups'), 'groups', $msg['dsi_all_groups']);
 	}
 	
+	protected function get_search_filter_empr_statut() {
+		global $msg;
+		
+		return $this->get_search_filter_simple_selection($this->get_selection_query('empr_statut'), 'empr_statut', $msg['all_statuts_empr']);
+	}
+	
+	protected function get_search_filter_empr_categ() {
+		global $msg;
+		
+		return $this->get_search_filter_simple_selection($this->get_selection_query('empr_categ'), 'empr_categ', $msg['categ_all']);
+	}
+	
+	protected function get_search_filter_empr_codestat() {
+		global $msg;
+		
+		return $this->get_search_filter_simple_selection($this->get_selection_query('empr_codestat'), 'empr_codestat', $msg['codestat_all']);
+	}
+	
 	protected function get_search_filter_resa_condition() {
 	    global $msg, $charset;
 	    
@@ -710,39 +803,24 @@ class list_reservations_ui extends list_ui {
 	    return $selector;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		
+	protected function _add_query_filters() {
 		if(get_called_class() == 'list_reservations_edition_treat_ui') {
-			$filters [] = '(resa_cb="" or resa_cb is null)';
+			$this->query_filters [] = '(resa_cb="" or resa_cb is null)';
 		}
-		if($this->filters['id_notice']) {
-			$filters [] = 'resa.resa_idnotice="'.$this->filters['id_notice'].'"';
-		}
-		if($this->filters['id_bulletin']) {
-			$filters [] = 'resa.resa_idbulletin="'.$this->filters['id_bulletin'].'"';
-		}
-		if($this->filters['id_empr']) {
-			$filters [] = 'resa.resa_idempr="'.$this->filters['id_empr'].'"';
-		}
+		$this->_add_query_filter_simple_restriction('id_notice', 'resa.resa_idnotice', 'integer');
+		$this->_add_query_filter_simple_restriction('id_bulletin', 'resa.resa_idbulletin', 'integer');
+		$this->_add_query_filter_simple_restriction('id_empr', 'resa.resa_idempr', 'integer');
 		if($this->filters['montrerquoi']) {
 			switch ($this->filters['montrerquoi']) {
 				case 'validees':
-					$filters [] = 'resa_cb<>""';
+					$this->query_filters [] = 'resa_cb<>""';
 					break;
 				case 'invalidees':
-					$filters [] = 'resa_cb=""';
+					$this->query_filters [] = 'resa_cb=""';
 					break;
 				case 'valid_noconf':
-					$filters [] = 'resa_cb<>""';
-					$filters [] = 'resa_confirmee="0"';
+					$this->query_filters [] = 'resa_cb<>""';
+					$this->query_filters [] = 'resa_confirmee="0"';
 					break;
 				case 'all':
 				default:
@@ -751,33 +829,31 @@ class list_reservations_ui extends list_ui {
 		}
 		if($this->filters['resa_state']) {
 			switch ($this->filters['resa_state']) {
-			    case 'depassee':
-			    	$filters [] = '(resa_date_fin < CURDATE() and resa_date_fin<>"0000-00-00")';
-			    	break;
+				case 'depassee':
+					$this->query_filters [] = '(resa_date_fin < CURDATE() and resa_date_fin<>"0000-00-00")';
+					break;
 				case 'encours':
 				default:
-					$filters [] = '(resa_date_fin >= CURDATE() or resa_date_fin="0000-00-00")';
-			    	break;
+					$this->query_filters [] = '(resa_date_fin >= CURDATE() or resa_date_fin="0000-00-00")';
+					break;
 			}
-// 			$filters [] = $this->filters['resa_dates_restrict'];
+// 			$this->query_filters [] = $this->filters['resa_dates_restrict'];
 		}
-		if(is_array($this->filters['groups']) && count($this->filters['groups'])) {
-			$filters [] = 'groupe_id IN ('.implode(',', $this->filters['groups']).')';
+		$this->_add_query_filter_multiple_restriction('groups', 'groupe_id', 'integer');
+		if($this->filters['ids']) {
+			$this->query_filters [] = 'id_resa IN ('.$this->filters['ids'].')';
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	/**
 	 * Fonction de callback
 	 * @param object $a
 	 * @param object $b
+	 * * @param number $index
 	 */
-	protected function _compare_objects($a, $b) {
-	    if($this->applied_sort[0]['by']) {
-	        $sort_by = $this->applied_sort[0]['by'];
+	protected function _compare_objects($a, $b, $index=0) {
+	    if($this->applied_sort[$index]['by']) {
+	        $sort_by = $this->applied_sort[$index]['by'];
 			switch($sort_by) {
 				case 'record' :
 					$a_notice_title = reservation::get_notice_title($a->id_notice, $a->id_bulletin);
@@ -797,10 +873,20 @@ class list_reservations_ui extends list_ui {
 					return strcmp($a->date_fin, $b->date_fin);
 					break;
 				case 'resa_condition': //Situation
-					return strcmp(strip_tags($this->get_cell_content_resa_condition($a)), strip_tags($this->get_cell_content_resa_condition($b)));
+					$cmp_a = strip_tags($this->get_cell_content_resa_condition($a));
+					$cmp_a_date = extraitdate($cmp_a);
+					if($cmp_a_date) {
+						$cmp_a = $cmp_a_date;
+					}
+					$cmp_b = strip_tags($this->get_cell_content_resa_condition($b));
+					$cmp_b_date = extraitdate($cmp_b);
+					if($cmp_b_date) {
+						$cmp_b = $cmp_b_date;
+					}
+					return strcmp($cmp_a, $cmp_b);
 					break;
 				default :
-					return parent::_compare_objects($a, $b);
+					return parent::_compare_objects($a, $b, $index);
 					break;
 			}
 		}
@@ -859,6 +945,7 @@ class list_reservations_ui extends list_ui {
 			$resa_situation->set_resa($object)
 			->set_resa_cb($object->expl_cb)
 			->set_idlocation($this->location_reservations[$object->id])
+			->set_my_home_location($this->filters['my_home_location'])
 			->set_rank($rank)
 			->set_no_aff($this->no_aff)
 			->set_lien_deja_affiche($this->lien_deja_affiche);
@@ -882,6 +969,14 @@ class list_reservations_ui extends list_ui {
 	
 	protected function _get_object_property_expl_cote($object) {
 		return $object->get_exemplaire()->cote;
+	}
+	
+	protected function _get_object_property_empr($object) {
+		return emprunteur::get_name($object->id_empr);
+	}
+	
+	protected function _get_object_property_empr_cb($object) {
+		return emprunteur::get_cb_empr($object->id_empr);
 	}
 	
 	protected function _get_object_property_empr_location($object) {
@@ -918,6 +1013,50 @@ class list_reservations_ui extends list_ui {
 		return implode(',', emprunteur::get_groupes($object->id_empr));
 	}
 	
+	protected function _get_object_property_empr_statut_libelle($object) {
+		return $object->get_emprunteur()->empr_statut_libelle;
+	}
+	
+	protected function _get_object_property_empr_categ_libelle($object) {
+		return $object->get_emprunteur()->cat_l;
+	}
+	
+	protected function _get_object_property_empr_codestat_libelle($object) {
+		return $object->get_emprunteur()->cstat_l;
+	}
+	
+	protected function _get_object_property_resa_date($object) {
+		return $object->formatted_date;
+	}
+	
+	protected function _get_object_property_resa_date_debut($object) {
+		if($object->date_debut != '0000-00-00') {
+			return $object->formatted_date_debut;
+		}
+		return '';
+	}
+	
+	protected function _get_object_property_resa_date_fin($object) {
+		if($object->date_fin != '0000-00-00') {
+			return $object->formatted_date_fin;
+		}
+		return '';
+	}
+	
+	protected function _get_object_property_resa_validee($object) {
+		if($object->expl_cb) {
+			return "X";
+		}
+		return '';
+	}
+	
+	protected function _get_object_property_resa_confirmee($object) {
+		if($object->confirmee) {
+			return "X";
+		}
+		return '';
+	}
+	
 	protected function _get_object_property_resa_loc_retrait($object) {
 		$loc_retrait = resa_loc_retrait($object->id);
 		$docs_location = new docs_location($loc_retrait);
@@ -935,8 +1074,6 @@ class list_reservations_ui extends list_ui {
 	}
 		
 	protected function get_cell_content($object, $property) {
-		global $base_path;
-		
 		$content = '';
 		switch($property) {
 			case 'expl_cb':
@@ -950,36 +1087,6 @@ class list_reservations_ui extends list_ui {
 				}
 				$content .= resa_list_get_column_title($object->id_notice, $object->id_bulletin, $typdoc);
 				break;
-			case 'empr':
-				if (SESSrights & CIRCULATION_AUTH) {
-					$content .= "<a href='".$base_path."/circ.php?categ=pret&form_cb=".rawurlencode(emprunteur::get_cb_empr($object->id_empr))."'>".emprunteur::get_name($object->id_empr)."</a>";
-				} else {
-					$content .= emprunteur::get_name($object->id_empr);
-				}
-				break;
-			case 'resa_date':
-				$content .= $object->formatted_date;
-				break;
-			case 'resa_date_debut':
-				if($object->date_debut != '0000-00-00') {
-					$content .= $object->formatted_date_debut;
-				}
-				break;
-			case 'resa_date_fin':
-				if($object->date_fin != '0000-00-00') {
-					$content .= $object->formatted_date_fin;
-				}
-				break;
-			case 'resa_validee':
-				if($object->expl_cb) {
-					$content .= "<span style='color:red'>X</span>";
-				}
-				break;
-			case 'resa_confirmee':
-				if($object->confirmee) {
-					$content .= "<span style='color:red'>X</span>";
-				}
-				break;
 			case 'resa_condition': //Situation
 				$content .= $this->get_cell_content_resa_condition($object);
 				break;
@@ -988,6 +1095,22 @@ class list_reservations_ui extends list_ui {
 				break;
 		}
 		return $content;
+	}
+	
+	protected function get_default_attributes_format_cell($object, $property) {
+		global $base_path;
+		
+		$attributes = array();
+		switch($property) {
+			case 'empr':
+				if (SESSrights & CIRCULATION_AUTH) {
+					$attributes['href'] = $base_path."/circ.php?categ=pret&form_cb=".rawurlencode(emprunteur::get_cb_empr($object->id_empr));
+				}
+				break;
+			default:
+				break;
+		}
+		return $attributes;
 	}
 	
 	protected function _get_query_property_filter($property) {
@@ -1012,6 +1135,12 @@ class list_reservations_ui extends list_ui {
 				return "select tdoc_libelle from docs_type where idtyp_doc IN (".implode(',', $this->filters[$property]).")";
 			case 'groups':
 				return "select libelle_groupe from groupe where id_groupe IN (".implode(',', $this->filters[$property]).")";
+			case 'empr_statut':
+				return "select statut_libelle from empr_statut where idstatut = ".$this->filters[$property];
+			case 'empr_categ':
+				return "select libelle from empr_categ where id_categ_empr = ".$this->filters[$property];
+			case 'empr_codestat':
+				return "select libelle from empr_codestat where idcode = ".$this->filters[$property];
 		}
 		return '';
 	}
@@ -1053,6 +1182,23 @@ class list_reservations_ui extends list_ui {
 	protected function _get_query_human_resa_loc_retrait() {
 		$docs_location = new docs_location($this->filters['resa_loc_retrait']);
 		return $docs_location->libelle;
+	}
+	
+	protected function get_display_query_human_home() {
+		global $msg, $charset;
+		
+		$display = '';
+		if(!empty($this->filters['my_home_location'])) {
+			$docs_location = new docs_location($this->filters['my_home_location']);
+			$display .= "<div class='align_left'><img src='".get_url_icon('home.png')."' title='".htmlentities($msg['my_home_location'], ENT_QUOTES, $charset)."' /> <i>".htmlentities($docs_location->libelle, ENT_QUOTES, $charset)."</i><br /><br /></div>";
+		}
+		return $display;
+	}
+	
+	protected function get_display_query_human($humans) {
+		$display = parent::get_display_query_human($humans);
+		$display .= $this->get_display_query_human_home();
+		return $display;
 	}
 	
 	public function get_resa_loc() {

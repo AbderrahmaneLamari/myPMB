@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.43.2.2 2021/11/19 10:09:59 jparis Exp $
+// $Id: ajax_main.inc.php,v 1.45.4.3 2024/01/03 08:44:30 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -146,6 +146,15 @@ switch($categ):
 	    break;
 	case "search_field" :
 	    include './ajax/search/search_field.inc.php';
+	    break;
+	case 'list':
+		include('./ajax/misc/list.inc.php');
+		break;
+	case "collstate":
+	    require_once './ajax/ajax_collstate.inc.php';
+	    break;
+	case "payments":
+	    require_once './ajax/ajax_payments.inc.php';
 	    break;
 	default:
 		break;

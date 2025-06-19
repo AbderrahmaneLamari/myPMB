@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_authperso_controller.class.php,v 1.12.2.2 2022/01/03 10:21:11 tsamson Exp $
+// $Id: entities_authperso_controller.class.php,v 1.14 2022/01/03 10:48:14 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

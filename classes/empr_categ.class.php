@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_categ.class.php,v 1.3 2021/01/12 07:42:45 dgoron Exp $
+// $Id: empr_categ.class.php,v 1.3.6.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -51,14 +51,31 @@ class empr_categ {
 		$this->age_max = $data->age_max;
 	}
 
-	public function get_form() {
-		global $msg;
-		global $admin_categlec_content_form ;
-		global $charset;
+	public function get_content_form() {
 		global $pmb_gestion_financiere,$pmb_gestion_abonnement;
 		
-		$content_form = $admin_categlec_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_libelle', '103')
+		->add_input_node('text', $this->libelle);
+		$interface_content_form->add_element('form_duree_adhesion', '1400')
+		->add_input_node('integer', $this->duree_adhesion)
+		->set_maxlength(10);
+		if ($pmb_gestion_financiere && $pmb_gestion_abonnement==1) {
+			$interface_content_form->add_element('form_tarif_adhesion', 'empr_categ_tarif')
+			->add_input_node('float', $this->tarif_abt)
+			->set_maxlength(10);
+		}
+		$interface_content_form->add_element('form_age_min', 'empr_categ_age_min')
+		->add_input_node('integer', $this->age_min)
+		->set_maxlength(3);
+		$interface_content_form->add_element('form_age_max', 'empr_categ_age_max')
+		->add_input_node('integer', $this->age_max)
+		->set_maxlength(3);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
 		$interface_form = new interface_admin_form('categform');
 		if(!$this->id){
@@ -66,27 +83,9 @@ class empr_categ {
 		}else{
 			$interface_form->set_label($msg['525']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		
-		$content_form = str_replace('!!duree_adhesion!!', htmlentities($this->duree_adhesion,ENT_QUOTES, $charset), $content_form);
-		
-		if (($pmb_gestion_financiere)&&($pmb_gestion_abonnement==1)) {
-			$tarif_adhesion="
-		<div class='row'>
-			<label class='etiquette' for='form_tarif_adhesion'>".$msg["empr_categ_tarif"]."</label>
-		</div>
-		<div class='row'>
-			<input type=text name='form_tarif_adhesion' id='form_tarif_adhesion' value='".htmlentities($this->tarif_abt,ENT_QUOTES,$charset)."' maxlength='10' class='saisie-5em' />
-		</div>
-		";
-		} else $tarif_adhesion="";
-		$content_form = str_replace('!!tarif_adhesion!!', $tarif_adhesion, $content_form);
-		$content_form = str_replace('!!age_min!!', htmlentities($this->age_min,ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!age_max!!', htmlentities($this->age_max,ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('empr_categ')
 		->set_field_focus('form_libelle');
 		return $interface_form->get_display();

@@ -2,12 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_section_categories.class.php,v 1.9.8.1 2022/01/10 08:35:26 dgoron Exp $
+// $Id: cms_module_common_datasource_records_section_categories.class.php,v 1.11 2022/09/06 07:52:19 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class cms_module_common_datasource_records_section_categories extends cms_module_common_datasource_records_list{
 	
+    public function __construct($id=0){
+        parent::__construct($id);
+        $this->paging = true;
+    }
+    
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
 	 */
@@ -159,6 +164,12 @@ class cms_module_common_datasource_records_section_categories extends cms_module
 	        } else {
 	            $return = $this->sort_records($return['records']);
 	        }
+	        
+	        if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+	            $return["paging"] = $this->inject_paginator($return['records']);
+	            $return['records'] = $this->cut_paging_list($return['records'], $return["paging"]);
+	        }
+	        
 	        return $return;
 	    }
 	    return false;

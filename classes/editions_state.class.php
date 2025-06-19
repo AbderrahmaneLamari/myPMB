@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: editions_state.class.php,v 1.9 2021/03/15 09:02:52 dgoron Exp $
+// $Id: editions_state.class.php,v 1.9.6.1 2023/02/24 08:13:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path."/templates/editions_state.tpl.php");
 require_once($class_path."/editions_state_order.class.php");
 require_once($class_path."/editions_datasource.class.php");
@@ -293,7 +294,10 @@ class editions_state {
 	}
 	
 	protected function _compare_fields($a, $b) {
-		return strcmp(convert_diacrit($this->fields[$a]['label']), convert_diacrit($this->fields[$b]['label']));
+		if(isset($this->fields[$a]['label']) && $this->fields[$b]['label']) {
+			return strcmp(convert_diacrit($this->fields[$a]['label']), convert_diacrit($this->fields[$b]['label']));
+		}
+		return '';
 	}
 	
 	protected function _sort_tab_fields($tab) {
@@ -344,14 +348,19 @@ class editions_state {
 					break;
 				case "filters" :
 					$class = $this->get_filter_class($field);
-					require_once($class_path."/".$class.".class.php");
-					$filter= new $class($this->fields[$field],$this->state_fields_params['filters'][$field]);
-					$content.= "
-					<div class='row' id='".$tab."_".$field."'>
-						<input type='hidden' name='editions_state_".$tab."_content_fields[]' value='".$this->fields[$field]['id']."' />"; 
-					$content.= $filter->get_form($draggable);	
-					$content.="
-					</div>";
+					if(file_exists($class_path."/".$class.".class.php")) {
+						require_once($class_path."/".$class.".class.php");
+						if(!isset($this->state_fields_params['filters'][$field])) {
+							$this->state_fields_params['filters'][$field] = array();
+						}
+						$filter= new $class($this->fields[$field],$this->state_fields_params['filters'][$field]);
+						$content.= "
+						<div class='row' id='".$tab."_".$field."'>
+							<input type='hidden' name='editions_state_".$tab."_content_fields[]' value='".$this->fields[$field]['id']."' />"; 
+						$content.= $filter->get_form($draggable);	
+						$content.="
+						</div>";
+					}
 					break;
 				case "orders" :
 					$order = new editions_state_order($this->fields[$field],$this->state_fields_params['orders'][$field]);
@@ -371,6 +380,8 @@ class editions_state {
 		$this->fields=$this->datasource->redo_values($field);//Je récupère les valeurs pour le cas où le champ est de type liste
 		if($this->fields[$field]['input'] == "list"){
 			$class = "editions_state_filter_list";
+		}elseif($this->fields[$field]['input'] == "auth"){
+			$class = "editions_state_filter_auth";
 		}else{
 			$class = "editions_state_filter_".$this->fields[$field]['type'];
 		}
@@ -386,10 +397,12 @@ class editions_state {
 		if(isset($this->state_fields_list['filters']['content']) && is_array($this->state_fields_list['filters']['content']) && count($this->state_fields_list['filters']['content'])){//Si les filtres sont présent dans la variable
 			foreach($this->state_fields_list['filters']['content'] as $field){
 				$class = $this->get_filter_class($field);
-				require_once($class_path."/".$class.".class.php");
-				$filter= new $class($this->fields[$field]);
-				if($tmp=$filter->get_params()){
-					$this->state_fields_params['filters'][$field] =$tmp;
+				if(file_exists($class_path."/".$class.".class.php")) {
+					require_once($class_path."/".$class.".class.php");
+					$filter= new $class($this->fields[$field]);
+					if($tmp=$filter->get_params()){
+						$this->state_fields_params['filters'][$field] =$tmp;
+					}
 				}
 			}
 		}

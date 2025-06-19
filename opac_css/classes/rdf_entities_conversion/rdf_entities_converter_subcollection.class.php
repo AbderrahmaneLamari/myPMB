@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_converter_subcollection.class.php,v 1.2 2020/11/26 13:29:05 qvarin Exp $
+// $Id: rdf_entities_converter_subcollection.class.php,v 1.3 2022/05/25 08:24:25 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -42,7 +42,10 @@ class rdf_entities_converter_subcollection extends rdf_entities_converter_author
 
 	protected function init_foreign_fields() {
 	    $this->foreign_fields = array_merge(parent::init_foreign_fields(), array(
-	        'sub_coll_parent' => 'http://www.pmbservices.fr/ontology#has_collection'
+	        'sub_coll_parent' => array(
+	            'type' => 'subcollection',
+	            'property' => 'http://www.pmbservices.fr/ontology#has_collection'
+	        )
 	    ));
 	    return $this->foreign_fields;
 	}

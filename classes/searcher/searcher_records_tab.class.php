@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_records_tab.class.php,v 1.7.2.1 2021/12/27 08:20:53 dgoron Exp $
+// $Id: searcher_records_tab.class.php,v 1.9 2022/03/17 12:15:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -120,6 +120,9 @@ class searcher_records_tab extends searcher_records {
 					$instance->add_restrict_no_display();
 					if (isset($searchfield['query']) && $searchfield['mode'] == "query") {
 					    $instance->set_query($searchfield['query']);
+					}
+					if (!empty($this->context_parameters) && method_exists($instance, 'set_context_parameters')) {
+						$instance->set_context_parameters($this->context_parameters);
 					}
 					$this->searcher_records_instances[] = $instance;
 				}

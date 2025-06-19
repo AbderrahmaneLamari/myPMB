@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: printer_data.class.php,v 1.5.8.1 2021/12/27 12:55:17 dgoron Exp $
+// $Id: printer_data.class.php,v 1.7.4.1 2023/04/20 10:23:00 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $base_path, $class_path, $include_path;
 
-require_once('./circ/print_pret/func.inc.php');
+require_once("$base_path/circ/print_pret/func.inc.php");
 
 require_once("$base_path/classes/comptes.class.php");
 require_once($class_path."/transaction/transaction.class.php");
@@ -70,7 +70,7 @@ class printer_data {
 	public function get_data_empr($id_empr){	
 		global $pmb_gestion_financiere, $pmb_gestion_abonnement,$pmb_gestion_tarif_prets,$pmb_gestion_amende; 	
 		
-		$empr=get_info_empr($id_empr);		
+		$empr=print_get_info_empr($id_empr);		
 		$i=count($this->data["empr_list"]);
 		$this->data["empr_list"][$i]["name"]=$empr->nom;
 		$this->data["empr_list"][$i]["fistname"]=$empr->prenom;	
@@ -130,7 +130,7 @@ class printer_data {
 	}
 	
 	public function get_data_expl($cb_doc){		
-		$expl=get_info_expl($cb_doc);		
+		$expl=print_get_info_expl($cb_doc);		
 		$i=count($this->data["expl_list"]);
 		$this->data["expl_list"][$i]["tit"]=$expl->tit;
 		$this->data["expl_list"][$i]["header_aut"]=$expl->header_aut;

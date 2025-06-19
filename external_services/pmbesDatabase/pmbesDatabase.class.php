@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesDatabase.class.php,v 1.8 2020/12/11 16:12:06 dbellamy Exp $
+// $Id: pmbesDatabase.class.php,v 1.9.2.2 2023/09/18 13:34:46 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -46,19 +46,6 @@ if(!function_exists('traite_rqt')) {
 } 
 
 class pmbesDatabase extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
-	
 	
 	public function get_current_version(){
 
@@ -183,11 +170,14 @@ class pmbesDatabase extends external_services_api_class {
 					case "v5" :
 						include ($base_path."/admin/misc/alter_v5.inc.php") ;
 						break ;
+					case "v6" :
+						include ($base_path."/admin/misc/alter_v6.inc.php") ;
+						break ;
 				}
 				ob_clean();
 				// Ne pas supprimer $action, $version_pmb_bdd et $maj_a_faire car utilisés dans les alter_vX.inc.php
 				$action = $maj_a_faire;
-				switch (substr($pmb_bdd_version,0,2)) {
+				switch (substr($action,0,2)) {
 					case "v1":
 						include ($base_path."/admin/misc/alter_v1.inc.php") ;
 						break ;
@@ -207,6 +197,9 @@ class pmbesDatabase extends external_services_api_class {
 					case "v5" :
 						include ($base_path."/admin/misc/alter_v5.inc.php") ;
 						break ;
+					case "v6" :
+					    include ($base_path."/admin/misc/alter_v6.inc.php") ;
+					    break ;
 				}			
 				$ob = ob_get_contents();
 				if( false !== $ob ) {

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: record_log.class.php,v 1.21.8.4 2021/12/27 10:13:08 dgoron Exp $
+// $Id: record_log.class.php,v 1.25.4.2 2023/04/04 12:26:50 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -72,6 +72,12 @@ class record_log{
 		global $pmb_perio_vidage_log, $pmb_perio_vidage_stat;
 		global $pmb_logs_exclude_robots;
 		
+		// Pas de log sur les requetes autres que GET et POST
+		if( !in_array($_SERVER['REQUEST_METHOD'], ['GET', 'POST']) ) {
+		    return;
+		}
+
+		// Exclusion des robots
 		$tab_logs_exclude_robots = array();
 		$tab_logs_exclude_robots = explode(",", $pmb_logs_exclude_robots);
 		if ($tab_logs_exclude_robots[0]) {
@@ -82,6 +88,8 @@ class record_log{
 				}
 			}
 		}
+
+		// Exclusion d'adresses IP
 		if (count($tab_logs_exclude_robots) > 1) {
 			$ip_adress = array();
 			for($i=1;$i<count($tab_logs_exclude_robots);$i++) {
@@ -96,16 +104,18 @@ class record_log{
 			return;
 		}
 		
-		$rqt = "INSERT INTO logopac (url_demandee,url_referente,get_log,post_log,num_session,server_log,empr_carac,empr_doc,empr_expl,nb_result, gen_stat) VALUES ('";
-		$rqt .= addslashes($this->url_asked)."','".addslashes($this->url_ref)."','".addslashes(serialize($this->get_log))."','".addslashes(serialize($this->post_log))."','".addslashes($this->num_session)."','".addslashes(serialize($this->serveur))."','".addslashes(serialize($this->empr))."','".addslashes(serialize($this->doc))."','".addslashes(serialize($this->expl))."','".addslashes(serialize($this->nb_results))."','".addslashes(serialize($this->generique))."')";
+		// Transfert logopac > statopac
 		$first_day = $this->sql_value("SELECT date_log FROM logopac order by date_log limit 1");
 		$periodicite = $this->sql_value("SELECT DATEDIFF(CURRENT_DATE(),'".addslashes($first_day)."')");
 		if($periodicite >= $pmb_perio_vidage_log){	
-			//On copie la table log dans stat et on la vide
 			pmb_mysql_query("INSERT INTO statopac (date_log, url_demandee, url_referente, get_log, post_log,num_session, server_log, empr_carac, empr_doc, empr_expl,nb_result, gen_stat) 
 					SELECT date_log, url_demandee, url_referente, get_log, post_log, num_session, server_log, empr_carac, empr_doc, empr_expl, nb_result, gen_stat FROM logopac");
 			pmb_mysql_query("TRUNCATE TABLE logopac");			
 		} 
+
+		//Insertion log
+		$rqt = "INSERT INTO logopac (url_demandee,url_referente,get_log,post_log,num_session,server_log,empr_carac,empr_doc,empr_expl,nb_result, gen_stat) VALUES ('";
+		$rqt .= addslashes($this->url_asked)."','".addslashes($this->url_ref)."','".addslashes(serialize($this->get_log))."','".addslashes(serialize($this->post_log))."','".addslashes($this->num_session)."','".addslashes(serialize($this->serveur))."','".addslashes(serialize($this->empr))."','".addslashes(serialize($this->doc))."','".addslashes(serialize($this->expl))."','".addslashes(serialize($this->nb_results))."','".addslashes(serialize($this->generique))."')";
 		pmb_mysql_query($rqt);
 		
 		//Gestion du verrou

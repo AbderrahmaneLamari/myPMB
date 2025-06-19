@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: animation_conf.class.php,v 1.1.2.1 2022/01/18 09:12:47 qvarin Exp $
+// $Id: animation_conf.class.php,v 1.2.4.2 2023/03/22 10:07:39 gneveu Exp $
 use Pmb\Animations\Orm\AnimationTypesOrm;
 use Pmb\Animations\Orm\AnimationOrm;
 
@@ -18,7 +18,11 @@ class animation_conf
     public const OPTION_AUTOMATIQUE = 1;
 
     public const OPTION_MANUELLE = 0;
-    
+
+    public const OPTION_ENDDATE_ARTICLE_NO = 0;
+
+    public const OPTION_ENDDATE_ARTICLE_YES = 1;
+
     public const OPTION_CALENDAR_EMPTY = "";
 
     private $state_anim_update = self::OPTION_MANUELLE;
@@ -36,6 +40,8 @@ class animation_conf
     private $errors = array();
     
     private $types = array();
+
+    private $state_anim_enddate_article = self::OPTION_ENDDATE_ARTICLE_NO;
 
     public function __construct()
     {
@@ -78,14 +84,18 @@ class animation_conf
             "!!animation_conf_state_publication!!",
             "!!animation_conf_anim_create!!",
             "!!animation_conf_anim_update!!",
-            "!!animation_conf_section_parent!!"
+            "!!animation_conf_section_parent!!",
+            "!!animation_conf_anim_init!!",
+            "!!animation_conf_anim_enddate_article!!"
         ];
         $replace = [
             $this->get_conf_anim_type(),
             $this->get_conf_state_publication(),
             $this->get_conf_anim_create(),
             $this->get_conf_anim_update(),
-            $this->get_conf_section_parent()
+            $this->get_conf_section_parent(),
+            $this->get_conf_anim_init(),
+            $this->get_conf_anim_enddate_article()
         ];
         $form = str_replace($search, $replace, $form);
         if ($updated) {
@@ -254,6 +264,30 @@ class animation_conf
         return $html;
     }
 
+    public function get_conf_anim_init()
+    {
+        global $animation_conf_anim_init;
+
+        return str_replace('!!animation_conf_anim_init!!', "", $animation_conf_anim_init);
+
+    }
+
+    public function get_conf_anim_enddate_article()
+    {
+        global $animation_conf_anim_enddate_article;
+
+        if ($this->state_anim_enddate_article == self::OPTION_ENDDATE_ARTICLE_NO) {
+            $html = str_replace('!!checked_0!!', "checked", $animation_conf_anim_enddate_article);
+            $html = str_replace('!!checked_1!!', "", $html);
+        } else {
+            $html = str_replace('!!checked_0!!', "", $animation_conf_anim_enddate_article);
+            $html = str_replace('!!checked_1!!', "checked", $html);
+        }
+
+        return $html;
+
+    }
+
     /**
      * Methode de sauvegarde
      */
@@ -276,7 +310,8 @@ class animation_conf
             'state_anim_create' => $this->state_anim_create,
             'id_publication_state' => $this->id_publication_state,
             'id_section_parent' => $this->id_section_parent,
-            'ids_calendar' => $this->ids_calendar
+            'ids_calendar' => $this->ids_calendar,
+            'state_anim_enddate_article' => $this->state_anim_enddate_article
         ]);
     }
 
@@ -286,12 +321,14 @@ class animation_conf
         global $animation_section_parent;
         global $animation_conf_update;
         global $animation_conf_create;
+        global $animation_anim_enddate_article;
 
         $this->state_anim_update = stripslashes($animation_conf_update);
         $this->state_anim_create = stripslashes($animation_conf_create);
         $this->id_publication_state = stripslashes($animation_state_publication);
         $this->id_section_parent = stripslashes($animation_section_parent);
-        
+        $this->state_anim_enddate_article = stripslashes($animation_anim_enddate_article);
+
         $ids_calendar = array();
         foreach ($this->get_types() as $type) {
             $var_name = "animation_choose_calendar" . $type->id_type;
@@ -310,7 +347,16 @@ class animation_conf
     {
         return $this->state_anim_update;
     }
-    
+
+    /**
+     *
+     * @return string
+     */
+    public function get_state_anim_enddate_article()
+    {
+        return $this->state_anim_enddate_article;
+    }
+
     /**
      *
      * @return string

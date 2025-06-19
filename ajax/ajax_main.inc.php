@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.46 2021/05/04 13:13:36 arenou Exp $
+// $Id: ajax_main.inc.php,v 1.48 2022/12/06 17:53:47 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -112,8 +112,12 @@ switch ($categ) {
 	
 		if(!isset($search_xml_file)) $search_xml_file = '';
 		if(!isset($search_xml_file_full_path)) $search_xml_file_full_path = '';
-		
-		$sc=new search(true, $search_xml_file, $search_xml_file_full_path);
+		if(!empty($ontology_id)) {
+		    $ontology =  new ontology(intval($ontology_id));//::get_ontology_by_pmbname($ontoname);
+		    $sc=new search_ontology(true, $search_xml_file,'',$ontology->get_handler()->get_ontology());
+		}else{
+            $sc=new search(true, $search_xml_file, $search_xml_file_full_path);
+		}
 		$sc->proceed_ajax();
 		break;
 	case 'indexation':
@@ -149,6 +153,9 @@ switch ($categ) {
 	case 'aceEditorCompletion' :
     	require_once './ajax/misc/ace_editor_completion.inc.php';
         break;
+	case 'folders_selector' :
+	    require_once './ajax/misc/folders_selector.inc.php';
+	    break;
     default:
 		break;
 }

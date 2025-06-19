@@ -2,14 +2,28 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.11.2.1 2021/12/01 13:11:32 dgoron Exp $
+// $Id: ajax_main.inc.php,v 1.13.4.1 2023/09/12 12:29:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $categ, $sub, $action, $class_path, $object_type, $plugin;
 
 //En fonction de $categ, il inclut les fichiers correspondants
-switch($categ){	
+switch($categ){
+    case 'diffuser':
+        switch ($sub) {
+            case 'history':
+                switch($action) {
+                    case "list":
+                        require_once($class_path."/dsi/bannettes_diffusions_controller.class.php");
+                        bannettes_diffusions_controller::proceed_ajax($object_type, 'bannettes');
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
+        break;
 	case 'bannettes':
 		switch ($sub) {
 			case 'classements':
@@ -59,6 +73,15 @@ switch($categ){
 			include $file;
 		}
 		break;
+	case 'search':
+	    require_once($class_path."/search.class.php");
+	    
+	    if(!isset($search_xml_file)) $search_xml_file = '';
+	    if(!isset($search_xml_file_full_path)) $search_xml_file_full_path = '';
+	    
+	    $sc=new search(true, $search_xml_file, $search_xml_file_full_path);
+	    $sc->proceed_ajax();
+	    break;
 	default:
 	//tbd
 	break;		

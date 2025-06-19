@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scheduler_task_calendar.class.php,v 1.3 2019/08/01 13:16:34 btafforeau Exp $
+// $Id: scheduler_task_calendar.class.php,v 1.5 2022/03/10 15:19:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,9 +12,7 @@ class scheduler_task_calendar {
 	public $defaut_min;
 	
 	public function __construct($num_planificateur) {
-		global $base_path;
-
-		$num_planificateur += 0;
+		$num_planificateur = intval($num_planificateur);
 		if ($num_planificateur) {
 			//renseignements Jour J
 			$date_du_jour = getdate();
@@ -26,11 +24,9 @@ class scheduler_task_calendar {
 	}
 	
 	public function calcul_next_exec($num_planificateur) {
-		global $dbh;
-		
 		$sql = "SELECT id_planificateur, num_type_tache, libelle_tache, perio_heure, perio_minute, perio_jour_mois, perio_jour, perio_mois 
 				FROM planificateur WHERE id_planificateur=".$num_planificateur;
-		$res = pmb_mysql_query($sql, $dbh);
+		$res = pmb_mysql_query($sql);
 		if ($res) {
 			while ($obj_sql=pmb_mysql_fetch_object($res)) {
 				//renseignements Jour J

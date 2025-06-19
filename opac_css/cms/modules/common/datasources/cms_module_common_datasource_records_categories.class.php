@@ -2,12 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_categories.class.php,v 1.17.4.1 2022/01/10 08:35:26 dgoron Exp $
+// $Id: cms_module_common_datasource_records_categories.class.php,v 1.19 2022/09/06 07:52:19 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class cms_module_common_datasource_records_categories extends cms_module_common_datasource_records_list{
 	
+    public function __construct($id=0){
+        parent::__construct($id);
+        $this->paging = true;
+    }
+    
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
 	 */
@@ -122,6 +127,7 @@ class cms_module_common_datasource_records_categories extends cms_module_common_
 			if(empty($return['records'])){
 			    return false;
 			}
+			
 			if (isset($this->parameters["sort_by"]) && $this->parameters["sort_by"] == 'pert') {
 			    if($this->parameters['autopostage']){
 			        //dans ce cas, la pertinance ne peut pas juste etre le nombre de catégorie en commun
@@ -134,9 +140,8 @@ class cms_module_common_datasource_records_categories extends cms_module_common_
                         join notices_categories on categ_noeuds.id_noeud = notices_categories.num_noeud
                         join notices on notcateg_notice = notice_id
                         where num_article='.($selector->get_value()*1).' and notice_id in ("'.implode('","', $return['records']).'") group by notice_id order by count(*) desc, dist';
-			        
-			        if($this->parameters['nb_max_elements']){
-			            $query.=" limit ".$this->parameters['nb_max_elements'];
+			        if( $this->parameters['nb_max_elements']){
+			            $query.=" limit ". $this->parameters['nb_max_elements'];
 			        }
 			    }else {
 			        // on tri par pertinence
@@ -145,8 +150,8 @@ class cms_module_common_datasource_records_categories extends cms_module_common_
 						JOIN notices_categories ON notice_id = notcateg_notice
 						JOIN cms_articles_descriptors ON cms_articles_descriptors.num_noeud = notices_categories.num_noeud
 						AND num_article = ".$selector->get_value()." where notice_id in ('".implode("','", $return['records'])."') group by notice_id order by count(*) ".$this->parameters["sort_order"].", create_date desc";
-			        if($this->parameters['nb_max_elements']){
-			            $query.=" limit ".$this->parameters['nb_max_elements'];
+			        if( $this->parameters['nb_max_elements']){
+			            $query.=" limit ". $this->parameters['nb_max_elements'];
 			        }
 			    }
 				$result = pmb_mysql_query($query);
@@ -160,6 +165,12 @@ class cms_module_common_datasource_records_categories extends cms_module_common_
 			} else {
 				$return = $this->sort_records($return["records"]);
 			}
+			
+			if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+			    $return["paging"] = $this->inject_paginator($return['records']);
+			    $return['records'] = $this->cut_paging_list($return['records'], $return["paging"]);
+			}
+			
 			return $return;
 		}
 		return false;

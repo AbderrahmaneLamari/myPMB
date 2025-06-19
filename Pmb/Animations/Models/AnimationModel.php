@@ -2,24 +2,67 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: AnimationModel.php,v 1.100.2.2 2022/01/18 09:12:46 qvarin Exp $
-
+// $Id: AnimationModel.php,v 1.117.2.10 2023/09/21 13:59:34 gneveu Exp $
 namespace Pmb\Animations\Models;
 
-use Pmb\Common\Models\Model;
+use Pmb\Animations\Event\AnimationsEvent;
+use Pmb\Animations\Orm\AnimationCalendarOrm;
 use Pmb\Animations\Orm\AnimationOrm;
+use Pmb\Animations\Orm\AnimationTypesOrm;
 use Pmb\Animations\Orm\EventOrm;
-use Pmb\Common\Models\DocsLocationModel;
-use Pmb\Autorities\Models\CategoryModel;
-use Pmb\Autorities\Models\ConceptModel;
-use Pmb\Common\Models\CustomFieldModel;
+use Pmb\Animations\Orm\MailingAnimationOrm;
+use Pmb\Animations\Orm\MailingTypeOrm;
 use Pmb\Animations\Orm\RegistrationOrm;
 use Pmb\Animations\Orm\RegistredPersonOrm;
-use Pmb\Animations\Orm\MailingAnimationOrm;
-use Pmb\Animations\Orm\AnimationTypesOrm;
+use Pmb\Autorities\Models\CategoryModel;
+use Pmb\Autorities\Models\ConceptModel;
+use Pmb\Common\Helper\GlobalContext;
+use Pmb\Common\Helper\Helper;
+use Pmb\Common\Library\Image\Image;
+use Pmb\Common\Models\CustomFieldModel;
+use Pmb\Common\Models\DocsLocationModel;
+use Pmb\Common\Models\Model;
+use Pmb\Common\Models\UploadFolderModel;
+use Pmb\Common\Models\EmprModel;
 
 class AnimationModel extends Model
 {
+
+    public $idAnimation;
+
+    public $name;
+
+    public $comment;
+
+    public $description;
+
+    public $globalQuota;
+
+    public $allowWaitingList;
+
+    public $internetQuota;
+
+    public $autoRegistration;
+
+    public $expirationDelay;
+
+    public $registrationRequired;
+
+    public $numStatus;
+
+    public $numEvent;
+
+    public $numParent;
+
+    public $numCart;
+
+    public $numType;
+
+    public $numCalendar;
+
+    public $unique_registration;
+
+    public $logo;
 
     protected $ormName = "\Pmb\Animations\Orm\AnimationOrm";
 
@@ -28,15 +71,17 @@ class AnimationModel extends Model
         $animationsList = AnimationOrm::findAll();
 
         foreach ($animationsList as $key => $animation) {
-
             $anim = new AnimationModel($animation->id_animation);
             $evt = $anim->fetchEvent();
-            $today = new \DateTime();
-            $evenementDate = new \DateTime($evt->endDate);
 
-            if ($today > $evenementDate) {
-                unset($animationsList[$key]);
-                continue;
+            if (! $evt->duringDay) {
+                $today = new \DateTime();
+                $evenementDate = new \DateTime($evt->endDate);
+
+                if ($today > $evenementDate) {
+                    unset($animationsList[$key]);
+                    continue;
+                }
             }
             if (! empty($evt)) {
                 $anim->event = $anim->getFormatDate($evt);
@@ -49,27 +94,28 @@ class AnimationModel extends Model
                 $anim->fetchLocation(true);
                 $anim->fetchQuotas();
                 $anim->checkChildrens();
+                $anim->fetchCalendar();
                 $anim->prices = PriceModel::getPrices($animation->id_animation);
             }
 
             $animationsList[$key] = $anim;
         }
-        
+
         usort($animationsList, function ($a, $b) {
-            
+
             if (empty($a->event->rawStartDate)) {
                 $a->event = $a->getFormatDate($a->event);
             }
             if (empty($b->event->rawStartDate)) {
                 $b->event = $b->getFormatDate($b->event);
             }
-            
+
             if ($a->event->rawStartDate == $b->event->rawStartDate) {
                 return 0;
             }
             return ($a->event->rawStartDate < $b->event->rawStartDate) ? - 1 : 1;
         });
-        
+
         return array_values($animationsList);
     }
 
@@ -84,24 +130,35 @@ class AnimationModel extends Model
 
         $anim->fetchParent();
         $anim->fetchStatus();
+        $anim->fetchType();
         $anim->fetchLocation(true);
         $anim->fetchQuotas();
-        
+        $anim->fetchCalendar();
+        $anim->checkChildrens();
+
         $anim->prices = PriceModel::getPrices($id);
         return $anim;
     }
 
-    public static function deleteAnimation(int $id, bool $delChildrens = false )
+    public static function deleteAnimation(int $id, bool $delChildrens = false)
     {
         // Revoir la suppression d'un animation
-        // Si on la supprime ou si on la passe dans un statut spï¿½cial
-        
+        // Si on la supprime ou si on la passe dans un statut special
         $results = AnimationOrm::find('num_parent', $id);
-        
-        if (!empty($results) && $delChildrens == false) {
+
+        if (! empty($results) && $delChildrens == false) {
             return false;
         }
-        
+
+        global $class_path;
+
+        require_once ($class_path . '/event/events_handler.class.php');
+        $event = new AnimationsEvent("animations", "delete");
+        $evth = \events_handler::get_instance();
+        $event->set_animation_id($id);
+        $evth->send($event);
+
+        $return = true;
         $animation = new AnimationOrm($id);
         if ($animation->num_event) {
             $evt = new EventOrm($animation->num_event);
@@ -110,24 +167,28 @@ class AnimationModel extends Model
 
         if ($delChildrens) {
             $childrens = AnimationOrm::find('num_parent', $animation->id_animation);
-            if (!empty($childrens) && count($childrens)) {
+            if (! empty($childrens) && count($childrens)) {
                 foreach ($childrens as $animation_children) {
                     AnimationModel::deleteAnimation($animation_children->id_animation, $delChildrens);
                 }
             }
         }
-        
+
         AnimationModel::deleteLocationList($animation->id_animation);
         PriceModel::deleteAnimationPrices($animation->id_animation);
         RegistrationModel::deleteAnimationRegistration($animation->id_animation);
 
         $animation->delete();
+
+        if ($event->get_article_id()) {
+            return $event->has_errors() ? false : true;
+        }
     }
 
     public static function addAnimation(object $data)
     {
         global $thesaurus_concepts_active;
-        
+
         $animation = new AnimationOrm();
         if (empty($data) || empty($data->name)) {
             return false;
@@ -147,21 +208,38 @@ class AnimationModel extends Model
         $animation->num_cart = $data->numCart;
         $animation->comment = $data->comment;
         $animation->description = $data->description;
-        
+
         $data->numType = intval($data->numType);
-        if (!AnimationTypesOrm::exist($data->numType)) {
+        if (! AnimationTypesOrm::exist($data->numType)) {
             $data->numType = AnimationOrm::DEFAULT_TYPE;
         }
         $animation->num_type = $data->numType;
- 
+
+        $data->numCalendar = intval($data->numCalendar);
+        if (! AnimationCalendarOrm::exist($data->numCalendar)) {
+            $data->numCalendar = AnimationOrm::DEFAULT_CALENDAR;
+        }
+        $animation->num_calendar = $data->numCalendar;
+
         $animation->num_event = EventModel::addEvent($data);
 
+        if (0 != $data->logo->uploadFolder && "" != $data->logo->filename) {
+            $animation->logo = json_encode([
+                "uploadFolder" => intval($data->logo->uploadFolder),
+                "filename" => $data->logo->filename,
+                "filePath" => AnimationModel::getPathAnimationLogo($data->image, intval($data->logo->uploadFolder)),
+                "alt" => $data->logo->alt
+            ]);
+        }
+
+        $animation->unique_registration = $data->uniqueRegistration;
+
         $animation->save();
-        
+
         if (! empty($data->categories)) {
             CategoryModel::updateAnimationCategories($data->categories, $animation->id_animation);
         }
-        
+
         if (! empty($data->concepts) && $thesaurus_concepts_active) {
             ConceptModel::updateAnimationConcepts($data->concepts, $animation->id_animation);
         }
@@ -169,15 +247,15 @@ class AnimationModel extends Model
         if (! empty($data->location)) {
             AnimationModel::insertLocationList($data->location, $animation->id_animation);
         }
-        
+
         if (! empty($data->mailingType)) {
             AnimationModel::insertMailingTypeList($data->mailingType, $animation->id_animation);
         }
-        
+
         if (! empty($data->prices)) {
             PriceModel::updatePriceList($data->prices, 0, $animation->id_animation);
         }
-        
+
         if (! empty($data->customFields)) {
             CustomFieldModel::updateCustomFields($data->customFields, $animation->id_animation, 'anim_animation');
         }
@@ -190,88 +268,126 @@ class AnimationModel extends Model
         if (! empty($data->name)) {
             $animation->name = $data->name;
         }
-        
+
         if (isset($data->globalQuota)) {
             $animation->global_quota = $data->globalQuota;
         }
-        
+
         if (isset($data->allowWaitingList)) {
             $animation->allow_waiting_list = $data->allowWaitingList;
         }
-        
+
         if (isset($data->autoRegistration)) {
             $animation->auto_registration = $data->autoRegistration;
         }
-        
+
+        $interneQuotas = 0;
         if (isset($data->internetQuota)) {
             $animation->internet_quota = $data->internetQuota;
+            $interneQuotas = $data->internetQuota;
         }
-        
+
         if (isset($data->expirationDelay)) {
             $animation->expiration_delay = $data->expirationDelay;
         }
-        
+
         if (isset($data->registrationRequired)) {
             $animation->registration_required = $data->registrationRequired;
         }
-        
+
         if (isset($data->numStatus)) {
             $animation->num_status = $data->numStatus;
         }
-        
+
         if (isset($data->numType)) {
             $data->numType = intval($data->numType);
-            if (!AnimationTypesOrm::exist($data->numType)) {
+            if (! AnimationTypesOrm::exist($data->numType)) {
                 $data->numType = AnimationOrm::DEFAULT_TYPE;
             }
             $animation->num_type = $data->numType;
         }
-        
+
+        if (isset($data->numCalendar)) {
+            $data->numCalendar = intval($data->numCalendar);
+            if (! AnimationCalendarOrm::exist($data->numCalendar)) {
+                $data->numCalendar = AnimationOrm::DEFAULT_CALENDAR;
+            }
+            $animation->num_calendar = $data->numCalendar;
+        }
+
         if (isset($data->numParent)) {
             $animation->num_parent = $data->numParent;
         }
-        
+
         if (isset($data->numCart)) {
             $animation->num_cart = $data->numCart;
         }
-        
+
         if (isset($data->comment)) {
             $animation->comment = $data->comment;
         }
-        
+
         if (isset($data->numParent)) {
             $animation->description = $data->description;
         }
-        
+
         if (isset($data->numEvent)) {
             $animation->num_event = EventModel::updateEvent($data->numEvent, $data);
         }
-        
+
         if (isset($data->categories)) {
             CategoryModel::updateAnimationCategories($data->categories, $id);
         }
-        
+
         if (isset($data->concepts)) {
             ConceptModel::updateAnimationConcepts($data->concepts, $id);
         }
-        
+
         if (! empty($data->prices)) {
             PriceModel::updatePriceList($data->prices, 0, $id);
         }
-        
+
         if (! empty($data->location)) {
             AnimationModel::insertLocationList($data->location, $id);
         }
-        
+
         if (! empty($data->mailingType)) {
             AnimationModel::insertMailingTypeList($data->mailingType, $id);
         }
-        
+
         if (! empty($data->customFields)) {
             CustomFieldModel::updateCustomFields($data->customFields, $id, 'anim_animation');
         }
-        
+
+        if (0 != $data->logo->uploadFolder && "" != $data->logo->filename) {
+            if (isset($data->image) && "undefined" !== $data->image) {
+                $filePath = AnimationModel::getPathAnimationLogo($data->image, intval($data->logo->uploadFolder));
+            } else {
+                $filePath = $data->logo->filePath;
+            }
+
+            $animation->logo = json_encode([
+                "uploadFolder" => intval($data->logo->uploadFolder),
+                "filename" => $data->logo->filename,
+                "filePath" => $filePath,
+                "alt" => $data->logo->alt
+            ]);
+        }
+
+        $animation->unique_registration = $data->uniqueRegistration;
+
         $animation->save();
+
+        // On recupere la liste des inscriptions en attente pour l'animation
+        $waitingList = RegistrationModel::getRegistrationsWaitingList($animation->id_animation);
+        foreach ($waitingList as $waitingRegistration) {
+            $registration = new RegistrationOrm($waitingRegistration["idRegistration"]);
+            $interneQuotas = RegistrationModel::reviewAnimationRegistration($registration, $interneQuotas);
+            if (! $interneQuotas) {
+                return false;
+            }
+        }
+
         return $animation->toArray();
     }
 
@@ -296,7 +412,7 @@ class AnimationModel extends Model
                 case 'dateStart':
                 case 'dateEnd':
                     if (! $dateDone) {
-                        if ($searchFields->dateEnd != '' && $searchFields->dateStart && !$searchFields->inputSearchExactDate) {
+                        if ($searchFields->dateEnd != '' && $searchFields->dateStart && ! $searchFields->inputSearchExactDate) {
                             $searchGlobals['f_2'] = [
                                 'BETWEEN' => [
                                     $searchValue,
@@ -331,13 +447,22 @@ class AnimationModel extends Model
     public static function getFormData($id = 0)
     {
         global $pmb_gestion_devise, $thesaurus_concepts_active;
-        
+        global $deflt_animation_calendar, $deflt_animation_waiting_list, $deflt_animation_automatic_registration, $deflt_animation_communication_type, $deflt_animation_unique_registration;
+
         return [
             'locations' => DocsLocationModel::getLocationList(),
             'mailingTypes' => MailingTypeModel::getMailingsTypeListForAnimation(),
             'status' => AnimationStatusModel::getAnimationStatusList(),
             'types' => AnimationTypesModel::getAnimationTypesList(),
+            'calendar' => AnimationCalendarModel::getAnimationCalendarList(),
             'priceType' => PriceTypeModel::getPricesTypeList(),
+            'prefColorUser' => $deflt_animation_calendar,
+            'prefWaitingListUser' => $deflt_animation_waiting_list,
+            'prefAutoRegistrationUser' => $deflt_animation_automatic_registration,
+            'prefCommunicationTypeUser' => $deflt_animation_communication_type,
+            'prefUniqueRegistrationUser' => $deflt_animation_unique_registration,
+            'uploadFolder' => UploadFolderModel::getUploadForlderList(),
+            'urlBase' => GlobalContext::get("url_base"),
             'img' => [
                 'plus' => get_url_icon('plus.gif'),
                 'minus' => get_url_icon('minus.gif'),
@@ -355,32 +480,31 @@ class AnimationModel extends Model
             ]
         ];
     }
-    
-    public function fetchMailings(bool $duplicate = false)
+
+    public function fetchMailing(bool $duplicate = false)
     {
-        if (! empty($this->mailings)) {
-            return $this->mailings;
+        if (! empty($this->mailing)) {
+            return $this->mailing;
         }
-        $this->mailings = MailingAnimationModel::getMailings($this->id, $duplicate);
-        return $this->mailings;
+        $this->mailing = MailingAnimationModel::getMailings($this->id, $duplicate);
+        return $this->mailing;
     }
-    
 
     public function fetchParent()
     {
         if (! empty($this->parent)) {
             return $this->parent;
         }
-        
+
         $num_parent = 0;
-        if (!empty($this->numParent)) {
+        if (! empty($this->numParent)) {
             $num_parent = $this->numParent;
         }
-        
+
         $this->parent = new AnimationModel($num_parent);
         return $this->parent;
     }
-    
+
     public function fetchPrices(bool $duplicate = false)
     {
         if (! empty($this->prices)) {
@@ -395,12 +519,12 @@ class AnimationModel extends Model
         if (! empty($this->event)) {
             return $this->event;
         }
-        
+
         $num_event = 0;
-        if (!empty($this->numEvent)) {
+        if (! empty($this->numEvent)) {
             $num_event = $this->numEvent;
         }
-        
+
         $this->event = new EventModel($num_event);
         return $this->event;
     }
@@ -410,29 +534,44 @@ class AnimationModel extends Model
         if (! empty($this->status)) {
             return $this->status;
         }
-        
+
         $num_status = 0;
-        if (!empty($this->numStatus)) {
+        if (! empty($this->numStatus)) {
             $num_status = $this->numStatus;
         }
-        
+
         $this->status = new AnimationStatusModel($num_status);
         return $this->status;
     }
-    
+
     public function fetchType()
     {
         if (! empty($this->type)) {
             return $this->type;
         }
-        
+
         $num_type = AnimationOrm::DEFAULT_TYPE;
-        if (!empty($this->numType) && AnimationTypesOrm::exist(intval($this->numType))) {
+        if (! empty($this->numType) && AnimationTypesOrm::exist(intval($this->numType))) {
             $num_type = $this->numType;
         }
-        
+
         $this->type = new AnimationTypesModel($num_type);
         return $this->type;
+    }
+
+    public function fetchCalendar()
+    {
+        if (! empty($this->calendar)) {
+            return $this->calendar;
+        }
+
+        $num_calendar = AnimationOrm::DEFAULT_CALENDAR;
+        if (! empty($this->numCalendar) && AnimationCalendarOrm::exist(intval($this->numCalendar))) {
+            $num_calendar = $this->numCalendar;
+        }
+
+        $this->calendar = new AnimationCalendarModel($num_calendar);
+        return $this->calendar;
     }
 
     public function fetchLocation($withInformations = false)
@@ -440,7 +579,7 @@ class AnimationModel extends Model
         if (! empty($this->location)) {
             return $this->location;
         }
-        
+
         $this->location = [];
         $query = "SELECT * FROM anim_animation_locations WHERE num_animation = $this->id";
         $result = pmb_mysql_query($query);
@@ -458,35 +597,35 @@ class AnimationModel extends Model
         }
         return $this->location;
     }
-    
+
     public function fetchMailingType($withInformations = false)
     {
         if (empty($this->mailing)) {
-            $this->fetchMailings();
+            $this->fetchMailing();
         }
-        
+
         if (empty($this->mailingType)) {
             $this->mailingType = array();
-            if (!empty($this->mailing)) {
+            if (! empty($this->mailing)) {
                 foreach ($this->mailing as $mailing) {
                     if ($withInformations) {
-                        $this->mailingType[] = new MailingTypeModel($mailing->num_mailing_type);
+                        $this->mailingType[] = new MailingTypeModel($mailing->numMailingType);
                     } else {
-                        $this->mailingType[] = $mailing->num_mailing_type;
+                        $this->mailingType[] = $mailing->numMailingType;
                     }
                 }
             }
         }
-        
+
         return $this->mailingType;
     }
-    
+
     public function fetchConcepts()
     {
         if (! empty($this->concepts)) {
             return $this->concepts;
         }
-        
+
         $this->concepts = [];
         $query = "SELECT * FROM index_concept WHERE num_object = $this->id AND type_object = '" . TYPE_ANIMATION . "'";
         $result = pmb_mysql_query($query);
@@ -496,13 +635,13 @@ class AnimationModel extends Model
             }
         }
     }
-    
+
     public function fetchCategories()
     {
         if (! empty($this->categories)) {
             return $this->categories;
         }
-        
+
         $this->categories = [];
         $query = "SELECT * FROM anim_animation_categories WHERE num_animation = $this->id ORDER BY ordre_categorie";
         $result = pmb_mysql_query($query);
@@ -512,7 +651,7 @@ class AnimationModel extends Model
             }
         }
     }
-    
+
     public function fetchCustomFields()
     {
         if (! empty($this->customFields)) {
@@ -530,44 +669,50 @@ class AnimationModel extends Model
     public function getFormatDate($event)
     {
         $evt = new \stdClass();
-        
-        if (!empty($event->rawStartDate)) {
+
+        if (! empty($event->rawStartDate)) {
             // event est déjà formaté
             return $event;
         }
-        
-        $sd = new \DateTime($event->startDate ?? 'now');
-        $ed = new \DateTime($event->endDate ?? 'now');
+
         $date = new \DateTime();
 
+        $sd = new \DateTime($event->startDate ?? 'now');
         $evt->startDate = $sd->format("d/m/Y");
-        $evt->endDate = $ed->format("d/m/Y");
-
         $evt->startHour = $sd->format("H:i");
-        $evt->endHour = $ed->format("H:i");
-
         $evt->rawStartDate = $event->startDate ?? $sd;
-        $evt->rawEndDate = $event->endDate ?? $ed;
-        
+
+        $evt->endDate = "00/00/0000";
+        $evt->endHour = "00:00";
+        $evt->rawEndDate = "0000-00-00 00:00:00";
+
+        if (! empty($event) && ! $event->duringDay) {
+            $ed = new \DateTime($event->endDate ?? 'now');
+            $evt->endDate = $ed->format("d/m/Y");
+            $evt->endHour = $ed->format("H:i");
+            $evt->rawEndDate = $event->endDate ?? $ed;
+        }
+
         $evt->dateExpired = false;
-        if ($ed < $date) {
+        if (isset($ed) && $ed < $date && (! empty($event) && ! $event->duringDay)) {
             $evt->dateExpired = true;
         }
-        
+
+        $evt->duringDay = $event->duringDay ?? 0;
         return $evt;
     }
 
     public function formatEventDateHTML()
     {
         $this->event->startHour = '';
-        if (!empty($this->event->startDate)) {
+        if (! empty($this->event->startDate)) {
             $sd = new \DateTime($this->event->startDate);
             $this->event->startDate = $sd->format("Y-m-d");
             $this->event->startHour = $sd->format("H:i");
         }
-        
+
         $this->event->endHour = '';
-        if (!empty($this->event->endDate)) {
+        if (! empty($this->event->endDate)) {
             $ed = new \DateTime($this->event->endDate);
             $this->event->endDate = $ed->format("Y-m-d");
             $this->event->endHour = $ed->format("H:i");
@@ -586,25 +731,27 @@ class AnimationModel extends Model
             pmb_mysql_query($query);
         }
     }
-    
+
     public static function insertMailingTypeList(array $mailingType, int $idAnimation = 0)
     {
+        $mailingType = array_map('intval', $mailingType);
+
         $animationModel = new AnimationModel($idAnimation);
-        $animationModel->fetchMailings();
-        
+        $animationModel->fetchMailing();
+
         $already_create = array();
         if ($animationModel->mailing) {
             foreach ($animationModel->mailing as $mailing) {
-                if (in_array($mailing->num_mailing_type, $mailingType)) {
-                    $already_create[] = $mailing->num_mailing_type;
+                if (in_array($mailing->numMailingType, $mailingType)) {
+                    $already_create[] = $mailing->numMailingType;
                 } else {
                     $mailing->delete();
                 }
             }
         }
-        
+
         foreach ($mailingType as $mailingTypeId) {
-            if (!empty($mailingTypeId) && intval($mailingTypeId) != 0 && !in_array($mailingTypeId, $already_create)) {
+            if (! empty($mailingTypeId) && $mailingTypeId != 0 && ! in_array($mailingTypeId, $already_create) && MailingTypeOrm::exist($mailingTypeId)) {
                 $mailingOrm = new MailingAnimationOrm();
                 $mailingOrm->num_animation = intval($idAnimation);
                 $mailingOrm->num_mailing_type = intval($mailingTypeId);
@@ -618,26 +765,27 @@ class AnimationModel extends Model
         $query = "DELETE FROM `anim_animation_locations` WHERE `anim_animation_locations`.`num_animation` = $id";
         pmb_mysql_query($query);
     }
-    
-    public static function saveParentChild($data) {
+
+    public static function saveParentChild($data)
+    {
         $animation = new AnimationOrm($data->idChildren);
         if (0 === $data->idParent) {
             $animation->num_parent = 0;
-        }else{
+        } else {
             $animation->num_parent = $data->idParent;
         }
         $animation->save();
     }
-    
-    public static function getAnimationsDNDList(){
-        
+
+    public static function getAnimationsDNDList()
+    {
         $animationsList = AnimationOrm::findAll();
-        
+
         $list = [];
         $listToUnset = [];
-        
+
         $animTemps = new AnimationModel();
-        
+
         foreach ($animationsList as $key => $animation) {
             $newAnimation = new \stdClass();
             $event = new EventModel($animation->num_event);
@@ -647,37 +795,48 @@ class AnimationModel extends Model
             $newAnimation->event = $animTemps->getFormatDate($event);
             $newAnimation->numParent = $animation->num_parent;
             $newAnimation->nested = [];
-            
+
             $list[$animation->id_animation] = $newAnimation;
         }
-        
-        foreach ($list as $id => $anim){
-            if (!empty($anim->numParent)) {
+
+        foreach ($list as $id => $anim) {
+            if (! empty($anim->numParent)) {
                 if (isset($list[$anim->numParent])) {
                     $list[$anim->numParent]->nested[] = $anim;
                     $listToUnset[] = $list[$id];
-                } 
+                }
             }
         }
-        
-        foreach ($listToUnset as $animation){
+
+        foreach ($listToUnset as $animation) {
             unset($list[$animation->id]);
         }
         
-        usort($list, function ($a, $b) {
-            if ($a->event->startDate == $b->event->startDate) {
-                return 0;
-            }
-            return ($a->event->startDate < $b->event->startDate) ? - 1 : 1;
-        });
+        self::sortRecursiveAnimationsByDate($list);
         
         return self::toArray(array_values($list));
     }
     
+    protected static function sortRecursiveAnimationsByDate(&$animations) 
+    {
+        usort($animations, function ($a, $b) {
+            $startDateA = strtotime($a->event->rawStartDate);
+            $startDateB = strtotime($b->event->rawStartDate);
+            
+            return $startDateA - $startDateB;
+        });
+        
+        foreach($animations as $animation) {
+            if(count($animation->nested)) {
+                self::sortRecursiveAnimationsByDate($animation->nested);
+            }
+        }
+    }
+
     public function getEditAddData(bool $duplicate = false)
     {
         $this->fetchEvent();
-        if (!empty($this->numEvent)) {
+        if (! empty($this->numEvent)) {
             $this->formatEventDateHTML();
         }
         $this->fetchPrices($duplicate);
@@ -687,11 +846,20 @@ class AnimationModel extends Model
         $this->fetchCategories();
         $this->fetchCustomFields();
         $this->fetchParent();
-        //$this->allowWaitingList = 0;
 
-        //TODO : Revoir la duplication en passant par une mÃ©thode dans l'ORM pour supprimer les relations
+        if (empty($this->logo)) {
+            $this->logo = json_encode([
+                "uploadFolder" => 0,
+                "filename" => "",
+                "filePath" => "",
+                "alt" => ""
+            ]);
+        }
+        // $this->allowWaitingList = 0;
+
+        // TODO : Revoir la duplication en passant par une mÃ©thode dans l'ORM pour supprimer les relations
         if ($duplicate) {
-            //Remise a ZÃ©ro des id et numAnimation
+            // Remise a ZÃ©ro des id et numAnimation
             $this->idAnimation = 0;
             $this->id = 0;
             $this->event->id = 0;
@@ -701,16 +869,14 @@ class AnimationModel extends Model
         } else {
             $this->hasChildrens = $this->checkChildrens();
         }
-        
-        
         return $this;
     }
-    
+
     public function checkChildrens()
     {
-        if ($this->idAnimation) {
+        if (isset($this->idAnimation)) {
             $results = AnimationOrm::find('num_parent', $this->idAnimation);
-            if (!empty($results) && count($results)) {
+            if (! empty($results) && count($results)) {
                 $this->hasChildrens = true;
                 return true;
             }
@@ -718,7 +884,7 @@ class AnimationModel extends Model
         $this->hasChildrens = false;
         return false;
     }
-    
+
     public function getViewData()
     {
         $this->fetchEvent();
@@ -734,15 +900,16 @@ class AnimationModel extends Model
         $this->fetchCategories();
         $this->fetchCustomFields();
         $this->fetchQuotas();
-        
+        $this->fetchCalendar();
+
         $this->hasChildrens = $this->checkChildrens();
         if ($this->hasChildrens) {
             $this->childrens = $this->getDaughterList($this->idAnimation);
         }
-        
+
         return $this;
     }
-    
+
     public function getSimpleSearchData()
     {
         $this->fetchEvent();
@@ -754,87 +921,91 @@ class AnimationModel extends Model
         $this->fetchType();
         $this->fetchQuotas();
         $this->checkChildrens();
-        
+        $this->fetchcalendar();
+
         return $this;
     }
-    
-    public function fetchQuotas() {
+
+    public function fetchQuotas()
+    {
         if (! empty($this->allQuotas)) {
             return $this->allQuotas;
         }
-        
+
         $this->allQuotas = AnimationModel::getAllQuotas($this->id);
         $this->hasQuotas = false;
 
-        if ($this->globalQuota >= 0 || $this->internetQuota >= 0) {
+        if ((! isset($this->globalQuota) || $this->globalQuota >= 0) || (! isset($this->internetQuota) || $this->internetQuota >= 0)) {
             $this->hasQuotas = true;
         }
-        
+
         $this->internetAvailable = false;
         if ($this->allQuotas['availableQuotas']['global'] >= $this->allQuotas['availableQuotas']['internet']) {
             $this->internetAvailable = true;
         }
-        
+
         return $this->allQuotas;
     }
-    
-    public static function getBaseQuotas($id){
+
+    public static function getBaseQuotas($id)
+    {
         $animations = new AnimationOrm($id);
         $quotas = [
             "global" => intval($animations->global_quota),
-            "internet" => intval($animations->internet_quota),
+            "internet" => intval($animations->internet_quota)
         ];
         return $quotas;
     }
-    
-    public static function getAllQuotas($id){
-        //Renvoie le nombre de place reserves
+
+    public static function getAllQuotas(int $id)
+    {
+        // Renvoie le nombre de place reserves
         $registrations = RegistrationModel::getRegistrationPlaceForAnimation($id);
 
-        //Renvoie le nombre de place reserves sur liste d'attente
+        // Renvoie le nombre de place reserves sur liste d'attente
         $waitingList = RegistrationModel::getRegistrationWaitingList($id);
-        
-        //Renvoie le quotas de place de l'animation
+
+        // Renvoie le quotas de place de l'animation
         $quotasAnimation = AnimationModel::getBaseQuotas($id);
-        
-        //calcul et formatage de donnees des places reservees
+
+        // calcul et formatage de donnees des places reservees
         $globalReservedPlace = 0;
         $internetReservedPlace = 0;
-        if (count($registrations)>0){
-            $result = self::countNbRegistredPerson($registrations);
+        if (count($registrations) > 0) {
+            $result = static::countNbRegistredPerson($registrations);
             $globalReservedPlace = $result['global'];
             $internetReservedPlace = $result['internet'];
         }
-        
-        //calcul et formatage de donnees des places sur liste d'attente
+
+        // calcul et formatage de donnees des places sur liste d'attente
         $globalWaitingList = 0;
         $internetWaitingList = 0;
-        if (count($waitingList)>0){
-            $result = self::countNbRegistredPerson($waitingList);
+        if (count($waitingList) > 0) {
+            $result = static::countNbRegistredPerson($waitingList);
             $globalWaitingList = $result['global'];
             $internetWaitingList = $result['internet'];
         }
-        
+
         $availablePlace = [];
         $availablePlace['global'] = 0;
         $availablePlace['internet'] = 0;
-        
-        //On y passe seulement dans le cas ou le quotas est limite
-        if ($quotasAnimation['global']>0){
+
+        // On y passe seulement dans le cas ou le quotas est limite
+        if ($quotasAnimation['global'] > 0) {
             $availablePlace['global'] = $quotasAnimation['global'] - $globalReservedPlace - $internetReservedPlace;
         }
-        if ($quotasAnimation['internet']>0){
+        if ($quotasAnimation['internet'] > 0) {
             $availablePlace['internet'] = $quotasAnimation['internet'] - $internetReservedPlace;
         }
-        
-        //Dans le cas ou il n'y a plus de places global disponibles, le nombre de places internet disponbibles est remis a 0
-        if ($quotasAnimation['global']>0 && $availablePlace['global'] == 0){
+
+        // Dans le cas ou il n'y a plus de places global disponibles, le nombre de places internet disponbibles est remis a 0
+        if ($quotasAnimation['global'] > 0 && $availablePlace['global'] == 0) {
             $availablePlace['internet'] = 0;
-        } else if ($quotasAnimation['global']>0 && $availablePlace['global'] < $availablePlace['internet']) {
-            //Dans le cas ou le compteur de place restante global est inferieure au compteur de place restante sur internet
+        } elseif ($quotasAnimation['global'] > 0 && $availablePlace['global'] < $availablePlace['internet']) {
+            // Dans le cas ou le compteur de place restante global est inferieure au compteur de place restante sur internet
             $availablePlace['internet'] = $availablePlace['global'];
         }
-        
+
         $quotas = [];
         $quotas['animationQuotas'] = $quotasAnimation;
         $quotas['availableQuotas'] = $availablePlace;
@@ -848,47 +1019,49 @@ class AnimationModel extends Model
         ];
         return $quotas;
     }
-    
-    protected static function countNbRegistredPerson($registredList){
+
+    protected static function countNbRegistredPerson($registredList)
+    {
         $global = 0;
         $internet = 0;
-        if ($registredList['global']){
-            foreach ($registredList['global'] as $registredGlobal){
+        if ($registredList['global']) {
+            foreach ($registredList['global'] as $registredGlobal) {
                 $global += intval($registredGlobal->nb_registered_persons);
             }
         }
-        if ($registredList['internet']){
-            foreach ($registredList['internet'] as $registredInternet){
+        if ($registredList['internet']) {
+            foreach ($registredList['internet'] as $registredInternet) {
                 $internet += intval($registredInternet->nb_registered_persons);
             }
         }
         return [
             "global" => $global,
-            "internet" => $internet  
+            "internet" => $internet
         ];
     }
-    
+
     public static function getDaughterList($idAnimation)
     {
         $daugtherList = [];
         $daughterORM = AnimationOrm::find('num_parent', $idAnimation);
         foreach ($daughterORM as $orm) {
             $id_animation = $orm->id_animation;
-            if (!empty($id_animation) && $id_animation != 0) {
+            if (! empty($id_animation) && $id_animation != 0) {
                 $daugtherList[] = self::getAnimation($id_animation);
             }
         }
-        
+
         return $daugtherList;
     }
-    
-    public function getSummaryPerson() {
+
+    public function getSummaryPerson()
+    {
         $priceTab = array();
-        
+
         $registrationList = RegistrationOrm::find('num_animation', $this->id);
-        foreach ($registrationList as $registration){
+        foreach ($registrationList as $registration) {
             $personList = RegistredPersonOrm::find('num_registration', $registration->id_registration);
-            foreach ($personList as $person){
+            foreach ($personList as $person) {
                 $personModel = new RegistredPersonModel($person->id_person);
                 $price = $personModel->fetchPrice();
                 if (empty($priceTab[$price->name])) {
@@ -897,64 +1070,66 @@ class AnimationModel extends Model
                 $priceTab[$price->name] = $priceTab[$price->name] + 1;
             }
         }
-        return $priceTab;        
+        return $priceTab;
     }
-    
-    public static function deleteAnimationCartNum($numCart){
+
+    public static function deleteAnimationCartNum($numCart)
+    {
         $animationOrm = AnimationOrm::find('num_cart', $numCart)[0];
-        if ($animationOrm != null){
+        if ($animationOrm != null) {
             $animationOrm->num_cart = 0;
             $animationOrm->save();
         }
-        
+
         return true;
     }
-    
-    public static function getIdAnimationFromNumCaddie($idEmprCaddie){
+
+    public static function getIdAnimationFromNumCaddie($idEmprCaddie)
+    {
         $animationOrm = AnimationOrm::find("num_cart", $idEmprCaddie);
         return $animationOrm[0]->id_animation;
     }
-    
+
     public static function getAnimationForMailing(int $id)
     {
         $anim = new AnimationModel($id);
         $anim->fetchEvent();
         $anim->fetchLocation(true);
-        $anim->fetchMailings();
-        
+        $anim->fetchMailing();
         return $anim;
     }
-    
-    public static function getAllAnimations(){
+
+    public static function getAllAnimations()
+    {
         return AnimationOrm::findAll();
     }
-    
+
     public function getCmsStructure(string $prefixVar = "", bool $children = false)
     {
         global $msg;
-        
+
         $cmsStructure = parent::getCmsStructure($prefixVar, $children);
-        
+
         if (! empty($cmsStructure[0]['children'])) {
             foreach ($cmsStructure[0]['children'] as $key => $props) {
-                if ($props['var'] == $prefixVar.".event") {
+                if ($props['var'] == $prefixVar . ".event") {
                     $event = $this->getFormatDate(null);
-                    if (!empty($event)) {
+                    if (! empty($event)) {
                         $cmsStructure[0]['children'][$key]['children'] = array();
                         foreach ($event as $propName => $value) {
                             $length = count($cmsStructure[0]['children'][$key]['children']);
-                            $cmsStructure[0]['children'][$key]['children'][$length]['var'] = $props['var'].".".$propName;
-                            
-                            $msgVar = str_replace(".", "_",  $props['var'].".".$propName);
+                            $cmsStructure[0]['children'][$key]['children'][$length]['var'] = $props['var'] . "." . $propName;
+
+                            $msgVar = str_replace(".", "_", $props['var'] . "." . $propName);
                             switch (true) {
-                                case isset($msg['cms_module_common_datasource_desc_'.$msgVar]):
-                                    $desc = $msg['cms_module_common_datasource_desc_'.$msgVar];
+                                case isset($msg['cms_module_common_datasource_desc_' . $msgVar]):
+                                    $desc = $msg['cms_module_common_datasource_desc_' . $msgVar];
                                     break;
-                                    
+
                                 case isset($msg[$msgVar]):
                                     $desc = $msg[$msgVar];
                                     break;
-                                    
+
                                 default:
                                     $desc = addslashes($msgVar);
                                     break;
@@ -965,41 +1140,311 @@ class AnimationModel extends Model
                 }
             }
         }
-        
+
         return $cmsStructure;
     }
-    
+
     public function getCmsData()
     {
-        $data = parent::getCmsData();
-        
-        foreach ($data as $var => $value) {
-            if ($var == "event") {
-                $event = $this->getFormatDate(null);
-                if (!empty($event)) {
-                    $data[$var] = $event;
+        $data = [
+            'id' => $this->id
+        ];
+
+        if (! empty($this->structure)) {
+            foreach ($this->structure as $prop) {
+                $data[addslashes($prop)] = Helper::toCmsData($this->{$prop});
+            }
+        }
+
+        $reflect = new \ReflectionClass($this);
+        $methods = $reflect->getMethods();
+        if (! empty($methods)) {
+            foreach ($methods as $method) {
+                if (substr($method->name, 0, 5) == "fetch") {
+                    $prop = $this->{$method->name}();
+                    if (! empty($prop)) {
+                        $key = strtolower(str_replace("fetch", "", $method->name));
+                        if ($key == "event") {
+                            $event = $this->getFormatDate($this->event);
+                            if (! empty($event)) {
+                                $data[addslashes($key)] = Helper::toCmsData($event);
+                            }
+                        } elseif (method_exists($prop, "getCmsData")) {
+                            if ($key == "parent" && ($prop->id == 0 || $prop->id == $this->id)) {
+                                continue;
+                            }
+                            $data[addslashes($key)] = $prop->getCmsData();
+                        } else {
+                            $data[addslashes($key)] = Helper::toCmsData($prop);
+                        }
+                    }
                 }
             }
         }
-        
+
         return $data;
     }
-    
+
     public function emprAlreadyRegistred(int $id_empr)
     {
-        if (!empty($this->emprAlreadyRegistred)) {
+        if (! empty($this->emprAlreadyRegistred)) {
             return $this->emprAlreadyRegistred;
         }
-        
+
         $registrationList = RegistrationModel::getEmprRegistrationsList($id_empr);
         foreach ($registrationList as $registration) {
-            if ($registration->animation->id == $this->id){
+            if ($registration->animation->id == $this->id) {
                 $this->emprAlreadyRegistred = true;
                 return true;
             }
         }
-        
+
         $this->emprAlreadyRegistred = false;
         return false;
+    }
+
+    public static function getPathAnimationLogo($file, $idFolder)
+    {
+        if (empty($file['tmp_name'])) {
+            return '';
+        }
+
+        $file_temp_path = $file['tmp_name'];
+        if (! file_exists($file_temp_path)) {
+            return '';
+        }
+        $upload_directory = new \upload_folder($idFolder);
+        $rep_path = $upload_directory->repertoire_path;
+
+        $blob = file_get_contents($file_temp_path);
+        $filename = $file['name'];
+
+        file_put_contents($rep_path . $filename, $blob);
+
+        return $rep_path . $filename;
+    }
+
+    public static function printLogo(int $id, $size = null)
+    {
+        $animation = AnimationOrm::findById($id);
+        $logo = json_decode($animation->logo);
+
+        if (file_exists($logo->filePath)) {
+            $max_size = $size ?? GlobalContext::get("pmb_notice_img_pics_max_size");
+            $image = file_get_contents($logo->filePath);
+            $imgResize = Image::resize($image, $max_size);
+            Image::printPNG($imgResize);
+            exit();
+        } else {
+            $fp = fopen("./images/mimetype/jpg-dist.png", "r");
+            $contenu_vignette = fread($fp, filesize("./images/mimetype/jpg-dist.png"));
+            fclose($fp);
+            print $contenu_vignette;
+            exit();
+        }
+    }
+
+    /**
+     * Methode pour H2o pour recuperer le logo
+     *
+     * @return NULL|[]
+     */
+    public function getFormatlogo()
+    {
+        global $opac_url_base;
+
+        $logo = json_decode($this->logo);
+        if (empty($logo)) {
+            return null;
+        }
+
+        $orgineSize = 0;
+        if (! empty($logo->filePath)) {
+            $orgineSize = getimagesize($logo->filePath);
+            $orgineSize = intval($orgineSize[0] ?? 0);
+        }
+        $animationLinkLogo = $opac_url_base . "animations_vign.php?animationId=" . intval($this->id);
+        return [
+            "default" => $animationLinkLogo,
+            "small_vign" => $animationLinkLogo . "&size=16",
+            "vign" => $animationLinkLogo . "&size=100",
+            "small" => $animationLinkLogo . "&size=140",
+            "medium" => $animationLinkLogo . "&size=300",
+            "big" => $animationLinkLogo . "&size=600",
+            "large" => $animationLinkLogo . "&size=" . intval($orgineSize),
+            "alt" => $logo->alt ?? ""
+        ];
+    }
+
+    /**
+     * Permet d'exporter la liste des inscriptions pour une animation
+     *
+     * @param string $exportType
+     * @param array $param
+     */
+    public function exportPrint(string $exportType, array $param = [])
+    {
+        switch ($exportType) {
+            case "excel":
+            default:
+                $this->getExcelSummarize();
+                break;
+        }
+    }
+
+    protected function getExcelSummarize()
+    {
+        global $msg;
+
+        $worksheet = new \spreadsheetPMB();
+        $title = str_replace("%s", $this->name, $msg["animation_export_title"]);
+        $worksheet->write(0, 0, $title);
+
+        $i = 2;
+        $j = 2;
+
+        $worksheet->write($i, $j ++, $msg["animation_export_name"]);
+        $worksheet->write($i, $j ++, $msg["animation_export_barcode"]);
+        $worksheet->write($i, $j ++, $msg["animation_export_email"]);
+        $worksheet->write($i, $j ++, $msg["animation_export_phone"]);
+        $worksheet->write($i, $j ++, $msg["animation_export_date_registration"]);
+        $i ++;
+
+        $resgistrationList = RegistrationModel::getRegistrations($this->id);
+
+        foreach ($resgistrationList as $registration) {
+            $j = 2;
+            $worksheet->write($i,$j++,$registration["name"]);
+            $worksheet->write($i,$j++,EmprModel::getBarcode($registration["numEmpr"]) ?? $msg["animation_export_no_barcode"]);
+            $worksheet->write($i,$j++,$registration["email"] ?? "no_email");
+            $worksheet->write($i,$j++,$registration["phoneNumber"] ?? "no_phone");
+            $worksheet->write($i,$j++,$registration["date"]);
+            $i ++;
+        }
+        $name = "liste_inscription_" . str_replace(" ", "_", $this->name) . ".xls";
+        $worksheet->download($name);
+    }
+
+    public function repeatEventAnimation(object $data)
+    {
+        global $thesaurus_concepts_active, $class_path;
+        require_once ($class_path . '/event/events_handler.class.php');
+
+        foreach ($data->selectedDays as $years) {
+            foreach ($years as $year => $months) {
+                foreach ($months as $month => $days) {
+                    foreach ($days as $day) {
+                        // Ici on créer nos animations
+                        $animation = new AnimationOrm();
+                        $animation->name = $data->animationName ?? $this->name;
+                        $animation->comment = $this->comment ?? "";
+                        $animation->description = $this->description ?? "";
+                        $animation->global_quota = $this->globalQuota ?? 0;
+                        $animation->internet_quota = $this->internetQuota ?? 0;
+                        $animation->num_status = $this->numStatus ?? 1;
+                        $animation->num_event = EventModel::getRepeatEventId($data->event, $year, $month, $day);
+                        $animation->num_parent = $this->id;
+                        $animation->expiration_delay = $this->expirationDelay;
+                        $animation->registration_required = $this->registrationRequired;
+                        $animation->auto_registration = $this->autoRegistration;
+                        $animation->allow_waiting_list = $this->allowWaitingList;
+                        $animation->num_cart = $this->numCart;
+                        $animation->num_type = $this->numType;
+                        $animation->num_calendar = $this->numCalendar;
+                        $animation->logo = $this->logo;
+                        $animation->unique_registration = $this->uniqueRegistration;
+                        $animation->save();
+
+                        if (! empty($this->categories)) {
+                            CategoryModel::updateAnimationCategories(json_decode(json_encode($this->categories)), $animation->id_animation);
+                        }
+
+                        if (! empty($this->concepts) && $thesaurus_concepts_active) {
+                            ConceptModel::updateAnimationConcepts(json_decode(json_encode($this->concepts)), $animation->id_animation);
+                        }
+
+                        AnimationModel::insertLocationList([
+                            "0" => $data->location
+                        ], $animation->id_animation);
+
+                        if (! empty($this->mailingType)) {
+                            AnimationModel::insertMailingTypeList($this->mailingType, $animation->id_animation);
+                        }
+
+                        if (! empty($this->prices)) {
+                            PriceModel::addPriceRepeatAnimation($this->prices, $animation->id_animation);
+                        }
+
+                        if (! empty($this->customFields)) {
+                            CustomFieldModel::updateCustomFields(json_decode(json_encode($this->customFields)), $animation->id_animation, 'anim_animation');
+                        }
+
+                        $event = new AnimationsEvent("animations", "save");
+                        $evth = \events_handler::get_instance();
+                        $event->set_animation_id($animation->id_animation);
+                        if (! empty($animation->id_animation)) {
+                            $event->set_action($event::AUTOMATIC_UPDATE);
+                        } else {
+                            $event->set_action($event::AUTOMATIC_CREATE);
+                        }
+                        $evth->send($event);
+                    }
+                }
+            }
+        }
+    }
+
+    public function getFetchAnimation()
+    {
+        $this->fetchEvent();
+
+        if (! empty($this->event)) {
+            $this->event = $this->getFormatDate($this->event);
+        }
+
+        $this->fetchParent();
+        $this->fetchPrices();
+        $this->fetchLocation(true);
+        $this->fetchStatus();
+        $this->fetchType();
+        $this->fetchConcepts();
+        $this->fetchCategories();
+        $this->fetchCustomFields();
+        $this->fetchQuotas();
+        $this->fetchCalendar();
+    }
+
+    public static function initAnimationToArticle()
+    {
+        global $class_path;
+
+        require_once ($class_path . '/event/events_handler.class.php');
+        $animList = AnimationOrm::findAll();
+
+        foreach ($animList as $anim) {
+            $event = new AnimationsEvent("animations", "save");
+            $evth = \events_handler::get_instance();
+            $event->set_animation_id($anim->id_animation);
+
+            if (! empty($anim->id_animation)) {
+                $event->set_action($event::AUTOMATIC_UPDATE);
+            } else {
+                $event->set_action($event::AUTOMATIC_CREATE);
+            }
+            $evth->send($event);
+
+            if ($event->has_errors()) {
+                $errors = '<div>Error messages<ul>';
+                foreach ($event->get_errors() as $error) {
+                    $errors .= "<li>" . $error . "</li>";
+                }
+                $errors .= '</ul></div>';
+                echo $errors;
+            }
+        }
+
+        return [
+            "error" => $errors
+        ];
     }
 }

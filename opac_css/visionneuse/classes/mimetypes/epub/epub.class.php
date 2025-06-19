@@ -2,8 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: epub.class.php,v 1.5 2017/07/03 09:07:10 dgoron Exp $
+// $Id: epub.class.php,v 1.6 2022/03/07 14:35:10 dgoron Exp $
 
+global $visionneuse_path;
 require_once($visionneuse_path."/classes/mimetypes/affichage.class.php");
 require_once($visionneuse_path."/../classes/epubData.class.php");
 require_once($visionneuse_path."/classes/mimetypes/converter_factory.class.php");
@@ -250,8 +251,6 @@ class epub extends affichage{
     }
     
     public function render(){
-    	global $visionneuse_path;
-    	
     	$ebook = new epubData($this->driver->get_cached_filename($this->doc->id));
 		if (substr($this->driver->getParam("page"),-3)=="css"){
     		header("Content-Type: text/css");
@@ -262,6 +261,8 @@ class epub extends affichage{
     }
     
     public function getTabParam(){
+    	if(!isset($this->parameters['size_x'])) $this->parameters['size_x'] = '';
+    	if(!isset($this->parameters['size_y'])) $this->parameters['size_y'] = '';
     	$this->tabParam = array(
 			"size_x"=>array("type"=>"text","name"=>"size_x","value"=>$this->parameters['size_x'],"desc"=>"Largeur du document en % de l'espace visible"),
 			"size_y"=>array("type"=>"text","name"=>"size_y","value"=>$this->parameters['size_y'],"desc"=>"Hauteur du document en % de l'espace visible")

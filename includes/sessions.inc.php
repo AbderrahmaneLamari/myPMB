@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sessions.inc.php,v 1.62.2.1 2022/01/13 15:02:04 dgoron Exp $
+// $Id: sessions.inc.php,v 1.65.4.2 2023/07/20 08:14:40 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -13,8 +13,9 @@ if(preg_match('/sessions\.inc\.php/', $REQUEST_URI)) {
 	include('./forbidden.inc.php'); forbidden();
 }
 
-global $class_path;
-require_once($class_path."/cache_factory.class.php");
+global $class_path, $include_path;
+require_once "{$include_path}/pmb_cookie.inc.php";
+require_once "{$class_path}/cache_factory.class.php";
 
 define( 'CHECK_USER_NO_SESSION', 1 );
 define( 'CHECK_USER_SESSION_DEPASSEE', 2 );
@@ -54,15 +55,19 @@ function checkUser($SESSNAME, $allow=0,$user_connexion='') {
 	$PHPSESSNAME = (isset($_COOKIE["$SESSNAME-SESSNAME"]) ? $_COOKIE["$SESSNAME-SESSNAME"] : '');
 
 	// message de debug messages ?
-	if ($check_messages==-1) setcookie($SESSNAME."-CHECK-MESSAGES", 0, 0);
-	if ($check_messages==1) setcookie($SESSNAME."-CHECK-MESSAGES", 1, 0);
+	if ($check_messages==-1) {
+	    pmb_setcookie($SESSNAME."-CHECK-MESSAGES", 0, 0);
+	}
+	if ($check_messages==1) {
+	    pmb_setcookie($SESSNAME."-CHECK-MESSAGES", 1, 0);
+	}
 
 	// on récupère l'IP du client
 	$ip = $_SERVER['REMOTE_ADDR'];
 
 	// recherche de la session ouverte dans la table
 	$query = "SELECT SESSID, login, IP, SESSstart, LastOn, SESSNAME FROM sessions WHERE ";
-	$query .= "SESSID='".addslashes($PHPSESSID)."' and login = '".$PHPSESSLOGIN."'";
+	$query .= "SESSID='".addslashes($PHPSESSID)."' and login = '".addslashes($PHPSESSLOGIN)."'";
 	$txt_er = $query;
 	$result = pmb_mysql_query($query);
 	$numlignes = pmb_mysql_num_rows($result);
@@ -84,6 +89,9 @@ function checkUser($SESSNAME, $allow=0,$user_connexion='') {
 		}
 	}
 	if(($session->LastOn+SESSION_REACTIVATE) < time()) {
+		// On supprime l'ancienne session avant de renvoyer l'erreur
+		sessionDelete('PhpMyBibli');
+
 		$checkuser_type_erreur = CHECK_USER_SESSION_DEPASSEE ;
 		return FALSE;
 	}
@@ -96,6 +104,9 @@ function checkUser($SESSNAME, $allow=0,$user_connexion='') {
 		}
 	}
 	if(($session->SESSstart+SESSION_MAXTIME) < time()) {
+		// On supprime l'ancienne session avant de renvoyer l'erreur
+		sessionDelete('PhpMyBibli');
+
 		$checkuser_type_erreur = CHECK_USER_SESSION_DEPASSEE ;
 		define('SESSname', '');
 		return FALSE;
@@ -300,16 +311,16 @@ function startSession($SESSNAME, $login, $database=LOCATION) {
 	}
 
 	// cookie pour le login de l'utilisateur
-	setcookie($SESSNAME."-LOGIN", $login, 0);
+	pmb_setcookie($SESSNAME."-LOGIN", $login, 0);
 
 	// cookie pour le nom de la session
-	setcookie($SESSNAME."-SESSNAME", $SESSNAME, 0);
+	pmb_setcookie($SESSNAME."-SESSNAME", $SESSNAME, 0);
 
 	// cookie pour l'ID de session
-	setcookie($SESSNAME."-SESSID", $SESSID, 0);
+	pmb_setcookie($SESSNAME."-SESSID", $SESSID, 0);
 
 	// cookie pour la base de donnée
-	setcookie($SESSNAME."-DATABASE", $PMBdatabase, 0);
+	pmb_setcookie($SESSNAME."-DATABASE", $PMBdatabase, 0);
 
 	// mise à disposition des variables de la session
 	define('SESSlogin'	, addslashes($login));
@@ -367,15 +378,15 @@ function sessionDelete($SESSNAME) {
 
 	// altération du cookie-client (au cas où la suppression ne fonctionnerait pas)
 
-	setcookie($SESSNAME."-LOGIN", "no_login", 0);
-	setcookie($SESSNAME."-SESSNAME", "no_session", 0);
-	setcookie($SESSNAME."-SESSID", "no_id_session", 0);
+	pmb_setcookie($SESSNAME."-LOGIN", "no_login", 0);
+	pmb_setcookie($SESSNAME."-SESSNAME", "no_session", 0);
+	pmb_setcookie($SESSNAME."-SESSID", "no_id_session", 0);
 
 	// tentative de suppression ddes cookies
 
-	setcookie($SESSNAME."-SESSNAME");
-	setcookie($SESSNAME."-SESSID");
-	setcookie($SESSNAME."-LOGIN");
+	pmb_setcookie($SESSNAME."-SESSNAME");
+	pmb_setcookie($SESSNAME."-SESSID");
+	pmb_setcookie($SESSNAME."-LOGIN");
 
 	//Destruction de la session php
 	session_destroy();

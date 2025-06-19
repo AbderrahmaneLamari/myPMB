@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_tabs_edit_ui.class.php,v 1.1.4.3 2021/09/21 11:33:59 dgoron Exp $
+// $Id: list_tabs_edit_ui.class.php,v 1.4.4.1 2023/12/15 14:45:47 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -79,6 +79,7 @@ class list_tabs_edit_ui extends list_tabs_ui {
 			$this->add_tab('transferts_edition_titre', 'transferts', 'transferts_edition_envoi', 'envoi');
 			$this->add_tab('transferts_edition_titre', 'transferts', 'transferts_edition_reception', 'reception');
 			$this->add_tab('transferts_edition_titre', 'transferts', 'transferts_edition_retours', 'retours');
+			$this->add_tab('transferts_edition_titre', 'transferts', 'transferts_circ_menu_refuse', 'refus');
 		}
 		
 		//OPAC

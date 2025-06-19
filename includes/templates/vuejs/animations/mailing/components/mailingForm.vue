@@ -52,6 +52,10 @@
 								<input id="mailingstypes.annulation" name="periodicity" type="radio"  v-model="mailingstypes.periodicity" value="5" required> 
 								<label for="mailingstypes.annulation" class='etiquette'>{{ pmb.getMessage("animation", "animation_mailing_annulation") }}</label>
 							</template>
+							<template v-if="typecomisset.sendtobibli == 0 || this.nativePeriodicity == 6 ">
+								<input id="mailingstypes.sendtobibli" name="periodicity" type="radio"  v-model="mailingstypes.periodicity" value="6" required> 
+								<label for="mailingstypes.sendToBibli" class='etiquette'>{{ pmb.getMessage("animation", "animation_mailing_sendtobibli") }}</label>
+							</template>
 						</template>
 						<template v-else>
 							<input id="mailingstypes.periodicity" name="periodicity" type="radio"  v-model="mailingstypes.periodicity"  value="1" required> 
@@ -137,6 +141,8 @@
 				        this.mailingstypes.periodicity = 4;
 		        	} else if (this.typecomisset.annulation == 0){
 				        this.mailingstypes.periodicity = 5;
+		        	} else if (this.typecomisset.sendtobibli == 0){
+				        this.mailingstypes.periodicity = 6;
 		        	}
 		        } else {
 			        this.mailingstypes.periodicity = 1;

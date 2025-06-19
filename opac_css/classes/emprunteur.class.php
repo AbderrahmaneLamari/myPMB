@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: emprunteur.class.php,v 1.41.2.1 2021/12/27 10:13:08 dgoron Exp $
+// $Id: emprunteur.class.php,v 1.47 2022/08/01 06:44:58 dgoron Exp $
 
 // classe emprunteur
 //	inclure :
@@ -451,71 +451,17 @@ if ( ! defined( 'EMPR_CLASS' ) ) {
 		 * Renvoi du mail de confirmation d'inscription
 		 */
 		public function registration_confirmation_email() {
-			global $msg;
-			global $opac_biblio_name,$opac_biblio_email,$opac_url_base ;
-			global $opac_url_base;
-			
-			$obj = str_replace("!!biblio_name!!",$opac_biblio_name,$msg['subs_mail_obj']) ;
-			$corps = str_replace("!!biblio_name!!",$opac_biblio_name,$msg['subs_mail_corps']) ;
-			$corps = str_replace("!!empr_first_name!!", $this->prenom,$corps) ;
-			$corps = str_replace("!!empr_last_name!!",$this->nom,$corps) ;
-			
-			// nouvelle clé de validation :
-			$alphanum  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-			$cle_validation = substr(str_shuffle($alphanum), 0, 20);
-			$query = "UPDATE empr set cle_validation = '".$cle_validation."' WHERE id_empr = ".$this->id;
-			pmb_mysql_query($query);
-			
-			$lien_validation = "<a href='".$opac_url_base."subscribe.php?subsact=validation&login=".urlencode($this->login)."&cle_validation=$cle_validation'>".$opac_url_base."subscribe.php?subsact=validation&login=".$this->login."&cle_validation=$cle_validation</a>";
-			$corps = str_replace("!!lien_validation!!",$lien_validation,$corps) ;
-			
-			$headers  = "MIME-Version: 1.0\n";
-			$headers .= "Content-type: text/html; charset=iso-8859-1\n";
-			
-			return mailpmb(trim($this->prenom." ".$this->nom), $this->mail, $obj, $corps, $opac_biblio_name, $opac_biblio_email, $headers);
+			$mail_opac_reader_registration = new mail_opac_reader_registration();
+			$mail_opac_reader_registration->set_mail_to_id($this->id);
+			$mail_opac_reader_registration->set_empr($this);
+			return $mail_opac_reader_registration->send_mail();
 		}
 		
 		public function forgotten_password_email($email) {
-			global $msg, $database;
-			global $opac_biblio_name,$opac_biblio_email,$opac_url_base, $opac_parse_html;
-			
-			if (!$opac_biblio_name) {
-				$query_loc = "SELECT name, email FROM docs_location WHERE idlocation='".$this->location."'";
-				$result_loc = pmb_mysql_query($query_loc) or die ("*** Erreur dans la requ&ecirc;te <br />*** $query_loc<br />\n");
-				$info_loc = pmb_mysql_fetch_object($result_loc) ;
-				$biblio_name_temp=$info_loc->name ;
-				$biblio_email_temp=$info_loc->email ;
-			} else {
-				$biblio_name_temp=$opac_biblio_name;
-				$biblio_email_temp=$opac_biblio_email;
-			}
-			$headers  = "MIME-Version: 1.0\n";
-			$headers .= "Content-type: text/html; charset=iso-8859-1\n";
-			
-			// clé pour autoriser une seule connexion auto :
-			$alphanum  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-			$password_key = substr(str_shuffle($alphanum), 0, 20);
-			$rqt = "update empr set cle_validation='".$password_key."' where empr_login='".$this->login."' ";
-			pmb_mysql_query($rqt);
-			
-			// Bonjour,<br /><br />Pour faire suite à votre demande de réinitialisation de mot de passe à <b>!!biblioname!!</b>, veuillez trouver ci-dessous le lien qui vous permettra d'effectuer ce changement : <br /><br />!!lien_mdp!!<br /><br /> - Pour rappel, votre identifiant est : !!login!!<br /><br />Si vous rencontrez des difficultés, adressez un mail à !!biblioemail!!.<br /><br />
-			$messagemail = $msg['mdp_mail_body'] ;
-			$messagemail = str_replace("!!login!!",$this->login,$messagemail);
-			$messagemail = str_replace("!!biblioname!!","<a href=\"$opac_url_base\">".$biblio_name_temp."</a>",$messagemail);
-			$lien_mdp = "<a href='".$opac_url_base."empr.php?lvl=change_password&emprlogin=".$this->login."&password_key=".$password_key."&database=".$database."'>".$opac_url_base."empr.php?lvl=change_password&emprlogin=".$this->login."&password_key=".$password_key."&database=".$database."</a>";
-			$messagemail = str_replace("!!lien_mdp!!",$lien_mdp,$messagemail);
-			$messagemail = str_replace("!!biblioemail!!","<a href=mailto:$opac_biblio_email>$biblio_email_temp</a>",$messagemail);
-			
-			$objetemail = str_replace("!!biblioname!!",$biblio_name_temp,$msg['mdp_mail_obj']);
-			
-			if($opac_parse_html){
-				$objetemail = parseHTML($objetemail);
-				$messagemail = parseHTML($messagemail);
-				$biblio_name_temp = parseHTML($biblio_name_temp);
-				$biblio_email_temp = parseHTML($biblio_email_temp);
-			}
-			
-			return mailpmb(trim($this->prenom.' '.$this->nom), $email,$objetemail,$messagemail,$biblio_name_temp, $biblio_email_temp, $headers);
+			$mail_opac_reader_forgotten_password = new mail_opac_reader_forgotten_password();
+			$mail_opac_reader_forgotten_password->set_mail_to_id($this->id)
+					->set_empr($this);
+			return $mail_opac_reader_forgotten_password->send_mail();
 		}
 		
 		/**
@@ -682,7 +628,60 @@ if ( ! defined( 'EMPR_CLASS' ) ) {
 			return json_encode(pmb_utf8_array_encode($ajax_rules));
 		}
 		
+		public static function get_suggested_login($firstname, $name) {
+			$suggested_login = pmb_substr($firstname,0,1).$name;
+			$suggested_login = str_replace(CHR(32),"",$suggested_login);
+			$suggested_login = pmb_strtolower($suggested_login);
+			$suggested_login = clean_string($suggested_login) ;
+			$suggested_login = convert_diacrit(pmb_strtolower($suggested_login)) ;
+			$suggested_login = pmb_alphabetic('^a-z0-9\.\_\-\@', '', $suggested_login);
+			$original_login = $suggested_login;
+			$pb = 1 ;
+			$num_login=1;
+			while ($pb==1) {
+				$query_login = "SELECT empr_login FROM empr WHERE empr_login='$suggested_login' LIMIT 1 ";
+				$result_login = pmb_mysql_query($query_login);
+				$nbr_lignes = pmb_mysql_num_rows($result_login);
+				if ($nbr_lignes) {
+					$suggested_login = $original_login.$num_login;
+					$num_login++;
+				} else $pb = 0 ;
+			}
+			return $suggested_login;
+		}
+		
+		//Retourne un nom de lecteur depuis un id
+		public static function get_name($id, $mode=0){
+			$id = intval($id);
+			$query ="select concat(empr_nom,' ',empr_prenom) as mode_0, concat(empr_prenom,' ',empr_nom) as mode_1  from empr where id_empr = ".$id;
+			$result = pmb_mysql_query($query);
+			if(pmb_mysql_num_rows($result)){
+				return trim(pmb_mysql_result($result, 0, "mode_".$mode));
+			}
+			return '';
+		}
+		
+		
+		//Retourne le code-barre d'un emprunteur
+		public static function get_cb_empr($id_empr) {
+			$id_empr = intval($id_empr);
+			if (!$id_empr) return false;
+			$q ="select empr_cb from empr where id_empr=$id_empr";
+			$r = pmb_mysql_query($q);
+			
+			return pmb_mysql_result($r,0,0);
+		}
+		
+		//Retourne le mail d'un emprunteur
+		public static function get_mail_empr($id_empr) {
+			$id_empr = intval($id_empr);
+			if (!$id_empr) return false;
+			$q ="select empr_mail from empr where id_empr=$id_empr";
+			$r = pmb_mysql_query($q);
+			
+			return pmb_mysql_result($r,0,0);
+		}
+		
 	}
-
 }
 

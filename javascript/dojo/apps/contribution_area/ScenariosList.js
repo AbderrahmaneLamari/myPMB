@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ScenariosList.js,v 1.12 2020/09/03 14:08:14 jlaurent Exp $
+// $Id: ScenariosList.js,v 1.13 2022/03/15 14:40:51 tsamson Exp $
 
 
 define([
@@ -146,7 +146,9 @@ define([
 			}
 			
 			if (nodeFilter && nodeFilter.type == "attachment") {
-				expandBase(nodeFilter.entityType + '_scenario_div', true);
+				for(var i = 0; i < nodeFilter.entityType.length ; i++){
+					expandBase(nodeFilter.entityType[i] + '_scenario_div', true);
+				}
 			}
 			
 		},

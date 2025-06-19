@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: custom_cote_pmi.inc.php,v 1.2.16.1 2022/01/03 14:13:07 dgoron Exp $
+// $Id: custom_cote_pmi.inc.php,v 1.3 2022/01/03 14:10:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

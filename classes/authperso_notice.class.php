@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authperso_notice.class.php,v 1.36 2020/04/28 06:20:13 dgoron Exp $
+// $Id: authperso_notice.class.php,v 1.38.4.1 2023/11/15 07:54:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once("$class_path/authperso.class.php");
 
 class authperso_notice {
@@ -16,46 +17,55 @@ class authperso_notice {
 	private static $authpersos=array();
 	
 	public function __construct($id=0) {
-		$this->id=$id+0; // id de la notice
+		$this->id=intval($id); // id de la notice
 		$this->fetch_data();
 	}
 	
 	public function fetch_data() {		
 		$this->onglets_auth_list=array();
 		
-		if(!$this->id) return;
+		if(!$this->id) {
+		    return;
+		}
 		
 		// pour chaque autorités existantes récupérér les autorités affectés à la notice
 		$req="select * from authperso, notices_authperso,authperso_authorities where id_authperso=authperso_authority_authperso_num and notice_authperso_authority_num=id_authperso_authority and notice_authperso_notice_num=".$this->id."
 		order by notice_authperso_order";
 		
 		$res = pmb_mysql_query($req);
-		while(($r=pmb_mysql_fetch_object($res))) {			
-			// get isbd ...
-			$this->auth_info[$r->notice_authperso_authority_num]['onglet_num']=$r->authperso_notice_onglet_num;
-			$this->auth_info[$r->notice_authperso_authority_num]['authperso_name']=$r->authperso_name;
-			$this->auth_info[$r->notice_authperso_authority_num]['infos_global']=$r->authperso_infos_global;
-			$this->auth_info[$r->notice_authperso_authority_num]['index_infos_global']=$r->authperso_index_infos_global;
-			$isbd = authperso::get_isbd($r->notice_authperso_authority_num);
-			$this->onglets_auth_list[$r->authperso_notice_onglet_num][$r->id_authperso][$r->notice_authperso_authority_num]['id']=$r->notice_authperso_authority_num;
-			$this->onglets_auth_list[$r->authperso_notice_onglet_num][$r->id_authperso][$r->notice_authperso_authority_num]['isbd']=$isbd;
-			$this->onglets_auth_list[$r->authperso_notice_onglet_num][$r->id_authperso][$r->notice_authperso_authority_num]['authperso_name']=$r->authperso_name;		
-			$authperso = $this->get_authperso_class($r->id_authperso);
-			$info_fields=$authperso->get_info_fields($r->notice_authperso_authority_num);
-			$this->auth_info[$r->notice_authperso_authority_num]['isbd']=$isbd;
-			$this->auth_info[$r->notice_authperso_authority_num]['info_fields']=$info_fields;		
-			$this->auth_info[$r->notice_authperso_authority_num]['authperso_id']=$authperso->id;		
+		if(pmb_mysql_num_rows($res)){
+			while(($r=pmb_mysql_fetch_object($res))) {
+				// get isbd ...
+			    $isbd = authperso::get_isbd($r->notice_authperso_authority_num);
+			    $authperso = $this->get_authperso_class($r->id_authperso);
+			    $info_fields=$authperso->get_info_fields($r->notice_authperso_authority_num);
+			    
+			    $this->auth_info[$r->notice_authperso_authority_num]= array( 
+			        'onglet_num' => $r->authperso_notice_onglet_num,
+			        'authperso_name' => translation::get_translated_text($r->id_authperso, 'authperso', 'authperso_name', $r->authperso_name),
+			        'infos_global' => $r->authperso_infos_global,
+			        'index_infos_global' => $r->authperso_index_infos_global,
+			        'isbd' => $isbd,
+			        'info_fields' => $info_fields,
+			        'authperso_id' => $authperso->id
+			    );
+				$this->onglets_auth_list[$r->authperso_notice_onglet_num][$r->id_authperso][$r->notice_authperso_authority_num]['id']=$r->notice_authperso_authority_num;
+				$this->onglets_auth_list[$r->authperso_notice_onglet_num][$r->id_authperso][$r->notice_authperso_authority_num]['isbd']=$isbd;
+				$this->onglets_auth_list[$r->authperso_notice_onglet_num][$r->id_authperso][$r->notice_authperso_authority_num]['authperso_name']=$r->authperso_name;		
+			}
+			pmb_mysql_free_result($res);
 		}
+		
 	}
 	
 	public function get_notice_display(){
 		global $base_path;
 		
 		$aff="";
-		foreach($this->onglets_auth_list as $onglet_num => $onglet){
+		foreach($this->onglets_auth_list as $onglet){
 			$authperso_name="";
-			foreach($onglet as $authperso_num => $auth_perso){
-				foreach($auth_perso as $auth_num => $auth){
+			foreach($onglet as $auth_perso){
+				foreach($auth_perso as $auth){
 					if($authperso_name!=$auth['authperso_name']){
 						$authperso_name=$auth['authperso_name'];
 						$aff.="<br><b>".$authperso_name."</b>&nbsp;: ";
@@ -72,12 +82,11 @@ class authperso_notice {
 	
 	public function get_notice_display_list(){
 		$aff_list=array();
-		foreach($this->onglets_auth_list as $onglet_num => $onglet){
-			$authperso_name="";
+		foreach($this->onglets_auth_list as $onglet){
 			foreach($onglet as $authperso_num => $auth_perso){
 				$aff_list[$authperso_num]['isbd']="";
 				$aff_list[$authperso_num]['name']="";
-				foreach($auth_perso as $auth_num => $auth){
+				foreach($auth_perso as $auth){
 					$aff_list[$authperso_num]['name']=$auth['authperso_name'];
 					if($aff_list[$authperso_num]['isbd'])$aff_list[$authperso_num]['isbd'].=", ";	
 					$aff_list[$authperso_num]['isbd'].=$auth['isbd'];
@@ -116,7 +125,7 @@ class authperso_notice {
 	}
 	
 	public function get_form(){
-		global $msg,$charset,$base_path;
+		global $msg,$charset;
 		
 		$onglet_all_tpl=" 				
 		<script>
@@ -314,7 +323,6 @@ class authperso_notice {
 		$this->onglets_info=$authpersos->get_onglet_list();
 		foreach($this->onglets_info as $onglet_num => $onglet){	
 			$onglet_contens="";
-			$last_elt = count($onglet) - 1;
 			foreach($onglet as $elt){
 				// Pour chaque type d'autorité dans l'onglet
 				//printr($elt);
@@ -425,7 +433,7 @@ class authperso_notice {
 					$auth_id=${$auth_id};					
 					if($auth_id){
 						$req="insert into notices_authperso set notice_authperso_notice_num=".$this->id.", notice_authperso_authority_num= $auth_id, notice_authperso_order=".$order;
-						$result = pmb_mysql_query($req);
+						pmb_mysql_query($req);
 						$order++;
 					}
 				}
@@ -438,7 +446,7 @@ class authperso_notice {
 					
 					if($auth_id){					
 						$req="insert into notices_authperso set notice_authperso_notice_num=".$this->id.", notice_authperso_authority_num= $auth_id, notice_authperso_order=".$order;
-						$result = pmb_mysql_query($req);	
+						pmb_mysql_query($req);	
 						$order++;
 					}
 				}

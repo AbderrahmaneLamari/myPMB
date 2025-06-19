@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_marc_list.class.php,v 1.4.2.1 2021/10/20 12:07:16 dgoron Exp $
+// $Id: selector_marc_list.class.php,v 1.6 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,20 +54,10 @@ class selector_marc_list extends selector {
 	}
 	
 	protected function get_display_list() {
-		global $nb_per_page;
-		global $page;
 		global $letter;
 		global $msg;
 		
-		$page = intval($page);
-		$nb_per_page = intval($nb_per_page);
-		
 		$display_list = '';
-		if(!$page) {
-			$debut = 0;
-		} else {
-			$debut = ($page-1)*$nb_per_page;
-		}
 		$marc_list_instance = $this->get_marc_list_instance();
 		if(isset($this->search)) {
 			$marc_list_instance = $this->filter_from_search($marc_list_instance);
@@ -113,7 +103,7 @@ class selector_marc_list extends selector {
 			else
 				$display_list .= "<strong><u>#</u></strong> ";
 		}
-		foreach($alphabet as $dummykey=>$char) {
+		foreach($alphabet as $char) {
 			$present = pmb_preg_grep("/^$char/i", $marc_list_instance->table);
 			if(sizeof($present) && strcasecmp($letter, $char))
 				$display_list .= "<a href='".static::get_base_url()."&letter=$char'>$char</a> ";
@@ -129,7 +119,7 @@ class selector_marc_list extends selector {
 		}
 		
 		$display_list .= "<div class='row'>";
-		foreach($display as $dummykey=>$link) {
+		foreach($display as $link) {
 			$display_list .= $link;
 		}
 		$display_list .= "</div>";

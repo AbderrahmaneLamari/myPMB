@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesTasks.class.php,v 1.20.8.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: pmbesTasks.class.php,v 1.21.4.3 2023/09/22 07:48:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,18 +10,6 @@ global $class_path;
 require_once($class_path."/external_services.class.php");
 
 class pmbesTasks extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 		
 	public function timeoutTasks() {
 		$requete = "select id_tache, param, start_at, num_type_tache FROM taches
@@ -49,42 +37,42 @@ class pmbesTasks extends external_services_api_class {
 		return array("response" => "OK");
 	}
 	
-	public function getOS() {
-		if (stripos($_SERVER['SERVER_SOFTWARE'], "win")!==false || stripos(PHP_OS, "win")!==false )
-		  $os = "Windows";
-		elseif (stripos($_SERVER['SERVER_SOFTWARE'], "mac")!==false || stripos(PHP_OS, "mac")!==false || stripos($_SERVER['SERVER_SOFTWARE'], "ppc")!==false || stripos(PHP_OS, "ppc")!==false )
-		  $os = "Mac";
-		elseif (stripos($_SERVER['SERVER_SOFTWARE'], "linux")!==false || stripos(PHP_OS, "linux")!==false )
-		  $os = "Linux";
-		elseif (stripos($_SERVER['SERVER_SOFTWARE'], "freebsd")!==false || stripos(PHP_OS, "freebsd")!==false )
-		  $os = "FreeBSD";
-		elseif (stripos($_SERVER['SERVER_SOFTWARE'], "sunos")!==false || stripos(PHP_OS, "sunos")!==false )
-		  $os = "SunOS";
-		elseif (stripos($_SERVER['SERVER_SOFTWARE'], "irix")!==false || stripos(PHP_OS, "irix")!==false )
-		  $os = "IRIX";
-		elseif (stripos($_SERVER['SERVER_SOFTWARE'], "beos")!==false || stripos(PHP_OS, "beos")!==false )
-		  $os = "BeOS";
-		elseif (stripos($_SERVER['SERVER_SOFTWARE'], "os/2")!==false || stripos(PHP_OS, "os/2")!==false )
-		  $os = "OS/2";
-		elseif (stripos($_SERVER['SERVER_SOFTWARE'], "aix")!==false || stripos(PHP_OS, "aix")!==false )
-		  $os = "AIX";
+	public static function getOS() {
+		if ((!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "win")!==false) || stripos(PHP_OS, "win")!==false )
+			$os = "Windows";
+		elseif ((!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "mac")!==false) || stripos(PHP_OS, "mac")!==false || (!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "ppc")!==false) || stripos(PHP_OS, "ppc")!==false )
+			$os = "Mac";
+		elseif ((!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "linux")!==false) || stripos(PHP_OS, "linux")!==false )
+			$os = "Linux";
+		elseif ((!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "freebsd")!==false) || stripos(PHP_OS, "freebsd")!==false )
+			$os = "FreeBSD";
+		elseif ((!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "sunos")!==false) || stripos(PHP_OS, "sunos")!==false )
+			$os = "SunOS";
+		elseif ((!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "irix")!==false) || stripos(PHP_OS, "irix")!==false )
+			$os = "IRIX";
+		elseif ((!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "beos")!==false) || stripos(PHP_OS, "beos")!==false )
+			$os = "BeOS";
+		elseif ((!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "os/2")!==false) || stripos(PHP_OS, "os/2")!==false )
+			$os = "OS/2";
+		elseif ((!empty($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], "aix")!==false) || stripos(PHP_OS, "aix")!==false )
+			$os = "AIX";
 		else
-		  $os = "Autre";
-		  
+			$os = "Autre";
+		
 		return $os;
 	}
 	
 	/*Vérifie les processus actifs*/
 	public function checkTasks() {
-		global $charset;
-		
 		//Récupération de l'OS pour la vérification des processus
-		$os = $this->getOS();
-		
-		$sql = "SELECT id_tache, start_at, id_process FROM taches WHERE id_process <> 0";
-		$res = pmb_mysql_query($sql);
-		if ($res && pmb_mysql_num_rows($res)) {
-			while ($row = pmb_mysql_fetch_assoc($res)) {
+		$os = static::getOS();
+		$query = "SELECT id_tache, start_at, id_process, num_type_tache 
+                FROM taches 
+                JOIN planificateur ON num_planificateur = id_planificateur 
+                WHERE id_process <> 0";
+		$result = pmb_mysql_query($query);
+		if ($result && pmb_mysql_num_rows($result)) {
+			while ($row = pmb_mysql_fetch_assoc($result)) {
 				if ($os == "Linux") {
 					$command = 'ps -p '.$row['id_process'];
 				} else if ($os == "Windows") {
@@ -100,6 +88,9 @@ class pmbesTasks extends external_services_api_class {
 	        		$scheduler_task = new scheduler_task($row["id_tache"]);
 	        		// 5 = STOPPED
 	        		$scheduler_task->send_command(5);
+	        		//la tâche s'est arrêtée involontairement / pour du debug si besoin
+	        		//scheduler_log::add_content('scheduler_'.scheduler_tasks::get_catalog_element($row->num_type_tache, 'NAME').'_task_'.$row->id_tache.'.log', 'The task stopped unintentionally');
+	        		
 	        		//En fonction du paramétrage de la tâche...
 	        		//Replanifier / Envoi de mail
 	        		if($scheduler_task->is_param_active('alert_mail_on_failure')) {
@@ -112,68 +103,70 @@ class pmbesTasks extends external_services_api_class {
 			}
 		}
 	}
-		
+	
 	/*Vérifie si une ou plusieurs tâches doivent être exécutées et lance celles-ci*/
 	public function runTasks($connectors_out_source_id) {
-		global $base_path;
-		global $pmb_path_php,$pmb_psexec_cmd;
+		$connectors_out_source_id = intval($connectors_out_source_id);
 		
 		//Récupération de l'OS sur lequel est exécuté la tâche
-		$os = $this->getOS();
-
-		//Y-a t-il une ou plusieurs tâches à exécuter...
-		$sql = "SELECT id_planificateur, p.num_type_tache, p.libelle_tache, p.num_user, t.id_tache FROM planificateur p, taches t
-			WHERE t.num_planificateur = p.id_planificateur
-			And t.start_at='0000-00-00 00:00:00'
-			And t.status=1
-			And p.calc_next_date_deb <> '0000-00-00'
-			And (p.calc_next_date_deb < '".date('Y-m-d')."'
-			Or p.calc_next_date_deb = '".date('Y-m-d')."' 
-			And p.calc_next_heure_deb <= '".date('H:i')."')
-			";
-		$res = pmb_mysql_query($sql);
-		while ($row = pmb_mysql_fetch_assoc($res)) {
-			$output=array();
-			if ($os == "Linux") {
-				exec("nohup $pmb_path_php  $base_path/admin/planificateur/run_task.php ".$row["id_tache"]." ".$row["num_type_tache"]." ".$row["id_planificateur"]." ".$row["num_user"]." ".$connectors_out_source_id." ".LOCATION." > /dev/null 2>&1 & echo $!", $output);
-			} else if ($os == "Windows") {//L'utilitaire PsExec fait partie de PSTools et doit au préalable être installé sur le serveur avec l'ajout du dossier dans le PATH des variables d'environnements.
-				if ($pmb_psexec_cmd) {
-					$psexec_cmd = $pmb_psexec_cmd;
-				} else {
-					$psexec_cmd = 'psexec -d';
-				}
-				exec("$psexec_cmd $pmb_path_php $base_path/admin/planificateur/run_task.php ".$row["id_tache"]." ".$row["num_type_tache"]." ".$row["id_planificateur"]." ".$row["num_user"]." ".$connectors_out_source_id." ".LOCATION." 2>&1 ",$output);
-				if((count($output) > 5) && preg_match('/ID (\d+)/', $output[5], $matches)){
-					$output[0]=$matches[1];
-				}
-			} else if ($os == "Mac") {
-				exec("nohup $pmb_path_php  $base_path/admin/planificateur/run_task.php ".$row["id_tache"]." ".$row["num_type_tache"]." ".$row["id_planificateur"]." ".$row["num_user"]." ".$connectors_out_source_id." ".LOCATION." > /dev/null 2>&1 & echo $!", $output);
-			} else {
-				exec("nohup $pmb_path_php  $base_path/admin/planificateur/run_task.php ".$row["id_tache"]." ".$row["num_type_tache"]." ".$row["id_planificateur"]." ".$row["num_user"]." ".$connectors_out_source_id." ".LOCATION." > /dev/null 2>&1 & echo $!", $output);
+		$os = static::getOS();
+		
+		//A-t-on demandé l'annulation d'une tâche ?
+		$query = "SELECT id_tache FROM taches 
+			JOIN planificateur ON id_planificateur = num_planificateur 
+			WHERE id_process = 0 AND commande = 5";
+		$result = pmb_mysql_query($query);
+		if ($result && pmb_mysql_num_rows($result)) {
+			while ($row = pmb_mysql_fetch_assoc($result)) {
+				$scheduler_task = new scheduler_task($row["id_tache"]);
+				$scheduler_task->cancellation();
 			}
-			$id_process = (int)$output[0];
-			
-			$update_process = "update taches set id_process='".$id_process."' where id_tache='".$row["id_tache"]."'";		
-			pmb_mysql_query($update_process);
+		}
+		
+		//A-t-on essayé une reprise de tâche ?
+		$query = "SELECT id_tache FROM taches 
+			JOIN planificateur ON id_planificateur = num_planificateur 
+			WHERE id_process = 0 AND commande = 1";
+		$result = pmb_mysql_query($query);
+		if ($result && pmb_mysql_num_rows($result)) {
+			while ($row = pmb_mysql_fetch_assoc($result)) {
+				$scheduler_task = new scheduler_task($row["id_tache"]);
+				$scheduler_task->recovery();
+				$scheduler_task->set_connectors_out_source_id($connectors_out_source_id);
+				$scheduler_task->set_operating_system($os);
+				$scheduler_task->run();
+			}
+		}
+		
+		//Y-a t-il une ou plusieurs tâches à exécuter...
+		$query = "SELECT id_tache FROM taches 
+			JOIN planificateur ON num_planificateur = id_planificateur
+			WHERE start_at='0000-00-00 00:00:00'
+			AND status=1
+			AND calc_next_date_deb <> '0000-00-00'
+			AND (calc_next_date_deb < '".date('Y-m-d')."' OR calc_next_date_deb = '".date('Y-m-d')."' AND calc_next_heure_deb <= '".date('H:i')."')";
+		$result = pmb_mysql_query($query);
+		while ($row = pmb_mysql_fetch_assoc($result)) {
+			$scheduler_task = new scheduler_task($row["id_tache"]);
+			$scheduler_task->set_connectors_out_source_id($connectors_out_source_id);
+			$scheduler_task->set_operating_system($os);
+			$scheduler_task->run();
 		}
 	}
 	
 	/*Retourne la liste des tâches réalisées et planifiées
 	 */
 	public function listTasksPlanned() {
-		$result = array();
-		
-		$sql = "SELECT t.id_tache, p.libelle_tache, p.desc_tache,";
-		$sql .= "t.start_at, t.end_at, t.indicat_progress, t.status";
-		$sql .= "FROM taches t, planificateur p WHERE t.num_planificateur=p.id_planificateur"; 
-			
-		$res = pmb_mysql_query($sql);
-		if ($res) {
-			while($row = pmb_mysql_fetch_assoc($res)) {
-				$result[] = array (
+		$list = array();
+		$query = "SELECT id_tache, libelle_tache, desc_tache, start_at, end_at, indicat_progress, status
+			FROM taches JOIN planificateur ON num_planificateur = id_planificateur"; 
+		$result = pmb_mysql_query($query);
+		if ($result) {
+			while($row = pmb_mysql_fetch_assoc($result)) {
+				$list[] = array (
 						"id_tache" => $row["id_tache"],
-						"libelle_tache" => utf8_normalize($row["libelle_tache"]),
-						"desc_tache" => utf8_normalize($row["desc_tache"]),
+						"libelle_tache" => encoding_normalize::utf8_normalize($row["libelle_tache"]),
+						"desc_tache" => encoding_normalize::utf8_normalize($row["desc_tache"]),
 						"start_at" => $row["start_at"],
 						"end_at" => $row["end_at"],
 						"indicat_progress" => $row["indicat_progress"],
@@ -181,7 +174,7 @@ class pmbesTasks extends external_services_api_class {
 				);
 			}
 		}
-		return $result;
+		return $list;
 	}
 	
 	/*Retourne les types de tâches*/
@@ -211,7 +204,7 @@ class pmbesTasks extends external_services_api_class {
 	public function getInfoTaskPlanned($planificateur_id, $active="") {
 		$result = array();
 
-		$planificateur_id += 0;
+		$planificateur_id = intval($planificateur_id);
 		if (!$planificateur_id)
 			throw new Exception("Missing parameter: planificateur_id");
 
@@ -231,12 +224,12 @@ class pmbesTasks extends external_services_api_class {
 			$result[] = array(
 				"id_planificateur" => $row["id_planificateur"],
 				"num_type_tache" => $row["num_type_tache"],
-				"libelle_tache" => utf8_normalize($row["libelle_tache"]),
-				"desc_tache" => utf8_normalize($row["desc_tache"]),
+				"libelle_tache" => encoding_normalize::utf8_normalize($row["libelle_tache"]),
+				"desc_tache" => encoding_normalize::utf8_normalize($row["desc_tache"]),
 				"num_user" => $row["num_user"],
 				"statut" => $row["statut"],
-				"calc_next_date_deb" => utf8_normalize($row["calc_next_date_deb"]),
-				"calc_next_heure_deb" => utf8_normalize($row["calc_next_heure_deb"]),
+				"calc_next_date_deb" => encoding_normalize::utf8_normalize($row["calc_next_date_deb"]),
+				"calc_next_heure_deb" => encoding_normalize::utf8_normalize($row["calc_next_heure_deb"]),
 			);
 		}		
 		return $result;
@@ -245,6 +238,8 @@ class pmbesTasks extends external_services_api_class {
 	public function createNewTask($id_tache, $id_type_tache, $id_planificateur) {
 		global $base_path;
 	
+		$id_tache = intval($id_tache);
+		$id_planificateur = intval($id_planificateur);
 		if (!$id_tache)
 			throw new Exception("Missing parameter: id_tache");
 	
@@ -269,16 +264,14 @@ class pmbesTasks extends external_services_api_class {
 	 */
 	public function changeStatut($id_planificateur,$activation='') {
 		$id_planificateur = intval($id_planificateur);
-		if (!$id_planificateur)
+		if (!$id_planificateur) {
 			throw new Exception("Missing parameter: id_planificateur");
-			
-		$sql = "select statut from planificateur where id_planificateur=".$id_planificateur;
-		$res = pmb_mysql_query($sql);
-		
-		if (pmb_mysql_num_rows($res) == "1") {
-			$statut_sql = pmb_mysql_result($res, 0,"statut");
-			if ((($statut_sql == "0") && ($activation == "1")) ||
-				(($statut_sql == "1") && ($activation == "0"))) {
+		}
+		$query = "select statut from planificateur where id_planificateur=".$id_planificateur;
+		$result = pmb_mysql_query($query);
+		if (pmb_mysql_num_rows($result)) {
+			$statut = intval(pmb_mysql_result($result, 0,"statut"));
+			if (($statut == 0 && $activation == 1) || ($statut == 1 && $activation == 0)) {
 				$sql_update = "update planificateur set statut=".$activation." where id_planificateur=".$id_planificateur;
 				pmb_mysql_query($sql_update);
 				return true;
@@ -290,5 +283,3 @@ class pmbesTasks extends external_services_api_class {
 		}
 	}
 }
-
-?>

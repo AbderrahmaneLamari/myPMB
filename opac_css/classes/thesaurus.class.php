@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: thesaurus.class.php,v 1.18.8.1 2021/11/30 09:27:45 dgoron Exp $
+// $Id: thesaurus.class.php,v 1.19.4.1 2023/10/27 08:59:57 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,6 +22,9 @@ class thesaurus {
 	public $num_noeud_orphelins = 0; 			// Index Noeud orphelins du thesaurus
 	public $num_noeud_nonclasses = 0; 			// Index Noeud nonclasses du thesaurus 
 	 
+	protected static $fullThesaurusList = null;
+    protected static $thesaurusList = null;
+
 	private static $instances =array();
 	
 	// Constructeur.
@@ -277,23 +280,89 @@ class thesaurus {
 		} 
 	}
 	
-	//retourne la liste des thesaurus dans un tableau associé id_thesaurus=>libelle_thesaurus
-	public static function getThesaurusList($restrict=""){
-		$list_thes = array();
-		if ($restrict) 
-			$whereplus = " and id_thesaurus in ($restrict) ";
-		else 
-			$whereplus = "";
-		$q = "select id_thesaurus, libelle_thesaurus from thesaurus where opac_active=1 $whereplus ORDER BY libelle_thesaurus";
+
+	/**
+	 *  Retourne une liste des thesaurus et de leur propriétés
+	 *
+	 * @return [
+	 *     id_thesaurus => [
+	 *         id_thesaurus        => 'Identifiant thesaurus',
+	 *         libelle_thesaurus   => 'Nom du Thesaurus',
+	 *         langue_defaut       => 'Langue par defaut (fr_FR, ...)',
+	 *         active              => 'Active (O/1)',
+	 *         opac_active         => 'Active en OPAC (O/1)',
+	 *         num_noeud_racine    => 'Identifiant noeud racine',
+	 *         thesaurus_order     => 'Ordre d'affichage',
+	 *     ]
+	 * ]
+	 */
+	public static function getFullThesaurusList()
+	{
+	    if(!is_null(static::$fullThesaurusList)) {
+	        return static::$fullThesaurusList;
+	    }
+	    static::$fullThesaurusList = [];
+	    $q = "select * from thesaurus";
 		$r = pmb_mysql_query($q);
-		while ($row = @pmb_mysql_fetch_object($r)){
-			$list_thes[$row->id_thesaurus] = translation::get_text($row->id_thesaurus, 'thesaurus', 'libelle_thesaurus', $row->libelle_thesaurus);
+	    if(!pmb_mysql_num_rows($r)) {
+	        return static::$fullThesaurusList = [];
+	    }
+	    while ($row = pmb_mysql_fetch_assoc($r)){
+	        static::$fullThesaurusList[$row['id_thesaurus']] = $row;
+	    }
+	    return static::$fullThesaurusList;
+	}
+
+
+	//
+	/**
+	 * Retourne une liste simplifiee des thesaurus actif triee par libelle
+	 *
+	 * @param string $restrict : liste d'id de thesaurus separes par une virgule
+	 *
+	 * @return [
+	 *     id_thesaurus => 'libelle_thesaurus'
+	 * ]
+	 */
+	public static function getThesaurusList($restrict="")
+	{
+        if( is_null(static::$thesaurusList) ) {
+            static::getFullThesaurusList();
+            // Limitation aux thesaurus actifs en OPAC
+            foreach(static::$fullThesaurusList as $k => $v) {
+                if( 1 == $v['opac_active'] ) {
+                    static::$thesaurusList[$k] = $v['libelle_thesaurus'];
+                }
+            }
+        }
+
+        $restrict = preg_replace("/[^0-9|,]/", "", $restrict);
+        $restrict = !empty($restrict) ? explode(',', $restrict) : [];
+
+        // Restriction aux thesaurus definis en parametres
+        $thesaurusList = [];
+        if( empty($restrict) ) {
+            $thesaurusList = static::$thesaurusList;
+        } else {
+            foreach( $restrict as $v ) {
+                if( !empty(static::$thesaurusList[$v]) ) {
+                    $thesaurusList[$v] = static::$thesaurusList[$v];
+                }
+            }
+        }
+
+        // Traduction
+        foreach ($thesaurusList as $k => $v) {
+            $thesaurusList[$k] = translation::get_text($k, 'thesaurus', 'libelle_thesaurus', $v);
 		}
-		return $list_thes;
+
+        // Tri alpha
+        asort($thesaurusList, SORT_STRING);
+
+        return $thesaurusList;
 	}
 	
 	public function get_translated_libelle_thesaurus() {
 		return translation::get_text($this->id_thesaurus, 'thesaurus', 'libelle_thesaurus',  $this->libelle_thesaurus);
 	}
 }
-?>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_translations_ui.class.php,v 1.9.2.2 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_translations_ui.class.php,v 1.12 2022/10/06 11:57:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -294,22 +294,8 @@ class list_translations_ui extends list_ui {
 		return $this->get_search_filter_multiple_selection('', 'classifications', $msg['all'], $options);
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['translation_to']) {
-			$filters [] = 'trans_lang  = "'.$this->filters['translation_to'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('translation_to', 'trans_lang');
 	}
 	
 	protected function _get_query_human_is_translated() {

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: move.js,v 1.43 2021/06/10 11:33:32 dgoron Exp $
+// $Id: move.js,v 1.44 2022/04/20 14:56:46 dgoron Exp $
 
 if (typeof(grid_type) == "undefined") {
 	grid_type = 'records';
@@ -644,7 +644,11 @@ function get_pos(def) {
 			var empr_grille_categ=document.getElementById('form_categ');
 			empr_grille_categ.setAttribute('onchange','get_pos();');
 			var empr_grille_location=document.getElementById('empr_location_id');
-			empr_grille_location.setAttribute('onchange','get_pos();');
+			if(typeof calculate_type_abts != 'undefined') {
+				empr_grille_location.setAttribute('onchange','get_pos();calculate_type_abts(this);');
+			} else {
+				empr_grille_location.setAttribute('onchange','get_pos();');
+			}
 			var url = "./ajax.php?module=circ&categ=empr&sub=get_empr_grille";
 		}
 		var post_params = "&empr_grille_categ="+empr_grille_categ.value+"&empr_grille_location="+empr_grille_location.value;

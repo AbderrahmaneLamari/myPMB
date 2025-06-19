@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_rss_ui.class.php,v 1.12.2.2 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_rss_ui.class.php,v 1.16.2.2 2023/09/29 07:24:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -71,30 +71,17 @@ class list_rss_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-		
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'id':
-					$order .= 'id_rss_flux';
-					break;
-				case 'name' :
-					$order .= $sort_by;
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}	
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'id':
+	            return 'id_rss_flux';
+	        case 'name' :
+	            return $sort_by;
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	protected function get_form_title() {
@@ -132,27 +119,13 @@ class list_rss_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_nom_rss_flux() {
-		global $msg, $charset;
-	
-		return "<input class='saisie-30em' id='".$this->objects_type."_name' type='text' name='".$this->objects_type."_nom_rss_flux' value=\"".htmlentities($this->filters['nom_rss_flux'], ENT_QUOTES, $charset)."\" title='".$msg['3000']."' />";
+		return $this->get_search_filter_simple_text('nom_rss_flux');
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+	protected function _add_query_filters() {
 		if($this->filters['nom_rss_flux']) {
-			$filters [] = 'nom_rss_flux like "%'.str_replace("*", "%", $this->filters['nom_rss_flux']).'%"';
+			$this->query_filters [] = 'nom_rss_flux like "%'.str_replace("*", "%", $this->filters['nom_rss_flux']).'%"';
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	protected function get_cell_content($object, $property) {
@@ -170,7 +143,7 @@ class list_rss_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		switch($property) {
 			case 'permalink':
@@ -179,8 +152,6 @@ class list_rss_ui extends list_ui {
 				$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=view&suite=acces&id_rss_flux=".$object->id_rss_flux."\"";
 				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 }

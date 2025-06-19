@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_connecteurs_out_auth_ui.class.php,v 1.4 2021/04/19 07:10:15 dgoron Exp $
+// $Id: list_configuration_connecteurs_out_auth_ui.class.php,v 1.5.4.1 2023/04/07 09:41:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -24,7 +24,7 @@ class list_configuration_connecteurs_out_auth_ui extends list_configuration_conn
 		$anonymous_count = pmb_mysql_result(pmb_mysql_query($sql), 0, 0);
 		$this->add_object((object) array(
 				'esgroup_id' => 0,
-				'esgroup_name' => "&lt;".$msg["admin_connecteurs_outauth_anonymgroupname"]."&gt;",
+				'esgroup_name' => "<".$msg["admin_connecteurs_outauth_anonymgroupname"].">",
 				'esgroup_fullname' => $msg["admin_connecteurs_outauth_anonymgroupfullname"],
 				'connecteurs' => $anonymous_count)
 		);
@@ -42,17 +42,8 @@ class list_configuration_connecteurs_out_auth_ui extends list_configuration_conn
 	    $this->add_applied_sort('esgroup_name');
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		$filters[] = 'esgroup_id <> -1';
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->query_filters [] = 'esgroup_id <> -1';
 	}
 	
 	protected function get_main_fields_from_sub() {

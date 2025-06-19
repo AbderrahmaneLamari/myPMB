@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: quick_access.class.php,v 1.3 2021/03/11 15:39:26 btafforeau Exp $
+// $Id: quick_access.class.php,v 1.5.2.1 2023/03/29 12:37:45 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -57,8 +57,12 @@ class quick_access {
 			$selector .= "<option value='empr.php?tab=pnb&lvl=pnb_devices' class='empr_quick_access_pnb'>" . $msg['empr_menu_pnb']. "</option>";
 		}
 		if ($animations_active) {
-		    $selector .= "<option value='empr.php?tab=animations&lvl=animations_list' class='empr_quick_access_animations'>" . $msg['empr_menu_animations'] . "</option>";
+	       $selector .= "<option value='empr.php?tab=animations&lvl=animations_list' class='empr_quick_access_animations'>" . $msg['empr_menu_animations'] . "</option>";
 		}
+		
+		// En cour de Dev
+	    // $selector .= "<option value='empr.php?tab=payments&lvl=payments_list' class='empr_quick_access_payment'>" . $msg['empr_menu_payment'] . "</option>";
+	    
 		if($opac_quick_access_logout){			
 			$selector .= "<option value='index.php?logout=1'>".$msg["empr_logout"]."</option>";
 		}

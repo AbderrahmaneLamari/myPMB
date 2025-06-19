@@ -2,9 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc.inc.php,v 1.239.2.7 2022/01/10 11:27:49 dgoron Exp $
+// $Id: misc.inc.php,v 1.262.2.4 2023/09/21 10:20:15 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+use Pmb\Common\Library\CSRF\ParserCSRF;
+use Pmb\Common\Library\CSRF\CollectionCSRF;
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 global $class_path, $include_path;
 require_once "$include_path/apache_functions.inc.php";
@@ -16,9 +20,19 @@ if (!function_exists('is_countable')) {
 	}
 }
 
+function isimage_cache_white_pixel($hash_location) {
+	global $base_path;
+	
+	$image = file_get_contents($hash_location);
+	if(file_get_contents($base_path.'/images/white_pixel.jpg') == $image || file_get_contents($base_path.'/images/white_pixel_2x2.png') == $image) {
+		return true;
+	}
+	return false;
+}
+
 //Fonction pour gérer les images demandés par PMB
-function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0, $noticecode=0, $url_image=0, $empr_pic=0, $cached_in_opac = 0, $docnum_id = 0){
-    global $pmb_notice_img_folder_id, $pmb_authority_img_folder_id, $pmb_docnum_img_folder_id, $opac_url_base,$empr_pics_max_size;
+function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0, $noticecode=0, $url_image=0, $empr_pic=0, $cached_in_opac = 0){
+    global $pmb_notice_img_folder_id, $pmb_authority_img_folder_id, $opac_url_base,$empr_pics_max_size;
 
 	global $pmb_img_cache_folder, $opac_img_cache_folder;
 
@@ -41,9 +55,6 @@ function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0,
 	}elseif($authority_id){
 		$imgpmb_name="img_authority_".$authority_id;
 		$imgpmb_test=$pmb_authority_img_folder_id;
-	}elseif($docnum_id){
-	    $imgpmb_name="img_docnum_".$docnum_id;
-	    $imgpmb_test=$pmb_docnum_img_folder_id;
 	}
 
 	if(!$stop && $imgpmb_name && $imgpmb_test){
@@ -88,7 +99,7 @@ function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0,
 			$image_empty_rep_cache=$img_cache_folder.$hash_img_empty.".png";
 			if(file_exists($image_empty_rep_cache)){
 				$location = $image_empty_rep_cache;
-			}elseif(file_exists($image_rep_cache)){
+			}elseif(file_exists($image_rep_cache) && !isimage_cache_white_pixel($image_rep_cache)){
 				$location = $image_rep_cache;
 			}else{
 				//on teste l'existence de répertoire de cache pour éviter les erreurs et les liens cassés
@@ -105,9 +116,9 @@ function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0,
 }
 
 function getimage_url($code = "", $vigurl = "", $empr_pic = 0, $no_cache=false) {
-	global $opac_url_base, $opac_book_pics_url, $pmb_book_pics_url, $pmb_opac_url, $pmb_url_base, $prefix_url_image;
+    global $opac_url_base, $opac_book_pics_url, $pmb_show_book_pics, $pmb_book_pics_url, $pmb_opac_url, $pmb_url_base, $prefix_url_image;
 	global $pmb_img_cache_folder, $pmb_img_cache_url, $opac_img_cache_folder, $opac_img_cache_url;
-	global $use_opac_url_base;
+	global $use_opac_url_base, $no_use_img_cache;
 	
 	$url_return = $notice_id = $etagere_id = $authority_id = $noticecode = $url_image = "" ;
 
@@ -133,6 +144,16 @@ function getimage_url($code = "", $vigurl = "", $empr_pic = 0, $no_cache=false) 
 	}
 
 	if($code){
+	    if ($pmb_show_book_pics && !$empr_pic) {
+    	    $notice_id = notice::get_notice_id_from_cb($code);
+    	    if ($notice_id) {
+    	        $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+        	    $url = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $notice_id);
+        	    if ($url) {
+        	        return $url;
+        	    }
+    	    }
+    	}
 		$noticecode = pmb_preg_replace('/-|\.| /', '', $code);
 	}else{
 		$noticecode = "";
@@ -194,7 +215,7 @@ function getimage_url($code = "", $vigurl = "", $empr_pic = 0, $no_cache=false) 
 		if(isset($empr_pic) && $empr_pic){
 			$url_return .="&empr_pic=1";
 		}
-		if(!empty($use_opac_url_base)){
+		if(!empty($no_use_img_cache)){
 			$url_return .="&no_caching=1";
 		}
 		$url_return = str_replace("!!noticecode!!", $noticecode, $url_return) ;
@@ -204,25 +225,25 @@ function getimage_url($code = "", $vigurl = "", $empr_pic = 0, $no_cache=false) 
 
 //Fonction de récupération d'une URL vignette
 function get_vignette($notice_id, $no_cache=false, $from_export=false) {
-	global $opac_book_pics_url, $opac_show_book_pics;
+	global $opac_show_book_pics;
 	global $opac_url_base;
+	global $use_opac_url_base;
 
 	$requete="select code,thumbnail_url from notices where notice_id=$notice_id";
 	$res=pmb_mysql_query($requete);
 
-	$url_image_ok=$opac_url_base."images/vide.png";
-
-	if ($res) {
-		$notice=pmb_mysql_fetch_object($res);
-		if ($from_export && $notice->thumbnail_url) {
-			return $notice->thumbnail_url;
-		} elseif ($notice->code || $notice->thumbnail_url) {
-			if ($opac_show_book_pics && ($opac_book_pics_url || $notice->thumbnail_url)) {
-				$url_image_ok = getimage_url($notice->code, $notice->thumbnail_url, 0, $no_cache);
-			}
-		} else {
-		    $url_image_ok = get_url_icon("no_image", true);
-		}
+	if ($from_export) {
+		$url_image_ok="";
+	} else {
+		$url_image_ok=$opac_url_base."images/vide.png";
+	}
+	if (pmb_mysql_num_rows($res)) {
+	    if ($opac_show_book_pics) {
+	    	//Necessaire pour bien afficher les vignettes de l'OPAC
+			$use_opac_url_base = 1;
+            $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+            $url_image_ok = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $notice_id);
+	    }
 	}
 	return $url_image_ok;
 }
@@ -323,6 +344,7 @@ function get_empty_words($lg = 0) {
 			while($row = pmb_mysql_fetch_object($result)) {
 				$mots[] = convert_diacrit($row->mot);
 			}
+			pmb_mysql_free_result($result);
 			$got_empty_word[$lg] = array_diff($got_empty_word[$lg], $mots);
 		}
 	}
@@ -533,10 +555,12 @@ function detectFormatDate($date_a_convertir,$compl="01", $date_flot = false){
         //cas particulier des intervalles
         //on ne tien compte de que la 1ère date 
         $date = detectFormatDate($matches[1]);
-    }else if(preg_match("#(\d{4}-\d{2}-\d{2})#",$date_a_convertir, $matches)){
-        $date = $matches[0];
-    }else if(preg_match("#(\d{4}.\d{2}.\d{2})#",$date_a_convertir, $matches)){
-        $date = str_replace('.', '-', $matches[0]);
+    }else if(preg_match("#(\d{4})[-/\.](\d{2})[-/\.](\d{2})#",$date_a_convertir, $matches)){
+        try{
+            $date = $matches[1]."-".$matches[2]."-".$matches[3];
+        }catch(Exception $e){
+            $date = "0000-00-00";
+        }
     }else if(preg_match("#(\d{1,2})[-/\.](\d{2})[-/\.](\d{4})#",$date_a_convertir, $matches)){
         try{
             $tmp_date = new DateTime($matches[1]."-".$matches[2]."-".$matches[3]);
@@ -1676,6 +1700,12 @@ function console_log($msg_to_log){
 	print "<script type='text/javascript'>if(typeof console != 'undefined') {console.log('".addslashes($msg_to_log)."');}</script>";
 }
 
+function parseHTML($buffer){
+	$htmlparser=new parse_format("inhtml.inc.php");
+	$htmlparser->cmd = $buffer;
+	return $htmlparser->exec_cmd(true);
+}
+
 function clean_string_to_base($string){
 	return str_replace(" ","_",strip_empty_chars($string));
 }
@@ -1879,17 +1909,18 @@ function get_upload_max_filesize(){
 	return $upload_max_filesize;
 }
 
-function get_url_icon($icon, $use_opac_url_base=0) {
+function get_url_icon($icon, $force_opac_url_base=0) {
     global $base_path;
     global $opac_url_base;
     global $stylesheet;
     global $opac_default_style;
+    global $use_opac_url_base;
     
     $result = "";
     $tmp_base = $base_path;
     $tmp_stylesheet = $stylesheet;
     //gestion des url OPAC
-    if($use_opac_url_base) {
+    if($force_opac_url_base || !empty($use_opac_url_base)) {
         $url_base = $opac_url_base;
         $base_path .= "/opac_css";
         $stylesheet = $opac_default_style;
@@ -1941,28 +1972,37 @@ function search_url_icon_type($icon) {
 	return '';
 }
 
-function gen_where_in($field, $elts, &$table_tempo_name=''){
+function gen_temporary_table_where_in($elts, $table_name=''){
 	global $memo_tempo_table_to_rebuild;
-
+	
 	if(!isset($memo_tempo_table_to_rebuild)) $memo_tempo_table_to_rebuild = array();
-
+	
 	if(!is_array($elts)) {
 		$elts = str_replace("'", '', $elts);
 		$elts = str_replace('"', '', $elts);
 		$elts = explode(',', $elts);
 	}
 	if(!count($elts)) $elts = array();
-	if(!$table_tempo_name) $table_tempo_name = 'where_in_table'.md5(uniqid("",true));
+	if(!$table_name) $table_name = 'where_in_table'.md5(uniqid("",true));
 	$field_id = 'where_in_id';
-
-	$rqt = 'create temporary table IF NOT EXISTS '.$table_tempo_name.' ('.$field_id.' int, index using btree('.$field_id.')) engine=memory ';
+	
+	$rqt = 'create temporary table IF NOT EXISTS '.$table_name.' ('.$field_id.' int, index using btree('.$field_id.')) engine=memory ';
 	pmb_mysql_query($rqt);
 	$memo_tempo_table_to_rebuild[] = $rqt;
 	if(count($elts)) {
-		$rqt = 'INSERT INTO '.$table_tempo_name.' ('.$field_id.') VALUES ('.implode('),(',$elts).')';
+		$rqt = 'INSERT INTO '.$table_name.' ('.$field_id.') VALUES ('.implode('),(',$elts).')';
 		$memo_tempo_table_to_rebuild[] = $rqt;
 		pmb_mysql_query($rqt);
 	}
+	return $table_name;
+}
+
+function gen_where_in($field, $elts, &$table_tempo_name=''){
+
+	if(!$table_tempo_name) $table_tempo_name = 'where_in_table'.md5(uniqid("",true));
+	$field_id = 'where_in_id';
+
+	$table_tempo_name = gen_temporary_table_where_in($elts, $table_tempo_name);
 	$field_id = $table_tempo_name.'.'.$field_id;
 	return ' join '.$table_tempo_name.' on '.$field.'='.$field_id.' ';
 }
@@ -2409,4 +2449,46 @@ function check_sphinx_service() {
         return $msg['notification_sphinx_service_off'];
     }
     return '';
+}
+
+/**
+ * Tester la validité d'un email
+ *
+ * @param string $mail
+ * @return boolean
+ */
+function is_valid_mail($mail){
+	/**
+	 * Exemple :
+	 *
+	 * Valide mail :
+	 * 	mail@email.my-website.co.us
+	 * 	mail@127.0.0.1
+	 * 	mail@i.ua
+	 *
+	 * Invalide mail :
+	 * 	mail@my-website.com:7777
+	 * 	%@mail.com
+	 * 	'@mail.com
+	 * 	"............"@mail.com
+	 */
+	$regex = "/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@[0-9a-z]([a-z0-9\-_\.]+)*[0-9a-z]$/";
+	return pmb_preg_match($regex, $mail);
+}
+
+/**
+ *
+ * @param string $redirect
+ * @return boolean
+ */
+function verify_csrf(string $redirect = "") {
+    global $csrf_token, $pmb_url_base;
+    return (new CollectionCSRF())->valideToken($csrf_token ?? "", $redirect, $pmb_url_base);
+}
+
+function html_builder() {
+    $html = ob_get_contents();
+    ob_end_clean();
+    $parserCSRF = new ParserCSRF();
+    print $parserCSRF->parseHTML($html);
 }

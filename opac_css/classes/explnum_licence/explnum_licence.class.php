@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum_licence.class.php,v 1.6.6.1 2022/01/19 11:46:43 dgoron Exp $
+// $Id: explnum_licence.class.php,v 1.7 2022/01/19 11:44:39 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

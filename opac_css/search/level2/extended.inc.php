@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: extended.inc.php,v 1.126.2.1 2021/09/13 14:25:53 qvarin Exp $
+// $Id: extended.inc.php,v 1.130.2.2 2023/12/08 15:19:38 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -86,11 +86,16 @@ if(!$opac_allow_affiliate_search || ($opac_allow_affiliate_search && $tab == "ca
 	}
 	
 	if($count){
-		if(isset($_SESSION["last_sortnotices"]) && $_SESSION["last_sortnotices"]!==""){
-			$notices = $searcher->get_sorted_result($_SESSION["last_sortnotices"],$debut,$opac_search_results_per_page);	
-		}else{
-			$notices = $searcher->get_sorted_result("default",$debut,$opac_search_results_per_page);	
-		}
+	    global $nb_per_page_custom;
+	    if (!$nb_per_page_custom) {
+	        $nb_per_page_custom = $opac_search_results_per_page;
+	    }
+	    
+	    if(isset($_SESSION["last_sortnotices"]) && $_SESSION["last_sortnotices"]!==""){
+	        $notices = $searcher->get_sorted_result($_SESSION["last_sortnotices"],$debut,$nb_per_page_custom);
+	    }else{
+	        $notices = $searcher->get_sorted_result("default",$debut,$nb_per_page_custom);
+	    }
 		if (count($notices)) {
 			$_SESSION['tab_result_current_page'] = implode(",", $notices);
 		} else {
@@ -99,7 +104,8 @@ if(!$opac_allow_affiliate_search || ($opac_allow_affiliate_search && $tab == "ca
 	}
 	$sr_form .= pmb_bidi("<h3 class='searchResult-search'><span class='searchResult-equation'><span class='search-found'>$count $msg[titles_found]</span> ".$lib_recherche."</span></h3>");
 	
-	$sr_form .= "</div><div id=\"resultatrech_liste\">";
+	//$sr_form .= "</div><div id=\"resultatrech_liste\">";
+	$sr_form .= "<div id=\"resultatrech_liste\">";
 	
 	// pour la DSI - création d'une alerte
 	if ($opac_allow_bannette_priv && $allow_dsi_priv && ((isset($_SESSION['abon_cree_bannette_priv']) && $_SESSION['abon_cree_bannette_priv']==1) || $opac_allow_bannette_priv==2)) {
@@ -286,23 +292,32 @@ if(!$opac_allow_affiliate_search || ($opac_allow_affiliate_search && $tab == "ca
 		}
 	}
 	
-	if($filtre_compare=='compare'){
-		$sr_form.="<div id='navbar'><hr></div>";
-	}elseif($count){
-		if(!$opac_allow_affiliate_search){
-			$url_page = "javascript:document.form_values.page.value=!!page!!; document.form_values.submit()";
-			$nb_per_page_custom_url = "javascript:document.form_values.nb_per_page_custom.value=!!nb_per_page_custom!!";
-			$action = "javascript:document.form_values.page.value=document.form.page.value; document.form_values.submit()";
-		}else{
-			$url_page = "javascript:document.form_values.page.value=!!page!!; document.form_values.catalog_page.value=document.form_values.page.value; document.form_values.action = \"./index.php?lvl=more_results&mode=extended&tab=catalog\"; document.form_values.submit()";
-			$nb_per_page_custom_url = "javascript:document.form_values.nb_per_page_custom.value=!!nb_per_page_custom!!";
-			$action = "javascript:document.form_values.page.value=document.form.page.value; document.form_values.catalog_page.value=document.form_values.page.value; document.form_values.action = \"./index.php?lvl=more_results&mode=extended&tab=catalog\"; document.form_values.submit()";
+	$record_display = record_display_modes::get_instance();
+	$nav_displayed = true;
+	if (isset($record_display) && is_a($record_display, record_display_modes::class)) {
+	    $current_mode = $record_display->get_current_mode();
+	    $nav_displayed = $record_display->is_nav_displayed($current_mode);
+	}
+	
+	if($nav_displayed){
+    	if($filtre_compare=='compare'){
+    		$sr_form.="<div id='navbar'><hr></div>";
+    	}elseif($count){
+    		if(!$opac_allow_affiliate_search){
+    			$url_page = "javascript:document.form_values.page.value=!!page!!; document.form_values.submit()";
+    			$nb_per_page_custom_url = "javascript:document.form_values.nb_per_page_custom.value=!!nb_per_page_custom!!";
+    			$action = "javascript:document.form_values.page.value=document.form.page.value; document.form_values.submit()";
+    		}else{
+    			$url_page = "javascript:document.form_values.page.value=!!page!!; document.form_values.catalog_page.value=document.form_values.page.value; document.form_values.action = \"./index.php?lvl=more_results&mode=extended&tab=catalog\"; document.form_values.submit()";
+    			$nb_per_page_custom_url = "javascript:document.form_values.nb_per_page_custom.value=!!nb_per_page_custom!!";
+    			$action = "javascript:document.form_values.page.value=document.form.page.value; document.form_values.catalog_page.value=document.form_values.page.value; document.form_values.action = \"./index.php?lvl=more_results&mode=extended&tab=catalog\"; document.form_values.submit()";
+    		}
+    		$sr_form.="<div id='navbar'><hr />\n<div style='text-align:center'>".printnavbar($page, $count, $opac_search_results_per_page, $url_page, $nb_per_page_custom_url, $action)."</div></div>";
 		}
-		$sr_form.="<div id='navbar'><hr />\n<div style='text-align:center'>".printnavbar($page, $count, $opac_search_results_per_page, $url_page, $nb_per_page_custom_url, $action)."</div></div>";
 	}
 	
 	if(!$opac_allow_affiliate_search  || !$allow_search_affiliate_and_external) {
-		$sr_form.= "	</div>";
+		$sr_form.= "</div></div>";
 	}
 	$sr_form = str_replace('<!-- search_result_extended_affiliate_lvl2_head_link -->',$search_result_extended_affiliate_lvl2_head_wo_link,$sr_form);
 	

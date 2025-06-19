@@ -1,0 +1,18 @@
+{% extends "paginator.html" %}
+
+{% comment %}
+$Id: paginatorPerio.html,v 1.2 2022/10/11 09:32:38 gneveu Exp $
+{% endcomment  %}
+
+{% block script %}
+	<script type="text/javascript">
+		function changepage(idPage, idPerio) {
+			document.getElementById("page").value = idPage;
+			show_perio(idPerio);
+		}
+	</script>
+{% endblock %}
+
+{% block input %}
+	<input type="hidden" id='page' name="page" value="{{ current.page }}"/>
+{% endblock %}

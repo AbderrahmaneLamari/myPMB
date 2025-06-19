@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_resource_selector_ui.class.php,v 1.30.2.1 2021/08/25 13:57:16 qvarin Exp $
+// $Id: onto_common_datatype_resource_selector_ui.class.php,v 1.32 2022/09/20 07:37:22 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -247,8 +247,11 @@ class onto_common_datatype_resource_selector_ui extends onto_common_datatype_ui 
 				$selector_url = './select.php?what=ontology&objs=&element=concept&caller=';
 				break;
 			case 'http://www.pmbservices.fr/ontology#bulletin':
-				$selector_url = './select.php?what=bulletin&caller=';
+				$selector_url = './select.php?what=bulletins&caller=';
 				break;
+			case 'http://www.pmbservices.fr/ontology#event':
+				$selector_url = './select.php?what=oeuvre_event&caller=';
+				break; 
 			default: 
 			    //Cas des authperso
 			    if (strpos($resource_uri, 'authperso') !== false) {
@@ -293,11 +296,17 @@ class onto_common_datatype_resource_selector_ui extends onto_common_datatype_ui 
 			case 'http://www.pmbservices.fr/ontology#work' :
 				$completion = 'titre_uniforme';
 				break;
+			case 'http://www.pmbservices.fr/ontology#bulletin' :
+				$completion = 'bull';
+				break;
 			case 'http://www.pmbservices.fr/ontology#indexint' :
 				$completion = 'indexint';
 				break;
 			case 'http://www.w3.org/2004/02/skos/core#Concept' :
 				$completion = 'concepts';
+				break;
+			case 'http://www.pmbservices.fr/ontology#event':
+				$completion = 'onto_oeuvre_event';
 				break;
 			default:
 			    //Cas des authperso

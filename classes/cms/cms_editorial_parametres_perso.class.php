@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_editorial_parametres_perso.class.php,v 1.50.2.2 2021/12/27 07:42:28 dgoron Exp $
+// $Id: cms_editorial_parametres_perso.class.php,v 1.53.4.1 2023/09/13 08:57:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -208,7 +208,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 	
 	//Affichage de l'écran de gestion des paramètres perso (la liste de tous les champs définis)
 	public function show_field_list() {
-		global $msg;
+		global $msg, $charset;
 	
 		$query="select editorial_type_label, editorial_type_element, editorial_type_comment from cms_editorial_types where id_editorial_type = ".$this->num_type;
 		$result = pmb_mysql_query($query);
@@ -220,7 +220,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 		if(strpos($row->editorial_type_element,"generic")!== false){
 			$display .= "<h3>".$msg['editorial_content_type_fieldslist_'.$row->editorial_type_element.'_definition']."</h3>";
 		}else{
-			$display .= "<h3>".sprintf($msg['editorial_content_type_fieldslist_definition'],$row->editorial_type_label)."</h3>";
+			$display .= "<h3>".sprintf($msg['editorial_content_type_fieldslist_definition'], htmlentities($row->editorial_type_label, ENT_QUOTES, $charset))."</h3>";
 		}
 		$this->load_class('/list/custom_fields/list_custom_fields_cms_ui.class.php');
 		list_custom_fields_cms_ui::set_prefix($this->prefix);
@@ -241,7 +241,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 	
 	//Récupération des valeurs stockées dans les base pour un emprunteur ou autre
 	public function get_out_values($id) {
-		$id +=0;
+		$id = intval($id);
 		//Récupération des valeurs stockées 
 		if ((!$this->no_special_fields)&&($id)) {
 			$this->values = array() ;
@@ -278,7 +278,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 	
 	//Suppression de la base des valeurs d'un emprunteur ou autre...
 	public function delete_values($id,$type="") {
-		$id += 0;
+		$id = intval($id);
 		if($type){
 			//on va chercher les champs génériques
 			$generic_type = $this->get_generic_type($type);
@@ -389,7 +389,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 	
 	//Enregistrement des champs perso soumis lors de la saisie d'une fichie emprunteur ou autre...
 	public function rec_fields_perso($id,$type="") {
-		$id += 0;
+		$id = intval($id);
 		$this->check_submited_fields();
 		$query = "select editorial_type_element from cms_editorial_types where id_editorial_type=".$this->num_type;
 		$result = pmb_mysql_query($query);
@@ -428,7 +428,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 	
 	//Duplication des champs perso d'un contenu éditorial...
 	public function duplicate_fields_perso($id,$duplicate_from_id, $type = "") {
-		$id  = intval($id);
+		$id = intval($id);
 		$duplicate_from_id = intval($duplicate_from_id);
 		if($type){
 			//Enregistrement des champs personalisés
@@ -440,7 +440,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 				$resultat=pmb_mysql_query($requete);
 				while ($r=pmb_mysql_fetch_array($resultat)) {
 					$requete="insert into ".$generic->prefix."_custom_values (".$generic->prefix."_custom_champ,".$generic->prefix."_custom_origine,".$generic->prefix."_custom_small_text, ".$generic->prefix."_custom_text, ".$generic->prefix."_custom_integer, ".$generic->prefix."_custom_date, ".$generic->prefix."_custom_float, ".$generic->prefix."_custom_order) 
-						values(".$r[$generic->prefix."_custom_champ"].",".$id.",'".$r[$generic->prefix."_custom_small_text"]."','".$r[$generic->prefix."_custom_text"]."','".$r[$generic->prefix."_custom_integer"]."','".$r[$generic->prefix."_custom_date"]."','".$r[$generic->prefix."_custom_float"]."','".$r[$generic->prefix."_custom_order"]."')";
+						values(" . $r[$generic->prefix."_custom_champ"] . "," . $id . ",'" . addslashes($r[$generic->prefix."_custom_small_text"]) . "','" . addslashes($r[$generic->prefix."_custom_text"]) . "','" . addslashes($r[$generic->prefix."_custom_integer"]) . "','" . addslashes($r[$generic->prefix."_custom_date"]) . "','" . addslashes($r[$generic->prefix."_custom_float"]) . "','" . addslashes($r[$generic->prefix."_custom_order"]) . "')";
 					pmb_mysql_query($requete);
 				}
 			}
@@ -449,7 +449,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 		$resultat=pmb_mysql_query($requete);
 		while ($r=pmb_mysql_fetch_array($resultat)) {
 			$requete="insert into ".$this->prefix."_custom_values (".$this->prefix."_custom_champ,".$this->prefix."_custom_origine,".$this->prefix."_custom_small_text, ".$this->prefix."_custom_text, ".$this->prefix."_custom_integer, ".$this->prefix."_custom_date, ".$this->prefix."_custom_float, ".$this->prefix."_custom_order) 
-				values(".$r[$this->prefix."_custom_champ"].",".$id.",'".$r[$this->prefix."_custom_small_text"]."','".$r[$this->prefix."_custom_text"]."','".$r[$this->prefix."_custom_integer"]."','".$r[$this->prefix."_custom_date"]."','".$r[$this->prefix."_custom_float"]."','".$r[$this->prefix."_custom_order"]."')";
+				values(" . $r[$this->prefix . "_custom_champ"] . "," . $id . ",'" . addslashes($r[$this->prefix . "_custom_small_text"]) . "','" . addslashes($r[$this->prefix . "_custom_text"]) . "','" . addslashes($r[$this->prefix . "_custom_integer"]) . "','" . addslashes($r[$this->prefix . "_custom_date"]) . "','" . addslashes($r[$this->prefix . "_custom_float"]) . "','" . addslashes($r[$this->prefix . "_custom_order"]) . "')";
 			pmb_mysql_query($requete);
 		}
 	}

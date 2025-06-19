@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sauv_tables.class.php,v 1.17.6.1 2022/01/12 07:57:53 dgoron Exp $
+// $Id: sauv_tables.class.php,v 1.18.4.2 2024/01/02 11:44:00 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -154,17 +154,22 @@ class sauv_table {
 					$tables_list.= " class=\"saisie-simple\">&nbsp;".$tTables_tab[$i]."</td>";
 					$curCol ++;
 					if ($curCol == $nMaxCol) {
-						$tables_list.= "</tr>\n";
-						$curCol = 0;
+					    $tables_list .= "</tr><tr>";
+					    
+					    $curCol = 0;
 					}
 				}
-				for ($i = 1; $i < $nMaxCol - $curCol; $i ++) {
-					$tables_list.= "<td>&nbsp;</td>";
-				}
-				if ($curCol < $nMaxCol -1)
+				
+				if($curCol) {
+    				for ($i = 0; $i < $nMaxCol - $curCol; $i ++) {
+    					$tables_list.= "<td>&nbsp;</td>";
+    				}
+    				
 					$tables_list.= "</tr>\n";
-				$tables_list.= "</table>\n";
+				}
 
+				$tables_list.= "</table>\n";
+				
 				$form = str_replace("!!tables_list!!", $tables_list, $form);
 			} else {
 				//Tables non sauvegardées

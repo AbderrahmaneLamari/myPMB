@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SearchModel.php,v 1.6 2020/10/02 09:27:00 tsamson Exp $
+// $Id: SearchModel.php,v 1.7 2022/12/23 09:24:50 gneveu Exp $
 
 namespace Pmb\Common\Models;
 
@@ -18,6 +18,10 @@ class SearchModel extends Model
      * ];
      *
      */
+    
+    public function __construct()
+    {}
+    
     private function setGlobalsSearch(array $globalsSearch)
     {
         global $search;

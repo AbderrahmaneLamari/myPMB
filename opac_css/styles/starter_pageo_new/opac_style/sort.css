@@ -1,0 +1,27 @@
+/*-----------
+- OPAC: SORT -
+ -----------*/
+
+
+#frame_notice_preview {
+    border: solid 2px #888;
+    z-index: 9001;
+    background-color: #F8F8F8;
+    width: 720px;
+    height: 540px;
+    padding: 20px;
+    box-shadow: 1px 1px 1px 1px rgba(32, 48, 107, 0.36);
+}
+
+#frame_notice_preview h3 {
+    color: rgb(88, 88, 90);
+    border-bottom: solid 1px rgb(88, 88, 90);
+}
+
+#frame_notice_preview input[type="submit"] {
+    margin-top: 10px;
+}
+
+.ext_search_txt {
+    width: 75%;
+}

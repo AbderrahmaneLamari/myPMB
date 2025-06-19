@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesSelfServices.class.php,v 1.34.2.1 2021/09/17 13:43:02 rtigero Exp $
+// $Id: pmbesSelfServices.class.php,v 1.39.4.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -19,21 +19,10 @@ require_once "{$class_path}/quotas.class.php";
 require_once "{$class_path}/expl_to_do.class.php";
 require_once "{$class_path}/encoding_normalize.class.php";
 require_once "{$base_path}/circ/pret_func.inc.php";
+require_once "{$class_path}/printer.class.php";
 
 
 class pmbesSelfServices extends external_services_api_class{
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	// Permet de surcharger les messages avec ceux du web services si un subst est présent
 	public function merge_msg() {
@@ -52,6 +41,7 @@ class pmbesSelfServices extends external_services_api_class{
 	public function self_checkout_bibloto($expl_cb,$empr_cb="",$confirm=1) {
 		global $msg;
 		global $charset;	
+		global $base_path;	
 		global $selfservice_pret_carte_invalide_msg;
 		global $selfservice_pret_pret_interdit_msg;
 		global $selfservice_pret_deja_prete_msg;
@@ -60,6 +50,7 @@ class pmbesSelfServices extends external_services_api_class{
 		global $selfservice_pret_non_pretable_msg;
 		global $selfservice_pret_expl_inconnu_msg;		
 		global $get_self_renew_info;
+		global $printer_type, $pmb_printer_name;
 		
 		$get_self_renew_info = false; // retourne les informations de prolongation
 		//Effacement des prêts temporaires
@@ -193,7 +184,68 @@ class pmbesSelfServices extends external_services_api_class{
 		$ret["message_expl_comment"] = encoding_normalize::utf8_normalize($ret["message_expl_comment"]);
 		return $ret;
 	}
-		
+    /**
+     * Fonction renvoyant un template d'impression de tickets de prêt
+     * Si le paramètre expl_cb est vide, la fonction renvoie le template pour tous les prêts en cours
+     */
+	public function get_loans_printer_template($empr_cb="", $expl_cb="") {
+	    global $base_path, $charset;
+	    global $pmb_printer_name;
+	    global $id_empr;
+	    $ret = array();
+	    
+	    $req_empr="select id_empr from empr where empr_cb='$empr_cb'";
+	    $res_empr=pmb_mysql_query($req_empr);
+	    
+	    if (pmb_mysql_num_rows($res_empr)) {
+	        $row_empr = pmb_mysql_fetch_object($res_empr);
+	        $id_empr=$row_empr->id_empr;
+	    }
+	    
+	    $printer_type = "star";
+	    $ticket_tpl='';
+	    if(file_exists($base_path."/circ/print_pret/print_ticket.tpl.php")) {
+	        require_once ($base_path."/circ/print_pret/print_ticket.tpl.php");
+	    }
+	    
+	    $printer = new printer();
+	    if($pmb_printer_name) {
+	        $printer->printer_name = $pmb_printer_name;
+	    }
+	    
+	    if (substr($pmb_printer_name,0,9) == 'raspberry') {
+	        $printer->printer_driver = 'raspberry';
+	    }
+	    $printer->initialize();
+	    
+	    if(!empty($expl_cb)){
+	        $r = $printer->print_pret($id_empr,$expl_cb,$ticket_tpl);
+	    } else {
+    	    $r = $printer->print_all_pret($id_empr,$ticket_tpl);
+	    }
+	    if ((substr($pmb_printer_name,0,9) == 'raspberry') && (isset($printer_type))) {
+	        header("Content-Type: text/html; charset=utf-8");
+	        if ($charset != 'utf-8') {
+	            $tpl = utf8_encode($r[$printer_type]);
+	        } else {
+	            $tpl = $r[$printer_type];
+	        }
+	    } else {
+	        $tpl = $r;
+	    }
+	    $ret['print_tpl'] = $tpl;
+	    return $ret;
+	}
+	
+	public function get_printers_config() {
+	   global $pmb_printer_list, $pmb_printer_name;
+	   $printer_list = explode(';', $pmb_printer_list);
+	   return [
+	       "printer_list" => $printer_list,
+	       "printer_name" => $pmb_printer_name
+	   ];
+	}
+	
 	public function get_icondoc($niveau_biblio, $typdoc) {
 	    global $opac_url_base;
 	    
@@ -425,8 +477,8 @@ class pmbesSelfServices extends external_services_api_class{
 	}
 	
 	public function self_renew($expl_cb,$PMBUserId=-1, $check_resa = 0) {
-		global $is_self_renew_asked;	
-		return exemplaire::self_renew($expl_cb, $is_self_renew_asked, $check_resa);
+	    global $is_self_renew_asked;
+	    return exemplaire::self_renew($expl_cb, $is_self_renew_asked, $check_resa);
 	}
 	
 }

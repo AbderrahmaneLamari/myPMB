@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: fields_empr.inc.php,v 1.250.2.6 2022/01/24 14:42:12 gneveu Exp $
+// $Id: fields_empr.inc.php,v 1.266.2.1 2023/11/28 15:19:43 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -157,14 +157,14 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 	global $msg,$lang;
 	global $ajax_js_already_included;
 	global $base_path, $caller;
-	
+
 	$id_thes_unique=$field["OPTIONS"][0]["ID_THES"]["0"]["value"];
 	$att_id_filter= $params = $element = "";
 	$selection_parameters = get_authority_selection_parameters($field["OPTIONS"][0]["DATA_TYPE"]["0"]["value"]);
 	$what = $selection_parameters['what'];
 	$completion = $selection_parameters['completion'];
 	$concept_schemes = [];
-	
+
 	switch($field["OPTIONS"][0]["DATA_TYPE"]["0"]["value"]) {
 		case 2:
 			$att_id_filter= $id_thes_unique;
@@ -186,11 +186,11 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 	}
 
 	$values=$field['VALUES'];
-	
+
 	$options=$field['OPTIONS'][0];
-	
+
 	if ($values=="") $values=array();
-	
+
 	if (get_form_name()) {
     	$caller = get_form_name();
 	}
@@ -201,7 +201,7 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 		$ajax_js_already_included = true;
 		$ret.="<script src='javascript/ajax.js'></script>";
 	}
-	
+
 	if (($n==0)||($options['MULTIPLE'][0]['value']!="yes")) $n=1;
 	if ($options['MULTIPLE'][0]['value']=="yes") {
 		$readonly='';
@@ -223,7 +223,7 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 		    } else if ('$caller') {
 		        var formName = '$caller';
             } else {
-		        // On remonte jusqu'au formulaire parent 
+		        // On remonte jusqu'au formulaire parent
                 var div = this.document.getElementById('".$field["NAME"]."');
                 var parent = '';
                 while (parent != 'FORM') {
@@ -233,9 +233,9 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
                 var formName = div.name;
 	        }
 			suffixe = eval('document.'+formName+'.n_".$field["NAME"].".value');
-			
+
 			var node_dnd_id = get_custom_dnd_on_add('div_".$field["NAME"]."', 'customfield_query_auth_".$field["NAME"]."', suffixe);
-			
+
 			var nom_id = '".$field["NAME"]."_'+suffixe;
 			var f_perso = document.createElement('input');
 			f_perso.setAttribute('name','f_".$field["NAME"]."[]');
@@ -244,7 +244,7 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 			f_perso.setAttribute('att_id_filter','".$att_id_filter."');
 			f_perso.setAttribute('persofield','".$field["NAME"]."');
 			f_perso.setAttribute('autfield',nom_id);";
-		
+
 		if (count($concept_schemes) && $concept_schemes[0] != -1 && ($what == "ontology")) {
 			$ret.= "
 			f_perso.setAttribute('param1','".implode(',',$concept_schemes)."');";
@@ -254,7 +254,7 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 			f_perso.className='saisie-50emr';
 			$readonly
 			f_perso.setAttribute('value','');
-			
+
 			var del_f_perso = document.createElement('input');
 			del_f_perso.setAttribute('id','del_".$field["NAME"]."_'+suffixe);
 			del_f_perso.onclick=fonction_raz_".$field["NAME"].";
@@ -262,13 +262,13 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 			del_f_perso.className='bouton';
 			del_f_perso.setAttribute('readonly','');
 			del_f_perso.setAttribute('value','X');
-			
+
 			var f_perso_id = document.createElement('input');
 			f_perso_id.name='".$field["NAME"]."[]';
 			f_perso_id.setAttribute('type','hidden');
 			f_perso_id.setAttribute('id',nom_id);
 			f_perso_id.setAttribute('value','');
-			
+
 			var perso = document.getElementById(node_dnd_id);
 			perso.appendChild(f_perso);
 			perso.appendChild(document.createTextNode(' '));
@@ -278,7 +278,7 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 
 			var buttonAdd = document.getElementById('button_add_".$field['NAME']."');
 			if (buttonAdd) perso.appendChild(buttonAdd);
-			
+
 			document[formName].n_".$field["NAME"].".value=suffixe*1+1*1 ;
 			ajax_pack_element(document.getElementById('f_'+nom_id));
 		}
@@ -291,11 +291,15 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 		if(!isset($values[$i])) $values[$i] = '';
 		$id=$values[$i];
 		$val_dyn=3;
-		
+
 		$isbd="";
 		if($id) {
 			$isbd=get_authority_isbd_from_field($field, $id);
 		}
+
+		$autexclude = "";
+		$no_display = "";
+
 		switch($field["OPTIONS"][0]["DATA_TYPE"]["0"]["value"]) {
 			case 9:// concept
 				$element="&element=concept&param1=".$field["NAME"]."&param2=f_".$field["NAME"];
@@ -308,6 +312,13 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 					// autperso
 					$element="&param1=".$field["NAME"]."&param2=f_".$field["NAME"];
 					$val_dyn=4;
+					if ($field["AUTHPERSO"] && $field["OPTIONS"][0]["DATA_TYPE"][0]['value'] > 1000) {
+    					$attr_exclude = attr_exclude_id($field["ID_ORIGINE"], $field["OPTIONS"][0]["DATA_TYPE"][0]['value']);
+    					if ($attr_exclude["exclude"]) {
+    					    $autexclude = "autexclude={$attr_exclude['autexclude']}";
+    					    $no_display = "&no_display={$attr_exclude['no_display']}";
+    					}
+					}
 				}
 				break;
 		}
@@ -315,17 +326,17 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 			if ($options['MULTIPLE'][0]['value']=="yes") {
 				$ret .= get_js_function_dnd('query_auth', $field['NAME']);
 				$ret.="<input type='button' class='bouton' value='...' onclick=\"openPopUp('".$base_path."/select.php?what=$what&caller=$caller&p1=".$field["NAME"]."_$i&p2=f_".$field["NAME"]."_$i&perso_id=".$field["ID"]."&custom_prefixe=".$_custom_prefixe_."&dyn=$val_dyn&perso_name=".$field['NAME']
-				."&max_field=n_".$field["NAME"]."&field_id=".$field["NAME"]."_&field_name_id=f_".$field["NAME"]."_&add_field=add_".$field["NAME"]."&id_thes_unique=".urlencode($id_thes_unique).$element."', 'select_perso_".$field["ID"]
+				."&max_field=n_".$field["NAME"]."&field_id=".$field["NAME"]."_&field_name_id=f_".$field["NAME"]."_&add_field=add_".$field["NAME"]."&id_thes_unique=".urlencode($id_thes_unique).$element. $no_display . "', 'select_perso_".$field["ID"]
 				."', 700, 500, -2, -2,'toolbar=no, dependent=yes, resizable=yes, scrollbars=yes')\" /> ";
 				$ret.=" <input type='button' class='bouton' value='+' onClick=\"add_".$field["NAME"]."(this);\"/>";
 			}else {
 				$ret.="<input type='button' class='bouton' value='...' onclick=\"openPopUp('".$base_path."/select.php?what=$what&caller=$caller&p1=".$field["NAME"]."_$i&p2=f_".$field["NAME"]."_$i&perso_id=".$field["ID"]."&custom_prefixe=".$_custom_prefixe_."&dyn=$val_dyn&perso_name=".$field['NAME']
-				."&max_field=n_".$field["NAME"]."&field_id=".$field["NAME"]."_0&field_name_id=f_".$field["NAME"]."_0&add_field=add_".$field["NAME"]."&id_thes_unique=".urlencode($id_thes_unique).$element."', 'select_perso_".$field["ID"]
+				."&max_field=n_".$field["NAME"]."&field_id=".$field["NAME"]."_0&field_name_id=f_".$field["NAME"]."_0&add_field=add_".$field["NAME"]."&id_thes_unique=".urlencode($id_thes_unique).$element. $no_display . "', 'select_perso_".$field["ID"]
 				."', 700, 500, -2, -2,'toolbar=no, dependent=yes, resizable=yes, scrollbars=yes')\" />";
-				
+
 			}
 		}
-		$display_temp ="<input type='text' att_id_filter='".$att_id_filter."' ".$params." completion='$completion' class='saisie-50emr' id='f_".$field["NAME"]."_$i'  persofield='".$field["NAME"]."' autfield='".$field["NAME"]."_$i' name='f_".$field["NAME"]."[]'  data-form-name='f_".$field["NAME"]."_'  $readonly value=\"".htmlentities($isbd,ENT_QUOTES,$charset)."\" />\n";
+		$display_temp ="<input type='text' att_id_filter='".$att_id_filter."' ".$params." completion='$completion' class='saisie-50emr' id='f_".$field["NAME"]."_$i'  persofield='".$field["NAME"]."' autfield='".$field["NAME"]."_$i' name='f_".$field["NAME"]."[]' " . $autexclude . " data-form-name='f_".$field["NAME"]."_'  $readonly value=\"".htmlentities($isbd,ENT_QUOTES,$charset)."\" />\n";
 		$display_temp.="<input type='hidden' id='".$field["NAME"]."_$i' name='".$field["NAME"]."[]' data-form-name='".$field["NAME"]."_' value=\"".htmlentities($values[$i],ENT_QUOTES,$charset)."\">";
 		$display_temp.="<input type='button' class='bouton' value='X' onclick=\"this.form.f_".$field["NAME"]."_$i.value=''; this.form.".$field["NAME"]."_$i.value=''; \" />\n";
 		if ($i == $n-1 && $options['MULTIPLE'][0]['value']=="yes") {
@@ -338,7 +349,7 @@ function aff_query_auth_empr($field,&$check_scripts,$script="") {
 		}
 	}
 	$ret.="</div>";
-	
+
 	return $ret;
 }
 
@@ -347,7 +358,7 @@ function aff_query_auth_empr_search($field,&$check_scripts,$varname) {
 	global $_custom_prefixe_, $caller;
 	global $ajax_js_already_included;
 	global $base_path;
-	
+
 	if(!empty($field['NUMBER'])) {
 		$field_name = $field['NAME']."_".$field['NUMBER'];
 	} else {
@@ -359,11 +370,11 @@ function aff_query_auth_empr_search($field,&$check_scripts,$varname) {
 		$hidden_name=$field_name."_id";
 	}
 	$id=(isset($field['VALUES'][0]) ? $field['VALUES'][0] : '');
-	
+
 	$selection_parameters = get_authority_selection_parameters($field["OPTIONS"][0]["DATA_TYPE"]["0"]["value"]);
 	$what = $selection_parameters['what'];
 	$completion = $selection_parameters['completion'];
-	
+
 	$params = $att_id_filter= "";
 	$fnamevar_id = '';
 	$id_thesaurus = '';
@@ -399,7 +410,7 @@ function aff_query_auth_empr_search($field,&$check_scripts,$varname) {
 	if($id){
 		$libelle = get_authority_isbd_from_field($field, $id);
 	}
-	
+
 	$ret = "";
 	if(empty($ajax_js_already_included)){
 		$ajax_js_already_included = true;
@@ -413,11 +424,11 @@ function aff_query_auth_empr_search($field,&$check_scripts,$varname) {
 			$form_name = "formulaire";
 			break;
 	}
-	
+
 	$val_dyn=3;
 	$ret.="<input type='text'  att_id_filter='".$att_id_filter."' ".$params." completion='$completion' autfield='".$field_name."'  class='saisie-50emr' id='f_".$field_name."' persofield='".$field["NAME"]."' name='f_".$field_name."' data-form-name='f_".$field_name."' $fnamevar_id value=\"".htmlentities($libelle,ENT_QUOTES,$charset)."\" />\n";
 	$ret.="<input type='hidden' id='".$field_name."' name='".$varname."[]'  data-form-name='".$field_name."'  value=\"".htmlentities($id,ENT_QUOTES,$charset)."\">";
-	
+
 	$ret.="<input type='button' class='bouton' value='...' title='".htmlentities($msg['title_select_from_list'],ENT_QUOTES,$charset)."' onclick=\"openPopUp('".$base_path."/select.php?what=$what&caller=".($caller ? $caller : 'search_form').$element."&p1=".$field_name."_0&p2=f_".$field_name."_0&perso_id=".$field["ID"]."&custom_prefixe=".$_custom_prefixe_."&dyn=$val_dyn&perso_name=".$field['NAME']
 	."&max_field=n_".$field_name."&field_id=".$field_name."&field_name_id=f_".$field_name."&add_field=add_".$field_name.($id_thes_unique?"&id_thes_unique=".$id_thes_unique:"")."', 'select_perso_".$field["ID"]
 				."', 700, 500, -2, -2,'toolbar=no, dependent=yes, resizable=yes, scrollbars=yes')\" />";
@@ -461,7 +472,7 @@ function chk_query_auth_empr($field,&$check_message) {
 	return 1;
 }
 
-// affichage de l'autorité 
+// affichage de l'autorité
 function val_query_auth_empr($field,$val) {
 	global $pmb_perso_sep;
 
@@ -475,7 +486,7 @@ function val_query_auth_empr($field,$val) {
 		}
 	}
 	$aff=implode($pmb_perso_sep,$isbd_s);
-	
+
 	return array("ishtml" => true, "value"=> $aff, "withoutHTML" => strip_tags($aff));
 }
 
@@ -483,13 +494,13 @@ function val_query_auth_empr($field,$val) {
 function chk_datatype($field,$values,&$check_datatype_message) {
 	global $chk_type_list;
 	global $msg;
-	
+
 	//Nettoyage des valeurs vides
 	if (is_array($values)) {
     	if(isset($values)) {
     		$chk_values = array();
     		foreach ($values as $val) {
-    			if ($val != "") $chk_values[] = $val;  
+    			if ($val != "") $chk_values[] = $val;
     		}
     		$values = $chk_values;
     	}
@@ -541,21 +552,24 @@ function aff_date_box_empr($field,&$check_scripts) {
 		$ret .= '<input class="bouton" type="button" value="+" onclick="add_custom_date_box_(\''.$afield_name.'\', \''.addslashes($field['NAME']).'\',\''.(!isset($options["DEFAULT_TODAY"][0]["value"]) || !$options["DEFAULT_TODAY"][0]["value"] ? formatdate(date("Ymd",time())).'\',\''.date("Y-m-d",time()) : '\',\'').'\')">';
 	}
 	foreach ($values as $value) {
-		$d=explode("-",$value);		
+		$d=explode("-",$value);
 		$val = "";
-		
-		// Ici on a $d qui est vide si on provient du cp_date_acquisition, si il est vide on doit mettre la date du jour par defaut.
-		if ((!@checkdate($d[1],$d[2],$d[0]))&&(!isset($options["DEFAULT_TODAY"][0]["value"]) || !$options["DEFAULT_TODAY"][0]["value"])) {
+
+		$checked_date = false;
+		if(!empty($d[0]) && !empty($d[1]) && !empty($d[2])) {
+			$checked_date = @checkdate($d[1],$d[2],$d[0]);
+		}
+		if ((!$checked_date)&&(!isset($options["DEFAULT_TODAY"][0]["value"]) || !$options["DEFAULT_TODAY"][0]["value"])) {
 		    if(!$flag_id_origine) { //on est en création
 		        $val = date("Y-m-d",time());
 		    }
-		} elseif ((!@checkdate($d[1],$d[2],$d[0]))&&(isset($options["DEFAULT_TODAY"][0]["value"]) && $options["DEFAULT_TODAY"][0]["value"])) {
+		} elseif ((!$checked_date)&&(isset($options["DEFAULT_TODAY"][0]["value"]) && $options["DEFAULT_TODAY"][0]["value"])) {
 		    $val = "";
 		} else {
 		    $val = $value;
 		}
-		
-		$display_temp = get_input_date($field['NAME']."[]", $field['NAME']."_val_".$count, $val, $field['MANDATORY']);		
+
+		$display_temp = get_input_date($field['NAME']."[]", $field['NAME']."_val_".$count, $val, $field['MANDATORY']);
 		if(isset($options['REPEATABLE'][0]['value']) && $options['REPEATABLE'][0]['value']) {
 			$button_add = '';
 			if (end($values) == $value) {
@@ -574,18 +588,18 @@ function aff_date_box_empr($field,&$check_scripts) {
 		$ret .= "<script>
 			function add_custom_date_box_(field_id, field_name, value, value_popup) {
 				var count = document.getElementById('customfield_date_box_'+field_id).value;
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('spaceformorecustomfielddatebox_'+field_id, 'customfield_date_box_'+field_name, count);
 				var buttonAdd = document.getElementById('button_add_' + field_name + '_' + field_id);
 
-                var val = get_input_date_js(field_name + '[]', field_name + '_val_' + count, value);				
+                var val = get_input_date_js(field_name + '[]', field_name + '_val_' + count, value);
 				document.getElementById(node_dnd_id).appendChild(val);
 
 				var del = document.createElement('input');
 				del.setAttribute('type', 'button');
 		        del.setAttribute('class', 'bouton');
 		        del.setAttribute('value', 'X');
-                if (use_dojo_calendar == 1) { 
+                if (use_dojo_calendar == 1) {
     				del.setAttribute('onClick','empty_dojo_calendar_by_id(\"'+field_name + '_val_' + count+'\");');
     				del.addEventListener('click', function() {
     					empty_dojo_calendar_by_id(field_name + '_val_' + count);
@@ -596,10 +610,10 @@ function aff_date_box_empr($field,&$check_scripts) {
 			    document.getElementById(node_dnd_id).appendChild(document.createTextNode (' '));
 			    document.getElementById(node_dnd_id).appendChild(del);
 				if (buttonAdd) document.getElementById(node_dnd_id).appendChild(buttonAdd);
-				var br = document.createElement('br');				
+				var br = document.createElement('br');
 				document.getElementById(node_dnd_id).appendChild(br);
 				document.getElementById('customfield_date_box_'+field_id).value = document.getElementById('customfield_date_box_'+field_id).value * 1 + 1;
-				
+
 				dojo.parser.parse(node_dnd_id);
 			}
 		</script>";
@@ -629,7 +643,7 @@ function aff_date_box_empr_search($field,&$check_scripts,$varname) {
 		    if (!empty($values[0])) {
     			$d=explode("-",$values[0]);
     			if(!empty($d[0]) && !empty($d[1]) && !empty($d[2])) {
-	    			if (@checkdate($d[1],$d[2],$d[0])) {    			
+	    			if (@checkdate($d[1],$d[2],$d[0])) {
 	    				$val=$values[0];
 	    			}
     			}
@@ -641,7 +655,7 @@ function aff_date_box_empr_search($field,&$check_scripts,$varname) {
 		</div>";
 
 	$values=$field['VALUES1'];
-	$val='';	
+	$val='';
 	if (!empty($values[0])) {
     	$d=explode("-",$values[0]);
     	if(!empty($d[0]) && !empty($d[1]) && !empty($d[2])) {
@@ -661,7 +675,7 @@ function chk_date_box_empr($field,&$check_message) {
 	$name=$field['NAME'];
 	global ${$name};
 	$val=${$name};
-	
+
 	$check_datatype_message="";
 	$val_1=chk_datatype($field,$val,$check_datatype_message);
 	if ($check_datatype_message) {
@@ -674,7 +688,7 @@ function chk_date_box_empr($field,&$check_message) {
 
 function val_date_box_empr($field,$value) {
 	global $pmb_perso_sep;
-	
+
 	$return = "";
 	$format_value = format_output($field,$value);
 	if (!$value) $value = array();
@@ -691,7 +705,7 @@ function val_date_box_empr($field,$value) {
 function aff_text_empr($field,&$check_scripts) {
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	$afield_name = $field["ID"];
@@ -706,7 +720,7 @@ function aff_text_empr($field,&$check_scripts) {
 	}
 	foreach ($values as $avalues) {
 		$display_temp = "<input id=\"".$field['NAME'].$count."\" type=\"text\" size=\"".$options['SIZE'][0]['value']."\" maxlength=\"".$options['MAXSIZE'][0]['value']."\" name=\"".$field['NAME']."[]\" data-form-name='".$field['NAME']."' value=\"".htmlentities($avalues,ENT_QUOTES,$charset)."\">";
-		
+
 		if(!empty($options['REPEATABLE'][0]['value'])) {
 			$button_add = '';
 			if (end($values) == $avalues) {
@@ -723,13 +737,13 @@ function aff_text_empr($field,&$check_scripts) {
 		$ret .= '<div id="spaceformorecustomfieldtext_'.$afield_name.'"></div>';
 		$ret.=get_custom_dnd_on_add();
 		$ret.="<script>
-			function add_custom_text_(field_id, field_name, field_size, field_maxlen) {		
+			function add_custom_text_(field_id, field_name, field_size, field_maxlen) {
 				document.getElementById('customfield_text_'+field_id).value = document.getElementById('customfield_text_'+field_id).value * 1 + 1;
 		        count = document.getElementById('customfield_text_'+field_id).value;
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('spaceformorecustomfieldtext_'+field_id, 'customfield_text_'+field_name, (count-1));
 				var buttonAdd = document.getElementById('button_add_'+ field_name + '_' + field_id);
-				
+
 				f_aut0 = document.createElement('input');
 		        f_aut0.setAttribute('name',field_name+'[]');
 		        f_aut0.setAttribute('id',field_name+(count-1));
@@ -755,7 +769,7 @@ function aff_text_empr($field,&$check_scripts) {
 function aff_text_empr_search($field,&$check_scripts,$varname) {
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	if(!isset($values[0])) $values[0] = '';
@@ -767,7 +781,7 @@ function chk_text_empr($field,&$check_message) {
 	$name=$field['NAME'];
 	global ${$name};
 	$val=${$name};
-	
+
 	$check_datatype_message="";
 	$val_1=chk_datatype($field,$val,$check_datatype_message);
 	if ($check_datatype_message) {
@@ -795,12 +809,12 @@ function val_text_empr($field,$value) {
 function aff_comment_empr($field,&$check_scripts) {
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	$afield_name = $field["ID"];
 	$ret = "";
-	
+
 	$count = 0;
 	if (!$values) {
 		$values = array("");
@@ -830,11 +844,11 @@ function aff_comment_empr($field,&$check_scripts) {
  		$ret.=get_custom_dnd_on_add();
 		$ret.="<script>
 		var cpt = $count;
-		
+
 		function add_custom_comment_(field_id, field_name, field_rows, field_cols, field_maxsize) {
 				document.getElementById('customfield_text_'+field_id).value = document.getElementById('customfield_text_'+field_id).value * 1 + 1;
 				count = document.getElementById('customfield_text_'+field_id).value;
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('spaceformorecustomfieldtext_'+field_id, 'customfield_comment_'+field_name, (count-1));
 				var	buttonAdd = document.getElementById('button_add_' + field_name + '_' + field_id);
 
@@ -845,16 +859,16 @@ function aff_comment_empr($field,&$check_scripts) {
 				f_aut0.setAttribute('rows',field_rows);
 				f_aut0.setAttribute('maxlength',field_maxsize);
 				f_aut0.setAttribute('wrap','virtual');
-				
+
 				space=document.createElement('br');
-				
+
 				document.getElementById(node_dnd_id).appendChild(f_aut0);
 				if (buttonAdd) document.getElementById(node_dnd_id).appendChild(buttonAdd);
 				document.getElementById(node_dnd_id).appendChild(space);
 				cpt++;
 			}
 			</script>";
-		
+
 	}
 	if ($field['MANDATORY']==1) {
 		$caller = get_form_name();
@@ -866,7 +880,7 @@ function aff_comment_empr($field,&$check_scripts) {
 function aff_comment_empr_search($field,&$check_scripts,$varname) {
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	if(!isset($values[0])) $values[0] = '';
@@ -878,7 +892,7 @@ function chk_comment_empr($field,&$check_message) {
 	$name=$field['NAME'];
 	global ${$name};
 	$val=${$name};
-	
+
 	$check_datatype_message="";
 	$val_1=chk_datatype($field,$val,$check_datatype_message);
 	if ($check_datatype_message) {
@@ -916,10 +930,10 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 	global $charset;
 	global $_custom_prefixe_;
 	global $base_path, $msg;
-	
+
 	$ret = '';
 	$_custom_prefixe_=$field["PREFIX"];
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	if ($values=="") $values=array();
@@ -929,10 +943,10 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 						var fieldName = "'.$field['NAME'].'";
 						var fields = document.querySelectorAll("[data-form-name=\'"+fieldName+"\']");
 						fields = fields.length ? fields : document.querySelectorAll("[name=\'"+fieldName+"[]\']")
-						if (("SELECT" == fields[0].tagName) && (("" == fields[0].selectedOptions[0].value) || (-1 == fields[0].options.selectedIndex))) {
+						if (("SELECT" == fields[0].tagName) && ((fields[0].selectedOptions.length && "" == fields[0].selectedOptions[0].value) || (-1 == fields[0].options.selectedIndex))) {
 							return cancel_submit("'.sprintf($msg["parperso_field_is_needed"],$field['ALIAS']).'");
 						}
-								
+
 						if ("checkbox" == fields[0].type) {
 							var valid = false;
 							fields.forEach(field => {
@@ -955,7 +969,7 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 				$ret.="</span>";
 			}
 			$requete="select ".$_custom_prefixe_."_custom_list_value, ".$_custom_prefixe_."_custom_list_lib from ".$_custom_prefixe_."_custom_lists where ".$_custom_prefixe_."_custom_champ=".$field['ID']." order by ordre";
-			$resultat=pmb_mysql_query($requete);	
+			$resultat=pmb_mysql_query($requete);
 			if ($resultat) {
 				while ($r=pmb_mysql_fetch_array($resultat)) {
 					if($limit && $i>0 && $i%$limit == 0) $ret.="<br />";
@@ -965,7 +979,7 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 						$as=in_array($r[$_custom_prefixe_."_custom_list_value"],$values);
 						if (($as!==FALSE)&&($as!==NULL)) $ret.=" checked=checked";
 					} else {
-						//Recherche de la valeur par défaut s'il n'y a pas de choix vide 
+						//Recherche de la valeur par défaut s'il n'y a pas de choix vide
 						if (($options['UNSELECT_ITEM'][0]['VALUE']=="") || ($options['UNSELECT_ITEM'][0]['value']=="")) {
 							//si aucune valeur par défaut, on coche le premier pour les boutons de type radio
 							if (($i==0)&&($type=="radio")&&($options['DEFAULT_VALUE'][0]['value']=="")) $ret.=" checked=checked";
@@ -1003,7 +1017,7 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 					$ret.="<option value=\"".htmlentities($options['ITEMS'][0]['ITEM'][$i]['VALUE'],ENT_QUOTES,$charset)."\"";
 					if (count($values)) {
 						$as=array_search($options['ITEMS'][0]['ITEM'][$i]['VALUE'],$values);
-						if (($as!==FALSE)&&($as!==NULL)) $ret.=" selected"; 
+						if (($as!==FALSE)&&($as!==NULL)) $ret.=" selected";
 					} else {
 						//Recherche de la valeur par défaut
 						if ($options['ITEMS'][0]['ITEM'][$i]['VALUE']==$options['DEFAULT_VALUE'][0]['value']) $ret.=" selected";
@@ -1067,7 +1081,7 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 			}
 			function add_".$field["NAME"]."() {
 				suffixe = eval('document.$caller.n_".$field["NAME"].".value');
-						
+
 				var node_dnd_id = get_custom_dnd_on_add('div_".$field["NAME"]."', 'customfield_list_".$field["NAME"]."', suffixe);
 
 				var nom_id = '".$field["NAME"]."_'+suffixe;
@@ -1082,7 +1096,7 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 				f_perso.className='saisie-50emr';
 				$readonly
 				f_perso.setAttribute('value','');
-				
+
 				var del_f_perso = document.createElement('input');
 				del_f_perso.setAttribute('id','del_".$field["NAME"]."_'+suffixe);
 				del_f_perso.onclick=fonction_raz_".$field["NAME"].";
@@ -1090,21 +1104,21 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 				del_f_perso.className='bouton';
 				del_f_perso.setAttribute('readonly','');
 				del_f_perso.setAttribute('value','X');
-				
+
 				var f_perso_id = document.createElement('input');
 				f_perso_id.name='".$field["NAME"]."[]';
 				f_perso_id.setAttribute('type','hidden');
 				f_perso_id.setAttribute('id',nom_id);
 				f_perso_id.setAttribute('value','');
-		
+
 				var buttonAdd = document.getElementById('button_add_".$field['NAME']."_".$field['ID']."');
 				var perso = document.getElementById(node_dnd_id);
 				perso.appendChild(f_perso);
-				perso.appendChild(document.createTextNode(' '));				
+				perso.appendChild(document.createTextNode(' '));
 				perso.appendChild(del_f_perso);
 				perso.appendChild(f_perso_id);
 				if (buttonAdd) perso.appendChild(buttonAdd);
-		
+
 				document.$caller.n_".$field["NAME"].".value=suffixe*1+1*1 ;
 				ajax_pack_element(document.getElementById('f_'+nom_id));
 			}
@@ -1121,7 +1135,7 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 		for ($i=0; $i<$n; $i++) {
 			$display_temp ="<input type='text' class='saisie-50emr' id='f_".$field["NAME"]."_$i' completion='perso_".$_custom_prefixe_."' persofield='".$field["NAME"]."' autfield='".$field["NAME"]."_$i' name='f_".$field["NAME"]."[]' data-form-name='f_".$field["NAME"]."_' $readonly value=\"".htmlentities($libelles[$i],ENT_QUOTES,$charset)."\" />\n";
 			$display_temp.="<input type='hidden' id='".$field["NAME"]."_$i' name='".$field["NAME"]."[]' data-form-name='".$field["NAME"]."_' value=\"".htmlentities($values[$i],ENT_QUOTES,$charset)."\">";
-			
+
 			$display_temp.="<input type='button' class='bouton' value='X' onclick=\"this.form.f_".$field["NAME"]."_$i.value=''; this.form.".$field["NAME"]."_$i.value=''; \" />\n";
 			if($options['MULTIPLE'][0]['value']=="yes") {
 				$button_add = '';
@@ -1132,7 +1146,7 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 			} else {
 				$ret.=$display_temp."<br />";
 			}
-		}		
+		}
 		$ret.="</div>";
 	}
 	return $ret;
@@ -1141,14 +1155,14 @@ function aff_list_empr($field,&$check_scripts,$script="") {
 function aff_list_empr_search($field,&$check_scripts,$varname,$script="") {
 	global $charset;
 	global $base_path;
-	
+
 	if(!empty($field['NUMBER'])) {
 		$field_name = $field['NAME']."_".$field['NUMBER'];
 	} else {
 		$field_name = $field['NAME'];
 	}
 	$_custom_prefixe_=$field["PREFIX"];
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	if ($values=="") $values=array();
@@ -1254,7 +1268,7 @@ function aff_list_empr_search($field,&$check_scripts,$varname,$script="") {
 				del_f_perso.setAttribute('type','button');
 				del_f_perso.className='bouton';
 				del_f_perso.setAttribute('value','X');
-		
+
 				f_perso_id = document.createElement('input');
 				f_perso_id.setAttribute('name', '".$varname."[]');
 				f_perso_id.setAttribute('type','hidden');
@@ -1268,7 +1282,7 @@ function aff_list_empr_search($field,&$check_scripts,$varname,$script="") {
 				perso.appendChild(f_perso_id);
 
 				template.appendChild(perso);
-		
+
 				document.search_form.n_".$varname.".value=suffixe*1+1*1 ;
 				ajax_pack_element(document.getElementById('f_'+nom_id));
 			}
@@ -1318,7 +1332,7 @@ function aff_empr_search($field) {
 	$table['label'] = $field['TITRE'];
 	$table['name'] = $field['NAME'];
 	$table['type'] =$field['DATATYPE'];
-	
+
 	$_custom_prefixe_=$field['PREFIX'];
 	$requete="select ".$_custom_prefixe_."_custom_list_value, ".$_custom_prefixe_."_custom_list_lib from ".$_custom_prefixe_."_custom_lists where ".$_custom_prefixe_."_custom_champ=".$field['ID']." order by ordre";
 	$resultat=pmb_mysql_query($requete);
@@ -1337,10 +1351,10 @@ function aff_empr_search($field) {
 
 function chk_list_empr($field,&$check_message) {
 	global $msg;
-	
+
 	$name=$field['NAME'];
 	$options=$field['OPTIONS'][0];
-	
+
 	global ${$name};
 	if ($options["AUTORITE"][0]["value"]!="yes") {
 		$val=${$name};
@@ -1356,18 +1370,18 @@ function chk_list_empr($field,&$check_message) {
 		 }
 	}
 	if ($field['MANDATORY']==1) {
-	    
+
 	    $count = 0;
-	    if (!empty($val) && is_countable($val)) {	        
+	    if (!empty($val) && is_countable($val)) {
     	    $count = count($val);
 	    }
-	    
+
 	    if ((!$count)||(($count==1)&&($val[0]==""))) {
 			$check_message=sprintf($msg["parperso_field_is_needed"],$field['ALIAS']);
 			return 0;
 		}
 	}
-	
+
 	$check_datatype_message="";
 	$val_1=chk_datatype($field,$val,$check_datatype_message);
 	if ($check_datatype_message) {
@@ -1375,7 +1389,7 @@ function chk_list_empr($field,&$check_message) {
 		return 0;
 	}
 	${$name}=$val_1;
-	
+
 	return 1;
 }
 
@@ -1396,12 +1410,13 @@ function val_list_empr($field,$val) {
 				$options_[$_custom_prefixe_][$field['ID']][$r[$_custom_prefixe_."_custom_list_value"]]=$r[$_custom_prefixe_."_custom_list_lib"];
 				$i++;
 			}
+			pmb_mysql_free_result($resultat);
 		}
 	}
-	if (!is_array($options_[$_custom_prefixe_][$field['ID']])) return ""; 
+	if (!is_array($options_[$_custom_prefixe_][$field['ID']])) return "";
 	$exec_func_array_flip = true;
 	foreach ($val as $value) {
-		if ($value == "") $exec_func_array_flip = false; 
+		if ($value == "") $exec_func_array_flip = false;
 	}
 	if ($exec_func_array_flip) $val_r=array_flip($val);
 	else $val_r=array();
@@ -1421,17 +1436,17 @@ function val_list_empr($field,$val) {
 	return $val_;
 }
 
-function aff_query_list_empr($field,&$check_scripts,$script="") {
+function aff_query_list_empr($field,&$check_scripts,$script="", $caller="") {
 	global $charset;
 	global $_custom_prefixe_;
 	global $base_path;
 	global $lang;
-	
+
 	$ret = '';
 	$values=$field['VALUES'];
-	
+
 	$options=$field['OPTIONS'][0];
-	
+
 	if ($values=="") $values=array();
 	if ($options["AUTORITE"][0]["value"]!="yes") {
 		if ($options["CHECKBOX"][0]["value"]=="yes"){
@@ -1451,7 +1466,7 @@ function aff_query_list_empr($field,&$check_scripts,$script="") {
 					$i++;
 				}
 				$ret.="</tr></table>";
-			}	
+			}
 		} else {
 			$options=$field['OPTIONS'][0];
 			$ret="<select id=\"".$field['NAME']."\" name=\"".$field['NAME'];
@@ -1469,13 +1484,13 @@ function aff_query_list_empr($field,&$check_scripts,$script="") {
 			while ($r=pmb_mysql_fetch_row($resultat)) {
 				$ret.="<option value=\"".htmlentities($r[0],ENT_QUOTES,$charset)."\"";
 				$as=array_search($r[0],$values);
-				if (($as!==FALSE)&&($as!==NULL)) $ret.=" selected"; 
+				if (($as!==FALSE)&&($as!==NULL)) $ret.=" selected";
 				$ret.=">".htmlentities($r[1],ENT_QUOTES,$charset)."</option>\n";
 			}
 			$ret.= "</select>\n";
 		}
 	} else {
-		$caller = get_form_name();
+		$caller = (!empty($caller) ? $caller : get_form_name());
 		$libelles=array();
 		if ($values) {
 			$values_received=$values;
@@ -1533,9 +1548,9 @@ function aff_query_list_empr($field,&$check_scripts,$script="") {
 			}
 			function add_".$field["NAME"]."() {
 				suffixe = eval('document.$caller.n_".$field["NAME"].".value');
-						
+
 				var node_dnd_id = get_custom_dnd_on_add('div_".$field["NAME"]."', 'customfield_query_list_".$field["NAME"]."', suffixe);
-						
+
 				var nom_id = '".$field["NAME"]."_'+suffixe;
 				var f_perso = document.createElement('input');
 				f_perso.setAttribute('name','f_".$field["NAME"]."[]');
@@ -1547,7 +1562,7 @@ function aff_query_list_empr($field,&$check_scripts,$script="") {
 				f_perso.className='saisie-50emr';
 				$readonly
 				f_perso.setAttribute('value','');
-				
+
 				var del_f_perso = document.createElement('input');
 				del_f_perso.setAttribute('id','del_".$field["NAME"]."_'+suffixe);
 				del_f_perso.onclick=fonction_raz_".$field["NAME"].";
@@ -1555,7 +1570,7 @@ function aff_query_list_empr($field,&$check_scripts,$script="") {
 				del_f_perso.className='bouton';
 				del_f_perso.setAttribute('readonly','');
 				del_f_perso.setAttribute('value','X');
-						
+
 				var f_perso_id = document.createElement('input');
 				f_perso_id.name='".$field["NAME"]."[]';
 				f_perso_id.setAttribute('type','hidden');
@@ -1570,7 +1585,7 @@ function aff_query_list_empr($field,&$check_scripts,$script="") {
 				perso.appendChild(del_f_perso);
 				perso.appendChild(f_perso_id);
 				if (buttonAdd) document.getElementById(node_dnd_id).appendChild(buttonAdd);
-		
+
 				document.$caller.n_".$field["NAME"].".value=suffixe*1+1*1 ;
 				ajax_pack_element(document.getElementById('f_'+nom_id));
 			}
@@ -1609,9 +1624,9 @@ function aff_query_list_empr($field,&$check_scripts,$script="") {
 function aff_query_list_empr_search($field,&$check_scripts,$varname,$script="") {
 	global $charset;
 	global $base_path;
-	
+
 	$_custom_prefixe_=$field["PREFIX"];
-	
+
 	$values=$field['VALUES'];
 	if ($values=="") $values=array();
 	$options=$field['OPTIONS'][0];
@@ -1629,7 +1644,7 @@ function aff_query_list_empr_search($field,&$check_scripts,$varname,$script="") 
 		while ($r=pmb_mysql_fetch_row($resultat)) {
 			$ret.="<option value=\"".htmlentities($r[0],ENT_QUOTES,$charset)."\"";
 			$as=array_search($r[0],$values);
-			if (($as!==FALSE)&&($as!==NULL)) $ret.=" selected"; 
+			if (($as!==FALSE)&&($as!==NULL)) $ret.=" selected";
 			$ret.=">".htmlentities($r[1],ENT_QUOTES,$charset)."</option>\n";
 		}
 		$ret.= "</select>\n";
@@ -1649,7 +1664,7 @@ function aff_query_list_empr_search($field,&$check_scripts,$varname,$script="") 
 				template = document.getElementById('div_".$varname."');
 				perso=document.createElement('div');
 				perso.className='row';
-		
+
 				suffixe = eval('document.search_form.n_".$varname.".value');
 				nom_id = '".$varname."_'+suffixe;
 				f_perso = document.createElement('input');
@@ -1662,28 +1677,28 @@ function aff_query_list_empr_search($field,&$check_scripts,$varname,$script="") 
 				f_perso.setAttribute('type','text');
 				f_perso.className='saisie-20emr';
 				f_perso.setAttribute('value','');
-		
+
 				del_f_perso = document.createElement('input');
 				del_f_perso.setAttribute('id','del_".$varname."_'+suffixe);
 				del_f_perso.onclick=fonction_raz_".$varname.";
 				del_f_perso.setAttribute('type','button');
 				del_f_perso.className='bouton';
 				del_f_perso.setAttribute('value','X');
-		
+
 				f_perso_id = document.createElement('input');
 				f_perso_id.setAttribute('name', '".$varname."[]');
 				f_perso_id.setAttribute('type','hidden');
 				f_perso_id.setAttribute('id',nom_id);
 				f_perso_id.setAttribute('value','');
-		
+
 				perso.appendChild(f_perso);
 				space=document.createTextNode(' ');
 				perso.appendChild(space);
 				perso.appendChild(del_f_perso);
 				perso.appendChild(f_perso_id);
-		
+
 				template.appendChild(perso);
-		
+
 				document.search_form.n_".$varname.".value=suffixe*1+1*1 ;
 				ajax_pack_element(document.getElementById('f_'+nom_id));
 			}
@@ -1729,7 +1744,7 @@ function aff_query_list_empr_search($field,&$check_scripts,$varname,$script="") 
 
 function chk_query_list_empr($field,&$check_message) {
 	global $msg;
-	
+
 	$name=$field['NAME'];
 	$options=$field['OPTIONS'][0];
 	global ${$name};
@@ -1759,7 +1774,7 @@ function chk_query_list_empr($field,&$check_message) {
 			return 0;
 		}
 	}
-	
+
 	$check_datatype_message="";
 	$val_1=chk_datatype($field,$val,$check_datatype_message);
 	if ($check_datatype_message) {
@@ -1767,7 +1782,7 @@ function chk_query_list_empr($field,&$check_message) {
 		return 0;
 	}
 	${$name}=$val_1;
-	
+
 	return 1;
 }
 
@@ -1795,7 +1810,7 @@ function val_query_list_empr($field,$val) {
 				$options_[$r[0]]=$r[1];
 			}
 		}
-	
+
 		for ($i=0; $i<count($val); $i++) {
 			if(isset($val[$i])) {
 				$val_c[$i]=$options_[$val[$i]];
@@ -1809,7 +1824,7 @@ function val_query_list_empr($field,$val) {
 function aff_text_i18n_empr($field,&$check_scripts) {
 	global $charset, $base_path;
 	global $msg;
-	
+
 	$langue_doc = get_langue_doc();
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
@@ -1833,7 +1848,7 @@ function aff_text_i18n_empr($field,&$check_scripts) {
 		$display_temp.="&nbsp;".$msg['param_perso_lang_select']." : <input id=\"".$field['NAME']."_lang_".$count."\" class=\"saisie-10emr\" type=\"text\" value=\"".(isset($exploded_value[1]) && $exploded_value[1] ? htmlentities($langue_doc[$exploded_value[1]],ENT_QUOTES,$charset) : '')."\" autfield=\"".$field['NAME']."_lang_code_".$count."\" completion=\"langue\" autocomplete=\"off\" data-form-name='".$field["NAME"]."_lang_' >";
 		$display_temp.="<input class=\"bouton\" type=\"button\" value=\"...\" onClick=\"openPopUp('".$base_path."/select.php?what=lang&caller='+this.form.name+'&p1=".$field['NAME']."_lang_code_".$count."&p2=".$field['NAME']."_lang_".$count."', 'select_lang', 500, 400, -2, -2, 'scrollbars=yes, toolbar=no, dependent=yes, resizable=yes')\">";
 		$display_temp.="<input class=\"bouton\" type=\"button\" onclick=\"this.form.".$field['NAME']."_lang_".$count.".value=''; this.form.".$field['NAME']."_lang_code_".$count.".value=''; \" value=\"X\">";
-		$display_temp.="<input id=\"".$field['NAME']."_lang_code_".$count."\" data-form-name='".$field["NAME"]."_lang_code_' type=\"hidden\" value=\"".(isset($exploded_value[1]) && $exploded_value[1] ? htmlentities($exploded_value[1], ENT_QUOTES, $charset) : '')."\" name=\"".$field['NAME']."_langs[".$count."]\">"; 
+		$display_temp.="<input id=\"".$field['NAME']."_lang_code_".$count."\" data-form-name='".$field["NAME"]."_lang_code_' type=\"hidden\" value=\"".(isset($exploded_value[1]) && $exploded_value[1] ? htmlentities($exploded_value[1], ENT_QUOTES, $charset) : '')."\" name=\"".$field['NAME']."_langs[".$count."]\">";
 		if(isset($options['REPEATABLE'][0]['value']) && $options['REPEATABLE'][0]['value']) {
 			$button_add = '';
 			if(end($values) == $value) {
@@ -1852,7 +1867,7 @@ function aff_text_i18n_empr($field,&$check_scripts) {
 		$ret.="<script>
 			function add_custom_text_i18n_(field_id, field_name, field_size, field_maxlen) {
 		        var count = document.getElementById('customfield_text_i18n_'+field_id).value;
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('spaceformorecustomfieldtexti18n_'+field_id, 'customfield_text_i18n_'+field_name, count);
 				var buttonAdd = document.getElementById('button_add_'+ field_name + '_' + field_id);
 
@@ -1863,9 +1878,9 @@ function aff_text_i18n_empr($field,&$check_scripts) {
 		        text.setAttribute('value','');
 		        text.setAttribute('size',field_size);
 		        text.setAttribute('maxlength',field_maxlen);
-				
+
 				var lang_label = document.createTextNode(' ".$msg['param_perso_lang_select']." : ');
-						
+
 				var lang = document.createElement('input');
 				lang.setAttribute('id', field_name + '_lang_' + count);
 				lang.setAttribute('class', 'saisie-10emr');
@@ -1874,7 +1889,7 @@ function aff_text_i18n_empr($field,&$check_scripts) {
 				lang.setAttribute('autfield', field_name + '_lang_code_' + count);
 				lang.setAttribute('completion', 'langue');
 				lang.setAttribute('autocomplete', 'off');
-						
+
 				var select = document.createElement('input');
 				select.setAttribute('class', 'bouton');
 				select.setAttribute('type', 'button');
@@ -1882,7 +1897,7 @@ function aff_text_i18n_empr($field,&$check_scripts) {
 				select.addEventListener('click', function(){
 					openPopUp('".$base_path."/select.php?what=lang&caller='+this.form.name+'&p1=' + field_name + '_lang_code_' + count + '&p2=' + field_name + '_lang_' + count, 'select_lang', 500, 400, -2, -2, 'scrollbars=yes, toolbar=no, dependent=yes, resizable=yes');
 				}, false);
-				
+
 				var del = document.createElement('input');
 				del.setAttribute('class', 'bouton');
 				del.setAttribute('type', 'button');
@@ -1890,15 +1905,15 @@ function aff_text_i18n_empr($field,&$check_scripts) {
 				del.addEventListener('click', function(){
 					document.getElementById(field_name + '_lang_' + count).value=''; document.getElementById(field_name + '_lang_code_' + count).value='';
 				}, false);
-							
+
 				var lang_code = document.createElement('input');
 				lang_code.setAttribute('id', field_name + '_lang_code_' + count);
 				lang_code.setAttribute('type', 'hidden');
 				lang_code.setAttribute('value', \"".(isset($exploded_value[1]) && $exploded_value[1] ? $exploded_value[1] : '')."\");
 				lang_code.setAttribute('name', field_name + '_langs[' + count + ']');
-				
+
 		        var space_br=document.createElement('br');
-							
+
 				document.getElementById(node_dnd_id).appendChild(text);
 				document.getElementById(node_dnd_id).appendChild(document.createTextNode(' '));
 				document.getElementById(node_dnd_id).appendChild(lang_label);
@@ -1908,7 +1923,7 @@ function aff_text_i18n_empr($field,&$check_scripts) {
 				document.getElementById(node_dnd_id).appendChild(buttonAdd);
 				document.getElementById(node_dnd_id).appendChild(lang_code);
 				document.getElementById(node_dnd_id).appendChild(space_br);
-				
+
 				document.getElementById('customfield_text_i18n_'+field_id).value = document.getElementById('customfield_text_i18n_'+field_id).value * 1 + 1;
 				ajax_pack_element(lang);
 			}
@@ -1925,7 +1940,7 @@ function aff_text_i18n_empr_search($field,&$check_scripts,$varname) {
 	global $charset;
 	global $msg;
 	global $base_path;
-	
+
 	$langue_doc = get_langue_doc();
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
@@ -1970,11 +1985,11 @@ function chk_text_i18n_empr($field,&$check_message) {
 
 function val_text_i18n_empr($field,$value) {
 	global $pmb_perso_sep;
-	
+
 	$langue_doc = get_langue_doc();
 	$value=format_output($field,$value);
 	if (!$value) $value=array();
-	
+
 	$formatted_values = array();
 	foreach ($value as $val) {
 		$exploded_val = explode("|||", $val);
@@ -1992,13 +2007,13 @@ function val_text_i18n_empr($field,$value) {
 function aff_filter_comment_empr($field,$varname,$multiple) {
 	global $charset;
 	global $msg;
-	
+
 	$ret="<select id=\"".$varname."\" name=\"".$varname;
 	$ret.="[]";
 	$ret.="\" ";
 	if ($multiple) $ret.="size=5 multiple";
 	$ret.=" data-form-name='".$varname."' >\n";
-		
+
 	$values=$field['VALUES'];
 	if ($values=="") $values=array();
 	$options=$field['OPTIONS'][0];
@@ -2013,7 +2028,7 @@ function aff_filter_comment_empr($field,$varname,$multiple) {
 		$as=array_search($r[0],$values);
 		if (($as!==FALSE)&&($as!==NULL)) $ret.=" selected";
 		$ret.=">".htmlentities(cutlongwords($r[0]),ENT_QUOTES,$charset)."</option>\n";
-		
+
 	}
 	$ret.= "</select>\n";
 	return $ret;
@@ -2022,13 +2037,13 @@ function aff_filter_comment_empr($field,$varname,$multiple) {
 function aff_filter_date_box_empr($field,$varname,$multiple) {
 	global $charset;
 	global $msg;
-	
+
 	$ret="<select id=\"".$varname."\" name=\"".$varname;
 	$ret.="[]";
 	$ret.="\" ";
 	if ($multiple) $ret.="size=5 multiple";
 	$ret.=" data-form-name='".$varname."' >\n";
-	
+
 	$values=$field['VALUES'];
 	if ($values=="") $values=array();
 	$options=$field['OPTIONS'][0];
@@ -2051,13 +2066,13 @@ function aff_filter_date_box_empr($field,$varname,$multiple) {
 function aff_filter_text_empr($field,$varname,$multiple) {
 	global $charset;
 	global $msg;
-	
+
 	$ret="<select id=\"".$varname."\" name=\"".$varname;
 	$ret.="[]";
 	$ret.="\" ";
 	if ($multiple) $ret.="size=5 multiple";
 	$ret.=" data-form-name='".$varname."' >\n";
-		
+
 	$values=$field['VALUES'];
 	if ($values=="") $values=array();
 	$options=$field['OPTIONS'][0];
@@ -2079,11 +2094,11 @@ function aff_filter_text_empr($field,$varname,$multiple) {
 
 function aff_filter_query_list_empr($field,$varname,$multiple) {
 	global $charset;
-		
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	if ($values=="") $values=array();
-	
+
 	$ret="<select id=\"".$varname."\" name=\"".$varname;
 	$ret.="[]";
 	$ret.="\" ";
@@ -2101,7 +2116,7 @@ function aff_filter_query_list_empr($field,$varname,$multiple) {
 			$ret.=">".htmlentities($r[1],ENT_QUOTES,$charset)."</option>\n";
 		}
 	} else {
-			
+
 	}
 	$ret.= "</select>\n";
 	return $ret;
@@ -2110,18 +2125,18 @@ function aff_filter_query_list_empr($field,$varname,$multiple) {
 function aff_filter_list_empr($field,$varname,$multiple) {
 	global $charset;
 	global $msg;
-	
+
 	$_custom_prefixe_=$field["PREFIX"];
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	if ($values=="") $values=array();
-	
+
 	$ret="<select id=\"".$varname."\" name=\"".$varname;
 	$ret.="[]";
 	$ret.="\" ";
 	if ($multiple) $ret.="size=5 multiple";
 	$ret.=" data-form-name='".$varname."' >\n";
-		
+
 	if (($options['UNSELECT_ITEM'][0]['VALUE']!="")||($options['UNSELECT_ITEM'][0]['value']!="")) {
 		$ret.="<option value=\"".htmlentities($options['UNSELECT_ITEM'][0]['VALUE'],ENT_QUOTES,$charset)."\">".htmlentities($options['UNSELECT_ITEM'][0]['value'],ENT_QUOTES,$charset)."</option>\n";
 	}
@@ -2154,7 +2169,7 @@ function aff_filter_list_empr($field,$varname,$multiple) {
 function aff_external_empr($field,&$check_scripts) {
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	//Recherche du libellé
@@ -2181,7 +2196,7 @@ function aff_external_empr($field,&$check_scripts) {
 function aff_external_empr_search($field,&$check_scripts,$varname) {
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	//Recherche du libellé
@@ -2202,7 +2217,7 @@ function chk_external_empr($field,&$check_message) {
 	$name=$field['NAME'];
 	global ${$name};
 	$val=${$name};
-	
+
 	$check_datatype_message="";
 	$val_1=chk_datatype($field,$val,$check_datatype_message);
 	if ($check_datatype_message) {
@@ -2229,14 +2244,14 @@ function val_external_empr($field,$value) {
 function aff_url_empr($field,&$check_scripts){
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	$afield_name = $field["ID"];
 	$ret = "";
 	$count = 0;
+	$linktarget_default_checked = (isset($options['LINKTARGET'][0]['value']) && $options['LINKTARGET'][0]['value'] ? 1 : 0);
 	if (!$values) {
-		$linktarget_default_checked = (isset($options['LINKTARGET'][0]['value']) && $options['LINKTARGET'][0]['value'] ? 1 : 0);
 		$values = array("||".$linktarget_default_checked);
 	}
 	if(isset($options['REPEATABLE'][0]['value']) && $options['REPEATABLE'][0]['value']) {
@@ -2256,14 +2271,14 @@ function aff_url_empr($field,&$check_scripts){
 			$target_checked = '';
     		$value_check = 0;
 		}
-		$display_temp.="&nbsp;<input id='".$field['NAME']."_linktarget".$count."' type='checkbox' data-form-name='".$field['NAME']."_linktarget' value='1' ".$target_checked." onclick='linktarget_checked(".$count.")'><label for='".$field['NAME']."_linktarget".$count."'>&nbsp;".$msg['persofield_url_linktarget']."</label>&nbsp;";
+		$display_temp.="&nbsp;<input id='".$field['NAME']."_linktarget".$count."' type='checkbox' data-form-name='".$field['NAME']."_linktarget' value='1' ".$target_checked." onclick='linktarget_".$field["NAME"]."_checked(".$count.")'><label for='".$field['NAME']."_linktarget".$count."'>&nbsp;".$msg['persofield_url_linktarget']."</label>&nbsp;";
 		$display_temp .= "<input type='hidden' id='".$field['NAME']."_linktarget_hidden".$count."' name='".$field['NAME']."[linktarget][]' value='" . $value_check . "'/>";
 		if(isset($options['REPEATABLE'][0]['value']) && $options['REPEATABLE'][0]['value']) {
 			$button_add = '';
 			if (end($values) == $value) {
 				$button_add = "<input id='button_add_".$field['NAME']."_".$field['ID']."' class='bouton' type='button' value='+' onclick=\"add_custom_url_('$afield_name', '".addslashes($field['NAME'])."', '".addslashes($options['SIZE'][0]['value'])."')\">";
 			}
-			$ret.=get_block_dnd('url', $field['NAME'], $count, $display_temp.$button_add, $avalues[0]);				
+			$ret.=get_block_dnd('url', $field['NAME'], $count, $display_temp.$button_add, $avalues[0]);
 		} else {
 			$ret.=$display_temp."<br />";
 		}
@@ -2308,7 +2323,7 @@ function aff_url_empr($field,&$check_scripts){
 				}
 			}
 		}
-        function linktarget_checked(count){
+        function linktarget_".$field["NAME"]."_checked(count){
             var inputHidden = document.getElementById('".$field['NAME']."_linktarget_hidden'+count);
                 if(inputHidden){
                    inputHidden.value = inputHidden.value == 1 ? 0 : 1;
@@ -2323,20 +2338,20 @@ function aff_url_empr($field,&$check_scripts){
 		$ret.="<script>
 			function add_custom_url_(field_id, field_name, field_size) {
 				cpt = document.getElementById('customfield_text_'+field_id).value;
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('spaceformorecustomfieldtext_'+field_id, 'customfield_url_'+field_name, cpt);
 				var buttonAdd = document.getElementById('button_add_' + field_name + '_' + field_id);
 				var prevCheckbox = document.getElementById(field_name+'_linktarget'+(cpt-1));
 
 				var check = document.createElement('div');
-				check.setAttribute('id','".$field['NAME']."_check_'+cpt);
+				check.setAttribute('id',field_name+'_check_'+cpt);
 				check.setAttribute('style','display:inline');
 				var link_label = document.createTextNode('".$msg['persofield_url_link']."');
 				var chklnk = document.createElement('input');
 				chklnk.setAttribute('type','button');
 				chklnk.setAttribute('value','".$msg['persofield_url_check']."');
 				chklnk.setAttribute('class','bouton');
-				chklnk.setAttribute('onclick','cp_chklnk_".$field['NAME']."('+cpt+',this);');
+				chklnk.setAttribute('onclick','cp_chklnk_'+field_name+'('+cpt+',this);');
 				document.getElementById('customfield_text_'+field_id).value = cpt*1 +1;
 				var link = document.createElement('input');
 		        link.setAttribute('name',field_name+'[link][]');
@@ -2345,7 +2360,7 @@ function aff_url_empr($field,&$check_scripts){
 				link.setAttribute('class','saisie-30em');
 		        link.setAttribute('size',field_size);
 		        link.setAttribute('value','');
-				link.setAttribute('onchange','cp_chklnk_".$field['NAME']."('+cpt+',this);');
+				link.setAttribute('onchange','cp_chklnk_'+field_name+'('+cpt+',this);');
 				var lib_label = document.createTextNode('".$msg['persofield_url_linklabel']."');
 				var lib = document.createElement('input');
 		        lib.setAttribute('name',field_name+'[linkname][]');
@@ -2358,8 +2373,8 @@ function aff_url_empr($field,&$check_scripts){
 		        target.setAttribute('id',field_name+'_linktarget'+cpt);
 		        target.setAttribute('type','checkbox');
 		        target.setAttribute('value','1');
-				target.setAttribute('onclick','linktarget_checked('+cpt+')');
-		        target.checked = false;
+				target.setAttribute('onclick','linktarget_'+field_name+'_checked('+cpt+')');
+		        target.checked = ".($linktarget_default_checked ? 'true' : 'false').";
 				var targetlabel = document.createElement('label');
 				targetlabel.setAttribute('for',field_name+'_linktarget'+cpt);
 				targetlabel.innerHTML = ' ".$msg['persofield_url_linktarget']."';
@@ -2367,7 +2382,7 @@ function aff_url_empr($field,&$check_scripts){
 				inputHidden.setAttribute('name',field_name+'[linktarget][]');
 		        inputHidden.setAttribute('id',field_name+'_linktarget_hidden'+cpt);
 		        inputHidden.setAttribute('type','hidden');
-		        inputHidden.setAttribute('value','0');
+		        inputHidden.setAttribute('value','".($linktarget_default_checked ? '1' : '0')."');
 		        space=document.createElement('br');
 				document.getElementById(node_dnd_id).appendChild(check);
 				document.getElementById(node_dnd_id).appendChild(link_label);
@@ -2396,7 +2411,7 @@ function aff_url_empr($field,&$check_scripts){
 function aff_url_empr_search($field,&$check_scripts,$varname) {
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	if(!isset($values[0])) $values[0] = '';
@@ -2409,15 +2424,17 @@ function chk_url_empr($field, &$check_message) {
 	global ${$name};
 	$val = ${$name};
 	$value = array();
-	$nb_vals = count($val['link']);
-	for ($i = 0; $i < $nb_vals; $i++) {
-		if ($val['link'][$i] != "") {
-			$linktarget = '|0';
-			if (!empty($val['linktarget'][$i])) {
-				$linktarget = '|1';
-			}
-			$value[] = $val['link'][$i]."|".$val['linkname'][$i].$linktarget;
-		}
+	if (!empty($val['link']) && is_array($val['link'])) {
+    	$nb_vals = count($val['link']);
+    	for ($i = 0; $i < $nb_vals; $i++) {
+    		if ($val['link'][$i] != "") {
+    			$linktarget = '|0';
+    			if (!empty($val['linktarget'][$i])) {
+    				$linktarget = '|1';
+    			}
+    			$value[] = $val['link'][$i]."|".$val['linkname'][$i].$linktarget;
+    		}
+    	}
 	}
 	$val = $value;
 	$check_datatype_message = "";
@@ -2448,7 +2465,7 @@ function val_url_empr($field,$value) {
 		}
 		$ret .= "<a href='".$val[0]."' target='".$target."'>".htmlentities($lib, ENT_QUOTES, $charset)."</a>";
 		if( $without != "") $without.= $pmb_perso_sep;
-		$without .= $lib;
+		$without .= $val[0];
 		$details[] = array('url' => $val[0], 'label' => $lib, 'target' => $target);
 	}
 	return array("ishtml" => true, "value"=>$ret, "withoutHTML" =>$without, "details" => $details);
@@ -2457,7 +2474,7 @@ function val_url_empr($field,$value) {
 function aff_resolve_empr($field,&$check_scripts){
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	$afield_name = $field["ID"];
@@ -2500,7 +2517,7 @@ function aff_resolve_empr($field,&$check_scripts){
 			function add_custom_resolve_(field_id, field_name, field_size, field_maxlen) {
 				document.getElementById('customfield_text_'+field_id).value = document.getElementById('customfield_text_'+field_id).value * 1 + 1;
 		        count = document.getElementById('customfield_text_'+field_id).value;
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('spaceformorecustomfieldtext_'+field_id, 'customfield_resolve_'+field_name, (count-1));
 				var buttonAdd = document.getElementById('button_add_' + field_name + '_' + field_id);
 
@@ -2528,7 +2545,7 @@ function aff_resolve_empr($field,&$check_scripts){
 				$ret.="
 				document.getElementById(node_dnd_id).appendChild(f_aut0);
 				document.getElementById(node_dnd_id).appendChild(document.createTextNode(' '));
-				document.getElementById(node_dnd_id).appendChild(select);				
+				document.getElementById(node_dnd_id).appendChild(select);
 				if (buttonAdd) document.getElementById(node_dnd_id).appendChild(buttonAdd);
 				document.getElementById(node_dnd_id).appendChild(space);
 			}
@@ -2566,8 +2583,8 @@ function chk_resolve_empr($field, &$check_message) {
 }
 
 function val_resolve_empr($field,$value) {
-	global $charset,$pmb_perso_sep,$use_opac_url_base;
-	
+	global $charset,$pmb_perso_sep;
+
 	$without="";
 	$options=$field['OPTIONS'][0];
 	$values=format_output($field,$value);
@@ -2585,9 +2602,7 @@ function val_resolve_empr($field,$value) {
 			}
 			$link = str_replace("!!id!!",$id,$url);
 			if( $ret != "") $ret.= " / ";
-			//$ret.= "<a href='$link' target='_blank'>".htmlentities($link,ENT_QUOTES,$charset)."</a>";
-			if (!$use_opac_url_base) $ret.= htmlentities($label,ENT_QUOTES,$charset)." : $id <a href='$link' target='_blank'><img class='center' src='".get_url_icon("globe.gif")."' alt='$link' title='link'/></a>";
-			else $ret.= htmlentities($label,ENT_QUOTES,$charset)." : $id <a href='$link' target='_blank'><img class='center' src='".get_url_icon("globe.gif", 1)."' alt='$link' title='link'/></a>";
+			$ret.= htmlentities($label,ENT_QUOTES,$charset)." : $id <a href='$link' target='_blank'><img class='center' src='".get_url_icon("globe.gif")."' alt='$link' title='link'/></a>";
 			if($without)$without.=$pmb_perso_sep;
 			$without.=$link;
 		}else{
@@ -2601,7 +2616,7 @@ function val_resolve_empr($field,$value) {
 function aff_resolve_empr_search($field,&$check_scripts,$varname){
 	global $charset;
 	global $msg;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	if(!isset($values[0])) $values[0] = '';
@@ -2615,12 +2630,12 @@ function aff_html_empr($field,&$check_scripts) {
 	global $pmb_editorial_dojo_editor,$pmb_javascript_office_editor;
 	global $cms_dojo_plugins_editor;
 	global $categ,$current;
-	
+
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	$afield_name = $field["ID"];
 	$ret = "";
-	
+
 	$count = 0;
 	if (!$values) {
 		$values = array("");
@@ -2651,7 +2666,7 @@ function aff_html_empr($field,&$check_scripts) {
 				$timeout = 1;
 				//Traitement plus long dans le contenu éditorial
 				if($categ == "get_type_form" && $current=="ajax.php") {
-				    $timeout = 1500; 
+				    $timeout = 1500;
 				}
 				$display_temp.="
 					if(typeof(tinyMCE)!= 'undefined') {
@@ -2669,7 +2684,7 @@ function aff_html_empr($field,&$check_scripts) {
     								tinyMCE_execCommand('mceRemoveControl',true,'$mcename');
     							}
     						}
-    				  },true);		
+    				  },true);
     				  ";
 				}
 				$display_temp.="	</script>";
@@ -2692,9 +2707,9 @@ function aff_html_empr($field,&$check_scripts) {
 			function add_custom_html_(field_id, field_name, field_height, field_width,use_html_editor) {
 				document.getElementById('customfield_text_'+field_id).value = document.getElementById('customfield_text_'+field_id).value * 1 + 1;
 				var count = document.getElementById('customfield_text_'+field_id).value;
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('spaceformorecustomfieldtext_'+field_id, 'customfield_html_'+field_name, (count-1));
-				
+
 				var hid = document.createElement('input');
 				hid.setAttribute('type','hidden');
 				hid.setAttribute('name',field_name+'['+(count-1)+']');
@@ -2706,9 +2721,9 @@ function aff_html_empr($field,&$check_scripts) {
 				f_aut0.setAttribute('class','saisie-80em');
 				f_aut0.setAttribute('wrap','wrap');
 				f_aut0.setAttribute('style','display:inline-block; width:'+field_width+'px');
-				
+
 				var space=document.createElement('br');
-				
+
 				document.getElementById(node_dnd_id).appendChild(hid);
 				document.getElementById(node_dnd_id).appendChild(f_aut0);
 				new dijit.Editor({id : field_name+'_'+(count-1), height : field_height+'px', extraPlugins:[
@@ -2724,14 +2739,14 @@ function aff_html_empr($field,&$check_scripts) {
 					    {name: 'colorTableCell', command: 'colorTableCell'},
 					    {name: 'tableContextMenu', command: 'tableContextMenu'},
 					    {name: 'resizeTableColumn', command: 'resizeTableColumn'},
-						{name: 'fontName', plainText: true}, 
-						{name: 'fontSize', plainText: true}, 
+						{name: 'fontName', plainText: true},
+						{name: 'fontSize', plainText: true},
 						{name: 'formatBlock', plainText: true},
 						'foreColor','hiliteColor',
 						'createLink','insertanchor', 'unlink', 'insertImage',
 						'fullscreen',
 						'viewsource'
-						
+
 				]}, f_aut0).startup();
 				document.getElementById(node_dnd_id).appendChild(space);
 				document.getElementById(node_dnd_id).appendChild(space);
@@ -2758,16 +2773,16 @@ function aff_html_empr($field,&$check_scripts) {
 			function add_custom_html_(field_id, field_name, field_height, field_width, use_html_editor) {
 				document.getElementById('customfield_text_'+field_id).value = document.getElementById('customfield_text_'+field_id).value * 1 + 1;
 				var count = document.getElementById('customfield_text_'+field_id).value;
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('spaceformorecustomfieldtext_'+field_id, 'customfield_html_'+field_name, (count-1));
-				
+
 				var f_aut0 = document.createElement('textarea');
 				f_aut0.setAttribute('name',field_name+'[]');
 				f_aut0.setAttribute('id',field_name+'_'+(count-1));
 				f_aut0.setAttribute('wrap','wrap');
 				f_aut0.setAttribute('width',field_width+'px');
 				f_aut0.setAttribute('height',field_height+'px');
-				
+
 				document.getElementById(node_dnd_id).appendChild(f_aut0);
 				document.getElementById(node_dnd_id).appendChild(document.createElement('br'));
 				document.getElementById(node_dnd_id).appendChild(document.createElement('br'));
@@ -2830,7 +2845,7 @@ function aff_html_empr($field,&$check_scripts) {
 function aff_marclist_empr($field,&$check_scripts,$script="") {
 	global $charset;
 	global $base_path;
-	
+
 	$_custom_prefixe_=$field["PREFIX"];
 
 	$options=$field['OPTIONS'][0];
@@ -2871,7 +2886,7 @@ function aff_marclist_empr($field,&$check_scripts,$script="") {
 			$marclist_type->table = array_reverse($marclist_type->table, true);
 		}
 		// Sinon on ne fait rien, le tableau est déjà trié avec l'attribut order
-		
+
 		reset($marclist_type->table);
 		if (count($marclist_type->table)) {
 			foreach ($marclist_type->table as $code=>$label) {
@@ -2925,9 +2940,9 @@ function aff_marclist_empr($field,&$check_scripts,$script="") {
 			}
 			function add_".$field["NAME"]."() {
 				suffixe = eval('document.$caller.n_".$field["NAME"].".value');
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('div_".$field["NAME"]."', 'customfield_marclist_".$field["NAME"]."', suffixe);
-				var buttonAdd = document.getElementById('button_add_".$field["NAME"]."_".$field["ID"]."')				
+				var buttonAdd = document.getElementById('button_add_".$field["NAME"]."_".$field["ID"]."')
 
 				var nom_id = '".$field["NAME"]."_'+suffixe;
 				var f_perso = document.createElement('input');
@@ -2948,7 +2963,7 @@ function aff_marclist_empr($field,&$check_scripts,$script="") {
 				del_f_perso.className='bouton';
 				del_f_perso.setAttribute('readonly','');
 				del_f_perso.setAttribute('value','X');
-				
+
 				var f_perso_id = document.createElement('input');
 				f_perso_id.name='".$field["NAME"]."[]';
 				f_perso_id.setAttribute('type','hidden');
@@ -2992,7 +3007,7 @@ function aff_marclist_empr($field,&$check_scripts,$script="") {
 		}
 		$ret.="</div>";
 	}
-	
+
 	return $ret;
 }
 
@@ -3001,9 +3016,9 @@ function chk_marclist_empr($field,&$check_message) {
 
 	$name=$field['NAME'];
 	$options=$field['OPTIONS'][0];
-	
+
 	global ${$name};
-	
+
 	if ($options["AUTORITE"][0]["value"]!="yes") {
 		$val=${$name};
 	} else {
@@ -3057,7 +3072,7 @@ function val_marclist_empr($field,$value) {
 function aff_marclist_empr_search($field,&$check_scripts,$varname){
 	global $charset;
 	global $base_path;
-	
+
 	$_custom_prefixe_=$field["PREFIX"];
 
 	$options=$field['OPTIONS'][0];
@@ -3073,7 +3088,7 @@ function aff_marclist_empr_search($field,&$check_scripts,$varname){
 		//if ($script) $ret.=$script." ";
 		$ret.="multiple";
 		$ret.=" data-form-name='".$varname."' >\n";
-	
+
 		if (($options['METHOD_SORT_VALUE'][0]['value']=="2") && ($options['METHOD_SORT_ASC'][0]['value']=="1")) {
 			asort($marclist_type->table);
 		} elseif (($options['METHOD_SORT_VALUE'][0]['value']=="1") && ($options['METHOD_SORT_ASC'][0]['value']=="1")) {
@@ -3086,7 +3101,7 @@ function aff_marclist_empr_search($field,&$check_scripts,$varname){
 			$marclist_type->table = array_reverse($marclist_type->table, true);
 		}
 		// Sinon on ne fait rien, le tableau est déjà trié avec l'attribut order
-	
+
 		reset($marclist_type->table);
 		if (count($marclist_type->table)) {
 			foreach ($marclist_type->table as $code=>$label) {
@@ -3145,9 +3160,9 @@ function aff_marclist_empr_search($field,&$check_scripts,$varname){
 				perso.appendChild(space);
 				perso.appendChild(del_f_perso);
 				perso.appendChild(f_perso_id);
- 		
+
 				template.appendChild(perso);
- 		
+
 				document.search_form.n_".$varname.".value=suffixe*1+1*1 ;
 				ajax_pack_element(document.getElementById('f_'+nom_id));
 			}
@@ -3188,7 +3203,7 @@ function aff_marclist_empr_search($field,&$check_scripts,$varname){
 function aff_q_txt_i18n_empr($field,&$check_scripts) {
 	global $charset, $base_path;
 	global $msg;
-	
+
 	$langue_doc = get_langue_doc();
 	$datatype = $field['DATATYPE'];
 	$options=$field['OPTIONS'][0];
@@ -3229,31 +3244,31 @@ function aff_q_txt_i18n_empr($field,&$check_scripts) {
 		$ret.='<input class="bouton" type="button" value="+" onclick="add_custom_q_txt_i18n_(\''.$afield_name.'\', \''.addslashes($field['NAME']).'\', \''.$options['SIZE'][0]['value'].'\', \''.$maxlength.'\')">';
 	}
 	$n = count($values);
-	
+
 	foreach ($values as $value) {
 		$exploded_value = explode("|||", $value);
 		if (isset($options['TYPE'][0]['value']) && $options['TYPE'][0]['value'] == "textarea") {
-		    $display_temp = "<textarea 
-                                id='".$field['NAME']."_$count' 
-                                name='".$field['NAME']."[$count]'  data-form-name='".$field["NAME"]."_' 
+		    $display_temp = "<textarea
+                                id='".$field['NAME']."_$count'
+                                name='".$field['NAME']."[$count]'  data-form-name='".$field["NAME"]."_'
                                 maxlength='$maxlength'
                             >".htmlentities($exploded_value[0], ENT_QUOTES, $charset)."</textarea>";
 		} else {
-    		$display_temp = "<input id='".$field['NAME']."_$count' type='text' 
-                                    size='".$options['SIZE'][0]['value']."' 
-                                    maxlength='".$maxlength."' 
-                                    name='".$field['NAME']."[$count]' data-form-name='".$field["NAME"]."_' 
+    		$display_temp = "<input id='".$field['NAME']."_$count' type='text'
+                                    size='".$options['SIZE'][0]['value']."'
+                                    maxlength='".$maxlength."'
+                                    name='".$field['NAME']."[$count]' data-form-name='".$field["NAME"]."_'
                                     value='".htmlentities($exploded_value[0], ENT_QUOTES, $charset)."'>";
 		}
-		
+
 		if(count($options['ITEMS']) == 1) {
 			$type = "checkbox";
 			$display_temp.= "<span id='lib_".$field['NAME']."_".$count."'>".
 			                     $options['ITEMS'][0]['label']."
                             </span>";
-                            
+
             $display_temp.= "<input id='".$field['NAME']."_qualification_$count' type='$type' name='".$field['NAME']."_qualifications[$count]'";
-			
+
 			if ($values[0] != "") {
 				if(isset($exploded_value[2]) && $options['ITEMS'][0]['value'] == $exploded_value[2]) $display_temp.=" checked=checked";
 			} else {
@@ -3308,18 +3323,18 @@ function aff_q_txt_i18n_empr($field,&$check_scripts) {
 		$ret.="<script>
 			function add_custom_q_txt_i18n_(field_id, field_name, field_size, field_maxlen) {
 		        var count = document.getElementById('customfield_q_txt_i18n_'+field_id).value;
-				
+
 				var node_dnd_id = get_custom_dnd_on_add('spaceformorecustomfieldtexti18n_'+field_id, 'customfield_q_txt_i18n_'+field_name, count);
-				
+
 				var qualification = document.getElementById(field_name+'_qualification_'+(count-1)).cloneNode(true);
 				qualification.setAttribute('id', field_name + '_qualification_' + count);
 		        qualification.setAttribute('name',field_name+'_qualifications[' + count + ']');
-				
+
 				if (document.getElementById('lib_'+field_name+'_'+(count-1))) {
 					var lib_qualification = document.getElementById('lib_'+field_name+'_'+(count-1)).cloneNode(true);
 					lib_qualification.setAttribute('id', 'lib_'+field_name+'_'+ count);
 				}
-				
+
 
                 switch ('".(isset($options['TYPE']) && isset($options['TYPE'][0]['value']) ? $options['TYPE'][0]['value'] : "text" )."') {
                     case 'textarea' :
@@ -3342,9 +3357,9 @@ function aff_q_txt_i18n_empr($field,&$check_scripts) {
                         break;
                 }
 
-				
+
 				var lang_label = document.createTextNode(' ".$msg['param_perso_lang_select']." : ');
-				
+
 				var lang = document.createElement('input');
 				lang.setAttribute('id', field_name + '_lang_' + count);
 				lang.setAttribute('class', 'saisie-10emr');
@@ -3369,7 +3384,7 @@ function aff_q_txt_i18n_empr($field,&$check_scripts) {
 				del.addEventListener('click', function(){
 					document.getElementById(field_name + '_lang_' + count).value=''; document.getElementById(field_name + '_lang_code_' + count).value='';
 				}, false);
-				
+
 				var lang_code = document.createElement('input');
 				lang_code.setAttribute('id', field_name + '_lang_code_' + count);
 				lang_code.setAttribute('type', 'hidden');
@@ -3377,7 +3392,7 @@ function aff_q_txt_i18n_empr($field,&$check_scripts) {
 				lang_code.setAttribute('name', field_name + '_langs[' + count + ']');
 
 		        var space_br=document.createElement('br');
-							
+
 				document.getElementById(node_dnd_id).appendChild(text);
 				if (lib_qualification) {
 					document.getElementById(node_dnd_id).appendChild(lib_qualification);
@@ -3386,7 +3401,7 @@ function aff_q_txt_i18n_empr($field,&$check_scripts) {
 
 				document.getElementById(node_dnd_id).appendChild(qualification);
 				document.getElementById(node_dnd_id).appendChild(document.createTextNode(' '));
-				document.getElementById(node_dnd_id).appendChild(lang_label);							
+				document.getElementById(node_dnd_id).appendChild(lang_label);
 				document.getElementById(node_dnd_id).appendChild(lang);
 				document.getElementById(node_dnd_id).appendChild(select);
 				document.getElementById(node_dnd_id).appendChild(del);
@@ -3410,8 +3425,8 @@ function aff_q_txt_i18n_empr_search($field,&$check_scripts,$varname) {
 	global $charset;
 	global $msg;
 	global $base_path;
-	
-	$langue_doc = get_langue_doc();	
+
+	$langue_doc = get_langue_doc();
 	$options=$field['OPTIONS'][0];
 	$values=$field['VALUES'];
 	$_custom_prefixe_=$field["PREFIX"];
@@ -3426,7 +3441,7 @@ function aff_q_txt_i18n_empr_search($field,&$check_scripts,$varname) {
 			$i++;
 		}
 	}
-		
+
 	$ret="<input id=\"".$varname."_txt\" class=\"saisie-30em\" type=\"text\" size=\"".$options['SIZE'][0]['value']."\" name=\"".$varname."[0][txt]\" value=\"".(isset($values[0]['txt']) ? htmlentities($values[0]['txt'],ENT_QUOTES,$charset) : '')."\">";
 	if(count($options['ITEMS']) == 1) {
 		$type = "checkbox";
@@ -3495,7 +3510,7 @@ function chk_q_txt_i18n_empr($field,&$check_message) {
 
 function val_q_txt_i18n_empr($field,$value) {
 	global $charset,$pmb_perso_sep;
-	
+
 	$langue_doc = get_langue_doc();
 	$_custom_prefixe_ = $field['PREFIX'];
 	$requete="select ".$_custom_prefixe_."_custom_list_value, ".$_custom_prefixe_."_custom_list_lib from ".$_custom_prefixe_."_custom_lists where ".$_custom_prefixe_."_custom_champ=".$field['ID']." order by ordre";
@@ -3506,7 +3521,7 @@ function val_q_txt_i18n_empr($field,$value) {
 			$items[$r[$_custom_prefixe_."_custom_list_value"]] = $r[$_custom_prefixe_."_custom_list_lib"];
 		}
 	}
-	
+
 	$value=format_output($field,$value);
 	if (!$value) $value=array();
 
@@ -3530,7 +3545,7 @@ function aff_date_inter_empr($field,&$check_scripts) {
 	global $charset;
 	global $msg;
 	global $base_path;
-	
+
 	$values = ($field['VALUES'] ? $field['VALUES'] : array(""));
 	$options=$field['OPTIONS'][0];
 	$afield_name = $field["ID"];
@@ -3556,7 +3571,7 @@ function aff_date_inter_empr($field,&$check_scripts) {
 		} elseif (!$timestamp_begin && !$timestamp_end && $options["DEFAULT_TODAY"][0]["value"]) {
 			$date_begin = null;
 			$date_end = null;
-			$time_begin = null;	
+			$time_begin = null;
 			$time_end = null;
 		} else {
 			$date_begin = date("Y-m-d",$timestamp_begin);
@@ -3606,9 +3621,9 @@ function aff_date_inter_empr_search($field,&$check_scripts,$varname) {
 	$values=$field['VALUES'];
     if(!empty($values[0])) {
 	$dates = explode("|",$values[0]);
-        if (isset($dates[0])) $timestamp_begin = $dates[0];        
+        if (isset($dates[0])) $timestamp_begin = $dates[0];
         if (isset($dates[1])) $timestamp_end = $dates[1];
-    }    
+    }
 	if (!$timestamp_begin && !$timestamp_end) {
 		$time = time();
 		$date_begin = date("Y-m-d",$time);
@@ -3674,7 +3689,7 @@ function chk_date_inter_empr($field,&$check_message) {
 	global ${$name};
 	$val=${$name};
 	$value = array();
-	
+
 	if (is_array($val)) {
 		foreach($val as $interval){
 			if(!$interval['time_begin']) {
@@ -3686,7 +3701,7 @@ function chk_date_inter_empr($field,&$check_message) {
 			if($interval['date_begin'] && $interval['date_end']) {
 				$timestamp_begin = strtotime($interval['date_begin'] . ' ' . $interval['time_begin']);
 				$timestamp_end = strtotime($interval['date_end'] . ' ' . $interval['time_end']);
-				
+
 				if ($timestamp_begin > $timestamp_end) {
 					$value[] = $timestamp_end."|".$timestamp_begin;
 				} else {
@@ -3709,13 +3724,13 @@ function chk_date_inter_empr($field,&$check_message) {
 
 function val_date_inter_empr($field,$value) {
 	global $pmb_perso_sep, $msg;
-	
+
 	$values=format_output($field,$value);
 	$return = "";
 	for ($i=0;$i<count($values);$i++){
 		$val = explode("|",$values[$i]);
-		
-		if(empty($val[0]) || empty($val[1])) continue;		
+
+		if(empty($val[0]) || empty($val[1])) continue;
 		$timestamp_begin = $val[0];
 		$timestamp_end = $val[1];
 		if ($return) {
@@ -3800,14 +3815,14 @@ function get_form_name() {
 
 function get_js_function_dnd($field_type, $field_name) {
 	global $base_path, $customfield_drop_already_included;
-	
+
 	$return = "";
-	
+
 	if(empty($customfield_drop_already_included)){
 		$return.= "<script type='text/javascript' src='".$base_path."/javascript/customfield_drop.js'></script>";
 		$customfield_drop_already_included = true;
 	}
-	
+
 	return $return."
 		<script type='text/javascript'>
 			allow_drag['customfield_".$field_type."_".$field_name."']=new Array();
@@ -3820,7 +3835,7 @@ function get_js_function_dnd($field_type, $field_name) {
 
 function get_block_dnd($field_type, $field_name, $count, $html, $avalues='') {
 	global $charset;
-	
+
 	return "
 		<div id='customfield_".$field_type."_".$field_name."_".$count."'  class='row' dragtype='customfield_".$field_type."_".$field_name."' draggable='yes' recept='yes' recepttype='customfield_".$field_type."_".$field_name."' handler='customfield_".$field_type."_".$field_name."_".$count."_handle'
 			dragicon='".get_url_icon('icone_drag_notice.png')."' dragtext=\"".htmlentities($avalues,ENT_QUOTES,$charset)."\" downlight=\"customfield_downlight\" highlight=\"customfield_highlight\"
@@ -3846,7 +3861,7 @@ function get_custom_dnd_on_add() {
 			dnd_div.setAttribute('downlight', 'customfield_downlight');
 			dnd_div.setAttribute('highlight', 'customfield_highlight');
 			dnd_div.setAttribute('order', count);
-			
+
 			var sort_span = document.createElement('span');
 			sort_span.setAttribute('id', field_name + '_' + count + '_handle');
 			sort_span.setAttribute('style', 'float:left; padding-right : 7px');
@@ -3854,7 +3869,7 @@ function get_custom_dnd_on_add() {
 			sort_icon.setAttribute('src', '".get_url_icon('sort.png')."');
 			sort_icon.setAttribute('style', 'width:12px; vertical-align:middle');
 			sort_span.appendChild(sort_icon);
-			
+
 			dnd_div.appendChild(sort_span);
 			document.getElementById(node_id).appendChild(dnd_div);
 			parse_drag(dnd_div);
@@ -3866,7 +3881,7 @@ function get_custom_dnd_on_add() {
 function get_authority_isbd_from_field($field, $id=0, $with_permalink=false) {
 	global $charset;
 	global $lang;
-	
+
 	$isbd = '';
 	switch($field["OPTIONS"][0]["DATA_TYPE"]["0"]["value"]) {
 		case 1:// auteur
@@ -3906,10 +3921,10 @@ function get_authority_isbd_from_field($field, $id=0, $with_permalink=false) {
 			break;
 		case 9://Concept
 			if(!intval($id)){
-				$id = onto_common_uri::get_id($id);	
+				$id = onto_common_uri::get_id($id);
 			}
 			if(!$id) break;
-			$aut = authorities_collection::get_authority(AUT_TABLE_INDEX_CONCEPT, $id);			
+			$aut = authorities_collection::get_authority(AUT_TABLE_INDEX_CONCEPT, $id);
 			$isbd .= html_entity_decode($aut->get_display_label(),ENT_QUOTES, $charset);
 			break;
 		default:
@@ -3930,6 +3945,7 @@ function get_authority_selection_parameters($authority_type) {
 	$what = '';
 	$completion = '';
 	$sub = '';
+	$element = '';
 	switch ($authority_type) {
 		case 1:
 		    // Auteurs
@@ -3984,6 +4000,7 @@ function get_authority_selection_parameters($authority_type) {
 			$what = "ontology";
 			$completion = "onto";
 			$sub = "concept";
+			$element = "concept";
 			break;
 		default:
 		    // Autorités personnalisées
@@ -3994,11 +4011,13 @@ function get_authority_selection_parameters($authority_type) {
 			}
 			break;
 	}
-	return array(
-		'what' => $what,
-		'completion' => $completion,
-	    'sub' => $sub
-	);
+	$ret =[
+	    'what' => $what,
+	    'completion' => $completion,
+	    'sub' => $sub,
+	    'element' => $element
+	    ];
+	return  $ret;
 }
 
 function get_authority_details_from_field($field, $id=0) {
@@ -4059,7 +4078,7 @@ function aff_date_flottante_empr($field, &$check_scripts) {
 	global $charset;
 	global $msg;
 	global $base_path;
-	
+
 	$values = ($field['VALUES'] ? $field['VALUES'] : array(""));
 	$options = $field['OPTIONS'][0];
 	$afield_name = $field["ID"];
@@ -4085,7 +4104,7 @@ function aff_date_flottante_empr($field, &$check_scripts) {
 						break;
 				}
 			}
-			
+
 			function date_flottante_reset_fields(field_name) {
 				document.getElementById(field_name + '_date_begin').value = '';
 				document.getElementById(field_name + '_date_end').value = '';
@@ -4095,12 +4114,12 @@ function aff_date_flottante_empr($field, &$check_scripts) {
 		";
 	foreach ($values as $value) {
 		// value:  type (vers: 0, avant: 1, après: 2, date précise: 3, interval date: 4)
-		//		  1ere date			
-		//		  2eme date				
-		//		  zone commentaire					
-		// exemple: 1|||1950|||1960|||commentaires		
+		//		  1ere date
+		//		  2eme date
+		//		  zone commentaire
+		// exemple: 1|||1950|||1960|||commentaires
 		$data = explode("|||", $value);
-		
+
 		$date_type = (!empty($data[0]) ? $data[0] : "");
 		$date_begin = (!empty($data[1]) ? $data[1] : "");
 		$date_end = (!empty($data[2]) ? $data[2] : "");
@@ -4113,9 +4132,9 @@ function aff_date_flottante_empr($field, &$check_scripts) {
 		} elseif (!$date_begin && !$date_end && $options["DEFAULT_TODAY"][0]["value"]) {
 			$date_begin = "";
 			$date_end = "";
-		} else {			
+		} else {
 			//$date_begin = date("Y-m-d", $date_begin);
-			//$date_end = date("Y-m-d", $date_end);			
+			//$date_end = date("Y-m-d", $date_end);
 		}
 		$ret .= "<div>
 					<select id='" . $field['NAME'] . "_" . $count . "_date_type' name='" . $field['NAME'] . "[" . $count . "][date_type]' onchange=\"date_flottante_type_onchange('" . $field['NAME'] . '_' . $count . "');\">
@@ -4123,7 +4142,7 @@ function aff_date_flottante_empr($field, &$check_scripts) {
  						<option value='1' " . ($date_type == 1 ? ' selected ' : '') . ">" . $msg['parperso_option_duration_type1'] . "</option>
  						<option value='2' " . ($date_type == 2 ? ' selected ' : '') . ">" . $msg['parperso_option_duration_type2'] . "</option>
  						<option value='3' " . ($date_type == 3 ? ' selected ' : '') . ">" . $msg['parperso_option_duration_type3'] . "</option>
- 						<option value='4' " . ($date_type == 4 ? ' selected ' : '') . ">" . $msg['parperso_option_duration_type4'] . "</option>								
+ 						<option value='4' " . ($date_type == 4 ? ' selected ' : '') . ">" . $msg['parperso_option_duration_type4'] . "</option>
 					</select>
  					<span id='" . $field['NAME'] . "_" . $count . "_date_begin_zone'>
 						<label id='" . $field['NAME'] . "_" . $count . "_date_begin_zone_label'>" . $msg['parperso_option_duration_begin'] . "</label>
@@ -4134,7 +4153,7 @@ function aff_date_flottante_empr($field, &$check_scripts) {
 						<input type='text' id='" . $field['NAME'] . "_" . $count . "_date_end' name='" . $field['NAME'] . "[" . $count . "][date_end]' value='" . $date_end . "' placeholder='" . $msg["format_date_input_placeholder"] . "' maxlength='11' size='11' />
 					</span>
 					<label>" . $msg['parperso_option_duration_comment'] . "</label>
-					<input type='text' id='" . $field['NAME'] . "_" . $count . "_comment' name='" . $field['NAME'] . "[" . $count . "][comment]' value='" . htmlentities($comment, ENT_QUOTES, $charset) . "' class='saisie-30em'/>		
+					<input type='text' id='" . $field['NAME'] . "_" . $count . "_comment' name='" . $field['NAME'] . "[" . $count . "][comment]' value='" . htmlentities($comment, ENT_QUOTES, $charset) . "' class='saisie-30em'/>
 					<input class='bouton' type='button' value='X' onClick=\"date_flottante_reset_fields('" . $field['NAME'] . '_' . $count . "');\"/>";
 		if (isset($options['REPEATABLE'][0]['value']) && $options['REPEATABLE'][0]['value'] && !$count) {
 			$ret .= '<input class="bouton" type="button" value="+" onclick="add_custom_date_flottante_(\'' . $afield_name . '\', \'' . addslashes($field['NAME']) . '\',\'' . $options["DEFAULT_TODAY"][0]["value"] . '\')" >';
@@ -4153,7 +4172,7 @@ function aff_date_flottante_empr($field, &$check_scripts) {
 		$ret .= "
 		<script>
 			function add_custom_date_flottante_(field_id, field_name, today) {
-				
+
 			}
 		</script>";
 	}
@@ -4161,7 +4180,7 @@ function aff_date_flottante_empr($field, &$check_scripts) {
 	if ($field['MANDATORY']==1) {
 		$caller = get_form_name();
 		$check_scripts.="if (document.forms[\"".$caller."\"].elements[\"".$field['NAME']."[]\"].value==\"\") return cancel_submit(\"".sprintf($msg["parperso_field_is_needed"],$field['ALIAS'])."\");\n";
-	}	
+	}
 	return $ret;
 }
 
@@ -4249,7 +4268,7 @@ function chk_date_flottante_empr($field, &$check_message) {
 
 function val_date_flottante_empr($field, $value) {
 	global $pmb_perso_sep, $msg;
-	
+
 	$values = format_output($field, $value);
 	$return = "";
 	for ($i = 0; $i < count($values); $i++) {
@@ -4289,10 +4308,25 @@ function val_date_flottante_empr($field, $value) {
 
 function get_langue_doc() {
     global $langue_doc;
-    
+
     if (!isset($langue_doc) || !count($langue_doc)) {
         $langue_doc = marc_list_collection::get_instance('lang');
         $langue_doc = $langue_doc->table;
     }
     return $langue_doc;
+}
+
+function attr_exclude_id($id_origine, $id_authperso_origine) {
+    global $id, $id_authperso;
+
+    $exclude = false;
+    if ((intval($id) == intval($id_origine)) && (intval($id_authperso) == intval($id_authperso_origine - 1000))) {
+        $exclude = true;
+    }
+
+    return [
+        "exclude" => $exclude,
+        "autexclude" => intval($id),
+        "no_display" => intval($id),
+    ];
 }

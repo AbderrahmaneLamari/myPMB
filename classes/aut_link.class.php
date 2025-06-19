@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: aut_link.class.php,v 1.49.2.4 2022/01/11 08:35:21 dgoron Exp $
+// $Id: aut_link.class.php,v 1.54.4.1 2023/04/06 15:23:49 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 // gestion des liens entre autorités
@@ -24,6 +24,7 @@ require_once("$class_path/onto/onto_index.class.php");
 require_once("$class_path/authorities_collection.class.php");
 require_once($include_path."/templates/aut_link.tpl.php");
 require_once($class_path."/cache_factory.class.php");
+require_once $class_path."/indexation_stack.class.php";
 
 define('AUT_TABLE_AUTHORS',1);
 define('AUT_TABLE_CATEG',2);
@@ -39,6 +40,7 @@ define('AUT_TABLE_INDEX_CONCEPT',11);
 // Pour la classe authorities_collection
 define('AUT_TABLE_CATEGORIES',12);
 define('AUT_TABLE_AUTHORITY',13);
+define('AUT_TABLE_FAQ',15);
 // authperso >1000
 define('AUT_TABLE_ANIMATION',14);
 
@@ -387,7 +389,6 @@ class aut_link {
 				    $reciproc_id = pmb_mysql_insert_id();
 				    $requete = "UPDATE aut_link SET aut_link_reverse_link_num=" . $reciproc_id . " WHERE id_aut_link=" . $last_id;
 				    pmb_mysql_query($requete);
-				    $this->maj_index($f_aut_link_id, $f_aut_link_table > 1000 ? 9 : $f_aut_link_table);
 				}				
 			}
 		}
@@ -400,16 +401,18 @@ class aut_link {
 		$result = pmb_mysql_query($query);
 		pmb_mysql_query("DELETE FROM aut_link WHERE aut_link_from='".$this->aut_table."' and aut_link_from_num='".$this->id."' ");
 		if(pmb_mysql_num_rows($result)) {
-			while($row = pmb_mysql_fetch_object($result)) {
-    			$this->maj_index($row->aut_link_to_num, $row->aut_link_to > 1000 ? 9 : $row->aut_link_to);
+		    while($row = pmb_mysql_fetch_object($result)) {
+		        $entity_type = authority::aut_const_to_type_const(($row->aut_link_to > 1000 ? 9 : $row->aut_link_to));
+		        indexation_stack::push($row->aut_link_to_num, $entity_type, "aut_link");
 			}
 		}
 		$query = "SELECT aut_link_from_num, aut_link_from FROM aut_link WHERE aut_link_to_num='".$this->id."' and aut_link_to='".$this->aut_table."' ";
 		$result = pmb_mysql_query($query);
 		pmb_mysql_query("DELETE FROM aut_link WHERE aut_link_to='".$this->aut_table."' and aut_link_to_num='".$this->id."' ");
 		if(pmb_mysql_num_rows($result)) {
-			while($row = pmb_mysql_fetch_object($result)) {
-	       		$this->maj_index($row->aut_link_from_num, $row->aut_link_from > 1000 ? 9 : $row->aut_link_from);
+		    while($row = pmb_mysql_fetch_object($result)) {
+		        $entity_type = authority::aut_const_to_type_const(($row->aut_link_from > 1000 ? 9 : $row->aut_link_from));
+		        indexation_stack::push($row->aut_link_from_num, $entity_type, "aut_link");
 			}
 		}
 	}		
@@ -424,8 +427,9 @@ class aut_link {
 		pmb_mysql_query("DELETE FROM aut_link WHERE aut_link_from='".$this->aut_table."' and aut_link_from_num='".$this->id."' ");
 		
 		if(pmb_mysql_num_rows($result) && $indexation_active) {
-			while($row = pmb_mysql_fetch_object($result)) {
-				$this->maj_index($row->aut_link_to_num, $row->aut_link_to > 1000 ? 9 : $row->aut_link_to);
+		    while($row = pmb_mysql_fetch_object($result)) {
+		        $entity_type = authority::aut_const_to_type_const(($row->aut_link_to > 1000 ? 9 : $row->aut_link_to));
+		        indexation_stack::push($row->aut_link_to_num, $entity_type, "aut_link");
 			}
 		}
 		
@@ -436,8 +440,9 @@ class aut_link {
 		pmb_mysql_query("DELETE FROM aut_link WHERE aut_link_to='".$this->aut_table."' and aut_link_to_num='".$this->id."' ");
 		
 		if(pmb_mysql_num_rows($result) && $indexation_active) {
-			while($row = pmb_mysql_fetch_object($result)) {
-				$this->maj_index($row->aut_link_from_num, $row->aut_link_from > 1000 ? 9 : $row->aut_link_from);
+		    while($row = pmb_mysql_fetch_object($result)) {
+		        $entity_type = authority::aut_const_to_type_const(($row->aut_link_from > 1000 ? 9 : $row->aut_link_from));
+		        indexation_stack::push($row->aut_link_from_num, $entity_type, "aut_link");
 			}
 		}
 	}	
@@ -501,7 +506,6 @@ class aut_link {
 		        $reciproc_id = pmb_mysql_insert_id();
 		        $requete = "UPDATE aut_link SET aut_link_reverse_link_num=" . $reciproc_id . " WHERE id_aut_link=" . $last_id;
 		        pmb_mysql_query($requete);			        
-		        $this->maj_index($aut["to_num"], $aut["to"] > 1000 ? 9 : $aut["to"]);
 		    }
 		    $i++;	
 		}			
@@ -754,72 +758,6 @@ class aut_link {
 		}
 		return '';
 	}
-	
-	public function maj_index($object_id, $object_type) {
-		global $include_path, $class_path;
-		
-		$directory = authority::get_indexation_directory($object_type);
-		if($directory == 'concepts') {
-			if(!isset(static::$onto_index)) {
-				$onto_store_config = array(
-						/* db */
-						'db_name' => DATA_BASE,
-						'db_user' => USER_NAME,
-						'db_pwd' => USER_PASS,
-						'db_host' => SQL_SERVER,
-						/* store */
-						'store_name' => 'ontology',
-						/* stop after 100 errors */
-						'max_errors' => 100,
-						'store_strip_mb_comp_str' => 0
-				);
-				$data_store_config = array(
-						/* db */
-						'db_name' => DATA_BASE,
-						'db_user' => USER_NAME,
-						'db_pwd' => USER_PASS,
-						'db_host' => SQL_SERVER,
-						/* store */
-						'store_name' => 'rdfstore',
-						/* stop after 100 errors */
-						'max_errors' => 100,
-						'store_strip_mb_comp_str' => 0
-				);
-					
-				$tab_namespaces=array(
-						"skos"	=> "http://www.w3.org/2004/02/skos/core#",
-						"dc"	=> "http://purl.org/dc/elements/1.1",
-						"dct"	=> "http://purl.org/dc/terms/",
-						"owl"	=> "http://www.w3.org/2002/07/owl#",
-						"rdf"	=> "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-						"rdfs"	=> "http://www.w3.org/2000/01/rdf-schema#",
-						"xsd"	=> "http://www.w3.org/2001/XMLSchema#",
-						"pmb"	=> "http://www.pmbservices.fr/ontology#"
-				);
-					
-				static::$onto_index = onto_index::get_instance();
-				static::$onto_index->load_handler($class_path."/rdf/skos_pmb.rdf", "arc2", $onto_store_config, "arc2", $data_store_config,$tab_namespaces,'http://www.w3.org/2004/02/skos/core#prefLabel');
-			}
-			static::$onto_index->maj($object_id);
-		} elseif($directory == 'authperso') {
-			$indexation_authperso = new indexation_authperso($include_path."/indexation/authorities/authperso/champs_base.xml", "authorities", (1000+$object_id), $object_id);
-// 			if($this->aut_table > 1000) {
-// 				$indexation_authperso->maj($object_id,'authperso');
-// 			} else {
-				$indexation_authperso->maj($object_id,'authperso');
-// 			}
-		} else {
-			if(file_exists($include_path."/indexation/authorities/".$directory."/champs_base.xml")) {
-				$indexation_authority = new indexation_authority($include_path."/indexation/authorities/".$directory."/champs_base.xml", "authorities", $object_type);
-				if($this->aut_table > 1000) {
-					$indexation_authority->maj($object_id,'authperso_link');
-				} else {
-					$indexation_authority->maj($object_id,'aut_link');
-				}
-			}
-		}
-	}
-	
 	public function get_hidden_values_already_exist() 
 	{
 	    global $max_aut_link, $charset;

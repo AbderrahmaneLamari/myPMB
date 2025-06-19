@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_selfservice_ui.class.php,v 1.3 2021/05/25 11:09:08 dgoron Exp $
+// $Id: list_configuration_selfservice_ui.class.php,v 1.4 2023/02/07 08:19:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -62,7 +62,9 @@ class list_configuration_selfservice_ui extends list_configuration_ui {
 				}
 				break;
 			case 'message':
-				$content .= $this->get_cell_edition_format_content($object->message, 'valeur_param');
+			    if ($object->message) {
+    			    $content .= $this->get_cell_edition_format_content($object->message, 'valeur_param');
+			    }
 				break;
 			default :
 				$content .= parent::get_cell_edition_content($object, $property);

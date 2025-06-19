@@ -66,6 +66,8 @@ export default {
 	       		this.searchValueId = this.searchData[this.index].FIELD[0];
 	       	}
        	}
+
+		this.initListeners();
        	
 	},
 	computed: {
@@ -148,6 +150,17 @@ export default {
 		},
 		setDatalist: function(data) {
 			this.dataList = data;
+		},
+		initListeners : function() {
+			this.$root.$on("beforeSubmit", () => {
+				let input = document.getElementById(this.id+'_id_0');
+				if(input != null) {
+					if(input.value == ""){
+						//Si on n'a pas recupere l'id de l'autorite
+						this.operatorSelected = "BOOLEAN";
+					}
+				}
+			})
 		}
 	}
 }

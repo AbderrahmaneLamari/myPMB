@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: analysis_move.inc.php,v 1.5.2.1 2022/01/07 11:41:08 dgoron Exp $
+// $Id: analysis_move.inc.php,v 1.6 2022/01/07 11:40:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

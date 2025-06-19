@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: aut_link.tpl.php,v 1.23.8.1 2021/10/08 09:13:55 jparis Exp $
+// $Id: aut_link.tpl.php,v 1.24 2021/10/08 09:15:12 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 

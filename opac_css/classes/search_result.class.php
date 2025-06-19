@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_result.class.php,v 1.12 2019/06/21 08:00:06 ngantier Exp $
+// $Id: search_result.class.php,v 1.12.8.1 2023/04/24 13:07:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -184,7 +184,6 @@ class search_result {
 		
 		if ($opac_modules_search_keywords && $look_KEYWORDS) {
 			$total_results += static::get_display_level1_records_search('keywords', 'level1_records_keywords_search');
-			$total_results += $nb_result_keywords;
 		}
 		
 		if ($opac_modules_search_abstract && $look_ABSTRACT) {

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SubTabCategoryResults.js,v 1.7 2021/04/27 07:59:51 dgoron Exp $
+// $Id: SubTabCategoryResults.js,v 1.8 2022/12/13 07:45:38 dgoron Exp $
 
 
 define([
@@ -71,6 +71,9 @@ define([
 					handleAs: 'html',
 				}).then(lang.hitch(this, function(data){
 					topic.publish('SubTabHierarchicalSearch', 'SubTabHierarchicalSearch', 'printResults', {results: data, origin: this.parameters.selectorURL+"&action=hierarchical_results_search&search_type=hierarchy", search_type:'hierarchy', parent: queryObject.parent[queryObject.parent.length-1]});
+					setTimeout(() => {
+						  this.getParent().resizeIframe();
+					}, "500");
 				}));
 				return false; 
 			},

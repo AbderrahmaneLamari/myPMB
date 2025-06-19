@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: filter_fields.class.php,v 1.3 2021/02/17 13:31:47 jlaurent Exp $
+// $Id: filter_fields.class.php,v 1.4.4.1 2023/08/31 12:56:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once "$class_path/fields/fields.class.php";
 
 class filter_fields extends fields {
@@ -125,9 +126,6 @@ class filter_fields extends fields {
 			$op = $this->get_global_value("op_".$i."_".$fields[$i]);
 			$field = $this->get_global_value("field_".$i."_".$fields[$i]);
 			$inter = $this->get_global_value("inter_".$i."_".$fields[$i]);
-
-			//Choix du moteur
-			$this->current_engine = 'MyISAM';
 
 			$last_main_table="";
 // 			$prefixe="";
@@ -271,19 +269,9 @@ class filter_fields extends fields {
 						$requete.="select * from ".$table;
 						pmb_mysql_query($requete);
 						if ($prefixe) {
-							$requete="alter table ".$prefixe."t".$i." add idiot int(1)";
-							pmb_mysql_query($requete);
-							$requete="alter table ".$prefixe."t".$i." add unique(".$this->field_keyName.")";
-							pmb_mysql_query($requete);
-							$requete="alter table ".$prefixe."t".$i." add pert decimal(16,1) default 1";
-							pmb_mysql_query($requete);
+							$this->upgrade_columns_temporary_table($prefixe."t".$i, $this->field_keyName, true);
 						} else {
-							$requete="alter table t".$i." add idiot int(1)";
-							pmb_mysql_query($requete);
-							$requete="alter table t".$i." add unique(".$this->field_keyName.")";
-							pmb_mysql_query($requete);
-							$requete="alter table t".$i." add pert decimal(16,1) default 1";
-							pmb_mysql_query($requete);
+							$this->upgrade_columns_temporary_table("t".$i, $this->field_keyName, true);
 						}
 						if ($prefixe) {
 							$requete="insert into ".$prefixe."t".$i." (".$this->field_keyName.",idiot,pert) select distinct ".$last_table.".".$this->field_keyName.",".$last_table.".idiot, ".$last_table.".pert AS pert from ".$last_table." left join ".$table." on ".$last_table.".".$this->field_keyName."=".$table.".".$this->field_keyName." where ".$table.".".$this->field_keyName." is null";

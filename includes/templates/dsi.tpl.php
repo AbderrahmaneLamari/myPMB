@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: dsi.tpl.php,v 1.109.2.1 2021/12/03 08:53:41 dgoron Exp $
+// $Id: dsi.tpl.php,v 1.110.4.3 2024/01/05 10:06:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -11,9 +11,11 @@ global $include_path, $msg, $current_module;
 require_once $include_path."/templates/export_param.tpl.php";
 
 global $dsi_desc_field, $dsi_desc_first_desc;
-global $dsi_desc_other_desc, $dsi_bannette_content_form, $dsi_bannette_content_form_abo, $dsi_classement_content_form, $dsi_equation_content_form, $dsi_bannette_equation_assoce, $dsi_ban_list_diff; 
+global $dsi_desc_other_desc, $dsi_bannette_content_form, $dsi_bannette_content_form_abo, $dsi_bannette_equation_assoce, $dsi_ban_list_diff; 
 global $dsi_bannette_classement_content_form;
-global $dsi_bannette_common_content_form, $dsi_bannette_entity_records_content_form, $dsi_bannette_entity_records_content_form_abo, $dsi_bannette_archive_content_form, $dsi_bannette_options_content_form, $dsi_bannette_access_rights_content_form, $dsi_bannette_access_rights_content_form_abo;
+global $dsi_bannette_common_content_form, $dsi_bannette_entity_records_content_form, $dsi_bannette_entity_records_content_form_abo;
+global $dsi_bannette_archive_content_form, $dsi_bannette_diffusions_history_content_form;
+global $dsi_bannette_options_content_form, $dsi_bannette_access_rights_content_form, $dsi_bannette_access_rights_content_form_abo;
 global $dsi_bannette_export_content_form, $dsi_bannette_document_content_form;
 global $dsi_flux_js_script, $dsi_flux_content_form, $dsi_bannette_form_selvars;
 
@@ -24,7 +26,7 @@ $dsi_desc_field = "
 <div class='row'>
 	<div class='colonne'>
 		<div class='row'>
-			<label for='dsi_desc_form_desc'>".$msg['dsi_ban_form_desc']."</label>
+			<label for='f_categ0'>".$msg['dsi_ban_form_desc']."</label>
 		</div>
 		<div class='row'>
 			!!cms_categs!!
@@ -79,7 +81,7 @@ $dsi_bannette_common_content_form = "
 			<label class='etiquette' for='nom_bannette'>$msg[dsi_ban_form_nom]</label>
 		</div>
 		<div class='row'>
-			<input type='text' class='saisie-30em' name='nom_bannette' value=\"!!nom_bannette!!\" />
+			<input type='text' class='saisie-30em' id='nom_bannette' name='nom_bannette' value=\"!!nom_bannette!!\" />
 		</div>
 	</div>
 	!!classement!!
@@ -131,7 +133,7 @@ $dsi_bannette_entity_records_content_form = "
 
 <div class='row'>
 	<label for='display_notice_in_every_group' class='etiquette'>".$msg['dsi_ban_form_display_notice_in_every_group']."</label>
-	<input type='checkbox' name='display_notice_in_every_group' value='1' !!display_notice_in_every_group!! class='saisie-simple'>
+	<input type='checkbox' id='display_notice_in_every_group' name='display_notice_in_every_group' value='1' !!display_notice_in_every_group!! class='saisie-simple'>
 </div>
 
 <div class='row'>&nbsp;</div>
@@ -154,10 +156,22 @@ $dsi_bannette_archive_content_form = "
 <div class='row'>
 	<div class='colonne2'>
 		<label for='archive_number' class='etiquette'>$msg[dsi_archive_number]</label>
-		<input type='text' class='saisie-5em' name='archive_number'  value=\"!!archive_number!!\" />
+		<input type='text' class='saisie-5em' id='archive_number' name='archive_number'  value=\"!!archive_number!!\" />
 	</div>
 	<div class='colonne_suite'>
 		
+	</div>
+</div>
+";
+
+$dsi_bannette_diffusions_history_content_form = "
+<div class='row'>
+	<div class='colonne2'>
+		<label for='diffusions_history' class='etiquette'>$msg[dsi_diffusions_history]</label>
+		<input type='checkbox' id='diffusions_history' name='diffusions_history'  value='1' !!diffusions_history!! />
+	</div>
+	<div class='colonne_suite'>
+	
 	</div>
 </div>
 ";
@@ -169,11 +183,12 @@ $dsi_bannette_options_content_form = "
 		!!date_last_remplissage!!
 		</div>
 	<div class='colonne_suite'>
-		<label for='date_last_remplissage' class='etiquette'>$msg[dsi_ban_date_last_envoi]</label>
+		<label for='date_last_envoi' class='etiquette'>$msg[dsi_ban_date_last_envoi]</label>
 		!!date_last_envoi!!
 	</div>
 </div>
 !!archive!!
+!!diffusions_history!!
 <div class='row'><hr /></div>
 
 <div class='row'>
@@ -185,25 +200,25 @@ $dsi_bannette_options_content_form = "
 <div class='row'>
 	<div class='colonne3'>
 		<label for='bannette_auto' class='etiquette'>$msg[dsi_ban_form_ban_auto]</label>
-		<input type='checkbox' name='bannette_auto' !!bannette_auto!! value=\"1\" />
+		<input type='checkbox' id='bannette_auto' name='bannette_auto' !!bannette_auto!! value=\"1\" />
 		</div>
 	<div class='colonne3'>
 		<label for='periodicite' class='etiquette'>$msg[dsi_ban_form_periodicite]</label>
-		<input type='text' class='saisie-5em' name='periodicite' value=\"!!periodicite!!\" />
+		<input type='text' class='saisie-5em' id='periodicite' name='periodicite' value=\"!!periodicite!!\" />
 		</div>
 	</div>
 <div class='row'>
 	<div class='colonne3'>
 		<label for='diffusion_email' class='etiquette'>$msg[dsi_ban_form_diff_email]</label>
-		<input type='checkbox' name='diffusion_email' !!diffusion_email!! value=\"1\" />
+		<input type='checkbox' id='diffusion_email' name='diffusion_email' !!diffusion_email!! value=\"1\" />
 	</div>
 	<div class='colonne3'>
-		<label for='bannette_nb_notices_diff' class='etiquette'>$msg[dsi_ban_form_nb_notices_diff]</label>
-		<input type='text' name='nb_notices_diff' class='saisie-5em' value=\"!!nb_notices_diff!!\" />
+		<label for='nb_notices_diff' class='etiquette'>$msg[dsi_ban_form_nb_notices_diff]</label>
+		<input type='text' id='nb_notices_diff' name='nb_notices_diff' class='saisie-5em' value=\"!!nb_notices_diff!!\" />
 	</div>
 	<div class='colonne3'>		
 		<label for='bannette_aff_notice_number' class='etiquette'>".$msg["dsi_bannette_aff_notice_number"]."</label>
-		<input type='checkbox' name='bannette_aff_notice_number' !!bannette_aff_notice_number!! value=\"1\" />
+		<input type='checkbox' id='bannette_aff_notice_number' name='bannette_aff_notice_number' !!bannette_aff_notice_number!! value=\"1\" />
 	</div>
 </div>
 <div class='row'>
@@ -224,14 +239,14 @@ $dsi_bannette_access_rights_content_form = "
 	</div>
 	<div class='colonne3'>
 		<label for='majautocateg' class='etiquette'>".$msg['dsi_ban_confirm_modif_categ']."</label>
-		<input type='checkbox' name='majautocateg' value='1' /><br />
+		<input type='checkbox' id='majautocateg' name='majautocateg' value='1' /><br />
 		<label for='majautogroupe' class='etiquette'>".$msg['dsi_ban_confirm_modif_group']."</label>
-		<input type='checkbox' name='majautogroupe' value='1' /><br />
+		<input type='checkbox' id='majautogroupe' name='majautogroupe' value='1' /><br />
 	</div>
 </div>
 <div class='row'>	
-	<label for='bannette_opac_page_accueil' class='etiquette'>".$msg['bannette_opac_page_accueil']."</label>
-	<input type='checkbox' name='bannette_opac_accueil' !!bannette_opac_accueil_check!! value=\"1\" />
+	<label for='bannette_opac_accueil' class='etiquette'>".$msg['bannette_opac_page_accueil']."</label>
+	<input type='checkbox' id='bannette_opac_accueil' name='bannette_opac_accueil' !!bannette_opac_accueil_check!! value=\"1\" />
 </div>
 ";
 
@@ -243,7 +258,7 @@ $dsi_bannette_export_content_form = "
 	</div>
 	<div class='colonne_suite'>
 	<label for='prefixe_fichier' class='etiquette'>".$msg['dsi_ban_prefixe_fichier']." : </label>
-		<input type='text' name='prefixe_fichier' class='saisie-15em' value=\"!!prefixe_fichier!!\" />
+		<input type='text' id='prefixe_fichier' name='prefixe_fichier' class='saisie-15em' value=\"!!prefixe_fichier!!\" />
 	</div>
 	<div class='row'></div>
 </div>
@@ -258,7 +273,7 @@ $dsi_bannette_document_content_form = "
 <div class='row'>
 	<div class='colonne2'>
 		<label for='document_generate' class='etiquette'>".$msg["dsi_ban_document_generate"]."</label>
-		<input type='checkbox' name='document_generate' !!document_generate!! value='1'>	
+		<input type='checkbox' id='document_generate' name='document_generate' !!document_generate!! value='1'>	
 	</div>
 	<div class='colonne_suite'>
 		<label for='document_notice_tpl' class='etiquette'>".$msg["dsi_ban_document_notice_tpl"]."</label>
@@ -268,19 +283,19 @@ $dsi_bannette_document_content_form = "
 <div class='row'>
 	<div class='colonne2'>
 		<label for='document_group' class='etiquette'>".$msg["dsi_ban_document_group"]."</label>
-		<input type='checkbox' name='document_group' !!document_group!! value='1'>	
+		<input type='checkbox' id='document_group' name='document_group' !!document_group!! value='1'>	
 
 	</div>
 	<div class='colonne_suite'>
 		<label for='document_add_summary' class='etiquette'>".$msg["dsi_ban_document_add_summary"]."</label>
-		<input type='checkbox' name='document_add_summary' !!document_add_summary!! value='1'>
+		<input type='checkbox' id='document_add_summary' name='document_add_summary' !!document_add_summary!! value='1'>
 	</div>
 </div>
 <div class='row'>&nbsp;</div>
 <div class='row'>
 	<div class='colonne2' style='display:none' >		
 		<label for='document_insert_docnum' class='etiquette'>".$msg["dsi_ban_document_insert_docnum"]."</label>
-		<input type='checkbox' name='document_insert_docnum' !!document_insert_docnum!! value='1'>	
+		<input type='checkbox' id='document_insert_docnum' name='document_insert_docnum' !!document_insert_docnum!! value='1'>	
 	</div>
 	<div class='colonne_suite'>		
 	</div>
@@ -297,11 +312,11 @@ $dsi_bannette_content_form = "
 <div class='row'>
 	<div class='colonne3'>
 		<label for='statut_not_account' class='etiquette'>".$msg["dsi_ban_statut_not_account"]."</label>
-		<input type='checkbox' name='statut_not_account' !!statut_not_account!! value=\"1\" />
+		<input type='checkbox' id='statut_not_account' name='statut_not_account' !!statut_not_account!! value=\"1\" />
 	</div>
 	<div class='colonne3'>
 		<label for='associated_campaign' class='etiquette'>".$msg["dsi_ban_associated_campaign"]."</label>
-		<input type='checkbox' name='associated_campaign' !!associated_campaign!! value=\"1\" />
+		<input type='checkbox' id='associated_campaign' name='associated_campaign' !!associated_campaign!! value=\"1\" />
 	</div>
 </div>
 <div class='row'>
@@ -323,7 +338,7 @@ $dsi_bannette_content_form = "
 	<label for='limite_type' class='etiquette'>".$msg['dsi_ban_type_cumul']." : </label>
 	!!limite_type!!
 	<label for='limite_nombre' class='etiquette'>".$msg['dsi_ban_cumul_taille']." : </label>
-	<input type='text' name='limite_nombre' class='saisie-5em' value=\"!!limite_nombre!!\" />
+	<input type='text' id='limite_nombre' name='limite_nombre' class='saisie-5em' value=\"!!limite_nombre!!\" />
 </div>
 
 <div class='row'>&nbsp;</div>
@@ -344,13 +359,13 @@ $dsi_bannette_entity_records_content_form_abo = "
 
 <div class='row'>
 	<div class='colonne2'>
-		<label for='notice_tpl' class='etiquette'>$msg[dsi_ban_form_regroupe_pperso]</label>
-		<input type='radio' name='group_type' value='0' !!checked_group_pperso!! class='saisie-simple'>
+		<label for='group_type_0' class='etiquette'>$msg[dsi_ban_form_regroupe_pperso]</label>
+		<input type='radio' id='group_type_0' name='group_type' value='0' !!checked_group_pperso!! class='saisie-simple'>
 		!!pperso_group!!
 	</div>	
     <div class='colonne2'>
-        <label for='notice_tpl' class='etiquette'>$msg[dsi_ban_form_froup_facette]</label>
-		<input type='radio' name='group_type' value='1' !!checked_group_facette!! class='saisie-simple'>
+        <label for='group_type_1' class='etiquette'>$msg[dsi_ban_form_froup_facette]</label>
+		<input type='radio' id='group_type_1' name='group_type' value='1' !!checked_group_facette!! class='saisie-simple'>
 		!!facette_group!!
     </div>
 </div>
@@ -378,78 +393,6 @@ $dsi_bannette_content_form_abo = "
 !!bannette_export_content_form!!
 <input type='hidden' name=id_empr value='!!id_empr!!' />
 <input type='hidden' name='form_actif' value='1'>
-";
-
-// $dsi_classement_content_form : form saisie des classements
-$dsi_classement_content_form = "
-<div class='row'>
-	<div class='colonne2'>
-		<div class='row'>
-			<label class='etiquette' for='nom_classement'>$msg[dsi_clas_form_nom]</label>
-		</div>
-		<div class='row'>
-			<input type='text' class='saisie-30em' name='nom_classement' value=\"!!nom_classement!!\" />
-		</div>
-	</div>
-	<div class='colonne_suite'>
-		<div class='row'>
-			<label class='etiquette' for='type_classement'>$msg[dsi_clas_form_type]</label>
-		</div>
-		<div class='row'>
-			!!type_classement!!
-		</div>
-	</div>
-</div>
-<div class='row'>
-	<div class='colonne2'>
-		<div class='row'>
-			<label class='etiquette' for='nom_classement_opac'>$msg[dsi_clas_form_nom_opac]</label>
-		</div>
-		<div class='row'>
-			<input type='text' class='saisie-30em' name='nom_classement_opac' value=\"!!nom_classement_opac!!\" />
-		</div>
-	</div>
-</div>
-";
-
-// $dsi_equation_content_form : form saisie des équations
-$dsi_equation_content_form = "
-<div class='row'>
-	<div class='colonne2'>
-		<div class='row'>
-			<label class='etiquette' for='nom_equation'>".$msg['dsi_equ_form_nom']."</label>
-		</div>
-		<div class='row'>
-			<input type='text' class='saisie-30em' name='nom_equation' value=\"!!nom_equation!!\" />
-		</div>
-	</div>
-	<div class='colonne_suite'>
-		<div class='row'>
-			<label class='etiquette' for='num_classement'>".$msg['dsi_equ_form_classement']."</label>
-		</div>
-		<div class='row'>
-			!!num_classement!!
-		</div>
-	</div>
-</div>
-<div class='row'>
-	<label for='comment_equation' class='etiquette'>".$msg['dsi_ban_form_com_gestion']."</label>
-</div>
-<div class='row'>
-	<textarea id='comment_equation' class='saisie-80em' name='comment_equation' cols='62' rows='2' wrap='virtual'>!!comment_equation!!</textarea>
-</div>
-<div class='row'></div>
-<div class='row'>
-	<label for='requete' class='etiquette'>".$msg['dsi_equ_form_requete']."</label>
-</div>
-<div class='row'>
-	!!requete_human!!<input type='hidden' name='requete' value=\"!!requete!!\" />!!bouton_modif_requete!!
-</div>
-<div class='row'></div>
-<div class='row'>
-	<label for='proprio_equation' class='etiquette'>".$msg['dsi_ban_proprio_bannette']."</label>
-	!!proprio_equation!!
-</div>
 ";
 
 // $dsi_bannette_equation_assoce : template pour association des équations/bannette
@@ -566,108 +509,9 @@ $dsi_flux_js_script = "
 
 // $dsi_flux_content_form : form saisie des flux RSS
 $dsi_flux_content_form = "
-<div class='colonne2'>
-	<div class='row'>
-		<label class='etiquette' for='nom_rss_flux'>$msg[dsi_flux_form_nom]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-50em' name='nom_rss_flux' value=\"!!nom_rss_flux!!\" />
-	</div>
-</div>
-<div class='colonne_suite'>
-	<div class='row'>
-		<label class='etiquette' for='link_rss_flux'>$msg[dsi_flux_form_link]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-50em' name='link_rss_flux' value=\"!!link_rss_flux!!\" />
-	</div>
-</div>
-<div class='row'>
-	<div class='row'>
-		<label class='etiquette' for='descr_rss_flux'>$msg[dsi_flux_form_descr]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-80em' name='descr_rss_flux' value=\"!!descr_rss_flux!!\" />
-	</div>
-</div>
-<div class='row'>
-	<div class='row'>
-		<input type='checkbox' name='metadata_rss_flux' !!metadata_rss_flux!! value='1' />
-		<label class='etiquette' for='metadata_rss_flux'>$msg[dsi_flux_form_metadata]</label>
-	</div>
-</div>
-<div class='row'><hr /></div>
-<div class='colonne4'>
-	<div class='row'>
-		<label class='etiquette' for='lang_rss_flux'>$msg[dsi_flux_form_lang]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-10em' name='lang_rss_flux' value=\"!!lang_rss_flux!!\" />
-	</div>
-</div>
-<div class='colonne4'>
-	<div class='row'>
-		<label class='etiquette' for='ttl_rss_flux'>$msg[dsi_flux_form_ttl]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-10em' name='ttl_rss_flux' value=\"!!ttl_rss_flux!!\" />
-	</div>
-</div>
-<div class='colonne_suite'>
-	<div class='row'>
-		<label class='etiquette' for='copy_rss_flux'>$msg[dsi_flux_form_copy]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-50em' name='copy_rss_flux' value=\"!!copy_rss_flux!!\" />
-	</div>
-</div>
-<div class='row'></div>
-<div class='row'><hr /></div>
-<div class='colonne2'>
-	<div class='row'>
-		<label class='etiquette' for='editor_rss_flux'>$msg[dsi_flux_form_editor]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-50em' name='editor_rss_flux' value=\"!!editor_rss_flux!!\" />
-	</div>
-</div>
-<div class='colonne_suite'>
-	<div class='row'>
-		<label class='etiquette' for='webmaster_rss_flux'>$msg[dsi_flux_form_webmaster]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-50em' name='webmaster_rss_flux' value=\"!!webmaster_rss_flux!!\" />
-	</div>
-</div>
-<div class='row'></div>
 <div class='row'><hr /></div>
 <div class='row'>
-	<div class='row'>
-		<label class='etiquette' for='img_url_rss_flux'>$msg[dsi_flux_form_img_url]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-80em' name='img_url_rss_flux' value=\"!!img_url_rss_flux!!\" />
-	</div>
-</div>
-<div class='row'>
-	<div class='row'>
-		<label class='etiquette' for='img_title_rss_flux'>$msg[dsi_flux_form_img_title]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-80em' name='img_title_rss_flux' value=\"!!img_title_rss_flux!!\" />
-	</div>
-</div>
-<div class='row'>
-	<div class='row'>
-		<label class='etiquette' for='img_link_rss_flux'>$msg[dsi_flux_form_img_link]</label>
-	</div>
-	<div class='row'>
-		<input type='text' class='saisie-80em' name='img_link_rss_flux' value=\"!!img_link_rss_flux!!\" />
-	</div>
-</div>
-<div class='row'><hr /></div>
-<div class='row'>
-	<label class='etiquette'>$msg[dsi_flux_form_format_flux_items]</label>
+	<label class='etiquette' for='notice_title_tpl'>$msg[dsi_flux_form_format_flux_items]</label>
 </div>
 <div class='row'>
 	&nbsp;
@@ -704,7 +548,7 @@ $dsi_flux_content_form = "
 	&nbsp;
 </div>
 <div class='row'>
-	<label class='etiquette'>$msg[dsi_flux_form_format_flux_item_link]</label>
+	<label class='etiquette' for='notice_link_tpl'>$msg[dsi_flux_form_format_flux_item_link]</label>
 </div>
 <div class='row'>
 	!!sel_notice_link_tpl!!
@@ -712,11 +556,11 @@ $dsi_flux_content_form = "
 <div class='row'><hr /></div>
 <div class='row'>
 	<div class='colonne2'>
-		<label for='paniers' class='etiquette'>$msg[dsi_flux_form_paniers]</label>
+		<label class='etiquette'>$msg[dsi_flux_form_paniers]</label>
 		!!paniers!!
 	</div>
 	<div class='colonne_suite'>
-		<label for='bannettes' class='etiquette'>$msg[dsi_flux_form_bannettes]</label>
+		<label class='etiquette'>$msg[dsi_flux_form_bannettes]</label>
 		!!bannettes!!
 	</div>
 </div>

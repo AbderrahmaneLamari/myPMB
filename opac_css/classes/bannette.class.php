@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette.class.php,v 1.102.2.10 2021/12/08 15:40:38 dgoron Exp $
+// $Id: bannette.class.php,v 1.116.4.2 2023/03/09 09:08:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -100,6 +100,7 @@ class bannette {
 	protected $notice_group;
 	
 	protected $output_format;
+	public $equation_name = ""; //Nom de l'équation dans la table équation
 	
 	// ---------------------------------------------------------------
 	//		constructeur
@@ -192,12 +193,26 @@ class bannette {
 					}
 				}
 				$rqt = "select * from bannette_empr_categs where empr_categ_num_bannette = '".$this->id_bannette."'";
-			 	$res = pmb_mysql_query($rqt);
-			 	if(pmb_mysql_num_rows($res)){
-			 		while($row = pmb_mysql_fetch_object($res)){
-			 			$this->categorie_lecteurs[] = $row->empr_categ_num_categ;
-			 		}
-			 	}
+				$res = pmb_mysql_query($rqt);
+				if(pmb_mysql_num_rows($res)){
+					while($row = pmb_mysql_fetch_object($res)){
+						$this->categorie_lecteurs[] = $row->empr_categ_num_categ;
+					}
+				}
+			}
+			
+			// On récupère le nom_equation si il est present en base
+			$query = "
+                SELECT nom_equation FROM equations 
+                JOIN bannette_equation
+                ON num_equation = id_equation
+                JOIN bannettes
+                ON bannette_equation.num_bannette = bannettes.id_bannette
+                where num_bannette = $this->id_bannette";
+			$result = pmb_mysql_query($query);
+			if (pmb_mysql_num_rows($result)) {
+			    $row = pmb_mysql_fetch_object($result);
+			    $this->equation_name = $row->nom_equation;
 			}
 		}
 		$this->bannette_descriptors = new bannette_descriptors($this->id_bannette);
@@ -208,7 +223,7 @@ class bannette {
 		$facette = new bannette_facettes($this->id_bannette);
 		return $facette->gen_facette_selection();
 	}
-	
+
 	protected function get_senders_selector() {
 		global $msg, $charset;
 		
@@ -225,160 +240,189 @@ class bannette {
 		return $selector;
 	}
 	
-	// ---------------------------------------------------------------
-	//		show_form : affichage du formulaire de saisie
-	// ---------------------------------------------------------------
-	public function show_form($type="pro") {
-	
-		global $msg, $charset;
-		global $dsi_bannette_form;
-		global $dsi_bannette_form_abo, $dsi_bannette_form_selvars;
-		global $nom_prenom_abo;
-		global $dsi_bannette_notices_template, $PMBuserid;
-		global $form_cb, $id_classement;
-		global $page, $nbr_lignes, $nb_per_page;
-	
-		if ($type=="abo") $dsi_bannette_form = $dsi_bannette_form_abo ;
-	
-		if($this->id_bannette) {
-			$link_pagination = "";
-			if($page > 1) {
-				$link_pagination .= "&page=".$page."&nbr_lignes=".$nbr_lignes."&nb_per_page=".$nb_per_page;
-			}
-			$action = "./dsi.php?categ=bannettes&sub=$type&id_bannette=$this->id_bannette&suite=update&id_classement=$id_classement&form_cb=$form_cb$link_pagination";
-			$link_duplicate =  "<input type='button' class='bouton' value='".$msg['bannette_duplicate_bouton']."' onclick='document.location=\"./dsi.php?categ=bannettes&sub=$type&id_bannette=$this->id_bannette&suite=duplicate&id_classement=$id_classement&form_cb=$form_cb$link_pagination\"' />";
-			$link_annul = "<input type='button' class='bouton' value='$msg[76]' onClick=\"document.location='./dsi.php?categ=bannettes&sub=$type&id_bannette=&suite=search&id_classement=$id_classement&form_cb=$form_cb$link_pagination';\" />";
-			$button_delete = "<input type='button' class='bouton' value='$msg[63]' onClick=\"confirm_delete();\">";
-			$libelle = $msg['dsi_ban_form_modif'];
+	protected function get_classement_content_form($type="pro") {
+		global $dsi_bannette_classement_content_form;
+		
+		if ($type=="pro") {
+			$content_form = $dsi_bannette_classement_content_form;
+			$content_form = str_replace('!!num_classement!!', show_classement_utilise ('BAN', $this->num_classement, 0), $content_form);
 		} else {
-			$action = "./dsi.php?categ=bannettes&sub=$type&id_bannette=0&suite=update";
-			$link_duplicate = "";
-			$link_annul = "<input type='button' class='bouton' value='$msg[76]' onClick=\"history.go(-1);\" />";
-			$libelle = $msg['dsi_ban_form_creat'];
-			$button_delete ="";
-			if ($this->id_bannette_origine) { //On vient d'une duplication
-				$origine_bannette = new bannette($this->id_bannette_origine) ;
-				$this->notice_tpl=$origine_bannette->notice_tpl;
-			} else {
-				$this->notice_tpl=$dsi_bannette_notices_template;
-			}
+			$content_form = "<input type=hidden name=num_classement value=0 />";
 		}
+		return $content_form;
+	}
 	
+	protected function get_common_content_form($type="pro") {
+		global $charset;
+		global $dsi_bannette_common_content_form, $dsi_bannette_form_selvars;
+		
+		$content_form = $dsi_bannette_common_content_form;
+		$content_form = str_replace('!!nom_bannette!!', htmlentities($this->nom_bannette,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!classement!!', $this->get_classement_content_form($type), $content_form);
+		$content_form = str_replace('!!comment_gestion!!', htmlentities($this->comment_gestion,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!comment_public!!', htmlentities($this->comment_public,ENT_QUOTES, $charset), $content_form);
+		
+		//ajout champs emprunteur
+		if ($type=="pro") {
+			$comment_public_info_empr = str_replace('!!selector_name!!', 'comment_public_selvars_id',  $dsi_bannette_form_selvars);
+			$comment_public_info_empr = str_replace('!!dest_dom_node!!', 'comment_public',  $comment_public_info_empr);
+			$content_form = str_replace('!!comment_public_info_empr!!', $comment_public_info_empr,  $content_form);
+		} else {
+			$content_form = str_replace('!!comment_public_info_empr!!', '',  $content_form);
+		}
+		
 		$bannette_tpl_list=bannette_tpl::gen_tpl_select("bannette_tpl_num",$this->bannette_tpl_num);
+		$content_form = str_replace('!!bannette_tpl_list!!', $bannette_tpl_list, $content_form);
+		$content_form = str_replace('!!entete_mail!!', htmlentities($this->entete_mail,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!piedpage_mail!!', htmlentities($this->piedpage_mail,ENT_QUOTES, $charset), $content_form);
+		
+		$info_empr = str_replace('!!selector_name!!', 'selvars_id',  $dsi_bannette_form_selvars);
+		$info_empr = str_replace('!!dest_dom_node!!', 'entete_mail',  $info_empr);
+		$content_form = str_replace('!!info_empr!!', $info_empr,  $content_form);
+		
+		return $content_form;
+	}
 	
-		$dsi_bannette_form = str_replace('!!libelle!!', $libelle, $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!type!!', $type, $dsi_bannette_form);
+	protected function get_entity_content_form($type="pro") {
+		global $msg;
+		global $dsi_bannette_entity_records_content_form;
+		global $dsi_bannette_entity_records_content_form_abo;
+		global $dsi_notice_group_by_default;
+		
+		$content_form = $dsi_bannette_entity_records_content_form;
+		if ($type=="abo") {
+			$content_form = $dsi_bannette_entity_records_content_form_abo;
+		}
+		
+		$group_by = array();
+		$group_by = explode(',', $dsi_notice_group_by_default);
+		
+		$content_form = str_replace('!!notice_tpl!!', notice_tpl_gen::gen_tpl_select("notice_tpl",$this->notice_tpl), $content_form);
+		
+		
+		$selected_id = $this->group_pperso;
+		if (!$this->id_bannette && !empty($group_by) && !empty($group_by[0]) && trim($group_by[0]) == "cp" && !empty($group_by[1]) && intval($group_by[1]) != 0) {
+		    $selected_id = $group_by[1];
+		}
+		
+		$liste_p_perso = $this->p_perso->gen_liste_field("group_pperso", $selected_id, $msg["dsi_ban_form_regroupe_pperso_no"]);
+		$content_form = str_replace('!!pperso_group!!', $liste_p_perso, $content_form);
+		
+		$facette_group = $this->gen_facette_selection();
+		if ($this->id_bannette_origine) {
+    		// On vient d'une duplication
+			$origine_bannette = new bannette($this->id_bannette_origine);
+			$facette_group = $origine_bannette->gen_facette_selection();
+		}
+		$content_form = str_replace('!!facette_group!!', $facette_group, $content_form);
+		$content_form = str_replace("!!display_notice_in_every_group!!", ($this->display_notice_in_every_group ? "checked='checked'" : ""), $content_form);
+		
+		if (!$this->id_bannette && !empty($group_by) && !empty($group_by[0])) {
+		    
+    		$checked_group_facette = "";
+    		$checked_group_pperso = " checked='checked' ";
+		    if (trim($group_by[0]) == "f") {
+    		    $checked_group_facette = " checked='checked' ";
+    		    $checked_group_pperso = "";
+		    }
+		    
+		} else {
+    		$checked_group_facette = "";
+    		$checked_group_pperso = " checked='checked' ";
+    		if ($this->group_type) {
+    		    $checked_group_facette = " checked='checked' ";
+    		    $checked_group_pperso = "";
+    		}
+		}
+		
+		$content_form = str_replace('!!checked_group_facette!!', $checked_group_facette, $content_form);
+		$content_form = str_replace('!!checked_group_pperso!!', $checked_group_pperso, $content_form);
+		
+		return $content_form;
+	}
 	
-		$dsi_bannette_form = str_replace('!!id_bannette!!', $this->id_bannette, $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!action!!', $action, $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!link_duplicate!!', $link_duplicate, $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!link_annul!!', $link_annul, $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!nom_bannette!!', htmlentities($this->nom_bannette,ENT_QUOTES, $charset), $dsi_bannette_form);
+	protected function get_archive_content_form($type="pro") {
+		global $dsi_bannette_archive_content_form;
+		
+		if ($type=="pro") {
+			$content_form = $dsi_bannette_archive_content_form;
+			$content_form = str_replace('!!archive_number!!', $this->archive_number, $content_form);
+		} else {
+			$content_form = "";
+		}
+		return $content_form;
+	}
 	
-		if ($type=="pro") $dsi_bannette_form = str_replace('!!num_classement!!', show_classement_utilise ('BAN', $this->num_classement, 0), $dsi_bannette_form);
-		else $dsi_bannette_form = str_replace('!!num_classement!!', "<input type=hidden name=num_classement value=0 />", $dsi_bannette_form);
-	
-		global $id_empr ;
-		$dsi_bannette_form = str_replace('!!id_empr!!', $id_empr, $dsi_bannette_form);
-	
-		$dsi_bannette_form = str_replace('!!comment_gestion!!', htmlentities($this->comment_gestion,ENT_QUOTES, $charset), $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!comment_public!!', htmlentities($this->comment_public,ENT_QUOTES, $charset), $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!bannette_tpl_list!!', $bannette_tpl_list, $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!entete_mail!!', htmlentities($this->entete_mail,ENT_QUOTES, $charset), $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!piedpage_mail!!', htmlentities($this->piedpage_mail,ENT_QUOTES, $charset), $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!date_last_remplissage!!', htmlentities($this->aff_date_last_remplissage,ENT_QUOTES, $charset), $dsi_bannette_form);
-	
+	protected function get_options_content_form($type="pro") {
+		global $msg, $charset;
+		global $nom_prenom_abo;
+		global $dsi_bannette_options_content_form;
+		
+		$content_form = $dsi_bannette_options_content_form;
+		$content_form = str_replace('!!date_last_remplissage!!', htmlentities($this->aff_date_last_remplissage,ENT_QUOTES, $charset), $content_form);
+		
 		$date_clic   = "onClick=\"openPopUp('./select.php?what=calendrier&caller=saisie_bannette&date_caller=".substr(preg_replace('/-/', '', $this->date_last_envoi),0,8)."&param1=form_date_last_envoi&param2=form_aff_date_last_envoi&auto_submit=NO&date_anterieure=YES', 'calendar')\"  ";
 		$date_last_envoi = "
 					<input type='hidden' name='form_date_last_envoi' value='".str_replace(' ', '', str_replace('-', '', str_replace(':', '', $this->date_last_envoi)))."' />
 					<input class='bouton' type='button' name='form_aff_date_last_envoi' value='".$this->aff_date_last_envoi."' ".$date_clic." />";
-			
-		$dsi_bannette_form = str_replace('!!date_last_envoi!!', $date_last_envoi, $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!archive_number!!', $this->archive_number, $dsi_bannette_form);
-		if ($type=="pro") $dsi_bannette_form = str_replace('!!proprio_bannette!!', htmlentities($msg['dsi_ban_no_proprio'],ENT_QUOTES, $charset), $dsi_bannette_form);
-		else $dsi_bannette_form = str_replace('!!proprio_bannette!!', htmlentities($nom_prenom_abo,ENT_QUOTES, $charset), $dsi_bannette_form);
-	
-		if ($this->bannette_auto) $dsi_bannette_form = str_replace('!!bannette_auto!!', "checked", $dsi_bannette_form);
-		else $dsi_bannette_form = str_replace('!!bannette_auto!!', "", $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!periodicite!!', htmlentities($this->periodicite,ENT_QUOTES, $charset), $dsi_bannette_form);
-		if ($this->diffusion_email) $dsi_bannette_form = str_replace('!!diffusion_email!!', "checked='checked'", $dsi_bannette_form);
-		else $dsi_bannette_form = str_replace('!!diffusion_email!!', "", $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!nb_notices_diff!!', htmlentities($this->nb_notices_diff,ENT_QUOTES, $charset), $dsi_bannette_form);
-	
-// 		$dsi_bannette_form = str_replace('!!notice_display_type_0!!', (!$this->notice_display_type ? "checked='checked'" : ""), $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!notice_tpl!!', notice_tpl_gen::gen_tpl_select("notice_tpl",$this->notice_tpl), $dsi_bannette_form);
-// 		$dsi_bannette_form = str_replace('!!notice_display_type_1!!', ($this->notice_display_type ? "checked='checked'" : ""), $dsi_bannette_form);
-//		$dsi_bannette_form = str_replace('!!django_directory!!', record_display::get_directories_options($this->django_directory), $dsi_bannette_form);
-	
-		if ($this->statut_not_account) $dsi_bannette_form = str_replace('!!statut_not_account!!', "checked", $dsi_bannette_form);
-		else $dsi_bannette_form = str_replace('!!statut_not_account!!', "", $dsi_bannette_form);
-		if ($this->associated_campaign) $dsi_bannette_form = str_replace('!!associated_campaign!!', "checked", $dsi_bannette_form);
-		else $dsi_bannette_form = str_replace('!!associated_campaign!!', "", $dsi_bannette_form);
 		
-		// choix de l'expéditeur
-		$dsi_bannette_form = str_replace('!!senders!!', $this->get_senders_selector(), $dsi_bannette_form);
+		$content_form = str_replace('!!date_last_envoi!!', $date_last_envoi, $content_form);
 		
-		// group_type, group_pperso, group_facettes
-		if($this->group_type){
-			$dsi_bannette_form = str_replace('!!checked_group_facette!!', " checked='checked' ", $dsi_bannette_form);
-			$dsi_bannette_form = str_replace('!!checked_group_pperso!!', "", $dsi_bannette_form);
-		}else{
-			$dsi_bannette_form = str_replace('!!checked_group_facette!!', "", $dsi_bannette_form);
-			$dsi_bannette_form = str_replace('!!checked_group_pperso!!', " checked='checked' ", $dsi_bannette_form);
-		}
-		$dsi_bannette_form = str_replace('!!bannette_aff_notice_number!!', ($this->bannette_aff_notice_number ? " checked='checked' " : ""), $dsi_bannette_form);
-	
-		$liste_p_perso = $this->p_perso->gen_liste_field("group_pperso",$this->group_pperso,$msg["dsi_ban_form_regroupe_pperso_no"]);
-		$dsi_bannette_form = str_replace('!!pperso_group!!', $liste_p_perso, $dsi_bannette_form);
-			
-		if ($this->id_bannette_origine) { //On vient d'une duplication
-			$origine_bannette = new bannette($this->id_bannette_origine) ;
-			$dsi_bannette_form = str_replace('!!facette_group!!', $origine_bannette->gen_facette_selection(), $dsi_bannette_form);
-		} else {
-			$dsi_bannette_form = str_replace('!!facette_group!!', $this->gen_facette_selection(), $dsi_bannette_form);
-		}
-		$dsi_bannette_form = str_replace("!!display_notice_in_every_group!!", ($this->display_notice_in_every_group ? "checked='checked'" : ""), $dsi_bannette_form);
-	
+		$content_form = str_replace('!!archive!!', $this->get_archive_content_form($type), $content_form);
 		if ($type=="pro") {
-			$requete = 'SELECT id_categ_empr, libelle, IF(empr_categ_num_categ IS NULL, 0,1) as inscription FROM empr_categ
-						left join bannette_empr_categs on (id_categ_empr=empr_categ_num_categ and empr_categ_num_bannette=' . $this->id_bannette . ' )
-						ORDER BY libelle';
-			$categ_lect_aff = gen_liste_multiple ($requete, "id_categ_empr", "libelle", "inscription", "categorie_lecteurs[]", '', 1, 0, $msg['dsi_ban_aucune_categ'], -1,$msg['dsi_all_empr_categ'], 5) ;
-			$dsi_bannette_form = str_replace('!!categorie_lecteurs!!', $categ_lect_aff, $dsi_bannette_form);
-				
-			$requete = 'SELECT id_groupe, libelle_groupe, IF(empr_groupe_num_groupe IS NULL, 0,1) as inscription FROM groupe
-						left join bannette_empr_groupes on (id_groupe=empr_groupe_num_groupe and empr_groupe_num_bannette=' . $this->id_bannette . ' )
-						ORDER BY libelle_groupe';
-			$groupe_lect_aff = gen_liste_multiple ($requete, "id_groupe", "libelle_groupe", "inscription", "groupe_lecteurs[]", '', 1, 0, $msg['empr_form_aucungroupe'], 0,'', 5) ;
-			$dsi_bannette_form = str_replace('!!groupe_lecteurs!!', $groupe_lect_aff, $dsi_bannette_form);
+			$content_form = str_replace('!!proprio_bannette!!', htmlentities($msg['dsi_ban_no_proprio'],ENT_QUOTES, $charset), $content_form);
 		} else {
-			$dsi_bannette_form = str_replace('!!categorie_lecteurs!!', "<input type=hidden name=categorie_lecteurs[] value=0 />", $dsi_bannette_form);
-			$dsi_bannette_form = str_replace('!!groupe_lecteurs!!', "<input type=hidden name=groupe_lecteurs[] value=0 />", $dsi_bannette_form);
+			$content_form = str_replace('!!proprio_bannette!!', htmlentities($nom_prenom_abo,ENT_QUOTES, $charset), $content_form);
 		}
-	
-		$dsi_bannette_form = str_replace('!!desc_fields!!', $this->bannette_descriptors->get_form(), $dsi_bannette_form);
-	
-		$requete = "SELECT idcaddie, name FROM caddie where type='NOTI' ";
-		if ($PMBuserid!=1) $requete.=" and (autorisations='$PMBuserid' or autorisations like '$PMBuserid %' or autorisations like '% $PMBuserid %' or autorisations like '% $PMBuserid') ";
-		$requete.=" ORDER BY name ";
-		$panier_bann_aff = gen_liste ($requete, "idcaddie", "name", "num_panier", "", $this->num_panier, 0, $msg['dsi_panier_aucun'], 0,$msg['dsi_panier_aucun'], 0) ;
-		$dsi_bannette_form = str_replace('!!num_panier!!', $panier_bann_aff, $dsi_bannette_form);
-	
-		$limite_type = "<select name='limite_type' id='limite_type'>
-						<option value='' ".(!$this->limite_type ? "selected='selected'" : "").">".$msg['dsi_ban_non_cumul']."</option>
-						<option value='D' ".($this->limite_type == 'D' ? "selected='selected'" : "").">".$msg['dsi_ban_cumul_jours']."</option>
-						<option value='I' ".($this->limite_type == 'I' ? "selected='selected'" : "").">".$msg['dsi_ban_cumul_notice']."</option>
-						</select>";
-		$dsi_bannette_form = str_replace('!!limite_type!!', $limite_type, $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!limite_nombre!!', $this->limite_nombre, $dsi_bannette_form);
-	
+		
+		$content_form = str_replace('!!bannette_auto!!', ($this->bannette_auto ? "checked='checked'" : ""), $content_form);
+		$content_form = str_replace('!!periodicite!!', htmlentities($this->periodicite,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!diffusion_email!!', ($this->diffusion_email ? "checked='checked'" : ""), $content_form);
+		$content_form = str_replace('!!nb_notices_diff!!', htmlentities($this->nb_notices_diff,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!bannette_aff_notice_number!!', ($this->bannette_aff_notice_number ? " checked='checked' " : ""), $content_form);
+		
 		// update_type: se baser sur la date de création ou la date de mise à jour des notices ?
 		$update_type = "<select name='update_type' id='update_type'>
 						<option value='C' ".((!$this->update_type || $this->update_type == 'C') ? "selected='selected'" : "").">".$msg['dsi_ban_update_type_c']."</option>
 						<option value='U' ".($this->update_type == 'U' ? "selected='selected'" : "").">".$msg['dsi_ban_update_type_u']."</option>
 						</select>";
-		$dsi_bannette_form = str_replace('!!update_type!!', $update_type, $dsi_bannette_form);
+		$content_form = str_replace('!!update_type!!', $update_type, $content_form);
+		
+		return $content_form;
+	}
 	
+	protected function get_access_rights_content_form($type="pro") {
+		global $msg;
+		global $dsi_bannette_access_rights_content_form, $dsi_bannette_access_rights_content_form_abo;
+		
+		if ($type=="pro") {
+			$content_form = $dsi_bannette_access_rights_content_form;
+			$requete = 'SELECT id_categ_empr, libelle, IF(empr_categ_num_categ IS NULL, 0,1) as inscription FROM empr_categ
+						left join bannette_empr_categs on (id_categ_empr=empr_categ_num_categ and empr_categ_num_bannette=' . $this->id_bannette . ' )
+						ORDER BY libelle';
+			$categ_lect_aff = gen_liste_multiple ($requete, "id_categ_empr", "libelle", "inscription", "categorie_lecteurs[]", '', 1, 0, $msg['dsi_ban_aucune_categ'], -1,$msg['dsi_all_empr_categ'], 5) ;
+			$content_form = str_replace('!!categorie_lecteurs!!', $categ_lect_aff, $content_form);
+			
+			$requete = 'SELECT id_groupe, libelle_groupe, IF(empr_groupe_num_groupe IS NULL, 0,1) as inscription FROM groupe
+						left join bannette_empr_groupes on (id_groupe=empr_groupe_num_groupe and empr_groupe_num_bannette=' . $this->id_bannette . ' )
+						ORDER BY libelle_groupe';
+			$groupe_lect_aff = gen_liste_multiple ($requete, "id_groupe", "libelle_groupe", "inscription", "groupe_lecteurs[]", '', 1, 0, $msg['empr_form_aucungroupe'], 0,'', 5) ;
+			$content_form = str_replace('!!groupe_lecteurs!!', $groupe_lect_aff, $content_form);
+			$content_form = str_replace('!!bannette_opac_accueil_check!!', ($this->bannette_opac_accueil ? "checked='checked'" : ""), $content_form);
+		} else {
+			$content_form = $dsi_bannette_access_rights_content_form_abo;
+			$content_form = str_replace('!!categorie_lecteurs!!', "<input type=hidden name=categorie_lecteurs[] value=0 />", $content_form);
+			$content_form = str_replace('!!groupe_lecteurs!!', "<input type=hidden name=groupe_lecteurs[] value=0 />", $content_form);
+		}
+		
+		return $content_form;
+	}
+	
+	protected function get_export_content_form($type="pro") {
+		global $msg;
+		global $dsi_bannette_export_content_form;
+		
+		$content_form = $dsi_bannette_export_content_form;
 		$exp = start_export::get_exports();
 		$liste_exports = "<select name='typeexport' onchange=\"if(this.selectedIndex==0) document.getElementById('liste_parametre').style.display='none'; else document.getElementById('liste_parametre').style.display=''; \">" ;
 		if (!$this->typeexport) $liste_exports .= "<option value='' selected>".$msg['dsi_ban_noexport']."</option>";
@@ -388,44 +432,121 @@ class bannette {
 			else $liste_exports .= "<option value='".$exp[$i]["PATH"]."' >".$exp[$i]["NAME"]."</option>";
 		}
 		$liste_exports .= "</select>" ;
-		$dsi_bannette_form = str_replace('!!typeexport!!', $liste_exports,  $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!prefixe_fichier!!', $this->prefixe_fichier,  $dsi_bannette_form);
-	
-		$dsi_bannette_form = str_replace('!!bannette_opac_accueil_check!!', ($this->bannette_opac_accueil ? "checked='checked'" : ""), $dsi_bannette_form);
-	
-		$dsi_bannette_form = str_replace('!!document_generate!!', ($this->document_generate ? "checked='checked'" : ""), $dsi_bannette_form);
-// 		$dsi_bannette_form = str_replace('!!document_notice_display_type_0!!', (!$this->document_notice_display_type ? "checked='checked'" : ""), $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!document_notice_tpl!!', notice_tpl_gen::gen_tpl_select("document_notice_tpl",$this->document_notice_tpl), $dsi_bannette_form);
-// 		$dsi_bannette_form = str_replace('!!document_notice_display_type_1!!', ($this->document_notice_display_type ? "checked='checked'" : ""), $dsi_bannette_form);
-// 		$dsi_bannette_form = str_replace('!!document_django_directory!!', record_display::get_directories_options($this->document_django_directory), $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!document_insert_docnum!!', ($this->document_insert_docnum ? "checked='checked'" : ""), $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!document_group!!', ($this->document_group ? "checked='checked'" : ""), $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!document_add_summary!!', ($this->document_add_summary ? "checked='checked'" : ""), $dsi_bannette_form);
-	
-		$dsi_bannette_form = str_replace('!!delete!!', $button_delete,  $dsi_bannette_form);
-	
-		// afin de revenir où on était : $form_cb, le critère de recherche
-		$dsi_bannette_form = str_replace('!!form_cb!!', $form_cb,  $dsi_bannette_form);
+		$content_form = str_replace('!!typeexport!!', $liste_exports,  $content_form);
+		$content_form = str_replace('!!prefixe_fichier!!', $this->prefixe_fichier,  $content_form);
+		
 		if($this->param_export) {
 			$param=new export_param(EXP_DSI_CONTEXT, $this->param_export);
 		} else {
 			$param=new export_param(EXP_DEFAULT_GESTION);
 		}
-		$dsi_bannette_form = str_replace('!!display_liste_param!!', (!$this->typeexport ? 'display:none' : ''),  $dsi_bannette_form);
-		$dsi_bannette_form = str_replace('!!form_param!!', $param->check_default_param(),  $dsi_bannette_form);
-	
-		//ajout champs emprunteur
-		$comment_public_info_empr = str_replace('!!selector_name!!', 'comment_public_selvars_id',  $dsi_bannette_form_selvars);
-		$comment_public_info_empr = str_replace('!!dest_dom_node!!', 'comment_public',  $comment_public_info_empr);
-		$dsi_bannette_form = str_replace('!!comment_public_info_empr!!', $comment_public_info_empr,  $dsi_bannette_form);
+		$content_form = str_replace('!!display_liste_param!!', (!$this->typeexport ? 'display:none' : ''),  $content_form);
+		$content_form = str_replace('!!form_param!!', $param->check_default_param(),  $content_form);
 		
-		$info_empr = str_replace('!!selector_name!!', 'selvars_id',  $dsi_bannette_form_selvars);
-		$info_empr = str_replace('!!dest_dom_node!!', 'entete_mail',  $info_empr);
-		$dsi_bannette_form = str_replace('!!info_empr!!', $info_empr,  $dsi_bannette_form);
-	
-		print $dsi_bannette_form;
+		return $content_form;
 	}
 	
+	protected function get_document_content_form($type="pro") {
+		global $dsi_bannette_document_content_form;
+		
+		$content_form = $dsi_bannette_document_content_form;
+		$content_form = str_replace('!!document_generate!!', ($this->document_generate ? "checked='checked'" : ""), $content_form);
+// 		$content_form = str_replace('!!document_notice_display_type_0!!', (!$this->document_notice_display_type ? "checked='checked'" : ""), $content_form);
+		$content_form = str_replace('!!document_notice_tpl!!', notice_tpl_gen::gen_tpl_select("document_notice_tpl",$this->document_notice_tpl), $content_form);
+// 		$content_form = str_replace('!!document_notice_display_type_1!!', ($this->document_notice_display_type ? "checked='checked'" : ""), $content_form);
+// 		$content_form = str_replace('!!document_django_directory!!', record_display::get_directories_options($this->document_django_directory), $content_form);
+		$content_form = str_replace('!!document_insert_docnum!!', ($this->document_insert_docnum ? "checked='checked'" : ""), $content_form);
+		$content_form = str_replace('!!document_group!!', ($this->document_group ? "checked='checked'" : ""), $content_form);
+		$content_form = str_replace('!!document_add_summary!!', ($this->document_add_summary ? "checked='checked'" : ""), $content_form);
+		return $content_form;
+	}
+	
+	// ---------------------------------------------------------------
+	//		show_form : affichage du formulaire de saisie
+	// ---------------------------------------------------------------
+	public function show_form($type="pro") {
+		global $msg, $base_path, $current_module;
+		global $dsi_bannette_content_form;
+		global $dsi_bannette_content_form_abo;
+		global $dsi_bannette_notices_template;
+		global $form_cb, $id_classement, $id_empr;
+		global $page, $nbr_lignes, $nb_per_page;
+		
+		if ($type=="abo") {
+			$content_form = $dsi_bannette_content_form_abo ;
+		} else {
+			$content_form = $dsi_bannette_content_form;
+		}
+		$content_form = str_replace('!!id_bannette!!', $this->id_bannette, $content_form);
+		
+		$interface_form = new interface_dsi_form('saisie_bannette');
+		if(!$this->id_bannette){
+			$interface_form->set_label($msg['dsi_ban_form_creat']);
+		}else{
+			$interface_form->set_label($msg['dsi_ban_form_modif']);
+		}
+		if($this->id_bannette) {
+			$link_pagination = "";
+			if($page > 1) {
+				$link_pagination .= "&page=".$page."&nbr_lignes=".$nbr_lignes."&nb_per_page=".$nb_per_page;
+			}
+			$interface_form->set_url_base($base_path.'/'.$current_module.'.php?categ=bannettes&sub='.$type.'&id_classement='.$id_classement.'&form_cb='.$form_cb.$link_pagination);
+			$link_annul = "<input type='button' class='bouton' value='$msg[76]' onClick=\"document.location='".static::format_url("&categ=bannettes&sub=$type&id_bannette=&suite=search&id_classement=$id_classement&form_cb=$form_cb$link_pagination")."';\" />";
+		} else {
+			$interface_form->set_url_base($base_path.'/'.$current_module.'.php?categ=bannettes&sub='.$type);
+			$link_annul = "<input type='button' class='bouton' value='$msg[76]' onClick=\"history.go(-1);\" />";
+			if ($this->id_bannette_origine) { //On vient d'une duplication
+				$origine_bannette = new bannette($this->id_bannette_origine) ;
+				$this->notice_tpl=$origine_bannette->notice_tpl;
+			} else {
+				$this->notice_tpl=$dsi_bannette_notices_template;
+			}
+		}
+		$content_form = str_replace('!!type!!', $type, $content_form);
+		$content_form = str_replace('!!id_empr!!', $id_empr, $content_form);
+		
+		$content_form = str_replace('!!bannette_common_content_form!!', $this->get_common_content_form($type), $content_form);
+		$content_form = str_replace('!!bannette_entity_content_form!!', $this->get_entity_content_form($type), $content_form);
+		$content_form = str_replace('!!bannette_options_content_form!!', $this->get_options_content_form($type), $content_form);
+		$content_form = str_replace('!!bannette_access_rights_content_form!!', $this->get_access_rights_content_form($type), $content_form);
+		$content_form = str_replace('!!bannette_export_content_form!!', $this->get_export_content_form($type), $content_form);
+		if($type=="pro") {
+			$content_form = str_replace('!!bannette_document_content_form!!', $this->get_document_content_form($type), $content_form);
+		}
+	
+		if ($this->statut_not_account) $content_form = str_replace('!!statut_not_account!!', "checked", $content_form);
+		else $content_form = str_replace('!!statut_not_account!!', "", $content_form);
+		if ($this->associated_campaign) $content_form = str_replace('!!associated_campaign!!', "checked", $content_form);
+		else $content_form = str_replace('!!associated_campaign!!', "", $content_form);
+		
+		// choix de l'expéditeur
+		$content_form = str_replace('!!senders!!', $this->get_senders_selector(), $content_form);
+		
+		$content_form = str_replace('!!desc_fields!!', $this->bannette_descriptors->get_form(), $content_form);
+		
+		$content_form = str_replace('!!num_panier!!', caddie::get_cart_list_selector('NOTI', 'num_panier', $this->num_panier), $content_form);
+		
+		$limite_type = "<select name='limite_type' id='limite_type'>
+						<option value='' ".(!$this->limite_type ? "selected='selected'" : "").">".$msg['dsi_ban_non_cumul']."</option>
+						<option value='D' ".($this->limite_type == 'D' ? "selected='selected'" : "").">".$msg['dsi_ban_cumul_jours']."</option>
+						<option value='I' ".($this->limite_type == 'I' ? "selected='selected'" : "").">".$msg['dsi_ban_cumul_notice']."</option>
+						</select>";
+		$content_form = str_replace('!!limite_type!!', $limite_type, $content_form);
+		$content_form = str_replace('!!limite_nombre!!', $this->limite_nombre, $content_form);
+	
+		$interface_form->set_object_id($this->id_bannette)
+		->set_bannette_type($type)
+		->set_id_empr($id_empr)
+		->set_confirm_delete_msg($msg['confirm_suppr'])
+		->set_content_form($content_form)
+		->set_table_name('bannettes')
+		->set_field_focus('nom_bannette');
+		if($type=="pro") {
+			$interface_form->set_duplicable(true);
+		}
+		print $interface_form->get_display();
+	}
+
 	public function set_properties_from_form() {
 		global $num_classement, $nom_bannette, $comment_gestion, $comment_public;
 		global $entete_mail, $piedpage_mail, $notice_display_type, $notice_tpl, $django_directory;
@@ -608,21 +729,21 @@ class bannette {
 				}
 			}
 			for($i=0 ; $i<count($this->categorie_lecteurs) ; $i++){
-				$id_categ=$this->categorie_lecteurs[$i]*1;
+				$id_categ = intval($this->categorie_lecteurs[$i]);
 				$rqt = "insert into bannette_empr_categs set empr_categ_num_bannette = '".$this->id_bannette."', empr_categ_num_categ = '".$id_categ."' ";
 				pmb_mysql_query($rqt);
 			}
 		}else{
 			$this->categorie_lecteurs=array();
 		}
-	
+		
 		$this->bannette_descriptors->set_properties_from_form();
 		$this->bannette_descriptors->save();
-	
+
 		$facette = new bannette_facettes($this->id_bannette);
 		$facette->save();
 	}
-	
+
 	// ---------------------------------------------------------------
 	//		delete() : suppression
 	// ---------------------------------------------------------------
@@ -630,6 +751,8 @@ class bannette {
 		$requete = "delete from bannette_abon WHERE num_bannette='$this->id_bannette'";
 		pmb_mysql_query($requete);
 		$requete = "delete from bannette_contenu WHERE num_bannette='$this->id_bannette'";
+		pmb_mysql_query($requete);
+		$requete = "DELETE FROM bannettes_diffusions WHERE diffusion_num_bannette = ".$this->id_bannette;
 		pmb_mysql_query($requete);
 		$requete = "delete from bannettes WHERE id_bannette='$this->id_bannette'";
 		pmb_mysql_query($requete);
@@ -665,7 +788,7 @@ class bannette {
 		while ($obj=pmb_mysql_fetch_object($res)) {
 			$tab[]=$obj->num_notice ;
 		}
-	
+		
 		// selection des notices ajoutées depuis moins d'un jour
 		$requete = "select num_notice from bannette_contenu WHERE num_bannette='".$this->id_bannette."' and ";
 		$requete .= " date_add(date_ajout, INTERVAL 1 DAY)>=sysdate() ";
@@ -687,11 +810,11 @@ class bannette {
 			$ac = new acces();
 			$dom_2 = $ac->setDomain(2);
 			$acces_j = $dom_2->getJoin($this->proprio_bannette,'4=0','num_notice');
-				
+			
 			$q="delete from bannette_contenu using bannette_contenu $acces_j WHERE num_bannette='$this->id_bannette' ";
 			pmb_mysql_query($q);
 		}
-			
+		
 		//purge des notices ne répondant plus aux équations de recherche
 		if(!empty($this->equations_notices)) {
 			$notice_suppr=implode(",",$this->equations_notices);
@@ -723,7 +846,7 @@ class bannette {
 		}
 		$this->compte_elements() ;
 	}
-	
+
 	// ---------------------------------------------------------------
 	//		vider() : vider le contenu de la bannette 
 	// ---------------------------------------------------------------
@@ -794,7 +917,7 @@ class bannette {
 	protected function get_css($directory) {
 		global $base_path;
 		global $opac_url_base;
-	
+		
 		$css = '';
 		$css_path= $base_path."/styles/".$directory."/dsi";
 		if (is_dir($css_path)) {
@@ -814,7 +937,7 @@ class bannette {
 	
 	protected function get_css_style() {
 		global $opac_default_style;
-	
+		
 		// récupération des fichiers de style commun
 		$css = $this->get_css('common');
 			
@@ -834,10 +957,10 @@ class bannette {
 	
 	protected function get_data_structure() {
 		$data = array();
-	
+		
 		//Nb total sans limitation
 		$data['records']['length_total'] = $this->nb_notices;
-	
+		
 		$result = pmb_mysql_query($this->get_query_records());
 		$data['records']['length'] = pmb_mysql_num_rows($result);
 		if(pmb_mysql_num_rows($result)) {
@@ -931,7 +1054,7 @@ class bannette {
 		$document.= "</body></html>";
 		return $document;
 	}
-	
+
 	public function get_empr_mail($id_empr){
 		$requete = "select empr_mail, bannette_mail from empr,  bannette_abon, bannettes ";
 		$requete .= "where num_bannette='".$this->id_bannette."' and num_empr=$id_empr and num_bannette=id_bannette and num_empr=id_empr";
@@ -959,7 +1082,7 @@ class bannette {
 	
 	protected function add_list_group_in_list() {
 		global $dsi_bannette_notices_order;
-	
+		
 		if(count($this->list_group)) {
 			foreach($this->list_group as $list_notice) {
 				$req_list=array();
@@ -1003,7 +1126,7 @@ class bannette {
 	
 	protected function get_display_mail() {
 		global $charset;
-	
+		
 		$this->set_records_globals();
 		$this->set_output_format('mail');
 		$this->build_lists(1);
@@ -1029,19 +1152,22 @@ class bannette {
 	protected function get_empr_informations($id_empr=0) {
 		global $msg;
 		
-		$query = "SELECT id_empr, empr_cb, empr_mail, empr_nom, empr_prenom, empr_login, empr_password, if(empr_sexe=2,'".$msg["civilite_madame"]."', ";
-		$query .= "if(empr_sexe=1,'".$msg["civilite_monsieur"]."','".$msg["civilite_unknown"]."')) as empr_sexe, empr_adr1, empr_adr2, empr_cp, empr_ville, empr_lang, ";
-		$query .= "empr_pays, empr_tel1, empr_tel2, date_format(empr_date_adhesion, '".$msg["format_date"]."') as aff_empr_date_adhesion, date_format(empr_date_expiration, '".$msg["format_date"]."') as aff_empr_date_expiration,";
-		$query .= "idstatut, statut_libelle, id_categ_empr, empr_categ.libelle as libelle_categ, idcode as id_codestat, empr_codestat.libelle as libelle_codestat, allow_dsi, allow_dsi_priv, empr_location ";
-		$query .= "FROM empr ";
-		$query .= "JOIN empr_statut ON empr_statut=idstatut ";
-		$query .= "JOIN empr_categ ON empr_categ=id_categ_empr ";
-		$query .= "JOIN empr_codestat ON empr_codestat=idcode ";
-		$query .= "where id_empr=".$id_empr." ";
-		$query .= "order by empr_nom, empr_prenom ";
-		$result = pmb_mysql_query($query);
-		$empr = pmb_mysql_fetch_object($result);
-		return $empr;
+		$id_empr = intval($id_empr);
+		if($id_empr) {
+			$query = "SELECT id_empr, empr_cb, empr_mail, empr_nom, empr_prenom, empr_login, empr_password, if(empr_sexe=2,'".$msg["civilite_madame"]."', ";
+			$query .= "if(empr_sexe=1,'".$msg["civilite_monsieur"]."','".$msg["civilite_unknown"]."')) as empr_sexe, empr_adr1, empr_adr2, empr_cp, empr_ville, empr_lang, ";
+			$query .= "empr_pays, empr_tel1, empr_tel2, date_format(empr_date_adhesion, '".$msg["format_date"]."') as aff_empr_date_adhesion, date_format(empr_date_expiration, '".$msg["format_date"]."') as aff_empr_date_expiration,";
+			$query .= "idstatut, statut_libelle, id_categ_empr, empr_categ.libelle as libelle_categ, idcode as id_codestat, empr_codestat.libelle as libelle_codestat, allow_dsi, allow_dsi_priv, empr_location ";
+			$query .= "FROM empr ";
+			$query .= "JOIN empr_statut ON empr_statut=idstatut ";
+			$query .= "JOIN empr_categ ON empr_categ=id_categ_empr ";
+			$query .= "JOIN empr_codestat ON empr_codestat=idcode ";
+			$query .= "where id_empr=".$id_empr." ";
+			$query .= "order by empr_nom, empr_prenom ";
+			$result = pmb_mysql_query($query);
+			$empr = pmb_mysql_fetch_object($result);
+			return $empr;
+		}
 	}
 	
 	protected function get_formatted_anonymous_text($text) {
@@ -1119,7 +1245,7 @@ class bannette {
 		return $formatted_text;
 	}
 			
-	protected function get_formatted_text($text, $empr) {
+	protected function get_formatted_text($text, $empr=null) {
 		global $lang;
 		global $opac_url_base;
 		global $opac_connexion_phrase;
@@ -1157,7 +1283,7 @@ class bannette {
 		return $formatted_text;
 	}
 	
-	protected function get_formatted_mail($empr) {
+	protected function get_formatted_mail($empr=null) {
 		$text = $this->get_display_mail();
 		$formatted_mail = $this->get_formatted_text($text, $empr);
 		return $formatted_mail;
@@ -1165,7 +1291,7 @@ class bannette {
 	
 	public function get_display_export() {
 		global $charset;
-	
+		
 		$this->set_records_globals();
 		$this->set_output_format('export');
 		$this->build_lists(0);
@@ -1364,9 +1490,6 @@ class bannette {
 			$nb_echec=0;
 			$nb_no_email=0;
 			
-			$headers  = "MIME-Version: 1.0\n";
-			$headers .= "Content-type: text/html; charset=".$charset."\n";
-			
 			$requete = "select id_empr, empr_cb, empr_mail, empr_nom, empr_prenom, empr_login, empr_password, if(empr_sexe=2,'".$msg["civilite_madame"]."', ";
 			$requete .= "if(empr_sexe=1,'".$msg["civilite_monsieur"]."','".$msg["civilite_unknown"]."')) as empr_sexe, empr_adr1, empr_adr2, empr_cp, empr_ville, empr_lang, ";
 			$requete .= "empr_pays, empr_tel1, empr_tel2, date_format(empr_date_adhesion, '".$msg["format_date"]."') as aff_empr_date_adhesion, date_format(empr_date_expiration, '".$msg["format_date"]."') as aff_empr_date_expiration,";
@@ -1381,8 +1504,13 @@ class bannette {
 				$libelle_langue = $langues->table[$code_langue];
 				$emaildest = $empr->empr_mail;
 				if ($emaildest) {
-					$docs_location = new docs_location($empr->empr_location);
-					$res_envoi=mailpmb($empr->empr_prenom." ".$empr->empr_nom, $emaildest,strip_tags($this->get_formatted_text($this->comment_public, $empr)), $this->get_formatted_mail($empr), $docs_location->libelle, $docs_location->email, $headers, "", "", 0, $pieces_jointes);
+					$mail_opac_reader_dsi = new mail_opac_reader_dsi();
+					$mail_opac_reader_dsi->set_mail_to_id($empr->id_empr)
+							->set_mail_object(strip_tags($this->get_formatted_text($this->comment_public, $empr)))
+							->set_mail_content($this->get_formatted_mail($empr))
+							->set_mail_from_id($empr->empr_location)
+							->set_mail_attachments($pieces_jointes);
+					$res_envoi = $mail_opac_reader_dsi->send_mail();
 				}
 			}
 			/* A commenter pour tests */ 
@@ -1412,7 +1540,7 @@ class bannette {
 			";
 	
 		$requete = "SELECT num_notice FROM bannette_contenu join notices on notice_id = num_notice where num_bannette='".$this->id_bannette."' order by index_sew";
-	
+
 		$liste=array();
 		$liste_group = array();
 		$result = @pmb_mysql_query($requete);
@@ -1439,7 +1567,7 @@ class bannette {
 			}
 		}
 	
-		if(!sizeof($liste) || !is_array($liste)) {
+		if ((empty($liste) && !is_array($liste)) || !is_array($liste)) {
 			return $msg['dsi_ban_empty'];
 		} else {
 			// boucle de parcours des notices trouvées
@@ -1447,47 +1575,31 @@ class bannette {
 			// début de liste
 			$return_affichage .= $begin_result_liste;
 			//Affichage du lien impression et panier
+			$return_affichage .= $this->get_display_icons();
 			
+			$records = array();
 			foreach ($liste as $cle => $object) {
-	
-				// affichage de la liste des notices sous la forme 'expandable'
-				$requete = "SELECT * FROM notices WHERE notice_id='".$object['num_notice']."' ";
-				$fetch = pmb_mysql_query($requete);
-				if (pmb_mysql_num_rows($fetch)) {
-					$notice = pmb_mysql_fetch_object($fetch);
-					if($notice->niveau_biblio != 's' && $notice->niveau_biblio != 'a') {
-						// notice de monographie
-						$link = './catalog.php?categ=isbd&id=!!id!!';
-						$link_expl = './catalog.php?categ=edit_expl&id=!!notice_id!!&cb=!!expl_cb!!&expl_id=!!expl_id!!';
-						$link_explnum = './catalog.php?categ=edit_explnum&id=!!notice_id!!&explnum_id=!!explnum_id!!';
-						if (!$no_del)
-							$lien_suppr_cart = "<a href='$url_base&suite=suppr_notice&num_notice=$notice->notice_id&id_bannette=$this->id_bannette'><img src='".get_url_icon('basket_empty_20x20.gif')."' alt='basket' title=\"".$msg['caddie_icone_suppr_elt']."\" /></a> ";
-							else
-								$lien_suppr_cart = "" ;
-								$display = new mono_display($notice, 6, $link, 1, $link_expl, $lien_suppr_cart, $link_explnum );
-								$return_affichage .= $display->result;
-					} else {
-						// on a affaire à un périodique
-						// préparation des liens pour lui
-						$link_serial = './catalog.php?categ=serials&sub=view&serial_id=!!id!!';
-						$link_analysis = './catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=!!bul_id!!&art_to_show=!!id!!';
-						$link_bulletin = './catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=!!id!!';
-						if (!$no_del)
-							$lien_suppr_cart = "<a href='$url_base&suite=suppr_notice&num_notice=$notice->notice_id&id_bannette=$this->id_bannette'><img src='".get_url_icon('basket_empty_20x20.gif')."' alt='basket' title=\"".$msg['caddie_icone_suppr_elt']."\" /></a> ";
-							else
-								$lien_suppr_cart = "" ;
-								$link_explnum = "./catalog.php?categ=serials&sub=analysis&action=explnum_form&bul_id=!!bul_id!!&analysis_id=!!analysis_id!!&explnum_id=!!explnum_id!!";
-								$serial = new serial_display($notice, 6, $link_serial, $link_analysis, $link_bulletin, $lien_suppr_cart, $link_explnum, 0);
-								$return_affichage .= $serial->result;
-					}
-				}
-			} // fin de liste
+				$records[] = $object['num_notice'];
+			}
+			$elements_records_list_ui = new elements_records_list_ui($records, count($records), false);
+			if (!$no_del) {
+				$lien_suppr_cart = "<a href='".$url_base."&suite=suppr_notice&num_notice=!!notice_id!!&id_bannette=".$this->id_bannette."'><img src='".get_url_icon('basket_empty_20x20.gif')."' alt='basket' title=\"".$msg['caddie_icone_suppr_elt']."\" /></a> ";
+				elements_records_list_ui::set_link_delete_cart($lien_suppr_cart);
+			}
+			elements_records_list_ui::set_link_delete_cart($lien_suppr_cart);
+			$elements_records_list_ui->set_show_resa(0);
+			$elements_records_list_ui->set_show_statut(0);
+			$elements_records_list_ui->set_show_resa_planning(0);
+			$elements_records_list_ui->set_draggable(0);
+			$elements_records_list_ui->set_ajax_mode(0);
+			$return_affichage .= $elements_records_list_ui->get_elements_list();
+			
 			$return_affichage .= $end_result_liste;
 		}
 		$return_affichage .= "<br />" ;
 		return $return_affichage ;
 	}
-	
+
 	// ---------------------------------------------------------------
 	//		suppr_notice() : suppression d'une notice d'une bannette
 	// ---------------------------------------------------------------
@@ -1546,7 +1658,7 @@ class bannette {
 		}
 		return $this->export_contenu;
 	}
-	
+		
 	protected function get_location() {
 		//Recherche de la loc de l'emprunteur
 		$docs_loc = 0;
@@ -1561,7 +1673,7 @@ class bannette {
 	
 	protected function get_display_template() {
 		$already_printed=array();
-	
+		
 		$display_template = "";
 		$template_id = $this->get_notice_tpl();
 		foreach($this->list as $num_notice) {
@@ -1581,20 +1693,20 @@ class bannette {
 	protected function get_tpl_notice($num_notice) {
 		global $deflt2docs_location;
 		
-	    $tpl_notice="";
-	    switch ($this->get_notice_display_type()) {
-	        case 1:
-	            //Affichage Django
-	            $tpl_notice .= record_display::get_display_in_result($num_notice, $this->get_django_directory());
-	            break;
-	        default:
-	            $template_id = $this->get_notice_tpl();
-	            if($template_id) {
-	                $notice_tpl_gen = notice_tpl_gen::get_instance($template_id);
-	                $tpl_notice .= $notice_tpl_gen->build_notice($num_notice, $deflt2docs_location, false, $this->id_bannette);
-	            }
-	            break;
-	    }
+		$tpl_notice="";
+		switch ($this->get_notice_display_type()) {
+		    case 1:
+		        //Affichage Django
+		        $tpl_notice .= record_display::get_display_in_result($num_notice, $this->get_django_directory());
+		        break;
+		    default:
+		        $template_id = $this->get_notice_tpl();
+		        if($template_id) {
+		            $notice_tpl_gen = notice_tpl_gen::get_instance($template_id);
+		            $tpl_notice .= $notice_tpl_gen->build_notice($num_notice, $deflt2docs_location, false, $this->id_bannette);
+		        }
+		        break;
+		}
 		if(!$tpl_notice) {
 			$n=pmb_mysql_fetch_object(pmb_mysql_query("select * from notices where notice_id=".$num_notice));
 			global $use_opac_url_base; $use_opac_url_base=1;
@@ -1637,27 +1749,27 @@ class bannette {
 					}
 				}
 			} else {
-			foreach($this->list as $num_notice) {
-				$tpl_notice = $this->get_tpl_notice($num_notice);
-				if($this->notice_group[$num_notice]) {
-					foreach($this->notice_group[$num_notice] as $id=>$cpDisplay){
-							
-						if($this->display_notice_in_every_group){
-							$already_printed=array();
-						}
-							
+				foreach($this->list as $num_notice) {
+					$tpl_notice = $this->get_tpl_notice($num_notice);
+					if($this->notice_group[$num_notice]) {
+						foreach($this->notice_group[$num_notice] as $id=>$cpDisplay){
+								
+							if($this->display_notice_in_every_group){
+								$already_printed=array();
+							}
+								
 							if(!isset($this->tri_tpl[$template_id][$cpDisplay]) 
 									|| !$this->tri_tpl[$template_id][$cpDisplay] 
 									|| !in_array($tpl_notice, $this->tri_tpl[$template_id][$cpDisplay])){
-									if(!in_array($num_notice, $already_printed)){
+								if(!in_array($num_notice, $already_printed)){
 									$this->tri_tpl[$template_id][$cpDisplay][]= $tpl_notice;
-										$already_printed[]=$num_notice;
-									}
+									$already_printed[]=$num_notice;
+								}
+							}
 						}
 					}
 				}
 			}
-		}
 		}
 		return $this->tri_tpl[$template_id];
 	}
@@ -1667,12 +1779,12 @@ class bannette {
 	    
 		$data = array();
 		$already_printed=array();
-	
+		
 		if (count($this->list) && $this->group_type==1) {
 			$facette = $this->get_instance_bannette_facette();
 			$data = $facette->build_document_data($this->list,$this->get_notice_tpl());
 		} else {
-		    if($this->is_grouped()) {
+			if($this->is_grouped()) {
 				$tri_tpl = $this->get_tri_tpl();
 				$this->pmb_ksort($tri_tpl);
 				$index = 0;
@@ -1703,9 +1815,9 @@ class bannette {
 	protected function get_display_summary() {
 		global $group_separator;
 		global $notice_separator;
-	
+		
 		$display="";
-	
+		
 		$index=0;
 		$summary="";
 		$template_id = $this->get_notice_tpl();
@@ -1717,7 +1829,7 @@ class bannette {
 			$index++;
 			$display.= "<a name='[".$index."]'></a><h1><span class='summary_elt_index'>".$index." - </span>".$titre."</h1>";
 			$summary.="<a href='#[".$index."]' class='summary_elt'><span class='summary_elt_index'>".$index." - </span>".$titre."</a><br />";
-	
+				
 			$nb=0;
 			foreach ($liste as $val) {
 				$display.=$val;
@@ -1737,7 +1849,7 @@ class bannette {
 		}
 		return $display;
 	}
-	
+		
 	protected function build_lists($use_limit=1) {
 		$this->use_limit = $use_limit;
 		$this->list=array();
@@ -1887,7 +1999,7 @@ class bannette {
 		$entete = str_replace ("!!nb_notice!!",$this->nb_notices,$entete) ;
 		return $entete ;
 	}
-	
+
 	// ---------------------------------------------------------------
 	//		compte_elements() : méthode pour pouvoir recompter en dehors !
 	// ---------------------------------------------------------------
@@ -1983,8 +2095,8 @@ class bannette {
 	
 	public function get_private_bannette_tpl() {
 		global $dsi_private_bannette_tpl;
-	
-		return $dsi_private_bannette_tpl+0;
+		
+		return intval($dsi_private_bannette_tpl);
 	}
 	
 	public function get_instance_bannette_facette() {
@@ -2007,13 +2119,13 @@ class bannette {
 	
 		$use_opac_url_base=true;
 		// pour URL image vue de l'extérieur
-	
+		
 		$depliable = 0;
 		$prefix_url_image = $opac_url_base;
 	}
 	
 	public function is_subscribed($id_empr=0) {
-		$id_empr += 0;
+		$id_empr = intval($id_empr);
 		$query = "select count(*) as subscribed from bannette_abon where num_bannette = '".$this->id_bannette."' and num_empr='".$id_empr."' ";
 		$result = pmb_mysql_query($query);
 		return pmb_mysql_result($result, 0, 'subscribed');
@@ -2452,7 +2564,7 @@ class bannette {
 	}
 	
 	/**
-	 * 
+	 *
 	 * @param integer $id
 	 * @return bannette
 	 */
@@ -2465,7 +2577,7 @@ class bannette {
 	
 	protected static function get_lang_messages($lang) {
 		global $include_path;
-	
+		
 		if (!isset(static::$lang_messages[$lang])) {
 			$messages = new XMLlist($include_path."/messages/".$lang.".xml", 0);
 			$messages->analyser();

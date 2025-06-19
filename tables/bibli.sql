@@ -6577,7 +6577,7 @@ CREATE TABLE notices_relations (
   num_notice bigint(20) unsigned NOT NULL DEFAULT '0',
   linked_notice bigint(20) unsigned NOT NULL DEFAULT '0',
   relation_type char(1) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
-  rank int(11) NOT NULL DEFAULT '0',
+  ranking int(11) NOT NULL DEFAULT '0',
   direction varchar(4) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   num_reverse_link int(10) NOT NULL DEFAULT '0',
   PRIMARY KEY (id_notices_relations),

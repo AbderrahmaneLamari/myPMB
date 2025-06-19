@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.1 2018/04/13 14:30:33 vtouchard Exp $
+// $Id: search.class.php,v 1.2 2022/08/17 13:19:54 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/search_universes/search_segment_set.class.php');
 
 //Classe de gestion de la recherche spécial "facette"
@@ -73,6 +74,10 @@ class search_universe_segment_search {
     
     public function get_input_box() {
     	global $charset;
+
+    	$field_name="field_".$this->n_ligne."_s_".$this->id;
+    	global ${$field_name};
+    	$valeur = ${$field_name};
     	
     	$this->get_segment_set();
     	
@@ -81,7 +86,7 @@ class search_universe_segment_search {
 		
     	//on génère une human_query
     	$r = $this->segment_set->get_human_query();
-    	$r.="<span><input type='hidden' name='field_".$this->n_ligne."_s_".$this->id."[]' value='".htmlentities($valeur[0],ENT_QUOTES,$charset)."'/></span>";
+    	$r.="<span><input type='hidden' name='field_".$this->n_ligne."_s_".$this->id."[]' value='$valeur[0]'/></span>";
     	
     	//restauration de l'environnement courant
     	$this->search->pull();
@@ -106,7 +111,13 @@ class search_universe_segment_search {
     	$value = "field_".$this->n_ligne."_s_".$this->id;
     	global ${$value};
     	
-    	$this->segment_set = new search_segment_set(${$value});
+    	$segment_id = ${$value};
+    	if (is_array(${$value})) {
+    	    $segment_id = ${$value}[0];
+    	}
+    	
+    	$this->segment_set = new search_segment_set($segment_id);
+
     	return $this->segment_set;
     }
     

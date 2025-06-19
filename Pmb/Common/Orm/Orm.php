@@ -2,7 +2,8 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Orm.php,v 1.23.2.1 2022/01/18 09:12:47 qvarin Exp $
+// $Id: Orm.php,v 1.36.2.3 2023/07/28 11:54:18 qvarin Exp $
+
 namespace Pmb\Common\Orm;
 
 use Pmb\Common\Helper\Helper;
@@ -10,7 +11,7 @@ use Pmb\Common\Helper\Helper;
 /**
  *
  * @author arenou
- *        
+ *
  */
 abstract class Orm
 {
@@ -30,13 +31,23 @@ abstract class Orm
 
     /**
      * Clé primaire supplémentaire
+     *
      * @var array
      */
     public static $primaryKeyAditional = [];
-    
-    private $structure = [];
+
+    /**
+     * Clé primaire non supprimable
+     *
+     * @var array
+     */
+    public static $primaryKeyNotDeletable = [];
+
+    protected $structure = [];
 
     protected static $relations = [];
+
+    public static $instances = array();
 
     /**
      *
@@ -44,8 +55,18 @@ abstract class Orm
      */
     protected static $reflectionClass = null;
 
-    /**
-     */
+    protected const DEFAULT_OPERATOR = "=";
+
+    protected const ONE_TO_MANY = "1n";
+
+    protected const MANY_TO_ONE = "n1";
+
+    protected const MANY_TO_ZERO = "n0";
+
+    protected const ZERO_TO_MANY = "0n";
+
+    protected const MANY_TO_MANY = "nn";
+
     public function __construct(int $id = 0)
     {
         $this->initDataStructure();
@@ -84,17 +105,16 @@ abstract class Orm
         }
         return $this;
     }
-    
+
     private function formatValue($prop, $value)
     {
-        switch (gettype($this->{$prop}))
-        {
+        switch (gettype($this->{$prop})) {
             case 'boolean':
                 return boolval($value);
             case 'integer':
                 return intval($value);
-            case 'double' ;
-            case 'float' ;
+            case 'double':
+            case 'float':
                 return floatval($value);
         }
         return $value;
@@ -115,6 +135,14 @@ abstract class Orm
 
     public function delete()
     {
+        if (in_array($this->{static::$idTableName}, static::$primaryKeyNotDeletable)) {
+            throw new \Exception("Unable to delete !");
+        }
+
+        if (! $this->checkBeforeDelete()) {
+            throw new \Exception("Unable to delete !");
+        }
+
         $query = "delete from " . static::$tableName . " where " . static::$idTableName . " = " . $this->{static::$idTableName};
         pmb_mysql_query($query);
         $defaultProperties = static::$reflectionClass->getDefaultProperties();
@@ -129,6 +157,12 @@ abstract class Orm
         pmb_mysql_query($query);
     }
 
+    /**
+     * Met a jour les donnees de l'objet selon l'Id defini
+     *
+     * @param int $id
+     * @return \Pmb\Common\Orm\Orm
+     */
     public function setId(int $id)
     {
         return $this->fetchData($id);
@@ -136,7 +170,6 @@ abstract class Orm
 
     public function __set($label, $value)
     {
-        
         if (static::$reflectionClass->hasMethod(Helper::camelize("set " . $label))) {
             return $this->{Helper::camelize("set " . $label)}($value);
         }
@@ -152,8 +185,7 @@ abstract class Orm
         if (static::$reflectionClass->hasMethod(Helper::camelize("get " . $label))) {
             return $this->{Helper::camelize("get " . $label)}();
         }
-
-        if (in_array($label, array_keys(static::$relations))) {
+        if (isset(static::$relations[static::class]) && in_array($label, array_keys(static::$relations[static::class]))) {
             return $this->getRelated($label);
         }
         if (static::$reflectionClass->hasProperty($label)) {
@@ -162,7 +194,7 @@ abstract class Orm
         throw new \Exception("Unknown property");
     }
 
-    private function initDataStructure()
+    protected function initDataStructure()
     {
         static::$reflectionClass = new \ReflectionClass($this);
         $query = "show columns from " . static::$tableName;
@@ -170,19 +202,19 @@ abstract class Orm
         if (pmb_mysql_num_rows($result)) {
             while ($row = pmb_mysql_fetch_object($result)) {
                 $this->structure[$row->Field] = $row;
-                
+
                 // On vérifie que la propriété existe sur l'ORM
                 $rowField = $row->Field;
                 if (! empty(static::$tablePrefix)) {
                     $rowField = str_replace(static::$tablePrefix . '_custom_', '', $row->Field);
                 }
-                
+
                 if (false === static::$reflectionClass->hasProperty($rowField)) {
                     throw new \Exception("$rowField is missing");
                 }
-                    
+
                 // On vérifie l'existance de la clé primaire
-                if ('PRI' === $row->Key && (static::$idTableName !== $row->Field && !in_array($row->Field, static::$primaryKeyAditional))) {
+                if ('PRI' === $row->Key && (static::$idTableName !== $row->Field && ! in_array($row->Field, static::$primaryKeyAditional))) {
                     throw new \Exception("Wrong primary key");
                 }
             }
@@ -192,30 +224,37 @@ abstract class Orm
 
     private function initRelationsDefinition()
     {
-        if (! empty(static::$relations)) {
-            return static::$relations;
+        if (! empty(static::$relations[static::class])) {
+            return static::$relations[static::class];
         }
+
+        static::$relations[static::class] = [];
+
         // On reconstruit la structure décrivant les relations
         foreach (static::$reflectionClass->getProperties() as $property) {
             $comment = $property->getDocComment();
             $matches = [];
             if (false !== $comment) {
-
                 if (preg_match_all('/@(Relation|RelatedKey|ForeignKey|TableLink|Table|Orm)\s([^\s]+)/', $comment, $matches)) {
-                    static::$relations[$property->getName()] = [];
+                    static::$relations[static::class][$property->getName()] = [];
                     for ($i = 0; $i < count($matches[0]); $i ++) {
-                        static::$relations[$property->getName()][$matches[1][$i]] = $matches[2][$i];
+                        static::$relations[static::class][$property->getName()][$matches[1][$i]] = $matches[2][$i];
                     }
                 }
             }
         }
+
         $this->checkRelationsDefinition();
-        return static::$relations;
+        return static::$relations[static::class];
     }
 
     private function checkRelationsDefinition()
     {
-        foreach (static::$relations as $definition) {
+        if (empty(static::$relations[static::class])) {
+            return false;
+        }
+
+        foreach (static::$relations[static::class] as $definition) {
             if (empty($definition['Relation'])) {
                 throw new \Exception("Relation required");
             }
@@ -223,12 +262,14 @@ abstract class Orm
                 throw new \Exception("Related ORM required");
             }
             switch ($definition['Relation']) {
-                case "0n":
+                case static::ONE_TO_MANY:
+                case static::ZERO_TO_MANY:
                     if (empty($definition['RelatedKey'])) {
                         throw new \Exception("RelatedKey required");
                     }
                     break;
-                case "n0":
+                case static::MANY_TO_ONE:
+                case static::MANY_TO_ZERO:
                     if (empty($definition['Table'])) {
                         throw new \Exception("Table required");
                     }
@@ -239,7 +280,7 @@ abstract class Orm
                         throw new \Exception("RelatedKey required");
                     }
                     break;
-                case "nn":
+                case static::MANY_TO_MANY:
                     if (empty($definition['RelatedKey'])) {
                         throw new \Exception("RelatedKey required");
                     }
@@ -259,23 +300,30 @@ abstract class Orm
      * @param string $label
      * @return string
      */
-    private function getRelated(string $label)
+    protected function getRelated(string $label)
     {
         // Si la property n'est pas à null, on y est déjà passé, donc on évite le recalcul
         if ($this->{$label} !== null) {
             return $this->{$label};
         }
-        $relation = static::$relations[$label];
+        $relation = static::$relations[static::class][$label];
         $result = pmb_mysql_query($this->getRelatedQuery($relation));
         $this->{$label} = false;
-        if ("n1" !== $relation["Relation"]) {
+        if (static::ONE_TO_MANY !== $relation["Relation"]) {
             $this->{$label} = [];
         }
         if (pmb_mysql_num_rows($result)) {
             $ormClass = $relation['Orm'];
             while ($row = pmb_mysql_fetch_assoc($result)) {
-                if (!empty($row['related_id'])) {
-                    $obj = new $ormClass($row['related_id']);
+                if (! empty($row['related_id'])) {
+                    if ($relation['Relation'] == static::MANY_TO_MANY && is_subclass_of($ormClass, OrmManyToMany::class)) {
+                        $obj = new $ormClass([
+                            $relation['ForeignKey'] => $row['related_id'],
+                            $relation['RelatedKey'] => $this->{static::$idTableName}
+                        ]);
+                    } else {
+                        $obj = OrmCollection::getInstance($ormClass, $row['related_id']);
+                    }
                     if (is_array($this->{$label})) {
                         $this->{$label}[] = $obj;
                     } else {
@@ -296,12 +344,14 @@ abstract class Orm
     private function getRelatedQuery($relation)
     {
         switch ($relation['Relation']) {
-            case "n0":
+            case static::MANY_TO_ONE:
+            case static::MANY_TO_ZERO:
                 return "select {$relation['RelatedKey']} as related_id from {$relation['Table']} where  {$relation['ForeignKey']} = {$this->{static::$idTableName}}";
-            case "0n":
+            case static::ONE_TO_MANY:
+            case static::ZERO_TO_MANY:
                 return "select {$relation['RelatedKey']} as related_id from " . static::$tableName . " where " . static::$idTableName . " = {$this->{static::$idTableName}}";
-            case "nn":
-                return "select {$relation['RelatedKey']} as related_id from {$relation['TableLink']} join " . static::$tableName . " on {$relation['ForeignKey']} = " . static::$idTableName . " where " . static::$idTableName . " = {$this->{static::$idTableName}}";
+            case static::MANY_TO_MANY:
+                return "select {$relation['ForeignKey']} as related_id from {$relation['TableLink']} join " . static::$tableName . " on {$relation['RelatedKey']} = " . static::$idTableName . " where " . static::$idTableName . " = {$this->{static::$idTableName}}";
             default:
                 throw new \Exception("Unknown relation");
         }
@@ -317,8 +367,7 @@ abstract class Orm
     {
         try {
             $className = static::class;
-            $instance = new $className($id);
-            return $instance;
+            return new $className($id);
         } catch (\Exception $e) {
             throw $e;
         }
@@ -334,69 +383,122 @@ abstract class Orm
         $result = pmb_mysql_query($query);
         $instances = array();
         if (pmb_mysql_num_rows($result)) {
+            $className = static::class;
             foreach ($result as $row) {
-                $className = static::class;
-                $instance = new $className(intval($row[static::$idTableName]));
-                $instances[] = $instance;
+                $instances[] = $className::getInstance(intval($row[static::$idTableName]));
             }
+
+            pmb_mysql_free_result($result);
         }
         return $instances;
     }
-    
+
     /**
      * Effectuer une recherche sur une colonne
+     *
      * @return array
      */
     public static function find($field, $value, $orderby = "")
     {
-        $query = "SELECT * FROM " . static::$tableName ." WHERE $field = '" . addslashes($value) . "'" . ($orderby ? " ORDER BY $orderby": '');
+        $query = "SELECT * FROM " . static::$tableName . " WHERE $field = '" . addslashes($value) . "'" . ($orderby ? " ORDER BY $orderby" : '');
         $result = pmb_mysql_query($query);
         $instances = array();
         if (pmb_mysql_num_rows($result)) {
+            $className = static::class;
             foreach ($result as $row) {
-                $className = static::class;
-                $instance = new $className(intval($row[static::$idTableName]));
-                $instances[] = $instance;
+                $instances[] = new $className(intval($row[static::$idTableName]));
             }
+
+            pmb_mysql_free_result($result);
         }
         return $instances;
     }
-    
+
     /**
-     * Effectuer une recherche sur plusieurs colonnes (Operator : AND)
+     * Effectuer une recherche sur plusieurs colonnes (Inter : AND)
+     *
      * @return array
      */
-    public static function finds(array $fields_values, $orderby = "")
+    public static function finds(array $fieldsValues, $orderby = "", $inter = "AND", $limit = "")
     {
         $query = "SELECT * FROM " . static::$tableName . " WHERE ";
         $clause = "";
-        foreach ($fields_values as $field => $value) {
-            if (!empty($clause)) {
-                $clause .= " AND ";
+        foreach ($fieldsValues as $field => $data) {
+            $field = trim($field);
+
+            $operator = self::DEFAULT_OPERATOR;
+            if (is_string($data) || is_numeric($data)) {
+                $value = $data;
+            } elseif (is_array($data)) {
+
+                // Gestion des tableaux : associatif pour tester un champ
+                // Sequentiel pour tester plusieurs fois le champ
+                if (isset($data[0])) {
+                    foreach ($data as $subData) {
+                        if (isset($subData['value']) && isset($subData['operator'])) {
+                            $operator = trim($subData['operator']) ?? self::DEFAULT_OPERATOR;
+                            $value = $subData['value'] ?? null;
+                            if (! empty($clause)) {
+                                $clause .= $subData["inter"] ?? "OR";
+                            }
+
+                            $format = " %s %s '%s'";
+                            if (in_array(strtolower($operator), [
+                                "in",
+                                "not in"
+                            ])) {
+                                $format = " %s %s (%s)";
+                                $value = is_string($value) ? $value : implode(",", $value);
+                            }
+                            $clause .= sprintf($format, $field, $operator, addslashes($value));
+                        }
+                    }
+                    continue;
+                } elseif (isset($data['value']) && isset($data['operator'])) {
+                    $operator = trim($data['operator']) ?? self::DEFAULT_OPERATOR;
+                    $value = $data['value'] ?? null;
+                }
+            } else {
+                continue;
             }
-            $clause .= "$field = '" . addslashes($value) . "'";
+
+            if (! empty($clause)) {
+                $clause .= " {$inter} ";
+            }
+
+            $format = " %s %s '%s'";
+            if (in_array(strtolower($operator), [
+                "in",
+                "not in"
+            ])) {
+                $format = " %s %s (%s)";
+                $value = is_string($value) ? $value : implode(",", $value);
+            }
+            $clause .= sprintf($format, $field, $operator, addslashes($value));
         }
+
         $query .= $clause;
-        $query .= ($orderby ? " ORDER BY $orderby": '');
-        
+        $query .= ($orderby ? " ORDER BY {$orderby}" : '');
+        $query .= ($limit ? " LIMIT {$limit}" : '');
+
         $result = pmb_mysql_query($query);
         $instances = array();
         if (pmb_mysql_num_rows($result)) {
+            $className = static::class;
             foreach ($result as $row) {
-                $className = static::class;
-                $instance = new $className(intval($row[static::$idTableName]));
-                $instances[] = $instance;
+                $instances[] = $className::getInstance(intval($row[static::$idTableName]));
             }
+            pmb_mysql_free_result($result);
         }
         return $instances;
     }
-    
+
     public function toArray()
     {
         $object = array();
         static::$reflectionClass = new \ReflectionClass($this);
         foreach (static::$reflectionClass->getProperties() as $property) {
-            if (!$property->isStatic()) {
+            if (! $property->isStatic()) {
                 if (is_array($this->{$property->name})) {
                     foreach ($this->{$property->name} as $property_array) {
                         if (is_object($property_array) && is_a($property_array, "\\Pmb\\Common\\Orm\\Orm")) {
@@ -414,41 +516,41 @@ abstract class Orm
         }
         return $object;
     }
-    
+
     public function getInfos()
     {
         $infos = array();
         static::$reflectionClass = new \ReflectionClass($this);
         foreach (static::$reflectionClass->getProperties() as $property) {
-            if (!$property->isStatic()) {
-                if (!is_a($this->{$property->name}, "\\Pmb\\Common\\Orm\\Orm")) {
+            if (! $property->isStatic()) {
+                if (! is_a($this->{$property->name}, "\\Pmb\\Common\\Orm\\Orm")) {
                     $infos[$property->name] = $this->{$property->name};
                 }
             }
         }
         return $infos;
     }
-    
+
     public function getCmsStructure(string $prefixVar = "", bool $children = false)
     {
         global $msg;
-        
+
         $cmsStructure = array();
-        if (!$children) {
+        if (! $children) {
             $cmsStructure[0]['var'] = $msg['cms_module_common_datasource_main_fields'];
             $cmsStructure[0]['children'] = array();
         }
-        
+
         foreach ($this->structure as $key => $val) {
-            
+
             $var = addslashes($key);
             $msgVar = addslashes($key);
-            if (!empty($prefixVar)) {
-                $var = addslashes($prefixVar.".".$key);
-                $msgVar = addslashes($prefixVar."_".$key);
+            if (! empty($prefixVar)) {
+                $var = addslashes($prefixVar . "." . $key);
+                $msgVar = addslashes($prefixVar . "_" . $key);
             }
-            
-            if (!$children) {
+
+            if (! $children) {
                 $length = count($cmsStructure[0]['children']);
                 $cmsStructure[0]['children'][$length]['var'] = $var;
                 $cmsStructure[0]['children'][$length]['desc'] = "";
@@ -457,37 +559,37 @@ abstract class Orm
                 $cmsStructure[$length]['var'] = $var;
                 $cmsStructure[$length]['desc'] = "";
             }
-            
+
             switch (true) {
-                case isset($msg['cms_module_common_datasource_desc_'.$msgVar]):
-                    $desc = $msg['cms_module_common_datasource_desc_'.$msgVar];
+                case isset($msg['cms_module_common_datasource_desc_' . $msgVar]):
+                    $desc = $msg['cms_module_common_datasource_desc_' . $msgVar];
                     break;
-                    
+
                 case isset($msg[$msgVar]):
                     $desc = $msg[$msgVar];
                     break;
-                
+
                 default:
                     $desc = addslashes($msgVar);
                     break;
             }
-            
-            if (!$children) {
+
+            if (! $children) {
                 $cmsStructure[0]['children'][$length]['desc'] = $desc;
             } else {
                 $cmsStructure[$length]['desc'] = $desc;
             }
         }
-        
-        if (!empty(static::$relations) && !$children) {
-            foreach (static::$relations as $key => $relation) {
+
+        if (! empty(static::$relations[static::class]) && ! $children) {
+            foreach (static::$relations[static::class] as $key => $relation) {
                 $length = count($cmsStructure[0]['children']);
                 $cmsStructure[0]['children'][$length]['var'] = addslashes($key);
                 $cmsStructure[0]['children'][$length]['desc'] = "";
                 $cmsStructure[0]['children'][$length]['children'] = array();
-                if (!empty($relation['Orm'])) {
+                if (! empty($relation['Orm'])) {
                     $baseVar = $key;
-                    if ($relation['Relation'] == "nn") {
+                    if ($relation['Relation'] == static::MANY_TO_MANY) {
                         $baseVar .= '[i]';
                     }
                     $relation_orm = new $relation['Orm']();
@@ -495,25 +597,25 @@ abstract class Orm
                 }
             }
         }
-        
+
         return $cmsStructure;
     }
-    
+
     public function getCmsData()
     {
         $data = array();
-        
+
         foreach ($this->structure as $key => $val) {
             $data[addslashes($key)] = $this->{$key};
         }
-        
-        if (!empty(static::$relations)) {
-            foreach (static::$relations as $key => $relation) {
+
+        if (! empty(static::$relations[static::class])) {
+            foreach (static::$relations[static::class] as $key => $relation) {
                 $data[addslashes($key)] = array();
-                
+
                 $relations = $this->getRelated($key);
-                if (!empty($relations)) {
-                    if ($relation['Relation'] == "nn") {
+                if (! empty($relations)) {
+                    if ($relation['Relation'] == static::MANY_TO_MANY) {
                         $data[addslashes($key)] = $relations;
                     } else {
                         $data[addslashes($key)] = $relations[0];
@@ -524,7 +626,7 @@ abstract class Orm
 
         return $data;
     }
-    
+
     /**
      *
      * @param int $id
@@ -533,8 +635,33 @@ abstract class Orm
     public static function exist(int $id)
     {
         $id = intval($id);
-        $query = "SELECT 1 FROM " . static::$tableName ." WHERE " . static::$idTableName . " = $id";
-        $result = pmb_mysql_query($query);
-        return pmb_mysql_num_rows($result) == 1;
+
+        if($id) {
+            $query = "SELECT 1 FROM " . static::$tableName . " WHERE " . static::$idTableName . " = $id";
+            $result = pmb_mysql_query($query);
+            return pmb_mysql_num_rows($result) == 1;
+        }
+
+        return false;
+    }
+
+    protected function checkBeforeDelete()
+    {
+        return true;
+    }
+
+    public static function getInstance($id = 0)
+    {
+        $id = intval($id);
+        static::$instances[static::class] = static::$instances[static::class] ?? [];
+
+        if (isset(static::$instances[static::class][$id])) {
+            $instance = static::$instances[static::class][$id];
+        } else {
+            $instance =  new static($id);
+            static::$instances[static::class][$id] = $instance;
+        }
+
+        return $instance;
     }
 }

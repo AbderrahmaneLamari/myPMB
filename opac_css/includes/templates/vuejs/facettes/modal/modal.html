@@ -1,0 +1,19 @@
+<div id="facettes_modal" class="modal-container" v-show="showModal" style="display:none;" v-on:click.self.prevent="closeModal">
+	<loader />
+	<div class="modal">
+		<div class="modal-header">
+			<a class="modal-close" href="#" v-on:click.prevent="closeModal">
+				{{getMessage('close_modal')}} <i class="fa fa-times" aria-hidden="true"></i>
+			</a>
+		</div>
+		<div class="modal-content">
+			<h3 class="modal-title">{{ facetteLabel }}</h3>
+			<p class="modal-description">{{ description }}</p>
+			<sort :facettes="facettes" v-on:check="check($event)" v-on:facetteclicked="facetteClicked($event)" />
+		</div>
+		<div class="modal-footer">
+			<input v-on:click.prevent="closeModal" type="button" class="bouton modal-cancel" :value="getMessage('cancel_modal')">
+			<input v-on:click.prevent="valid" type="button" class="bouton modal-valid" :value="getMessage('validate_modal')">
+		</div>
+	</div>
+</div>

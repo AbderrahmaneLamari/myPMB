@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: upload_folder.class.php,v 1.5.8.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: upload_folder.class.php,v 1.7 2022/08/10 09:57:55 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,15 +16,14 @@ class upload_folder {
 	public $repertoire_path='';
 	public $repertoire_navigation=0;
 	public $repertoire_hachage=0;
-	public $repertoire_subfolder=0;
-	public $repertoire_utf8=0;
+	public $repertoire_subfolder=20;
+	public $repertoire_utf8=1;
 	
 	public function __construct($id=0, $action=''){
 		$this->repertoire_id = intval($id);
 		$this->action = $action;	
 		
 		if($this->repertoire_id){
-			//Modification
 			$req="select repertoire_nom, repertoire_url, repertoire_path, repertoire_navigation, repertoire_hachage, repertoire_subfolder, repertoire_utf8 from upload_repertoire where repertoire_id='".$this->repertoire_id."'";
 			$res=pmb_mysql_query($req);
 			if(pmb_mysql_num_rows($res)){
@@ -36,24 +35,7 @@ class upload_folder {
 				$this->repertoire_hachage=$item->repertoire_hachage;
 				$this->repertoire_subfolder=$item->repertoire_subfolder;
 				$this->repertoire_utf8=$item->repertoire_utf8;
-			} else {
-				$this->repertoire_nom='';
-				$this->repertoire_url='';
-				$this->repertoire_path='';
-				$this->repertoire_navigation=0;
-				$this->repertoire_hachage=0;
-				$this->repertoire_subfolder=0;
-				$this->repertoire_utf8=0;
-			}
-		} else {
-			//Création
-			$this->repertoire_nom='';
-			$this->repertoire_url='';
-			$this->repertoire_path='';
-			$this->repertoire_navigation=0;
-			$this->repertoire_hachage=0;
-			$this->repertoire_subfolder=20;
-			$this->repertoire_utf8=0;
+			} 
 		}
 	}
 	
@@ -95,7 +77,6 @@ class upload_folder {
 	 * Hache le nom de fichier pour le classer
 	 */
 	public function hachage($nom_fichier){
-								
 		$chemin= $this->repertoire_path;
 		$nb_dossier = $this->repertoire_subfolder;
 		$total=0;
@@ -209,4 +190,4 @@ class upload_folder {
 	}
 	
 }
-?>
+

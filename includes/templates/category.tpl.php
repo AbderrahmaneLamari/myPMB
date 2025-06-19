@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: category.tpl.php,v 1.80 2021/04/29 12:22:22 dgoron Exp $
+// $Id: category.tpl.php,v 1.82 2022/04/12 14:26:40 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -189,9 +189,6 @@ $category_form .= "<!-- libelle defaut -->
 					<!-- numero_autorite -->
 				</div>
 			</div>
-			<div id='el0Child_5_b' class='colonne_suite' movable='yes' title=\"".htmlentities($msg['print_thesaurus'], ENT_QUOTES, $charset)."\">
-				<!-- imprimer_thesaurus -->
-			</div>
 		</div>
 		!!concept_form!!
 		!!thumbnail_url_form!!
@@ -216,6 +213,7 @@ $category_form .= "<!-- libelle defaut -->
 		<!-- remplace_categ -->
 		!!voir_notices!!
 		!!audit_bt!!
+		<!-- imprimer_thesaurus -->
 		<input type='hidden' name='page' value='!!page!!' />
 		<input type='hidden' name='nbr_lignes' value='!!nbr_lignes!!' />
 		<input type='hidden' name='user_input' value=\"!!user_input!!\" />
@@ -364,7 +362,7 @@ $form_categ_parent = "
 		</div>
 		<div class='row'>
 			<input type='text' class='saisie-80emr' id='category_parent' name='category_parent' value=\"!!parent_libelle!!\"
-                completion='categories_mul' autfield='category_parent_id' autocomplete='off'/>
+                completion='categories_mul' autfield='category_parent_id' autocomplete='off' autexclude='!!id_noeud!!' att_id_filter='!!id_thes!!'/>
 			<input type='button' class='bouton_small' onclick=\"openPopUp('./select.php?what=categorie&caller=categ_form&p1=category_parent_id&p2=category_parent&keep_tilde=1&parent=!!parent!!&id2='+document.categ_form.category_parent_id.value, 'selector_category')\" title='$msg[157]' value='$msg[parcourir]' />
 			<input type='button' class='bouton_small' value='$msg[raz]' onclick=\"this.form.category_parent.value=''; this.form.category_parent_id.value='0'; \" />
 			<input type='hidden' id='category_parent_id' name='category_parent_id' value='!!parent_value!!' />

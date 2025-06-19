@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: campaign_proxy.class.php,v 1.5 2020/09/30 09:28:17 dgoron Exp $
+// $Id: campaign_proxy.class.php,v 1.5.6.1 2023/03/02 13:25:55 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -49,7 +49,11 @@ class campaign_proxy {
 	}
 	
 	protected static function gen_hash($recipient_hash, $url) {
-		return md5($recipient_hash."_".$url);
+	    global $opac_empr_password_salt;
+	    if ('' == $opac_empr_password_salt) {
+	        password::gen_salt_base();
+	    }
+	    return md5("{$opac_empr_password_salt}_{$recipient_hash}_{$url}");
 	}
 	
 	public static function check($hash, $url, $id) {

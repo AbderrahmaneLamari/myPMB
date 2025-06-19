@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesChklnk.class.php,v 1.1.8.1 2021/08/04 12:44:31 dgoron Exp $
+// $Id: pmbesChklnk.class.php,v 1.2.4.1 2023/03/16 11:03:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -15,18 +15,6 @@ class pmbesChklnk extends external_services_api_class {
 	
 	protected $initialized_chklnk;
 	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
-	
 	protected function initialize_chklnk() {
 		chklnk::init_queries();
 	}
@@ -36,6 +24,7 @@ class pmbesChklnk extends external_services_api_class {
 			$this->initialize_chklnk();
 		}
 		$class_name_instance = new $class_name();
+		$caddie_id = intval($caddie_id);
 		if ($caddie_id) {
 			$caddie_instance = caddie_root::get_instance_from_object_type($caddie_type, $caddie_id);
 			$class_name_instance->set_caddie_instance($caddie_instance);
@@ -50,6 +39,7 @@ class pmbesChklnk extends external_services_api_class {
 		}
 		$chklnk_custom_fields = new chklnk_custom_fields();
 		$chklnk_custom_fields->set_sub_type($sub_type);
+		$caddie_id = intval($caddie_id);
 		if ($caddie_id) {
 			$caddie_instance = caddie_root::get_instance_from_object_type($caddie_type, $caddie_id);
 			$chklnk_custom_fields->set_caddie_instance($caddie_instance);

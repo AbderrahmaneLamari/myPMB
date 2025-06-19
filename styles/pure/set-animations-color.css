@@ -1,7 +1,7 @@
 /* +--------------------------------------------------------------------------+
 // 2017 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: set-animations-color.css,v 1.2 2020/10/06 13:05:46 btafforeau Exp $ */
+// $Id: set-animations-color.css,v 1.2.6.1 2023/03/10 08:54:12 gneveu Exp $ */
 /*------------------------------------------------------------------------------------------*/
 
 /* ========================================================================
@@ -218,6 +218,7 @@ li#navbar-animations.current,
 .animations .bouton:focus,
 .animations input[type='submit']:active,
 .animations input[type='button']:active,
-.animations .bouton:active{
+.animations .bouton:active,
+.animations .pagination button.bouton-page.active{
 	background-color: #0A8064;
 }

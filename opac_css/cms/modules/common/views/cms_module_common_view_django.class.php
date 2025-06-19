@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_view_django.class.php,v 1.45.2.1 2021/10/11 14:00:45 btafforeau Exp $
+// $Id: cms_module_common_view_django.class.php,v 1.49 2022/11/15 13:02:57 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 require_once($base_path."/cms/modules/common/includes/pmb_h2o.inc.php");
@@ -126,7 +126,22 @@ class cms_module_common_view_django extends cms_module_common_view{
 			if(!isset($datas['post_vars']) || !$datas['post_vars']){
 				$datas['post_vars'] = $_POST;
 			}
+			if(isset($datas['paging']) && $datas['paging']['activate']){
+			    $url = $_SERVER["REQUEST_URI"];
+			    
+			    if(strpos($url, "page=") === false) {
+			        if(strpos($url, "?")) {
+			            $url .= "&page=!!page!!";
+			        }else {
+			            $url .= "?page=!!page!!";
+			        }
+			    }
+			    
+			    $navbar = getNavbar($datas['paging']['page'], $datas['paging']['total'], $datas['paging']['nb_per_page'], $url);
+			    $datas['paginator'] = $navbar;
+			}
 	    }
+	    $datas = array_merge($datas, $this->additional_data());
 		try{
 		    $template_path = $base_path.'/temp/'.LOCATION.'_cms__view_django_'.$this->id;
 		    if(!file_exists($template_path) || (isset($this->parameters['active_template']) && md5($this->parameters['active_template']) != md5_file($template_path))){
@@ -174,7 +189,7 @@ class cms_module_common_view_django extends cms_module_common_view{
 			}
 		}
 			$form.="
-				<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->module_class_name)."&quoi=views&elem=".$this->class_name."&cms_template=new&action=get_form'/>".$this->format_text($this->msg['cms_module_common_view_django_add_template'])."</a> 
+				<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->module_class_name)."&quoi=views&elem=".$this->class_name."&cms_template=new&action=get_form'>".$this->format_text($this->msg['cms_module_common_view_django_add_template'])."</a> 
 			";
 		$form.="
 			</div>
@@ -447,5 +462,9 @@ class cms_module_common_view_django extends cms_module_common_view{
 		</script>";
 		
 		return $html;
+	}
+	
+	protected function additional_data() {
+	    return [];
 	}
 }

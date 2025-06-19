@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_connecteurs_in_ui.class.php,v 1.5.2.1 2021/10/22 08:27:18 btafforeau Exp $
+// $Id: list_configuration_connecteurs_in_ui.class.php,v 1.6.4.2 2023/03/24 07:55:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,6 +34,7 @@ class list_configuration_connecteurs_in_ui extends list_configuration_connecteur
 	protected function init_default_settings() {
 		parent::init_default_settings();
 		$this->set_setting_column('sources', 'align', 'center');
+		$this->set_setting_column('add_source', 'align', 'right');
 	}
 	
 	protected function init_default_columns() {
@@ -50,12 +51,13 @@ class list_configuration_connecteurs_in_ui extends list_configuration_connecteur
 	
 	protected function add_column_add_source() {
 		global $msg;
-		$this->columns[] = array(
-				'property' => 'add_source',
-				'label' => '',
-				'html' => "<div class='align_right'><input type='button' value='".$msg["connecteurs_add_source"]."' class='bouton_small' onClick='document.location=\"".static::get_controller_url_base()."&act=add_source&id=!!id!!\"'/></div>",
-				'exportable' => false
+		
+		$html_properties = array(
+				'value' => $msg['connecteurs_add_source'],
+				'link' => static::get_controller_url_base().'&act=add_source&id=!!id!!',
+				'align' => $this->get_selected_setting_column('add_source', 'align')
 		);
+		$this->add_column_simple_action('add_source', '', $html_properties);
 	}
 	
 	protected function get_display_content_sources_object_list($object, $indice) {
@@ -177,13 +179,10 @@ class list_configuration_connecteurs_in_ui extends list_configuration_connecteur
 		return sprintf($msg["connecteurs_count_sources"],$n_sources);
 	}
 	
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "document.location=\"".$this->get_edition_link($object)."\""
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_display_cell_html_value($object, $value) {

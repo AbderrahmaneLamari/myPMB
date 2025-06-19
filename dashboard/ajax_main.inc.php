@@ -2,16 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.4.4.1 2021/12/27 14:05:14 dgoron Exp $
+// $Id: ajax_main.inc.php,v 1.6 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $categ, $sub, $plugin, $module, $msg;
 
 //En fonction de $categ, il inclut les fichiers correspondants
-require_once($class_path."/autoloader.class.php");
-$autoload = new autoloader();
-
 
 if($categ === 'plugin') {
 	$plugins = plugins::get_instance();

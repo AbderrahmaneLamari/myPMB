@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_bdp2.inc.php,v 1.4.4.2 2021/11/09 14:01:05 dgoron Exp $
+// $Id: func_bdp2.inc.php,v 1.7 2022/04/25 14:43:37 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -21,7 +21,6 @@ function recup_noticeunimarc_suite($notice) {
 } // fin recup_noticeunimarc_suite = fin récupération des variables propres BDP : rien de plus
 	
 function import_new_notice_suite() {
-	global $dbh ;
 	global $notice_id ;
 	
 	global $index_sujets ;
@@ -34,7 +33,7 @@ function import_new_notice_suite() {
 	
 	$mots_cles ? $index_matieres = strip_empty_words($mots_cles) : $index_matieres = '';
 	$rqt_maj = "update notices set index_l='".addslashes($mots_cles)."', index_matieres=' ".addslashes($index_matieres)." ' where notice_id='$notice_id' " ;
-	pmb_mysql_query($rqt_maj, $dbh);
+	pmb_mysql_query($rqt_maj);
 } // fin import_new_notice_suite
 			
 // TRAITEMENT DES EXEMPLAIRES ICI

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_acquisition_budget_ui.class.php,v 1.2 2021/04/19 07:10:22 dgoron Exp $
+// $Id: list_configuration_acquisition_budget_ui.class.php,v 1.3 2022/10/06 11:57:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -30,19 +30,8 @@ class list_configuration_acquisition_budget_ui extends list_configuration_acquis
 		$this->set_setting_column('libelle', 'text', array('italic' => true));
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['num_entite']) {
-			$filters[] = 'num_entite = "'.$this->filters['num_entite'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('num_entite', 'num_entite', 'integer');
 	}
 	
 	protected function get_main_fields_from_sub() {

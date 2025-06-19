@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: records_flux.class.php,v 1.14.2.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: records_flux.class.php,v 1.15 2021/12/28 10:06:50 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

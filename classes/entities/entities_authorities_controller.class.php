@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_authorities_controller.class.php,v 1.21.2.1 2022/01/03 10:21:11 tsamson Exp $
+// $Id: entities_authorities_controller.class.php,v 1.23.4.1 2023/04/07 09:15:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once ($class_path."/entities/entities_controller.class.php");
 global $pmb_indexation_lang;
 include($include_path."/marc_tables/".$pmb_indexation_lang."/empty_words");
@@ -40,9 +41,6 @@ class entities_authorities_controller extends entities_controller {
 	}
 	
 	protected function get_display_label_column($label='', $infobulle='') {
-		global $charset;
-		
-// 		htmlentities($label, ENT_QUOTES, $charset)
 		$display = "
 			<td style='vertical-align:top' onmousedown=\"document.location='".$this->get_edit_link($this->authority->get_num_object())."&user_input=".rawurlencode($this->user_input)."&nbr_lignes=".$this->nbr_lignes."&page=".$this->page."';\" title='".$infobulle."'>
 				".$this->authority->get_display_statut_class_html().$label."
@@ -168,7 +166,18 @@ class entities_authorities_controller extends entities_controller {
 			        print $entity_locking->get_locked_form();
 			        break;
 			    }
-			    $this->proceed_delete();
+			    // On déclenche un événement sur la supression
+			    $evt_handler = events_handler::get_instance();
+			    $event = new event_entity("entity", "has_deletion_rights");
+			    $event->set_entity_id($this->id);
+			    $event->set_entity_type($this->get_aut_const());
+			    $event->set_user_id($PMBuserid);
+			    $evt_handler->send($event);
+			    if($event->get_error_message()){
+			    	information_message('', $event->get_error_message(), 1, $this->get_permalink());
+			    } else {
+			    	$this->proceed_delete();
+			    }
 				break;
 			case 'replace':
 			    $entity_locking = new entity_locking($this->id, $this->get_aut_const());
@@ -258,7 +267,6 @@ class entities_authorities_controller extends entities_controller {
 	
 	public function proceed_duplicate() {
 		$object_instance = $this->get_object_instance();
-		$id = 0;
 		$object_instance->show_form(true);
 	}
 	
@@ -419,7 +427,7 @@ class entities_authorities_controller extends entities_controller {
 	}
 	
 	public function get_msg_from_categ($categ, $id_authperso = 0) {
-		global $msg, $search;
+		global $msg;
 		
 		switch ($categ) {
 			case 'auteurs' :

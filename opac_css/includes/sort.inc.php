@@ -6,33 +6,42 @@
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");	
 	
+global $class_path, $include_path, $charset;
+global $params, $raz_sort;
+
 // gestion du tri
 require_once($include_path . "/templates/sort.tpl.php");
 require_once($class_path . "/sort.class.php");
 
-$sort = new sort('notices', 'session');
-
-//Si vidage historique des tris demandé ?
-if ($raz_sort) {
-	if ((isset($_POST['cases_suppr'])) && !empty($_POST['cases_suppr'])) {
-		$cases_a_suppr = $_POST['cases_suppr'];
-		$sort->supprimer($cases_a_suppr);
-	} 
-}
-
 $page_en_cours = '';
 if (isset($_GET['page_en_cours'])) {
-    $page_en_cours = strip_tags($_GET['page_en_cours']);
+	$page_en_cours = strip_tags($_GET['page_en_cours']);
 }
-
-if (isset($params)) {
+$sort_name = 'notices';
+if (!empty($params)) {
 	$params_tab = unserialize(rawurldecode(stripslashes($params)));
-	if (count($params_tab)) {
+	if(!empty($params_tab) && is_countable($params_tab)) {
 		foreach ($params_tab as $param_name => $param_value) {
 			$page_en_cours.= '&' . $param_name . '=' . $param_value;
 		}
+		if((!empty($params_tab['sub']) && in_array($params_tab['sub'], array('consultation', 'view'))) && !empty($params_tab['id_liste'])) {
+			$sort_name = 'reading_list';
+		}
+	}
+} elseif((!empty($page_en_cours) && (strpos($page_en_cours, 'lvl=show_list&sub=consultation') !== false) || strpos($page_en_cours, 'lvl=show_list&sub=view') !== false)) {
+	$sort_name = 'reading_list';
+}
+
+$sort = new sort($sort_name, 'session');
+
+//Si vidage historique des tris demandé ?
+if (!empty($raz_sort)) {
+	if ((isset($_POST['cases_suppr'])) && !empty($_POST['cases_suppr'])) {
+		$cases_a_suppr = $_POST['cases_suppr'];
+		$sort->supprimer($cases_a_suppr);
 	}
 }
+
 if (isset($_GET['modif_sort'])) {
 	$temp = array();
 	for ($i = 0;$i <= 4; $i++) {
@@ -55,7 +64,7 @@ if (isset($_GET['modif_sort'])) {
 			$tmpStr = str_replace("!!page_en_cours1!!",$page_en_cours, $tmpStr);
 			echo $tmpStr;
 		} else {
-			$temp_tri = $_SESSION["nb_sortnotices"]-1;
+			$temp_tri = $_SESSION["nb_sort".$sort_name]-1;
 			print "<script> document.location='./index.php?" . $page_en_cours . "&get_last_query=" . htmlentities($_SESSION["last_query"],ENT_QUOTES,$charset) . "&sort=" . $temp_tri."';</script>";	
 		}	
 	} else {

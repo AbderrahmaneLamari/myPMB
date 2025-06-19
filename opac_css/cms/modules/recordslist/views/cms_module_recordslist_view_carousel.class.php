@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_recordslist_view_carousel.class.php,v 1.21 2019/08/08 06:42:15 jlaurent Exp $
+// $Id: cms_module_recordslist_view_carousel.class.php,v 1.21.8.2 2023/06/09 08:21:08 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 class cms_module_recordslist_view_carousel extends cms_module_carousel_view_carousel{
 	
@@ -48,11 +50,12 @@ class cms_module_recordslist_view_carousel extends cms_module_carousel_view_caro
 			$query = "select notice_id,tit1,thumbnail_url,code from notices where notice_id in ('".implode("','",$records['records'])."') order by field( notice_id, '".implode("','",$records['records'])."')";
 			$result = pmb_mysql_query($query);
 			if($result && pmb_mysql_num_rows($result)){
+			    $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
 				while($row = pmb_mysql_fetch_object($result)){
-					$url_vign = "";
-					if (($row->code || $row->thumbnail_url) && ($opac_show_book_pics=='1' && ($opac_book_pics_url || $row->thumbnail_url))) {
-						$url_vign = getimage_url($row->code, $row->thumbnail_url);
-					}
+				    $url_vign = "";
+				    if ($opac_show_book_pics=='1') {
+				        $url_vign = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $row->notice_id);
+				    }
 					$notice_class = new $opac_notice_affichage_class($row->notice_id,"");
 					$notice_class->do_header();
 					if (isset($this->parameters['used_template']) && $this->parameters['used_template']) {

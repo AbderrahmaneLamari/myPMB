@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_campaigns_ui.class.php,v 1.33.2.3 2021/11/17 13:33:29 dgoron Exp $
+// $Id: list_campaigns_ui.class.php,v 1.38.4.2 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -93,32 +93,19 @@ class list_campaigns_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-		
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'id':
-					$order .= 'id_campaign';
-					break;
-				case 'type' :
-				case 'label' :
-				case 'date':
-					$order .= 'campaign_'.$sort_by;
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order); 
-			} else {
-				return "";
-			}
-		}	
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'id':
+	            return 'id_campaign';
+	        case 'type' :
+	        case 'label' :
+	        case 'date':
+	            return 'campaign_'.$sort_by;
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -241,48 +228,27 @@ class list_campaigns_ui extends list_ui {
 		return $this->get_search_filter_interval_date('date');
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if(is_array($this->filters['types']) && count($this->filters['types'])) {
-			$filters [] = 'campaign_type IN ("'.implode('","', $this->filters['types']).'")';
-		}
-		if(is_array($this->filters['labels']) && count($this->filters['labels'])) {
-			$filters [] = 'campaign_label IN ("'.implode('","', addslashes_array($this->filters['labels'])).'")';
-		}
+	protected function _add_query_filters() {
+		$this->_add_query_filter_multiple_restriction('types', 'campaign_type');
+		$this->_add_query_filter_multiple_restriction('labels', 'campaign_label');
 		if(is_array($this->filters['descriptors']) && count($this->filters['descriptors'])) {
 			$descriptors_ids = array();
 			foreach ($this->filters['descriptors'] as $descriptor) {
 				$descriptors_ids[] = $descriptor['id'];
 			}
-			$filters [] = 'id_campaign IN (select num_campaign from campaigns_descriptors where num_noeud IN ("'.implode(',', $descriptors_ids).'"))';
+			$this->query_filters [] = 'id_campaign IN (select num_campaign from campaigns_descriptors where num_noeud IN ("'.implode(',', $descriptors_ids).'"))';
 		}
 		if(is_array($this->filters['tags']) && count($this->filters['tags'])) {
 			$tags_ids = array();
 			foreach ($this->filters['tags'] as $tag) {
 				$tags_ids[] = $tag['id'];
 			}
-			$filters [] = 'id_campaign IN (select num_campaign from campaigns_tags where num_tag IN ("'.implode(',', $tags_ids).'"))';
+			$this->query_filters [] = 'id_campaign IN (select num_campaign from campaigns_tags where num_tag IN ("'.implode(',', $tags_ids).'"))';
 		}
-		if($this->filters['date_start']) {
-			$filters [] = 'campaign_date >= "'.$this->filters['date_start'].'"';
-		}
-		if($this->filters['date_end']) {
-			$filters [] = 'campaign_date <= "'.$this->filters['date_end'].' 23:59:59"';
-		}
+		$this->_add_query_filter_interval_restriction('date', 'campaign_date', 'datetime');
 		if($this->filters['ids']) {
-			$filters [] = 'id_campaign IN ('.$this->filters['ids'].')';
+			$this->query_filters [] = 'id_campaign IN ('.$this->filters['ids'].')';
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	protected function _get_query_human_descriptors() {
@@ -317,13 +283,10 @@ class list_campaigns_ui extends list_ui {
 		return $object->get_campaign_view()->get_campaign_stats()->get_recipients_number();
 	}
 	
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "window.location=\"".static::get_controller_url_base()."&action=view&id=".$object->get_id()."\""
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_grouped_label($object, $property) {

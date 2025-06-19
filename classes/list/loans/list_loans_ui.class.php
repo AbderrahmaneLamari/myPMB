@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_loans_ui.class.php,v 1.26.2.3 2021/10/28 08:27:30 dgoron Exp $
+// $Id: list_loans_ui.class.php,v 1.31.4.3 2023/11/10 07:50:04 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -50,6 +50,10 @@ class list_loans_ui extends list_ui {
 						'doc_location' => 'editions_filter_docs_location',
 						'empr_categorie' => 'editions_filter_empr_categ',
 						'empr_codestat_one' => 'editions_filter_empr_codestat',
+// 						'groups' => '907',
+// 						'pret_date' => 'circ_date_emprunt',
+// 						'pret_retour' => 'circ_date_retour'
+				        'expl_type' => 'editions_datasource_expl_type'
 				)
 		);
 		if($pmb_lecteurs_localises) {
@@ -78,7 +82,9 @@ class list_loans_ui extends list_ui {
 				'pret_retour_end' => '',
 				'short_loan_flag' => '',
                 'associated_group' => '',
-                'empr_resp_group_location_id' => ''
+                'empr_resp_group_location_id' => '',
+				'groups' => array(),
+                'expl_type' => '',
 		);
 		
 		if (dilicom::is_pnb_active()) {
@@ -106,11 +112,15 @@ class list_loans_ui extends list_ui {
 	
 	protected function init_default_selected_filters() {
 		global $pmb_lecteurs_localises;
+		
 		if($pmb_lecteurs_localises) {
 			$this->add_selected_filter('empr_location');
 		}
 		$this->add_selected_filter('doc_location');
-		$this->add_empty_selected_filter();
+		$this->add_selected_filter('expl_type');
+		if(!$pmb_lecteurs_localises) {
+            $this->add_empty_selected_filter();
+		}
 		$this->add_selected_filter('empr_categorie');
 		$this->add_selected_filter('empr_codestat_one');
 	}
@@ -129,13 +139,23 @@ class list_loans_ui extends list_ui {
 						'cb_expl' => '4014',
 						'cote' => '4016',
 						'typdoc' => '294',
+						'section_libelle' => '295',
+						'lender_libelle' => '651',
+						'expl_location_libelle' => 'editions_datasource_expl_location',
+						'expl_statut_libelle' => 'editions_datasource_expl_statut',
+						'expl_codestat_libelle' => 'editions_datasource_expl_codestat',
 						'record' => '233',
 						'author' => '234',
 						'empr' => 'empr_nom_prenom',
 						'pret_date' => 'circ_date_emprunt',
 						'pret_retour' => 'circ_date_retour',
 						'late_letter' => '369',
-				        'groups' => 'groupes_empr'
+				        'groups' => 'groupes_empr',
+						'empr_cb' => '35',
+						'empr_location_libelle' => 'editions_datasource_empr_location',
+						'empr_statut_libelle' => 'editions_datasource_empr_statut',
+						'empr_categ_libelle' => 'editions_datasource_empr_categ',
+						'empr_codestat_libelle' => 'editions_datasource_empr_codestat',
 				)
 		);
 		
@@ -152,49 +172,31 @@ class list_loans_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-	
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'record' :
-					break;
-				case 'author' :
-					break;
-				case 'empr' :
-					$order .= 'empr.empr_nom, empr.empr_prenom';
-					break;
-				case 'pret_retour_empr' :
-					$order .= 'pret_retour, empr.empr_nom, empr.empr_prenom';
-					break;
-				case 'cote':
-					$order .= 'expl_cote';
-					break;
-				case 'typdoc':
-					$order .= 'expl_typdoc';
-					break;
-				case 'pret_date':
-					$order .= 'pret_date';
-					break;
-				case 'pret_retour':
-					$order .= 'pret_retour';
-					break;
-				case 'groups':
-				    $order .= 'groups, empr.empr_nom, empr.empr_prenom, pret_retour';
-				    break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'record' :
+	            return '';
+	        case 'author' :
+	            return '';
+	        case 'empr' :
+	            return 'empr.empr_nom, empr.empr_prenom';
+	        case 'pret_retour_empr' :
+	            return 'pret_retour, empr.empr_nom, empr.empr_prenom';
+	        case 'cote':
+	            return 'expl_cote';
+	        case 'typdoc':
+	            return 'expl_typdoc';
+	        case 'pret_date':
+	            return 'pret_date';
+	        case 'pret_retour':
+	            return 'pret_retour';
+	        case 'groups':
+	            return 'groups, empr.empr_nom, empr.empr_prenom, pret_retour';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -220,15 +222,23 @@ class list_loans_ui extends list_ui {
 
 		if(isset($empr_location_id)) {
 			$this->filters['empr_location_id'] = intval($empr_location_id);
+		} else {
+		    $this->set_filter_from_form('empr_location_id', 'integer');
 		}
 		if(isset($docs_location_id)) {
 			$this->filters['docs_location_id'] = intval($docs_location_id);
+		} else {
+		    $this->set_filter_from_form('docs_location_id', 'integer');
 		}
 		if(isset($empr_categ_filter)) {
 		    $this->filters['empr_categ_filter'] = intval($empr_categ_filter);
+		} else {
+			$this->set_filter_from_form('empr_categ_filter', 'integer');
 		}
 		if(isset($empr_codestat_filter)) {
-			$this->filters['empr_codestat_filter'] = intval($empr_codestat_filter);
+		    $this->filters['empr_codestat_filter'] = intval($empr_codestat_filter);
+		} else {
+		    $this->set_filter_from_form('empr_codestat_filter', 'integer');
 		}
 		if(isset($empr_resp_group_location_id)) {
 		    $this->filters['empr_resp_group_location_id'] = intval($empr_resp_group_location_id);
@@ -239,23 +249,69 @@ class list_loans_ui extends list_ui {
 		if(isset($pnb_flag)) {
 		    $this->filters['pnb_flag'] = 1;
 		}
+		$this->set_filter_from_form('pret_date_start');
+		$this->set_filter_from_form('pret_date_end');
+		$this->set_filter_from_form('pret_retour_start');
+		$this->set_filter_from_form('pret_retour_end');
+		$this->set_filter_from_form('groups', 'integer');
+		$this->set_filter_from_form('expl_type', 'integer');
 		parent::set_filters_from_form();
 	}
 	
+	protected function get_selection_query($type) {
+	    $query = '';
+	    switch ($type) {
+	        case 'docs_codestat':
+	            $query = 'select idcode as id, codestat_libelle as label from docs_codestat order by label';
+	            break;
+	        case 'docs_section':
+	            $query = 'select idsection as id, section_libelle as label from docs_section order by label';
+	            break;
+	        case 'docs_statut':
+	            $query = 'select idstatut as id, statut_libelle as label from docs_statut order by label';
+	            break;
+	        case 'docs_type':
+	            $query = 'select idtyp_doc as id, tdoc_libelle as label from docs_type order by label';
+	            break;
+	        case 'docs_location':
+	            $query = 'select idlocation as id, location_libelle as label from docs_location order by label';
+	            break;
+	        case 'docs_groups':
+	            $query = 'select id_groupexpl as id, groupexpl_name as label from groupexpl order by label';
+	            break;
+	        case 'empr_categ':
+	            $query = 'select id_categ_empr as id, libelle as label from empr_categ order by label';
+	            break;
+	        case 'empr_codestat':
+	            $query = 'select idcode as id, libelle as label from empr_codestat order by label';
+	            break;
+	    }
+	    return $query;
+	}
+	
 	protected function get_search_filter_empr_location() {
-		return docs_location::gen_combo_box_empr($this->filters['empr_location_id']);
+	    global $msg;
+	    
+		return $this->get_search_filter_simple_selection($this->get_selection_query('docs_location'), 'empr_location_id', $msg['all_location']);
+		
 	}
 	
 	protected function get_search_filter_doc_location() {
-		return docs_location::gen_combo_box_docs($this->filters['docs_location_id']);
+	    global $msg;
+	    
+	    return $this->get_search_filter_simple_selection($this->get_selection_query('docs_location'), 'docs_location_id', $msg['all_location']);
 	}
 	
 	protected function get_search_filter_empr_categorie() {
-		return emprunteur::gen_combo_box_categ($this->filters['empr_categ_filter']);
+	    global $msg;
+	    
+		return $this->get_search_filter_simple_selection($this->get_selection_query('empr_categ'), 'empr_categ_filter', $msg['categ_all']);
 	}
 	
 	protected function get_search_filter_empr_codestat_one() {
-		return emprunteur::gen_combo_box_codestat($this->filters['empr_codestat_filter']);
+	    global $msg;
+	    
+		return $this->get_search_filter_simple_selection($this->get_selection_query('empr_codestat'), 'empr_codestat_filter', $msg['codestat_all']);
 	}
 	
 	protected function get_search_filter_pnb_flag() {
@@ -272,6 +328,49 @@ class list_loans_ui extends list_ui {
 	    return docs_location::get_html_select(array($this->filters['empr_resp_group_location_id']),array('id'=> 0,'msg'=> $msg['all_location']),array('id'=>'empr_resp_group_location_id','name'=>'empr_resp_group_location_id'));
 	}
 	
+	protected function get_search_filter_interval_date($name) {
+		global $sub;
+		
+		$readonly_start = false;
+		$readonly_end = false;
+		switch ($name) {
+			case 'pret_retour':
+				if($sub == 'retard' || $sub == 'retard_par_date' || $sub == 'overdue_short_loans') {
+					$readonly_end = true;
+				}
+				if($sub == 'unreturned_short_loans') {
+					$readonly_start = true;
+				}
+				break;
+			case 'pret_date':
+				if($sub == 'unreturned_short_loans') {
+					$readonly_end = true;
+				}
+				break;
+		}
+		return "<input type='date' name='".$this->objects_type."_".$name."_start' id='".$this->objects_type."_".$name."_start' value='".$this->filters[$name."_start"]."' ".($readonly_start ? "disabled='disabled'" : '')." />
+			 - <input type='date' name='".$this->objects_type."_".$name."_end' id='".$this->objects_type."_".$name."_end' value='".$this->filters[$name."_end"]."' ".($readonly_end ? "disabled='disabled'" : '')." />";
+	}
+	
+	protected function get_search_filter_pret_date() {
+		return $this->get_search_filter_interval_date('pret_date');
+	}
+	
+	protected function get_search_filter_pret_retour() {
+		return $this->get_search_filter_interval_date('pret_retour');
+	}
+	
+	protected function get_search_filter_groups() {
+		//TODO : filtre de groupes avec auto-complétion
+		return '';
+	}
+	
+	protected function get_search_filter_expl_type() {
+	    global $msg;
+	    
+	    return $this->get_search_filter_simple_selection($this->get_selection_query('docs_type'), 'expl_type', $msg['all']);
+	}
+	
 	/**
 	 * Jointure externes SQL pour les besoins des filtres
 	 */
@@ -285,70 +384,35 @@ class list_loans_ui extends list_ui {
 	    return $filter_join_query;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-	    global $empr_groupes_localises;
-	    
-		$filter_query = '';
+	protected function _add_query_filters() {
+		global $empr_groupes_localises;
 		
-		$this->set_filters_from_form();
+		$this->_add_query_filter_simple_restriction('empr_location_id', 'empr_location', 'integer');
+		$this->_add_query_filter_simple_restriction('docs_location_id', 'expl_location', 'integer');
+		$this->_add_query_filter_simple_restriction('empr_categ_filter', 'empr_categ', 'integer');
+		$this->_add_query_filter_simple_restriction('empr_codestat_filter', 'empr_codestat', 'integer');
 		
-		$filters = array();
-		if($this->filters['empr_location_id']) {
-			$filters [] = 'empr_location = "'.$this->filters['empr_location_id'].'"';
-		}
-		if($this->filters['docs_location_id']) {
-			$filters [] = 'expl_location = "'.$this->filters['docs_location_id'].'"';
-		}
-		if($this->filters['empr_categ_filter']) {
-			$filters [] = 'empr_categ = "'.$this->filters['empr_categ_filter'].'"';
-		}
-		if($this->filters['empr_codestat_filter']) {
-			$filters [] = 'empr_codestat = "'.$this->filters['empr_codestat_filter'].'"';
-		}
-		if($this->filters['pret_date_start']) {
-			$filters [] = 'pret_date >= "'.$this->filters['pret_date_start'].'"';
-		}
-		if($this->filters['pret_date_end']) {
-			$filters [] = 'pret_date < "'.$this->filters['pret_date_end'].'"';
-		}
+		$this->_add_query_filter_interval_restriction('pret_date', 'pret_date', 'date');
+		
 		if(empty($this->_query_filters_with_in_progress)) {
-			if($this->filters['pret_retour_start']) {
-				$filters [] = 'pret_retour >= "'.$this->filters['pret_retour_start'].'"';
-			}
-			if($this->filters['pret_retour_end']) {
-				$filters [] = 'pret_retour < "'.$this->filters['pret_retour_end'].'"';
-			}
+			$this->_add_query_filter_interval_restriction('pret_retour', 'pret_retour', 'date');
 		}
-		if($this->filters['short_loan_flag']) {
-			$filters [] = 'short_loan_flag = "'.$this->filters['short_loan_flag'].'"';
-		}
+		$this->_add_query_filter_simple_restriction('short_loan_flag', 'short_loan_flag', 'integer');
 		if($this->filters['associated_group'] == 1) {
-		    $filters [] = 'groupe_id IS NOT NULL';
+			$this->query_filters [] = 'groupe_id IS NOT NULL';
 		}
 		if($empr_groupes_localises && $this->filters['empr_resp_group_location_id']) {
-		    $filters [] = 'coords_resp_group.empr_location="'.$this->filters['empr_resp_group_location_id'].'"';
+			$this->query_filters [] = 'coords_resp_group.empr_location="'.$this->filters['empr_resp_group_location_id'].'"';
 		}
-		if ($this->filters['pnb_flag']) {
-		    $filters [] = 'pret_pnb_flag = "'.$this->filters['pnb_flag'].'"';
-		}
-		if(count($filters)) {
-		    $filter_query .= $this->_get_query_join_filters();
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
+		$this->_add_query_filter_simple_restriction('pnb_flag', 'pret_pnb_flag', 'integer');
+		$this->_add_query_filter_multiple_restriction('groups', 'groupe_id', 'integer');
+		
+		$this->_add_query_filter_simple_restriction('expl_type', 'expl_typdoc', 'integer');
 	}
 	
-	/**
-	 * Fonction de callback
-	 * @param object $a
-	 * @param object $b
-	 */
-	protected function _compare_objects($a, $b) {
-	    if($this->applied_sort[0]['by']) {
-	        $sort_by = $this->applied_sort[0]['by'];
+	protected function _compare_objects($a, $b, $index=0) {
+	    if($this->applied_sort[$index]['by']) {
+	        $sort_by = $this->applied_sort[$index]['by'];
 			switch($sort_by) {
 				case 'record' :
 					return $this->strcmp($a->get_exemplaire()->get_notice_title(), $b->get_exemplaire()->get_notice_title());
@@ -363,7 +427,7 @@ class list_loans_ui extends list_ui {
 					return '';
 					break;
 				default :
-					return parent::_compare_objects($a, $b);
+					return parent::_compare_objects($a, $b, $index);
 					break;
 			}
 		}
@@ -390,16 +454,57 @@ class list_loans_ui extends list_ui {
 	    return $grouped_label;
 	}
 	
-	protected function _get_object_property_cb_expl($object) {
-		return exemplaire::get_cb_link($object->cb_expl);
-	}
-	
 	protected function _get_object_property_cote($object) {
 		return $object->get_exemplaire()->cote;
 	}
 	
 	protected function _get_object_property_typdoc($object) {
 		return $object->get_exemplaire()->typdoc;
+	}
+	
+	protected function _get_object_property_section_libelle($object) {
+		return $object->get_exemplaire()->section;
+	}
+	
+	protected function _get_object_property_lender_libelle($object) {
+		return $object->owner;
+	}
+	
+	protected function _get_object_property_expl_location_libelle($object) {
+		return $object->get_exemplaire()->location;
+	}
+	
+	protected function _get_object_property_expl_statut_libelle($object) {
+		return $object->statut_doc;
+	}
+	
+	protected function _get_object_property_expl_codestat_libelle($object) {
+		$docs_codestat = new docs_codestat($object->get_exemplaire()->codestat_id);
+		return $docs_codestat->libelle;
+	}
+	
+	protected function _get_object_property_empr_cb($object) {
+		return emprunteur::get_cb_empr($object->id_empr);
+	}
+	
+	protected function _get_object_property_empr_location_libelle($object) {
+		return $object->get_emprunteur()->empr_location_l;
+	}
+	
+	protected function _get_object_property_empr_statut_libelle($object) {
+		return $object->get_emprunteur()->empr_statut_libelle;
+	}
+	
+	protected function _get_object_property_empr_categ_libelle($object) {
+		return $object->get_emprunteur()->cat_l;
+	}
+	
+	protected function _get_object_property_empr_codestat_libelle($object) {
+		return $object->get_emprunteur()->cstat_l;
+	}
+	
+	protected function _get_object_property_empr($object) {
+		return emprunteur::get_name($object->id_empr);
 	}
 	
 	protected function _get_object_property_groups($object) {
@@ -414,6 +519,9 @@ class list_loans_ui extends list_ui {
 		
 		$content = '';
 		switch($property) {
+			case 'cb_expl':
+				$content .= exemplaire::get_cb_link($object->cb_expl);
+				break;
 			case 'record':
 				$content .= "";
 				if (SESSrights & CATALOGAGE_AUTH) {
@@ -487,6 +595,32 @@ class list_loans_ui extends list_ui {
 		return $display;
 	}
 	
+	protected function _get_query_property_filter($property) {
+	    switch ($property) {
+	        case 'expl_codestat':
+	            return "select codestat_libelle from docs_codestat where idcode = ".$this->filters[$property];
+	        case 'expl_codestats':
+	            return "select codestat_libelle from docs_codestat where idcode IN (".implode(',', $this->filters[$property]).")";
+	        case 'expl_section':
+	            return "select section_libelle from docs_section where idsection = ".$this->filters[$property];
+	        case 'expl_sections':
+	            return "select section_libelle from docs_section where idsection IN (".implode(',', $this->filters[$property]).")";
+	        case 'expl_statut':
+	            return "select statut_libelle from docs_statut where idstatut = ".$this->filters[$property];
+	        case 'expl_statuts':
+	            return "select statut_libelle from docs_statut where idstatut IN (".implode(',', $this->filters[$property]).")";
+	        case 'expl_type':
+	            return "select tdoc_libelle from docs_type where idtyp_doc = ".$this->filters[$property];
+	        case 'expl_types':
+	            return "select tdoc_libelle from docs_type where idtyp_doc IN (".implode(',', $this->filters[$property]).")";
+	        case 'expl_group':
+	            return "select groupexpl_name from groupexpl where id_groupexpl = ".$this->filters[$property];
+	        case 'expl_groups':
+	            return "select groupexpl_name from groupexpl where id_groupexpl IN (".implode(',', $this->filters[$property]).")";
+	    }
+	    return '';
+	}
+	
 	protected function _get_query_human_empr_location() {
 		if($this->filters['empr_location_id']) {
 			$docs_location = new docs_location($this->filters['empr_location_id']);
@@ -501,6 +635,18 @@ class list_loans_ui extends list_ui {
 			return $docs_location->libelle;
 		}
 		return '';
+	}
+	
+	protected function _get_query_human_pret_date() {
+		return $this->_get_query_human_interval_date('pret_date');
+	}
+	
+	protected function _get_query_human_pret_retour() {
+		return $this->_get_query_human_interval_date('pret_retour');
+	}
+	
+	protected function _get_query_human_groups() {
+// 		return '';
 	}
 	
 	protected function _get_query_human() {

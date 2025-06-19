@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_accounting_budgets_ui.class.php,v 1.3 2021/04/23 07:05:12 dgoron Exp $
+// $Id: list_accounting_budgets_ui.class.php,v 1.4.4.1 2023/03/24 07:55:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -68,19 +68,8 @@ class list_accounting_budgets_ui extends list_accounting_ui {
 		$this->add_column('exercice');
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['entite']) {
-			$filters[] = 'num_entite = "'.$this->filters['entite'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('entite', 'num_entite', 'integer');
 	}
 	
 	protected function _get_query_order() {
@@ -106,12 +95,10 @@ class list_accounting_budgets_ui extends list_accounting_ui {
 		return $exer->libelle;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=show&id_bibli=".$object->num_entite."&id_".$this->get_initial_name()."=".$object->id_budget."\"";
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	public function get_type_acte() {

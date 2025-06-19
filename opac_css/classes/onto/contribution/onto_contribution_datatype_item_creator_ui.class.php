@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_item_creator_ui.class.php,v 1.16.2.1 2021/09/09 14:18:26 tsamson Exp $
+// $Id: onto_contribution_datatype_item_creator_ui.class.php,v 1.18 2022/05/24 13:25:48 qvarin Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 require_once $class_path . '/onto/contribution/onto_contribution_datatype_resource_selector_ui.class.php';
@@ -406,6 +406,7 @@ class onto_contribution_datatype_item_creator_ui extends onto_contribution_datat
             $form = str_replace("!!onto_rows!!", $content, $form);
         }
 
+        $form = str_replace("!!onto_row_scripts!!", static::get_scripts(), $form);
         $form = str_replace("!!onto_row_id!!", $instance_name . '_' . $property->pmb_name, $form);
 
         return $form;

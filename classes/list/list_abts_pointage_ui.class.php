@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_abts_pointage_ui.class.php,v 1.2.2.11 2021/10/18 07:00:49 dgoron Exp $
+// $Id: list_abts_pointage_ui.class.php,v 1.18.4.2 2023/09/28 10:41:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -165,7 +165,11 @@ class list_abts_pointage_ui extends list_ui {
 			$sort_by = $this->applied_sort[0]['by'];
 			switch($sort_by) {
 				case 'date_parution':
-					$this->applied_sort_type = 'SQL';
+					if($this->applied_sort[0]['asc_desc'] == 'desc') {
+						$this->applied_sort_type = 'OBJECTS';
+					} else {
+						$this->applied_sort_type = 'SQL';
+					}
 					break;
 				default :
 					$this->applied_sort_type = 'OBJECTS';
@@ -263,38 +267,37 @@ class list_abts_pointage_ui extends list_ui {
 	}
 	
 	/**
-	 * Filtre SQL
+	 * Affichage d'une colonne avec du HTML non calculé
+	 * @param string $value
 	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if(!empty($this->filters['location'])) {
-			$filters [] = 'location_id = "'.$this->filters['location'].'"';
-		}
+	protected function get_display_cell_html_value($object, $value) {
+		$value = str_replace('!!id!!', $object->id_bull, $value);
+		$display = $this->get_display_format_cell($value);
+		return $display;
+	}
+	
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('location', 'location_id', 'integer');
 		if(!empty($this->filters['abts_statut'])) {
-			$filters [] = 'abt_status IN ('.$this->filters['abts_statut'].')';
+			$this->query_filters [] = 'abt_status IN ('.$this->filters['abts_statut'].')';
 		} else {
 			$abts_status_ids = abts_status::get_ids_bulletinage_active();
 			if(count($abts_status_ids)) {
-				$filters [] = 'abt_status IN ('.implode(',', $abts_status_ids).')';
+				$this->query_filters [] = 'abt_status IN ('.implode(',', $abts_status_ids).')';
 			}
 		}
-		if(!empty($this->filters['serials'])) {
-			$filters [] = 'notice_id IN ('.implode(',', $this->filters['serials']).')';
+		$this->_add_query_filter_multiple_restriction('serials', 'notice_id', 'integer');
+		$this->_add_query_filter_interval_restriction('date_parution', 'abts_grille_abt.date_parution', 'date');
+	}
+	
+	protected function _compare_objects($a, $b, $index=0) {
+	    $sort_by = $this->applied_sort[$index]['by'];
+		switch($sort_by) {
+			case 'date_parution':
+				return strcmp($a->date_parution, $b->date_parution);
+			default :
+			    return parent::_compare_objects($a, $b, $index);
 		}
-		if($this->filters['date_parution_start']) {
-			$filters [] = 'abts_grille_abt.date_parution >= "'.$this->filters['date_parution_start'].'"';
-		}
-		if($this->filters['date_parution_end']) {
-			$filters [] = 'abts_grille_abt.date_parution < "'.$this->filters['date_parution_end'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	protected function _get_query_human_location() {
@@ -392,6 +395,9 @@ class list_abts_pointage_ui extends list_ui {
 		
 		$content = '';
 		switch($property) {
+			case 'periodique':
+				$content .= $object->periodique; //conservation de l'interprétation du HTML
+				break;
 			case 'a_recevoir':
 				$content .= "<input type='radio' name='".$object->id_bull."' id='".$object->id_bull."_1' checked='checked'  value='1' />";
 				break;
@@ -399,7 +405,7 @@ class list_abts_pointage_ui extends list_ui {
 				$content .= "<input name='".$object->id_bull."' id='".$object->id_bull."_2' value='2' nume='".$object->NUM."' vol='".$object->VOL."' tom='".$object->TOM."' num='". htmlentities($object->libelle_numero,ENT_QUOTES, $charset)."'  type='radio' ".$object->link_recu." />";
 				break;
 			case 'supprimer_et_conserver':
-				$content .= "<input name='".$object->id_bull."' id='".$object->id_bull."_3' value='3' type='radio' ".$object->link_non_recevable." />";
+				$content .= "<input name='".$object->id_bull."' id='".$object->id_bull."_3' value='3' type='radio' ".$object->link_non_recevable." /><span id='".$object->id_bull."_3_action_response'></span>";
 				break;
 			default :
 				$content .= parent::get_cell_content($object, $property);
@@ -408,16 +414,14 @@ class list_abts_pointage_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		switch($property) {
 			case 'bulletin_see':
 				$attributes['id'] = $object->id_bull."_bul";
-				$content = $this->get_cell_content($object, $property);
-				return $this->get_display_format_cell($content, $property, $attributes);
-			default:
-				return parent::get_display_cell($object, $property);
+				break;
 		}
+		return $attributes;
 	}
 	
 	public function get_cpt_prochain_numero() {

@@ -2,13 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_persopac.class.php,v 1.24 2018/11/08 13:02:57 dgoron Exp $
+// $Id: search_persopac.class.php,v 1.26 2022/12/08 09:11:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 // classes de gestion des recherches personnalisées
 
 // inclusions principales
+global $class_path, $include_path;
 require_once("$include_path/templates/search_persopac.tpl.php");
 require_once("$class_path/search.class.php");
 require_once("$class_path/translation.class.php");
@@ -27,7 +28,7 @@ class search_persopac {
 	
 	// constructeur
 	public function __construct($id=0) {	
-		$this->id = $id+0;
+		$this->id = intval($id);
 		if($this->id) {
 			$this->fetch_data();
 		}else $this->get_link();
@@ -59,7 +60,7 @@ class search_persopac {
 		global $onglet_persopac;
 		
 		if($this->directlink == 2) {
-			$js_launch_search= "document.forms['search_form".$this->id."'].action = '".$base_path."/index.php?lvl=more_results&mode=extended';";
+			$js_launch_search= "document.forms['search_form".$this->id."'].action = '".$base_path."/index.php?lvl=more_results&mode=extended&search_type_asked=extended_search';";
 		} else {
 			$js_launch_search= "";
 		}
@@ -78,7 +79,6 @@ class search_persopac {
 	}
 	
 	public function get_link() {
-		global $onglet_persopac,$launch_search;	
 		global $opac_view_filter_class;
 		$myQuery = pmb_mysql_query("SELECT search_persopac.*, group_concat(id_categ_empr) as categ_restrict FROM search_persopac left join search_persopac_empr_categ on id_search_persopac = search_id group by search_id order by search_order, search_name ");
 		

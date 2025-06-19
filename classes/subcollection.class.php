@@ -2,11 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: subcollection.class.php,v 1.99.2.2 2021/12/28 13:51:32 dgoron Exp $
+// $Id: subcollection.class.php,v 1.103 2022/12/02 09:30:40 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 // définition de la classe de gestion des 'sous-collections'
+use Pmb\Ark\Entities\ArkEntityPmb;
 
 if ( ! defined( 'SUB_COLLECTION_CLASS' ) ) {
   define( 'SUB_COLLECTION_CLASS', 1 );
@@ -80,6 +81,8 @@ class subcollection {
 			$result = pmb_mysql_query($requete);
 			if(pmb_mysql_num_rows($result)) {
 				$row = pmb_mysql_fetch_object($result);
+				pmb_mysql_free_result($result);
+				
 				$this->id = $row->sub_coll_id;
 				$this->name = $row->sub_coll_name;
 				$this->parent = $row->sub_coll_parent;
@@ -240,6 +243,7 @@ class subcollection {
 	// ---------------------------------------------------------------
 	public function replace($by,$link_save=0) {
 		global $msg;
+	    global $pmb_ark_activate;
 	
 		if(!$by) {
 			// pas de valeur de remplacement !!!
@@ -303,7 +307,15 @@ class subcollection {
 		
 		// nettoyage indexation
 		indexation_authority::delete_all_index($this->id, "authorities", "id_authority", AUT_TABLE_SUB_COLLECTIONS);
-		
+		if ($pmb_ark_activate) {
+		    $idReplaced = authority::get_authority_id_from_entity($this->id, AUT_TABLE_SUB_COLLECTIONS);
+		    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_SUB_COLLECTIONS);
+		    if ($idReplaced && $idReplacing) {
+		        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+		        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+		        $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		    }
+		}
 		// effacement de l'identifiant unique d'autorité
 		$authority = new authority(0, $this->id, AUT_TABLE_SUB_COLLECTIONS);
 		$authority->delete();

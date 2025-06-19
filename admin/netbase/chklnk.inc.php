@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: chklnk.inc.php,v 1.30.2.1 2021/12/15 08:53:05 dgoron Exp $
+// $Id: chklnk.inc.php,v 1.31 2021/12/15 08:47:16 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

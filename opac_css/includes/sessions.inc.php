@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sessions.inc.php,v 1.15.2.4 2022/01/13 15:02:04 dgoron Exp $
+// $Id: sessions.inc.php,v 1.22.4.3 2023/10/24 10:10:51 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -56,7 +56,7 @@ function checkEmpr($SESSNAME, $allow=0,$user_connexion='') {
 
 	// recherche de la session ouverte dans la table
 	$query = "SELECT SESSID, login, IP, SESSstart, LastOn, SESSNAME FROM sessions WHERE ";
-	$query .= "SESSID='$PHPSESSID' and login = '".$PHPSESSLOGIN."'";
+	$query .= "SESSID='". addslashes($PHPSESSID) . "' and login = '" . addslashes($PHPSESSLOGIN) . "'";
 	$result = pmb_mysql_query($query);
 	$numlignes = pmb_mysql_num_rows($result);
 
@@ -78,18 +78,16 @@ function checkEmpr($SESSNAME, $allow=0,$user_connexion='') {
 		return FALSE;
 	}
 	
-	// On test ici si le mdp correpond a la politique des mdp mis en place
-	if (file_exists($include_path . '/ext_auth.inc.php') === false) {	    
-	    if ($PHPSESSLOGIN !== "") {
-        	$query_user_pwd = "SELECT empr_password FROM empr WHERE empr_login = '" . $PHPSESSLOGIN . "'";
-        	$result_user_pwd = pmb_mysql_query($query_user_pwd);
-        	if (pmb_mysql_num_rows($result_user_pwd)) {
-        	    $user_infos = pmb_mysql_fetch_object($result_user_pwd);
-        	    $hash_format = password::get_hash_format($user_infos->empr_password);
-        	    if ('undefined' === $hash_format ) {
-        	        $_SESSION['password_no_longer_compliant'] = true;
-        	    }
-        	}
+	// On teste ici si le mdp correspond a la politique des mdp mis en place
+	if ($PHPSESSLOGIN !== "") {
+	    $query_user_pwd = "SELECT empr_password FROM empr WHERE empr_login = '" . addslashes($PHPSESSLOGIN) . "'";
+	    $result_user_pwd = pmb_mysql_query($query_user_pwd);
+	    if (pmb_mysql_num_rows($result_user_pwd)) {
+	        $user_infos = pmb_mysql_fetch_object($result_user_pwd);
+	        $hash_format = password::get_hash_format($user_infos->empr_password);
+	        if ('undefined' === $hash_format ) {
+	            $_SESSION['password_no_longer_compliant'] = true;
+	        }
 	    }
 	}
 	
@@ -117,9 +115,9 @@ function checkEmpr($SESSNAME, $allow=0,$user_connexion='') {
 	// récupération de la langue de l'utilisateur
 
 	// mise à disposition des variables de la session
-	define('SESSlogin'	, $PHPSESSLOGIN);
-	define('SESSname'	, $SESSNAME);
-	define('SESSid'		, $PHPSESSID);
+	define('SESSlogin'	, addslashes($PHPSESSLOGIN));
+	define('SESSname'	, addslashes($SESSNAME));
+	define('SESSid'		, addslashes($PHPSESSID));
 	define('SESSstart'	, $SESSstart_session);
 	
 	return TRUE;
@@ -172,6 +170,11 @@ function startSession($SESSNAME, $login) {
 	// cookie pour l'ID de session
 	pmb_setcookie($SESSNAME."-SESSID", $SESSID, 0);
 
+	//ré-affectation de la clé à la volée pour utilisation sur la même page
+	//pmb_setcookie n'a pas d'effet immediat
+	// #135688 : CAIRN access SSO
+	$_COOKIE["$SESSNAME-SESSID"] = $SESSID;
+
 	// cookie pour la base de donnée
 	pmb_setcookie($SESSNAME."-DATABASE", $PMBdatabase, 0);
 
@@ -198,6 +201,12 @@ function startSession($SESSNAME, $login) {
 function cleanTable($SESSNAME) {
 	global $opac_duration_session_auth;
 	
+	if (!isset($opac_duration_session_auth)) {
+	    // On n'a pa encore globalisé les paramètres, on va chercher la durée de session directement dans la table
+	    $query = "select valeur_param from parametres where type_param = 'opac' and sstype_param = 'duration_session_auth'";
+	    $result = pmb_mysql_query($query);
+	    $opac_duration_session_auth = pmb_mysql_result($result, 0, 0);
+	}
 	// heure courante moins une heure
 	$time_out = time() - $opac_duration_session_auth;
 

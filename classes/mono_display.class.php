@@ -2,12 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mono_display.class.php,v 1.335.2.1 2022/01/11 08:29:49 qvarin Exp $
+// $Id: mono_display.class.php,v 1.343.4.1 2023/04/07 13:00:46 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-require_once($class_path."/record_display.class.php");
+global $class_path, $include_path, $tdoc, $fonction_auteur;
 
+require_once($class_path."/record_display.class.php");
 require_once("$class_path/marc_table.class.php");
 require_once("$class_path/author.class.php");
 require_once("$class_path/editor.class.php");
@@ -39,8 +40,8 @@ require_once($class_path."/notice_relations_collection.class.php");
 require_once($class_path."/thumbnail.class.php");
 require_once($class_path."/pnb/pnb_record_orders.class.php");
 
-if (!isset($tdoc)) $tdoc = marc_list_collection::get_instance('doctype');
-if (!isset($fonction_auteur)) {
+if (empty($tdoc)) $tdoc = marc_list_collection::get_instance('doctype');
+if (empty($fonction_auteur)) {
 	$fonction_auteur = new marc_list('function');
 	$fonction_auteur = $fonction_auteur->table;
 }
@@ -105,6 +106,7 @@ class mono_display extends record_display {
 	  	if($pmb_recherche_ajax_mode){
 			$this->ajax_mode=$ajax_mode;
 		  	if($this->ajax_mode) {
+		  		$param=array();
 				if (is_object($id)){
 					$param['id']=$id->notice_id;
 				} else {
@@ -202,6 +204,7 @@ class mono_display extends record_display {
 				$this->map=new stdClass();
 				$this->map_info=new stdClass();
 				if($pmb_map_activate){
+					$ids=array();
 					$ids[]=$this->notice_id;
 					$this->map=new map_objects_controler(TYPE_RECORD,$ids);
 					$this->map_info=new map_info($this->notice_id);
@@ -231,7 +234,7 @@ class mono_display extends record_display {
 	
 	// génération de l'isbd----------------------------------------------------
 	public function do_isbd() {
-		global $msg, $dbh, $base_path;
+		global $msg, $base_path;
 		global $tdoc;
 		global $charset;
 		global $lang;
@@ -393,7 +396,7 @@ class mono_display extends record_display {
 		}
 		// Permalink OPAC
 		if ($pmb_show_permalink) {
-			$this->isbd .= "<b>".$msg["notice_permalink_opac"]."&nbsp;</b><a href='".$pmb_opac_url."index.php?lvl=notice_display&id=".$this->notice_id."' target=\"_blank\">".$pmb_opac_url."index.php?lvl=notice_display&id=".$this->notice_id."</a><br />";
+		    $this->isbd .= "<b>".$msg["notice_permalink_opac"]."&nbsp;</b><a href='".$this->get_permalink()."' target=\"_blank\">".$this->get_permalink()."</a><br />";
 		}
 		// niveau 1
 		if($this->level == 1) {
@@ -419,7 +422,9 @@ class mono_display extends record_display {
 				if ($aff_resa_planning)	$this->isbd .= "<b>$msg[resas_planning]</b>".$aff_resa_planning;
 			}
 			$this->simple_isbd=$this->isbd;
-			thumbnail::do_image($this->isbd, $this->notice);
+			if (isset($this->notice)) {
+			    thumbnail::do_image($this->isbd, $this->notice);
+			}
 			return;
 		}
 		
@@ -517,7 +522,7 @@ class mono_display extends record_display {
 			$collstate_aff = "";
 			if ($this->notice->niveau_biblio=='b' && $this->notice->niveau_hierar==2) { // on est face à une notice de bulletin
 				$requete="select bulletin_id from bulletins where num_notice=".$this->notice->notice_id;
-				$result=@pmb_mysql_query($requete);
+				$result=pmb_mysql_query($requete);
 				if (pmb_mysql_num_rows($result)) {
 					$bull = pmb_mysql_fetch_object($result);					
 					if (!$this->notice->is_numeric) {
@@ -539,15 +544,9 @@ class mono_display extends record_display {
 					    }
 					}
 					//on affiche les états des collections en condition identique des exemplaires
-					global $pmb_etat_collections_localise;
-					$collstate = new collstate(0, 0, $bull->bulletin_id);
-					if($pmb_etat_collections_localise) {
-						$collstate->get_display_list("",0,0,0,1,0,true);
-					} else {
-						$collstate->get_display_list("",0,0,0,0,0,true);
-					}
-					if($collstate->nbr) {
-						$collstate_aff = $collstate->liste;
+					$list_collstate_ui = new list_collstate_ui(array('serial_id' => 0, 'bulletin_id' => $bull->bulletin_id), array('all_on_page' => true));
+					if(count($list_collstate_ui->get_objects())) {
+						$collstate_aff = $list_collstate_ui->get_display_list();
 					}
 				}
 			}else{
@@ -575,7 +574,7 @@ class mono_display extends record_display {
 				$this->isbd .= $expl_aff;
 			}
 			if($collstate_aff) {
-				$this->isbd .= "<br /><b>".$msg["abts_onglet_collstate"]." (".$collstate->nbr.")</b><br />";
+				$this->isbd .= "<br /><b>".$msg["abts_onglet_collstate"]." (".count($list_collstate_ui->get_objects()).")</b><br />";
 				$this->isbd .= $collstate_aff;
 			}
 		}
@@ -657,11 +656,11 @@ class mono_display extends record_display {
 
 	// génération du header----------------------------------------------------
 	public function do_header() {
-		global $dbh, $base_path;
+		global $base_path, $use_opac_url_base;
 		global $charset,$msg;
 		global $pmb_notice_reduit_format;
 		global $tdoc;
-		global $use_opac_url_base, $opac_url_base, $use_dsi_diff_mode;
+		global $opac_url_base;
 		global $no_aff_doc_num_image;
 	
 		$type_reduit = substr($pmb_notice_reduit_format,0,1);
@@ -684,8 +683,11 @@ class mono_display extends record_display {
 	 				$this->header_texte=$notice_tpl_header;
 				}
 			}
+    		if (!$this->header) {
+    		    $type_reduit = "1";
+    		}
 		}
-	
+		
 		if ($type_reduit!="H") {
 			// récupération du titre de série
 			if (!empty($this->tit_serie)) {
@@ -780,7 +782,7 @@ class mono_display extends record_display {
     			    $header_issue = sprintf($msg["bul_titre_perio"], htmlentities($row->tit1, ENT_QUOTES, $charset));
     			    $header_issue_text = sprintf($msg["bul_titre_perio"], $row->tit1);
     			} else {
-    			    $header_issue = sprintf($msg["bul_titre_perio"], htmlentities($row->tit1.", ".$row->num_bull." [".$row->aff_date_date."]"));
+    			    $header_issue = sprintf($msg["bul_titre_perio"], htmlentities($row->tit1.", ".$row->num_bull." [".$row->aff_date_date."]", ENT_QUOTES, $charset));
     			    $header_issue_text = sprintf($msg["bul_titre_perio"], $row->tit1.", ".$row->num_bull." [".$row->aff_date_date."]");
     			}
     			
@@ -807,8 +809,7 @@ class mono_display extends record_display {
 				$explnumrow = pmb_mysql_fetch_object($explnums);
 				if (!$use_opac_url_base) $this->header .= "<a href=\"".$base_path."/doc_num.php?explnum_id=".$explnumrow->explnum_id."\" target=\"_blank\">";
 				else $this->header .= "<a href=\"".$opac_url_base."doc_num.php?explnum_id=".$explnumrow->explnum_id."\" target=\"_blank\">";
-				if (!$use_opac_url_base) $this->header .= "<img src='".get_url_icon('globe_orange.png')."' border=\"0\" class='align_middle' hspace=\"3\"";
-				else $this->header .= "<img src=\"".$opac_url_base."images/globe_orange.png\" border=\"0\" class='align_middle' hspace=\"3\"";
+				$this->header .= "<img src='".get_url_icon('globe_orange.png')."' border=\"0\" class='align_middle' hspace=\"3\"";
 				$this->header .= " alt=\"";
 				$this->header .= htmlentities($explnumrow->explnum_nom,ENT_QUOTES,$charset);
 				$this->header .= "\" title=\"";
@@ -817,8 +818,7 @@ class mono_display extends record_display {
 				$this->header .='</a>';
 			}
 			else if ($explnumscount > 1) {
-				if (!$use_opac_url_base) $this->header .= "<img src='".get_url_icon('globe_rouge.png')."' border=\"0\" class='align_middle' alt=\"".$msg['info_docs_num_notice']."\" title=\"".$msg['info_docs_num_notice']."\" hspace=\"3\">";
-				else $this->header .= "<img src=\"".$opac_url_base."images/globe_rouge.png\" border=\"0\" class='align_middle' alt=\"".$msg['info_docs_num_notice']."\" title=\"".$msg['info_docs_num_notice']."\" hspace=\"3\">";
+				$this->header .= "<img src='".get_url_icon('globe_rouge.png')."' border=\"0\" class='align_middle' alt=\"".$msg['info_docs_num_notice']."\" title=\"".$msg['info_docs_num_notice']."\" hspace=\"3\">";
 			}
 		}
 		if (isset($this->icondoc)) $this->header = $this->icondoc." ".$this->header;

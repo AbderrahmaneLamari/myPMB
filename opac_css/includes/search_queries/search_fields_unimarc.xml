@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: search_fields_unimarc.xml,v 1.31.2.1 2021/09/10 14:56:05 tsamson Exp $ -->
+<!-- $Id: search_fields_unimarc.xml,v 1.34 2023/01/17 09:58:06 tsamson Exp $ -->
 <pmbfields>
 	<!-- Zone fixedFields :
 		Liste des champs de recherche possibles de la base de données
@@ -280,6 +280,16 @@
 			<query for="EXACT" regDiacrit="yes">
 				<repeat name="current_source" on="selected_sources" separator="," operator="union" orderTerm="i_value"/>
 				<main><![CDATA[select distinct recid as notice_id, i_value from entrepot_source_!!current_source!! where i_value=' !!p!! ' and ufield='500' and usubfield='a']]></main>
+			</query>
+		</field>
+		<field title="msg:external_search_analysis_id" id="37" unimarcField="014$a" >
+			<input type="text"/>
+			<variable name="selected_sources" type="global"/>
+			<query for="STARTWITH" isbnSearch="yes">
+				<repeat name="current_source" on="selected_sources" separator="," operator="union" orderTerm=""/>
+				<main><![CDATA[select distinct recid as notice_id from entrepot_source_!!current_source!! where (ufield='014') and usubfield='a' and !!multiple_term!! group by notice_id]]></main>
+				<multipleTerm>value like '!!p!!%'</multipleTerm>
+				<multipleOperator>or</multipleOperator>
 			</query>
 		</field>
 		<field title="msg:docnum_indexation_contenu" id="72" unimarcField="FORBIDDEN">
@@ -697,7 +707,9 @@
 			</input>
 			<query for="EQ">				
 				<repeat name="current_source" on="selected_sources" separator="," operator="union"/>
-				<main><![CDATA[select distinct a0.recid as notice_id from entrepot_source_!!current_source!! as a0, entrepot_source_!!current_source!! as a1, notices where notice_id='!!p!!' and a0.value=tit1 and ((a0.ufield='461' and a0.usubfield='t' and a1.ufield='bl' and a1.value='a') or (a0.ufield='200' and a0.usubfield='a' and a1.ufield='bl' and a1.value='s'))]]></main>
+				<main><![CDATA[SELECT distinct a0.recid AS notice_id FROM entrepot_source_!!current_source!! AS a0 JOIN notices on a0.value=notices.tit1 AND notices.notice_id='!!p!!' LEFT JOIN entrepot_source_!!current_source!! AS a1 ON a1.recid = a0.recid WHERE a0.ufield='461' AND a0.usubfield='t' AND a1.ufield='bl' AND a1.value='a'
+				UNION
+				SELECT distinct a1.recid AS notice_id FROM entrepot_source_!!current_source!! AS a0 JOIN notices on a0.value=notices.tit1 AND notices.notice_id='!!p!!' LEFT JOIN entrepot_source_!!current_source!! AS a1 ON a1.recid = a0.recid WHERE a0.ufield='200' AND a0.usubfield='a' AND a1.ufield='bl' AND a1.value='s']]></main>
 			</query>
 		</field>
 		<field title="msg:num_bull_query" id="35" unimarcField="463$v">

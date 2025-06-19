@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_item_creator_ui.class.php,v 1.3.2.1 2021/06/30 13:44:22 qvarin Exp $
+// $Id: onto_contribution_datatype_item_creator_ui.class.php,v 1.4 2021/06/30 13:44:38 gneveu Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 require_once $class_path . '/onto/common/onto_common_datatype_ui.class.php';

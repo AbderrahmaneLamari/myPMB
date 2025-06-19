@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: titre_uniforme.class.php,v 1.63.2.3 2022/01/14 09:05:47 tsamson Exp $
+// $Id: titre_uniforme.class.php,v 1.67.4.1 2023/05/24 14:12:08 gneveu Exp $
 if (stristr ( $_SERVER ['REQUEST_URI'], ".class.php" ))
 	die ( "no access" );
 
@@ -75,6 +75,7 @@ class titre_uniforme {
 	protected $oeuvre_expressions; // tableau des expressions de l'oeuvre
 	protected $oeuvre_expressions_datas; // Tableau des données des expressions de l'oeuvre
 	
+	protected $display_tonalite; //Affichage formaté de la tonalité selon la marc_list music_key.xml
 	// ---------------------------------------------------------------
 	// titre_uniforme($id) : constructeur
 	// ---------------------------------------------------------------
@@ -186,28 +187,56 @@ class titre_uniforme {
 	
 	public function get_authors() {
 	    if($this->authors === null){
+
 	        global $fonction_auteur;
+
 	        $responsabilites = array() ;
 	        $auteurs = array() ;
+
 	        $this->authors["responsabilites"] = array() ;
 	        $this->authors["auteurs"] = array() ;
+
 	        $this->sorted_responsabilities = array(
 	            'authors' => array(),
 	            'performers' => array()
 	        );
-	        
-	        $rqt = "select author_id, responsability_tu_fonction, responsability_tu_type, id_responsability_tu ";
-	        $rqt.= "from responsability_tu, authors where responsability_tu_num='".$this->id."' and responsability_tu_author_num=author_id order by responsability_tu_type, responsability_tu_ordre " ;
-	        
-	        $res_sql = pmb_mysql_query($rqt);
-	        $i = 0;
-	        while ($resp_tu=pmb_mysql_fetch_object($res_sql)) {
+
+	        $query = "
+                SELECT author_id, responsability_tu_fonction, responsability_tu_type, id_responsability_tu 
+                FROM responsability_tu, authors 
+                WHERE responsability_tu_num = $this->id 
+                AND responsability_tu_author_num = author_id 
+                ORDER BY responsability_tu_type, responsability_tu_ordre 
+            ";
+
+	        $result = pmb_mysql_query($query);
+	        $tab_resp = pmb_mysql_fetch_all($result);
+
+	        $resp_tu_filter = array_filter($tab_resp, function ($resp) {
+	            return intval($resp[2]) == 0;
+	        });
+
+            $resp_tu_interpreter_filter = array_filter($tab_resp, function ($resp) {
+                return intval($resp[2]) != 0;
+	        });
+
+            $tab_tu = vedette_composee::get_vedette_id_from_array(array_column($resp_tu_filter, 3), TYPE_TU_RESPONSABILITY);
+            $tab_tu_interpreter = vedette_composee::get_vedette_id_from_array(array_column($resp_tu_interpreter_filter, 3), TYPE_TU_RESPONSABILITY_INTERPRETER);
+
+            $rqt = pmb_mysql_query($query);
+            while ($resp_tu = pmb_mysql_fetch_object($rqt)) {
 	            $responsabilites[] = $resp_tu->responsability_tu_type;
-	            $qualif_id = vedette_composee::get_vedette_id_from_object($resp_tu->id_responsability_tu, (!$resp_tu->responsability_tu_type ? TYPE_TU_RESPONSABILITY : TYPE_TU_RESPONSABILITY_INTERPRETER));
+	            if ($resp_tu->responsability_tu_type == 0) {
+	                $qualif_id = $tab_tu[$resp_tu->id_responsability_tu];
+	            } else {
+	                $qualif_id = $tab_tu_interpreter[$resp_tu->id_responsability_tu];
+	            }
+
 	            $qualif = null;
 	            if($qualif_id){
 	                $qualif = new vedette_composee($qualif_id);
 	            }
+
 	            $fonction_label = '';
 	            if (!empty($resp_tu->responsability_tu_fonction) && isset($fonction_auteur[$resp_tu->responsability_tu_fonction])) {
 	                $fonction_label = $fonction_auteur[$resp_tu->responsability_tu_fonction];
@@ -965,5 +994,76 @@ class titre_uniforme {
 	    }
 	    
 	    return $this->libelle;
+	}
+	
+	public function get_display_tonalite() {
+		if(isset($this->display_tonalite)) {
+			return $this->display_tonalite;
+		}
+		
+		$marc_key = self::get_marc_key();
+		if(!empty($this->tonalite_marclist) && isset($marc_key->table[$this->tonalite_marclist])){
+			return $marc_key->table[$this->tonalite_marclist];
+		}
+		return "";
+	}
+	
+	public function get_authors_without_vedettes () 
+	{
+	    if($this->authors === null){
+	        global $fonction_auteur;
+	        $responsabilites = array() ;
+	        $auteurs = array() ;
+	        $this->authors["responsabilites"] = array() ;
+	        $this->authors["auteurs"] = array() ;
+	        $this->sorted_responsabilities = array(
+	            'authors' => array(),
+	            'performers' => array()
+	        );
+
+	        $rqt = "select author_id, responsability_tu_fonction, responsability_tu_type, id_responsability_tu ";
+	        $rqt.= "from responsability_tu, authors where responsability_tu_num='".$this->id."' and responsability_tu_author_num=author_id order by responsability_tu_type, responsability_tu_ordre " ;
+
+	        $res_sql = pmb_mysql_query($rqt);
+
+	        while ($resp_tu=pmb_mysql_fetch_object($res_sql)) {
+	            $responsabilites[] = $resp_tu->responsability_tu_type;
+	            $fonction_label = '';
+	            if (!empty($resp_tu->responsability_tu_fonction) && isset($fonction_auteur[$resp_tu->responsability_tu_fonction])) {
+	                $fonction_label = $fonction_auteur[$resp_tu->responsability_tu_fonction];
+	            }
+	            $data = array(
+	                'id' => $resp_tu->author_id,
+	                'id_responsability_tu' => $resp_tu->id_responsability_tu,
+	                'fonction' => $resp_tu->responsability_tu_fonction,
+	                'fonction_label' => $fonction_label,
+	                'responsability' => $resp_tu->responsability_tu_type,
+	                'objet' => authorities_collection::get_authority(AUT_TABLE_AUTHORS, $resp_tu->author_id)
+	            ) ;
+	            $auteurs[] = $data;
+	            $data['attributes'][] = array(
+	                'fonction' => $data['fonction'],
+	                'fonction_label' => $data['fonction_label'],
+	            );
+	            unset($data['fonction']);
+	            unset($data['fonction_label']);
+	            if (!$resp_tu->responsability_tu_type) {
+	                if (!isset($this->sorted_responsabilities['authors'][$data['id']])) {
+	                    $this->sorted_responsabilities['authors'][$data['id']] = $data;
+	                } else {
+	                    $this->sorted_responsabilities['authors'][$data['id']]['attributes'][] = $data['attributes'][0];
+	                }
+	            } else {
+	                if (!isset($this->sorted_responsabilities['performers'][$data['id']])) {
+	                    $this->sorted_responsabilities['performers'][$data['id']] = $data;
+	                } else {
+	                    $this->sorted_responsabilities['performers'][$data['id']]['attributes'][] = $data['attributes'][0];
+	                }
+	            }
+	        }
+	        $this->authors["responsabilites"] = $responsabilites ;
+	        $this->authors["auteurs"] = $auteurs ;
+	    }
+	    return $this->authors;
 	}
 } // class titre uniforme

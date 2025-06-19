@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: export_z3950.php,v 1.8 2017/08/02 08:49:00 tsamson Exp $
+// $Id: export_z3950.php,v 1.9 2023/02/01 16:03:22 qvarin Exp $
 
 $base_path="../..";
 include($base_path."/includes/db_param.inc.php");
@@ -11,7 +11,7 @@ include($base_path."/admin/convert/xml_unimarc.class.php");
 require_once($base_path."/includes/isbn.inc.php");
 
 function make_error($nerr,$err_message) {
-	echo $nerr."@".$err_message."@";
+    echo htmlentities($nerr."@".$err_message."@");
 	exit();
 }
 

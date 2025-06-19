@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: make_object.inc.php,v 1.12.4.1 2022/01/10 10:35:58 dgoron Exp $
+// $Id: make_object.inc.php,v 1.14 2023/02/09 08:25:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -10,7 +10,7 @@ if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 //	test_other_query() : analyse d'une rech. sur zones de notes
 // ----------------------------------------------------------------------------
 // Armelle : a priori plus utilisé
-function test_other_query($n_res=0, $n_gen=0, $n_tit=0, $n_mat=0, $query, $operator=TRUE, $force_regexp=FALSE) {
+function test_other_query($n_res=0, $n_gen=0, $n_tit=0, $n_mat=0, $query='', $operator=TRUE, $force_regexp=FALSE) {
 	// fonction d'analyse d'une recherche sur titre
 	// la fonction retourne un tableau :
 	

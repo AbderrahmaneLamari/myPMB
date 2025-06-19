@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: upload_folder.tpl.php,v 1.8 2021/01/12 13:56:48 dgoron Exp $
+// $Id: upload_folder.tpl.php,v 1.9 2022/09/14 14:38:50 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -13,7 +13,7 @@ $rep_edit_form = "
 	<script type='text/javascript'>
 		function test_form(form) {
 			if((form.rep_nom.value.length == 0) || (form.rep_path.value.length == 0)) {
-				alert(\"$msg[upload_repertoire_error_creation]\");
+				alert(\"".$msg['upload_repertoire_error_creation']."\");
 				return false;
 			}
 			return true;
@@ -26,50 +26,45 @@ $rep_edit_form = "
 		}
 	</script>
 	
-	<input type='hidden' name='action'/>
-	<input type='hidden' name='id' value='!!id!!'/>
-	<h3><span>$msg[upload_repertoire_modify]</span>
+	<input type='hidden' name='action' />
+	<input type='hidden' name='id' value='!!id!!' />
+	<h3><span>".$msg['upload_repertoire_modify']."</span>
 	<div class='form-contenu'>
 		<div class='row'>
-			<label>$msg[upload_repertoire_nom] </label>
+			<label>".$msg['upload_repertoire_nom']."</label>
 		</div>
 		<div class='row'>
-			<input type='text' class='saisie-80em' name='rep_nom' id='rep_nom' value='!!rep_nom!!'/>
+			<input type='text' class='saisie-80em' name='rep_nom' id='rep_nom' value='!!rep_nom!!' />
 		</div> ";
-/* "		<div class='row'>
-			<label>$msg[upload_repertoire_url] </label>
-		</div>
-		<div class='row'>
-			<input type='text' class='saisie-80em' name='rep_url' id='rep_url' value='!!rep_url!!' />
-		</div> */
+
 $rep_edit_form .="<div class='row'>
-			<label>$msg[upload_repertoire_path] </label>
+			<label>".$msg['upload_repertoire_path']."</label>
 		</div>
 		<div class='row'>
 			<input type='text' class='saisie-80em' name='rep_path' id='rep_path' value='!!rep_path!!' />
 		</div>
 		<div class='row'>
 			<div class='colonne3'>
-				<label>$msg[upload_repertoire_navig] </label>
+				<label>".$msg['upload_repertoire_navig']."</label>
 			</div>
 			<div class='colonne3'>
-				<label>$msg[upload_repertoire_hash] </label>
+				<label>".$msg['upload_repertoire_hash']."</label>
 			</div>
 			<div class='colonne3'>
-				<label>$msg[upload_repertoire_subfolder] </label>
+				<label>".$msg['upload_repertoire_subfolder']."</label>
 			</div>
 		</div>
 		<div class='row'>
 			<div class='colonne3'>
 				<select id='rep_navig' name='rep_navig'>
-					<option value='1' !!select_nav_yes!!>$msg[upload_repertoire_yes]</option>
-					<option value='0' !!select_nav_no!!>$msg[upload_repertoire_no]</option>
+					<option value='1' !!select_nav_yes!!>".$msg['upload_repertoire_yes']."</option>
+					<option value='0' !!select_nav_no!!>".$msg['upload_repertoire_no']."</option>
 				</select>
 			</div>	
 			<div class='colonne3'>
 				<select id='rep_hash' name='rep_hash' onchange=\"changeEtatHash();\">
-					<option value='1' !!select_hash_yes!!>$msg[upload_repertoire_yes]</option>
-					<option value='0' !!select_hash_no!!>$msg[upload_repertoire_no]</option>
+					<option value='1' !!select_hash_yes!!>".$msg['upload_repertoire_yes']."</option>
+					<option value='0' !!select_hash_no!!>".$msg['upload_repertoire_no']."</option>
 				</select>
 			</div>	
 			<div class='colonne3'>
@@ -77,19 +72,19 @@ $rep_edit_form .="<div class='row'>
 			</div>
 		</div>		
 		<div class='row'>
-			<label>$msg[upload_repertoire_utf8] </label>
+			<label>".$msg['upload_repertoire_utf8']."</label>
 		</div>
 		<div class='row'>
 			<select name='rep_utf8'>
-				<option value='1' !!select_utf8_yes!!>$msg[upload_repertoire_yes]</option>
-				<option value='0' !!select_utf8_no!!>$msg[upload_repertoire_no]</option>
+				<option value='1' !!select_utf8_yes!!>".$msg['upload_repertoire_yes']."</option>
+				<option value='0' !!select_utf8_no!!>".$msg['upload_repertoire_no']."</option>
 			</select>
 		</div>			
 	</div>
 	<div class='row'>
 		<div class='left'>			
-			<input type='button' class='bouton' value='$msg[76]' onclick='document.location=\"./admin.php?categ=docnum&sub=rep\"'/> 
-			<input type='submit' class='bouton' value='$msg[77]' onclick='this.form.action.value=\"save_rep\"; return test_form(this.form);'/>
+			<input type='button' class='bouton' value='$msg[76]' onclick='document.location=\"./admin.php?categ=docnum&sub=rep\"' /> 
+			<input type='submit' class='bouton' value='$msg[77]' onclick='this.form.action.value=\"save_rep\"; return test_form(this.form);' />
 		</div>
 		<div class='right'>
 			!!btn_suppr!!
@@ -100,14 +95,12 @@ $rep_edit_form .="<div class='row'>
 ";
 
 $up_frame = "
-	<h3>$msg[upload_repertoire_selection]</h3>
+	<h3>".$msg['upload_repertoire_selection']."</h3>
 	<form class='form-".$current_module."' id='up_frame_modif' name='up_frame_modif' method='post' style='width : 95%'>
 	<div class='row' >
-		
 	</div>
 	<div class='row' >
 		<div id='up_fiel_tree' ></div>
 	</div>
 	</form>
 ";
-?>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum_associate_svg.class.php,v 1.6 2017/11/30 10:00:36 dgoron Exp $
+// $Id: explnum_associate_svg.class.php,v 1.6.12.1 2023/11/30 11:07:23 qvarin Exp $
 
 
 if (stristr ($_SERVER['REQUEST_URI'], ".class.php"))
@@ -55,7 +55,7 @@ class explnum_associate_svg {
 	 * @param int explnum_id Identifiant du document numérique
 	 */
 	public function __construct($explnum_id) {
-		$this->explnum_id = $explnum_id;
+		$this->explnum_id = intval($explnum_id);
 	}
 	
 	/**

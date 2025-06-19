@@ -2,15 +2,16 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scheduler_caddie.class.php,v 1.5 2019/06/10 08:57:12 btafforeau Exp $
+// $Id: scheduler_caddie.class.php,v 1.7.2.1 2023/04/12 09:22:35 dgoron Exp $
 
+global $base_path, $class_path;
 require_once($class_path."/scheduler/scheduler_task.class.php");
 require_once($class_path."/parameters.class.php");
 require_once($base_path."/admin/planificateur/caddie/scheduler_caddie_planning.class.php");
 
 class scheduler_caddie extends scheduler_task {
 	
-	protected function execution_proc($myCart, $idproc=0, $proc_class_name, $method_name) {
+	protected function execution_proc($myCart, $idproc=0, $proc_class_name='', $method_name='') {
 		$this->add_section_report($proc_class_name::get_name($idproc), 'scheduler_report_section_proc');
 		if ($proc_class_name::check_rights($idproc)) {
 			$hp = new parameters ($idproc, $proc_class_name);
@@ -27,7 +28,7 @@ class scheduler_caddie extends scheduler_task {
 	}
 	
 	public function execution() {
-		global $msg, $charset, $PMBusername;
+		global $msg;
 		
 		if (SESSrights & ADMINISTRATION_AUTH) {
 			$parameters = $this->unserialize_task_params();
@@ -85,7 +86,7 @@ class scheduler_caddie extends scheduler_task {
 											}
 											$liste = array_merge($liste_0,$liste_1);
 											if(count($liste)) {
-											    foreach ($liste as $cle => $object) {
+											    foreach ($liste as $object) {
 													$myCart->pointe_item($object,$myCart_selected->type);
 												}
 											}
@@ -130,7 +131,11 @@ class scheduler_caddie extends scheduler_task {
 										}
 										$liste= array_merge($liste_0,$liste_1);
 										$res_aff_suppr_base = $myCart->del_items_base_from_list($liste);
-										if ($res_aff_suppr_base) {
+										if (!empty($res_aff_suppr_base) && defined('CADDIE_ITEM_NO_DELETION_RIGHTS') && !empty($res_aff_suppr_base[CADDIE_ITEM_NO_DELETION_RIGHTS])) {
+											$this->add_content_report($msg['caddie_supprbase_no_deletion_rights']);
+											unset($res_aff_suppr_base[CADDIE_ITEM_NO_DELETION_RIGHTS]);
+										}
+										if (!empty($res_aff_suppr_base)) {
 											$this->add_content_report($msg['caddie_supprbase_elt_used']);
 											// inclusion du javascript de gestion des listes dépliables
 											// début de liste
@@ -158,7 +163,7 @@ class scheduler_caddie extends scheduler_task {
 										$nb_elements_total=count($liste);
 											
 										if($nb_elements_total){
-										    foreach ($liste as $cle => $object) {
+										    foreach ($liste as $object) {
 												$myCart->reindex_object($object);
 											}
 										}
@@ -166,7 +171,27 @@ class scheduler_caddie extends scheduler_task {
 										$this->add_content_report(sprintf($msg["caddie_action_no_flag_processed"],$nb_elements_no_flag));
 										$this->add_content_report(sprintf($msg["caddie_action_total_processed"],$nb_elements_total));
 										$this->add_content_report($myCart->aff_cart_nb_items(), 'scheduler_report_section_caddie_nb_items');
-										break;
+										break;									
+									case 'signature':
+									    $signature_id = (isset($parameters['scheduler_caddie_action_sign']) ? $parameters['scheduler_caddie_action_sign'] : 0);
+									    $clear = (isset($parameters['scheduler_caddie_action_clear']) ? $parameters['scheduler_caddie_action_clear'] : 0);
+									    
+									    $list_notices = $myCart->get_cart("ALL") ;
+									    $report = "";
+									    foreach ($list_notices as $notice) {
+									        $report = $myCart->sign_docnum($notice, $signature_id);
+									        $this->add_content_report($report);
+									    }
+									    
+									    if (empty($report)) {
+									        $this->add_content_report("<tr><th>".$msg['planificateur_signature_not_signed']."</th></tr>");
+									    }
+									    
+									    if (!empty($clear)) {
+									        $myCart->del_item_flag();
+									        $myCart->del_item_no_flag();
+									    }
+									    break;
 								}
 								break;
 						}

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: track_clicks.js,v 1.7.2.1 2021/10/29 10:05:07 dgoron Exp $
+// $Id: track_clicks.js,v 1.8 2021/10/29 10:02:36 dgoron Exp $
 
 function _trackClick(event){
 	//event.button == 0 => clic gauche

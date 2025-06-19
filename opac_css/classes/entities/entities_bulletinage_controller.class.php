@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_bulletinage_controller.class.php,v 1.1 2018/10/08 13:59:39 vtouchard Exp $
+// $Id: entities_bulletinage_controller.class.php,v 1.2.4.1 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once ($class_path."/entities/entities_records_controller.class.php");
 
 class entities_bulletinage_controller extends entities_records_controller {
@@ -118,7 +119,7 @@ class entities_bulletinage_controller extends entities_records_controller {
 			$rep_result = $myBul->replace($by,1-$del);
 			if(!$rep_result) {
 				print "<div class='row'><div class='msg-perio'>".$msg["maj_encours"]."</div></div>
-					<script type=\"text/javascript\">document.location='./catalog.php?categ=serials&sub=view&serial_id=".$this->serial_id."&bul_id=".$by."'</script>";
+					<script type=\"text/javascript\">document.location='./catalog.php?categ=serials&sub=view&serial_id=".$this->serial_id."&bul_id=".intval($by)."'</script>";
 			} else {
 				error_message($msg[132], $rep_result, 1, "./catalog.php?categ=serials&sub=view&serial_id=".$this->serial_id);
 			}
@@ -126,11 +127,13 @@ class entities_bulletinage_controller extends entities_records_controller {
 	}
 	
 	protected function get_permalink($id=0) {
-		if(!$id) $id = $this->id;
-		return $this->url_base."&action=view&bul_id=".$id;
+	    if(!$id) {
+	        $id = $this->id;
+	    }
+		return $this->url_base."&action=view&bul_id=" . intval($id);
 	}
 	
 	public function set_serial_id($serial_id=0) {
-		$this->serial_id = $serial_id+0;
+	    $this->serial_id = (int) $serial_id;
 	}
 }

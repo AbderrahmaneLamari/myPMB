@@ -3,13 +3,13 @@
 		<h2 class="registration_intro">{{ pmb.getMessage("animation", "animation_registration_title") }}</h2>
 		<p v-if="!formdata.idEmpr">{{ pmb.getMessage("animation", "animation_registration_intro") }} <em>{{ pmb.getMessage("animation", "animation_registration_intro_info") }}</em></p>
 		<form class="form-registration" action="#" method="POST" @submit="save">
-			<div class="row">
+			<div class="row registration_form_animation_name">
 				<h2>{{ pmb.getMessage("animation", "animation") }} : {{ formdata.animation.name }}</h2>
 			</div>
-			<div class="row">
+			<div class="row registration_form_registration_date">
 				<p>
 					{{ pmb.getMessage("animation", "animation_registration_date") }} :
-					{{ formdata.animation.event.startDate }} {{ pmb.getMessage("animation", "animation_registration_date_to") }} {{ formdata.animation.event.endDate }}
+					{{ formdata.animation.event.startDate }} <template v-if="!formdata.animation.event.duringDay">{{ pmb.getMessage("animation", "animation_registration_date_to") }} {{ formdata.animation.event.endDate }}</template>
 				</p>
 			</div>
 
@@ -21,121 +21,137 @@
 
 			<!-- contact -->
 			<hr />
-			<div class='row'>
+			<div class='row registration_form_registration_contact'>
 				<h3>{{ pmb.getMessage("animation", "animation_registration_contact") }}</h3>
 			</div>
-			<table>
-				<tr>
-					<td>{{ pmb.getMessage("animation", "animation_registration_barcode") }} :</td>
-					<td>
-						<input id="barcode" v-model="registration.barcode" type="text" class='saisie-20em'/> 
-					</td>
-				</tr>
-				<tr>
+			<table class='row registration_form_registration_table'>
+				<tr class='registration_form_registration_table_name'>
 					<td>{{ pmb.getMessage("animation", "animation_registration_name") }} <sup>*</sup> :</td>
 					<td>
 						<input id="name" v-model="registration.name" type="text" class="saisie-20emr" required/>
 					</td>
 				</tr>
-				<tr>
-					<td>{{ pmb.getMessage("animation", "animation_registration_email") }} :</td>
+				<tr  class='registration_form_registration_table_email'>
+					<td>{{ pmb.getMessage("animation", "animation_registration_email") }} <sup>*</sup> :</td>
 					<td>
-						<input id="email" v-model="registration.email" type="email" class='saisie-20emr'/>
+						<input id="email" v-model="registration.email" type="email" class='saisie-20emr' required/>
 					</td>
 				</tr>
-				<tr>
-					<td>{{ pmb.getMessage("animation", "animation_registration_phone") }} <sup>*</sup> :</td>
+				<tr class='registration_form_registration_table_phoneNumber'>
+					<td>{{ pmb.getMessage("animation", "animation_registration_phone") }} :</td>
 					<td>
-						<input id="phoneNumber" v-model="registration.phoneNumber" type="text" class='saisie-20em' required/>
+						<input id="phoneNumber" v-model="registration.phoneNumber" type="text" class='saisie-20em'/>
+					</td>
+				</tr>
+				<tr class='registration_form_registration_table_barcode'>
+					<td>{{ pmb.getMessage("animation", "animation_registration_barcode") }} <sup v-if="formdata.params.animations_only_empr">*</sup> :</td>
+					<td>
+						<input id="barcode" 
+						  v-model="registration.barcode" 
+						  type="text" class='saisie-20em' 
+						  :required="formdata.params.animations_only_empr == 1"/> 
 					</td>
 				</tr>
 			</table>
 			
 			<!-- personnes inscrites -->
-			<hr />
-			<div class="row">
-				<h3> {{ pmb.getMessage("animation", "animation_registration_persons") }} {{ registration.registrationListPerson.length }}</h3>
-			</div>
-			<div class="row">
-				<input :title="pmb.getMessage('animation', 'animation_registration_add_person')" class="bouton" type="button" :value="pmb.getMessage('animation', 'animation_registration_add_person')"  @click="addPerson"/>
-				<template v-if="can_add_contact">
-					<input :title="pmb.getMessage('animation', 'animation_registration_add_contact_toregistered_persons')" class="bouton" type="button" :value="pmb.getMessage('animation', 'animation_registration_add_contact_toregistered_persons')" @click="addContactToRegisteredPersons"/>
-				</template>
-				<template v-else>
-					<input :disabled="true" :title="pmb.getMessage('animation', 'animation_registration_contact_already_add')" class="bouton" type="button" :value="pmb.getMessage('animation', 'animation_registration_add_contact_toregistered_persons')"/>
-				</template>
-			</div>
-			<br>
-			<table>
-				<template v-for="(person, indexPerson) in registration.registrationListPerson">
-					<thead>
-						<tr>
-							<th>{{ pmb.getMessage("animation", "animation_registration_barcode") }}</th>
-							<th>{{ pmb.getMessage("animation", "animation_registration_name") }} <sup>*</sup></th>
-							<th></th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td>
-								<input :id="'person.barcode_'+indexPerson"  v-model="person.barcode" type="text" class='saisie-20em' @change="barcodeNotAlreadyUse(indexPerson)"/>
-							</td>
-							<td>
-								<input :id="'person.name_'+indexPerson" v-model="person.name" type="text" class='saisie-20emr' required/>
-							</td>						
-							<td>
-								<div class="center">
-									<input :title="pmb.getMessage('animation', 'animation_registration_remove_persons')" class="bouton" type="button" :value="pmb.getMessage('animation', 'animation_registration_remove_cross')" @click="deletePerson(indexPerson)"/>
-								</div>
-							</td>
-						</tr>
-						<tr>
-							<td colspan="3">
-								<label class='etiquette'> {{ pmb.getMessage("animation", "animation_registration_price_type") }} <sup>*</sup> :</label>
-								<template v-if="!formdata.animation.hasChildrens">
-				 					<select :id="'person_numPrice_' + indexPerson" v-model="person.numPrice" @change="getcustomField(indexPerson)">
-										<option v-for="(price, indexPrice) in formdata.animation.prices" :value="price.idPrice">
-											{{ price.name }}
-										</option>
-									</select>
-									<div class="row">
-										<template v-for="(priceAnime, indexPrice) in formdata.animation.prices" v-if="person.numPrice == priceAnime.idPrice">
-											<p>{{ pmb.getMessage("animation", "animation_registration_price") }} : {{ priceAnime.value }}</p>
-										</template>
+			<div class="row registration_form_registration_subscribe_person_form" v-if="!formdata.animation.uniqueRegistration">
+				<hr />
+				<div class="row registration_form_registration_nb_person">
+					<h3> {{ pmb.getMessage("animation", "animation_registration_persons") }} {{ registration.registrationListPerson.length }}</h3>
+				</div>
+				<div class="row registration_form_registration_button_person">
+                    <button class="bouton" type="button" @click="addPerson">
+                        {{ pmb.getMessage('animation', 'animation_registration_add_person') }}
+                    </button>
+					<template v-if="can_add_contact">
+	                    <button class="bouton" type="button" @click="addContactToRegisteredPersons">
+	                        {{ pmb.getMessage('animation', 'animation_registration_add_contact_toregistered_persons') }}
+	                    </button>
+					</template>
+					<template v-else>
+	                    <button disabled="true" class="bouton" type="button" :title="pmb.getMessage('animation', 'animation_registration_contact_already_add')">
+	                        {{ pmb.getMessage('animation', 'animation_registration_add_contact_toregistered_persons') }}
+	                    </button>
+					</template>
+				</div>
+				<br>
+				<table class="registration_form_registration_person_list">
+					<template v-for="(person, indexPerson) in registration.registrationListPerson">
+						<thead>
+							<tr>
+								<th>{{ pmb.getMessage("animation", "animation_registration_barcode") }} <sup v-if="formdata.params.animations_only_empr">*</sup></th>
+								<th>{{ pmb.getMessage("animation", "animation_registration_name") }} <sup>*</sup></th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>
+									<input :id="'person.barcode_'+indexPerson" 
+									   v-model="person.barcode" 
+									   type="text" class='saisie-20em' 
+									   @change="barcodeNotAlreadyUse(indexPerson)" 
+									   :required="formdata.params.animations_only_empr == 1"/>
+								</td>
+								<td>
+									<input :id="'person.name_'+indexPerson" v-model="person.name" type="text" class='saisie-20emr' required/>
+								</td>
+								<td>
+									<div class="center">
+				                        <button class="bouton" type="button" @click="deletePerson(indexPerson)">
+				                            {{ pmb.getMessage('animation', 'animation_registration_remove_cross') }}
+				                        </button>
 									</div>
-									<div class="row">
-										<customfields :customfields="person.personCustomsFields" customprefixe="price_type" :img="formdata.img" :pmb="pmb" :index="indexPerson"></customfields>
-									</div>
-								</template>
-								<template v-else>
-									<template v-for="(cp, idAnim) in person.animations">
-										<hr />
-										<div class="row" :id="'animation_' + idAnim + '_prices'">
-											<label for="" class='etiquette'> {{ getAnimationName(idAnim) }} </label>
-						 					<select v-model="cp.numPrice" @change="getcustomFieldAnimation(indexPerson, idAnim)">
-												<option v-for="(price, indexPrice) in getAnimationPrices(idAnim)" :value="price.idPrice">
-													{{ price.name }}
-												</option>
-											</select>
-											<template v-for="(priceAnime, indexPrice) in getAnimationPrices(idAnim)" v-if="cp.numPrice == priceAnime.idPrice">
-												{{ pmb.getMessage("animation", "animation_registration_price") }} : {{ priceAnime.value }}
+								</td>
+							</tr>
+							<tr>
+								<td colspan="3">
+									<label class='etiquette'> {{ pmb.getMessage("animation", "animation_registration_price_type") }} <sup>*</sup> :</label>
+									<template v-if="!formdata.animation.hasChildrens">
+					 					<select :id="'person_numPrice_' + indexPerson" v-model="person.numPrice" @change="getcustomField(indexPerson)">
+											<option v-for="(price, indexPrice) in formdata.animation.prices" :value="price.idPrice">
+												{{ price.name }}
+											</option>
+										</select>
+										<div class="row">
+											<template v-for="(priceAnime, indexPrice) in formdata.animation.prices" v-if="person.numPrice == priceAnime.idPrice">
+												<p>{{ pmb.getMessage("animation", "animation_registration_price") }} : {{ priceAnime.value }}</p>
 											</template>
 										</div>
-										<div class="row" :id="'animation_' + idAnim + '_cp'">
-											<customfields :customfields="cp.personCustomsFields" customprefixe="price_type" :img="formdata.img" :pmb="pmb" :index="indexPerson + '_' + idAnim"></customfields>
+										<div class="row">
+											<customfields :customfields="person.personCustomsFields" customprefixe="price_type" :img="formdata.img" :pmb="pmb" :index="indexPerson"></customfields>
 										</div>
 									</template>
-								</template>
-							</td>
-						</tr>
-					</tbody>
-				</template>
-			</table>
-			
+									<template v-else>
+										<template v-for="(cp, idAnim) in person.animations">
+											<hr />
+											<div class="row" :id="'animation_' + idAnim + '_prices'">
+												<label for="" class='etiquette'> {{ getAnimationName(idAnim) }} </label>
+							 					<select v-model="cp.numPrice" @change="getcustomFieldAnimation(indexPerson, idAnim)">
+													<option v-for="(price, indexPrice) in getAnimationPrices(idAnim)" :value="price.idPrice">
+														{{ price.name }}
+													</option>
+												</select>
+												<template v-for="(priceAnime, indexPrice) in getAnimationPrices(idAnim)" v-if="cp.numPrice == priceAnime.idPrice">
+													{{ pmb.getMessage("animation", "animation_registration_price") }} : {{ priceAnime.value }}
+												</template>
+											</div>
+											<div class="row" :id="'animation_' + idAnim + '_cp'">
+												<customfields :customfields="cp.personCustomsFields" customprefixe="price_type" :img="formdata.img" :pmb="pmb" :index="indexPerson + '_' + idAnim"></customfields>
+											</div>
+										</template>
+									</template>
+								</td>
+							</tr>
+						</tbody>
+					</template>
+				</table>
+			</div>
 			<!-- Boutons -->
 			<hr />
-			<div class="row">
-				<div class="row">
+			<div class="row registration_form_registration_captcha">
+				<div class="row registration_form_registration_captcha_container">
 					<table>
 						<tr>
 							<td></td>
@@ -151,7 +167,7 @@
 						</tr>
 					</table>
 				</div>
-				<div class="row">
+				<div class="row registration_form_registration_user_confirmation">
 					<input id="user_confirmation" name="user_confirmation" type="checkbox" v-model="user_confirmation" required/>
 					<label for="user_confirmation">
 						{{ pmb.getMessage("animation", "animation_registration_user_confirmation") }}
@@ -166,10 +182,14 @@
 					<br />
 				</div>
 			</div>
-			<div class="row">
+			<div class="row registration_form_registration_button">
 				<div class="left">
-					<input class="bouton" type="button" :value="pmb.getMessage('animation', 'animation_registration_cancel')" @click="cancel"/>
-					<input class="bouton" type="submit" :value="pmb.getMessage('animation', 'animation_registration_save')"/>
+					<button class="bouton" type="button" @click="cancel">
+					    {{ pmb.getMessage('animation', 'animation_registration_cancel') }}
+					</button>
+					<button class="bouton" type="submit">
+					    {{ pmb.getMessage('animation', 'animation_registration_save') }}
+					</button>
 				</div>
 			</div>
 			<input type="hidden" value="" name="data" v-model="sendData"/>
@@ -418,7 +438,7 @@
 			},
 
 			isValidPhone : function() {
-				var tempPhone = this.registration.phoneNumber.replace(/[\W\s]/gm, '');
+				var tempPhone = this.registration.phoneNumber ? this.registration.phoneNumber.replace(/[\W\s]/gm, '') : "";
 				if (isNaN(tempPhone)) {
 					return false;
 				}
@@ -427,6 +447,15 @@
 			
 			isValidContact : function() {
 				
+			    // On check le code barre
+                if (this.formdata.params.animations_only_empr && this.registration.barcode == "") {
+                    alert(this.pmb.getMessage('animation', 'animation_registration_error_contact_barcode'));
+                    if (document.getElementById('barcode')) {
+                        document.getElementById('barcode').focus()
+                    }
+                    return false;
+                }
+			 
 				if ('' === this.registration.name) {
 					alert(this.pmb.getMessage('animation', 'animation_registration_error_contact_name'));
 					if (document.getElementById('name')) {
@@ -435,7 +464,15 @@
 					return false;
 				}
 				
-				if ('' === this.registration.phoneNumber || !this.isValidPhone()) {
+				if ('' == this.registration.email || !is_valid_mail(this.registration.email)) {
+					alert(this.pmb.getMessage('animation', 'animation_registration_error_contact_mail'));
+					if (document.getElementById('email')) {
+					    document.getElementById('email').focus()
+					}
+					return false;
+				}
+				
+				if (this.registration.phoneNumber && !this.isValidPhone()) {
 					alert(this.pmb.getMessage('animation', 'animation_registration_error_contact_phone'));
 					if (document.getElementById('phoneNumber')) {
 					    document.getElementById('phoneNumber').focus()
@@ -470,6 +507,15 @@
 					
 						var person = this.registration.registrationListPerson[personIndex];
 						
+						// On check le code barre
+						if (this.formdata.params.animations_only_empr && person.barcode == "") {
+							alert(this.pmb.getMessage('animation', 'animation_registration_error_barcode'));
+							if (document.getElementById('person.barcode_'+personIndex)) {
+								document.getElementById('person.barcode_'+personIndex).focus()
+							}
+							return false;
+						}
+
 						// On check le name
 						if(person.name == ""){
 							alert(this.pmb.getMessage('animation', 'animation_registration_error_person_name'));

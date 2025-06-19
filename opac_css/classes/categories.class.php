@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: categories.class.php,v 1.24.10.1 2021/08/04 07:31:30 dgoron Exp $
+// $Id: categories.class.php,v 1.25.4.1 2023/10/27 08:59:57 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -110,7 +110,7 @@ class categories{
 		$id_list = array_reverse($id_list);
 		$anc_list = array();
 
-		foreach($id_list as $key=>$id) {
+		foreach($id_list as $id) {
 			if (categories::exists($id, $langue)) $lg=$langue; 
 			else $lg=$thes->langue_defaut; 
 			$q = "select * from noeuds, categories ";
@@ -165,6 +165,16 @@ class categories{
 		return $r;
 	}
 	
+
+	public static function hasChildren($num_noeud=0) {
+	    $num_noeud = intval($num_noeud);
+
+	    $q = "SELECT 1 FROM noeuds LEFT JOIN categories AS catdef ON noeuds.id_noeud=catdef.num_noeud ";
+	    $q.= "WHERE noeuds.num_parent = '".$num_noeud."' LIMIT 1";
+	    $r = pmb_mysql_query($q);
+	    return pmb_mysql_result($r, 0) == "1";
+	}
+
 	//Retourne un resultset des Orphelins dont le renvoi voir pointe sur ce noeud
 	public static function listSynonymes($num_noeud=0, $langue='', $keep_tilde=1, $ordered=0) {
 		global $opac_categories_nav_max_display;

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: TagsTemplates.js,v 1.1.2.1 2021/08/19 12:00:18 qvarin Exp $
+// $Id: TagsTemplates.js,v 1.2 2021/08/19 12:08:15 qvarin Exp $
 
 
 define([

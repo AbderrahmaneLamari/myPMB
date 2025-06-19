@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: thresholds.class.php,v 1.4 2021/01/22 08:48:42 dgoron Exp $
+// $Id: thresholds.class.php,v 1.5 2022/02/21 08:12:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/entites.class.php");
 require_once($class_path."/threshold.class.php");
 
@@ -25,7 +26,8 @@ class thresholds {
 	public function __construct($num_entity=0) {
 		$this->entity = null;
 		$this->thresholds = array();
-		if($num_entity*1) {
+		$num_entity = intval($num_entity);
+		if($num_entity) {
 			$this->entity = new entites($num_entity);
 			$this->fetch_data();
 		}

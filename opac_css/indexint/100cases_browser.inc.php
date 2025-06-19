@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: 100cases_browser.inc.php,v 1.15.8.1 2022/01/03 10:54:54 dgoron Exp $
+// $Id: 100cases_browser.inc.php,v 1.16 2022/01/03 10:52:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

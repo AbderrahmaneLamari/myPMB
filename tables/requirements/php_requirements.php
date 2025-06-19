@@ -1,47 +1,82 @@
 <?php
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: php_requirements.php,v 1.2 2021/04/29 08:39:07 dbellamy Exp $
+// $Id: php_requirements.php,v 1.2.6.1 2023/04/07 13:53:58 dbellamy Exp $
 
-$php_suggested_setup = [
+
+/**
+ * Liste des pre-requis PHP
+ *
+ * @var array $php_requirements
+ *
+ * Format :
+ * "version" => [
+ *      "min"   => version php min
+ *      "max"   => version php max
+ * ],
+ * "options" => [
+ *      "type"               => integer|string|set|boolean
+ *      "mode"               => php.ini|PHP_INI_USER|PHP_INI_PERDIR|PHP_INI_SYSTEM|PHP_INI_ALL (inutilisé actuellement)
+ *      "suggested_value"    => Valeur suggeree
+ *      "min_value"          => Valeur minimale
+  *     "max_value"          => Valeur maximale
+ *      "allowed_values"     => Tableau des valeurs possibles
+ *      "required"           => 0|1
+ *      "extension"          => Extension associee
+ * ]
+ */
+
+$php_requirements['version'] = [
+    'min' => "7.3",
+    'max' => "7.4",
+];
+
+$php_requirements['options'] = [
     "date.timezone" => [
-        "value" => "Europe/Paris",
-        "numeric_value" => ""
+        "type" => "string",
+        "mode" => "PHP_INI_ALL",
+        "suggested_value" => "Europe/Paris",
+        "required" => 1,
     ],
     "display_errors" => [
-        "value" => "Off",
-        "numeric_value" => ""
+        "type" => "boolean",
+        "mode" => "PHP_INI_ALL",
+        "suggested_value" => "Off",
     ],
     "expose_php" => [
-        "value" => "Off",
-        "numeric_value" => ""
+        "type" => "boolean",
+        "mode" => "php.ini",
+        "suggested_value" => "Off",
     ],
     "max_execution_time" => [
-        "value" => ">= 300",
-        "numeric_value" => "300"
+        "type" => "integer",
+        "mode" => "PHP_INI_ALL",
+        "suggested_value" => ">= 300",
+        "min_value" => "300",
     ],
     "max_input_vars" => [
-        "value" => ">= 50000",
-        "numeric_value" => "50000"
+        "type" => "integer",
+        "mode" => "PHP_INI_PERDIR",
+        "suggested_value" => ">= 50000",
+        "min_value" => "50000",
     ],
     "memory_limit" => [
-        "value" => "256M",
-        "numeric_value" => "256M"
+        "type" => "integer",
+        "mode" => "PHP_INI_ALL",
+        "suggested_value" => ">= 256M",
+        "min_value" => "256M",
     ],
     "post_max_size" => [
-        "value" => ">= 64M",
-        "numeric_value" => "64M"
+        "type" => "integer",
+        "mode" => "PHP_INI_PERDIR",
+        "suggested_value" => ">= 64M",
+        "min_value" => "64M"
     ],
     "upload_max_filesize" => [
-        "value" => ">= 64M",
-        "numeric_value" => "64M"
-    ],
-    "suhosin.request.max_vars" => [
-        "value" => ">= 2048",
-        "numeric_value" => ""
-    ],
-    "suhosin.post.max_vars" => [
-        "value" => ">= 2048",
-        "numeric_value" => ""
-    ],
+        "type" => "integer",
+        "mode" => "PHP_INI_PERDIR",
+        "suggested_value" => ">= 64M",
+        "min_value" => "64M"
+    ]
 ];
+

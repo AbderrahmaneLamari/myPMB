@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: artevod.class.php,v 1.22 2019/12/30 15:58:50 btafforeau Exp $
+// $Id: artevod.class.php,v 1.23 2022/02/16 13:33:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $class_path,$base_path, $include_path;
+global $class_path, $include_path;
 require_once($class_path."/connecteurs.class.php");
 require_once("$class_path/curl.class.php");
 if (version_compare(PHP_VERSION,'5','>=') && extension_loaded('xsl')) {
@@ -111,8 +111,8 @@ class artevod extends connector {
     
     public function make_serialized_source_properties($source_id) {
     	global $url, $cp_field, $enrichment_template;
-    	global $del_xsl_transform;
     	
+    	$t=array();
     	$t["url"]=$url;
     	$t["cp_field"] = $cp_field;
     	$t['enrichment_template'] = ($enrichment_template ? $enrichment_template : addslashes($this->default_enrichment_template));
@@ -157,7 +157,7 @@ class artevod extends connector {
     }
         
     public function maj_entrepot($source_id, $callback_progress="", $recover=false, $recover_env="") {
-    	global $charset, $base_path;
+    	global $base_path;
     	
     	$this->fetch_global_properties();
     	$keys = unserialize($this->parameters);
@@ -456,7 +456,7 @@ class artevod extends connector {
 	} 
         
     public function rec_record($record, $source_id, $search_id) {
-    	global $charset, $base_path, $dbh, $url, $search_index;
+    	global $charset, $base_path;
 
     	$date_import = date("Y-m-d H:i:s",time());
     	
@@ -479,6 +479,7 @@ class artevod extends connector {
     		}
     		if (($this->del_old) || ((!$this->del_old)&&(!$ref_exists))) {
     			//Insertion de l'entête
+    			$n_header = array();
 				$n_header["rs"] = "*";
 				$n_header["ru"] = "*";
 				$n_header["el"] = "1";
@@ -526,6 +527,7 @@ class artevod extends connector {
     }
 	
 	public function getTypeOfEnrichment($source_id){
+		$type = array();
 		$type['type'] = array(
 			array(
 				"code" => "artevod",

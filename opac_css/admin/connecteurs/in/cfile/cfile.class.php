@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cfile.class.php,v 1.10 2019/12/30 15:58:50 btafforeau Exp $
+// $Id: cfile.class.php,v 1.11 2022/03/10 08:22:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -20,7 +20,7 @@ if (version_compare(PHP_VERSION,'5','>=') && extension_loaded('xsl')) {
 function cfile_file_item_($param) {
 	global $catalogs;
 	
-	if (($param['VISIBLE'] != 'no') && ($param['IMPORT'] == 'yes') || ($param['OUTPUT_PMBXML'] == 'yes')) {
+	if ((isset($param['VISIBLE']) && $param['VISIBLE'] != 'no') && (isset($param['IMPORT']) && $param['IMPORT'] == 'yes') || (isset($param['OUTPUT_PMBXML']) && $param['OUTPUT_PMBXML'] == 'yes')) {
 		$catalogs[]= array(
 			"name" => $param['NAME'],
 			"path" => $param['PATH']
@@ -138,6 +138,7 @@ class cfile extends connector {
 	  		$t["xslt_exemplaire"] = $oldvars["xslt_exemplaire"];  			
   		} else {
 			if (($_FILES["xsl_exemplaire"])&&(!$_FILES["xsl_exemplaire"]["error"])) {
+				$axslt_info = array();
 				$axslt_info["name"] = $_FILES["xsl_exemplaire"]["name"];
 				$axslt_info["content"] = file_get_contents($_FILES["xsl_exemplaire"]["tmp_name"]);
 		  		$t["xslt_exemplaire"] = $axslt_info;
@@ -154,7 +155,7 @@ class cfile extends connector {
 	}
 	
 	public function rec_record($record,$source_id,$search_id) {
-		global $charset,$base_path;
+		global $base_path;
 		$date_import=date("Y-m-d H:i:s",time());
 		$r=array();
 		//Inversion du tableau
@@ -209,12 +210,13 @@ class cfile extends connector {
 			//Si pas de conservation ou reférence inexistante
 			if (($this->del_old)||((!$this->del_old)&&(!$ref_exists))) {
 				//Insertion de l'entête
-				$n_header["rs"]=$record["rs"];
-				$n_header["ru"]=$record["ru"];
-				$n_header["el"]=$record["el"];
-				$n_header["bl"]=$record["bl"];
-				$n_header["hl"]=$record["hl"];
-				$n_header["dt"]=$record["dt"];
+				$n_header=array();
+				$n_header["rs"]=$record["rs"];unset($record["rs"]);
+				$n_header["ru"]=$record["ru"];unset($record["ru"]);
+				$n_header["el"]=$record["el"];unset($record["el"]);
+				$n_header["bl"]=$record["bl"];unset($record["bl"]);
+				$n_header["hl"]=$record["hl"];unset($record["hl"]);
+				$n_header["dt"]=$record["dt"];unset($record["dt"]);
 				
 				//Récupération d'un ID
 				$recid = $this->insert_into_external_count($source_id, $ref);
@@ -297,7 +299,7 @@ class cfile extends connector {
 	//Nécessaire pour passer les valeurs obtenues dans form_pour_maj_entrepot au javascript asynchrone
 	public function get_maj_environnement($source_id) {
 		global $outputtype, $import_type;
-		global $base_path;
+		global $base_path, $msg;
 		$envt=array();
 		//Copie du fichier dans le répertoire temporaire
 		$origine=str_replace(" ","",microtime());
@@ -349,7 +351,7 @@ class cfile extends connector {
 	}
 	
 	public function maj_entrepot($source_id,$callback_progress="",$recover=false,$recover_env="") {
-		global $dbh, $base_path, $file_in, $suffix, $converted, $origine, $charset, $outputtype;
+		global $base_path, $file_in, $suffix, $converted, $origine, $charset, $outputtype;
 		//Allons chercher plein d'informations utiles et amusantes
 		$params=$this->get_source_params($source_id);
 		$this->fetch_global_properties();
@@ -404,7 +406,7 @@ class cfile extends connector {
 			$this->loadfile_in_table_unimarc($final_file, $origine);
 	
 			$import_marc_count = "SELECT count(*) FROM import_marc";
-			$count_total = pmb_mysql_result(pmb_mysql_query($import_marc_count, $dbh), 0, 0);
+			$count_total = pmb_mysql_result(pmb_mysql_query($import_marc_count), 0, 0);
 			if (!$count_total) {
 				return 0;
 			}
@@ -453,7 +455,7 @@ class cfile extends connector {
 			$this->loadfile_in_table_xml($final_file, $origine);
 			
 			$import_marc_count = "SELECT count(*) FROM import_marc";
-			$count_total = pmb_mysql_result(pmb_mysql_query($import_marc_count, $dbh), 0, 0);
+			$count_total = pmb_mysql_result(pmb_mysql_query($import_marc_count), 0, 0);
 			if (!$count_total) {
 				return 0;
 			}
@@ -499,7 +501,7 @@ class cfile extends connector {
 	}
 	
 	public function loadfile_in_table_unimarc ($filename, $origine) {
-		global $msg, $dbh ;
+		global $msg;
 		global $sub, $book_lender_name ;
 		global $noticenumber, $pb_fini, $recharge ;
 
@@ -544,7 +546,7 @@ class cfile extends connector {
 					$str_lu = $str_lu.$car_lu;
 					$j++;
 					$sql = "INSERT INTO import_marc (notice, origine) VALUES(\"".addslashes($str_lu)."\", $origine)";
-					$sql_result = pmb_mysql_query($sql) or die ("Couldn't insert record!");
+					pmb_mysql_query($sql) or die ("Couldn't insert record!");
 					$str_lu="";
 				}
 			} else { /* the wole file has been read */

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.17.2.2 2021/12/23 15:49:52 dgoron Exp $
+// $Id: ajax_main.inc.php,v 1.19.4.1 2023/12/06 07:18:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -26,6 +26,9 @@ switch($categ){
 	                $commands_ids = explode(',',$commands_ids);
 	            }
 	            print encoding_normalize::json_encode($pnb->get_mailto_data($commands_ids));
+	            break;
+	        case "list":
+	            lists_controller::proceed_ajax($object_type);
 	            break;
 	    }
 	    break;

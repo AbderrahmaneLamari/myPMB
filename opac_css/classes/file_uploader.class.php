@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: file_uploader.class.php,v 1.1.2.2 2021/11/24 19:54:21 dgoron Exp $
+// $Id: file_uploader.class.php,v 1.2 2022/03/02 14:56:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -51,7 +51,7 @@ class file_uploader {
 					$file['fileName'] = utf8_encode($file['fileName']);
 				}
 				
-				$file['fileName'] = static::clean_explnum_file_name($file['fileName']);
+				$file['fileName'] = static::clean_file_name($file['fileName']);
 				
 				if ($up_place && $path != '') {
 					$chemin = $path;

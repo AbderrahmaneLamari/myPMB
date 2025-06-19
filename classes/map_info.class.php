@@ -2,17 +2,18 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: map_info.class.php,v 1.9 2020/02/24 08:12:29 btafforeau Exp $
+// $Id: map_info.class.php,v 1.10 2022/02/11 15:50:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once("$class_path/map/map_objects_controler.class.php");
 
 class map_info {
 
 	
 	public function __construct($id) {
-		$this->id=$id+0;
+		$this->id=intval($id);
 	   	$this->fetch_datas();
   	} // end of member function __construct
 
@@ -29,7 +30,7 @@ class map_info {
   		return $this->map;
   	}
   	public function fetch_datas() {
-  		global $dbh,$msg;
+  		global $msg;
   	
   		$this->map=array();
   		$this->isbd="";
@@ -89,7 +90,7 @@ class map_info {
   						$this->public.="<b>".$msg["map_notice_ref"]."</b> : ".$this->map['ref'];
   					}
   				} 
-  								
+  				$ids=array();
   				$ids[]=$this->id;
   				$map=new map_objects_controler(TYPE_RECORD,$ids);
 				$bounding_box=$map->get_bounding_box();
@@ -159,7 +160,6 @@ class map_info {
 	}
 	
 	public function save_form() {
-		global $dbh;
 		global $f_map_echelle;
 		global $f_map_projection;
 		global $f_map_ref;

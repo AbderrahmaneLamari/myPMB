@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: collection.class.php,v 1.102.2.2 2021/09/18 13:26:47 dgoron Exp $
+// $Id: collection.class.php,v 1.106 2022/12/02 09:30:41 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+use Pmb\Ark\Entities\ArkEntityPmb;
 // définition de la classe de gestion des collections
 
 if ( ! defined( 'COLLECTION_CLASS' ) ) {
@@ -80,6 +81,8 @@ class collection {
 			$result = @pmb_mysql_query($requete);
 			if(pmb_mysql_num_rows($result)) {
 				$row = pmb_mysql_fetch_object($result);
+				pmb_mysql_free_result($result);
+				
 				$this->id = $row->collection_id;
 				$this->name = $row->collection_name;
 				$this->parent = $row->collection_parent;
@@ -241,6 +244,7 @@ class collection {
 	// ---------------------------------------------------------------
 	public function replace($by,$link_save=0) {
 		global $msg;
+		global $pmb_ark_activate;
 	
 		if(!$by) {
 			// pas de valeur de remplacement !!!
@@ -305,7 +309,15 @@ class collection {
 		
 		// nettoyage indexation
 		indexation_authority::delete_all_index($this->id, "authorities", "id_authority", AUT_TABLE_COLLECTIONS);
-		
+		if ($pmb_ark_activate) {
+		    $idReplaced = authority::get_authority_id_from_entity($this->id, AUT_TABLE_COLLECTIONS);
+		    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_COLLECTIONS);
+		    if ($idReplaced && $idReplacing) {
+		        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+		        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+		        $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		    }
+		}
 		// effacement de l'identifiant unique d'autorité
 		$authority = new authority(0, $this->id, AUT_TABLE_COLLECTIONS);
 		$authority->delete();

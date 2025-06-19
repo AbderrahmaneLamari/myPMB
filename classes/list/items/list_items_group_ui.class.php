@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_items_group_ui.class.php,v 1.1.4.2 2021/10/29 12:06:01 dgoron Exp $
+// $Id: list_items_group_ui.class.php,v 1.3 2021/10/29 12:04:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

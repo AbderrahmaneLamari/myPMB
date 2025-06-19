@@ -4,7 +4,7 @@
 // | creator : Eric ROBERT                                                    |
 // | modified : Marco VANINETTI                                                           |
 // +-------------------------------------------------+
-// $Id: z_progression_cache.php,v 1.43.6.1 2021/08/12 13:37:08 dgoron Exp $
+// $Id: z_progression_cache.php,v 1.44.4.1 2023/03/28 13:13:51 jparis Exp $
 
 // définition du minimum nécéssaire
 $base_path="../..";
@@ -239,7 +239,12 @@ while ($ligne=pmb_mysql_fetch_array($rq_bib_z3950)) {
 			affiche_jsscript ($msg['z3950_echec_no_valid_attr'], "z3950_failed", $bib_id);
 		}
 	} else {
-
+	    // On envoie toujours en UTF-8 #140711
+	    global $charset;
+	    if($charset == "iso-8859-1") {
+	        $term = html_entity_decode(utf8_encode($term), ENT_QUOTES, 'UTF-8');
+	    }
+	    
 		//////////////////////////////////////////////////////////////////////////////////
 		// the query is ok we prepare the Z 3950 process for this biblio and
 		// save the $id to be able later to retrieve the records from the servers

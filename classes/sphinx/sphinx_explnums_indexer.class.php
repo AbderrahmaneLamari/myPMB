@@ -1,8 +1,8 @@
 <?php
 // +-------------------------------------------------+
-// © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sphinx_explnums_indexer.class.php,v 1.7 2020/11/06 14:16:21 btafforeau Exp $
+// $Id: sphinx_explnums_indexer.class.php,v 1.8 2023/01/02 15:25:50 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -120,7 +120,6 @@ index '.$index_name.'
 {
 	type = rt
 	path = '.str_replace('//', '/', $sphinx_indexes_path.'/'.$index_name).'
-	dict = keywords
 	min_infix_len = 3
 	expand_keywords = 1
 	charset_table = 0..9, a..z, _, A..Z->a..z, U+00C0->a, U+00C1->a, \

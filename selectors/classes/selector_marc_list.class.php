@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_marc_list.class.php,v 1.5.4.1 2021/10/20 11:57:44 dgoron Exp $
+// $Id: selector_marc_list.class.php,v 1.7 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -53,17 +53,10 @@ class selector_marc_list extends selector {
 	}
 	
 	protected function get_display_list() {
-		global $nb_per_page;
-		global $page;
 		global $letter;
 		global $msg;
 		
 		$display_list = '';
-		if(!$page) {
-			$debut = 0;
-		} else {
-			$debut = ($page-1)*$nb_per_page;
-		}
 		$marc_list_instance = $this->get_marc_list_instance();
 		if(isset($this->search)) {
 			$marc_list_instance = $this->filter_from_search($marc_list_instance);
@@ -119,7 +112,7 @@ class selector_marc_list extends selector {
 			else
 				$display_list .= "<strong><u>#</u></strong> ";
 		}
-		foreach($alphabet as $dummykey=>$char) {
+		foreach($alphabet as $char) {
 			
 			//attention accents + maj/minuscules sur pmb_grep_preg
 			$tmp=array();
@@ -142,7 +135,7 @@ class selector_marc_list extends selector {
 		}
 		
 		$display_list .= "<div class='row'>";
-		foreach($display as $dummykey=>$link) {
+		foreach($display as $link) {
 			$display_list .= $link;
 		}
 		$display_list .= "</div>";

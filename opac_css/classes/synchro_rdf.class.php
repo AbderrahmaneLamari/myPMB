@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: synchro_rdf.class.php,v 1.11.2.1 2022/01/11 08:35:21 dgoron Exp $
+// $Id: synchro_rdf.class.php,v 1.12 2022/01/11 08:30:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

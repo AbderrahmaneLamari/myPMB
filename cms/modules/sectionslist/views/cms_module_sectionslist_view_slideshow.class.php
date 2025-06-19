@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_sectionslist_view_slideshow.class.php,v 1.3 2020/03/16 10:28:02 tsamson Exp $
+// $Id: cms_module_sectionslist_view_slideshow.class.php,v 1.4 2022/10/20 13:18:21 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -50,8 +50,13 @@ class cms_module_sectionslist_view_slideshow extends cms_module_common_view_slid
 		    "article" => $this->get_constructed_link("article", "!!id!!"),
 		    "section" => $this->get_constructed_link("section", "!!id!!")
 		];
-		for($i=0 ; $i<count($ids) ; $i++){
-			$section = new cms_section($ids[$i]);
+		
+		$local_ids = $ids;
+		if (isset($ids["sections"])) {
+		    $local_ids = $ids["sections"];
+		}
+		for($i=0 ; $i<count($local_ids) ; $i++){
+		    $section = new cms_section($local_ids[$i]);
 			$infos = $section->format_datas($links);
 			$datas[]= $infos;
 		}

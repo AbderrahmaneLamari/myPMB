@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: emprunteur_display.class.php,v 1.11 2020/11/03 10:07:45 btafforeau Exp $
+// $Id: emprunteur_display.class.php,v 1.14.2.1 2023/12/26 09:37:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -44,7 +44,7 @@ class emprunteur_display {
 	}
 
 	static public function get_captcha($input_name = 'captcha_code') {
-	    global $base_path, $lang;
+	    global $base_path, $lang, $msg;
 	    
 	    $_SESSION['captcha_lang'] = $lang; //on envoie la lang de l'opac à securimage
 	    
@@ -52,8 +52,13 @@ class emprunteur_display {
         $options['input_name'] = $input_name;
         $options['securimage_path'] = $base_path . "/includes/securimage";
         $options['disable_flash_fallback'] = false;
-        //$options['refresh_alt_text'] = $msg['captcha_reload'];
-        //$options['refresh_title_text'] = $msg['captcha_reload'];
+        
+        $options['image_alt_text'] = $msg['captcha_image'];
+        $options['audio_icon_alt'] = $msg['captcha_play_image'];
+        $options['loading_icon_alt'] = $msg['captcha_loading_image'];
+        $options['refresh_alt_text'] = $msg['captcha_refresh_image'];
+        $options['refresh_title_text'] = $msg['captcha_refresh_image'];
+
         $options['input_text'] = '';
         $options['show_text_input'] = 0;
         
@@ -146,10 +151,14 @@ class emprunteur_display {
 
 
 	static private function render($id_empr, $tpl) {
+	    global $lang;
+	    
+	    $id_empr = intval($id_empr);
 		$h2o = new H2o($tpl);
 		$h2o->addLookup("emprunteur_display::lookup");
 		$h2o->set(array(
 		    'id_empr' => $id_empr,
+		    'password_rules' => emprunteur::get_json_enabled_password_rules($id_empr, $lang),
 		    'prefix_name' => (!empty($id_empr) ? "renewal_form_fields[empr_" : "subscribe_form_fields[empr_"),
 		    'suffix_name' => (!empty($id_empr) ? "]" : "]"),
 		));

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_display.class.php,v 1.40.2.4 2022/01/20 15:28:33 dgoron Exp $
+// $Id: notice_display.class.php,v 1.45 2022/09/23 15:20:22 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -43,98 +43,79 @@ class notice_display {
 		global $charset;
 		
 		$frbr_build = frbr_build::get_instance($this->id, $entity_type);
-		$display_graph = false;
 		$this->calculate_restrict_access_rights();
 		if($frbr_build->has_page() && $frbr_build->has_cadres() && $this->acces_v) {
-			//récupération des données des jeux de données
-			$datanodes_data = $frbr_build->get_datanodes_data();
-			$this->dom = new DOMDocument();
-			$this->dom->encoding = $charset;
-			$old_errors_value = false;
-			if(libxml_use_internal_errors(true)){
-				$old_errors_value = true;
-			}
-			$html = $this->get_details_display();
-			if($charset == "utf-8"){
-				$this->dom->loadHTML("<?xml version='1.0' encoding='$charset'>".$html);
-			}else{
-				$this->dom->loadHTML($html);
-			}
-			if (!$this->dom->getElementById('noticeNot')) {
-				$this->dom = $this->setAllId($this->dom);
-			}
-			
-			if ($this->dom->getElementById("noticeNot") == null) {
-			    print $html;
-			    $this->add_tab_result_read();
-			    return;
-			}
-			    
-			foreach ($frbr_build->get_cadres() as $cadre) {
-				if ($cadre['place_visibility']) {
-					if($cadre['cadre_type']) {
-						switch ($cadre['cadre_type']) {
-							case 'isbd':
-							    $this->dom->getElementById("noticeNot")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("blocNotice_descr"),true));
-								if ($this->dom->getElementById("links_for_serials") !== null) {
-								    $this->dom->getElementById("noticeNot")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("links_for_serials"),true));
-								}
-								if ($this->dom->getElementById("resa_notice-".$this->id) !== null) {
-								    $this->dom->getElementById("noticeNot")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("resa_notice-".$this->id),true));
-								}
-								if ($this->dom->getElementById("etat_coll") !== null) {
-								    $this->dom->getElementById("noticeNot")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("etat_coll"),true));
-								}
-								if ($this->dom->getElementById("zone_exemplaires") !== null) {
-								    $this->dom->getElementById("noticeNot")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("zone_exemplaires"),true));
-								}
-								if ($this->dom->getElementById("docnum") !== null) {
-								    $this->dom->getElementById("noticeNot")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("docnum"),true));
-								}
-								if ($this->dom->getElementById("perio_list_bulletins") !== null) {
-								    $this->dom->getElementById("noticeNot")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("perio_list_bulletins"),true));
-								}
-								break;
-							case 'frbr_graph' :
-								$graph_node = $this->dom->createElement("div");
-								$graph_node->setAttribute('id', 'frbr_entity_graph');
-								$this->dom->getElementById("noticeNot")->parentNode->appendChild($graph_node);
-								break;
-						}					
-					} else {					
-						$view_instance = new $cadre['cadre_object']($cadre['id']);
-						$html = $view_instance->show_cadre($datanodes_data);
-						$tmp_dom = new domDocument();
-						if($charset == "utf-8"){
-							@$tmp_dom->loadHTML("<?xml version='1.0' encoding='$charset'>".$html);
-						}else{
-							@$tmp_dom->loadHTML($html);
-						}
-						if (!$tmp_dom->getElementById($view_instance->get_dom_id())) {
-							$tmp_dom = $this->setAllId($tmp_dom);
-						}
-						$this->dom->getElementById("noticeNot")->parentNode->appendChild($this->dom->importNode($tmp_dom->getElementById($view_instance->get_dom_id()),true));
-					}
-				}
-				if ($cadre['cadre_visible_in_graph']) {
-					$display_graph = true;
-				}
-			}			
-			
-			if(!$frbr_build->get_page()->get_parameter_value('isbd')) {
-				$this->dom->getElementById("noticeNot")->parentNode->removeChild($this->dom->getElementById('noticeNot'));
-			}
-			//frbr_graph
-			if ($this->dom->getElementById("frbr_entity_graph")) {
-				if ($display_graph) {
-					$this->build_graph();
-				} else {
-					$this->dom->getElementById("frbr_entity_graph")->parentNode->removeChild($this->dom->getElementById("frbr_entity_graph"));
-				}
-			}
-			
-			print $this->dom->saveHTML();
-			libxml_use_internal_errors($old_errors_value);
+		    $display_graph = false;
+		    //récupération des données des jeux de données
+		    $datanodes_data = $frbr_build->get_datanodes_data();
+		    $this->dom = new DOMDocument();
+		    $this->dom->encoding = $charset;
+		    $old_errors_value = false;
+		    if(libxml_use_internal_errors(true)){
+		        $old_errors_value = true;
+		    }
+		    $html = $this->get_details_display();
+		    if($charset == "utf-8"){
+		        $this->dom->loadHTML("<?xml version='1.0' encoding='$charset'>".$html);
+		    }else{
+		        $this->dom->loadHTML($html);
+		    }
+		    if (!$this->dom->getElementById('noticeNot')) {
+		        $this->dom = $this->setAllId($this->dom);
+		    }
+		    if ($this->dom->getElementById("noticeNot") == null) {
+		        print $html;
+		        $this->add_tab_result_read();
+		        return;
+		    }
+		    $ref_node = $this->dom->getElementById("noticeNot")->parentNode;
+		    foreach ($frbr_build->get_cadres() as $cadre) {
+		        if ($cadre['place_visibility']) {
+		            if($cadre['cadre_type']) {
+		                switch ($cadre['cadre_type']) {
+		                    case 'isbd':
+		                        $ref_node->appendChild($this->dom->importNode($this->dom->getElementById("noticeNot"),true));
+		                        break;
+		                    case 'frbr_graph' :
+		                        $graph_node = $this->dom->createElement("div");
+		                        $graph_node->setAttribute('id', 'frbr_entity_graph');
+		                        $ref_node->appendChild($graph_node);
+		                        break;
+		                }
+		            } else {
+		                $view_instance = new $cadre['cadre_object']($cadre['id']);
+		                $html = $view_instance->show_cadre($datanodes_data);
+		                $tmp_dom = new domDocument();
+		                if($charset == "utf-8"){
+		                    @$tmp_dom->loadHTML("<?xml version='1.0' encoding='$charset'>".$html);
+		                }else{
+		                    @$tmp_dom->loadHTML($html);
+		                }
+		                if (!$tmp_dom->getElementById($view_instance->get_dom_id())) {
+		                    $tmp_dom = $this->setAllId($tmp_dom);
+		                }
+		                $ref_node->appendChild($this->dom->importNode($tmp_dom->getElementById($view_instance->get_dom_id()),true));
+		            }
+		        }
+		        if ($cadre['cadre_visible_in_graph']) {
+		            $display_graph = true;
+		        }
+		    }
+		    
+		    if(!$frbr_build->get_page()->get_parameter_value('isbd')) {
+		        $ref_node->removeChild($this->dom->getElementById('noticeNot'));
+		    }
+		    //frbr_graph
+		    if ($this->dom->getElementById("frbr_entity_graph")) {
+		        if ($display_graph) {
+		            $this->build_graph();
+		        } else {
+		            $this->dom->getElementById("frbr_entity_graph")->parentNode->removeChild($this->dom->getElementById("frbr_entity_graph"));
+		        }
+		    }
+		    
+		    print $this->dom->saveHTML();
+		    libxml_use_internal_errors($old_errors_value);
 		} else {
 			print $this->get_details_display();
 		}

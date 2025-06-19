@@ -2,12 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: favorites.inc.php,v 1.4.2.1 2021/06/30 07:21:25 dgoron Exp $
+// $Id: favorites.inc.php,v 1.5.4.1 2023/09/25 12:47:56 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], '.inc.php')) die('no access');
 
 global $modified, $PMBuserid, $account_form, $stylesheet, $user_lang, $pmb_url_base, $msg;
 global $form_pwd, $form_nb_per_page_search, $form_nb_per_page_select, $form_nb_per_page_gestion, $form_style, $form_user_email, $form_deflt_thesaurus, $form_deflt_docs_location;
+
+use Pmb\Common\Helper\MySQL;
 
 if (empty($modified)) {
     $user_params = get_account_info(SESSlogin);
@@ -38,7 +40,7 @@ if (empty($modified)) {
     
     if (!empty($form_pwd)) {
         $names[] = 'pwd';
-        $values[] = "password('$form_pwd')";
+        $values[] = "'".MySQL::password('$form_pwd')."'";
         $names[] = 'user_digest';
         $values[]= "'".md5(SESSlogin.":".md5($pmb_url_base).":".$form_pwd)."'";
     }
@@ -123,9 +125,9 @@ if (empty($modified)) {
         $n_values = '';
         foreach ($names as $cle => $valeur) {
             if ($n_values) {
-                $n_values .= ", $valeur=${values[$cle]}";
+                $n_values .= ", $valeur={$values[$cle]}";
             } else {
-                $n_values = "$valeur=${values[$cle]}";
+                $n_values = "$valeur={$values[$cle]}";
             }
         }
         $requete = "UPDATE users SET $n_values $set , last_updated_dt=curdate() WHERE username='".SESSlogin."' ";

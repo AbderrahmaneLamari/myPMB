@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: recouvr_reader.inc.php,v 1.14.2.1 2021/11/04 08:29:11 dgoron Exp $
+// $Id: recouvr_reader.inc.php,v 1.15 2021/11/04 08:28:11 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

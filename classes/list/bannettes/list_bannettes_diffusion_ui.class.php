@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_bannettes_diffusion_ui.class.php,v 1.12 2021/04/19 10:09:49 dgoron Exp $
+// $Id: list_bannettes_diffusion_ui.class.php,v 1.13.4.1 2023/05/31 06:47:37 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -48,6 +48,26 @@ class list_bannettes_diffusion_ui extends list_bannettes_ui {
 		
 	}
 	
+	protected function get_default_attributes_format_cell($object, $property) {
+		$attributes = array();
+		switch($property) {
+			case 'name':
+				$attributes['style'] = 'width:59%;';
+				break;
+			case 'send_last_date':
+				$attributes['style'] = 'width:20%;';
+				$attributes['sorttable_customkey'] = $object->date_last_envoi;
+				break;
+			case 'number_records':
+			case 'number_subscribed':
+				$attributes['style'] = 'width:10%;';
+				break;
+			default :
+				break;
+		}
+		return $attributes;
+	}
+	
 	protected function get_cell_content($object, $property) {
 		global $charset;
 		
@@ -70,9 +90,6 @@ class list_bannettes_diffusion_ui extends list_bannettes_ui {
 					$content .= "<br />(".htmlentities($object->aff_date_last_remplissage,ENT_QUOTES, $charset).")" ;
 				}
 				break;
-			case 'number_records':
-				$content .= "<strong>".$object->nb_notices."</strong>";
-				break;
 			case 'number_subscribed':
 				$content .= "<strong>".$object->nb_abonnes."</strong>";
 				break;
@@ -87,22 +104,23 @@ class list_bannettes_diffusion_ui extends list_bannettes_ui {
 	 * Header de la liste
 	 */
 	public function get_display_header_list() {
-		$display = "<tr >
-					<th width='1%' class='sorttable_nosort'>
-					</th>
-					<th width='59%'>
-						".$this->_get_label_cell_header('dsi_ban_form_nom')."
-					</th>
-					<th width='20%'>
-						".$this->_get_label_cell_header('dsi_ban_date_last_envoi')."
-					</th>
-					<th width='10%'>
-						".$this->_get_label_cell_header('dsi_ban_nb_notices')."
-					</th>
-					<th width='10%'>
-						".$this->_get_label_cell_header('dsi_ban_nb_abonnes')."
-					</th>
-				</tr>";
+		$display = "
+		<tr >
+			<th width='1%' class='sorttable_nosort'>
+			</th>
+			<th width='59%'>
+				".$this->_get_label_cell_header('dsi_ban_form_nom')."
+			</th>
+			<th width='20%'>
+				".$this->_get_label_cell_header('dsi_ban_date_last_envoi')."
+			</th>
+			<th width='10%'>
+				".$this->_get_label_cell_header('dsi_ban_nb_notices')."
+			</th>
+			<th width='10%'>
+				".$this->_get_label_cell_header('dsi_ban_nb_abonnes')."
+			</th>
+		</tr>";
 		return $display;
 	}
 	
@@ -118,18 +136,10 @@ class list_bannettes_diffusion_ui extends list_bannettes_ui {
 			<td width='1%' class='center'>
 				<input type='checkbox' name='liste_bannette[]' id='auto_".$object->id_bannette."' value='$object->id_bannette' ".($sub == 'lancer' ? "checked='checked'" : '')."/>
 			</td>
-			<td width='59%'>
-				".$this->get_cell_content($object, 'name')."
-			</td>
-			<td width='20%' sorttable_customkey='".$object->date_last_envoi."'>
-				".$this->get_cell_content($object, 'send_last_date')."
-			</td>
-			<td width='10%'>
-				".$this->get_cell_content($object, 'number_records')."
-			</td>
-			<td width='10%'>
-				".$this->get_cell_content($object, 'number_subscribed')."
-			</td>
+			".$this->get_display_cell($object, 'name')."
+			".$this->get_display_cell($object, 'send_last_date')."
+			".$this->get_display_cell($object, 'number_records')."
+			".$this->get_display_cell($object, 'number_subscribed')."
 		</tr>";
 		return $display;
 	}
@@ -223,6 +233,7 @@ class list_bannettes_diffusion_ui extends list_bannettes_ui {
                             return false;
                         }
 					</script>";
+		$display .= $this->pager_top();
 		//Affichage de la liste des objets
 		$display .= "<table id='".$this->objects_type."_list' width='100%' class='list_ui_list ".$this->objects_type."_list sortable'>";
 		$display .= $this->get_display_header_list();
@@ -239,7 +250,7 @@ class list_bannettes_diffusion_ui extends list_bannettes_ui {
 			}
 		}
 		$display .= "</table>";
-		$display .= $this->pager();
+		$display .= $this->pager_bottom();
 		$display .= "
 					<div class='row'>&nbsp;</div>
 					<div class='row'>

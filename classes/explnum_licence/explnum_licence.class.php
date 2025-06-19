@@ -2,12 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum_licence.class.php,v 1.18 2021/04/16 07:59:13 dgoron Exp $
+// $Id: explnum_licence.class.php,v 1.20.4.1 2023/06/28 08:01:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 use Spipu\Html2Pdf\Html2Pdf;
 
+global $class_path, $include_path;
 require_once($include_path.'/templates/explnum_licence/explnum_licence.tpl.php');
 require_once($class_path.'/explnum_licence/explnum_licence_profile.class.php');
 require_once($class_path.'/explnum_licence/explnum_licence_right.class.php');
@@ -53,14 +54,23 @@ class explnum_licence {
 	
 	public function __construct($id = 0) {
 		$this->id = intval($id);
+		$this->fetch_data();
 	}
 	
+    public function get_content_form() {
+    	$interface_content_form = new interface_content_form(static::class);
+    	$interface_content_form->add_element('explnum_licence_label', 'docnum_statut_libelle')
+    	->add_input_node('text', $this->get_label())
+    	->set_attributes(array('data-translation-fieldname'=> 'explnum_licence_label'));
+    	$interface_content_form->add_element('explnum_licence_uri', 'explnum_licence_uri')
+    	->add_input_node('text', $this->get_uri())
+    	->set_attributes(array('data-translation-fieldname'=> 'explnum_licence_uri'));
+    	return $interface_content_form->get_display();
+    }
+    
 	public function get_form() {
-		global $admin_explnum_licence_content_form, $msg;
+        global $msg;
 		global $base_path;
-		
-		$content_form = $admin_explnum_licence_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_form('explnumlicenceform');
 		if(!$this->id){
@@ -68,18 +78,15 @@ class explnum_licence {
 		}else{
 			$interface_form->set_label($msg['explnum_licence_edit']);
 		}
-		$content_form = str_replace('!!explnum_licence_label!!', $this->get_label(), $content_form);
-		$content_form = str_replace('!!explnum_licence_uri!!', $this->get_uri(), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 			->set_url_base($base_path."/admin.php?categ=docnum&sub=licence")
 			->set_confirm_delete_msg($msg['explnum_licence_confirm_delete'])
-			->set_content_form($content_form)
+            ->set_content_form($this->get_content_form())
 			->set_table_name('explnum_licence');
 		return $interface_form->get_display();
 	}
 	
-	public function get_values_from_form(){
+	public function set_properties_from_form(){
 		global $explnum_licence_uri, $explnum_licence_label;
 		
 		$this->uri = stripslashes($explnum_licence_uri);
@@ -306,7 +313,7 @@ class explnum_licence {
 	}
 	
 	public static function delete_explnum_licence_profiles($explnum_id) {
-		$explnum_id+= 0;
+		$explnum_id = intval($explnum_id);
 		if ($explnum_id) {
 			pmb_mysql_query('delete from explnum_licence_profile_explnums where explnum_licence_profile_explnums_explnum_num = '.$explnum_id);
 		}
@@ -415,8 +422,6 @@ class explnum_licence {
 		if (!$explnum_id) {
 			return '';
 		}
-		global $msg;
-		global $charset;
 		global $class_path;
 		global $explnum_licence_pdf_container_template;
 		
@@ -431,9 +436,6 @@ class explnum_licence {
 		if (!$explnum_id) {
 			return '';
 		}
-		global $msg;
-		global $charset;
-		global $explnum_licence_profile_details, $explnum_licence_right_details;
 		$html = '';
 		$profiles = self::get_explnum_licence_profiles($explnum_id);
 		if (!count($profiles)) {

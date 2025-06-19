@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: AttachmentNode.js,v 1.7 2020/08/14 10:10:27 jlaurent Exp $
+// $Id: AttachmentNode.js,v 1.8 2022/03/15 14:40:51 tsamson Exp $
 
 define([
         "dojo/_base/declare", 
@@ -22,8 +22,8 @@ define([
 		dragOver: function(){
 			var elt = window.draggedContributionElt;
 			if (elt.type == 'scenario') {
-				//si c'est le méme type			
-				if(elt.entityType == this.entityType){
+				//si c'est le méme type		
+				if(this.entityType.includes(elt.entityType)){
 					//on s'assure qu'il n'est pas déjé associé é ce noeud précis...
 					var elts = graphStore.query({parent:this.id,type:'scenario'});
 					var alreadyDroppedHere = false;

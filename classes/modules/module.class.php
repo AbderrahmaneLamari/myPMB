@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: module.class.php,v 1.18.2.1 2021/10/26 09:33:36 dgoron Exp $
+// $Id: module.class.php,v 1.20 2022/03/22 07:57:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -102,6 +102,8 @@ class module {
 				break;
 			case "TABLEAUHTML":
 				print $footer;
+				break;
+			case "TABLEAUCSV":
 				break;
 			default:
 				print $module_layout_end;

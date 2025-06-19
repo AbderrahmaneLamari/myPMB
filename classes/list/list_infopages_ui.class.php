@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_infopages_ui.class.php,v 1.9.2.2 2021/10/01 13:05:53 dgoron Exp $
+// $Id: list_infopages_ui.class.php,v 1.12.4.3 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -25,7 +25,7 @@ class list_infopages_ui extends list_ui {
 		parent::init_filters($filters);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'infopage_classement');
 	}
 	
@@ -93,27 +93,15 @@ class list_infopages_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-		
-		if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'valid_infopage':
-					$order .= $sort_by.", title_infopage";
-					break;
-				default :
-					$order .= $sort_by;
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'valid_infopage':
+	            return $sort_by.", title_infopage";
+	        default :
+	            return $sort_by;
+	    }
 	}
 	
 	/**
@@ -171,7 +159,7 @@ class list_infopages_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$onclick="";
 		$class="";
 		switch($property) {
@@ -187,13 +175,10 @@ class list_infopages_ui extends list_ui {
 				$onclick = "document.location=\"".static::get_controller_url_base()."&sub=infopages&action=modif&id=".$object->id_infopage."\"";
 				break;
 		}
-		$attributes = array(
+		return array(
 				'onclick' => $onclick,
 				'class' => $class,
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	public function get_display_list() {
@@ -203,7 +188,9 @@ class list_infopages_ui extends list_ui {
 			//Récupération du script JS de filtres rapides
 			$display .= $this->get_js_fast_filters_script();
 		}
-		$display .= "<script src='./javascript/classementGen.js' type='text/javascript'></script>";
+		$display .= "<script type='text/javascript'>
+            pmb_include('./javascript/classementGen.js');
+        </script>";
 		
 		//Affichage de la liste des objets
 		$display .= $this->get_display_objects_list();

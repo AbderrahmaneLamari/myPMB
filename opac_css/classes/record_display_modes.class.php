@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: record_display_modes.class.php,v 1.11 2020/11/20 15:06:39 btafforeau Exp $
+// $Id: record_display_modes.class.php,v 1.12 2022/05/18 10:37:39 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -110,7 +110,7 @@ class record_display_modes {
 		}
 		
 		$available_modes = array();
-		if($this->modes['NOMODE']){
+		if(!empty($this->modes['NOMODE'])){
 			$available_modes[] = 0;
 		}
 		if(sizeof($this->modes['MODE'])){

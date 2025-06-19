@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_authorities.class.php,v 1.12.2.2 2022/01/07 11:41:08 dgoron Exp $
+// $Id: search_authorities.class.php,v 1.14 2022/01/07 11:40:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

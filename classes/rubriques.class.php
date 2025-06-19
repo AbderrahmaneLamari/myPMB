@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rubriques.class.php,v 1.30 2021/04/19 10:35:10 dgoron Exp $
+// $Id: rubriques.class.php,v 1.31 2022/07/07 13:45:40 dgoron Exp $
 
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
@@ -48,6 +48,236 @@ class rubriques{
 		$this->autorisations = $obj->autorisations;
 	}
 	
+	protected function autorisations() {
+		global $charset;
+		global $autorisations_selection_content_form, $autorisations_user_content_form;
+		
+		//affichage entete
+		$content_form = $autorisations_selection_content_form.'<!-- autorisations -->';
+		
+		$bud = new budgets($this->num_budget);
+		
+		//récupération des autorisations de l'entité
+		$bibli = new entites($bud->num_entite);
+		$aut_entite = $bibli->autorisations;
+		
+		$aut = '';
+		//récupération autorisations rubrique
+		if ($this->id_rubrique) {
+			$aut = $this->autorisations;
+		} else {
+			//récupération autorisations rubrique parent
+			if ($this->num_parent) {
+				$rub_par = new rubriques($this->num_parent);
+				$aut = $rub_par->autorisations;
+			}
+			if ($aut=='') $aut = $aut_entite;
+		}
+		
+		$aut = explode(' ',$aut);
+		$aut_entite = explode(' ', $aut_entite);
+		
+		//récupération liste des noms d'utilisateurs pmb
+		$q = "SELECT userid, username FROM users order by username ";
+		$r = pmb_mysql_query($q);
+		
+		$id_check_list = '';
+		while($row = pmb_mysql_fetch_object($r)){
+			if(in_array($row->userid, $aut_entite)) {
+				$content_form = str_replace('<!-- autorisations -->', $autorisations_user_content_form.'<!-- autorisations -->', $content_form);
+				
+				$content_form = str_replace('!!user_name!!', htmlentities($row->username,ENT_QUOTES, $charset), $content_form);
+				$content_form = str_replace('!!user_id!!', $row->userid, $content_form);
+				if (in_array($row->userid, $aut)) {
+					$chk = 'checked=\'checked\'';
+				} else {
+					$chk = '';
+				}
+				$content_form = str_replace('!!checked!!', $chk, $content_form);
+				
+				if($id_check_list)$id_check_list.='|';
+				$id_check_list.="user_aut[".$row->userid."]";
+			}
+		}
+		$content_form = str_replace('!!auto_id_list!!', $id_check_list, $content_form);
+		return $content_form;
+	}
+	
+	public function get_form() {
+		global $msg;
+		global $charset;
+		global $rub_content_form, $rub_js_form;
+		global /*$ptab, */$bt_add_lig;
+		global $lig_rub, $lig_rub_img;
+		global $mnt_rub_form;
+		
+		//Récuperation du budget
+		if ($this->num_budget) $bud= new budgets($this->num_budget);
+		else die();
+		
+		$content_form = $rub_content_form;
+		
+		$interface_form = new interface_admin_acquisition_form('rubform');
+		if(!$this->id_rubrique){
+			$interface_form->set_label($msg['acquisition_ajout_rub']);
+		}else{
+			$interface_form->set_label($msg['acquisition_modif_rub']);
+		}
+		
+		if(!$this->id_rubrique) { //création de rubrique
+			//Affichage barre de navigation
+			$nav_form = "<a href=\"./admin.php?categ=acquisition&sub=budget&action=modif&id_bibli=".$bud->num_entite."&id_bud=".$this->num_budget."\" >".$bud->libelle."</a>";
+			if ($this->num_parent) {
+				$list_bar = rubriques::listAncetres($this->num_parent, TRUE);
+				foreach ($list_bar as $value) {
+					$nav_form.= "&nbsp;&gt;&nbsp;<a href=\"./admin.php?categ=acquisition&sub=budget&action=modif_rub&id_bud=".$this->num_budget."&id_rub=".$value[0]."&id_parent=".$value[2]."\" >".htmlentities($value[1], ENT_QUOTES, $charset)."</a>";
+				}
+			}
+			$content_form = str_replace('<!-- nav_form -->', $nav_form, $content_form);
+			$content_form = str_replace('!!libelle!!', '', $content_form);
+			
+			if ($bud->type_budget == TYP_BUD_RUB ) {
+				$content_form = str_replace('<!-- lib_mnt -->', $mnt_rub_form[0], $content_form);
+				$mnt_rub = str_replace('!!mnt_rub!!', '0.00',$mnt_rub_form[1]);
+				$content_form = str_replace('<!-- montant -->', $mnt_rub, $content_form);
+				$content_form = str_replace('!!lib_mnt!!', htmlentities($msg['acquisition_rub_mnt'], ENT_QUOTES, $charset), $content_form);
+			} else {
+				$content_form = str_replace('!!lib_mnt!!', '&nbsp;', $content_form);
+			}
+			
+			$label_ncp ="<label class='etiquette' for='ncp'>".htmlentities($msg['acquisition_num_cp_compta'],ENT_QUOTES,$charset)."</label>";
+			$content_form = str_replace('<!-- label_ncp -->', $label_ncp, $content_form);
+			
+			$ncp = "<input type='text' id='ncp' name='ncp' class='saisie-30em' style='text-align:right' value='' />";
+			$content_form = str_replace('!!ncp!!', $ncp, $content_form);
+			$content_form = str_replace('!!comment!!', '', $content_form);
+			
+			//complément du formulaire
+			$content_form = str_replace('!!id_bibli!!', $bud->num_entite, $content_form);
+			$content_form = str_replace('!!id_bud!!', $this->num_budget, $content_form);
+			$content_form = str_replace('!!id_rub!!', $this->id_rubrique, $content_form);
+			$content_form = str_replace('!!id_parent!!', $this->num_parent, $content_form);
+			
+			//Affichage des autorisations
+			$content_form = str_replace('<!-- autorisations -->', $this->autorisations(), $content_form);
+		} else { //modification de rubrique
+			//Affichage barre de navigation
+			$nav_form = "<a href=\"./admin.php?categ=acquisition&sub=budget&action=modif&id_bibli=".$bud->num_entite."&id_bud=".$this->num_budget."\" >".$bud->libelle."</a>";
+			$list_bar = rubriques::listAncetres($this->id_rubrique, FALSE);
+			foreach ($list_bar as $value) {
+				$nav_form.= "&nbsp;&gt;&nbsp;<a href=\"./admin.php?categ=acquisition&sub=budget&action=modif_rub&id_bud=".$this->num_budget."&id_rub=".$value[0]."&id_parent=".$value[2]."\" >".htmlentities($value[1], ENT_QUOTES, $charset)."</a>";
+				
+			}
+			$content_form = str_replace('<!-- nav_form -->', $nav_form, $content_form);
+			$content_form = str_replace('!!libelle!!', htmlentities($this->libelle,ENT_QUOTES,$charset), $content_form);
+			
+			if (!$bud->type_budget) {
+				
+				$content_form = str_replace('!!lib_mnt!!', htmlentities($msg['acquisition_rub_mnt'], ENT_QUOTES, $charset), $content_form);
+				
+				if(rubriques::countChilds($this->id_rubrique)) {
+					$ncp = '&nbsp;';
+					$aut = FALSE;
+				} else {
+					$content_form = str_replace('<!-- lib_mnt -->', $mnt_rub_form[0], $content_form);
+					$mnt_rub = str_replace('!!mnt_rub!!', $this->montant, $mnt_rub_form[1]);
+					$content_form = str_replace('<!-- montant -->', $mnt_rub, $content_form);
+					$label_ncp ="<label class='etiquette' for='ncp'>".htmlentities($msg['acquisition_num_cp_compta'],ENT_QUOTES,$charset)."</label>";
+					$ncp = "<input type='text' id='ncp' name='ncp' class='saisie-30em' style='text-align:right' value='".$this->num_cp_compta."' />";
+					$aut = TRUE;
+				}
+			} else {
+				$content_form = str_replace('!!lib_mnt!!', '&nbsp;', $content_form);
+				
+				if(rubriques::countChilds($this->id_rubrique)) {
+					$ncp = '&nbsp;';
+					$aut = FALSE;
+				} else {
+					$label_ncp ="<label class='etiquette' for='ncp'>".htmlentities($msg['acquisition_num_cp_compta'],ENT_QUOTES,$charset)."</label>";
+					$ncp = "<input type='text' id='ncp' name='ncp' class='saisie-30em' style='text-align:right' value='".$this->num_cp_compta."' />";
+					$aut = TRUE;
+				}
+			}
+			$content_form = str_replace('<!-- label_ncp -->', $label_ncp, $content_form);
+			$content_form = str_replace('!!ncp!!', $ncp, $content_form);
+			
+			$content_form = str_replace('!!comment!!', htmlentities($this->commentaires,ENT_QUOTES,$charset), $content_form);
+			
+			//complément du formulaire
+			$content_form = str_replace('!!id_rub!!', $this->id_rubrique, $content_form);
+			$content_form = str_replace('!!id_parent!!', $this->num_parent, $content_form);
+			
+			//affichage du bouton ajout rubrique si budget non clôturé
+			if ($bud->statut != STA_BUD_CLO ) {
+				$bt_add_lig = str_replace('!!id_rub!!', '0', $bt_add_lig);
+				$bt_add_lig = str_replace('!!id_parent!!', $this->id_rubrique, $bt_add_lig);
+				$content_form = str_replace('<!-- bouton_lig -->', $bt_add_lig, $content_form);
+			}
+			
+			$content_form = str_replace('!!id!!', $this->id_rubrique, $content_form);
+			
+			//Affichage rubriques budgetaires
+			$q = budgets::listRubriques($this->num_budget, $this->id_rubrique);
+			$list_n1 = pmb_mysql_query($q);
+			while($row=pmb_mysql_fetch_object($list_n1)){
+				$content_form = str_replace('<!-- rubriques -->', $lig_rub[0].'<!-- rubriques -->', $content_form);
+				$content_form = str_replace('<!-- marge -->', '', $content_form);
+				if (rubriques::countChilds($row->id_rubrique)) {
+					$content_form = str_replace('<!-- img_plus -->', $lig_rub_img, $content_form);
+				} else {
+					$content_form = str_replace('<!-- img_plus -->', '', $content_form);
+				}
+				$content_form = str_replace('!!id_rub!!', $row->id_rubrique, $content_form);
+				$content_form = str_replace('!!id_parent!!', $row->num_parent, $content_form);
+				$content_form = str_replace('!!lib_rub!!', $row->libelle, $content_form);
+				if (!$bud->type_budget) {
+					$content_form = str_replace('!!mnt!!', $row->montant, $content_form);
+				} else {
+					$content_form = str_replace('!!mnt!!', '&nbsp;', $content_form);
+				}
+				$content_form = str_replace('!!ncp!!', $row->num_cp_compta, $content_form);
+				$content_form = str_replace('<!-- sous_rub -->', '<!-- sous_rub'.$row->id_rubrique.' -->', $content_form);
+				
+				afficheSousRubriques($this->num_budget, $row->id_rubrique, $content_form, 1);
+			}
+			//complément du formulaire
+			$content_form = str_replace('!!id_bibli!!', $bud->num_entite, $content_form);
+			$content_form = str_replace('!!id_bud!!', $this->num_budget, $content_form);
+			
+			//Affichage des autorisations
+			if ($aut) {
+				$content_form = str_replace('<!-- autorisations -->', $this->autorisations(), $content_form);
+			}
+		}
+		
+		$biblio = new entites($bud->num_entite);
+		$form = "<div class='row'><label class='etiquette'>".htmlentities($biblio->raison_sociale,ENT_QUOTES,$charset)."</label></div>";
+		
+		$interface_form->set_object_id($this->id_rubrique)
+		->set_id_entity($bud->num_entite)
+		->set_id_budget($this->num_budget)
+		->set_id_parent($this->num_parent)
+		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
+		->set_content_form($content_form)
+		->set_table_name('rubriques')
+		->set_field_focus('libelle');
+		$form .= $interface_form->get_display();
+		
+		$form .= $rub_js_form;
+		return $form;
+	}
+	
+	public function set_properties_from_form() {
+		global $id_parent, $libelle, $comment, $mnt, $ncp, $user_aut;
+		
+		$this->num_parent = intval($id_parent);
+		$this->libelle = stripslashes($libelle);
+		$this->commentaires = stripslashes($comment);
+		if(isset($mnt))$this->montant = $mnt;
+		$this->num_cp_compta = stripslashes($ncp);
+		if (is_array($user_aut)) $this->autorisations = ' '.implode(' ',$user_aut).' ';
+		else $this->autorisations = '';
+	}
 	
 	// enregistre une rubrique en base.
 	public function save(){
@@ -55,15 +285,15 @@ class rubriques{
 	
 		if ($this->id_rubrique) {
 			
-			$q = "update rubriques set num_budget = '".$this->num_budget."', num_parent = '".$this->num_parent."', libelle = '".$this->libelle."', ";
-			$q.= "commentaires = '".$this->commentaires."', montant = '".$this->montant."', num_cp_compta = '".$this->num_cp_compta."', autorisations = '".$this->autorisations."' ";
+			$q = "update rubriques set num_budget = '".$this->num_budget."', num_parent = '".$this->num_parent."', libelle = '".addslashes($this->libelle)."', ";
+			$q.= "commentaires = '".addslashes($this->commentaires)."', montant = '".addslashes($this->montant)."', num_cp_compta = '".addslashes($this->num_cp_compta)."', autorisations = '".$this->autorisations."' ";
 			$q.= "where id_rubrique = '".$this->id_rubrique."' ";
 			pmb_mysql_query($q);
 			
 		} else {
 			
-			$q = "insert into rubriques set num_budget = '".$this->num_budget."', num_parent = '".$this->num_parent."', libelle = '".$this->libelle."', ";
-			$q.= "commentaires = '".$this->commentaires."', montant = '".$this->montant."', num_cp_compta = '".$this->num_cp_compta."', autorisations = '".$this->autorisations."' ";
+			$q = "insert into rubriques set num_budget = '".$this->num_budget."', num_parent = '".$this->num_parent."', libelle = '".addslashes($this->libelle)."', ";
+			$q.= "commentaires = '".addslashes($this->commentaires)."', montant = '".addslashes($this->montant)."', num_cp_compta = '".addslashes($this->num_cp_compta)."', autorisations = '".$this->autorisations."' ";
 			pmb_mysql_query($q);
 			$this->id_rubrique = pmb_mysql_insert_id();
 			

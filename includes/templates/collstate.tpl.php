@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: collstate.tpl.php,v 1.19 2020/01/16 09:47:40 dgoron Exp $
+// $Id: collstate.tpl.php,v 1.20 2022/02/23 11:18:44 dgoron Exp $
 
 // templates pour gestion des autorités collections
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $base_path, $collstate_form, $msg, $current_module, $location_field, $statut_field, $emplacement_field, $support_field, $tpl_collstate_liste_form, $collstate_list_header, $collstate_list_footer, $tpl_collstate_liste, $tpl_collstate_liste_line, $tpl_collstate_surloc_liste, $tpl_collstate_surloc_liste_line, $tpl_collstate_bulletins_list_th, $tpl_collstate_bulletins_list_td, $collstate_advanced_form, $collstate_expl_list_form, $charset, $tpl_collstate_bulletins_list_page; 
+global $base_path, $collstate_form, $msg, $current_module, $location_field, $statut_field, $emplacement_field, $support_field, $collstate_advanced_form, $collstate_expl_list_form, $charset, $tpl_collstate_bulletins_list_page; 
 
 require_once($base_path."/javascript/misc.inc.php");
 
@@ -173,105 +173,7 @@ $support_field="
 		!!support!!
 	</div>
 </div>";
-$tpl_collstate_liste_script="
-<script>
-	function show_collstate(id) {
-		if (document.getElementById(id).style.display=='none') {
-			document.getElementById(id).style.display='';		
-		} else {
-			document.getElementById(id).style.display='none';
-		}
-	} 
-</script>";
 	
-$tpl_collstate_liste_form="
-<form action='!!base_url!!' method='post' name='filter_form'><input type='hidden' name='location' value='!!location!!'/>
-	!!collstate_table!!
-</form>";
-
-$collstate_list_header = "
-<table class='exemplaires' cellpadding='2' width='100%'>
-	<tbody>
-";
-
-$collstate_list_footer ="
-	</tbody>
-</table>";
-
-$tpl_collstate_liste[0]="
-<table>	
-	<tr>		
-		<!-- surloc -->
-		<th>".$msg["collstate_form_emplacement"]."</th>		
-		<th>".$msg["collstate_form_cote"]."</th>
-		<th>".$msg["collstate_form_support"]."</th>
-		<th>".$msg["collstate_form_statut"]."</th>		
-		<th>".$msg["collstate_form_origine"]."</th>		
-		<th>".$msg["collstate_form_collections"]."</th>
-		<th>".$msg["collstate_form_archive"]."</th>
-		<th>".$msg["collstate_form_lacune"]."</th>
-		!!collstate_bulletins_list_th!!
-	</tr>
-	!!collstate_liste!!
-</table>";
-
-$tpl_collstate_liste_line[0]="
-<tr class='!!pair_impair!!' !!tr_surbrillance!! style='cursor: pointer'>
-	<!-- surloc -->
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_emplacement"],ENT_QUOTES,$charset)."'>!!emplacement_libelle!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_cote"],ENT_QUOTES,$charset)."'>!!cote!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_support"],ENT_QUOTES,$charset)."'>!!type_libelle!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_statut"],ENT_QUOTES,$charset)."'>!!statut_libelle!!</td>	
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_origine"],ENT_QUOTES,$charset)."'>!!origine!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_collections"],ENT_QUOTES,$charset)."'>!!state_collections!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_archive"],ENT_QUOTES,$charset)."'>!!archive!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_lacune"],ENT_QUOTES,$charset)."'>!!lacune!!</td>
-	!!collstate_bulletins_list_td!!
-</tr>";
-
-$tpl_collstate_liste[1]="
-$tpl_collstate_liste_script
-<table>	
-	<tr>
-		<!-- surloc -->
-		<th>".$msg["collstate_form_localisation"]."</th>		
-		<th>".$msg["collstate_form_emplacement"]."</th>		
-		<th>".$msg["collstate_form_cote"]."</th>
-		<th>".$msg["collstate_form_support"]."</th>
-		<th>".$msg["collstate_form_statut"]."</th>		
-		<th>".$msg["collstate_form_origine"]."</th>		
-		<th>".$msg["collstate_form_collections"]."</th>
-		<th>".$msg["collstate_form_archive"]."</th>
-		<th>".$msg["collstate_form_lacune"]."</th>
-		!!collstate_bulletins_list_th!!
-	</tr>
-	!!collstate_liste!!
-</table>
-";
-
-$tpl_collstate_liste_line[1]="
-<tr class='!!pair_impair!!' !!tr_surbrillance!! style='cursor: pointer'>	
-	<!-- surloc -->
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_localisation"],ENT_QUOTES,$charset)."'>!!localisation!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_emplacement"],ENT_QUOTES,$charset)."'>!!emplacement_libelle!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_cote"],ENT_QUOTES,$charset)."'>!!cote!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_support"],ENT_QUOTES,$charset)."'>!!type_libelle!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_statut"],ENT_QUOTES,$charset)."'>!!statut_libelle!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_origine"],ENT_QUOTES,$charset)."'>!!origine!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_collections"],ENT_QUOTES,$charset)."'>!!state_collections!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_archive"],ENT_QUOTES,$charset)."'>!!archive!!</td>
-	<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_form_lacune"],ENT_QUOTES,$charset)."'>!!lacune!!</td>
-	!!collstate_bulletins_list_td!!
-</tr>";
-
-$tpl_collstate_surloc_liste = "<th>".$msg["collstate_surloc"]."</th>";
-
-$tpl_collstate_surloc_liste_line = "<td !!tr_javascript!! data-column-name='".htmlentities($msg["collstate_surloc"],ENT_QUOTES,$charset)."'>!!surloc!!</td>";
-
-$tpl_collstate_bulletins_list_th = "<th>".$msg["collstate_linked_bulletins_list"]."</th>";
-
-$tpl_collstate_bulletins_list_td = "<td><input type='button' class='bouton' value='".$msg["collstate_linked_bulletins_list_link"]."' onclick='!!collstate_bulletins_list_onclick!!'></td>";
-
 $collstate_advanced_form = "
 <script type='text/javascript'>
 	function collstate_add_expl(form) {

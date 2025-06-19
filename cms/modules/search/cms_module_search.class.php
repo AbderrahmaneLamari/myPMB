@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_search.class.php,v 1.9 2020/03/31 11:18:01 arenou Exp $
+// $Id: cms_module_search.class.php,v 1.10 2022/10/27 07:38:52 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,7 +34,7 @@ class cms_module_search extends cms_module_common_module {
 			}
 		}
 			$form.="
-				<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->class_name)."&quoi=module&search_dest=new'/>".$this->format_text($this->msg['cms_module_search_add_search_dest'])."</a> 
+				<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->class_name)."&quoi=module&search_dest=new'>".$this->format_text($this->msg['cms_module_search_add_search_dest'])."</a> 
 			";
 		$form.="
 			</div>

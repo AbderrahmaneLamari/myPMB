@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_view_rss.class.php,v 1.5 2014/11/17 17:00:52 arenou Exp $
+// $Id: cms_module_common_view_rss.class.php,v 1.5.20.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,10 +14,10 @@ class cms_module_common_view_rss extends cms_module_common_view_django{
 		$this->default_template = "<h2>{{title}}</h2>
 <p>{{description}}</p>
 {% for item in items %}
-<blockquote>
+<div>
 <h4><a href='{{item.link}}' target='_blank'>{{item.title}}</a></h4>
 <p>{{item.description}}</p>
-</blockquote>
+</div>
 {% endfor %}";
 	}
 	

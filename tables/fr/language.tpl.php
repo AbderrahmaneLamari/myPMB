@@ -2,9 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: language.tpl.php,v 1.1 2021/05/03 10:13:12 dbellamy Exp $
+// $Id: language.tpl.php,v 1.1.6.1 2023/04/07 13:53:58 dbellamy Exp $
 
-if(preg_match('/install_inc\.php/', $_SERVER['REQUEST_URI'])) {
+if(preg_match('/language\.tpl\.php/', $_SERVER['REQUEST_URI'])) {
 	include('../../includes/forbidden.inc.php'); 
 	forbidden();
 }
@@ -19,7 +19,7 @@ $language_page = "
 		<meta charset='utf-8'>
 		<style type='text/css'>
 			body {
-				font-family: 'Verdana', 'Arial', sans-serif;
+				font-family: Verdana, Arial, sans-serif;
 				background: #eeeae4;
 				text-align: center;
 			}
@@ -44,12 +44,12 @@ $language_page = "
 
 				<h3>Langue: </h3>
 				<select id='lang' name='install_lang'>
-					<option value='en' />Anglais</option>
-					<option value='ca' />Catalan</option>
-					<option value='es' />Espagnol</option>
-					<option value='fr' selected />Fran&ccedil;ais</option>
-					<option value='it' />Italien</option>
-					<option value='pt' />Portuguais</option>
+					<option value='en' >Anglais</option>
+					<option value='ca' >Catalan</option>
+					<option value='es' >Espagnol</option>
+					<option value='fr' selected >Fran&ccedil;ais</option>
+					<option value='it' >Italien</option>
+					<option value='pt' >Portuguais</option>
 				</select>
 				<input type='hidden' name='install_step' value='requirements' />
 				<button class='bouton' type='submit'>Continuer</button>

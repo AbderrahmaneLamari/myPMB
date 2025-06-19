@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cURL_log.class.php,v 1.1.2.3 2021/11/26 12:52:43 dgoron Exp $
+// $Id: cURL_log.class.php,v 1.2 2021/11/26 12:50:00 dgoron Exp $
 
 global $class_path;
 require_once ($class_path."/log.class.php");

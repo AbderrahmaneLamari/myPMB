@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pret_func.inc.php,v 1.74.2.4 2021/11/25 13:25:43 moble Exp $
+// $Id: pret_func.inc.php,v 1.81 2022/08/01 06:44:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -313,23 +313,8 @@ function enregLoc(obj) {
 				}
 			} else $ndays=0;
 			if ($ndays>0) {
-				//Le lecteur est-il déjà bloqué ?
-				$date_fin_blocage_empr = pmb_mysql_result(pmb_mysql_query("select date_fin_blocage from empr where id_empr='".$stuff->pret_idempr."'"),0,0);
-				//Calcul de la date de fin
-				if ($pmb_blocage_max!=-1) {
-					$date_fin=calendar::add_days(date("d"),date("m"),date("Y"),$ndays,$loc_calendar);
-				} else {
-					$date_fin=calendar::add_days(date("d"),date("m"),date("Y"),0,$loc_calendar);
-				}
-				if ($date_fin > $date_fin_blocage_empr) {
-					//Mise à jour
-					pmb_mysql_query("update empr set date_fin_blocage='".$date_fin."' where id_empr='".$stuff->pret_idempr."'");
-					print "<br /><div class='erreur'>".sprintf($msg["blocage_retard_pret"],formatdate($date_fin))."</div>";
-					pret::add_alert_sound_list('critique');
-				} else {
-					print "<br /><div class='erreur'>".sprintf($msg["blocage_already_retard_pret"],formatdate($date_fin_blocage_empr))."</div>";
-					pret::add_alert_sound_list('critique');
-				}
+				$informations = pret::update_blocage($stuff->pret_idempr, $stuff->pret_idexpl, $ndays, $loc_calendar);
+				print "<br /><div class='erreur'>".$informations['message']."</div>";
 			}
 		}
 		
@@ -685,48 +670,19 @@ function get_groupe_content_electronic_loan_ticket($id_groupe) {
 // envoi d'un mail de ticket de prêt
 // reçoit : id_empr et éventuellement cb_doc
 function electronic_ticket($id_empr, $cb_doc="") {
-	global $charset ;
-	global $PMBusernom;
-	global $PMBuserprenom;
-	global $PMBuseremail,$PMBuseremailbcc;
-	
 	$id_empr = intval($id_empr);
-	
-	$headers  = "MIME-Version: 1.0\n";
-	$headers .= "Content-type: text/html; charset=".$charset."\n";
-	
-	$requete = "select id_empr, empr_mail, empr_nom, empr_prenom from empr where id_empr='$id_empr' ";
-	$res = pmb_mysql_query($requete);
-	$empr=pmb_mysql_fetch_object($res);
-	
-	if ($empr->empr_mail) {
-		$object = get_object_electronic_loan_ticket();
-		$content = get_empr_content_electronic_loan_ticket($id_empr, $cb_doc);
-		// function mailpmb($to_nom="", $to_mail, $obj="", $corps="", $from_name="", $from_mail, $headers, $copie_CC="", $copie_BCC="", $faire_nl2br=0, $pieces_jointes=array()) {
-		return mailpmb($empr->empr_prenom." ".$empr->empr_nom, $empr->empr_mail, $object, $content, $PMBuserprenom." ".$PMBusernom, $PMBuseremail, $headers, "", $PMBuseremailbcc, 1);
-	}
-	return false;
+	$mail_reader_loans_ticket = new mail_reader_loans_ticket();
+	$mail_reader_loans_ticket->set_mail_to_id($id_empr);
+	$mail_reader_loans_ticket->set_cb_doc($cb_doc);
+	return $mail_reader_loans_ticket->send_mail();
 }
 
 // envoi d'un mail de ticket de prêt de groupe
 function electronic_ticket_groupe($id_groupe) {
-	global $charset ;
-	global $PMBusernom;
-	global $PMBuserprenom;
-	global $PMBuseremail,$PMBuseremailbcc;
-	
 	$id_groupe = intval($id_groupe);
-
-	$headers  = "MIME-Version: 1.0\n";
-	$headers .= "Content-type: text/html; charset=".$charset."\n";
-
-	$myGroup = new group($id_groupe);
-	if ($myGroup->mail_resp) {
-		$object = get_object_electronic_loan_ticket();
-		$content = get_groupe_content_electronic_loan_ticket($id_groupe);
-		return mailpmb($myGroup->libelle_resp, $myGroup->mail_resp,$object,$content, $PMBuserprenom." ".$PMBusernom, $PMBuseremail, $headers, "", $PMBuseremailbcc, 1);
-	}
-	return false;
+	$mail_reader_loans_ticket = new mail_reader_loans_ticket();
+	$mail_reader_loans_ticket->set_id_group($id_groupe);
+	return $mail_reader_loans_ticket->send_mail();
 }
 
 function electronic_loan_ticket_expl_info($cb_doc) {

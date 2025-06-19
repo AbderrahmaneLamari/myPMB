@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: tu_form_mapper.class.php,v 1.6 2019/08/27 08:26:02 ccraig Exp $
+// $Id: tu_form_mapper.class.php,v 1.7 2022/02/07 08:45:32 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/form_mapper/form_mapper.class.php');
 require_once($class_path.'/titre_uniforme.class.php');
 require_once($class_path.'/marc_table.class.php');
@@ -25,7 +26,7 @@ class tu_form_mapper extends form_mapper{
 	}
 
 	public function setId($id){
-		$this->id = $id*1;
+		$this->id = intval($id);
 		$this->init();
 	}
 	
@@ -38,7 +39,7 @@ class tu_form_mapper extends form_mapper{
 	}
 	
 	public function getProfiles($dest){
-		global $charset, $msg;
+		global $msg;
 		$returnedArray = array();
 		switch($dest){
 			case 'tu':
@@ -83,8 +84,6 @@ class tu_form_mapper extends form_mapper{
 		
 	    switch($dest){
 	        case 'tu':
-	        	global $for_oeuvre_type;
-	        	global $for_oeuvre_nature;
 	        	global $mapperParams;
 	        	
 	        	/**
@@ -96,7 +95,6 @@ class tu_form_mapper extends form_mapper{
 	        		$mapperParams = json_decode(stripslashes($mapperParams));
 	        	}
 	        	
-	        	$authors = array();
 	        	$fonction = new marc_list('function');
 	        	$authors_label = array();
 	        	$authors_id = array();
@@ -167,7 +165,6 @@ class tu_form_mapper extends form_mapper{
         		    $concepts_array
         		);
         		case 'notice':
-					$authors = array();
 		        	$fonction = new marc_list('function');
 		        	$authors_label = array();
 		        	$authors_id = array();

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax.js,v 1.55.2.1 2021/10/27 12:57:56 qvarin Exp $
+// $Id: ajax.js,v 1.57 2022/04/12 14:26:40 tsamson Exp $
 
 requete=new Array();
 line=new Array();
@@ -540,7 +540,7 @@ function ajax_get_info(id) {
 	if (document.getElementById(id).getAttribute("param1")) param1 = document.getElementById(id).getAttribute("param1") ;
 	if (document.getElementById(id).getAttribute("param2")) param2 = document.getElementById(id).getAttribute("param2") ;
 	if (document.getElementById(id).getAttribute("typdoc")) typdoc = document.getElementById(document.getElementById(id).getAttribute("typdoc")).value ;
-	if (att_id_filter=document.getElementById(id).getAttribute("att_id_filter"));
+	if (document.getElementById(id).getAttribute("att_id_filter")) att_id_filter = document.getElementById(id).getAttribute("att_id_filter");
 	if (document.getElementById(id).getAttribute("listfield")){
 		var reg = new RegExp("[,]","g");
 		var tab = (document.getElementById(id).getAttribute("listfield")).split(reg);		

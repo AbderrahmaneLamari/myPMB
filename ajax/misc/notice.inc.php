@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice.inc.php,v 1.11 2019/05/29 12:03:09 btafforeau Exp $
+// $Id: notice.inc.php,v 1.12 2022/12/21 10:05:55 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -60,30 +60,6 @@ if ($id) {
 						<div class='row'>
 						$isbd->isbd
 						</div>";
-				
-				// pour affichage de l'image de couverture
-				if ($pmb_book_pics_show=='1' && (($pmb_book_pics_url && $isbd->notice->code) || $isbd->notice->thumbnail_url)) {
-					$display .= "<script type='text/javascript'>
-							<!--
-							var img = document.getElementById('PMBimagecover".$id."');
-							isbn=img.getAttribute('isbn');
-							vigurl=img.getAttribute('vigurl');
-							url_image=img.getAttribute('url_image');
-							if (vigurl) {
-								if (img.src.substring(img.src.length-8,img.src.length)=='vide.png') {
-									img.src=vigurl;
-								}
-							} else {
-								if (isbn) {
-									if (img.src.substring(img.src.length-8,img.src.length)=='vide.png') {
-										img.src=url_image.replace(/!!noticecode!!/,isbn);
-									}
-								}
-							}
-							//-->
-							</script>
-							";
-				}
 			}
 		}
 		ajax_http_send_response($display);

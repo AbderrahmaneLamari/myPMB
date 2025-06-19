@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: surligner.js,v 1.7 2019/05/29 10:59:42 ccraig Exp $
+// $Id: surligner.js,v 1.7.12.1 2023/04/24 14:13:01 dgoron Exp $
 var surlignage_reg_exp = {};
 
 function surlignage_get_regexp(mot){
@@ -25,7 +25,6 @@ function trouver_mots_f(obj,mot,couleur,litteral,onoff) {
 		
 		var reg_mot = surlignage_get_regexp(mot);	
 		for (i=0; i<childs.length; i++) {
-		
 			if (childs[i].nodeType==3 && childs[i].data.trim() !== "") {
 				if (litteral==0){
 					chaine=childs[i].data.toLowerCase();
@@ -72,7 +71,10 @@ function trouver_mots_f(obj,mot,couleur,litteral,onoff) {
 					}
 				}
 			} else if (childs[i].nodeType==1 && (childs[i].nodeName != "SCRIPT" && childs[i].nodeName != "IMG")){
-				trouver_mots_f(childs[i],mot,couleur,litteral,onoff);
+				var highlight = childs[i].getAttribute('data-highlight');
+				if(!highlight || (highlight && highlight != 'off')) {
+					trouver_mots_f(childs[i],mot,couleur,litteral,onoff);
+				}
 			}
 		}
 	}

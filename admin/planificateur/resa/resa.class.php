@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: resa.class.php,v 1.5.10.1 2022/01/03 10:28:29 dgoron Exp $
+// $Id: resa.class.php,v 1.6 2022/01/03 10:20:17 dgoron Exp $
 
 global $class_path;
 require_once($class_path."/scheduler/scheduler_task.class.php");

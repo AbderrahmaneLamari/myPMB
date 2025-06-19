@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: actions_ajax.inc.php,v 1.6.16.1 2021/08/06 11:52:14 dgoron Exp $
+// $Id: actions_ajax.inc.php,v 1.7 2021/08/06 11:50:07 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

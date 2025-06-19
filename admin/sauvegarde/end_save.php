@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: end_save.php,v 1.13 2017/10/23 10:13:00 ngantier Exp $
+// $Id: end_save.php,v 1.13.12.1 2023/03/02 08:28:59 dbellamy Exp $
 
 //Création du fichier final et transfert vers les lieux puis passage au jeu suivant
 $base_path="../..";
@@ -20,10 +20,11 @@ echo "<br /><br />";
 echo "<input type=\"button\" value=\"".$msg["sauv_annuler"]."\" onClick=\"document.location='launch.php';\" class=bouton>\n";
 
 //Jeux à suivre
-for ($i=0; $i<count($sauvegardes); $i++) {
-	echo "<input type=\"hidden\" name=\"sauvegardes[]\" value=\"".$sauvegardes[$i]."\">\n";
+if(!empty($sauvegardes) && is_array($sauvegardes) ) {
+	for ($i=0; $i<count($sauvegardes); $i++) {
+		echo "<input type=\"hidden\" name=\"sauvegardes[]\" value=\"".$sauvegardes[$i]."\">\n";
+	}
 }
-
 //Sauvegarde courante
 echo "<input type=\"hidden\" name=\"currentSauv\" value=\"".$currentSauv."\">\n";
 
@@ -104,4 +105,3 @@ echo "</form></body></html>";
 //Passer au jeu suivant
 echo "<script>document.sauv.action=\"run.php\"; document.sauv.submit();</script>";
 print "</div>";
-?>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_usage.class.php,v 1.4 2021/01/20 07:47:28 dgoron Exp $
+// $Id: notice_usage.class.php,v 1.4.6.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -30,7 +30,7 @@ class notice_usage {
 		if(!$this->id) return;
 	
 		$requete = 'SELECT * FROM notice_usage WHERE id_usage='.$this->id;
-		$result = @pmb_mysql_query($requete);
+		$result = pmb_mysql_query($requete);
 		if(!pmb_mysql_num_rows($result)) {
 			pmb_error::get_instance(static::class)->add_message("not_found", "not_found_object");
 			return;
@@ -40,13 +40,16 @@ class notice_usage {
 		$this->libelle = $data->usage_libelle;
 	}
 
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('usage_libelle', 'notice_usage_libelle')
+		->add_input_node('text', $this->libelle)
+		->set_attributes(array('data-translation-fieldname' => 'usage_libelle'));
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_notice_usage_content_form;
-		global $charset;
-		
-		$content_form = $admin_notice_usage_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('notice_usageform');
 		if(!$this->id){
@@ -54,11 +57,9 @@ class notice_usage {
 		}else{
 			$interface_form->set_label($msg['notice_usage_modification']);
 		}
-		$content_form = str_replace('!!usage_libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('notice_usage')
 		->set_field_focus('usage_libelle');
 		return $interface_form->get_display();

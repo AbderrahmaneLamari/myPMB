@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_sphinx.class.php,v 1.15.2.1 2021/06/18 13:33:48 btafforeau Exp $
+// $Id: searcher_sphinx.class.php,v 1.17.2.1 2023/09/06 08:19:20 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,7 +14,7 @@ class searcher_sphinx {
 	protected $user_query = '';
 	protected $sphinx_query = '';
 	protected $bypass = 10000;
-	protected $maxmatches = 100000;
+	protected $maxmatches = 50000;
 	//A REDEFINIR
 	protected $index_name = 'records';
 	protected $objects_ids;
@@ -107,7 +107,22 @@ class searcher_sphinx {
 			return $this->objects_ids;
 		}
 		$this->objects_ids = '';
- 		$this->_build_tmp_table();
+		
+		// petite opti La table tempo est déjà créer, on récupère les ids dedans
+		if(!$this->_build_tmp_table()) {
+		    $query =  'SELECT ' . $this->id_key . ', pert FROM ' . $this->get_tempo_tablename();
+		    $result = pmb_mysql_query($query);
+		    
+		    while($row = pmb_mysql_fetch_assoc($result)){
+		        if($this->objects_ids){
+		            $this->objects_ids .= ',';
+		        }
+		        $this->objects_ids .= $row['id'];
+		    }
+		    
+		    return $this->objects_ids;
+		}
+ 		
  		$query = '';
  		if ($this->sphinx_query != '*') {
  			$query = $this->get_fields_restrict().' ('.$this->sphinx_query.') ';
@@ -163,8 +178,8 @@ class searcher_sphinx {
 	}
 	
 	protected function _build_tmp_table(){
-		$query = 'create temporary table IF NOT EXISTS '.$this->get_tempo_tablename().'('.$this->id_key.' int,pert int,index using btree('.$this->id_key.'))' ;
-		pmb_mysql_query($query);
+		$query = 'create temporary table '.$this->get_tempo_tablename().'('.$this->id_key.' int,pert int,index using btree('.$this->id_key.'))' ;
+		return pmb_mysql_query($query);
 	}
 	
 	protected function insert_in_tmp_table($objects){

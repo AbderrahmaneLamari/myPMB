@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sort_fields.class.php,v 1.2 2020/03/06 15:50:32 tsamson Exp $
+// $Id: sort_fields.class.php,v 1.2.6.1 2023/08/31 12:56:45 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -153,7 +153,8 @@ class sort_fields extends fields {
 	}
 	
 	public function sort_data($data=array(), $offset = 0, $limit = 0, $use_authority_id = false) {
-	    global $fields;
+	    global $fields, $default_tmp_storage_engine;
+
 	    $limit = intval($limit);
 	    $offset = intval($offset);
 	    $sub_query="";
@@ -169,7 +170,7 @@ class sort_fields extends fields {
 	    }
 	    
 	    $temporary_table_name = "tempo_".str_replace([" ","."],"_",microtime());
-	    $query = "CREATE TEMPORARY TABLE $temporary_table_name ENGINE=MyISAM ($sub_query)";
+	    $query = "CREATE TEMPORARY TABLE $temporary_table_name ENGINE={$default_tmp_storage_engine} ($sub_query)";
 	    pmb_mysql_query($query);
 	    $query = "ALTER TABLE $temporary_table_name ADD PRIMARY KEY (" . $this->field_keyName.")";
 	    pmb_mysql_query($query);

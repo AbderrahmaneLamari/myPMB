@@ -2,17 +2,22 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_selector_category.class.php,v 1.2 2017/03/16 10:14:52 ngantier Exp $
+// $Id: cms_module_common_selector_category.class.php,v 1.2.14.1 2023/10/27 08:59:57 dbellamy Exp $
 
-if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
-//require_once($base_path."/cms/modules/common/selectors/cms_module_selector.class.php");
-class cms_module_common_selector_category extends cms_module_common_selector{
-	
-	public function __construct($id=0){
+if (stristr($_SERVER['REQUEST_URI'], ".class.php")) {
+    die("no access");
+}
+
+class cms_module_common_selector_category extends cms_module_common_selector
+{
+	public function __construct($id = 0)
+	{
 		parent::__construct($id);
 	}
 	
-	public function get_form(){
+
+    public function get_form()
+    {
 		$form = "
 			<div class='row'>
 				<div class='colonne3'>
@@ -26,18 +31,21 @@ class cms_module_common_selector_category extends cms_module_common_selector{
 		return $form;
 	}
 	
-	public function save_form(){
-		$this->parameters = $this->get_value_from_form("id_category");
-		return parent ::save_form();
+
+	public function save_form()
+	{
+	    $this->parameters = $this->get_value_from_form("id_category");
+	    return parent::save_form();
 	}
 	
 	/*
-	 * Retourne la valeur sélectionné
+	 * Retourne la valeur selectionnee
 	 */
-	public function get_value(){
-		if(!$this->value){
-			$this->value = $this->parameters;
-		}
-		return $this->value;
+	public function get_value()
+	{
+	    if (! $this->value) {
+	        $this->value = $this->parameters;
+	    }
+	    return $this->value;
 	}
 }

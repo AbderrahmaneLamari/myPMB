@@ -5,10 +5,10 @@
 ****************************************************************************************
 © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: cms_module_articleslist.xml,v 1.14.2.1 2021/10/13 12:23:12 qvarin Exp $ -->
+$Id: cms_module_articleslist.xml,v 1.15.4.1 2023/09/14 09:39:32 gneveu Exp $ -->
 
 <XMLlist>
-	<entry code='cms_module_common_datasource_articles_sections'>Rubriques</entry>
+	<entry code='cms_module_common_datasource_articles_sections'>Articles d'une rubrique</entry>
 	<entry code='cms_module_common_datasource_all_articles'>Tous les articles</entry>
 	<entry code='cms_module_common_datasource_articles'>Articles</entry>
 	<entry code='cms_module_common_datasource_articles_categories'>Articles des catégories d'une notice</entry>

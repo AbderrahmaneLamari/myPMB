@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource.class.php,v 1.51.2.2 2022/01/21 11:13:34 dgoron Exp $
+// $Id: cms_module_common_datasource.class.php,v 1.57.2.1 2023/09/20 14:53:18 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,6 +13,7 @@ class cms_module_common_datasource extends cms_module_root{
 	protected $cadre_parent;
 	protected $num_cadre_content;
 	protected $selectors=array();
+	protected $sub_datasources=array();
 	protected $datasource_data;
 	private $used_external_filters = false;
 	private $external_filters = array();
@@ -56,13 +57,16 @@ class cms_module_common_datasource extends cms_module_root{
 	protected function fetch_datas(){
 		if($this->id){
 			//on commence par aller chercher ses infos
-			$query = " select id_cadre_content, cadre_content_hash, cadre_content_num_cadre, cadre_content_data from cms_cadre_content where id_cadre_content = '".$this->id."'";
+			$query = " SELECT id_cadre_content, cadre_content_hash, cadre_content_num_cadre, cadre_content_data, cadre_content_num_cadre_content 
+                        FROM cms_cadre_content 
+                        WHERE id_cadre_content = '".$this->id."'";
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
 				$row = pmb_mysql_fetch_object($result);
 				$this->id = intval($row->id_cadre_content);
 				$this->hash = $row->cadre_content_hash;
 				$this->cadre_parent = intval($row->cadre_content_num_cadre);
+				$this->num_cadre_content = intval($row->cadre_content_num_cadre_content);
 				$this->unserialize($row->cadre_content_data);
 			}
 			//on va chercher les infos des sélecteurs...
@@ -72,6 +76,17 @@ class cms_module_common_datasource extends cms_module_root{
 				while($row=pmb_mysql_fetch_object($result)){
 					$this->selectors[] = array(
 						'id' => intval($row->id_cadre_content),
+						'name' => $row->cadre_content_object
+					);	
+				}
+			}
+			//on va chercher les infos des sélecteurs...
+			$query = "select id_cadre_content, cadre_content_object from cms_cadre_content where cadre_content_type='datasource' and cadre_content_num_cadre_content = '".$this->id."'";
+			$result = pmb_mysql_query($query);
+			if(pmb_mysql_num_rows($result)){
+				while($row=pmb_mysql_fetch_object($result)){
+					$this->sub_datasources[] = array(
+					    'id' => (int) $row->id_cadre_content,
 						'name' => $row->cadre_content_object
 					);	
 				}
@@ -104,7 +119,7 @@ class cms_module_common_datasource extends cms_module_root{
 				$selector_name= $selectors[0];
 			}
 			$form.="
-			<script type='text/javacsript'>
+			<script type='text/javascript'>
 				cms_module_load_elem_form('".$selector_name."','".$selector_id."','".$this->get_form_value_name('selector_form')."');
 			</script>";
 		}
@@ -189,21 +204,46 @@ class cms_module_common_datasource extends cms_module_root{
 			cadre_content_data = '".addslashes($this->serialize())."'
 			".$clause;
 		$result = pmb_mysql_query($query);
-		
 		if($result){
 			if(!$this->id){
 				$this->id = pmb_mysql_insert_id();
 			}
-			//on supprime les anciennes sources de données...
-			$query = "select id_cadre_content,cadre_content_object from cms_cadre_content where id_cadre_content not in ('".implode("','", $this->get_brothers())."') and cadre_content_type='datasource' and cadre_content_num_cadre = '".$this->cadre_parent."' and cadre_content_num_cadre_content=".$this->num_cadre_content;
-			$result = pmb_mysql_query($query);
-			if(pmb_mysql_num_rows($result)){
-				while($row= pmb_mysql_fetch_object($result)){
-					$obj = new $row->cadre_content_object($row->id_cadre_content);
-					$obj->delete();
+			if (!empty($this->cadre_parent)) {
+				//on supprime les anciennes sources de données...
+				$query = "select id_cadre_content,cadre_content_object from cms_cadre_content where id_cadre_content not in ('".implode("','", $this->get_brothers())."') and cadre_content_type='datasource' and cadre_content_num_cadre = '".$this->cadre_parent."'";
+    			$query.= " and cadre_content_num_cadre_content=". (!empty($this->num_cadre_content) ? $this->num_cadre_content : "0");
+				$result = pmb_mysql_query($query);
+				if(pmb_mysql_num_rows($result)){
+			    	while($row= pmb_mysql_fetch_object($result)){
+			        	$obj = new $row->cadre_content_object($row->id_cadre_content);
+			        	$obj->delete();
+			    	}
 				}
 			}
-			//sélecteur
+			//sub datasource
+			$sub_datasource_id = 0;
+			for($i=0 ; $i<count($this->sub_datasources) ; $i++){
+			    if($this->parameters['sub_datasource'] == $this->sub_datasources[$i]['name']){
+			        $sub_datasource_id = $this->sub_datasources[$i]['id'];
+					break;
+				}
+			}
+			if(!empty($this->parameters['sub_datasource'])){
+			    $sub_datasource = new $this->parameters['sub_datasource']($sub_datasource_id);
+			    $sub_datasource->set_num_cadre_content($this->id);
+			    $sub_datasource->set_cadre_parent($this->cadre_parent);
+			    $result = $sub_datasource->save_form();
+				if($result){
+				    if($sub_datasource_id==0){
+					    $this->sub_datasources[] = array(
+					        'id' => $sub_datasource->id,
+							'name' => $this->parameters['sub_datasource']
+						);
+					}
+				}
+			}
+			
+			//selecteur
 			$selector_id = 0;
 			for($i=0 ; $i<count($this->selectors) ; $i++){
 				if($this->parameters['selector'] == $this->selectors[$i]['name']){
@@ -274,7 +314,11 @@ class cms_module_common_datasource extends cms_module_root{
 	 * Méthode pour renvoyer les données tel que défini par le sélecteur
 	 */
 	public function get_datas(){
-		
+	    $sub_datasource = $this->get_selected_sub_datasource();
+	    if (!empty($sub_datasource)) {
+	        return $sub_datasource->get_datas();
+	    }
+		return false;
 	}
 	
 	public function get_headers($datas=array()){
@@ -293,6 +337,18 @@ class cms_module_common_datasource extends cms_module_root{
 			for($i=0 ; $i<count($this->selectors) ; $i++){
 				if($this->selectors[$i]['name'] == $this->parameters['selector']){
 				    return cms_modules_parser::get_module_class_content($this->parameters['selector'],$this->selectors[$i]['id']);
+				}
+			}
+		}else{
+			return false;
+		}
+	}
+	
+	protected function get_selected_sub_datasource(){
+		if(!empty($this->parameters['sub_datasource'])){
+			for($i=0 ; $i<count($this->sub_datasources) ; $i++){
+				if($this->sub_datasources[$i]['name'] == $this->parameters['sub_datasource']){
+				    return cms_modules_parser::get_module_class_content($this->parameters['sub_datasource'],$this->sub_datasources[$i]['id']);
 				}
 			}
 		}else{
@@ -336,6 +392,10 @@ class cms_module_common_datasource extends cms_module_root{
 			case "authorities" :
 				$result = $this->filter_authorities($datas);
 				break;
+			case "animations" :
+			case "animation" :
+			    $result = $this->filter_animations($datas);
+				break;
 			default :
 				//si on est pas avec une entité connue, on s'en charge quand même...
 				if(method_exists($this,"filter_".$type)){
@@ -361,16 +421,17 @@ class cms_module_common_datasource extends cms_module_root{
 
 	protected function filter_notices($datas){
 		$finaldatas = array();
-		if(count($datas)){
+		
+		if( is_array($datas) && count($datas) ){
 			$notices_ids = "";
 			for($i=0 ; $i<count($datas) ; $i++){
 				if($notices_ids) $notices_ids.= ",";
-				$notices_ids.= $datas[$i]*1;
+				$notices_ids.= intval($datas[$i]);
 			}
 			$filter = new filter_results($notices_ids);
 			$notices_ids = $filter->get_results();
 			//les données sont déjà filtrées...dont on s'assure que ca ne bouge pas !
-			$tmpdatas = explode(",",$notices_ids);
+			$tmpdatas = explode(",", $notices_ids);
 			$finaldatas = array_merge(array_intersect($datas, $tmpdatas));
 		}
 		return $finaldatas;
@@ -534,7 +595,11 @@ class cms_module_common_datasource extends cms_module_root{
 		$nb_days_to_1970 = 719528;
 		$nb_days_today = round((time()/(3600*24)))+$nb_days_to_1970;
 		
-		$id_empr = intval($_SESSION['id_empr_session']);
+		if(!empty($_SESSION['id_empr_session'])) {
+			$id_empr = intval($_SESSION['id_empr_session']);
+		} else {
+			$id_empr = 0;
+		}
 		
 		//rubriques accessibles a l'utilisateur courant pour les droits d'acces
 		if( ($gestion_acces_active==1) && ($gestion_acces_empr_cms_section==1) && (!isset(static::$sections_by_user[$id_empr])) ) {
@@ -698,5 +763,14 @@ class cms_module_common_datasource extends cms_module_root{
 	    
 	    $filtered_datas = $data;
 	    return $filtered_datas;
+	}
+	
+	public function get_default_entities_list() {
+	    return [];
+	}
+	
+	protected function filter_animations($datas){
+        // Un jour peut-etre cela sera utile
+        return $datas;
 	}
 }

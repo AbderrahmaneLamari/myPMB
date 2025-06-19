@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_bannettes_abon_priv_ui.class.php,v 1.1.2.2 2021/11/19 14:05:42 dgoron Exp $
+// $Id: list_bannettes_abon_priv_ui.class.php,v 1.1 2021/11/19 14:03:05 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

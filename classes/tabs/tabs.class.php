@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: tabs.class.php,v 1.1.4.1 2021/11/17 16:38:02 dgoron Exp $
+// $Id: tabs.class.php,v 1.2 2021/11/17 16:36:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

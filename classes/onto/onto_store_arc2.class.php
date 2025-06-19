@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_store_arc2.class.php,v 1.26 2021/02/03 09:46:45 qvarin Exp $
+// $Id: onto_store_arc2.class.php,v 1.28.4.1 2023/10/27 08:59:56 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,6 +16,8 @@ require_once "$class_path/onto/onto_store.class.php";
  */
 class onto_store_arc2 extends onto_store {
 	
+	public $store;
+
 	/**
 	 * @param array() config
 	
@@ -129,11 +131,16 @@ class onto_store_arc2 extends onto_store {
 	 * @access public
 	 */
 	public function query($query,$prefix=array()){
+        $query_insert = false;
+        if (preg_match("/^\s*(insert\sinto|delete)/", strtolower($query))) {
+            $query_insert = true;
+        }
 	
-		$query=$this->format_namespaces($prefix).$this->utf8_normalize($query);
-		$result=array();
-		$tabResult=array();
-	
+        $query = $this->format_namespaces($prefix).encoding_normalize::utf8_normalize($query);
+		$result = [];
+		$tabResult = [];
+		$this->result = [];
+
 		if(!count($this->errors)){
 			//Si je n'ai pas déjà des erreurs
 		    if (!pmb_mysql_ping($this->store->a['db_con'])) {
@@ -141,7 +148,10 @@ class onto_store_arc2 extends onto_store {
 		    }
 		    //J'execute la requete
 			$result = $this->store->query($query);
-				
+			if ($query_insert) {
+			    $this->close();
+			    $this->store->getDBCon();
+			}
 			if($erreurs=$this->store->getErrors()){
 				//Si l'execution de la requete a échoué
 				foreach($erreurs as $value){
@@ -206,5 +216,12 @@ class onto_store_arc2 extends onto_store {
 	
 	public function drop(){
 		$this->store->drop();
+	}
+	
+	public function reset_after_save()
+	{
+	    $this->close();
+	    $this->store = ARC2::getStore($this->config);
+	    $this->store->getDBCon();
 	}
 } // end of onto_store_arc2

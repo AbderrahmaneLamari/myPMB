@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<!--
+****************************************************************************************
+© 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+****************************************************************************************
+$Id: fr_FR.xml,v 1.1.2.2 2023/03/30 09:33:31 qvarin Exp $
+-->
+
+<XMLlist>
+	<entry code="name">Listes d'articles</entry>
+	<entry code='tree_articles_desc'>Articles</entry>
+</XMLlist>

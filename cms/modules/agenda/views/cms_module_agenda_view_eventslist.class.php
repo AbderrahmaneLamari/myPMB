@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_agenda_view_eventslist.class.php,v 1.8 2019/11/04 13:32:53 jlaurent Exp $
+// $Id: cms_module_agenda_view_eventslist.class.php,v 1.9 2022/11/21 14:05:45 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -74,11 +74,7 @@ le {{event.event_start.format_value}}
 			'var' => "events[i].link",
 			'desc'=> $this->msg['cms_module_agenda_view_evenslist_link_desc']
 		);
-		$format_data[] = array(
-			'var' => "title",
-			'desc'=> $this->msg['cms_module_agenda_view_evenslist_title_desc']
-		);
-		$format_data = array_merge($format_data,parent::get_format_data_structure());
+		$format_data = array_merge($format_data, parent::get_format_data_structure());
 		return $format_data;
 	}
 }

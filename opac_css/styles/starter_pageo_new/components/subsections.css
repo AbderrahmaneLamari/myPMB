@@ -1,0 +1,54 @@
+.pmb_sections_list .pmb_item,
+.pmb_articles_list .pmb_item {
+    margin-bottom: 40px;
+}
+
+.pmb_sections_list .pmb_img,
+.pmb_articles_list .pmb_img {
+    width: 150px;
+    height: 100px;
+    margin-right: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.pmb_sections_list .pmb_img img,
+.pmb_articles_list .pmb_img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pmb_sections_list .pmb_button,
+.pmb_articles_list .pmb_button {
+    margin-top: 8px;
+}
+
+.pmb_date {
+    color: var(--c-thirdly);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.pmb_date::before {
+    content: url("../images/calendar.png");
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 640px) {
+
+    .pmb_sections_list .pmb_item>div,
+    .pmb_articles_list .pmb_item>div {
+        flex-direction: column;
+    }
+
+    .pmb_sections_list .pmb_item .pmb_img,
+    .pmb_articles_list .pmb_item .pmb_img {
+        margin-bottom: 16px;
+    }
+
+}

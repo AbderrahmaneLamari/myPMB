@@ -11,16 +11,18 @@
  * @package UFPDF
  * @see fpdf.php
  * @see reportpdf.php
- * @version $Id: ufpdf.class.php,v 1.21.2.2 2021/07/23 10:20:03 dgoron Exp $
+ * @version $Id: ufpdf.class.php,v 1.24 2022/09/09 07:10:59 dgoron Exp $
  */
 
 // +-------------------------------------------------+
 // � 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ufpdf.class.php,v 1.21.2.2 2021/07/23 10:20:03 dgoron Exp $
+// $Id: ufpdf.class.php,v 1.24 2022/09/09 07:10:59 dgoron Exp $
 
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+global $class_path;
 
 if(!class_exists('UFPDF')) {
 define('UFPDF_VERSION','0.1');
@@ -51,10 +53,10 @@ class UFPDF extends FPDF
 *                               Public methods                                 *
 *                                                                              *
 *******************************************************************************/
-public function __construct($orientation='P',$unit='mm',$format='A4')
+public function __construct($orientation='P',$unit='mm',$size='A4')
 {
 	$this->embed_fonts = true;
-  parent::__construct($orientation, $unit, $format);
+  parent::__construct($orientation, $unit, $size);
   // cr�ation des arrays pour traitement de l'arabe
   // hamza 0621
   $this->arabicforms[chr(0xD8).chr(0xA1)] = array('isolated' => chr(0xEF).chr(0xBA).chr(0x80),
@@ -251,6 +253,7 @@ public function __construct($orientation='P',$unit='mm',$format='A4')
   
    
 }
+
 public function gethtmlentitiesdecode() {
   	global $charset;
 	
@@ -263,6 +266,7 @@ public function gethtmlentitiesdecode() {
 	$this->htmlentitiesdecode["&nbsp;"] = " ";
 	$this->htmlentitiesdecode["&shy;"] = "-";
 }
+
 public function SetEmbedFonts($embed)
 {
 	$this->embed_fonts = $embed;
@@ -276,7 +280,7 @@ public function GetStringWidth($s)
   $cw=&$this->CurrentFont['cw'];
   $w=0;
   //print " [$s]";
-  foreach($codepoints as $indexval => $cp) {
+  foreach($codepoints as $cp) {
 	//print "[$cp]";
     if (isset($cw[$cp])) {
 	    $w+=$cw[$cp];
@@ -299,39 +303,39 @@ public function AddFont($family,$style='',$file='')
     global $type, $ctg, $desc, $up, $ut, $cw, $originalsize, $size1, $size2;
   //Add a TrueType or Type1 font
   $family=strtolower($family);
+  if($file=='')
+  	$file=str_replace(' ','',$family).strtolower($style).'.php';
   if($family=='arial')
     $family='helvetica';
   $style=strtoupper($style);
   if($style=='IB')
     $style='BI';
+  $fontkey = $family.$style;
   if(isset($this->fonts[$family.$style]))
     $this->Error('Font already added: '.$family.' '.$style);
-  if($file=='')
-    $file=str_replace(' ','',$family).strtolower($style).'.php';
-  if(defined('FPDF_FONTPATH'))
-    $file=FPDF_FONTPATH.$file;
-  include($file);
-  if(!isset($name))
-    $this->Error('Could not include font definition file');
-  $i=count($this->fonts)+1;
-  $this->fonts[$family.$style]=array('i'=>$i,'type'=>$type,'name'=>$name,'desc'=>$desc,'up'=>$up,'ut'=>$ut,'cw'=>$cw,'file'=>$file,'ctg'=>$ctg);
-  if($file)
+  $info = $this->_loadfont($file);
+  $info['i'] = count($this->fonts)+1;
+  if(!empty($info['file']))
   {
-    if($type=='TrueTypeUnicode')
-      $this->FontFiles[$file]=array('length1'=>$originalsize);
-    else
-      $this->FontFiles[$file]=array('length1'=>$size1,'length2'=>$size2);
+  	// Embedded font
+  	if($info['type']=='TrueTypeUnicode')
+  		$this->FontFiles[$info['file']] = array('length1'=>$info['originalsize']);
+	else
+		$this->FontFiles[$info['file']] = array('length1'=>$info['size1'], 'length2'=>$info['size2']);
   }
+  $this->fonts[$fontkey] = $info;
 }
 
 public function Text($x,$y,$txt)
 {
+  if(!isset($this->CurrentFont))
+	  $this->Error('No font has been set');
   //Output a string
   $txt = strtr($txt, $this->htmlentitiesdecode);
   $txt = str_replace('&euro;','€',$txt);
   
   
-  $s=sprintf('BT %.2f %.2f Td %s Tj ET',$x*$this->k,($this->h-$y)*$this->k,$this->_escapetext($txt));
+  $s=sprintf('BT %.2F %.2F Td %s Tj ET',$x*$this->k,($this->h-$y)*$this->k,$this->_escapetext($txt));
   if($this->underline and $txt!='')
     $s.=' '.$this->_dounderline($x,$y,$txt);
   if($this->ColorFlag)
@@ -339,20 +343,14 @@ public function Text($x,$y,$txt)
   $this->_out($s);
 }
 
-public function AcceptPageBreak()
-{
-  //Accept automatic page break or not
-  return $this->AutoPageBreak;
-}
-
-public function Cell($w,$h=0,$txt='',$border=0,$ln=0,$align='',$fill=0,$link='')
+public function Cell($w,$h=0,$txt='',$border=0,$ln=0,$align='',$fill=false,$link='')
 {
   //Output a cell
   $txt = strtr($txt, $this->htmlentitiesdecode);
   $txt = str_replace('&euro;','€',$txt);
   
   $k=$this->k;
-  if($this->y+$h>$this->PageBreakTrigger and !$this->InFooter and $this->AcceptPageBreak())
+  if($this->y+$h>$this->PageBreakTrigger && !$this->InHeader && !$this->InFooter && $this->AcceptPageBreak())
   {
     //Automatic page break
     $x=$this->x;
@@ -362,37 +360,37 @@ public function Cell($w,$h=0,$txt='',$border=0,$ln=0,$align='',$fill=0,$link='')
       $this->ws=0;
       $this->_out('0 Tw');
     }
-    $this->AddPage($this->CurOrientation);
+    $this->AddPage($this->CurOrientation,$this->CurPageSize,$this->CurRotation);
     $this->x=$x;
     if($ws>0)
     {
       $this->ws=$ws;
-      $this->_out(sprintf('%.3f Tw',$ws*$k));
+      $this->_out(sprintf('%.3F Tw',$ws*$k));
     }
   }
   if($w==0)
     $w=$this->w-$this->rMargin-$this->x;
   $s='';
-  if($fill==1 or $border==1)
+  if($fill || $border==1)
   {
-    if($fill==1)
+  	if($fill)
       $op=($border==1) ? 'B' : 'f';
     else
       $op='S';
-    $s=sprintf('%.2f %.2f %.2f %.2f re %s ',$this->x*$k,($this->h-$this->y)*$k,$w*$k,-$h*$k,$op);
+    $s=sprintf('%.2F %.2F %.2F %.2F re %s ',$this->x*$k,($this->h-$this->y)*$k,$w*$k,-$h*$k,$op);
   }
   if(is_string($border))
   {
     $x=$this->x;
     $y=$this->y;
     if(is_int(strpos($border,'L')))
-      $s.=sprintf('%.2f %.2f m %.2f %.2f l S ',$x*$k,($this->h-$y)*$k,$x*$k,($this->h-($y+$h))*$k);
+      $s.=sprintf('%.2F %.2F m %.2F %.2F l S ',$x*$k,($this->h-$y)*$k,$x*$k,($this->h-($y+$h))*$k);
     if(is_int(strpos($border,'T')))
-      $s.=sprintf('%.2f %.2f m %.2f %.2f l S ',$x*$k,($this->h-$y)*$k,($x+$w)*$k,($this->h-$y)*$k);
+      $s.=sprintf('%.2F %.2F m %.2F %.2F l S ',$x*$k,($this->h-$y)*$k,($x+$w)*$k,($this->h-$y)*$k);
     if(is_int(strpos($border,'R')))
-      $s.=sprintf('%.2f %.2f m %.2f %.2f l S ',($x+$w)*$k,($this->h-$y)*$k,($x+$w)*$k,($this->h-($y+$h))*$k);
+      $s.=sprintf('%.2F %.2F m %.2F %.2F l S ',($x+$w)*$k,($this->h-$y)*$k,($x+$w)*$k,($this->h-($y+$h))*$k);
     if(is_int(strpos($border,'B')))
-      $s.=sprintf('%.2f %.2f m %.2f %.2f l S ',$x*$k,($this->h-($y+$h))*$k,($x+$w)*$k,($this->h-($y+$h))*$k);
+      $s.=sprintf('%.2F %.2F m %.2F %.2F l S ',$x*$k,($this->h-($y+$h))*$k,($x+$w)*$k,($this->h-($y+$h))*$k);
   }
   if($txt!='')
   {
@@ -406,7 +404,7 @@ public function Cell($w,$h=0,$txt='',$border=0,$ln=0,$align='',$fill=0,$link='')
     if($this->ColorFlag)
       $s.='q '.$this->TextColor.' ';
     $txtstring=$this->_escapetext($txt);
-    $s.=sprintf('BT %.2f %.2f Td %s Tj ET',($this->x+$dx)*$k,($this->h-($this->y+.5*$h+.3*$this->FontSize))*$k,$txtstring);
+    $s.=sprintf('BT %.2F %.2F Td %s Tj ET',($this->x+$dx)*$k,($this->h-($this->y+.5*$h+.3*$this->FontSize))*$k,$txtstring);
     if($this->underline)
       $s.=' '.$this->_dounderline($this->x+$dx,$this->y+.5*$h+.3*$this->FontSize,$txt);
     if($this->ColorFlag)
@@ -428,211 +426,210 @@ public function Cell($w,$h=0,$txt='',$border=0,$ln=0,$align='',$fill=0,$link='')
     $this->x+=$w;
 }
 
-public function MultiCell($w, $h, $txt, $border=0, $align='J', $fill=0) {
-			global $charset;
-			//Output text with automatic or explicit line breaks
-			$cw = &$this->CurrentFont['cw'];
+public function MultiCell($w, $h, $txt, $border=0, $align='J', $fill=false) {
+	global $charset;
+	//Output text with automatic or explicit line breaks
+	$cw = &$this->CurrentFont['cw'];
 
-			if($w == 0) {
-				$w = $this->w - $this->rMargin - $this->x;
+	if($w == 0) {
+		$w = $this->w - $this->rMargin - $this->x;
+	}
+
+	$wmax = ($w - 2 * $this->cMargin);
+
+    $txt = strtr($txt, $this->htmlentitiesdecode);
+	$txt = str_replace('&euro;','€',$txt);
+	$s = str_replace("\r", '', $txt); // remove carriage returns
+	$nb = strlen($s);
+
+	$b=0;
+	if($border) {
+		if($border==1) {
+			$border='LTRB';
+			$b='LRT';
+			$b2='LR';
+		} else {
+			$b2='';
+			if(strpos($border,'L')!==false) {
+				$b2.='L';
 			}
-
-			$wmax = ($w - 2 * $this->cMargin);
-
-		    $txt = strtr($txt, $this->htmlentitiesdecode);
-			$txt = str_replace('&euro;','€',$txt);
-			$s = str_replace("\r", '', $txt); // remove carriage returns
-			$nb = strlen($s);
-
-			$b=0;
-			if($border) {
-				if($border==1) {
-					$border='LTRB';
-					$b='LRT';
-					$b2='LR';
-				}
-				else {
-					$b2='';
-					if(strpos($border,'L')!==false) {
-						$b2.='L';
-					}
-					if(strpos($border,'R')!==false) {
-						$b2.='R';
-					}
-					$b=(strpos($border,'T')!==false) ? $b2.'T' : $b2;
-				}
+			if(strpos($border,'R')!==false) {
+				$b2.='R';
 			}
-			$sep=-1;
-			$i=0;
-			$j=0;
-			$l=0;
-			$ns=0;
-			$nl=1;
-			while($i<$nb) {
-				//Get next character
-			    $c = substr($s, $i, 1);
-				if(preg_match("/[\n]/u", $c)) {
-					//Explicit line break
-					if($this->ws > 0) {
-						$this->ws = 0;
-						$this->_out('0 Tw');
-					}
-					$this->Cell($w, $h, substr($s, $j, $i-$j), $b, 2, $align, $fill);
-					$i++;
-					$sep=-1;
-					$j=$i;
-					$l=0;
-					$ns=0;
-					$nl++;
-					if($border and $nl==2) {
-						$b = $b2;
-					}
-					continue;
-				}
-				if(preg_match("/[ ]/u", $c)) {
-					$sep = $i;
-					$ls = $l;
-					$ns++;
-				}
-
-				$l = $this->GetStringWidth(substr($s, $j, $i-$j));
-
-				if($l > $wmax) {
-					//Automatic line break
-					if($sep == -1) {
-						if($i == $j) {
-							$i++;
-						}
-						if($this->ws > 0) {
-							$this->ws = 0;
-							$this->_out('0 Tw');
-						}
-						$this->Cell($w, $h, substr($s, $j, $i-$j), $b, 2, $align, $fill);
-					}
-					else {
-						if($align=='J') {
-							$this->ws = ($ns>1) ? ($wmax-$ls)/($ns-1) : 0;
-							$this->_out(sprintf('%.3f Tw', $this->ws * $this->k));
-						}
-						$this->Cell($w, $h, substr($s, $j, $sep-$j), $b, 2, $align, $fill);
-						$i = $sep + 1;
-					}
-					$sep=-1;
-					$j=$i;
-					$l=0;
-					$ns=0;
-					$nl++;
-					if($border AND ($nl==2)) {
-						$b=$b2;
-					}
-				}
-				else {
-					$i++;
-				}
-			}
-			//Last chunk
-			if($this->ws>0) {
-				$this->ws=0;
+			$b=(strpos($border,'T')!==false) ? $b2.'T' : $b2;
+		}
+	}
+	$sep=-1;
+	$i=0;
+	$j=0;
+	$l=0;
+	$ns=0;
+	$nl=1;
+	while($i<$nb) {
+		//Get next character
+	    $c = substr($s, $i, 1);
+		if(preg_match("/[\n]/u", $c)) {
+			//Explicit line break
+			if($this->ws > 0) {
+				$this->ws = 0;
 				$this->_out('0 Tw');
 			}
-			if($border and is_int(strpos($border,'B'))) {
-				$b.='B';
-			}
 			$this->Cell($w, $h, substr($s, $j, $i-$j), $b, 2, $align, $fill);
-			$this->x=$this->lMargin;
+			$i++;
+			$sep=-1;
+			$j=$i;
+			$l=0;
+			$ns=0;
+			$nl++;
+			if($border && $nl==2) {
+				$b = $b2;
+			}
+			continue;
 		}
+		if(preg_match("/[ ]/u", $c)) {
+			$sep = $i;
+			$ls = $l;
+			$ns++;
+		}
+
+		$l = $this->GetStringWidth(substr($s, $j, $i-$j));
+
+		if($l > $wmax) {
+			//Automatic line break
+			if($sep == -1) {
+				if($i == $j) {
+					$i++;
+				}
+				if($this->ws > 0) {
+					$this->ws = 0;
+					$this->_out('0 Tw');
+				}
+				$this->Cell($w, $h, substr($s, $j, $i-$j), $b, 2, $align, $fill);
+			}
+			else {
+				if($align=='J') {
+					$this->ws = ($ns>1) ? ($wmax-$ls)/($ns-1) : 0;
+					$this->_out(sprintf('%.3f Tw', $this->ws * $this->k));
+				}
+				$this->Cell($w, $h, substr($s, $j, $sep-$j), $b, 2, $align, $fill);
+				$i = $sep + 1;
+			}
+			$sep=-1;
+			$j=$i;
+			$l=0;
+			$ns=0;
+			$nl++;
+			if($border && ($nl==2)) {
+				$b=$b2;
+			}
+		}
+		else {
+			$i++;
+		}
+	}
+	//Last chunk
+	if($this->ws>0) {
+		$this->ws=0;
+		$this->_out('0 Tw');
+	}
+	if($border && is_int(strpos($border,'B'))) {
+		$b.='B';
+	}
+	$this->Cell($w, $h, substr($s, $j, $i-$j), $b, 2, $align, $fill);
+	$this->x=$this->lMargin;
+}
 
 public function Write($h, $txt, $link='') {
 
-			//Output text in flowing mode
-			$cw = &$this->CurrentFont['cw'];
-			$w = $this->w - $this->rMargin - $this->x;
-			$wmax = ($w - 2 * $this->cMargin);
+	//Output text in flowing mode
+	$cw = &$this->CurrentFont['cw'];
+	$w = $this->w - $this->rMargin - $this->x;
+	$wmax = ($w - 2 * $this->cMargin);
 
-			$txt = strtr($txt, $this->htmlentitiesdecode);
-  			$txt = str_replace('&euro;','€',$txt);
+	$txt = strtr($txt, $this->htmlentitiesdecode);
+	$txt = str_replace('&euro;','€',$txt);
 			
-			$s = str_replace("\r", '', $txt);
-			$nb = strlen($s);
+	$s = str_replace("\r", '', $txt);
+	$nb = strlen($s);
 
-			// handle single space character
-			if(($nb==1) AND preg_match("/[ ]/u", $s)) {
-				$this->x += $this->GetStringWidth($s);
-				return;
+	// handle single space character
+	if(($nb==1) && preg_match("/[ ]/u", $s)) {
+		$this->x += $this->GetStringWidth($s);
+		return;
+	}
+
+	$sep=-1;
+	$i=0;
+	$j=0;
+	$l=0;
+	$nl=1;
+	while($i<$nb) {
+		//Get next character
+	    $c=substr($s, $i, 1);
+		if(preg_match("/[\n]/u", $c)) {
+			//Explicit line break
+			$this->Cell($w, $h, substr($s, $j, $i-$j), 0, 2, '', false, $link);
+			$i++;
+			$sep = -1;
+			$j = $i;
+			$l = 0;
+			if($nl == 1) {
+				$this->x = $this->lMargin;
+				$w = $this->w - $this->rMargin - $this->x;
+				$wmax = ($w - 2 * $this->cMargin);
 			}
+			$nl++;
+			continue;
+		}
+		if(preg_match("/[ ]/u", $c)) {
+			$sep= $i;
+		}
 
-			$sep=-1;
-			$i=0;
-			$j=0;
-			$l=0;
-			$nl=1;
-			while($i<$nb) {
-				//Get next character
-			    $c=substr($s, $i, 1);
-				if(preg_match("/[\n]/u", $c)) {
-					//Explicit line break
-					$this->Cell($w, $h, substr($s, $j, $i-$j), 0, 2, '', 0, $link);
+		$l = $this->GetStringWidth(substr($s, $j, $i-$j));
+
+		if($l > $wmax) {
+			//Automatic line break
+			if($sep == -1) {
+				if($this->x > $this->lMargin) {
+					//Move to next line
+					$this->x = $this->lMargin;
+					$this->y += $h;
+					$w=$this->w - $this->rMargin - $this->x;
+					$wmax=($w - 2 * $this->cMargin);
 					$i++;
-					$sep = -1;
-					$j = $i;
-					$l = 0;
-					if($nl == 1) {
-						$this->x = $this->lMargin;
-						$w = $this->w - $this->rMargin - $this->x;
-						$wmax = ($w - 2 * $this->cMargin);
-					}
 					$nl++;
 					continue;
 				}
-				if(preg_match("/[ ]/u", $c)) {
-					$sep= $i;
-				}
-
-				$l = $this->GetStringWidth(substr($s, $j, $i-$j));
-
-				if($l > $wmax) {
-					//Automatic line break
-					if($sep == -1) {
-						if($this->x > $this->lMargin) {
-							//Move to next line
-							$this->x = $this->lMargin;
-							$this->y += $h;
-							$w=$this->w - $this->rMargin - $this->x;
-							$wmax=($w - 2 * $this->cMargin);
-							$i++;
-							$nl++;
-							continue;
-						}
-						if($i==$j) {
-							$i++;
-						}
-						$this->Cell($w, $h, substr($s, $j, $i-$j), 0, 2, '', 0, $link);
-					}
-					else {
-						$this->Cell($w, $h, substr($s, $j, $sep-$j), 0, 2, '', 0, $link);
-						$i=$sep+1;
-					}
-					$sep = -1;
-					$j = $i;
-					$l = 0;
-					if($nl==1) {
-						$this->x = $this->lMargin;
-						$w = $this->w - $this->rMargin - $this->x;
-						$wmax = ($w - 2 * $this->cMargin);
-					}
-					$nl++;
-				}
-				else {
+				if($i==$j) {
 					$i++;
 				}
+				$this->Cell($w, $h, substr($s, $j, $i-$j), 0, 2, '', false, $link);
 			}
-			//Last chunk
-			if($i!=$j) {
-				$this->Cell($l / 1000 * $this->FontSize, $h, substr($s, $j), 0, 0, '', 0, $link);
+			else {
+				$this->Cell($w, $h, substr($s, $j, $sep-$j), 0, 2, '', false, $link);
+				$i=$sep+1;
 			}
-
-			$this->x += $this->GetStringWidth(substr($s, $j, $i-$j));
+			$sep = -1;
+			$j = $i;
+			$l = 0;
+			if($nl==1) {
+				$this->x = $this->lMargin;
+				$w = $this->w - $this->rMargin - $this->x;
+				$wmax = ($w - 2 * $this->cMargin);
+			}
+			$nl++;
 		}
+		else {
+			$i++;
+		}
+	}
+	//Last chunk
+	if($i!=$j) {
+		$this->Cell($l / 1000 * $this->FontSize, $h, substr($s, $j), 0, 0, '', false, $link);
+	}
+
+	$this->x += $this->GetStringWidth(substr($s, $j, $i-$j));
+}
 
 
 public function AliasNbPages($alias='{nb}')
@@ -710,16 +707,7 @@ public function _puttruetypeunicode($font) {
   $this->_out('endobj');
 }
 
-public function _dounderline($x,$y,$txt)
-{
-  //Underline text
-  $up=$this->CurrentFont['up'];
-  $ut=$this->CurrentFont['ut'];
-  $w=$this->GetStringWidth($txt)+$this->ws*substr_count($txt,' ');
-  return sprintf('%.2f %.2f %.2f %.2f re f',$x*$this->k,($this->h-($y-$up/1000*$this->FontSize))*$this->k,$w*$this->k,-$ut/1000*$this->FontSizePt);
-}
-
-public function _textstring($s)
+protected function _textstring($s)
 {
  	
   //Convert to UTF-16BE
@@ -909,93 +897,12 @@ $toreverse = '';
   return '('. strtr($s, array(')' => '\\)', '(' => '\\(', '\\' => '\\\\')) .')';
 }
 
-public function _putinfo()
+protected function _putinfo()
 {
-	$this->_out('/Producer '.$this->_textstring('UFPDF '. UFPDF_VERSION));
-	if(!empty($this->title))
-		$this->_out('/Title '.$this->_textstring($this->title));
-	if(!empty($this->subject))
-		$this->_out('/Subject '.$this->_textstring($this->subject));
-	if(!empty($this->author))
-		$this->_out('/Author '.$this->_textstring($this->author));
-	if(!empty($this->keywords))
-		$this->_out('/Keywords '.$this->_textstring($this->keywords));
-	if(!empty($this->creator))
-		$this->_out('/Creator '.$this->_textstring($this->creator));
-	$this->_out('/CreationDate '.$this->_textstring('D:'.date('YmdHis')));
-}
-
-public function _putpages()
-{
-	$nb=$this->page;
-	if(!empty($this->AliasNbPages))
-	{
-		$nbstr = $this->utf8_to_utf16be($nb,false);
-		//Replace number of pages
-		for($n=1;$n<=$nb;$n++) {
-			$this->pages[$n]=str_replace($this->AliasNbPages,$nbstr,$this->pages[$n]);
-		}
-	}
-	if($this->DefOrientation=='P')
-	{
-		$wPt=$this->fwPt;
-		$hPt=$this->fhPt;
-	}
-	else
-	{
-		$wPt=$this->fhPt;
-		$hPt=$this->fwPt;
-	}
-	$filter=($this->compress) ? '/Filter /FlateDecode ' : '';
-	for($n=1;$n<=$nb;$n++)
-	{
-		//Page
-		$this->_newobj();
-		$this->_out('<</Type /Page');
-		$this->_out('/Parent 1 0 R');
-		if(isset($this->OrientationChanges[$n]))
-			$this->_out(sprintf('/MediaBox [0 0 %.2f %.2f]',$hPt,$wPt));
-		$this->_out('/Resources 2 0 R');
-		if(isset($this->PageLinks[$n]))
-		{
-			//Links
-			$annots='/Annots [';
-			foreach($this->PageLinks[$n] as $indexval => $pl)
-			{
-				$rect=sprintf('%.2f %.2f %.2f %.2f',$pl[0],$pl[1],$pl[0]+$pl[2],$pl[1]-$pl[3]);
-				$annots.='<</Type /Annot /Subtype /Link /Rect ['.$rect.'] /Border [0 0 0] ';
-				if(is_string($pl[4]))
-					$annots.='/A <</S /URI /URI '.$this->_textstring($pl[4]).'>>>>';
-				else
-				{
-					$l=$this->links[$pl[4]];
-					$h=isset($this->OrientationChanges[$l[0]]) ? $wPt : $hPt;
-					$annots.=sprintf('/Dest [%d 0 R /XYZ 0 %.2f null]>>',1+2*$l[0],$h-$l[1]*$this->k);
-				}
-			}
-			$this->_out($annots.']');
-		}
-		$this->_out('/Contents '.($this->n+1).' 0 R>>');
-		$this->_out('endobj');
-		//Page content
-		$p=($this->compress) ? gzcompress($this->pages[$n]) : $this->pages[$n];
-		$this->_newobj();
-		$this->_out('<<'.$filter.'/Length '.strlen($p).'>>');
-		$this->_putstream($p);
-		$this->_out('endobj');
-	}
-	//Pages root
-	$this->offsets[1]=strlen($this->buffer);
-	$this->_out('1 0 obj');
-	$this->_out('<</Type /Pages');
-	$kids='/Kids [';
-	for($i=0;$i<$nb;$i++)
-		$kids.=(3+2*$i).' 0 R ';
-	$this->_out($kids.']');
-	$this->_out('/Count '.$nb);
-	$this->_out(sprintf('/MediaBox [0 0 %.2f %.2f]',$wPt,$hPt));
-	$this->_out('>>');
-	$this->_out('endobj');
+	$this->metadata['Producer'] = 'UFPDF '.UFPDF_VERSION;
+	$this->metadata['CreationDate'] = 'D:'.@date('YmdHis');
+	foreach($this->metadata as $key=>$value)
+		$this->_put('/'.$key.' '.$this->_textstring($value));
 }
 
 // UTF-8 to UTF-16BE conversion.

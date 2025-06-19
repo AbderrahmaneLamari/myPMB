@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette_tpl.class.php,v 1.7.2.1 2022/01/03 10:54:54 dgoron Exp $
+// $Id: bannette_tpl.class.php,v 1.8 2022/01/03 10:52:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

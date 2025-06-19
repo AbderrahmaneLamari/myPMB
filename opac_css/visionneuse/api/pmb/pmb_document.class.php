@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmb_document.class.php,v 1.7.4.1 2022/01/03 11:18:34 dgoron Exp $
+// $Id: pmb_document.class.php,v 1.8 2022/01/03 11:17:32 dgoron Exp $
 
 global $class_path;
 require_once($class_path."/cms/cms_document.class.php");

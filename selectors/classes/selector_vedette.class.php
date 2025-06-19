@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_vedette.class.php,v 1.1.10.1 2021/10/20 11:57:44 dgoron Exp $
+// $Id: selector_vedette.class.php,v 1.3 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -28,16 +28,9 @@ class selector_vedette extends selector {
 	}
 	
 	protected function get_display_list() {
-		global $nb_per_page;
-		global $page;
 		global $grammars;
 	
 		$display_list = '';
-		if(!$page) {
-			$debut = 0;
-		} else {
-			$debut = ($page-1)*$nb_per_page;
-		}
 		if(!$grammars) {
 			$grammars_in = "'notice_authors'";
 		} else {
@@ -55,10 +48,11 @@ class selector_vedette extends selector {
 		if($this->nbr_lignes) {
 			// on lance la vraie requête
 			if($user_input=="") {
-				$query = "SELECT id_vedette, label FROM vedette where grammar in (".$grammars_in.") ORDER BY label LIMIT $debut,$nb_per_page ";
+				$query = "SELECT id_vedette, label FROM vedette where grammar in (".$grammars_in.") ";
 			} else {
-				$query = "SELECT id_vedette, label FROM vedette where label like '%".$user_input."%' and  grammar in (".$grammars_in.") ORDER BY label limit $debut,$nb_per_page";
+				$query = "SELECT id_vedette, label FROM vedette where label like '%".$user_input."%' and  grammar in (".$grammars_in.") ";
 			}
+			$query .= " ORDER BY label LIMIT ".$this->get_start_list().",".$this->get_nb_per_page_list()." ";
 			$result = pmb_mysql_query($query);
 			$display_list .= "<table><tr>";
 			while($vedette=pmb_mysql_fetch_object($result)) {

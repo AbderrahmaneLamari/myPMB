@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_records_expl_controller.class.php,v 1.5 2021/05/18 12:05:37 dgoron Exp $
+// $Id: entities_records_expl_controller.class.php,v 1.5.6.1 2023/04/07 09:15:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -31,6 +31,20 @@ class entities_records_expl_controller extends entities_records_controller {
 		return $acces_m;
 	}
 	
+	protected function is_expl_deletable() {
+		global $msg;
+		
+		$query = "select 1 from pret where pret_idexpl='".$this->id."' ";
+		$result = pmb_mysql_query($query);
+		if (pmb_mysql_num_rows($result)) {
+			// gestion erreur prêt en cours
+			error_message($msg[416], $msg['impossible_expl_del_pret'], 1, $this->get_permalink());
+			return false;
+		} else {
+			return true;
+		}
+	}
+	
 	public function proceed_expl_delete() {
 		global $msg;
 	
@@ -43,7 +57,6 @@ class entities_records_expl_controller extends entities_records_controller {
 			exemplaire::del_expl($this->id);
 			
 			print "<div class='row'><div class='msg-perio'>".$msg['maj_encours']."</div></div>";
-			$id_form = md5(microtime());
 			print $this->get_redirection_form();
 		}
 	}

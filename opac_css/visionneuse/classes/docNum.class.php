@@ -2,8 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docNum.class.php,v 1.11 2021/01/19 07:45:52 dgoron Exp $
+// $Id: docNum.class.php,v 1.13 2022/10/25 10:27:07 arenou Exp $
 
+global $visionneuse_path;
 require_once($visionneuse_path."/classes/mimetypes/affichage.class.php");
 require_once($visionneuse_path."/classes/defaultConf.class.php");
 require_once($visionneuse_path."/classes/mimetypeClass.class.php");
@@ -31,7 +32,6 @@ class docNum {
     }
 
     public function fetchDisplay(){
-    	global $visionneuse_path;
     	if($this->driver->is_allowed($this->id)){
 			$this->selectDisplayClass();
 		
@@ -53,6 +53,9 @@ class docNum {
     	$this->selectDisplayClass();
     	if(method_exists($this->displayClass, "render")){
     	    $this->displayClass->render();
+    	}else{
+    	    $url_doc = $this->driver->getDocumentUrl($this->id);
+    	    print '<script type="text/javascript"> document.location = "'.$url_doc.'"</script>';
     	}
     }
     

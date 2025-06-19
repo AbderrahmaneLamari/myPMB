@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_autorities_skos_concepts.class.php,v 1.28.2.1 2021/12/27 08:20:53 dgoron Exp $
+// $Id: searcher_autorities_skos_concepts.class.php,v 1.30 2022/02/17 10:14:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -176,8 +176,10 @@ class searcher_autorities_skos_concepts extends searcher_autorities {
 	}
 	
 	protected function _get_pert($return_query = false) {
-	    parent::_get_pert($return_query);
-	    
+		$query = parent::_get_pert($return_query);
+		if ($return_query) {
+			return $query;
+		}
 	    // Colonne id_authority manquante dans la table tempo pour les tris côté Autorités
 	    // On ajoute la colonne avec les valeurs correspondantes
 	    pmb_mysql_query("alter table ".$this->table_tempo." add id_authority INT(10) unsigned NOT NULL DEFAULT 0");

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: catal_form.tpl.php,v 1.198.2.3 2021/11/17 08:49:47 dgoron Exp $
+// $Id: catal_form.tpl.php,v 1.203.2.1 2023/10/26 14:13:46 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -72,7 +72,7 @@ $ptab[0] = "
 	            <label for='f_tparent' class='etiquette'>$msg[241]</label>
 	            <div class='row'>
 			        <input type='text' class='saisie-30emr' id='f_tparent' name='f_tparent' data-form-name='f_tparent' value=\"!!tparent!!\" completion=\"serie\" autfield=\"f_tparent_id\" />
-	                <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=serie&caller=notice&param1=f_tparent_id&param2=f_tparent&deb_rech='+".pmb_escape()."(this.form.f_tparent.value), '!!force_dialog_serie!!')\" />
+	                <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=serie&caller=notice&param1=f_tparent_id&param2=f_tparent&deb_rech='+".pmb_escape()."(this.form.f_tparent.value), '!!force_dialog_serie!!', '!!force_popup_serie!!')\" />
 	                <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_tparent.value=''; this.form.f_tparent_id.value='0'; \" />
 	                <input type='hidden' name='f_tparent_id' id='f_tparent_id' data-form-name='f_tparent_id' value=\"!!tparent_id!!\" />
                 </div>
@@ -144,7 +144,7 @@ $notice_tab_responsabilities_form_tpl = "
     function fonction_selecteur_auteur() {
         name=this.getAttribute('id').substring(4);
         name_id = name.substr(0,6)+'_id'+name.substr(6);
-        openPopUpSelector('./select.php?what=auteur&caller=notice&param1='+name_id+'&param2='+name+'&dyn=1&deb_rech='+".pmb_escape()."(document.getElementById(name).value), '!!force_dialog_author!!');
+        openPopUpSelector('./select.php?what=auteur&caller=notice&param1='+name_id+'&param2='+name+'&dyn=1&deb_rech='+".pmb_escape()."(document.getElementById(name).value), '!!force_dialog_author!!', '!!force_popup_author!!');
     }
     function fonction_selecteur_auteur_change(field) {
     	// id champ text = 'f_aut'+n+suffixe
@@ -152,7 +152,7 @@ $notice_tab_responsabilities_form_tpl = "
     	// select.php?what=auteur&caller=notice&param1=f_aut0_id&param2=f_aut0&deb_rech='+t
         name=field.getAttribute('id');
         name_id = name.substr(0,6)+'_id'+name.substr(6);
-        openPopUpSelector('./select.php?what=auteur&caller=notice&param1='+name_id+'&param2='+name+'&dyn=1&deb_rech='+".pmb_escape()."(document.getElementById(name).value), '!!force_dialog_author!!');
+        openPopUpSelector('./select.php?what=auteur&caller=notice&param1='+name_id+'&param2='+name+'&dyn=1&deb_rech='+".pmb_escape()."(document.getElementById(name).value), '!!force_dialog_author!!', '!!force_popup_author!!');
     }
     function fonction_raz_auteur() {
         name=this.getAttribute('id').substring(4);
@@ -163,7 +163,7 @@ $notice_tab_responsabilities_form_tpl = "
     function fonction_selecteur_fonction() {
         name=this.getAttribute('id').substring(4);
         name_code = name.substr(0,4)+'_code'+name.substr(4);
-        openPopUpSelector('./select.php?what=function&caller=notice&param1='+name_code+'&param2='+name+'&dyn=1', '!!force_dialog_func!!');
+        openPopUpSelector('./select.php?what=function&caller=notice&param1='+name_code+'&param2='+name+'&dyn=1', '!!force_dialog_func!!', '!!force_popup_func!!');
     }
     function fonction_raz_fonction() {
         name=this.getAttribute('id').substring(4);
@@ -387,7 +387,7 @@ $notice_tab_responsabilities_form_tpl = "
     function fonction_selecteur_categ() {
         name=this.getAttribute('id').substring(4);
         name_id = name.substr(0,7)+'_id'+name.substr(7);
-        openPopUpSelectorCategory('./select.php?what=categorie&caller=notice&p1='+name_id+'&p2='+name+'&dyn=1', '!!force_dialog_category!!');
+        openPopUpSelectorCategory('./select.php?what=categorie&caller=notice&p1='+name_id+'&p2='+name+'&dyn=1', '!!force_dialog_category!!', '!!force_popup_category!!');
     }
     function fonction_raz_categ() {
         name=this.getAttribute('id').substring(4);
@@ -475,7 +475,7 @@ $notice_tab_responsabilities_form_tpl = "
     function fonction_selecteur_lang() {
         name=this.getAttribute('id').substring(4);
         name_id = name.substr(0,6)+'_code'+name.substr(6);
-        openPopUpSelector('./select.php?what=lang&caller=notice&p1='+name_id+'&p2='+name, '!!force_dialog_lang!!');
+        openPopUpSelector('./select.php?what=lang&caller=notice&p1='+name_id+'&p2='+name, '!!force_dialog_lang!!', '!!force_popup_lang!!');
     }
     function add_lang() {
     	templates.add_completion_selection_field('f_lang', 'f_lang_code', 'langue', fonction_selecteur_lang);
@@ -484,7 +484,7 @@ $notice_tab_responsabilities_form_tpl = "
     function fonction_selecteur_langorg() {
         name=this.getAttribute('id').substring(4);
         name_id = name.substr(0,9)+'_code'+name.substr(9);
-        openPopUpSelector('./select.php?what=lang&caller=notice&p1='+name_id+'&p2='+name, '!!force_dialog_lang!!');
+        openPopUpSelector('./select.php?what=lang&caller=notice&p1='+name_id+'&p2='+name, '!!force_dialog_lang!!', '!!force_popup_lang!!');
     }
     function add_langorg() {
     	templates.add_completion_selection_field('f_langorg', 'f_langorg_code', 'langue', fonction_selecteur_langorg);
@@ -522,7 +522,7 @@ $notice_tab_responsabilities_form_tpl = "
 	            <label for='f_aut0' class='etiquette'>$msg[244]</label>
 	            <div class='row' >
 					<input type='text' completion='authors' autfield='f_aut0_id' id='auteur0' class='saisie-30emr' name='f_aut0' data-form-name='f_aut0' value=\"!!aut0!!\" />
-	                <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=auteur&caller=notice&param1=f_aut0_id&param2=f_aut0&deb_rech='+".pmb_escape()."(this.form.f_aut0.value), '!!force_dialog_author!!')\" />
+	                <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=auteur&caller=notice&param1=f_aut0_id&param2=f_aut0&deb_rech='+".pmb_escape()."(this.form.f_aut0.value), '!!force_dialog_author!!', '!!force_popup_author!!')\" />
 	              	<input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_aut0.value=''; this.form.f_aut0_id.value='0'; \" />
 	               	<input type='hidden' name='f_aut0_id' data-form-name='f_aut0_id' id='f_aut0_id' value=\"!!aut0_id!!\" />
 	            </div>
@@ -532,7 +532,7 @@ $notice_tab_responsabilities_form_tpl = "
 	            <label for='f_f0' class='etiquette'>$msg[245]</label>
 	            <div class='row'>
 			        <input type='text' class='saisie-15emr' id='f_f0' name='f_f0' data-form-name='f_f0' value=\"!!f0!!\" completion=\"fonction\" autfield=\"f_f0_code\" />
-	                <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=function&caller=notice&p1=f_f0_code&p2=f_f0', '!!force_dialog_func!!')\" />
+	                <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=function&caller=notice&p1=f_f0_code&p2=f_f0', '!!force_dialog_func!!', '!!force_popup_func!!')\" />
 	                <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_f0.value=''; this.form.f_f0_code.value='0'; \" />
 	                <input type='hidden' name='f_f0_code' data-form-name='f_f0_code' id='f_f0_code' value=\"!!f0_code!!\" />
                 </div>
@@ -603,14 +603,14 @@ $notice_responsabilities_others_form_tpl = "
 	<div class='row'>
         <div id='el1Child_2b_first' style='float:left;margin-right:10px;'>
        		<input type='text' class='saisie-30emr' completion='authors' autfield='f_aut1_id!!iaut!!' id='f_aut1!!iaut!!' name='f_aut1!!iaut!!' data-form-name='f_aut1' value=\"!!aut1!!\" />
-			<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=auteur&caller=notice&param1=f_aut1_id!!iaut!!&param2=f_aut1!!iaut!!&deb_rech='+".pmb_escape()."(this.form.f_aut1!!iaut!!.value), '!!force_dialog_author!!')\" />
+			<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=auteur&caller=notice&param1=f_aut1_id!!iaut!!&param2=f_aut1!!iaut!!&deb_rech='+".pmb_escape()."(this.form.f_aut1!!iaut!!.value), '!!force_dialog_author!!', '!!force_popup_author!!')\" />
             <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_aut1!!iaut!!.value=''; this.form.f_aut1_id!!iaut!!.value='0'; \" />
             <input type='hidden' name='f_aut1_id!!iaut!!' data-form-name='f_aut1_id' id='f_aut1_id!!iaut!!' value=\"!!aut1_id!!\" />
         </div>
     	<!--    Fonction    -->
         <div id='el1Child_2b_others' style='float:left;margin-right:10px;'>
             <input type='text' class='saisie-15emr' id='f_f1!!iaut!!' name='f_f1!!iaut!!' data-form-name='f_f1' completion='fonction' autfield='f_f1_code!!iaut!!' value=\"!!f1!!\" />
-            <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=function&caller=notice&p1=f_f1_code!!iaut!!&p2=f_f1!!iaut!!', '!!force_dialog_func!!')\" />
+            <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=function&caller=notice&p1=f_f1_code!!iaut!!&p2=f_f1!!iaut!!', '!!force_dialog_func!!', '!!force_popup_func!!')\" />
             <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_f1!!iaut!!.value=''; this.form.f_f1_code!!iaut!!.value='0'; \" />
             $authors_add_aut_button_tpl
             !!button_add_aut1!!
@@ -652,14 +652,14 @@ $notice_responsabilities_secondary_form_tpl = "
 	<div class='row'>
         <div id='el1Child_3b_first' style='float:left;margin-right:10px;'>
             <input type='text' class='saisie-30emr' completion='authors' autfield='f_aut2_id!!iaut!!' id='f_aut2!!iaut!!' name='f_aut2!!iaut!!' data-form-name='f_aut2' value=\"!!aut2!!\" />
-			<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=auteur&caller=notice&param1=f_aut2_id!!iaut!!&param2=f_aut2!!iaut!!&deb_rech='+".pmb_escape()."(this.form.f_aut2!!iaut!!.value), '!!force_dialog_author!!')\" />
+			<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=auteur&caller=notice&param1=f_aut2_id!!iaut!!&param2=f_aut2!!iaut!!&deb_rech='+".pmb_escape()."(this.form.f_aut2!!iaut!!.value), '!!force_dialog_author!!', '!!force_popup_author!!')\" />
             <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_aut2!!iaut!!.value=''; this.form.f_aut2_id!!iaut!!.value='0'; \" />
             <input type='hidden' name='f_aut2_id!!iaut!!' data-form-name='f_aut2_id' id='f_aut2_id!!iaut!!' value=\"!!aut2_id!!\" />
         </div>
         <!--    Fonction    -->
         <div id='el1Child_3b_others' style='float:left;margin-right:10px;'>
             <input type='text' class='saisie-15emr' id='f_f2!!iaut!!' name='f_f2!!iaut!!' data-form-name='f_f2' completion='fonction' autfield='f_f2_code!!iaut!!' value=\"!!f2!!\" />
-            <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=function&caller=notice&p1=f_f2_code!!iaut!!&p2=f_f2!!iaut!!', '!!force_dialog_func!!')\" />
+            <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=function&caller=notice&p1=f_f2_code!!iaut!!&p2=f_f2!!iaut!!', '!!force_dialog_func!!', '!!force_popup_func!!')\" />
             <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_f2!!iaut!!.value=''; this.form.f_f2_code!!iaut!!.value='0'; \" />
             $authors_add_aut_button_tpl
             <input type='hidden' name='f_f2_code!!iaut!!' data-form-name='f_f2_code' id='f_f2_code!!iaut!!' value=\"!!f2_code!!\" />
@@ -691,7 +691,7 @@ $ptab[2] = "
 				}
 			</script>
 			<input type='text' completion='publishers' autfield='f_ed1_id' id='f_ed1' name='f_ed1' data-form-name='f_ed1' value=\"!!ed1!!\" class='saisie-30emr' callback='f_ed1_id_callback' />
-		    <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=editeur&caller=notice&p1=f_ed1_id&p2=f_ed1&p3=f_coll_id&p4=f_coll&p5=f_subcoll_id&p6=f_subcoll&deb_rech='+".pmb_escape()."(this.form.f_ed1.value), '!!force_dialog_publisher!!')\" />
+		    <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=editeur&caller=notice&p1=f_ed1_id&p2=f_ed1&p3=f_coll_id&p4=f_coll&p5=f_subcoll_id&p6=f_subcoll&deb_rech='+".pmb_escape()."(this.form.f_ed1.value), '!!force_dialog_publisher!!', '!!force_popup_publisher!!')\" />
 		    <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_ed1.value=''; this.form.f_ed1_id.value='0'; \" />
 		    <input type='hidden' name='f_ed1_id' data-form-name='f_ed1_id' id='f_ed1_id' value=\"!!ed1_id!!\" />
 		</div>
@@ -708,7 +708,7 @@ $ptab[2] = "
 					}
 				</script>
 				<input type='text' completion='collections' autfield='f_coll_id' id='f_coll' name='f_coll' data-form-name='f_coll' value=\"!!coll!!\" class='saisie-30emr' linkfield='f_ed1_id' callback='f_coll_id_callback'/>
-		        <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=collection&caller=notice&p1=f_ed1_id&p2=f_ed1&p3=f_coll_id&p4=f_coll&p5=f_subcoll_id&p6=f_subcoll&deb_rech='+".pmb_escape()."(this.form.f_coll.value), '!!force_dialog_collection!!')\" />
+		        <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=collection&caller=notice&p1=f_ed1_id&p2=f_ed1&p3=f_coll_id&p4=f_coll&p5=f_subcoll_id&p6=f_subcoll&deb_rech='+".pmb_escape()."(this.form.f_coll.value), '!!force_dialog_collection!!', '!!force_popup_collection!!')\" />
 		        <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_coll.value=''; this.form.f_coll_id.value='0'; \" />
 		        <input type='hidden' name='f_coll_id' data-form-name='f_coll_id' id='f_coll_id' value=\"!!coll_id!!\" />
 		        </div>
@@ -735,7 +735,7 @@ $ptab[2] = "
 					</script>
 					<input type='text' completion='subcollections' autfield='f_subcoll_id' id='f_subcoll' name='f_subcoll' data-form-name='f_subcoll' value=\"!!subcoll!!\" class='saisie-30emr' linkfield='f_coll_id' callback='f_subcoll_id_callback'/>
 			
-					<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=subcollection&caller=notice&p1=f_ed1_id&p2=f_ed1&p3=f_coll_id&p4=f_coll&p5=f_subcoll_id&p6=f_subcoll&deb_rech='+".pmb_escape()."(this.form.f_subcoll.value), '!!force_dialog_subcollection!!')\" />
+					<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=subcollection&caller=notice&p1=f_ed1_id&p2=f_ed1&p3=f_coll_id&p4=f_coll&p5=f_subcoll_id&p6=f_subcoll&deb_rech='+".pmb_escape()."(this.form.f_subcoll.value), '!!force_dialog_subcollection!!', '!!force_popup_subcollection!!')\" />
 					<input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_subcoll.value=''; this.form.f_subcoll_id.value='0'; \" />
 					<input type='hidden' id='f_subcoll_id' name='f_subcoll_id' data-form-name='f_subcoll_id' value=\"!!subcoll_id!!\" />
 				</div>
@@ -767,7 +767,7 @@ $ptab[2] = "
 		</div>
 		<div id='el2Child_7b' class='row'>
 		    <input type='text' completion='publishers' autfield='f_ed2_id' id='f_ed2' name='f_ed2' data-form-name='f_ed2' value=\"!!ed2!!\" class='saisie-30emr' />
-		    <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=editeur&caller=notice&p1=f_ed2_id&p2=f_ed2&p3=dummy&p4=dummy&p5=dummy&p6=dummy&deb_rech='+".pmb_escape()."(this.form.f_ed2.value), '!!force_dialog_publisher!!')\" />
+		    <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=editeur&caller=notice&p1=f_ed2_id&p2=f_ed2&p3=dummy&p4=dummy&p5=dummy&p6=dummy&deb_rech='+".pmb_escape()."(this.form.f_ed2.value), '!!force_dialog_publisher!!', '!!force_popup_publisher!!')\" />
 		    <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_ed2.value=''; this.form.f_ed2_id.value='0'; \" />
 		    <input type='hidden' name='dummy' />
 		    <input type='hidden' name='f_ed2_id' id='f_ed2_id' data-form-name='f_ed2_id' value=\"!!ed2_id!!\" />
@@ -937,7 +937,7 @@ $notice_tab_indexation_form_tpl = "
 	    </div>
 	    <div id='el6Child_1b' class='row'>
 	        <input type='text' class='saisie-80emr' id='f_indexint' name='f_indexint' data-form-name='f_indexint' value=\"!!indexint!!\" completion=\"indexint\" autfield=\"f_indexint_id\"  typdoc=\"typdoc\" />
-	        <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=indexint&caller=notice&param1=f_indexint_id&param2=f_indexint&parent=0&deb_rech='+".pmb_escape()."(this.form.f_indexint.value)+'&typdoc='+(this.form.typdoc.value)+'&num_pclass=!!num_pclass!!', '!!force_dialog_indexint!!')\" />
+	        <input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=indexint&caller=notice&param1=f_indexint_id&param2=f_indexint&parent=0&deb_rech='+".pmb_escape()."(this.form.f_indexint.value)+'&typdoc='+(this.form.typdoc.value)+'&num_pclass=!!num_pclass!!', '!!force_dialog_indexint!!', '!!force_popup_indexint!!')\" />
 	        <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_indexint.value=''; this.form.f_indexint_id.value='0'; \" />
 	        <input type='hidden' name='f_indexint_id' data-form-name='f_indexint_id' id='f_indexint_id' value='!!indexint_id!!' />
 	    </div>
@@ -965,7 +965,7 @@ $notice_tab_indexation_form_tpl = "
 $notice_indexation_first_form_tpl = "
 	<script type='text/javascript' src='./javascript/categ_drop.js'></script>
 	<input type='hidden' name='tab_categ_order' id='tab_categ_order' value='!!tab_categ_order!!' />
-	<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelectorCategory('./select.php?what=categorie&caller=notice&autoindex_class=autoindex_record&indexation_lang=!!indexation_lang_sel!!&p1=f_categ_id!!icateg!!&p2=f_categ!!icateg!!&dyn=1&parent=0&deb_rech=', '!!force_dialog_category!!')\" />
+	<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelectorCategory('./select.php?what=categorie&caller=notice&autoindex_class=autoindex_record&indexation_lang=!!indexation_lang_sel!!&p1=f_categ_id!!icateg!!&p2=f_categ!!icateg!!&dyn=1&parent=0&deb_rech=', '!!force_dialog_category!!', '!!force_popup_category!!')\" />
     <input type='button' class='bouton' value='+' onClick=\"add_categ();\"/>
   	<div id='drag_!!icateg!!'  class='row' dragtype='categ' draggable='yes' recept='yes' recepttype='categ' handler='handle_!!icateg!!'
 		dragicon='".get_url_icon('icone_drag_notice.png')."' dragtext='!!categ_libelle!!' downlight=\"categ_downlight\" highlight=\"categ_highlight\"
@@ -1035,7 +1035,7 @@ $notice_tab_lang_form_tpl = "
 $notice_lang_first_form_tpl = "
     <div id='el7Child_0a' class='row'>
         <input type='text' class='saisie-30emr' id='f_lang!!ilang!!' name='f_lang!!ilang!!' data-form-name='f_lang' value=\"!!lang!!\" completion=\"langue\" autfield=\"f_lang_code!!ilang!!\" />
-		<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=lang&caller=notice&p1=f_lang_code!!ilang!!&p2=f_lang!!ilang!!', '!!force_dialog_lang!!')\" />
+		<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=lang&caller=notice&p1=f_lang_code!!ilang!!&p2=f_lang!!ilang!!', '!!force_dialog_lang!!', '!!force_popup_lang!!')\" />
         <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_lang!!ilang!!.value=''; this.form.f_lang_code!!ilang!!.value=''; \" />
         !!button_add_lang!!
         <input type='hidden' name='f_lang_code!!ilang!!' data-form-name='f_lang_code' id='f_lang_code!!ilang!!' value='!!lang_code!!' />
@@ -1045,7 +1045,7 @@ $notice_lang_first_form_tpl = "
 $notice_lang_next_form_tpl = "
     <div id='el7Child_0a' class='row'>
         <input type='text' class='saisie-30emr' id='f_lang!!ilang!!' name='f_lang!!ilang!!' value=\"!!lang!!\" completion=\"langue\" autfield=\"f_lang_code!!ilang!!\" />
-		<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=lang&caller=notice&p1=f_lang_code!!ilang!!&p2=f_lang!!ilang!!', '!!force_dialog_lang!!')\" />
+		<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=lang&caller=notice&p1=f_lang_code!!ilang!!&p2=f_lang!!ilang!!', '!!force_dialog_lang!!', '!!force_popup_lang!!')\" />
         <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_lang!!ilang!!.value=''; this.form.f_lang_code!!ilang!!.value=''; \" />
         !!button_add_lang!!
         <input type='hidden' name='f_lang_code!!ilang!!' id='f_lang_code!!ilang!!' value='!!lang_code!!' />
@@ -1058,7 +1058,7 @@ $notice_lang_next_form_tpl = "
 $notice_langorg_first_form_tpl = "
     <div id='el7Child_0b' class='row'>
         <input type='text' class='saisie-30emr' id='f_langorg!!ilangorg!!' name='f_langorg!!ilangorg!!' data-form-name='f_langorg' value=\"!!langorg!!\" completion=\"langue\" autfield=\"f_langorg_code!!ilangorg!!\" />
-		<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=lang&caller=notice&p1=f_langorg_code!!ilangorg!!&p2=f_langorg!!ilangorg!!', '!!force_dialog_lang!!')\" />
+		<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=lang&caller=notice&p1=f_langorg_code!!ilangorg!!&p2=f_langorg!!ilangorg!!', '!!force_dialog_lang!!', '!!force_popup_lang!!')\" />
         <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_langorg!!ilangorg!!.value=''; this.form.f_langorg_code!!ilangorg!!.value=''; \" />
         <input type='hidden' name='f_langorg_code!!ilangorg!!' data-form-name='f_langorg_code' id='f_langorg_code!!ilangorg!!' value='!!langorg_code!!' />
         <input id='button_add_f_langorg_code' type='button' class='bouton' value='+' onClick=\"add_langorg();\"/>
@@ -1067,7 +1067,7 @@ $notice_langorg_first_form_tpl = "
 $notice_langorg_next_form_tpl = "
     <div id='el7Child_0b' class='row'>
         <input type='text' class='saisie-30emr' id='f_langorg!!ilangorg!!' name='f_langorg!!ilangorg!!' value=\"!!langorg!!\" completion=\"langue\" autfield=\"f_langorg_code!!ilangorg!!\" />
-		<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=lang&caller=notice&p1=f_langorg_code!!ilangorg!!&p2=f_langorg!!ilangorg!!', '!!force_dialog_lang!!')\" />
+		<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=lang&caller=notice&p1=f_langorg_code!!ilangorg!!&p2=f_langorg!!ilangorg!!', '!!force_dialog_lang!!', '!!force_popup_lang!!')\" />
         <input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_langorg!!ilangorg!!.value=''; this.form.f_langorg_code!!ilangorg!!.value=''; \" />
         <input type='hidden' name='f_langorg_code!!ilangorg!!' id='f_langorg_code!!ilangorg!!' value='!!langorg_code!!' />
     </div>
@@ -1291,6 +1291,34 @@ if($pmb_notice_img_folder_id)
 			</div>
 			<div id='el10Child_6b' class='row'>
 			    <input type='file' class='saisie-80em' id='f_img_load' name='f_img_load' rows='1' wrap='virtual' value='' />
+			</div>
+			<div id='el10Child_6c' class='row'>
+				<img id='f_img_loaded' alt='' src='!!f_img_loaded_src!!'/>
+                <button id='reset_thumbnail_button' name='reset_thumbnail_button' onclick='reset_thumbnail()'>
+                    <img alt='delete thumbnail' src='./images/cross.png'/>
+                </button>
+                <input type='hidden' id='f_reset_thumbnail' name='f_reset_thumbnail' value='0' />
+                <script>
+                    function displayResetThumbnailButton() {
+                        var imgThumbnail = document.getElementById('f_img_loaded');
+                            console.log(document.getElementById('reset_thumbnail_button'));
+                            console.log(imgThumbnail);
+                        if (imgThumbnail && imgThumbnail.src == '') {
+                            document.getElementById('reset_thumbnail_button').style.display = 'none';
+                        }
+                    }
+                    function reset_thumbnail() {
+                        if (confirm('Voulez-vous supprimer cette vignette ?')) {
+                            let inputReset = document.getElementById('f_reset_thumbnail');
+                            if (inputReset) {
+                                inputReset.value = 1;
+                            }
+                            document.getElementById('f_img_loaded').src = '';
+                            displayResetThumbnailButton();
+                        }
+                    }
+                    displayResetThumbnailButton();
+                </script>
 			</div>
 		</div>";
 $notice_tab_gestion_fields_form_tpl.= "

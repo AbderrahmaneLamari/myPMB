@@ -3,7 +3,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: manifest.xml,v 1.24.2.1 2021/08/06 09:48:31 dbellamy Exp $ -->
+$Id: manifest.xml,v 1.25.4.1 2023/03/16 14:56:43 dgoron Exp $ -->
 <manifest>
 	<name>pmbesTypes</name>
 	<description>msg:pmbesTypes_description</description>
@@ -439,6 +439,12 @@ $Id: manifest.xml,v 1.24.2.1 2021/08/06 09:48:31 dbellamy Exp $ -->
 			<part name="article_title" type="scalar" dataType="string" description="msg:cms_article_title"/>
 			<part name="article_resume" type="scalar" dataType="string" description="msg:cms_article_resume"/>
 			<part name="article_contenu" type="scalar" dataType="string" description="msg:cms_article_contenu"/>
+		</type>
+		<type name="cleanGroup" description="msg:cleanGroup_description">
+			<part name="title" type="scalar" dataType="string" description="msg:cleanGroup_title"/>
+			<part name="message" type="scalar" dataType="string" description="msg:cleanGroup_message"/>
+			<part name="affected" type="scalar" dataType="integer" description="msg:cleanGroup_affected"/>
+			<part name="bad_user_rights" type="scalar" dataType="integer" description="msg:cleanGroup_bad_user_rights"/>
 		</type>		
 	</types>
 </manifest>

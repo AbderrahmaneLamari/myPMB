@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entity_locking.class.php,v 1.13.2.1 2022/01/07 11:41:08 dgoron Exp $
+// $Id: entity_locking.class.php,v 1.14 2022/01/07 11:40:16 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

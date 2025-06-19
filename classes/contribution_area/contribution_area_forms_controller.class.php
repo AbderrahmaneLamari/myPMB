@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area_forms_controller.class.php,v 1.27.2.1 2021/06/28 12:13:00 qvarin Exp $
+// $Id: contribution_area_forms_controller.class.php,v 1.29.4.1 2023/09/12 13:56:13 dgoron Exp $
 if (stristr($_SERVER ['REQUEST_URI'], ".class.php"))
 	die("no access");
 
@@ -149,7 +149,8 @@ class contribution_area_forms_controller {
 	 						'id' => self::get_identifier(),
 	 						'parent_type' => $entity->pmb_name,
 	 						'name' => $pValues['label'],
-	 						'flag' => (!empty(self::$classes_properties[$entity->pmb_name][$prop]->flags[0]) ? self::$classes_properties[$entity->pmb_name][$prop]->flags[0] : ""),
+	 						//'flag' => (!empty(self::$classes_properties[$entity->pmb_name][$prop]->flags[0]) ? self::$classes_properties[$entity->pmb_name][$prop]->flags[0] : ""),
+	 					    'flag' => (!empty(self::$classes_properties[$entity->pmb_name][$prop]->flags) ? static::init_flags(self::$classes_properties[$entity->pmb_name][$prop]->flags) : []),
 	 					    'pmb_name' => (!empty(self::$classes_properties[$entity->pmb_name][$prop]->pmb_name) ? self::$classes_properties[$entity->pmb_name][$prop]->pmb_name : "")
 	 					);
 	 					
@@ -159,6 +160,32 @@ class contribution_area_forms_controller {
 			}
 		}
 		return $forms_array;
+	}
+	
+	private static function init_flags(array $flags) {
+	    $authority_key = array_search("authority", $flags);
+	    if ($authority_key === false) {
+	        return $flags;
+	    }
+	    unset($flags[$authority_key]);
+	    $tab_authorities = [
+	        "author",
+	        "category",
+	        "publisher",
+	        "collection",
+	        "subcollection",
+	        "serie",
+	        "work",
+	        "indexint",
+	        "concept",
+	    ];
+	    $authpersos = authpersos::get_authpersos();
+	    foreach ($authpersos as $authperso) {
+	        $tab_authorities[] = "authperso_".$authperso["id"];
+	    }
+	    $flags = array_merge($flags, $tab_authorities);
+	    $flags = array_unique($flags);
+	    return $flags;
 	}
 	
 	public static function display_forms_list(){
@@ -483,8 +510,6 @@ class contribution_area_forms_controller {
 	}
 	
 	public static function mail_empr_contribution_validate($uri) {
-	    global $msg, $charset, $opac_url_base, $include_path;
-	    
 	    $store = new contribution_area_store();
 	    $dataStore = $store->get_datastore();
 	    $query = "SELECT * WHERE {
@@ -497,42 +522,12 @@ class contribution_area_forms_controller {
 
 	    // On va cherche l'emprunteur
 	    $empr  = new emprunteur($results[0]->id_contributor);
-	    // Adresse mail de la loc de l'emprunteur
-	    $requete = "select location_libelle, email, empr_location from empr, docs_location where empr_location=idlocation and id_empr='".$results[0]->id_contributor."'";
-	    $res = pmb_mysql_query($requete);
-	    $loc=pmb_mysql_fetch_object($res);
-	    $PMBuseremail = $loc->email ;
-	    
-	    // On commence a preparer le mail
-	    $headers  = "MIME-Version: 1.0\n";
-	    $headers .= "Content-type: text/html; charset=".$charset."\n";
-	    
-	    // On genere le template de mail
-	    $template_path = $include_path."/templates/contribution_area/contribution_validate_mail.tpl.html";
-	    if (file_exists($include_path."/templates/contribution_area/contribution_validate_mail.subst.tpl.html")) {
-	        $template_path = $include_path."/templates/contribution_area/contribution_validate_mail.subst.tpl.html";
-	    }
-	    
         if ($empr->mail) {
-            $output_final = "<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><meta charset=\"".$charset."\" /></head><body>" ;
-            $sujet = $msg['subject_mail_confirm_validate_contribution'];
-            
-            $dateTime = new DateTime();
-            $last_edit = $dateTime->setTimestamp($results[0]->last_edit);
-            
-            $messages =  [
-                "subject" => $msg['subject_mail_confirm_validate_contribution'],
-                "url" => $msg['mail_confirm_contribution_url']
-                
-            ];
-            $url = $opac_url_base."empr.php?tab=contribution_area&lvl=contribution_area_done";
-            
-            //on fait le rendu du template pour l'envoyer aux administrateur
-            $h2o = H2o_collection::get_instance($template_path);
-            $output_final .= $h2o->render(['empr' => $empr, 'isbd' => $results[0]->display_label, 'date_contrib' => $last_edit->format('d-m-Y'), 'msg' => $messages, 'url' => $url]);
-            
-            //on envoi le mail
-            $res_envoi = mailpmb($empr->nom." ".$empr->prenom, $empr->mail, $sujet, $output_final, "", $PMBuseremail, $headers, "", "", 1);
+            $mail_reader_contribution = new mail_reader_contribution();
+            $mail_reader_contribution->set_mail_to_id($results[0]->id_contributor);
+            $mail_reader_contribution->set_empr($empr);
+            $mail_reader_contribution->set_datastore_results($results);
+            $mail_reader_contribution->send_mail();
         }
 	}
 	

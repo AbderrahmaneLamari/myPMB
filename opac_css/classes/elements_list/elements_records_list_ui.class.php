@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: elements_records_list_ui.class.php,v 1.6 2021/02/02 11:41:38 gneveu Exp $
+// $Id: elements_records_list_ui.class.php,v 1.6.6.1 2023/09/22 08:54:13 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -48,6 +48,7 @@ class elements_records_list_ui extends elements_list_ui {
 	protected $draggable;
 	protected $no_link;
 	protected $ajax_mode;
+	protected static $lazy_loading = false;
 	
 	public function __construct($contents, $nb_results, $mixed, $groups=array(), $nb_filtered_results = 0) {
 		static::init_links();
@@ -366,5 +367,13 @@ class elements_records_list_ui extends elements_list_ui {
 	
 	public function set_ajax_mode($ajax_mode) {
 		$this->ajax_mode = $ajax_mode;
+	}
+	
+	public static function enable_lazy_loading() {
+	    static::$lazy_loading = true;
+	}
+	
+	public static function disable_lazy_loading() {
+	    static::$lazy_loading = false;
 	}
 }

@@ -2,11 +2,13 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_lists_ui.class.php,v 1.10.2.6 2021/12/13 08:37:51 dgoron Exp $
+// $Id: list_lists_ui.class.php,v 1.17.2.3 2023/03/29 13:21:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class list_lists_ui extends list_ui {
+	
+	protected $directories_lists;
 	
 	protected static $list_objects_type;
 	
@@ -32,45 +34,77 @@ class list_lists_ui extends list_ui {
 		}
 	}
 	
+	protected function get_xmlfile_lists() {
+		if (file_exists($this->get_list_directory()."catalog_subst.xml")) {
+			return $this->get_list_directory()."catalog_subst.xml";
+		} else {
+			return $this->get_list_directory()."catalog.xml";
+		}
+	}
+	
+	protected function get_directories_lists() {
+		if(!isset($this->directories_lists)) {
+			$filename = $this->get_xmlfile_lists();
+			$xml=file_get_contents($filename);
+			$this->directories_lists=_parser_text_no_function_($xml,"LISTS",$filename);
+		}
+		return $this->directories_lists;
+	}
+	
+	protected function get_builded_object($list, $directory_path, $directory_label) {
+		global $charset;
+		
+		$object = new stdClass();
+		$object->directory_path = $directory_path;
+		$object->directory_label = get_msg_to_display($directory_label);
+		$object->name = $list['NAME'];
+		$object->type = $list['NAME']."_ui";
+		$object->class_name = "list_".$list['NAME']."_ui";
+		if(!empty($list['PROPERTIES'])) {
+			$class_name = $object->class_name;
+			foreach ($list['PROPERTIES'][0] as $name=>$property) {
+				$setter = "set_".strtolower($name);
+				$class_name::$setter($property[0]['value']);
+				if($name == 'OBJECT_TYPE') {
+					$object->type .= "_".$property[0]['value'];
+				}
+			}
+		}
+		$object->num_dataset = list_model::get_num_dataset_common_list($object->type);
+		$object->instance = $this->get_list_ui_instance($object->class_name);
+		$object->id = $object->num_dataset;
+		$object->label = html_entity_decode($object->instance->get_dataset_title(), ENT_QUOTES, $charset);
+		if(!empty($list['LABEL']) && get_msg_to_display($list['LABEL'])) {
+			$object->label = get_msg_to_display($list['LABEL']);
+		}
+		return $object;
+	}
+	
+	protected function is_visible_object($object) {
+		if($object->instance->has_rights()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	protected function add_object($row) {
+		if($this->is_visible_object($row)) {
+			parent::add_object($row);
+		}
+	}
+	
 	protected function fetch_data() {
 		$this->objects = array();
 		list_ui::set_without_data(true);
-		if (file_exists($this->get_list_directory()."catalog_subst.xml")) {
-			$filename = $this->get_list_directory()."catalog_subst.xml";
-		} else {
-			$filename = $this->get_list_directory()."catalog.xml";
-		}
-		$xml=file_get_contents($filename);
-		$directories_lists=_parser_text_no_function_($xml,"LISTS",$filename);
+		$directories_lists=$this->get_directories_lists();
 		if(!empty($directories_lists)) {
 			foreach ($directories_lists as $directory_lists) {
 				foreach ($directory_lists as $lists) {
 					$directory_path = $lists['PATH'][0]['value'];
 					$directory_label = $lists['LABEL'][0]['value'];
 					foreach ($lists['LIST'] as $list) {
-						$object = new stdClass();
-						$object->directory_path = $directory_path;
-						$object->directory_label = get_msg_to_display($directory_label);
-						$object->name = $list['NAME'];
-						$object->type = $list['NAME']."_ui";
-						$object->class_name = "list_".$list['NAME']."_ui";
-						if(!empty($list['PROPERTIES'])) {
-							$class_name = $object->class_name;
-							foreach ($list['PROPERTIES'][0] as $name=>$property) {
-								$setter = "set_".strtolower($name);
-								$class_name::$setter($property[0]['value']);
-								if($name == 'OBJECT_TYPE') {
-									$object->type .= "_".$property[0]['value'];
-								}
-							}
-						}
-						$object->num_dataset = list_model::get_num_dataset_common_list($object->type);
-						$object->instance = $this->get_list_ui_instance($object->class_name);
-						$object->id = $object->num_dataset;
-						$object->label = $object->instance->get_dataset_title();
-						if(empty($object->label) && !empty($list['LABEL'])) {
-							$object->label = get_msg_to_display($list['LABEL']);
-						}
+						$object = $this->get_builded_object($list, $directory_path, $directory_label);
 						$this->add_object($object);
 					}
 				}
@@ -85,8 +119,34 @@ class list_lists_ui extends list_ui {
 	 * Initialisation des filtres disponibles
 	 */
 	protected function init_available_filters() {
-		$this->available_filters['main_fields'] = array();
+		$this->available_filters =
+		array('main_fields' =>
+				array(
+						'name' => '705',
+						'autorisations' => '25',
+				)
+		);
 		$this->available_filters['custom_fields'] = array();
+	}
+	
+	/**
+	 * Initialisation des filtres de recherche
+	 */
+	public function init_filters($filters=array()) {
+		$this->filters = array(
+				'name' => '',
+				'autorisations' => array()
+		);
+		parent::init_filters($filters);
+	}
+	
+	/**
+	 * Filtres provenant du formulaire
+	 */
+	public function set_filters_from_form() {
+		$this->set_filter_from_form('name');
+		$this->set_filter_from_form('autorisations');
+		parent::set_filters_from_form();
 	}
 	
 	/**
@@ -109,7 +169,7 @@ class list_lists_ui extends list_ui {
 		$this->available_columns['custom_fields'] = array();
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'directory_label');
 	}
 	
@@ -183,7 +243,7 @@ class list_lists_ui extends list_ui {
 		    			}
 		    		}
 		    	}
-		    	$content .= implode('<br />', $data);
+		    	$content .= implode(' | ', $data);
 		    	break;
 		    case 'default_applied_sort' :
 		    	$sorted_available_columns = $object->instance->get_sorted_available_columns();
@@ -238,7 +298,7 @@ class list_lists_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		switch ($property) {
 			case 'initialization':
@@ -247,9 +307,7 @@ class list_lists_ui extends list_ui {
 				$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=edit&objects_type=".$object->instance->get_objects_type()."&id=".$object->num_dataset."\"";
 				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	protected function init_default_selection_actions() {

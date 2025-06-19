@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: import_expl_bdp.class.php,v 1.1.2.4 2021/12/10 09:50:06 dgoron Exp $
+// $Id: import_expl_bdp.class.php,v 1.3 2021/12/10 09:49:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

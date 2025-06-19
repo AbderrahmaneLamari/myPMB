@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: impr_cote_suite.php,v 1.8 2021/03/16 09:48:36 dgoron Exp $
+// $Id: impr_cote_suite.php,v 1.9 2022/06/09 09:50:22 dbellamy Exp $
 
 global $base_noheader, $pmb_label_construct_script, $idcaddie, $elt_flag, $elt_no_flag, $fpdf, $label_grid_nb_per_row, $label_grid_nb_per_col;
 global $page_orientation, $unit, $page_format, $label_grid_from_top, $label_grid_from_left, $label_grid_h_spacing, $label_grid_v_spacing;
@@ -66,8 +66,11 @@ if ($pmb_label_construct_script) {
 		$pdf->AddStick();
 		$content_src = $ordered_list[$i]['id'];
 		foreach($content_type as $step=>$value) {
-		    $font_family = $content_value[$step]['font'];
-		    if(strtolower($font_family) == 'arial') $font_family='Helvetica';
+		    $font_family = '';
+		    if( !empty($content_value[$step]['font']) ) {
+		        $font_family = $content_value[$step]['font'];
+		        if(strtolower($font_family) == 'arial') $font_family='Helvetica';
+		    }
 		    if(!empty($font_family)) {
 		    	if (empty($pdf->fonts[$font_family]) && array_key_exists(strtolower($font_family),$pdf->CoreFonts)===false && in_array($font_family,$pdf->CoreFonts)===false) {
 		            $pdf->AddFont($font_family);

@@ -2,14 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scan_requests.inc.php,v 1.5 2019/12/31 12:56:23 ngantier Exp $
+// $Id: scan_requests.inc.php,v 1.6.4.1 2023/08/02 09:41:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $class_path, $lvl, $sub, $from, $msg;
+global $id, $notice;
+
 require_once($class_path.'/scan_request/scan_requests.class.php');
 require_once($class_path.'/scan_request/scan_request.class.php');
-
-if(!isset($from)) $from = '';
 
 switch($lvl){
 	case 'scan_request':
@@ -44,8 +45,12 @@ switch($lvl){
 				} else {
 					print '<div class="alerte">'.$msg['scan_request_cant_delete'].'</div>';
 				}
-				$scan_requests = new scan_requests($_SESSION['id_empr_session']);
-				print $scan_requests->get_display_list();
+				$list_opac_scan_requests_ui = list_opac_scan_requests_ui::get_instance(array('empr' => array($_SESSION['id_empr_session'])));
+				if(count($list_opac_scan_requests_ui->get_objects())) {
+				    print $list_opac_scan_requests_ui->get_display_list();
+				} else {
+				    print $msg['scan_request_list_empty'];
+				}
 				break;
 			case 'display':
 			default :
@@ -55,8 +60,11 @@ switch($lvl){
 		break;
 	case 'scan_requests_list':
 	default :
-		$scan_requests = new scan_requests($_SESSION['id_empr_session']);
-		print $scan_requests->get_display_list();
+	    $list_opac_scan_requests_ui = list_opac_scan_requests_ui::get_instance(array('empr' => array($_SESSION['id_empr_session'])));
+	    if(count($list_opac_scan_requests_ui->get_objects())) {
+	        print $list_opac_scan_requests_ui->get_display_list();
+	    } else {
+	        print $msg['scan_request_list_empty'];
+	    }
 	break;
 }
-?>

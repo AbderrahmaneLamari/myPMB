@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serialcirc_tpl_print_fields.class.php,v 1.5.8.1 2021/12/21 15:05:29 dgoron Exp $
+// $Id: serialcirc_tpl_print_fields.class.php,v 1.6 2021/12/21 15:01:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

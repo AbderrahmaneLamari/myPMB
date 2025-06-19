@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: departs.inc.php,v 1.13.2.1 2021/07/30 14:48:33 dgoron Exp $
+// $Id: departs.inc.php,v 1.15 2022/10/04 09:20:22 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $sub, $action, $msg, $database_window_title;
-global $transferts_validation_actif, $deflt_docs_location, $nb_per_page;
+global $transferts_validation_actif, $nb_per_page;
 global $site_destination, $liste_transfert, $form_cb_expl, $motif_refus;
 global $transferts_retour_acceptation_erreur, $transferts_envoi_OK, $transferts_validation_acceptation_OK, $transferts_retour_acceptation_OK;
 
@@ -108,16 +108,16 @@ if ($action == "") {
 	} 
 	
  	// **************************** LISTE DES DEMANDES A VALIDER	
-	$list_transferts_validation_ui = new list_transferts_validation_ui(array('etat_transfert' => 0, 'etat_demande' => 0, 'site_origine' => $deflt_docs_location));
+	$list_transferts_validation_ui = new list_transferts_validation_ui(array('etat_transfert' => 0, 'etat_demande' => 0));
 	print $list_transferts_validation_ui->get_display_list();
 	
 	//$filtres="";
 	// **************************** LISTE DES ENVOIS A EFFECTUER
 	if ($transferts_validation_actif=="1") {
-		$list_transferts_envoi_ui = new list_transferts_envoi_ui(array('etat_transfert' => 0, 'etat_demande' => 1, 'site_origine' => $deflt_docs_location, 'site_destination' => 0));
+		$list_transferts_envoi_ui = new list_transferts_envoi_ui(array('etat_transfert' => 0, 'etat_demande' => 1));
 		print $list_transferts_envoi_ui->get_display_list();
 	} else {
-		$list_transferts_envoi_ui = new list_transferts_envoi_ui(array('etat_transfert' => 0, 'etat_demande' => array(0,1), 'site_origine' => $deflt_docs_location, 'site_destination' => 0));
+		$list_transferts_envoi_ui = new list_transferts_envoi_ui(array('etat_transfert' => 0, 'etat_demande' => array(0,1)));
 		print $list_transferts_envoi_ui->get_display_list();
 	}
 	
@@ -125,7 +125,7 @@ if ($action == "") {
 		$f_etat_dispo = 1;
 	}
 	// **************************** LISTE DES RETOUR A EFFECTUER	
-	$list_transferts_retours_ui = new list_transferts_retours_ui(array('etat_transfert' => 0, 'type_transfert' => 1, 'etat_demande' => 3, 'site_destination' => $deflt_docs_location, 'site_origine' => 0, 'f_etat_dispo' => 1), array(), array('by' => 'date_retour'));
+	$list_transferts_retours_ui = new list_transferts_retours_ui(array('etat_transfert' => 0, 'type_transfert' => 1, 'etat_demande' => 3, 'f_etat_dispo' => 1), array(), array('by' => 'date_retour'));
 	print $list_transferts_retours_ui->get_display_list();
 }
 

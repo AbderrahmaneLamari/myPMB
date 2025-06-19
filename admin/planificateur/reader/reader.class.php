@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: reader.class.php,v 1.5 2017/07/10 15:50:02 dgoron Exp $
+// $Id: reader.class.php,v 1.6.4.1 2023/03/16 14:18:36 dgoron Exp $
 
 global $class_path;
 require_once($class_path."/scheduler/scheduler_task.class.php");
@@ -11,15 +11,8 @@ require_once($class_path."/docs_location.class.php");
 class reader extends scheduler_task {
 	
 	public function execution() {
-		global $dbh,$msg;
+		global $msg;
 		global $empr_relance_adhesion;
-		
-		//requete
-		$rqt = "select distinct p.libelle_tache, p.rep_upload, p.path_upload from planificateur p
-			left join taches t on t.num_planificateur = p.id_planificateur
-			left join tache_docnum tdn on tdn.tache_docnum_repertoire=p.rep_upload
-			where t.id_tache=".$id_tache;
-		$res_query = pmb_mysql_query($rqt);
 		
 		$parameters = $this->unserialize_task_params();
 		
@@ -27,7 +20,7 @@ class reader extends scheduler_task {
 			$empr_location_id = ($parameters["empr_location_id"] ? $parameters["empr_location_id"] : "0");
 			if ($empr_location_id != "0") {
 				$query = "select name from docs_location where idlocation=".$empr_location_id;
-				$res = pmb_mysql_query($query, $dbh);
+				$res = pmb_mysql_query($query);
 				if ($res) {
 					$location_name = pmb_mysql_result($res,0,"name");
 				}
@@ -35,7 +28,7 @@ class reader extends scheduler_task {
 			$empr_statut_edit = ($parameters["empr_statut_edit"] ? $parameters["empr_statut_edit"] : "0");
 			if ($empr_statut_edit != "0") {
 				$query = "select statut_libelle from empr_statut where idstatut=".$empr_statut_edit;
-				$res = pmb_mysql_query($query, $dbh);
+				$res = pmb_mysql_query($query);
 				if ($res) {
 					$statut_name = pmb_mysql_result($res,0,"statut_libelle");
 				}
@@ -49,7 +42,7 @@ class reader extends scheduler_task {
 				switch ($elem) {
 					case "reader_abon_fin_proche" :
 						//Lecteurs en fin d'abonnement (proche)
-						$this->report[] = "<tr><th>".$this->msg["reader_relance_abon_fin_proche"]." ".($location_name ? "(".$location_name.")" : "")." ".($statut_name ? " ".$msg[297]." : ".$statut_name : "")."</th></tr>";
+						$this->add_section_report($this->msg["reader_relance_abon_fin_proche"]." ".($location_name ? "(".$location_name.")" : "")." ".($statut_name ? " ".$msg[297]." : ".$statut_name : ""));
 						if (method_exists($this->proxy, "pmbesReaders_listReadersSubscription")) {
 							$results = $this->proxy->pmbesReaders_listReadersSubscription("limit",$empr_location_id,$empr_statut_edit);
 							if ($results) {
@@ -64,7 +57,7 @@ class reader extends scheduler_task {
 									$tab_no_mail=array();
 									foreach ($results as $aresult) {
 										if ($aresult["empr_mail"] != '') {
-											$text = $this->proxy->pmbesReaders_generateMailReadersSubscription($aresult["id_empr"],$empr_location_id);
+											$this->proxy->pmbesReaders_generateMailReadersSubscription($aresult["id_empr"],$empr_location_id);
 //											generateMailReadersEndSubscription($ligne["id_empr"],$empr_location_id);	
 										} else {
 											$tab_no_mail[] = $aresult;
@@ -91,7 +84,7 @@ class reader extends scheduler_task {
 						break;
 					case "reader_abon_depasse" :
 						//Lecteurs dont l'abonnement est dépassé
-						$this->report[] = "<tr><th>".$this->msg["reader_relance_abon_depassee"]." ".($location_name ? "(".$location_name.")" : "")." ".($statut_name ? " ".$msg[297]." : ".$statut_name : "")."</th></tr>";
+						$this->add_section_report($this->msg["reader_relance_abon_depassee"]." ".($location_name ? "(".$location_name.")" : "")." ".($statut_name ? " ".$msg[297]." : ".$statut_name : ""));
 						if (method_exists($this->proxy, "pmbesReaders_listReadersSubscription")) {
 							$results = $this->proxy->pmbesReaders_listReadersSubscription("exceed",$empr_location_id,$empr_statut_edit);
 							if ($results) {
@@ -107,7 +100,7 @@ class reader extends scheduler_task {
 									foreach ($results as $aresult) {
 										if ($aresult["empr_mail"] != '') {
 											if (method_exists($this->proxy, "pmbesReaders_generateMailReadersSubscription")) {
-												$text = $this->proxy->pmbesReaders_generateMailReadersSubscription($aresult["id_empr"],$empr_location_id);
+												$this->proxy->pmbesReaders_generateMailReadersSubscription($aresult["id_empr"],$empr_location_id);
 //												generateMailReadersExceedSubscription($ligne["id_empr"],$empr_location_id);	
 											} else {
 												$this->add_function_rights_report("generateMailReadersExceedSubscription","pmbesReaders");
@@ -144,7 +137,7 @@ class reader extends scheduler_task {
 //						if ($result != '') {
 //							foreach ($result as $ligne) {
 //								if ($ligne["id_empr"] != "") {
-//									$this->report[] = "<tr><td>".$msg["planificateur_empr"]." : ".$ligne["empr_prenom"]." ".$ligne["empr_nom"]."</td></tr>";
+// 									$this->add_content_report($msg["planificateur_empr"]." : ".$ligne["empr_prenom"]." ".$ligne["empr_nom"]);
 //									$text = $this->proxy->pmbesReaders_generateMailReadersEndSubscription($ligne["id_empr"],$empr_location_id);	
 //								}
 //							}
@@ -160,7 +153,7 @@ class reader extends scheduler_task {
 //						if ($result != '') {
 //							foreach ($result as $ligne) {
 //								if ($ligne["id_empr"] != "") {
-//									$this->report[] = "<tr><td>".$msg["planificateur_empr"]." : ".$ligne["empr_prenom"]." ".$ligne["empr_nom"]."</td></tr>";
+// 									$this->add_content_report($msg["planificateur_empr"]." : ".$ligne["empr_prenom"]." ".$ligne["empr_nom"]);
 //									$object_fpdf = $this->proxy->pmbesReaders_generatePdfReadersSubscription($ligne["id_empr"],$empr_location_id);	
 //									//génération d'un pdf
 //									$this->generate_docnum($object_fpdf);
@@ -176,7 +169,7 @@ class reader extends scheduler_task {
 //						if ($result != '') {
 //							foreach ($result as $ligne) {
 //								if ($ligne["id_empr"] != "") {
-//									$this->report[] = "<tr><td>".$msg["planificateur_empr"]." : ".$ligne["empr_prenom"]." ".$ligne["empr_nom"]."</td></tr>";
+// 									$this->add_content_report($msg["planificateur_empr"]." : ".$ligne["empr_prenom"]." ".$ligne["empr_nom"]);
 //	//								get_texts(1);
 //									$text = $this->proxy->pmbesReaders_generateMailReadersExceedSubscription($ligne["id_empr"],$empr_location_id);	
 //									//génération d'un pdf
@@ -193,7 +186,7 @@ class reader extends scheduler_task {
 //						if ($result != '') {
 //							foreach ($result as $ligne) {
 //								if ($ligne["id_empr"] != "") {
-//									$this->report[] = "<tr><td>".$msg["planificateur_empr"]." : ".$ligne["empr_prenom"]." ".$ligne["empr_nom"]."</td></tr>";
+// 									$this->add_content_report($msg["planificateur_empr"]." : ".$ligne["empr_prenom"]." ".$ligne["empr_nom"]);
 //	//								get_texts(1);
 //									$object_fpdf = $this->proxy->pmbesReaders_generatePdfReadersSubscription($ligne["id_empr"],$empr_location_id);		
 //									//génération d'un pdf
@@ -209,7 +202,7 @@ class reader extends scheduler_task {
 				$this->update_progression($percent);	
 			}
 		} else {
-			$this->report[] = "<tr><td>".$this->msg["reader_no_option"]."</td></tr>";
+			$this->add_content_report($this->msg["reader_no_option"]);
 		}	
 	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_agenda.class.php,v 1.8 2019/07/05 13:37:51 btafforeau Exp $
+// $Id: cms_module_agenda.class.php,v 1.8.8.1 2023/09/06 13:31:43 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,9 +34,9 @@ class cms_module_agenda extends cms_module_common_module {
 					</p>";
 			}
 		}
-			$form.="
-				<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->class_name)."&quoi=module&calendar=new'/>".$this->format_text($this->msg['cms_module_agenda_add_calendar'])."</a> 
-			";
+		$form.="
+			<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->class_name)."&quoi=module&calendar=new'>".$this->format_text($this->msg['cms_module_agenda_add_calendar'])."</a> 
+		";
 		$form.="
 			</div>
 			<div dojoType='dijit.layout.ContentPane' region='center' >";

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_authorities_tab.class.php,v 1.18.2.2 2021/12/27 08:20:53 dgoron Exp $
+// $Id: searcher_authorities_tab.class.php,v 1.21 2022/03/17 12:15:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -131,6 +131,9 @@ class searcher_authorities_tab extends searcher_autorities {
 					}
 					if (!empty($searchfield['details'])) {
 					    $instance->set_details($searchfield['details']);
+					}
+					if (!empty($this->context_parameters) && method_exists($instance, 'set_context_parameters')) {
+						$instance->set_context_parameters($this->context_parameters);
 					}
 					$this->searcher_authorities_instances[] = $instance;
 				}

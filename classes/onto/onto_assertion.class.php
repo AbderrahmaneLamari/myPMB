@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_assertion.class.php,v 1.6 2017/11/27 10:37:26 tsamson Exp $
+// $Id: onto_assertion.class.php,v 1.8 2022/10/18 10:04:54 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -57,8 +57,11 @@ class onto_assertion {
 		$this->object_properties = $object_properties;
 	}
 
-
-	public function get_subject(){
+	public function get_subject() {
+		if (is_numeric($this->subject)) {
+			$this->subject = intval($this->subject);
+			$this->subject = onto_common_uri::get_uri($this->subject);
+		}
 		return $this->subject;
 	} 
 	public function get_predicate(){
@@ -79,5 +82,9 @@ class onto_assertion {
 			return $this->object_properties[$offset];
 		}
 		return null;
+	}
+	
+	public function set_object($obj){
+	    $this->object = $obj;
 	}
 } // end of onto_assertion

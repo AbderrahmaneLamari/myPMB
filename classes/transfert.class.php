@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: transfert.class.php,v 1.71.2.2 2021/12/23 13:55:45 dgoron Exp $
+// $Id: transfert.class.php,v 1.77 2022/06/10 13:58:55 dgoron Exp $
 
 if (stristr ( $_SERVER ['REQUEST_URI'], ".class.php" ))
 	die ( "no access" );
@@ -590,7 +590,8 @@ class transfert {
 	}	
 	
 	// memorise la loc d'origine de l'exemplaire
-	public function memo_origine($expl_id) {	
+	public function memo_origine($expl_id) {
+		$origine_id = 0;
 		//on recupere la localisation de l'exemplaire
 		$rqt = "SELECT trans_source_numloc FROM transferts_source WHERE trans_source_numexpl=$expl_id ";
 		$res = pmb_mysql_query( $rqt );
@@ -889,6 +890,23 @@ class transfert {
 		return 0;
 	}
 
+	public function resa_is_first_availability($resa_id_notice=0, $resa_id_bulletin=0, $resa_rank=0) {
+		//on regarde si les rangs précédents sont validés
+		$is_first_availability = true;
+		$ranks = recupere_rangs($resa_id_notice, $resa_id_bulletin/*, $this->filters['removal_location']*/);
+		if(!empty($ranks)) {
+			$ranks = array_slice($ranks, 0, $resa_rank, true);
+			foreach ($ranks as $id_resa=>$rank) {
+				if($rank < $resa_rank) {
+					if($is_first_availability && empty(reservation::get_cb_from_id($id_resa))) {
+						$is_first_availability = false;
+					}
+				}
+			}
+		}
+		return $is_first_availability;
+	}
+	
 	//effectue la reception d'une liste de transferts
 	public function enregistre_reception($listeTransferts, $idStatut, $listeSections,&$info=array()) {
 		global $deflt_docs_location;
@@ -1020,10 +1038,28 @@ class transfert {
 				// Traitement de la résa				
 				if ($origine==4 && $typeTrans) {
 					//c'est un transfert suite a une resa donc
+					
+					//on verifie qu'elle soit en rang 1
+					$rank = 1;
+					$is_first_availability = false;
+					if($origineComp) {
+						$rqt = "SELECT resa_idnotice, resa_idbulletin, resa_idempr
+								FROM resa WHERE id_resa='".$origineComp."'";
+						$res = pmb_mysql_query( $rqt );
+						if(pmb_mysql_num_rows($res)) {
+							$row = pmb_mysql_fetch_object($res);
+							$rank = recupere_rang($row->resa_idempr, $row->resa_idnotice, $row->resa_idbulletin);
+							$rank = intval($rank);
+							$is_first_availability = $this->resa_is_first_availability($row->resa_idnotice, $row->resa_idbulletin, $rank);
+						}
+					}
+					//on valide la resa si elle est prioritaire
+					if($rank == 1 || $is_first_availability) {
 					//valider la resa 
-					$id_resa_validee = affecte_cb($explcb,$origineComp);
-					//on genere la lettre de confirmation
-					alert_empr_resa($id_resa_validee); 				
+						$id_resa_validee = affecte_cb($explcb,$origineComp);
+						//on genere la lettre de confirmation
+						alert_empr_resa($id_resa_validee);
+					}
 				}
 			
 			} //fin du else de if ($sensTrans == 0)

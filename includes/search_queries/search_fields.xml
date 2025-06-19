@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: search_fields.xml,v 1.182.2.2 2021/07/27 11:47:56 dgoron Exp $ -->
+<!-- $Id: search_fields.xml,v 1.187.4.2 2023/12/13 08:30:42 qvarin Exp $ -->
 <pmbfields>
 
 	<!-- Zone fixedFields :
@@ -2526,7 +2526,7 @@
 				WHERE expl_comment not like '' GROUP BY notice_id)) AS sub1 ORDER BY notice_id DESC]]></main>
 			</query>
 		</field>
-		<field group="9" title="msg:date_creation_query" id="50">
+		<field group="9" title="msg:expl_date_creation_query" id="50">
 			<input type='date' placeholder='msg:format_date_input_placeholder'/>
 			<query for="EQ">
 				<main><![CDATA[SELECT distinct notice_id FROM ((SELECT notice_id FROM notices JOIN exemplaires ON ( notice_id = expl_notice )
@@ -3081,7 +3081,7 @@
 		</field>
 		<field group="11" title="msg:collection_state_search_emp" id="58">
 			<input type="query_list">
-				<query>select archempla_id, archempla_libelle from arch_emplacement order by archempla_libelle</query>
+				<query translationTablename="arch_emplacement" translationFieldname="archempla_libelle">select archempla_id, archempla_libelle from arch_emplacement order by archempla_libelle</query>
 			</input>
 			<query for="EQ">
 				<main><![CDATA[select distinct notice_id from notices join collections_state on (notice_id=id_serial) where collstate_emplacement=!!p!! order by index_serie, tnvol, index_sew]]></main>
@@ -3090,7 +3090,7 @@
 		
 		<field group="11" title="msg:collection_state_search_sup" id="59">
 			<input type="query_list">
-				<query>select archtype_id, archtype_libelle from arch_type order by archtype_libelle</query>
+				<query translationTablename="arch_type" translationFieldname="archtype_libelle">select archtype_id, archtype_libelle from arch_type order by archtype_libelle</query>
 			</input>
 			<query for="EQ">
 				<main><![CDATA[select distinct notice_id from notices join collections_state on (notice_id=id_serial) where collstate_type=!!p!! order by index_serie, tnvol, index_sew]]></main>
@@ -3099,7 +3099,7 @@
 
 		<field group="11" title="msg:collection_state_search_sta" id="60">
 			<input type="query_list">
-				<query>select archstatut_id, archstatut_gestion_libelle from arch_statut order by archstatut_gestion_libelle</query>
+				<query translationTablename="arch_statut" translationFieldname="archstatut_gestion_libelle">select archstatut_id, archstatut_gestion_libelle from arch_statut order by archstatut_gestion_libelle</query>
 			</input>
 			<query for="EQ">
 				<main><![CDATA[select distinct notice_id from notices join collections_state on (notice_id=id_serial) where collstate_statut=!!p!! order by index_serie, tnvol, index_sew]]></main>
@@ -4257,6 +4257,17 @@
 				</main>
 			</query>
 		</field>
+		<field group="15" title="msg:search_extended_serial_id" id="2001">
+			<input type="query_list">
+				<query>SELECT notice_id, tit1 FROM notices WHERE niveau_biblio="s" AND niveau_hierar=1 ORDER BY index_sew;</query>
+			</input>
+			<query for="EQ">
+				<main><![CDATA[SELECT analysis.analysis_notice AS 'notice_id' FROM analysis
+					JOIN bulletins ON bulletins.bulletin_id=analysis.analysis_bulletin
+    				JOIN notices ON notices.notice_id=bulletins.bulletin_notice AND notices.notice_id=!!p!!
+				]]></main>
+			</query>
+		</field>
 	</fixedFields>
 	
 	<!-- Zone dynamicFields :
@@ -5177,9 +5188,12 @@
 		<field type="facette" title="msg:search_facette" id="3" opacVisibility="no" visible="no"/>
 		<field type="simple_search" title="msg:search_persopac_table_humanquery" id="4" opacVisibility="no" visible="no"/>
 		<field group="1001" type="last_import_isbn_doublons" title="msg:last_import_isbn_doublons" id="5" opacVisibility="no"/>
+		<field group="1001" type="avis" title="msg:search_avis" id="8" />
 		<field type="combine_extended_search" title="msg:combine_extended_search" id="11" opacVisibility="no"/>
 		<field type="map_circle" group="6" title="msg:search_extended_map_circle" id="104" />		
 		<field type="map_address" group="6" title="msg:search_extended_map_address" id="107" />
+		<field group="1001" type="dynamic_value" title="msg:dynamic_value_field" id="12" />
+		<field type="search_segment" title="msg:search_segment" id="10" opacVisibility="no" visible="no"/>
 	</specialFields>
 	
 	<operators>
@@ -5288,5 +5302,9 @@
 			<order>17</order>
 			<label>msg:recherches_query</label>
 		</group>
+		<group id="15">
+            <order>19</order>
+            <label>msg:search_extended_group_art</label>
+        </group>
 	</groups>
 </pmbfields>

@@ -2,14 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scheduler_tasks_type.class.php,v 1.5 2021/03/03 07:46:02 dgoron Exp $
+// $Id: scheduler_tasks_type.class.php,v 1.5.6.2 2023/05/26 14:07:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path."/parser.inc.php");
 require_once($include_path."/templates/taches.tpl.php");
 require_once($include_path."/connecteurs_out_common.inc.php");
-require_once($class_path."/scheduler/scheduler_task_docnum.class.php");
 require_once($class_path."/upload_folder.class.php");
 require_once($class_path."/xml_dom.class.php");
 require_once($class_path."/scheduler/scheduler_task.class.php");
@@ -134,7 +134,7 @@ class scheduler_tasks_type {
 		$tab_commands=array();
 		$nodes_commands = $xml_dom_commands->get_nodes("workflow/commands/command");
 		if ($nodes_commands) {
-			foreach ($nodes_commands as $id=>$node_command) {
+			foreach ($nodes_commands as $node_command) {
 				$t=array();
 				$t["id"] = $xml_dom_commands->get_attribute($node_command,"id");
 				$t["name"] = $xml_dom_commands->get_attribute($node_command,"name");
@@ -146,7 +146,7 @@ class scheduler_tasks_type {
 	
 		$nodes_commands_manifest = $xml_dom_manifest->get_nodes("manifest/capacities/commands/command");
 		if ($nodes_commands_manifest) {
-			foreach ($nodes_commands_manifest as $id=>$node_command_manifest) {
+			foreach ($nodes_commands_manifest as $node_command_manifest) {
 				$t=array();
 				$t["id"] = $xml_dom_manifest->get_attribute($node_command_manifest,"id");
 				$t["name"] = $xml_dom_manifest->get_attribute($node_command_manifest,"name");
@@ -261,34 +261,6 @@ class scheduler_tasks_type {
 		} else {
 			$this->fetch_default_global_values();
 		}
-	}
-	
-	//affiche la planification de tâches par type
-	public function get_display_list() {
-	    global $charset,$msg;
-	
-		$display = '';
-		$query = "SELECT id_planificateur, libelle_tache, desc_tache,statut,calc_next_heure_deb,calc_next_date_deb FROM planificateur WHERE num_type_tache = '".$this->id."'";
-		$res = pmb_mysql_query($query);
-		$parity_source= $this->id % 2;
-		if ($res) {
-			while ($row=pmb_mysql_fetch_object($res)) {
-				$pair_impair_source = $parity_source++ % 2 ? "even" : "odd";
-				$tr_javascript_source=" onmouseover=\"this.className='surbrillance'\" onmouseout=\"this.className='$pair_impair_source'\" onmousedown=\"if (event) e=event; else e=window.event; if (e.srcElement) target=e.srcElement; else target=e.target; if (target.nodeName!='INPUT') document.location='./admin.php?categ=planificateur&sub=manager&act=task&type_task_id=".$this->id."&planificateur_id=".$row->id_planificateur."';\" ";
-				$display .= "<tr style='cursor: pointer' class='$pair_impair_source' $tr_javascript_source>
-				<td>".htmlentities($row->libelle_tache, ENT_QUOTES, $charset)."</td>
-						<td>".htmlentities($row->desc_tache, ENT_QUOTES, $charset)."</td>
-						<td>".($row->statut == 1 ? $msg['planificateur_task_statut_active'] : $msg['planificateur_task_statut_inactive'])."</td>
-                        <td>!!next_exec!!</td>
-                </tr>";
-				$next_exec = "";
-				if($row->statut == 1){
-				    $next_exec = htmlentities(formatdate($row->calc_next_date_deb),ENT_QUOTES,$charset)." ".htmlentities($row->calc_next_heure_deb,ENT_QUOTES,$charset);
-				}
-				$display = str_replace('!!next_exec!!',$next_exec,$display);
-			}
-		}
-		return $display;
 	}
 	
 	public function get_number() {

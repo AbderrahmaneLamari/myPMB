@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_affichage.ext.class.php,v 1.299.2.1 2021/12/24 13:23:41 dgoron Exp $
+// $Id: notice_affichage.ext.class.php,v 1.303.4.1 2023/11/17 09:42:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -367,28 +367,9 @@ class notice_affichage_custom_bretagne extends notice_affichage {
 		return;
 	} // fin do_public($short=0,$ex=1)
 	
-	// fonction de génération de ,la mention in titre du pério + numéro
-	public function genere_in_perio () {
-		global $charset ;
-		// serials : si article
-		if($this->notice->niveau_biblio == 'a' && $this->notice->niveau_hierar == 2) {
-			$bulletin = $this->parent_title;
-			$notice_mere = inslink("<span class='perio_title'>".$this->parent_title."</span>", str_replace("!!id!!", $this->parent_id, $this->lien_rech_perio));
-			if($this->parent_numero) $numero = $this->parent_numero." " ;
-			// affichage de la mention de date utile : mention_date si existe, sinon date_date
-			if ($this->parent_date) $date_affichee = " (".$this->parent_date.")";
-			elseif ($this->parent_date_date) $date_affichee .= " [".formatdate($this->parent_date_date)."]";
-			else $date_affichee="" ;
-			$bulletin = inslink("<span class='bull_title'>".$numero.$date_affichee."</span>", str_replace("!!id!!", $this->bulletin_id, $this->lien_rech_bulletin));
-			$this->bulletin_numero=$numero;
-			$this->bulletin_date=$date_affichee;
-			$mention_parent = "<b>in</b> $notice_mere > $bulletin ";
-			$retour .= "<br />$mention_parent";
-			$pagination = htmlentities($this->notice->npages,ENT_QUOTES, $charset);
-			//if ($pagination) $retour .= ".&nbsp;-&nbsp;$pagination";
-		}
-		return $retour ;
-	} // fin genere_in_perio ()
+	protected function genere_pagination_in_perio () {
+		return '';
+	}
 	
 } // end class notice_affichage_custom_bretagne
 
@@ -4035,42 +4016,10 @@ class notice_affichage_cee extends notice_affichage {
 	} // fin do_parents()
 	
 	public function affichage_etat_collections() {
-		global $msg;
-		global $pmb_etat_collections_localise;
-		global $tpl_collstate_liste,$tpl_collstate_liste_line;
-		
-		$tpl_collstate_liste[2]="
-		<table class='exemplaires' cellpadding='2' style='width:100%'>
-			<tbody>
-				<tr>
-					<th>".$msg["collstate_form_emplacement"]."</th>		
-					<th>".$msg["collstate_form_cote"]."</th>
-					<th>".$msg["collstate_form_collections"]."</th>
-					<th>".$msg["collstate_form_archive"]."</th>
-					<th>".$msg["collstate_form_lacune"]."</th>		
-				</tr>
-				!!collstate_liste!!	
-			</tbody>	
-		</table>
-		";		
-		$tpl_collstate_liste_line[2]="
-		<tr class='!!pair_impair!!' !!tr_surbrillance!! >
-			<!-- surloc -->
-			<td !!tr_javascript!! >!!emplacement_libelle!!</td>
-			<td !!tr_javascript!! >!!cote!!</td>
-			<td !!tr_javascript!! >!!state_collections!!</td>
-			<td !!tr_javascript!! >!!archive!!</td>
-			<td !!tr_javascript!! >!!lacune!!</td>
-		</tr>";
-			
-		$collstate=new collstate(0,$this->notice_id);			
-		$collstate->get_display_list("",0,0,0,2);
-	
-		if($collstate->nbr) {
-			$affichage.= "<h3><span class='titre_exemplaires'>".$msg["perio_etat_coll"]."</span></h3>";
-			$affichage.=$collstate->liste;
-		}
-		return $affichage;
+	    //Il y avait une dérivée pour n'afficher que les entrées statut et archive
+	    //Le paramètre $opac_collstate_data doit permettre de répondre à leur besoin
+	    //Je conserve tout de même la dérivée pour avoir l'information lors de la montée de version
+	    return parent::affichage_etat_collections();
 	} // fin affichage_etat_collections()
 	
 }// fin class notice_affichage_cee
@@ -4450,81 +4399,10 @@ class notice_affichage_esc_rennes extends notice_affichage {
 	} // fin do_public($short=0,$ex=1)
 	
 	public function affichage_etat_collections() {
-		global $msg;
-		global $pmb_etat_collections_localise;
-		global $tpl_collstate_liste,$tpl_collstate_liste_line;
-		
-		$tpl_collstate_liste[2]="
-		<table class='exemplaires' cellpadding='2' style='width:100%'>
-			<tbody>
-				<tr>
-					<th>".$msg["collstate_form_emplacement"]."</th>		
-					<th>".$msg["collstate_form_support"]."</th>
-					<th>".$msg["collstate_form_statut"]."</th>				
-					<th>".$msg["collstate_form_collections"]."</th>
-					<th>".$msg["collstate_form_archive"]."</th>
-					<th>".$msg["collstate_form_lacune"]."</th>		
-				</tr>
-				!!collstate_liste!!	
-			</tbody>	
-		</table>
-		";
-		
-		$tpl_collstate_liste_line[2]="
-		<tr class='!!pair_impair!!' !!tr_surbrillance!! >
-			<!-- surloc -->
-			<td !!tr_javascript!! >!!emplacement_libelle!!</td>
-			<td !!tr_javascript!! >!!type_libelle!!</td>
-			<td !!tr_javascript!! >!!statut_libelle!!</td>	
-			<td !!tr_javascript!! >!!state_collections!!</td>
-			<td !!tr_javascript!! >!!archive!!</td>
-			<td !!tr_javascript!! >!!lacune!!</td>
-		</tr>";
-		
-		$tpl_collstate_liste[3]="
-		<table class='exemplaires' cellpadding='2' style='width:100%'>
-			<tbody>
-				<tr>
-					<!-- surloc -->
-					<th>".$msg["collstate_form_localisation"]."</th>		
-					<th>".$msg["collstate_form_emplacement"]."</th>		
-					<th>".$msg["collstate_form_support"]."</th>
-					<th>".$msg["collstate_form_statut"]."</th>		
-					<th>".$msg["collstate_form_collections"]."</th>
-					<th>".$msg["collstate_form_archive"]."</th>
-					<th>".$msg["collstate_form_lacune"]."</th>		
-				</tr>
-				!!collstate_liste!!
-			</tbody>	
-		</table>
-		";
-		
-		$tpl_collstate_surloc_liste = "<th>".$msg["collstate_form_surloc"]."</th>";
-		
-		$tpl_collstate_liste_line[3]="
-		<tr class='!!pair_impair!!' !!tr_surbrillance!! >
-			<!-- surloc -->
-			<td !!tr_javascript!! >!!localisation!!</td>
-			<td !!tr_javascript!! >!!emplacement_libelle!!</td>
-			<td !!tr_javascript!! >!!type_libelle!!</td>	
-			<td !!tr_javascript!! >!!statut_libelle!!</td>
-			<td !!tr_javascript!! >!!state_collections!!</td>
-			<td !!tr_javascript!! >!!archive!!</td>
-			<td !!tr_javascript!! >!!lacune!!</td>
-		</tr>";
-
-		$collstate=new collstate(0,$this->notice_id);
-		if($pmb_etat_collections_localise) {
-			$collstate->get_display_list("",0,0,0,3);
-		} else { 	
-			$collstate->get_display_list("",0,0,0,2);
-		}
-		if($collstate->nbr) {
-			$affichage.= "<h3><span class='titre_exemplaires'>".$msg["perio_etat_coll"]."</span></h3>";
-			$affichage.=$collstate->liste;
-		}
-
-		return $affichage;
+	    //Il y avait une dérivée pour n'afficher que les entrées statut et archive
+	    //Le paramètre $opac_collstate_data doit permettre de répondre à leur besoin
+	    //Je conserve tout de même la dérivée pour avoir l'information lors de la montée de version
+	    return parent::affichage_etat_collections();
 	} // fin affichage_etat_collections()
 	
 	public function get_aff_fields_perso() {
@@ -5301,7 +5179,7 @@ class notice_affichage_cconstitutionnel extends notice_affichage {
 		}
 		$template.="!!CONTENU!!
 					!!SUITE!!</div>";
-					
+
 		if($this->notice->niveau_biblio != "b"){
 			$this->permalink = "index.php?lvl=notice_display&id=".$this->notice_id;
 		}else {
@@ -5314,7 +5192,7 @@ class notice_affichage_cconstitutionnel extends notice_affichage {
 			}	
 			$template_in.="
 		<div id='el!!id!!addthis' class='addthis_toolbox addthis_default_style ' 
-			addthis:url='".$opac_url_base."fb.php?title=".rawurlencode(strip_tags(($charset != "utf-8" ? utf8_encode($this->notice_header_without_html) : $this->notice_header_without_html)))."&url=".rawurlencode(($charset != "utf-8" ? utf8_encode($this->permalink) : $this->permalink))."'>
+			addthis:url='".$opac_url_base."fb.php?id=" . intval($this->notice_id) . "&type=" . intval(TYPE_NOTICE) . "'>
 		</div>";	
 		}
 		$template_in.= $this->get_display_tabs("simple", $what);
@@ -6519,77 +6397,10 @@ class notice_affichage_cconstitutionnel extends notice_affichage {
 	} // fin do_public($short=0,$ex=1)	
 	
 	public function affichage_etat_collections() {
-		global $msg;
-		global $pmb_etat_collections_localise;
-		global $tpl_collstate_liste,$tpl_collstate_liste_line;
-		
-		$tpl_collstate_liste[2]="
-		<table class='exemplaires' cellpadding='2' style='width:100%'>
-			<tbody>
-				<tr>
-					<th>".$msg["collstate_form_emplacement"]."</th>		
-					<th>".$msg["collstate_form_support"]."</th>
-					<th>".$msg["collstate_form_statut"]."</th>				
-					<th>".$msg["collstate_form_collections"]."</th>
-					<th>".$msg["collstate_form_lacune"]."</th>		
-				</tr>
-				!!collstate_liste!!	
-			</tbody>	
-		</table>
-		";
-		
-		$tpl_collstate_liste_line[2]="
-		<tr class='!!pair_impair!!' !!tr_surbrillance!! >
-			<!-- surloc -->
-			<td !!tr_javascript!! >!!emplacement_libelle!!</td>
-			<td !!tr_javascript!! >!!type_libelle!!</td>
-			<td !!tr_javascript!! >!!statut_libelle!!</td>	
-			<td !!tr_javascript!! >!!state_collections!!</td>
-			<td !!tr_javascript!! >!!lacune!!</td>
-		</tr>";
-		
-		$tpl_collstate_liste[3]="
-		<table class='exemplaires' cellpadding='2' style='width:100%'>
-			<tbody>
-				<tr>
-					<!-- surloc -->
-					<th>".$msg["collstate_form_localisation"]."</th>		
-					<th>".$msg["collstate_form_emplacement"]."</th>		
-					<th>".$msg["collstate_form_support"]."</th>
-					<th>".$msg["collstate_form_statut"]."</th>		
-					<th>".$msg["collstate_form_collections"]."</th>
-					<th>".$msg["collstate_form_lacune"]."</th>		
-				</tr>
-				!!collstate_liste!!
-			</tbody>	
-		</table>
-		";
-		
-		$tpl_collstate_surloc_liste = "<th>".$msg["collstate_form_surloc"]."</th>";
-		
-		$tpl_collstate_liste_line[3]="
-		<tr class='!!pair_impair!!' !!tr_surbrillance!! >
-			<!-- surloc -->
-			<td !!tr_javascript!! >!!localisation!!</td>
-			<td !!tr_javascript!! >!!emplacement_libelle!!</td>
-			<td !!tr_javascript!! >!!type_libelle!!</td>	
-			<td !!tr_javascript!! >!!statut_libelle!!</td>
-			<td !!tr_javascript!! >!!state_collections!!</td>
-			<td !!tr_javascript!! >!!lacune!!</td>
-		</tr>";
-
-		$collstate=new collstate(0,$this->notice_id);
-		if($pmb_etat_collections_localise) {
-			$collstate->get_display_list("",0,0,0,3);
-		} else { 	
-			$collstate->get_display_list("",0,0,0,2);
-		}
-		if($collstate->nbr) {
-			$affichage.= "<h3><span class='titre_exemplaires'>".$msg["perio_etat_coll"]."</span></h3>";
-			$affichage.=$collstate->liste;
-		}
-
-		return $affichage;
+	    //Il y avait une dérivée pour n'afficher que les entrées statut et archive
+	    //Le paramètre $opac_collstate_data doit permettre de répondre à leur besoin
+	    //Je conserve tout de même la dérivée pour avoir l'information lors de la montée de version
+	    return parent::affichage_etat_collections();
 	} // fin affichage_etat_collections()
 	
 	public function aff_suite() {
@@ -6601,7 +6412,6 @@ class notice_affichage_cconstitutionnel extends notice_affichage {
 		global $msg;
 		global $memo_notice;
 		global $opac_notice_affichage_class;
-		global $parent_notice;
 	
 		$this->parents = "";
 		$this->parents_in = '';
@@ -6613,21 +6423,11 @@ class notice_affichage_cconstitutionnel extends notice_affichage {
 		}
 		if($this->notice_relations->get_nb_parents()) {
 			$this->parents .= "<div class='notice_parents'>";
-			$parents = $this->notice_relations->get_parents();
-			foreach ($parents as $relation_type=>$parents_relations) {
-				foreach ($parents_relations as $parent) {
-					if ($opac_notice_affichage_class) $notice_affichage=$opac_notice_affichage_class; else $notice_affichage="notice_affichage";
-					if(!$memo_notice[$parent->get_linked_notice()]["header_without_doclink"]) {
-						$parent_notice=new $notice_affichage($parent->get_linked_notice(),$this->liens,1,$this->to_print,1);
-						$parent_notice->visu_expl = 0 ;
-						$parent_notice->is_parent = true;
-						$parent_notice->visu_explnum = 0 ;
-						if ($this->parents_header_without_html) {
-							$parent_notice->do_header_without_html();
-						} else {
-							$parent_notice->do_header();
-						}
-					}
+			$display_links = $this->notice_relations->get_display_links('parents', $this);
+			foreach ($display_links as $relation_type=>$relations_links) {
+				foreach ($relations_links as $parent) {
+					$parent_notice = new notice($parent['linked_notice']);
+
 					//Présentation différente si il y en a un ou plusieurs
 					if ($this->notice_relations->get_nb_parents()==1) {
 						// si une seule, peut-être est-ce une notice de bulletin, aller cherche $this->bulletin_id
@@ -6640,35 +6440,35 @@ class notice_affichage_cconstitutionnel extends notice_affichage {
 							}
 						}
 					}
-					if (!$r_type[$relation_type]) {
+					if (!isset($r_type[$relation_type])) {
 						$r_type[$relation_type]=1;
 						if ($ul_opened) $this->parents.="</ul>";
 						else {
-							//							$this->parents.="<br />";
+//							$this->parents.="<br />";
 							$ul_opened=true;
 						}
 						$this->parents.="<br /><b>".notice_relations::$liste_type_relation['up']->table[$relation_type]."</b>";
 						$this->parents.="<ul class='notice_rel'>\n";
 					}
-					$html_icon = $this->get_icon_html($parent_notice->notice->niveau_biblio, $parent_notice->notice->typdoc);
+					$html_icon = $this->get_icon_html($parent_notice->niveau_biblio, $parent_notice->typdoc);
 					$this->parents.="<br /><table><tr><td style='width:3%'><li style='list-style-type: none;'>".$html_icon."</td><td style='width:87%'>";
-					if ($this->lien_rech_notice) $this->parents.="<a href='".str_replace("!!id!!",$parent->get_linked_notice(),$this->lien_rech_notice)."&seule=1'>";
+					if ($this->lien_rech_notice) $this->parents.="<a href='".str_replace("!!id!!",$parent['linked_notice'],$this->lien_rech_notice)."&seule=1'>";
 					//$this->parents.=$parent_notice->notice_header;
-					$this->parents.=$memo_notice[$parent->get_linked_notice()]["header_without_doclink"];
+					$this->parents.=$memo_notice[$parent['linked_notice']]["header_without_doclink"];
 					if ($this->lien_rech_notice) $this->parents.="</a>";
 					$this->parents.="</td></tr></table></li>\n";
 					$this->parents.="</ul>\n";
-					if(notice_relations::$liste_type_relation['up']->table[$relation_type]== "in"){
-						$this->parents_in.="<br /><b>".notice_relations::$liste_type_relation['up']->table[$relation_type]."</b> ";
-						if ($this->lien_rech_notice) $this->parents_in.="<a href='".str_replace("!!id!!",$parent->get_linked_notice(),$this->lien_rech_notice)."&seule=1'>";
-						$this->parents_in.= "<b>".$parent_notice->notice->tit1."</b>";
+					if($relation_type== "in"){
+						$this->parents_in.="<br /><b>".$relation_type."</b> ";
+						if ($this->lien_rech_notice) $this->parents_in.="<a href='".str_replace("!!id!!",$parent['linked_notice'],$this->lien_rech_notice)."&seule=1'>";
+						$this->parents_in.= "<b>".$parent_notice->tit1."</b>";
 						if ($this->lien_rech_notice) $this->parents_in.="</a>";
 						//Année édition
-						if ($parent_notice->notice->year) {
-							$this->parents_in .= ", ".$parent_notice->notice->year;
+						if ($parent_notice->year) {
+							$this->parents_in .= ", ".$parent_notice->year;
 						}
 						//Cote
-						$req='SELECT expl_cote FROM exemplaires WHERE expl_notice='.$parent->get_linked_notice().' LIMIT 1';
+						$req='SELECT expl_cote FROM exemplaires WHERE expl_notice='.$parent['linked_notice'].' LIMIT 1';
 						$res = pmb_mysql_query($req);
 						$tmp_notice_header = "";
 						if ($res) {

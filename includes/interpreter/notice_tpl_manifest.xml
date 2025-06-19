@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: notice_tpl_manifest.xml,v 1.29.2.1 2021/07/27 11:48:23 dgoron Exp $ -->
+$Id: notice_tpl_manifest.xml,v 1.31.4.1 2023/12/15 09:06:54 qvarin Exp $ -->
 <manifest>
 	<name>notice_tpl</name>
 	<description>msg:Notice_tpl_functions_description</description>
@@ -287,6 +287,14 @@ $Id: notice_tpl_manifest.xml,v 1.29.2.1 2021/07/27 11:48:23 dgoron Exp $ -->
 			</inputs>
 			<outputs>
 				<description>msg:img_url_output_description</description>
+			</outputs>
+		</method>
+		<method name="#img_base64();" rights="" version="1.0" comment="msg:img_base64_description" language_independant="true">
+			<inputs>
+				<description>msg:img_base64_input_description</description>
+			</inputs>
+			<outputs>
+				<description>msg:img_base64_output_description</description>
 			</outputs>
 		</method>
 		<method name="#no_image();" rights="" version="1.0" comment="msg:no_image_description" language_independant="true">
@@ -1055,6 +1063,14 @@ $Id: notice_tpl_manifest.xml,v 1.29.2.1 2021/07/27 11:48:23 dgoron Exp $ -->
 			</inputs>
 			<outputs>
 				<description>msg:ucfirst_output_description</description>
+			</outputs>
+		</method>
+		<method name="#ucwords(param0);" rights="" version="1.0" comment="msg:ucwords_description" language_independant="true">
+			<inputs>
+				<description>msg:ucwords_input_description</description>
+			</inputs>
+			<outputs>
+				<description>msg:ucwords_output_description</description>
 			</outputs>
 		</method>
 		<method name="#set_variable(param0);" rights="" version="1.0" comment="msg:set_variable_description" language_independant="true">

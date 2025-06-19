@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scan_request.class.php,v 1.26 2021/05/28 09:41:27 dgoron Exp $
+// $Id: scan_request.class.php,v 1.29.4.1 2023/08/02 09:41:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -244,23 +244,10 @@ class scan_request {
 	}
 	
 	public function send_mail(){
-		global $charset, $msg;
-		global $empr_nom, $empr_prenom, $empr_mail;
-		
-		$headers  = "MIME-Version: 1.0\n";
-		$headers .= "Content-type: text/html; charset=".$charset."\n";
-		
-		//En création de demande, on envoie à la localisation
-		$location = new docs_location($this->num_location);
-		if ($location->email) {
-			$title = $msg["scan_request_creation_mail_title"];
-			$content = $msg["scan_request_creation_mail_content"];
-			$content = str_replace("!!scan_title!!", $this->title, $content);
-			$content = str_replace("!!scan_desc!!", $this->desc, $content);
-			$content = str_replace("!!scan_nb_scanned_pages!!", $this->nb_scanned_pages, $content);
-			$content = str_replace("!!scan_dest!!", $this->get_lib_empr($this->num_dest_empr*1), $content);
-			mailpmb($location->libelle, $location->email, $title, $content, $empr_prenom." ".$empr_nom, $empr_mail, $headers);
-		}
+		$mail_opac_scan_request = new mail_opac_scan_request();
+		$mail_opac_scan_request->set_mail_to_id($this->num_location);
+		$mail_opac_scan_request->set_scan_request($this);
+		$mail_opac_scan_request->send_mail();
 	}
 	
 	public function save() {
@@ -507,6 +494,27 @@ class scan_request {
 		return $h2o->render(array('scan_request' => $this));
 	}
 	
+	public function get_display_in_list() {
+	    global $include_path;
+	    
+	    $tpl = $include_path.'/templates/scan_request/scan_request_in_list.tpl.html';
+	    if (file_exists($include_path.'/templates/scan_request/scan_request_in_list_subst.tpl.html')) {
+	        $tpl = $include_path.'/templates/scan_request/scan_request_in_list_subst.tpl.html';
+	    }
+	    $h2o = H2o_collection::get_instance($tpl);
+	    $empr = '';
+	    if ($this->num_dest_empr) {
+	        $query = 'select empr_nom, empr_prenom from empr where id_empr = '.$this->num_dest_empr;
+	        $result = pmb_mysql_query($query);
+	        if (pmb_mysql_num_rows($result)) {
+	            $row = pmb_mysql_fetch_object($result);
+	            $empr = $row->empr_nom;
+	            if($row->empr_prenom) $empr .= ', '.$row->empr_prenom;
+	        }
+	    }
+	    return $h2o->render(array('scan_request' => $this, 'empr' => $empr));
+	}
+	
 	public function delete() {
 		global $opac_scan_request_cancel_status;
 		
@@ -736,6 +744,22 @@ class scan_request {
 		return $this->num_dest_empr;
 	}
 
+	public function get_empr() {
+	    if (!isset($this->empr)) {
+	        $this->empr = "";
+	        if (!empty($this->num_dest_empr)) {
+	            $query = 'select empr_nom, empr_prenom from empr where id_empr = '.$this->num_dest_empr;
+	            $result = pmb_mysql_query($query);
+	            if (pmb_mysql_num_rows($result)) {
+	                $row = pmb_mysql_fetch_object($result);
+	                $this->empr = $row->empr_nom;
+	                if($row->empr_prenom) $this->empr .= ', '.$row->empr_prenom;
+	            }
+	        }
+	    }
+	    return $this->empr;
+	}
+	
 	public function get_num_creator() {
 		return $this->num_creator;
 	}

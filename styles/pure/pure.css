@@ -2,7 +2,7 @@
 /* +--------------------------------------------------------------------------+
 // 2017 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pure.css,v 1.58.2.20 2022/01/05 13:08:59 lbeguin Exp $ */
+// $Id: pure.css,v 1.86.2.5 2023/11/16 09:43:18 pmallambic Exp $ */
 
 /*------------------------------------------------------------------------------------------*/
 
@@ -1494,10 +1494,12 @@ select:not([multiple]):not([size]):disabled {
     background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2224%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%20%20%3Cpolygon%20fill%3D%22%23999%22%20points%3D%2212%201%209%206%2015%206%22%3E%3C%2Fpolygon%3E%0A%20%20%20%20%3Cpolygon%20fill%3D%22%23999%22%20points%3D%2212%2013%209%208%2015%208%22%3E%3C%2Fpolygon%3E%0A%3C%2Fsvg%3E%0A");
 }
 
+input[type="password"],
 input[type="text"],
 input[type="number"],
 input[type="time"],
 input[type="date"],
+input[type="email"],
 select:not([size]) {
     box-sizing: border-box;
     margin: 0;
@@ -1701,26 +1703,30 @@ div[class^='dijit'] input[class^='bouton']:focus,
     outline-color: transparent;
 }
 
+button.btnCancel,
 input[type="button"].btnCancel,
 input[value*='Annuler'][type="button"].bouton {
     background: #999 !important;
 }
-
+button.btnCancel:hover,
 input[type="button"].btnCancel:hover,
 input[value*='Annuler'][type="button"].bouton:hover {
     background: #a0a0a0 !important;
 }
 
+button.btnCancel:focus,
 input[type="button"].btnCancel:focus,
 input[value*='Annuler'][type="button"].bouton:focus {
     background: #777 !important;
 }
 
+button.btnCancel:active,
 input[type="button"].btnCancel:active,
 input[value*='Annuler'][type="button"].bouton:active {
     background: #777 !important;
 }
 
+button.btnDelete,
 input[type="button"].btnDelete,
 input[type="submit"].btnDelete,
 input[type="button"][value="Supprimer"].bouton,
@@ -1728,6 +1734,7 @@ input[type="submit"][value="Supprimer"].bouton {
     background: #FF5722 !important;
 }
 
+button.btnDelete:hover,
 input[type="button"].btnDelete:hover,
 input[type="submit"].btnDelete:hover,
 input[type="button"][value="Supprimer"].bouton:hover,
@@ -1735,6 +1742,7 @@ input[type="submit"][value="Supprimer"].bouton:hover {
     background: #FC6436 !important;
 }
 
+button.btnDelete:focus,
 input[type="button"].btnDelete:focus,
 input[type="submit"].btnDelete:focus,
 input[type="button"][value="Supprimer"].bouton:focus,
@@ -1742,6 +1750,7 @@ input[type="submit"][value="Supprimer"].bouton:focus {
     background: #F04C1A !important;
 }
 
+button.btnDelete:active,
 input[type="button"].btnDelete:active,
 input[type="submit"].btnDelete:active,
 input[type="button"][value="Supprimer"].bouton:active,
@@ -1822,6 +1831,8 @@ Input autorite */
 
 /* Disabled */
 
+button[disabled=""],
+button[disabled=""]:disabled,
 input[disabled=""],
 input[disabled=""]:disabled {
     background-color: #f8f8f8;
@@ -1834,6 +1845,11 @@ input[disabled=""]:disabled {
 #tableau_multi_sugg {
     display: flex;
     flex-direction: column;
+}
+
+.acquisition #tableau_multi_sugg{
+	display:block;
+	flex-direction: column;
 }
 
 #tableau_multi_sugg tr:first-child {
@@ -2191,9 +2207,33 @@ tr.odd {
     box-shadow: 0px -1px 1px -1px rgba(45, 45, 45, 0.61) inset;
 }
 
+.pure .exemplaires-perio .uk-table-striped tbody tr:nth-of-type(odd),
+.pure .exemplaires-perio .uk-table-striped>tr:nth-of-type(odd),
+.pure .exemplaires-perio tr.odd {
+    background-color: #fbfbfb;
+    box-shadow:  none;
+}
+
+.pure .exemplaires-perio .uk-table-striped tbody tr:nth-of-type(odd) td,
+.pure .exemplaires-perio .uk-table-striped>tr:nth-of-type(odd) td,
+.pure .exemplaires-perio tr.odd td{
+    background-color: #fbfbfb;
+    box-shadow:  0px 2px 1px -2px rgba(45, 45, 45, 0.61) inset;
+}
+
 .pure .uk-table-striped tbody tr:nth-of-type(even) {
     background-color: #f3f3f3;
     box-shadow: 0px -1px 1px -1px rgba(45, 45, 45, 0.61) inset;
+}
+
+.pure .exemplaires-perio .uk-table-striped tbody tr:nth-of-type(even){
+    background-color: #f3f3f3;
+    box-shadow: none;
+}
+
+.pure .exemplaires-perio .uk-table-striped tbody tr:nth-of-type(even) td{
+    background-color: #f3f3f3;
+    box-shadow: 0px 2px 1px -2px rgba(45, 45, 45, 0.61) inset;
 }
 
 .pure tr.even,
@@ -4135,4 +4175,67 @@ background-color: #593482;
 
 .form-admin .form-contenu .dom_tab2 .dom_col2 {
 vertical-align: top;
+}
+
+/* ------------------ Vignette Administration ------------------ */
+.admin .accordion-trigger:focus, 
+.admin .accordion-trigger:hover {
+	background: #df115c !important;
+	color: white;
+}
+
+/* ------------------ Refonte Dsi ------------------ */
+#views .accordion .accordion-trigger,
+#views .accordion .accordion-trigger:focus,
+#views .accordion .accordion-trigger:hover,
+#diffusionsPending .accordion .accordion-trigger,
+#diffusionsPending .accordion .accordion-trigger:focus,
+#diffusionsPending .accordion .accordion-trigger:hover,
+#subscriberList .accordion .accordion-trigger,
+#subscriberList .accordion .accordion-trigger:focus,
+#subscriberList .accordion .accordion-trigger:hover,
+#products .accordion .accordion-trigger,
+#products .accordion .accordion-trigger:focus,
+#products .accordion .accordion-trigger:hover,
+#diffusions .accordion .accordion-trigger,
+#diffusions .accordion .accordion-trigger:focus,
+#diffusions .accordion .accordion-trigger:hover {
+    background: #d970a9 !important;
+    color: white;
+}
+
+.dsi-tabs .dsi-tab-registers button.active-tab {
+    background: #bd4385;
+}
+
+.source-list .source-item::before {
+	content: "\2022"; 
+	color: #df115c;
+	display: inline-block; 
+	width: 1em;
+	margin-left: -1em
+}
+
+.pagination button.bouton-page.active {
+	background-color: #d970a9;
+	color: white;
+}
+
+.dsi-scroll-up {
+    top: 100px;
+}
+
+/*                      Planificateur de taches                        		  */
+/* ---------------------------------------------------------------------------*/
+
+div.scheduler_progress_bar {
+	height:35px;
+}
+
+.scheduler_progress_bar_img {
+	height:25px;
+}
+
+div.scheduler_progress_bar_percent {
+	top: -23px; 
 }

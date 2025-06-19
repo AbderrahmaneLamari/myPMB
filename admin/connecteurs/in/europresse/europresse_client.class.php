@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: europresse_client.class.php,v 1.2 2020/05/20 13:23:05 dbellamy Exp $
+// $Id: europresse_client.class.php,v 1.3 2022/02/24 14:32:41 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,6 +16,7 @@ class europresse_client {
 	const WSURL_DEFAULT = 'https://api.cedrom-sni.com/api/';
 	
 	const AUTH_PATH = 'auth/login';
+	const AUTH_PATH_LOGOUT = 'auth/Logout';
 	const AUTH_GRANT_TYPE = 'password';
 	const AUTH_HEADERS = [
 			'Accept'		=> 'application/json',
@@ -291,6 +292,7 @@ class europresse_client {
 		}
 		
 		$response_body = json_decode($this->curl_response->body, true);
+		$this->auth_logout();
 		if( is_null($response_body) || empty($response_body) ) {
 			$this->error = true;
 			$this->error_msg[] = 'search => json response error';
@@ -364,6 +366,7 @@ class europresse_client {
 			}
 			
 			$response_body = json_decode($this->curl_response->body, true);
+			$this->auth_logout();
 			if( is_null($response_body) || empty($response_body) ) {
 				$this->error = true;
 				$this->error_msg[] = 'search => json response error';
@@ -402,6 +405,7 @@ class europresse_client {
 		}
 		
 		$response_body = json_decode($this->curl_response->body, true);
+		$this->auth_logout();
 		if( is_null($response_body) || empty($response_body) ) {
 			$this->error = true;
 			$this->error_msg[] = 'documents => json response error';
@@ -454,6 +458,7 @@ class europresse_client {
 		}
 		
 		$response_body = json_decode($this->curl_response->body, true);
+		$this->auth_logout();
 		if( is_null($response_body) || empty($response_body) ) {
 			$this->error = true;
 			$this->error_msg[] = 'domains => json response error';
@@ -509,6 +514,7 @@ class europresse_client {
 		}
 		
 		$response_body = json_decode($this->curl_response->body, true);
+		$this->auth_logout();
 		if( is_null($response_body) || empty($response_body) ) {
 			$this->error = true;
 			$this->error_msg[] = 'criteria => json response error';
@@ -739,6 +745,7 @@ class europresse_client {
 		}
 		
 		$response_body = json_decode($this->curl_response->body, true);
+		$this->auth_logout();
 		if( is_null($response_body) || empty($response_body) ) {
 			$this->error = true;
 			$this->error_msg[] = 'publications => json response error';
@@ -783,6 +790,33 @@ class europresse_client {
 			return true;
 		}
 		
+	}
+	
+	/**
+	 * logout
+	 *
+	 * @return bool
+	 */
+	public function auth_logout() {
+	    if ($this->access_token) {
+	        $this->curl_method = 'get';
+	        $this->curl_url = $this->ws_url.europresse_client::AUTH_PATH_LOGOUT;
+	        $this->curl_headers = europresse_client::DEFAULT_HEADERS;
+	        $this->curl_headers[europresse_client::DEFAULT_AUTHORIZATION_HEADER_KEY] = europresse_client::DEFAULT_AUTHORIZATION_HEADER_PREFIX.$this->access_token;
+	        
+	        $this->send_request();
+	        if($this->error) {
+	            return false;
+	        }
+	        $response_body = json_decode($this->curl_response->body, true);
+	        if(is_null($response_body)) {
+	            $this->error = true;
+	            $this->error_msg[] = 'logout => json response error';
+	            return false;
+	        }
+	        $this->access_token = "";
+	    }
+	    return true;
 	}
 	
 }

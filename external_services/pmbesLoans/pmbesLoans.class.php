@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesLoans.class.php,v 1.11.2.1 2022/01/04 08:48:18 dgoron Exp $
+// $Id: pmbesLoans.class.php,v 1.12.4.1 2023/03/16 11:03:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,18 +14,6 @@ define('LOAN_PRINT_MAIL','2');
 define('LOAN_CSV_MAIL','3');
 
 class pmbesLoans extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	//ex: "empr","empr_list","b,n,c,g","b,n,c,g".$localisation.",cs","n,g"
 	// correspondance : ./includes/filter_list/empr/empr_list.xml
@@ -87,6 +75,7 @@ class pmbesLoans extends external_services_api_class {
 	public function relanceLoansReaders($t_empr) {
 
 		if (SESSrights & CIRCULATION_AUTH) {
+			array_walk($t_empr, function(&$a) {$a = intval($a);}); //Soyons sûr de ne stocker que des entiers dans le tableau.
 			$requete = "select id_empr from empr, pret, exemplaires where 1 ";
 			$requete.=" and id_empr in (".implode(",",$t_empr).") ";
 			//$requete.= $loc_filter;
@@ -115,6 +104,7 @@ class pmbesLoans extends external_services_api_class {
 			pmb_mysql_query($req);
 			$requete = "select id_empr from empr, pret, exemplaires where 1 ";
 			if (!isset($t_empr)) $t_empr[] = "0";
+			array_walk($t_empr, function(&$a) {$a = intval($a);}); //Soyons sûr de ne stocker que des entiers dans le tableau.
 			$requete.=" and id_empr in (".implode(",",$t_empr).") ";
 			//$requete.= $loc_filter;
 			$requete.= "and pret_retour<now() and pret_idempr=id_empr and pret_idexpl=expl_id group by id_empr";
@@ -249,9 +239,12 @@ class pmbesLoans extends external_services_api_class {
 		}
 	}
 		
-	public function listLoansGroups($loan_type=0, $limite_mysql='', $limite_page='') {
+	public function listLoansGroups($loan_type=0, $limite_mysql=0, $limite_page=0) {
 		global $msg;
 		
+		$loan_type = intval($loan_type);
+		$limite_mysql = intval($limite_mysql);
+		$limite_page = intval($limite_page);
 		if (SESSrights & CIRCULATION_AUTH) {
 			$results = array();
 		

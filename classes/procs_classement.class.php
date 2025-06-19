@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: procs_classement.class.php,v 1.3 2021/03/05 14:25:51 dgoron Exp $
+// $Id: procs_classement.class.php,v 1.3.6.1 2023/07/04 15:31:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -36,13 +36,15 @@ class procs_classement {
 		$this->libelle = $data->libproc_classement;
 	}
 
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_libproc_classement', 'proc_clas_lib')
+		->add_input_node('text', $this->libelle);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $charset;
-		global $admin_procs_clas_content_form;
-		
-		$content_form = $admin_procs_clas_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('proc_clas_form');
 		if($this->id){
@@ -50,12 +52,9 @@ class procs_classement {
 		}else{
 			$interface_form->set_label($msg['proc_clas_bt_add']);
 		}
-		
-		$content_form = str_replace("!!libelle!!", htmlentities($this->libelle,ENT_QUOTES,$charset),$content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('procs_classements')
 		->set_field_focus('form_libproc_classement');
 		return $interface_form->get_display();

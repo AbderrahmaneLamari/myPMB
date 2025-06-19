@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: analytics_services.class.php,v 1.1.2.3 2021/07/21 13:43:47 dgoron Exp $
+// $Id: analytics_services.class.php,v 1.2 2021/07/21 13:40:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

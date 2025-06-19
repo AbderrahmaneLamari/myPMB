@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ConceptModel.php,v 1.3 2020/09/28 15:20:41 moble Exp $
+// $Id: ConceptModel.php,v 1.3.6.2 2023/03/14 15:22:11 gneveu Exp $
 
 namespace Pmb\Autorities\Models;
 
@@ -28,7 +28,7 @@ class ConceptModel extends Model
         pmb_mysql_query($rqtDel);
         $rqtIns = "INSERT INTO index_concept (num_object, type_object, num_concept, order_concept, comment, comment_visible_opac) VALUES";
         foreach ($concepts as $concept) {
-            if (! empty($concept->id)) {
+            if (!empty($concept->id)) {
                 $rqt = "$rqtIns ('$animationId', '" . TYPE_ANIMATION . "', '$concept->id', $ordre, '', 0)";
                 pmb_mysql_query($rqt);
                 $ordre++;

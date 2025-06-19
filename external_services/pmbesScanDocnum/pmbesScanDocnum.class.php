@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesScanDocnum.class.php,v 1.5.10.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: pmbesScanDocnum.class.php,v 1.6.4.2 2023/09/22 14:54:40 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,18 +11,6 @@ require_once($class_path."/external_services.class.php");
 require_once($class_path."/explnum.class.php");
 
 class pmbesScanDocnum extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	public function get_doc_num($explnum, $upload_folder) {
 		global $pmb_set_time_limit, $base_path;		
@@ -115,12 +103,13 @@ class pmbesScanDocnum extends external_services_api_class {
 								pmb_mysql_query($query);
 							
 							}
-							if(!rename($upload_folder.$explnum['explnum_nomfichier'],$upload_repertoire->decoder_chaine($upload_repertoire->repertoire_path).$explnum['explnum_nomfichier'])){
+							if(!copy($upload_folder.$explnum['explnum_nomfichier'],$upload_repertoire->decoder_chaine($upload_repertoire->repertoire_path).$explnum['explnum_nomfichier'])){
 								$report['error'][]=$this->msg['get_doc_num_rename_error'];
 								//On efface l'entrée
 								$query='DELETE FROM explnum WHERE explnum_id='.$explnum['explnum_id'];
 								pmb_mysql_query($query);
 							}else{
+							    unlink($upload_folder.$explnum['explnum_nomfichier']);
 								//Réussi ici, on réindex et on incrémente le résultat
 								$index = new indexation_docnum($explnum['explnum_id']);
 								$index->indexer();
@@ -151,4 +140,3 @@ class pmbesScanDocnum extends external_services_api_class {
 		return $report;
 	}
 }
-?>

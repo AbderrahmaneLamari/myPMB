@@ -4,7 +4,7 @@
 			<img id="animationDaughterImg" class="img_plus" name="imEx" :src='img.plus' onClick="expandBase('animationDaughter', true); return false;">
 			<span class="notice-heada">{{ pmb.getMessage("animation", "animation_daughter_list") }} ({{ animations.length }})</span>
 		</div>
-		<div id="animationDaughterChild" class="child" style="display: none;">
+		<div id="animationDaughterChild" class="child" style="display: none;" v-if="0 < animations.length">
 			<animations :animations="animations" :pmb="pmb" :action="action" :formdata="formdata"></animations>
 		</div>
 	</div>
@@ -12,16 +12,21 @@
 
 <script>
 	import animations from "./animations.vue";
-	
+	import messages from "../../../common/helper/Messages.js";
+
 	export default {
 		props : ["animations", "img", "pmb", "action", "formdata"],
-		
+
 		components : {
-			animations
+			animations,
 		},
-		
+        data: function () {
+            return {
+                msg: messages,
+            }
+        },
 		ready : function() {
 			this.action = "daughter";
-		} 
+		}
 	}
 </script>

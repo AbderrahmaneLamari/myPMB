@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: AnimationsController.php,v 1.56.2.1 2022/01/18 09:12:42 qvarin Exp $
+// $Id: AnimationsController.php,v 1.60.2.3 2023/03/15 09:33:00 gneveu Exp $
 
 namespace Pmb\Animations\Controller;
 
@@ -60,6 +60,14 @@ class AnimationsController extends Controller
                 return $this->pluginEditorial(intval($this->data->id));
             case "mailing":
                 return $this->mailing(intval($this->data->id));
+            case "export":
+                return $this->exportAction($this->data);
+            case "repeatEventAnimation":
+                return $this->repeatEventAnimationAction($this->data);
+            case "deleteSelectedAnimations":
+                return $this->deleteSelectedAnimationsAction($this->data);
+            case "initEvent":
+                return $this->initEventAction();
             default:
                 return $this->formSearchAction();
         }
@@ -76,8 +84,6 @@ class AnimationsController extends Controller
 
     public function editAnimationAction(int $id)
     {
-        global $msg;
-        
         if ($id == 0) {
             return $this->listAction();
         }
@@ -87,7 +93,8 @@ class AnimationsController extends Controller
         } catch (\Exception $e) {
             return $this->listAction();
         }
-
+        
+        
         $animView = new AnimationsView("animations/animations", [
             "animations" => $animation->getEditAddData(),
             "formData" => AnimationModel::getFormData($id),
@@ -172,7 +179,7 @@ class AnimationsController extends Controller
     public function saveAction(object $data)
     {
         global $class_path;
-        
+
         if (! empty($data->idAnimation)) {
             $animation = AnimationModel::updateAnimation(intval($data->idAnimation), $data);
         } else {
@@ -195,27 +202,11 @@ class AnimationsController extends Controller
 
     public function deleteAnimationAction(int $id, bool $delChildrens = false)
     {
-        global $class_path;
-        
         $animation = AnimationModel::deleteAnimation($id, $delChildrens);
-        
-        require_once ($class_path . '/event/events_handler.class.php');
-        $event = new AnimationsEvent("animations", "delete");
-        $evth = \events_handler::get_instance();
-        $event->set_animation_id($id);
-        $evth->send($event);
-        
-        $return = array(
-            'animation' => $animation
-        );
-        
-        if ($event->get_article_id()) {
-            $return['success_plugins'] = $event->has_errors() ? false : true;
-        }
-        
+        $return['success_plugins'] = $animation;
         return $return;
     }
-    
+
     public function formSearchAction()
     {
         $view = new VueJsView('animations/formSearch', [
@@ -230,7 +221,7 @@ class AnimationsController extends Controller
         ]);
         print $view->render();
     }
-    
+
     public function searchAction($animationIds)
     {
         $animations = [];
@@ -344,5 +335,50 @@ class AnimationsController extends Controller
             'mailingDetail' => $mailDetail
         ]);
         print $animView->render();
+    }
+
+    public function exportAction($data) {
+        try {
+            $animation = new AnimationModel(intval($data->id));
+            $animation->exportPrint($data->exportType);
+            return true;
+        } catch (\Exception $e) {
+            return $this->listAction();
+        }
+    }
+
+    public function repeatEventAnimationAction($data) {
+        try {
+            $animation = new AnimationModel(intval($data->idanimation));
+            $animation->getFetchAnimation();
+            $animation->repeatEventAnimation($data);
+            return $data->idanimation;
+        } catch (\Exception $e) {
+            return $this->listAction();
+        }
+    }
+
+    public function deleteSelectedAnimationsAction($data) {
+        try {
+            $idParent = 0;
+            foreach ($data->ids as $id){
+                $animation = new AnimationModel(intval($id));
+                if (empty($idParent)) {
+                    $idParent = $animation->numParent;
+                }
+                $animation->deleteAnimation(intval($id), true);
+            }
+            return $idParent;
+        } catch (\Exception $e) {
+            return $this->listAction();
+        }
+    }
+    
+    public function initEventAction() {
+        try {
+            return AnimationModel::initAnimationToArticle();
+        } catch (\Exception $e) {
+            return $this->listAction();
+        }
     }
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_ui.tpl.php,v 1.14.2.6 2021/08/25 13:57:16 qvarin Exp $
+// $Id: onto_contribution_datatype_ui.tpl.php,v 1.20 2021/08/25 14:05:30 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pointage_exemplarise.php,v 1.6.2.1 2021/11/10 10:30:22 dgoron Exp $
+// $Id: pointage_exemplarise.php,v 1.9 2022/12/14 14:01:39 dgoron Exp $
 
 // définition du minimum nécéssaire
 $base_path=".";                            
@@ -19,6 +19,8 @@ global $id_bull, $bul_id, $bul_no, $bul_date, $date_date, $bul_titre;
 global $f_ex_cb, $expl_cote, $expl_note, $expl_comment, $expl_prix, $expl_typdoc, $expl_location;
 global $expl_section, $expl_statut, $expl_codestat, $expl_owner, $type_antivol;
 global $create_notice_bul, $xmlta_doctype_bulletin, $deflt_notice_statut, $deflt_notice_is_new;
+global $pmb_serialcirc_subst;
+global $numero, $nume, $vol, $tom;
 
 require_once($class_path."/serials.class.php");
 require_once($class_path."/serial_display.class.php");
@@ -93,11 +95,11 @@ else echo str_replace('!!page_title!!', $msg[4000].$msg[1003].$msg[4008], $seria
 */
 function do_selector_bul_section($section_id, $location_id) {
  	global $charset;
-	global $deflt_section;
-	global $deflt_location;
+	global $deflt_docs_section;
+	global $deflt_docs_location;
 	
-	if (!$section_id) $section_id=$deflt_section ;
-	if (!$location_id) $location_id=$deflt_location;
+	if (!$section_id) $section_id=$deflt_docs_section ;
+	if (!$location_id) $location_id=$deflt_docs_location;
 
 	$rqtloc = "SELECT idlocation FROM docs_location order by location_libelle";
 	$resloc = pmb_mysql_query($rqtloc);
@@ -126,7 +128,7 @@ function bul_do_form($obj) {
 	global $bul_expl_form1,$expl_bulletinage_tpl;
 	global $msg; // pour texte du bouton supprimer
 	global $charset;
-	global $pmb_type_audit,$pmb_antivol ;
+	global $pmb_antivol ;
 	global $id_bull,$bul_id,$serial_id,$numero,$pmb_rfid_activate,$pmb_rfid_serveur_url;
 	global $deflt_explnum_statut;
 	
@@ -428,25 +430,7 @@ if(($act=='update') ) {
 	$myQuery = pmb_mysql_query($requete);*/
 	
 	// Mise a jour de la table notices_mots_global_index pour toutes les notices en relation avec l'exemplaire
-	$req_maj="SELECT bulletin_notice,num_notice, analysis_notice FROM bulletins LEFT JOIN analysis ON analysis_bulletin=bulletin_id WHERE bulletin_id='".$bul_id."'";
-	$res_maj=pmb_mysql_query($req_maj);
-	if($res_maj && pmb_mysql_num_rows($res_maj)){
-		$first=true;//Pour la premiere ligne de résultat on doit indexer aussi la notice de périodique et de bulletin au besoin
-		while ( $ligne=pmb_mysql_fetch_object($res_maj) ) {
-			if($first){
-				if($ligne->bulletin_notice){
-					notice::majNoticesMotsGlobalIndex($ligne->bulletin_notice,'expl');
-				}
-				if($ligne->num_notice){
-					notice::majNoticesMotsGlobalIndex($ligne->num_notice,'expl');
-				}
-			}
-			if($ligne->analysis_notice){
-				notice::majNoticesMotsGlobalIndex($ligne->analysis_notice,'expl');
-			}
-			$first=false;
-		}
-	}
+	exemplaire::majNoticesMotsGlobalIndex($expl_id);
 	
 	// Déclaration du bulletin comme reçu
 	$requete="update abts_grille_abt set state='2' where id_bull= '$id_bull' ";	
@@ -512,7 +496,7 @@ if(($act=='update') ) {
 	if($flag_exemp_auto==1)	{
 		//Génération automatique de code barre, activé pour cet abonnement
   		$requete="DELETE from exemplaires_temp where sess not in (select SESSID from sessions)";
-   		$res = pmb_mysql_query($requete); 	
+   		pmb_mysql_query($requete); 	
     	//Appel à la fonction de génération automatique de cb
     	$code_exemplaire =init_gen_code_exemplaire(0,$bul_id);
     	do {
@@ -525,7 +509,7 @@ if(($act=='update') ) {
     		
    		//Memorise dans temps le cb et la session pour le cas de multi utilisateur session
    		$requete="INSERT INTO exemplaires_temp (cb ,sess) VALUES ('$code_exemplaire','".SESSid."')";
-   		$res = pmb_mysql_query($requete);
+   		pmb_mysql_query($requete);
 		$expl->expl_cb=$code_exemplaire;	
 		//Focus sur le bouton 'Enregistre'
 		$expl->focus="<script type='text/javascript' >document.forms[\"expl\"].bouton_enregistre.focus();</script>";

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatch_datasource.class.php,v 1.47.2.5 2021/12/22 14:18:44 dgoron Exp $
+// $Id: docwatch_datasource.class.php,v 1.52.4.1 2023/05/17 07:47:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -227,7 +227,7 @@ class docwatch_datasource extends docwatch_root{
 			<label for='docwatch_datasource_title'>".htmlentities($msg['dsi_docwatch_datasource_title'],ENT_QUOTES,$charset)."</label>
 		</div>
 		<div class='row'>
-			<input type='text' data-dojo-type='dijit/form/TextBox' required='true' id='docwatch_datasource_title' name='docwatch_datasource_title' value='".htmlentities($this->get_title(),ENT_QUOTES,$charset)."'/>
+			<input type='text' style='width: 35em;' data-dojo-type='dijit/form/TextBox' required='true' id='docwatch_datasource_title' name='docwatch_datasource_title' value='".htmlentities($this->get_title(),ENT_QUOTES,$charset)."'/>
 		</div>
 		<div class='row'>&nbsp;</div>
 		<div class='row'>
@@ -741,7 +741,7 @@ class docwatch_datasource extends docwatch_root{
 		return $valid_datas;
 	}
 	
-	protected function get_sections_tree($id_parent = 0,$path="",&$paths){
+	protected function get_sections_tree($id_parent = 0, $path="", &$paths){
 		$id_parent = intval($id_parent);
 		$tree = array();
 	

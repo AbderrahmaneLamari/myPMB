@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: load_notice_pos.php,v 1.37.2.1 2022/01/05 09:00:58 dgoron Exp $
+// $Id: load_notice_pos.php,v 1.38 2022/01/05 08:50:28 dgoron Exp $
 
 $base_path=".";
 $base_noheader=1;

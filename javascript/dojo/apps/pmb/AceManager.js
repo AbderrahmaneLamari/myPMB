@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: AceManager.js,v 1.6 2021/05/04 13:38:50 arenou Exp $
+// $Id: AceManager.js,v 1.7 2022/03/07 14:27:58 qvarin Exp $
 
 define([
 	"dojo/_base/declare", 
@@ -47,6 +47,7 @@ define([
 					
 				});
 				editor.getSession().setUseWorker(true);
+				editor.getSession().setUseWrapMode(true);
 				this.registry[id] = editor;
 				var pmbCompleter = {
 					getCompletions : function(editor, session, pos, prefix, callback) {

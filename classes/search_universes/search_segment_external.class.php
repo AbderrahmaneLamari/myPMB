@@ -2,9 +2,10 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_external.class.php,v 1.4.2.2 2021/11/10 16:27:14 gneveu Exp $
+// $Id: search_segment_external.class.php,v 1.7 2022/04/20 08:28:48 dgoron Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once ($class_path . '/search_universes/search_segment_set.class.php');
 require_once ($class_path . '/search_universes/search_segment_search_perso.class.php');
 require_once ($class_path . '/search_universes/search_segment_facets.class.php');
@@ -45,7 +46,7 @@ class search_segment_external extends search_segment
         $this->sources = $sources;
         $this->logo = $segment_logo;
         $this->num_universe = $segment_universe_id;
-        if (method_exists($this->sort, 'get_sort_from_form')){
+        if (is_object($this->sort) && method_exists($this->sort, 'get_sort_from_form')){
             $this->segment_sort = $this->sort->get_sort_from_form();
         }
     }

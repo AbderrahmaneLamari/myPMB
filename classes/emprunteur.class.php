@@ -2,12 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: emprunteur.class.php,v 1.260.2.11 2022/01/25 08:14:19 gneveu Exp $
+// $Id: emprunteur.class.php,v 1.284.2.4 2023/10/31 10:35:25 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 use Pmb\Animations\Models\RegistrationModel;
 use Pmb\Animations\Views\AnimationsView;
+use Pmb\DSI\Models\Diffusion;
 
 global $class_path, $include_path;
 require_once "{$include_path}/resa_func.inc.php";
@@ -133,13 +134,12 @@ class emprunteur {
 	protected $digital_loans=array();
 	protected $digital_loans_counter;
 	protected $cle_validation='';
-	
+
 	// <----------------- constructeur ------------------>
 	public function __construct($id=0, $message='', $niveau_message=FALSE, $type_fiche=0) {
 		// initialisation des proprietes si l'id est defini
-		$id +=0;
-		if($id) {
-			$this->id = $id;
+		$this->id = intval($id);
+		if($this->id) {
 			$this->type_fiche = $type_fiche;
 			$this->serious_message = $niveau_message;
 			$this->prets = array();
@@ -148,11 +148,13 @@ class emprunteur {
 			$this->nb_reservations = 0;
 			$this->nb_previsions = 0;
 			$this->fetch_info();
+			$uniqid = PHP_log::prepare_time($this->nom." ".$this->prenom);
 			if ($type_fiche>0) $this->fetch_info_suite();
 			$this->message = $message;
 			if ($type_fiche==1) $this->do_fiche();
 			elseif ($type_fiche==2) $this->do_fiche_affichage() ;
 			elseif ($type_fiche==3) $this->do_fiche_consultation() ;
+			PHP_log::register($uniqid);
 		}
 	}
 
@@ -160,10 +162,7 @@ class emprunteur {
 	public function fetch_info() {
 		global $msg;
 		global $charset;
-		global $val_list_empr;
-		global $pmb_gestion_financiere, $pmb_gestion_abonnement,$pmb_gestion_tarif_prets,$pmb_gestion_amende;
-		global $deflt_docs_location ;
-		global $pmb_opac_view_activate,$pmb_sur_location_activate;
+		global $pmb_opac_view_activate;
 
 		if(!$this->id)
 			return FALSE;
@@ -231,7 +230,7 @@ class emprunteur {
 		if($pmb_opac_view_activate ){
 			$this->opac_view = new opac_view(0,$this->id);
 		}
-		
+
 		$date_blocage=array();
 		$date_blocage=explode("-",$this->date_blocage);
 		if (mktime(0,0,0,$date_blocage[1],$date_blocage[2],$date_blocage[0])>time()) {
@@ -314,10 +313,10 @@ class emprunteur {
 
 		$this->header_format=$this->get_header_format();
 	}
-	
+
 	private function get_header_format() {
 		global $empr_header_format;
-		
+
 		$header_format="";
 		if ($empr_header_format) {
 			$s=explode(",",$empr_header_format);
@@ -344,15 +343,15 @@ class emprunteur {
 			}
 			$header_format = implode("&nbsp;",$s);
 		}
-		
+
 		return $header_format;
 	}
-	
+
 	private function get_header_formated_value($value) {
 		global $msg;
-		
+
 		$header_formated_value = '';
-		
+
 		switch ($value) {
 			case 'cb' :
 				$header_formated_value = '<b>'.$msg['38'].'</b> : '.$this->cb;
@@ -406,7 +405,7 @@ class emprunteur {
 				$header_formated_value = '<b>'.$msg['empr_statut_menu'].'</b> : '.$this->empr_statut_libelle;
 				break;
 		}
-		
+
 		return $header_formated_value;
 	}
 
@@ -414,11 +413,7 @@ class emprunteur {
 	// histoire de ne pas aller chercher tout le reste
 	public function fetch_info_suite() {
 		global $msg;
-		global $charset;
-		global $val_list_empr;
 		global $pmb_gestion_financiere, $pmb_gestion_abonnement,$pmb_gestion_tarif_prets,$pmb_gestion_amende;
-		global $deflt_docs_location ;
-		global $pmb_sur_location_activate;
 		global $pmb_resa_planning;
 		//Comptes si gestion financiere
 		$compte="";
@@ -473,6 +468,28 @@ class emprunteur {
 				}
 				$n_c++;
 			}
+
+			global $pmb_gestion_animation;
+			if ($pmb_gestion_animation) {
+				$cpt_id=comptes::get_compte_id_from_empr($this->id,22);
+				$cpt=new comptes($cpt_id);
+				$solde=$cpt->update_solde();
+				$novalid=$cpt->summarize_transactions("","",0,0);
+				if ($cpt_id) {
+					//Calcul des amendes
+					$amende=new amende($this->id,true);
+					$total_amende=$amende->get_total_amendes();
+					$this->nb_amendes=$amende->nb_amendes;
+					$compte.="<div class='colonne4'><div><strong><a href='./circ.php?categ=pret&sub=compte&id=".$this->id."&typ_compte=22'>".$msg["transactype_empr_animation"]."</a></strong> ".comptes::format($solde)."</div>";
+					if ($novalid)
+						$compte.="<div>".$msg["finance_not_validated"]." : ".comptes::format($novalid)."</div>";
+					if ($total_amende)
+						$compte.="<div> ".$msg["finance_pret_amende_en_cours"]." : ".comptes::format($total_amende)."</div>";
+					$compte.="</div>";
+				}
+				$n_c++;
+			}
+
 			// Autre compte, que s'il y a des types de transaction
 			$transactype=new transactype_list();
 			if ($transactype->get_count()) {
@@ -489,8 +506,8 @@ class emprunteur {
 				$compte.="</div>";
 				$n_c++;
 			}
-			if ($n_c<3) {
-				for ($i=$n_c; $i<4; $i++)
+			if ($n_c<4) {
+				for ($i=$n_c; $i<5; $i++)
 					$compte.="<div class='colonne4'>&nbsp;</div>";
 			}
 			$compte.="</div><div class='row'></div></div>";
@@ -506,13 +523,13 @@ class emprunteur {
 		}
 
 		$this->retard = 0;
-		
+
 		//Recuperation des prets
 		$this->fetch_loan();
-		
+
 		//Recuperation des prets numeriques
 		$this->fetch_loan(true);
-		
+
 		$requete_resa = "select count(1) as nb_reservations ";
 		$requete_resa .= " from resa ";
 		$requete_resa .= " where resa_idempr=".$this->id;
@@ -533,7 +550,7 @@ class emprunteur {
 		return TRUE;
 	}
 
-	
+
 	protected function fetch_loan($digital=false){
 		// Gestion de limitation de la visualisation de la liste de pret.
 	    global $pmb_sur_location_activate;
@@ -542,12 +559,12 @@ class emprunteur {
 		global $see_all_pret;
 		global $get_self_renew_info;
 		global $msg;
-		
+
 		$property = "prets";
 		if($digital){
 			$property = "digital_loans";
 		}
-		
+
 		$order = " order by p.pret_date desc";
 		if($digital){
 		    $requete_nb_pret = "select count(1) as nb_pret from pret join pnb_orders_expl on pret.pret_idexpl = pnb_orders_expl.pnb_order_expl_num where pret.pret_idempr=".$this->id;
@@ -560,10 +577,10 @@ class emprunteur {
 		    $r_nb_pret = pmb_mysql_fetch_object($result_nb_pret);
 		    $this->nb_pret = $r_nb_pret->nb_pret ;
 		}
-		
-		
+
+
 		// recuperation du tableau des exemplaires empruntes
-		// il nous faut : code barre exemplaire, titre/auteur, type doc, date de pret, date de retour		
+		// il nous faut : code barre exemplaire, titre/auteur, type doc, date de pret, date de retour
 		if ($digital){
 		    $requete = "select e.expl_cb, e.expl_id, e.expl_notice, docs_location.location_libelle, docs_location.idlocation, docs_section.section_libelle, e.expl_bulletin,";
 		    $requete.= " p.pret_date, p.pret_retour, p.short_loan_flag, p.pret_pnb_flag, t.tdoc_libelle,";
@@ -603,13 +620,13 @@ class emprunteur {
 		$with_print_info=true;
 		$nb_ligne_traite=0;
 		while($pret = pmb_mysql_fetch_object($result)) {
-		    
+
 			// Gestion de limitation de la visualisation de la liste de pret.
 			if(	$pmb_pret_aff_limitation==1 && $pmb_pret_aff_nombre && !$see_all_pret && ($nb_ligne_traite >= $pmb_pret_aff_nombre)) {
 				$with_print_info=false;
 			}
 			$nb_ligne_traite++;
-				
+
 			if($pmb_sur_location_activate) {
 				$sur_loc= sur_location::get_info_surloc_from_location($pret->idlocation);
 			}
@@ -627,8 +644,8 @@ class emprunteur {
 					$notice->notice = new stdClass();
 					$notice->notice->niveau_biblio="";
 					$notice->notice->typdoc="";
-				}			
-				
+				}
+
 				// $this->digital_loans ou $this->prets defini ici :
 				$this->{$property}[] = array(
 						'cb' => $pret->expl_cb,
@@ -668,7 +685,7 @@ class emprunteur {
 				if (!empty($bulletin->notice->niveau_biblio) && !empty($bulletin->notice->typdoc)) {
 				    $icondoc = $this->get_icondoc($bulletin->notice->niveau_biblio, $bulletin->notice->typdoc);
 				}
-				
+
 			    $this->{$property}[] = array(
                     'cb' => $pret->expl_cb,
                     'id' => $pret->expl_id,
@@ -700,10 +717,10 @@ class emprunteur {
 			$this->retard = $this->retard+$pret->retard;
 		}
 	}
-	
+
 	public function get_icondoc($niveau_biblio, $typdoc) {
 	    global $opac_url_base;
-	    
+
 	    //Icone type de Document
 	    $icon_doc = marc_list_collection::get_instance('icondoc');
 	    $icon = (!empty($icon_doc->table[$niveau_biblio.$typdoc]) ? $icon_doc->table[$niveau_biblio.$typdoc] : '');
@@ -712,7 +729,7 @@ class emprunteur {
 	    }
 	    return '';
 	}
-	
+
 	// fabrication de la fiche lecteur
 	public function do_fiche() {
 		global $base_path;
@@ -742,7 +759,7 @@ class emprunteur {
 		global $current_module;
 		global $empr_pnb_loans_tmpl;
 		global $check_allcb;
-		
+
 		$loc_prolongation = 0;
 		$this->fiche = $empr_tmpl;
 		$this->fiche = str_replace('!!cb!!'        , $this->cb    , $this->fiche);
@@ -789,14 +806,18 @@ class emprunteur {
 		$this->fiche = str_replace('!!perso!!'    , $this->perso, $this->fiche);
 		$this->fiche = str_replace('!!header_format!!'    , $this->header_format, $this->fiche);
 		$this->fiche = str_replace('!!empr_login!!'    , $this->login, $this->fiche);
-		
-		$hash_format = password::get_hash_format($this->pwd);
-		if( ('bcrypt' == $hash_format) && ( false === password::verify_hash('', $this->pwd)) ) {
-			$this->fiche = str_replace('!!empr_pwd!!',"<i><strong>".$msg["empr_pwd_opac_affected"]."</strong></i>",$this->fiche);
+
+		if (password::check_external_authentication() === false) {
+    		$hash_format = password::get_hash_format($this->pwd);
+    		if( ('bcrypt' == $hash_format) && ( false === password::verify_hash('', $this->pwd)) ) {
+    			$this->fiche = str_replace('!!empr_pwd!!',"<i><strong>".$msg["empr_pwd_opac_affected"]."</strong></i>",$this->fiche);
+    		} else {
+    			$this->fiche = str_replace('!!empr_pwd!!',"<i class='erreur'><strong>".$msg["empr_pwd_need_update"]."</strong></i>",$this->fiche);
+    		}
 		} else {
-			$this->fiche = str_replace('!!empr_pwd!!',"<i class='erreur'><strong>".$msg["empr_pwd_need_update"]."</strong></i>",$this->fiche);
-		}		
-		
+			$this->fiche = str_replace('!!empr_pwd!!',"",$this->fiche);
+		}
+
 		$this->fiche = str_replace('!!empr_validated_subscription!!', ($this->cle_validation ? $msg['39']: $msg['40']), $this->fiche);
 		$this->fiche = str_replace('!!comptes!!'    , $this->compte, $this->fiche);
 		$this->fiche = str_replace('!!empr_statut_libelle!!', $this->empr_statut_libelle, $this->fiche);
@@ -822,7 +843,7 @@ class emprunteur {
 			$this->fiche = str_replace('!!groupes!!',"&nbsp;",$this->fiche);
 			$resume_groupe = '';
 		}
-		
+
 		// Ajout d'infos complémentaires lorsque la fiche lecteur est repliée par défaut
 		$empr_resume='';
 		if ($empr_fiche_depliee=="0") {
@@ -837,8 +858,8 @@ class emprunteur {
 
 		//Pret autorisé ou non ?
 		$pret_ok=0;
+		$message_pret="";
 		if (($pmb_gestion_financiere)&&($force_finance==0)) {
-			$message_pret="";
 			if ($pmb_gestion_abonnement) {
 				//Vérification du compte
 				$cpte_abt_id=comptes::get_compte_id_from_empr($this->id,1);
@@ -918,7 +939,7 @@ class emprunteur {
 				if ($bloca->pret_retour){
 					$pret_retour=$bloca->pret_retour;
 					$date_debut=explode("-",$pret_retour);
-					
+
 					//choix du mode de calcul
 					$loc_calendar = 0;
 					global $pmb_utiliser_calendrier, $pmb_utiliser_calendrier_location;
@@ -929,7 +950,7 @@ class emprunteur {
 							$loc_calendar = $row->expl_location;
 						}
 					}
-					
+
 					$ndays=calendar::get_open_days($date_debut[2],$date_debut[1],$date_debut[0],date("d"),date("m"),date("Y"),$loc_calendar);
 
 					if ($ndays>$pmb_blocage_delai) {
@@ -1022,7 +1043,7 @@ class emprunteur {
 						<div class='colonne10'><img src='".get_url_icon('info.png')."' /></div>
 						<div class='colonne_suite'>";
 			if ($this->empr_msg) {
-			    $message_fiche_empr.= "<span class='erreur'>".$this->empr_msg."</span>";
+			    $message_fiche_empr.= "<span class='erreur'>".nl2br($this->empr_msg)."</span>";
 			}
 			if (!empty($this->groupes_comments)) {
 			    $message_fiche_empr.= "<div class='empr_groups_comments'>
@@ -1132,7 +1153,6 @@ class emprunteur {
 		} else {
 			// constitution du code HTML
 			$vdr=0;
-			$id_bloc='';
 			$odd_even = 0 ;
 
 			// Gestion de limitation de la visualisation de la liste de pret.
@@ -1140,11 +1160,11 @@ class emprunteur {
 				$id_inpret .= $valeur['id'].'|';
 				if ($valeur['pret_retard']==1) $tit_color="style='color:RED'";
 					else $tit_color="";
-					
+
 				//reservations sur la notice ou le bulletin ?
 				$resas="";
 				$query_resa = "select count(*) as resas from resa where resa_idnotice=".$valeur['notice_id']." and resa_idbulletin=".$valeur['bulletin_id']." and (resa_cb='')";
-				
+
 				if($pmb_location_reservation ) {
 					$query_resa = "select count(*) as resas from resa,empr,resa_loc
 					where resa_idnotice=".$valeur['notice_id']." and resa_idbulletin=".$valeur['bulletin_id']." and (resa_cb='')
@@ -1257,38 +1277,36 @@ class emprunteur {
 							<input type='hidden' name='sub' value='pret_prolongation'>
 							<input type='hidden' name='form_cb' value='$this->cb'>
 							<input type='hidden' name='cb_doc' value='${valeur['cb']}'>
-							<input type='hidden' name='id_doc' value='${valeur['id']}'>";
-                
-			  	$vdr=max($vdr,$date_prolongation);
-			  	$format_date_prolongation = substr($vdr,0,4).'-'.substr($vdr,4,2).'-'.substr($vdr,6,2);
-			  	
-// 				$vdr=max($vdr,$valeur['org_ret_date']);
-				if($forcage_prolongation== FALSE && $valeur['cpt_prolongation']>=$pret_nombre_prolongation ) {
+							<input type='hidden' name='id_doc' value='${valeur['id']}'>
+							<input type='hidden' name='date_retour' value=\"\">";
 
-					$prets_list[$valeur['short_loan_flag']] .= "${valeur['date_retour']}" .
-							"<input type='date' name='date_retour' value=\"\">
-                            </td>" .
-							"<td>&nbsp;</td></form></tr>";
-				} else {
-				    if ($pmb_utiliser_calendrier) {
-				        $date_onchange = "test_jour_ouverture('prolong".$valeur['id']."', 'date_retour', this.value, $deflt2docs_location);";
-				    } else {
-				        $date_onchange = "document.forms['prolong".$valeur['id']."'].submit();";
-				    }
-				    $onclick = "document.getElementById(\"date_retour_selecteur_$id_inpret\").value=\"$format_date_prolongation\"; document.getElementById(\"date_retour_selecteur_$id_inpret\").onchange();";
-				    $prets_list[$valeur['short_loan_flag']] .= "
-                        <input type='date' id='date_retour_selecteur_$id_inpret'  name='date_retour' value=\"${valeur['sql_date_retour']}\" onchange=\"$date_onchange\">
-						<input class='button' name='prolonger' type='button' value='".$msg['prolonger']."' onclick='$onclick' style='cursor:pointer;'>
-                        </td>
-                        
-                        <td class='center'>";
-					$prets_list[$valeur['short_loan_flag']] .= "<input type='checkbox' id='prol_".$valeur['id']."' name='cbox_prol'  onClick='check_cb(this.form)' ".(isset($check_allcb) && $check_allcb ? "checked='checked'" : "")."/>";
-					if(isset($check_allcb) && $check_allcb) {
-					    $prets_list[$valeur['short_loan_flag']] .= "<script type='text/javascript'>addLoadEvent(check_cb(document.forms['prolong".$valeur['id']."']));</script>";
-					}
-					$prets_list[$valeur['short_loan_flag']] .= "</td>
+			  	$vdr=max($vdr,$date_prolongation);
+// 				$vdr=max($vdr,$valeur['org_ret_date']);
+			  	if($forcage_prolongation== FALSE && $valeur['cpt_prolongation']>=$pret_nombre_prolongation ) {
+
+			  		$prets_list[$valeur['short_loan_flag']] .= "${valeur['date_retour']}" .
+			  		"</td>" .
+			  		"<td>&nbsp;</td></form></tr>";
+			  	} else {
+			  		$date_clic   = " onClick=\"openPopUp('./select.php?what=calendrier";
+			  		$date_clic  .= "&caller=prolong".$valeur['id'];
+			  		$date_clic  .= "&date_caller=$date_prolongation";
+			  		if ($pmb_utiliser_calendrier) {
+			  			$date_clic  .= "&param1=date_retour&param2=date_retour_lib&auto_submit=NO&func_other_to_call=test_jour_ouverture&sub_param1=".$valeur["idlocation"]."',";
+			  		} else {
+			  			$date_clic  .= "&param1=date_retour&param2=date_retour_lib&auto_submit=YES',";
+			  		}
+			  		$date_clic  .= " 'calendar')\"";
+			  		$prets_list[$valeur['short_loan_flag']] .= "
+						<input type='button' name='date_retour_lib' class='bouton' value='${valeur['date_retour']}' ".$date_clic." sorttable_customkey='${valeur['date_retour']}' />
+						</td><td class='center'>";
+			  		$prets_list[$valeur['short_loan_flag']] .= "<input type='checkbox' id='prol_".$valeur['id']."' name='cbox_prol'  onClick='check_cb(this.form)' ".(isset($check_allcb) && $check_allcb ? "checked='checked'" : "")."/>";
+			  		if(isset($check_allcb) && $check_allcb) {
+			  			$prets_list[$valeur['short_loan_flag']] .= "<script type='text/javascript'>addLoadEvent(check_cb(document.forms['prolong".$valeur['id']."']));</script>";
+			  		}
+			  		$prets_list[$valeur['short_loan_flag']] .= "</td>
 						</form></tr>";
-				}
+			  	}
 				// Gestion de limitation de la visualisation de la liste de pret.
 				if(	$pmb_pret_aff_limitation==1 && $pmb_pret_aff_nombre && !$see_all_pret && ($cle+1 >= $pmb_pret_aff_nombre)) {
 					break;
@@ -1302,9 +1320,9 @@ class emprunteur {
 						$voir_tout_pret="<input type='button' name='see_all_pret' class='bouton' value='".$msg['pret_liste_voir_tout']."'  $tout_voir_click/>";
 			}
 		}
-		
+
 		$tit_color = '';
-        
+
         // Template PNB
 		if(dilicom::is_pnb_active() && count($this->digital_loans)){
 		    $prets_list['digital_loans'] = '';
@@ -1350,31 +1368,34 @@ class emprunteur {
 						</td></form></tr>";
 		    }
 		}
-		
+
 		/* 1ere option */
 		//$prets_list = $prets_list[0].(($pmb_short_loan_management==1 && count($prets_list[1]))?("<tr ><th colspan='9'>".$msg['short_loans']."</th></tr>".$prets_list[1]):'');
 		/* 2eme option*/
 
 		$id_inpret=substr($id_inpret,0,-1);
 
-		$date_format_SQL = substr($vdr,0,4).'-'.substr($vdr,4,2).'-'.substr($vdr,6,2);		
+		$date_format_SQL = substr($vdr,0,4).'-'.substr($vdr,4,2).'-'.substr($vdr,6,2);
+		$svdr=formatdate($date_format_SQL);
+
+		$date_prol   = " onClick=\"openPopUp('./select.php?what=calendrier";
+		$date_prol  .= "&caller=prolong_bloc";
+		$date_prol  .= "&date_caller=$vdr";
 		if ($pmb_utiliser_calendrier) {
-			$date_onchange = "test_jour_ouverture('prolong_bloc', 'date_retbloc', this.value, $deflt2docs_location);";
+			$date_prol  .= "&param1=date_retbloc&param2=date_retbloc_lib&auto_submit=NO&func_other_to_call=test_jour_ouverture&sub_param1=".$loc_prolongation."',";
 		} else {
-			$date_onchange = "document.forms['prolong_bloc'].submit();";
+			$date_prol  .= "&param1=date_retbloc&param2=date_retbloc_lib&auto_submit=YES',";
 		}
+		$date_prol  .= " 'date_retbloc')\"";
+
 		$butt_prol   = "
+			<input type='button' name='date_retbloc_lib' class='bouton' value='$svdr' ".$date_prol." />
 			<input type='hidden' name='categ' value='pret'>
 			<input type='hidden' name='sub' value='pret_prolongation_bloc'>
             <input type='hidden' name='see_all_pret' value=\"".(!empty($see_all_pret) ? $see_all_pret : '')."\">
 			<input type='hidden' name='form_cb' value='$this->cb'>
-			<input type='date' name='date_retbloc' value=\"$date_format_SQL\">";
-		if($pmb_utiliser_calendrier){
-		    $butt_prol .= "<input class='bouton' type='button' value=\"{$msg['acquisition_sug_bt_con']}\" onclick=\"tout_prolonger($deflt2docs_location)\" />";
-		} else {
-		    $butt_prol .= "<input class='bouton' type='button' value=\"{$msg['acquisition_sug_bt_con']} \" onclick=\"document.forms['prolong_bloc'].submit();\" />";
-		}
-		$butt_prol .="<input type='hidden' name='id_bloc' value=\"\">";
+			<input type='hidden' name='date_retbloc' value=\"\">
+            <input type='hidden' name='id_bloc' value=\"\">";
 
 		$this->fiche = str_replace('!!id_inpret!!'    , $id_inpret    , $this->fiche);
 		if ($vdr) {
@@ -1399,7 +1420,7 @@ class emprunteur {
 
 		/* 2eme option */
 		$this->fiche = str_replace('!!pret_list!!', $prets_list[0], $this->fiche);
-		
+
 		if ($pmb_short_loan_management == 1) {
 		    if (!empty($prets_list[1])) {
 				$this->fiche = str_replace('!!short_loan_list!!', $prets_list[1], $this->fiche);
@@ -1418,13 +1439,13 @@ class emprunteur {
 		// mise à jour de la liste des réservations
 		$this->fiche = str_replace('!!resa_list!!', $this->fetch_resa(), $this->fiche);
 
-		// motif présent dans $empr_pret_allowed. Calculé à l'appel de fetch_resa 
+		// motif présent dans $empr_pret_allowed. Calculé à l'appel de fetch_resa
 		if ($this->has_resa_available()) {
 			$this->fiche = str_replace('<!-- has_resa_available -->',"<span class='empr_resa_has_available'><img src='".get_url_icon('notification_new.png')."' title='".htmlentities($msg['has_resa_available'], ENT_QUOTES, $charset)."' alt='".htmlentities($msg['has_resa_available'], ENT_QUOTES, $charset)."' /></span>",$this->fiche);
 		} else {
 			$this->fiche = str_replace('<!-- has_resa_available -->','',$this->fiche);
 		}
-		
+
 		if($pmb_resa_planning) {
 			// mise à jour de la liste des réservations planifiées
 			$this->fiche = str_replace('!!resa_planning_list!!', $this->fetch_resa_planning(), $this->fiche);
@@ -1448,21 +1469,21 @@ class emprunteur {
 		}
 
 		$this->fiche = str_replace('!!dsi!!', $this->get_form_dsi_empr(), $this->fiche);
-		
+
 		$this->load_class("/caddie/empr_caddie_controller.class.php");
 		$this->fiche = str_replace('!!caddies!!', empr_caddie_controller::get_display_list_from_item('display', 'EMPR', $this->id), $this->fiche);
-		
+
 		// mise a jour de la liste des abonnements de circulation de perio
 		$this->fiche = str_replace('!!serialcirc_empr!!', $this->fetch_serial_circ(), $this->fiche);
-		
+
 		// affichage des animations ou l'empr est inscrit
 		global $animations_active;
-		if ($animations_active) {		    
+		if ($animations_active) {
     		$this->fiche = str_replace('!!animations_empr!!', $this->get_registration_animations(), $this->fiche);
 		} else {
     		$this->fiche = str_replace('!!animations_empr!!', "", $this->fiche);
 		}
-		
+
 		if(dilicom::is_pnb_active() && count($this->digital_loans)){
 		    $this->fiche = str_replace('!!digital_loans_table!!', '<h3>'.htmlentities($msg['edit_menu_pnb'], ENT_QUOTES, $charset).'</h3>'.$empr_pnb_loans_tmpl, $this->fiche);
 		    $this->fiche = str_replace('!!pret_list!!', $prets_list['digital_loans'], $this->fiche);
@@ -1546,12 +1567,10 @@ class emprunteur {
 
 		global $empr_tmpl_fiche_affichage;
 		global $msg;
-		global $groupID;
-		global $biblio_email;
 		global $pmb_resa_planning;
 		global $alert_sound_list; // l'utilisateur veut-il les sons d'alerte
-		
-		$prets_list = '';		
+
+		$prets_list = '';
 		$this->fiche_affichage = $empr_tmpl_fiche_affichage;
 		$this->fiche_affichage = str_replace('!!cb!!'        , $this->cb    , $this->fiche_affichage);
 		$this->fiche_affichage = str_replace('!!nom!!'    , pmb_strtoupper($this->nom)    , $this->fiche_affichage);
@@ -1575,7 +1594,7 @@ class emprunteur {
 					<hr />
 					<div class='row'>
 						<div class='colonne10'><img src='".get_url_icon('info.png')."' /></div>
-						<div class='colonne-suite'><span class='erreur'>$this->empr_msg</span></div>
+						<div class='colonne-suite'><span class='erreur'>".nl2br($this->empr_msg)."</span></div>
 						</div><br />";
 			$alert_sound_list[]="information";
 
@@ -1693,14 +1712,14 @@ class emprunteur {
 									</form></tr>
 									";
 						// ouf, c'est fini ;-)
-				
+
 				// Gestion de limitation de la visualisation de la liste de pret.
 				if(	$pmb_pret_aff_limitation==1 && $pmb_pret_aff_nombre && !$see_all_pret && ($cle+1 >= $pmb_pret_aff_nombre)) {
 					break;
 				}
 			}
-			
-			
+
+
 
 			// Gestion de limitation de la visualisation de la liste de pret.
 			if(	$pmb_pret_aff_limitation==1) {
@@ -1747,8 +1766,6 @@ class emprunteur {
 
 	//   récupération de la liste des réservations planifiées pour l'emprunteur
 	public function fetch_resa_planning() {
-	//	return empr_planning_list ($this->id) ;
-// 		return planning_list (0, 0, $this->id, '', '', LECTEUR_INFO_GESTION) ;
 	    $list_resa_planning_circ_reader_ui = new list_resa_planning_circ_reader_ui(array('id_empr' => $this->id));
 	    return $list_resa_planning_circ_reader_ui->get_display_list();
 	}
@@ -1793,77 +1810,78 @@ class emprunteur {
 
 	// fonction de suppression
 	public static function del_empr($id=0) {
+		global $dsi_active;
+		
 		if (!$id) return false;
 
 		$rqt_prets = "select 1 from pret where pret_idempr=$id ";
 		$resultat_prets=pmb_mysql_query($rqt_prets);
-		$resprets=pmb_mysql_num_rows($resultat_prets);
 		if (pmb_mysql_num_rows($resultat_prets)) {
 			return false;
 		} else {
 			$rqt_del = "delete from empr_caddie_content where object_id=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from empr where id_empr=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$p_perso=new parametres_perso("empr");
 			$p_perso->delete_values($id);
 
 			$rqt_del = "delete from empr_groupe where empr_id=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "update groupe set resp_groupe=0 where resp_groupe=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from recouvrements where empr_id=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from resa where resa_idempr=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from resa_planning where resa_idempr=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from opac_sessions where empr_id=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "update suggestions_origine set origine='', type_origine=2 where origine=$id and type_origine=1 ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from bannette_abon where num_empr=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from bannettes where proprio_bannette=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from equations where proprio_equation=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from comptes where proprio_id=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "delete from opac_views_empr where emprview_empr_num=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
 			$rqt_del = "update avis set num_empr=0 where num_empr=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 
-			$query = pmb_mysql_query("DELETE bannettes FROM bannettes LEFT JOIN empr ON proprio_bannette = id_empr WHERE id_empr IS NULL AND proprio_bannette !=0");
-			$query = pmb_mysql_query("DELETE equations FROM equations LEFT JOIN empr ON proprio_equation = id_empr WHERE id_empr IS NULL AND proprio_equation !=0 ");
-			$query = pmb_mysql_query("DELETE bannette_equation FROM bannette_equation LEFT JOIN bannettes ON num_bannette = id_bannette WHERE id_bannette IS NULL ");
-			$query = pmb_mysql_query("DELETE bannette_equation FROM bannette_equation LEFT JOIN equations on num_equation=id_equation WHERE id_equation is null");
-			$query = pmb_mysql_query("DELETE bannette_abon FROM bannette_abon LEFT JOIN empr on num_empr=id_empr WHERE id_empr is null");
-			$query = pmb_mysql_query("DELETE bannette_abon FROM bannette_abon LEFT JOIN bannettes ON num_bannette=id_bannette WHERE id_bannette IS NULL ");
+			pmb_mysql_query("DELETE bannettes FROM bannettes LEFT JOIN empr ON proprio_bannette = id_empr WHERE id_empr IS NULL AND proprio_bannette !=0");
+			pmb_mysql_query("DELETE equations FROM equations LEFT JOIN empr ON proprio_equation = id_empr WHERE id_empr IS NULL AND proprio_equation !=0 ");
+			pmb_mysql_query("DELETE bannette_equation FROM bannette_equation LEFT JOIN bannettes ON num_bannette = id_bannette WHERE id_bannette IS NULL ");
+			pmb_mysql_query("DELETE bannette_equation FROM bannette_equation LEFT JOIN equations on num_equation=id_equation WHERE id_equation is null");
+			pmb_mysql_query("DELETE bannette_abon FROM bannette_abon LEFT JOIN empr on num_empr=id_empr WHERE id_empr is null");
+			pmb_mysql_query("DELETE bannette_abon FROM bannette_abon LEFT JOIN bannettes ON num_bannette=id_bannette WHERE id_bannette IS NULL ");
 
 			//listes de lecture partagées
 			$rqt_del = "delete from opac_liste_lecture where num_empr=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
+			pmb_mysql_query($rqt_del);
 			$rqt_del = "delete from abo_liste_lecture where num_empr=$id ";
-			$resultat_del=pmb_mysql_query($rqt_del);
-			$query = pmb_mysql_query("delete abo_liste_lecture from abo_liste_lecture left join empr on num_empr=id_empr where id_empr is null");
-			$query = pmb_mysql_query("delete abo_liste_lecture from abo_liste_lecture left join opac_liste_lecture on num_liste=id_liste where id_liste is null");
-			$query = pmb_mysql_query("delete opac_liste_lecture from opac_liste_lecture left join empr on num_empr=id_empr where id_empr is null");
+			pmb_mysql_query($rqt_del);
+			pmb_mysql_query("delete abo_liste_lecture from abo_liste_lecture left join empr on num_empr=id_empr where id_empr is null");
+			pmb_mysql_query("delete abo_liste_lecture from abo_liste_lecture left join opac_liste_lecture on num_liste=id_liste where id_liste is null");
+			pmb_mysql_query("delete opac_liste_lecture from opac_liste_lecture left join empr on num_empr=id_empr where id_empr is null");
 
 			//Historique des relances
 
@@ -1884,22 +1902,26 @@ class emprunteur {
 
 			//Demandes de numérisations
 			scan_requests::delete_from_creator($id, 2);
-			
+
 			//Suppression des droits d'acces emprunteurs - notices
 			$q = "delete from acces_usr_2 where usr_num=$id ";
-			@pmb_mysql_query($q);
+			pmb_mysql_query($q);
 
 			// Suppression dans les animations
 			RegistrationModel::deleteFromCirculation($id);
 			
+			//Suppression des DSI privées dans la nouvelle DSI
+			if($dsi_active == 2) {
+				Diffusion::deleteEmprDiffusionsPrivate($id);
+			}
+
 			return true;
 		}
 	}
 
 	// méthode qui retourne un objet <img> avec l'url de la photo de l'emprunteur
 	public function picture_empr($empr_cb) {
-		global $charset;
-		global $empr_pics_url, $empr_pics_max_size, $prefix_url_image;
+		global $empr_pics_url, $prefix_url_image;
 		if ($empr_pics_url) {
 			$prefix_url_image = "./";
 			$url_image_ok = getimage_url($empr_cb, $empr_pics_url, 1);
@@ -1929,19 +1951,11 @@ class emprunteur {
 
 		global $empr_tmpl_consultation;
 		global $msg,$charset;
-		global $groupID;
-		global $biblio_email;
 		global $pmb_lecteurs_localises ;
-		global $pmb_gestion_abonnement,$pmb_gestion_financiere, $pmb_gestion_tarif_prets, $pmb_gestion_amende;
-		global $finance_blocage_abt,$finance_blocage_amende,$finance_blocage_pret,$pmb_blocage_retard,$pmb_blocage_retard_force;
-		global $force_finance;
-		global $pmb_resa_planning;
-		global $pmb_blocage_retard,$pmb_blocage_coef,$pmb_blocage_max,$pmb_blocage_delai;
+		global $pmb_gestion_abonnement,$pmb_gestion_financiere;
 		global $empr_fiche_depliee;
 
 		//global $cb_inpret;
-
-		global $alert_sound_list; // l'utilisateur veut-il les sons d'alerte
 
 		$this->fiche_consultation = $empr_tmpl_consultation;
 		$this->fiche_consultation = str_replace('!!cb!!'        , $this->cb    , $this->fiche_consultation);
@@ -1977,14 +1991,18 @@ class emprunteur {
 		$this->fiche_consultation = str_replace('!!perso!!'    , $this->perso, $this->fiche_consultation);
 		$this->fiche_consultation = str_replace('!!header_format!!'    , $this->header_format, $this->fiche_consultation);
 		$this->fiche_consultation = str_replace('!!empr_login!!'    , $this->login, $this->fiche_consultation);
-		
-		$hash_format = password::get_hash_format($this->pwd);
-		if( ('bcrypt' == $hash_format) && ( false === password::verify_hash('', $this->pwd)) ) {
-			$this->fiche_consultation = str_replace('!!empr_pwd!!',"<i><strong>".$msg["empr_pwd_opac_affected"]."</strong></i>",$this->fiche_consultation);
+
+		if (password::check_external_authentication() === false) {
+    		$hash_format = password::get_hash_format($this->pwd);
+    		if( ('bcrypt' == $hash_format) && ( false === password::verify_hash('', $this->pwd)) ) {
+    			$this->fiche_consultation = str_replace('!!empr_pwd!!',"<i><strong>".$msg["empr_pwd_opac_affected"]."</strong></i>",$this->fiche_consultation);
+    		} else {
+    			$this->fiche_consultation = str_replace('!!empr_pwd!!',"<i class='erreur'><strong>".$msg["empr_pwd_need_update"]."</strong></i>",$this->fiche_consultation);
+    		}
 		} else {
-			$this->fiche_consultation = str_replace('!!empr_pwd!!',"<i class='erreur'><strong>".$msg["empr_pwd_need_update"]."</strong></i>",$this->fiche_consultation);
+			$this->fiche_consultation = str_replace('!!empr_pwd!!',"",$this->fiche_consultation);
 		}
-		
+
 		$this->fiche_consultation = str_replace('!!empr_validated_subscription!!', ($this->cle_validation ? $msg['39']: $msg['40']), $this->fiche_consultation);
 		$this->fiche_consultation = str_replace('!!comptes!!'    , $this->compte, $this->fiche_consultation);
 		$this->fiche_consultation = str_replace('!!empr_statut_libelle!!', $this->empr_statut_libelle, $this->fiche_consultation);
@@ -2024,7 +2042,7 @@ class emprunteur {
 					<hr />
 					<div class='row'>
 						<div class='colonne10'><img src='".get_url_icon('info.png')."' /></div>
-						<div class='colonne-suite'><span class='erreur'>$this->empr_msg</span></div>
+						<div class='colonne-suite'><span class='erreur'>".nl2br($this->empr_msg)."</span></div>
 						</div><br />";
 			$this->fiche_consultation = str_replace('!!empr_msg!!'    ,$message_fiche_empr , $this->fiche_consultation);
 		} else
@@ -2220,12 +2238,20 @@ class emprunteur {
 			$q.= "'".$this->mail."', '".$this->tel1."', '".$this->sms."', '".$this->categ."', '".$this->cstat."', '".$this->sexe."', '".$this->login."', '".$this->date_adhesion."', ";
 			$q.= "'".$this->date_expiration."', '".$this->empr_lang."', '".$this->empr_location."', '".$this->empr_msg."', '".$this->birth."', '".$this->cdate."', '".$this->adr2."', '".$this->tel2."', '".$this->mdate."', '".$this->pwd."', '".$this->prof."','".$this->type_abt."','".$this->empr_statut."','".$this->total_loans."', '".$this->last_loan_date."', '".$this->date_blocage."') ";
 			$r=pmb_mysql_query($q);
-			
+
 			$id_empr = pmb_mysql_insert_id();
-			
-			emprunteur::update_digest($this->login,$this->pwd);
-			emprunteur::hash_password($this->login,$this->pwd);
-			
+
+			//Chiffrement du mot de passe
+			//On verifie que le mot de passe lecteur correspond aux regles de saisie definies
+			//Si non, encodage dans l'ancien format
+			$old_hash = false;
+			$check_password_rules = emprunteur::check_password_rules((int) $id_empr, $this->pwd, [], $lang);
+			if( !$check_password_rules['result'] ) {
+			    $old_hash = true;
+			}
+			emprunteur::update_digest($this->login, $this->pwd);
+			emprunteur::hash_password($this->login, $this->pwd, $old_hash);
+
 		return $id_empr;
 	}
 
@@ -2317,6 +2343,7 @@ class emprunteur {
 		$niveau_normal=$level["level_normal"];
 		$printed=$level["printed"];
 		$date_relance=$level["level_min_date_relance"];
+		$list_dates=array();
 		$list_dates[$date_relance]=format_date($date_relance);
 
 		if($niveau_min || $niveau_normal){
@@ -2350,7 +2377,7 @@ class emprunteur {
 		}
 		return $res;
 	}
-	
+
 	//Retourne un nom de lecteur depuis un id
 	public static function get_name($id, $mode=0){
 	    $id = intval($id);
@@ -2361,8 +2388,8 @@ class emprunteur {
 		}
 		return '';
 	}
-	
-	
+
+
 	//Retourne le code-barre d'un emprunteur
 	public static function get_cb_empr($id_empr) {
 	    $id_empr = intval($id_empr);
@@ -2372,14 +2399,14 @@ class emprunteur {
 
 		return pmb_mysql_result($r,0,0);
 	}
-	
+
 	//Retourne le mail d'un emprunteur
 	public static function get_mail_empr($id_empr) {
 	    $id_empr = intval($id_empr);
 		if (!$id_empr) return false;
 		$q ="select empr_mail from empr where id_empr=$id_empr";
 		$r = pmb_mysql_query($q);
-	
+
 		return pmb_mysql_result($r,0,0);
 	}
 
@@ -2393,7 +2420,7 @@ class emprunteur {
 		}
 		return new docs_location();
 	}
-	
+
 	//Retourne la langue du lecteur depuis un id
 	public static function get_lang_empr($id_empr){
 	    $id_empr = intval($id_empr);
@@ -2404,7 +2431,7 @@ class emprunteur {
 	    }
 	    return '';
 	}
-	
+
 	public static function rec_abonnement($id_empr,$type_abt,$empr_categ,$rec_caution=true) {
 		global $pmb_gestion_financiere,$pmb_gestion_abonnement;
 
@@ -2486,41 +2513,63 @@ class emprunteur {
 			}
 		}
 		if ($id_empr) {
-		    if ($old_hash) {
-		        $hash = password::gen_previous_hash($empr_password, "");
+		    if ($old_hash && (password::check_external_authentication() === false)) {
+		        $hash = password::gen_previous_hash($empr_password, $id_empr);
 		    } else {
     		    $hash = password::gen_hash($empr_password);
 		    }
-		    $q = "update empr set empr_password='".addslashes($hash)."', empr_password_is_encrypted = 1 where empr_login='".addslashes($empr_login)."'";
+		    $q = "update empr set empr_password='".addslashes($hash)."', empr_password_is_encrypted = 1 where id_empr=".$id_empr;
 			pmb_mysql_query($q);
 		}
 	}
-	
+
+	/**
+	 * Verification login + password emprunteur
+	 *
+	 * @param string $empr_login
+	 * @param string $empr_password
+	 * @return integer : id empr ou 0 si echec
+	 */
 	public static function check_login_and_password($empr_login, $empr_password){
 	    $id_empr = 0;
 	    $hash = '';
-	    
-	    if (!$empr_login || !$empr_password) return 0;
-	    
+
+	    if (!$empr_login || !$empr_password) {
+	        return 0;
+	    }
+
         $query = "select id_empr, empr_password from empr where empr_login='".addslashes($empr_login)."'";
         $result = pmb_mysql_query($query);
         if (pmb_mysql_num_rows($result) == 1) {
             $hash = pmb_mysql_result($result, 0, "empr_password");
             $id_empr = pmb_mysql_result($result, 0, "id_empr");
         }
-	    if (!$hash || !$id_empr) return 0;
+        if (!$hash || !$id_empr) {
+            return 0;
+        }
 
-	    //Salage du password fourni
-	    $hash_empr_pass = password::gen_hash($empr_password, $id_empr);
-	    
-	    if ($hash == $hash_empr_pass) return $id_empr;
-	    
-	    return 0;
+
+	    $check_password = false;
+	    $hash_format = password::get_hash_format($hash);
+
+	    if( 'bcrypt' == $hash_format) {
+	        $check_password = password::verify_hash($empr_password, $hash);
+	    } else {
+	        $previous_encrypted_password = password::gen_previous_hash($empr_password, $id_empr);
+	        if( $empr_password == $previous_encrypted_password ){
+	            $check_password = true;
+	        }
+	    }
+	    if (!$check_password) {
+	        return 0;
+	    }
+	    return $id_empr;
 	}
-	
+
+
 	public static function update_digest($empr_login='',$empr_password='') {
 		global $pmb_url_base;
-	
+
 		if (!$empr_login) return;
 		$q = "update empr set empr_digest='".addslashes(md5($empr_login.":".md5($pmb_url_base).":".$empr_password))."' where empr_login='".addslashes($empr_login)."'";
 		pmb_mysql_query($q);
@@ -2528,12 +2577,12 @@ class emprunteur {
 
 	public function get_form_dsi_empr(){
 		global $msg;
-		
+
 		$dsi_script="";
 		$bannette_abon = new bannette_abon(0, $this->id);
 		if (count($bannette_abon->tableau_gerer_bannette("PUB")) || count($bannette_abon->tableau_gerer_bannette("PRI"))) {
 			$dsi_script .="
-				<script type='text/javascript'>			
+				<script type='text/javascript'>
 					function save_bannette_abon(selection){
 						var params='';
 						for(var i=0; i<selection.length; i++){
@@ -2543,9 +2592,9 @@ class emprunteur {
 						xhr_object.request('./ajax.php?module=circ&categ=bannette&sub=save_abon',1,params+'empr_id=".$this->id."');
 						require(['dojo/topic'], function(topic){
 							topic.publish('dGrowl', '".addslashes($msg['dsi_bannette_lecteurs_update'])."');
-						});		
+						});
 					}
-		
+
 					function delete_bannette_abon(selection){
 						var params='';
 						for(var i=0; i<selection.length; i++){
@@ -2558,7 +2607,7 @@ class emprunteur {
 						});
 						bannette_get_form();
 					}
-			
+
 					function bannette_get_form(){
 						var bannette_abon=document.getElementById('bannette_abon');
 						var xhr_object = new http_request();
@@ -2569,12 +2618,12 @@ class emprunteur {
 							window.eval(scripts[i].text);
 						}
 					}
-			
+
 					function bannette_expand_form(){
 						if(document.getElementById('bannette_abon').innerHTML=='') bannette_get_form();
 					}
 				</script>
-												
+
 				<div class='row'><hr /></div>
 				<div id='empr_dsi".$this->id."' class='notice-parent'><h3>
 					<img src='".get_url_icon('plus.gif')."' class='img_plus' name='imEx' id='empr_dsi".$this->id."Img' title='".$msg['plus_detail']."' style='border:0px' onClick=\"expandBase('empr_dsi".$this->id."', true); bannette_expand_form(); return false;\">
@@ -2589,20 +2638,20 @@ class emprunteur {
 		}
 		return $dsi_script;
 	}
-	
+
 	public function get_bannette_form() {
 		list_bannettes_abon_pub_ui::set_id_empr($this->id);
 		list_bannettes_abon_pub_ui::set_empr_cb($this->cb);
 		$list_bannettes_abon_pub_ui = new list_bannettes_abon_pub_ui(array('num_empr' => $this->id, 'proprio_bannette' => 0));
 		$bannette_form = $list_bannettes_abon_pub_ui->get_display_list();
-		
+
 		list_bannettes_abon_priv_ui::set_id_empr($this->id);
 		list_bannettes_abon_priv_ui::set_empr_cb($this->cb);
 		$list_bannettes_abon_priv_ui = new list_bannettes_abon_priv_ui(array('proprio_bannette' => $this->id));
 		$bannette_form .= $list_bannettes_abon_priv_ui->get_display_list();
 		return $bannette_form;
 	}
-	
+
 	public static function gen_combo_box_codestat($selected, $afficher_premier=1, $on_change="", $nom="empr_codestat_filter" ) {
 		global $msg;
 		$requete="select idcode, libelle from empr_codestat order by libelle ";
@@ -2637,7 +2686,7 @@ class emprunteur {
 		$gen_liste_str.="</select>\n" ;
 		return $gen_liste_str ;
 	}
-	
+
 	public static function gen_combo_box_categ($selected, $afficher_premier=1, $on_change="", $nom="empr_categ_filter" ) {
 		global $msg;
 		$requete="select id_categ_empr, libelle from empr_categ order by libelle ";
@@ -2672,11 +2721,11 @@ class emprunteur {
 		$gen_liste_str.="</select>\n" ;
 		return $gen_liste_str ;
 	}
-	
+
 	public function get_id() {
 		return $this->id;
 	}
-	
+
 	protected function init_pnb_parameters(){
 		$this->pnb_password = "";
 		$this->pnb_password_hint = "";
@@ -2688,27 +2737,27 @@ class emprunteur {
 			$this->pnb_password = $data['empr_pnb_password'];
 		}
 	}
-	
+
 	public function get_pnb_password(){
 		if(!isset($this->pnb_password)){
 			$this->init_pnb_parameters();
 		}
 		return $this->pnb_password;
 	}
-	
+
 	public function get_pnb_password_hint(){
 		if(!isset($this->pnb_password_hint)){
 			$this->init_pnb_parameters();
 		}
 		return $this->pnb_password_hint;
 	}
-	
+
 	public function set_empr_statut($empr_statut) {
 		$empr_statut += 0;
 		$this->empr_statut = $empr_statut;
 		$this->set_empr_statut_libelle_from_id($this->empr_statut);
 	}
-	
+
 	public function set_empr_statut_libelle_from_id($empr_statut) {
 		$empr_statut += 0;
 		$query = "select statut_libelle from empr_statut where idstatut = ".$empr_statut;
@@ -2717,12 +2766,12 @@ class emprunteur {
 			$this->empr_statut_libelle = pmb_mysql_result($result, 0, 0);
 		}
 	}
-	
+
 	public static function get_display_card($id_empr, $erreur_affichage) {
 		$emprunteur = new emprunteur($id_empr, $erreur_affichage, FALSE, 1);
 		return $emprunteur->fiche;
 	}
-	
+
 	public static function exists($id) {
 		if (!$id)
 			return FALSE;
@@ -2730,10 +2779,8 @@ class emprunteur {
 		$result = pmb_mysql_query($query);
 		return pmb_mysql_result($result, 0, 0);
 	}
-	
-	public function get_liste_empr_groupe() {
-	    global $charset;
 
+	public function get_liste_empr_groupe() {
 	    $empr_liste = array();
 	    $requete = "SELECT `empr_id` FROM `empr_groupe` WHERE `groupe_id` IN ( SELECT `groupe_id` FROM `empr_groupe` WHERE `empr_id` = $this->id ) AND `empr_id` != $this->id";
 	    $result = pmb_mysql_query($requete);
@@ -2744,10 +2791,10 @@ class emprunteur {
 	    }
 	    return array_unique($empr_liste);
 	}
-	
+
 	public static function get_groupes($id_empr) {
 	    global $charset;
-	    
+
 	    $groupes = array();
 	    $requete = "select id_groupe, libelle_groupe from groupe, empr_groupe where empr_id='$id_empr' and id_groupe=groupe_id";
 	    $result = pmb_mysql_query($requete);
@@ -2758,14 +2805,14 @@ class emprunteur {
 	    }
 	    return $groupes;
 	}
-	
+
 	public static function get_nb_loans($id_empr){
 	    $query = "select count(pret_idexpl) as prets from empr left join pret on pret_idempr=id_empr where id_empr='".$id_empr."' group by id_empr";
 	    $result = pmb_mysql_query($query);
 	    $nb = pmb_mysql_fetch_object($result);
 	    return $nb->prets;
 	}
-	
+
 	public static function get_nb_loans_late($id_empr){
 		$query = "select count(pret_idexpl) as nb_retards from empr left join pret on pret_idempr=id_empr where id_empr='".$id_empr."' and pret_retour<CURDATE() group by id_empr";
 		$result = pmb_mysql_query($query);
@@ -2775,7 +2822,19 @@ class emprunteur {
 		}
 		return 0;
 	}
-	
+
+	public static function get_loans_late($id_empr){
+		$loans = array();
+		$query = "select * from empr left join pret on pret_idempr=id_empr where id_empr='".$id_empr."' and pret_retour<CURDATE() group by id_empr";
+		$result = pmb_mysql_query($query);
+		if(pmb_mysql_num_rows($result)) {
+			while($row = pmb_mysql_fetch_object($result)) {
+				$loans[$row->pret_idexpl] = $row;
+			}
+		}
+		return $loans;
+	}
+
 	public static function get_nb_loans_including_late($id_empr){
 		$aff_nb_loans = static::get_nb_loans($id_empr);
 		if ($aff_nb_loans) {
@@ -2786,7 +2845,7 @@ class emprunteur {
 		}
 		return $aff_nb_loans;
 	}
-	
+
 	public static function get_nb_resas($id_empr) {
 		$query = "SELECT count( resa_idempr ) as nb_resa FROM resa where resa_idempr = ".$id_empr;
 		$result = pmb_mysql_query($query);
@@ -2796,7 +2855,7 @@ class emprunteur {
 		}
 		return 0;
 	}
-	
+
 	public static function get_nb_resas_and_validated($id_empr) {
 		$aff_nb_resa = static::get_nb_resas($id_empr);
 		if ($aff_nb_resa) {
@@ -2811,16 +2870,16 @@ class emprunteur {
 		}
 		return $aff_nb_resa;
 	}
-	
+
 	public function set_pret_idexpl($pret_idexpl) {
 	    $this->pret_idexpl = $pret_idexpl;
 	}
-	
+
 	public static function get_instance_filter_list($clause='') {
 		global $empr_show_rows,$empr_filter_rows,$empr_sort_rows;
 		global $empr_location_id;
 		global $page, $nb_per_page;
-		
+
 		$filter_list = new filter_list("empr","empr_list",$empr_show_rows,$empr_filter_rows,$empr_sort_rows);
 		if (!$empr_location_id) $empr_location_id=-1;
 		if (array_search("l",explode(",",$empr_filter_rows))!==FALSE) {
@@ -2839,7 +2898,7 @@ class emprunteur {
 		$filter_list->multiple=1;
 		return $filter_list;
 	}
-	
+
 	protected function load_class($file){
 		global $base_path;
 		global $class_path;
@@ -2848,7 +2907,7 @@ class emprunteur {
 		global $styles_path;
 		global $msg,$charset;
 		global $current_module;
-		
+
 		if(file_exists($class_path.$file)){
 			require_once($class_path.$file);
 		}else{
@@ -2856,7 +2915,7 @@ class emprunteur {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Verification des regles de saisie de mot de passe
 	 *
@@ -2867,55 +2926,51 @@ class emprunteur {
 	 * @return [bool result, [error_msg]]
 	 */
 	public static function check_password_rules(int $id, string $password, $form_values=[], $lang = 'fr_FR') {
-		
+
 		global $class_path;
-		
+
 		$enabled_rules = password::get_enabled_rules('empr');
 		$msg = password::get_messages('empr', $lang);
 		$checked = true;
 		$error_msg = [];
-		
-		foreach($enabled_rules as $rule_id=>$rule) {
-			
-			if('1' == $rule['enabled']) {
-				
-				switch ($rule['type']) {
-					
-					case 'class' :
-						
-						$check_class_name = $rule['class'];
-						$check_class_filename = "{$class_path}/password/check_password_classes/{$check_class_name}.class.php";
-						if( !is_readable($check_class_filename) ) {
+
+		if(!empty($enabled_rules)) {
+			foreach($enabled_rules as $rule_id=>$rule) {
+				if('1' == $rule['enabled']) {
+					switch ($rule['type']) {
+						case 'class' :
+							$check_class_name = $rule['class'];
+							$check_class_filename = "{$class_path}/password/check_password_classes/{$check_class_name}.class.php";
+							if( !is_readable($check_class_filename) ) {
+								break;
+							}
+							require_once $check_class_filename;
+							$check_class = new $check_class_name();
+							if( !($check_class instanceof check_password_interface) ) {
+								break;
+							}
+							if( false == $check_class::check($id, $password, $form_values)) {
+								$error_msg[] = sprintf($msg[$rule_id.'_error'], '');
+								$checked =false;
+							}
+							unset($check_class);
 							break;
-						}
-						require_once $check_class_filename;
-						$check_class = new $check_class_name();
-						if( !($check_class instanceof check_password_interface) ) {
+						case 'regexp' :
+							$regexp = str_replace('VAR', $rule['value'], $rule['regexp']);
+							if(!pmb_preg_match("/".$regexp."/", $password)) {
+								$error_msg[] = sprintf($msg[$rule_id.'_error'], $rule['value']);
+								$checked =false;
+							}
 							break;
-						}
-						if( false == $check_class::check($id, $password, $form_values)) {
-							$error_msg[] = sprintf($msg[$rule_id.'_error'], '');
-							$checked =false;
-						}
-						unset($check_class);
-						break;
-						
-					case 'regexp' :
-						
-						$regexp = str_replace('VAR', $rule['value'], $rule['regexp']);
-						if(!pmb_preg_match("/".$regexp."/", $password)) {
-							$error_msg[] = sprintf($msg[$rule_id.'_error'], $rule['value']);
-							$checked =false;
-						}
-						break;
+					}
 				}
+
 			}
-			
 		}
 		return ['result'=>$checked, 'error_msg'=>$error_msg];
 	}
-	
-	
+
+
 	/**
 	 * Recuperation des regles de saisie de mot de passe pour traitement cote client
 	 *
@@ -2925,12 +2980,12 @@ class emprunteur {
 	 * @return {rules:[]}
 	 */
 	public static function get_json_enabled_password_rules(int $id, $lang='fr_FR') {
-		
+
 		global $class_path;
-		
+
 		$enabled_rules = password::get_enabled_rules('empr');
 		$msg = password::get_messages('empr', $lang);
-		
+
 		$ajax_rules = [];
 		if(is_array($enabled_rules)) {
 			foreach($enabled_rules as $rule_id=>$rule) {
@@ -2958,7 +3013,7 @@ class emprunteur {
 							unset($check_class);
 							break;
 						case 'regexp' :
-							
+
 							$regexp = str_replace('VAR', $rule['value'], $rule['regexp']);
 							$ajax_rules[] = [
 									'id'	=> $rule_id,
@@ -2974,9 +3029,9 @@ class emprunteur {
 		}
 		return json_encode(pmb_utf8_array_encode($ajax_rules));
 	}
-	
+
 	public function get_registration_animations() {
-	    
+
 	    $animView = new AnimationsView("animations/empr", [
 	        'action' => "animationList",
 	        'formData' => [
@@ -2985,30 +3040,19 @@ class emprunteur {
 	    ]);
 	    return $animView->render();
 	}
-	
-	public function send_mail_temp_password($form_empr_password = "") {
-	    global $charset, $opac_url_base, $include_path;
-	    global $empr_send_pwd_mail_obj, $empr_send_pwd_mail_text;
-	    
-	    // Adresse mail de la loc de l'emprunteur
-	    // $requete = "select location_libelle, email, empr_location from empr, docs_location where empr_location=idlocation and id_empr='".$this->id."'";
-	    $requete = "select docs_location.*, empr_location from empr, docs_location where empr_location = idlocation and id_empr = '".$this->id."'";
-	    $res = pmb_mysql_query($requete);
-	    $loc = pmb_mysql_fetch_object($res);
-	    $PMBuseremail = $loc->email ;
 
-	    // On commence a preparer le mail
-	    $headers  = "MIME-Version: 1.0\n";
-	    $headers .= "Content-type: text/html; charset=".$charset."\n";
-	    
-	    if ($this->mail) {
-	        $pwd = $form_empr_password;
-	        $url = $opac_url_base.'empr.php'; 
-	        $sujet = $empr_send_pwd_mail_obj;
-	        $output_final = str_replace(['!!pwd!!', '!!url!!'],[$pwd, $url], $empr_send_pwd_mail_text) ;
-	        //on envoi le mail
-	        $res_envoi = mailpmb($this->nom." ".$this->prenom, $this->mail, $sujet, $output_final, "", $PMBuseremail, $headers, "", "", 1);
-	        return $res_envoi;
-	    }
+	public function send_mail_temp_password($form_empr_password = "") {
+	    $mail_reader_temp_password = new mail_reader_temp_password();
+	    $mail_reader_temp_password->set_mail_to_id($this->id)
+	    		->set_temp_password($form_empr_password);
+	    return $mail_reader_temp_password->send_mail();
+	}
+
+	//Retourne l'identifiant d'un emprunteur
+	public static function get_id_empr_by_cb($empr_cb) {
+	    if (empty($empr_cb)) return false;
+	    $q ="select id_empr from empr where empr_cb='{$empr_cb}'";
+	    $r = pmb_mysql_query($q);
+	    return pmb_mysql_result($r, 0, 0);
 	}
 } # fin de declaration classe emprunteur

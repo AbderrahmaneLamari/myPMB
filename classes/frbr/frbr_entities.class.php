@@ -2,13 +2,12 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entities.class.php,v 1.3 2020/05/18 15:12:38 tsamson Exp $
+// $Id: frbr_entities.class.php,v 1.4 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 require_once($class_path."/frbr/frbr_entities_parser.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("frbr_entities",true);
+
 class frbr_entities {
 	
 	/**

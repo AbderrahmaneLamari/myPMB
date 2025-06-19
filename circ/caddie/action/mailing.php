@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mailing.php,v 1.36 2021/02/25 14:29:39 jlaurent Exp $
+// $Id: mailing.php,v 1.36.6.1 2023/09/04 14:36:36 tsamson Exp $
 
 // définition du minimum nécéssaire
 $base_path="../../..";
@@ -97,7 +97,9 @@ if (!$idemprcaddie) die();
 
 if($pmb_javascript_office_editor){
 	print $pmb_javascript_office_editor;
-	print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+	print "<script type='text/javascript'>
+        pmb_include('$base_path/javascript/tinyMCE_interface.js');
+    </script>";
 }
 
 if ((!isset($f_message) || !$f_message) && !$pmb_javascript_office_editor) {

@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_facets.class.php,v 1.15.2.6 2021/12/17 14:05:10 gneveu Exp $
+// $Id: search_segment_facets.class.php,v 1.23.4.2 2023/08/25 13:11:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 require_once($class_path."/facette_search.class.php");
-require_once($class_path."/search_universes/external/search_segment_external_facets.class.php");
+//require_once($class_path."/search_universes/external/search_segment_external_facets.class.php");
 require_once($class_path."/search_universes/search_segment.class.php");
 require_once($include_path.'/templates/search_universes/search_segment_facets.tpl.php');
 
@@ -298,15 +298,15 @@ class search_segment_facets extends facettes {
 	}
 	
 	protected function get_refine_form() {
-	    global $msg, $include_path, $base_path;
+	    global $msg, $include_path, $base_path,$charset;
 	    
 	    $this->get_segment();
 	    
 	    $action = $base_path.'/index.php?lvl=search_segment&action=search_result&id='.$this->num_segment;
 	    $action .= search_universe::get_parameters();
 	    $tpl = "
-            <form name='refine_search_input' id='refine_search_input' action='$action' method='post' onSubmit=\"if (refine_search_input.refine_user_query.value.length == 0) { refine_search_input.refine_user_query.value='*'; return true; }\">
-                <h3>".sprintf($msg['search_segment_refine_search_in_segment'], $this->segment->get_label())."</h3>
+            <form name='refine_search_input' id='refine_search_input' action='".htmlentities($action,ENT_QUOTES,$charset)."' method='post' onSubmit=\"if (refine_search_input.refine_user_query.value.length == 0) { refine_search_input.refine_user_query.value='*'; return true; }\">
+                <h3>".sprintf($msg['search_segment_refine_search_in_segment'], $this->segment->get_translated_label())."</h3>
 				<input type='text' id='refine_user_query' name='refine_user_query' class='text_query' value=\"\"/>
 				<input type='hidden' id='refine_user_rmc' name='refine_user_rmc' value=\"\" />
                 <br/>
@@ -334,5 +334,11 @@ class search_segment_facets extends facettes {
 	        return $this->segment;
 	    }
 	    return null;
+	}
+	
+	public static function get_modal_data() {
+	    $data = [];
+	    $data['form_name'] = "form_values";
+	    return $data;
 	}
 }

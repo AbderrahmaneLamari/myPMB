@@ -1,13 +1,13 @@
 <?php
 // +-------------------------------------------------+
-// Â© 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: shorturl_type_segment.class.php,v 1.5.2.3 2021/11/08 10:14:43 tsamson Exp $
+// $Id: shorturl_type_segment.class.php,v 1.10.4.1 2023/10/17 06:38:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($class_path."/shorturl/shorturl_type.class.php");
-
 require_once($include_path."/search_queries/specials/combine/search.class.php");
 require_once($include_path."/search_queries/specials/permalink/search.class.php");
 require_once($include_path."/rec_history.inc.php");
@@ -16,7 +16,7 @@ class shorturl_type_segment extends shorturl_type{
 	
 	protected function rss()
 	{
-		global $opac_url_base,$dbh, $charset;
+		global $opac_url_base, $charset;
 		global $opac_short_url_mode;
 		global $opac_search_results_per_page;
 		global $search,$op_0_s_10,$field_0_s_10;
@@ -31,16 +31,17 @@ class shorturl_type_segment extends shorturl_type{
 		} else {
     		$es = new search();
 		}
-		
-		$es->unserialize_search(serialize($context['serialized_search']));
+		$es->unserialize_search(urldecode($context['shared_serialized_search']));
 		$table = $es->make_search();
-		$query = "SELECT * FROM $table";
-		$res = pmb_mysql_query($query);
+		if($table) {
+			$query = "SELECT * FROM $table";
+			$result = pmb_mysql_query($query);
 
-		if(pmb_mysql_num_rows($res)){
-		    while ($row = pmb_mysql_fetch_object($res)){
-		        $this->notices_list[]= $row->notice_id;
-		    }
+			if(pmb_mysql_num_rows($result)){
+			    while ($row = pmb_mysql_fetch_object($result)){
+		    	    $this->notices_list[]= $row->notice_id;
+		    	}
+			}
 		}
 		if($opac_short_url_mode){
 			$flux = new records_flux(0);
@@ -87,15 +88,17 @@ class shorturl_type_segment extends shorturl_type{
 		if(!empty($context['opac_view'])){
 			$suite = "&opac_view=".$context['opac_view'];
 		}
-		if (!empty($context["user_rmc"])) {
-		    $suite .= "&user_rmc=".urlencode(stripslashes($context["user_rmc"]));
+		if (!empty($context["shared_serialized_search"])) {
+		    $suite .= "&shared_serialized_search=".urlencode(stripslashes($context["shared_serialized_search"]));
 		}
-		if (!empty($context["user_query"])) {
-		    $suite .= "&user_query=".urlencode(stripslashes($context["user_query"]));
+		if (!empty($context["shared_query"])) {
+		    $suite .= "&shared_query=".$context["shared_query"];
 		}
-// 		if (!empty($context["segment_json_search"])) {
-// 		    $suite .= "&segment_json_search=".urlencode(stripslashes($context["segment_json_search"]));
-// 		}
+		if (!empty($context["dynamic_params"])) {
+		    foreach ($context["dynamic_params"] as $key => $value) {
+		        $suite .= "&$key=".urlencode(stripslashes($value));
+		    }
+		}
 		
 		$es = new search();
 		$html = '
@@ -118,20 +121,31 @@ class shorturl_type_segment extends shorturl_type{
 	}
 
 	public function generate_hash($action,$context=array()) {
-	    global $search_index,$id, $search, $opac_search_other_function, $universe_query;
+	    global $id,$es;
+	    
+	    if (!is_object($es)) {
+	        $es = search::get_instance("");
+	    }
 		$hash = '';
 		
 		$context =array();
 		$context["search_type"] = 'search_segment';
 		$context['id_segment'] = $id;
-		$context['user_query'] = (search_universe::$start_search["type"] == "simple" ? search_universe::$start_search["query"] : "");
-		$context['user_rmc'] = (search_universe::$start_search["type"] == "extended" ? search_universe::$start_search["query"] : "");
-		//$context['segment_json_search'] = (search_universe::$start_search["segment_json_search"] ? search_universe::$start_search["segment_json_search"] : "");
+		$context['dynamic_params'] = search_universe::$segments_dynamic_params;
+		$context['shared_serialized_search'] = (search_universe::$start_search["shared_serialized_search"] ? urlencode(search_universe::$start_search["shared_serialized_search"]) : "");
+		$universe_human_query = search_universe::$start_search["query"];
+		if (search_universe::$start_search["type"] == "extended") {
+		    //make human query
+		    $es->push();
+		    $es->unserialize_search(stripslashes(search_universe::$start_search["query"]));
+		    $universe_human_query = $es->make_human_query();
+		    $es->pull();
+		}
+		$context['shared_query'] = urlencode($universe_human_query);
 		//on essaye de conserver la vue!
 		if(isset($_SESSION['opac_view']) && $_SESSION['opac_view']){
 			$context['opac_view'] = $_SESSION['opac_view'];
 		}
- 			
 		if(method_exists($this, $action)){
 			$hash = self::create_hash('segment',$action,$context);
 		}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_universe.tpl.php,v 1.17.2.4 2021/11/08 16:18:04 qvarin Exp $
+// $Id: search_universe.tpl.php,v 1.23 2022/06/09 09:21:51 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -80,9 +80,9 @@ $search_universe_segment_list = "
 "; 
 
 $search_universe_segments_form_row = "
-	<li class='search_universe_segments_row !!segment_selected!!' data-segment-id='!!segment_id!!' data-universe-id='!!universe_id!!'>
+	<li class='search_universe_segments_row !!segment_selected!!' data-segment-id='!!segment_id!!' data-universe-id='!!universe_id!!' data-segment-dynamic-field='!!segment_dynamic_field!!'>
         <input type='hidden' value='' class='simple_search_mc' name='search_universe_simple_search_!!segment_id!!' id='search_universe_simple_search_!!segment_id!!' />
-		<a class='search_universe_segments_cell' href='./index.php?lvl=search_segment&action=segment_results&id=!!segment_id!!'>
+		<a class='search_universe_segments_cell' href='!!segment_url!!'>
 			<p class='search_segment_label'>!!segment_label!!</p>
 			!!segment_logo!!
 			<p class='search_segment_description'>!!segment_description!!</p>

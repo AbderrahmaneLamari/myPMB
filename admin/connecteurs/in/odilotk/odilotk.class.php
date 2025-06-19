@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: odilotk.class.php,v 1.5 2019/06/13 15:26:51 btafforeau Exp $
+// $Id: odilotk.class.php,v 1.5.10.1 2023/09/01 12:41:47 qvarin Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
 	die("no access");
 
@@ -430,4 +430,33 @@ class odilotk extends connector {
 		$envt["form_radio"]=$form_radio;
 		return $envt;
 	}
-}// class end
+	
+	/**
+	 * Permet de verifier les donnees passees dans l'environnement
+	 *
+	 * @param int $source_id
+	 * @param array $env
+	 * @return array
+	 */
+	public function check_environnement($source_id, $env) {
+
+	    if (! in_array($env['form_radio'], [
+	        'last_sync',
+	        'date_sync'
+	    ], true)) {
+	        $env['form_radio'] = 'last_sync';
+	    }
+
+	    // Format accepte : "Y-m-d"
+	    if (! preg_match("/^[0-9]{4}(-[0-9]{2}){2}$/", $env['form_from'])) {
+	        $env['form_from'] = date("Y-m-d", time());
+	    }
+
+	    $clean_env = [];
+	    $clean_env['form_radio'] = $env['form_radio'] ?? "";
+	    $clean_env['form_from'] = $env['form_from'];
+	    $clean_env['form_from_lib'] = formatdate($env['form_from']);
+
+	    return $clean_env;
+	}
+}

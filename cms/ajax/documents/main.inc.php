@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.4.8.1 2022/01/11 11:24:00 gneveu Exp $
+// $Id: main.inc.php,v 1.6 2022/09/27 13:21:27 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 if(!isset($caller)) $caller = '';
-
+global $class_path;
 require_once($class_path."/cms/cms_document.class.php");
 
 $id+=0;
@@ -39,6 +39,7 @@ switch($action){
 	    $response['content'] = cms_document::delete_in_batch($list_ids);
 		break;
 }
+session_write_close();
 
 if($response['content']){
 	if(empty($response['content-type']))$response['content-type'] = "text/html";

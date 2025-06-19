@@ -2,12 +2,10 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: MailingAnimationModel.php,v 1.8 2021/03/29 08:56:38 qvarin Exp $
+// $Id: MailingAnimationModel.php,v 1.12.2.2 2023/11/09 07:58:34 gneveu Exp $
 
 namespace Pmb\Animations\Models;
 
-use Pmb\Animations\Models\AnimationModel;
-use Pmb\Animations\Models\RegistrationModel;
 use Pmb\Animations\Orm\MailingAnimationOrm;
 use Pmb\Common\Models\MailingModel;
 use Pmb\Common\Models\MailtplModel;
@@ -20,6 +18,9 @@ class MailingAnimationModel extends MailingModel
 
     protected $ormName = "\Pmb\Animations\Orm\MailingAnimationOrm";
 
+    protected static $AnimationModelInstance = []; 
+    protected static $EmprModelInstance = []; 
+    
     public static function computeCartEmpr(int $idAnimation)
     {
         $anim = AnimationModel::getAnimationForMailing($idAnimation);
@@ -81,14 +82,27 @@ class MailingAnimationModel extends MailingModel
     {
         global $msg;
 
-        $anim = new AnimationModel($registration->numAnimation);
-        $anim->getViewData();
-        $empr = new EmprModel($registration->numEmpr);
-        $listRegistredPersons = RegistredPersonModel::getListRegistredPersons($registration->numEmpr, $registration->numAnimation);
+        if (!isset(self::$AnimationModelInstance[$registration->numAnimation])) {
+            $anim = new AnimationModel($registration->numAnimation);
+            $anim->getViewData();
+            self::$AnimationModelInstance[$registration->numAnimation] = $anim;
+        } else {
+            $anim = self::$AnimationModelInstance[$registration->numAnimation];
+        }
+
+        if (!isset(self::$EmprModelInstance[$registration->numEmpr])) {
+            $empr = new EmprModel($registration->numEmpr);
+            self::$EmprModelInstance[$registration->numEmpr] = $empr;
+        } else {
+            $empr = self::$EmprModelInstance[$registration->numEmpr];
+        }
+        
+        
+        $listRegistredPersons = RegistredPersonModel::getListRegistredPersons($registration->id);
         
         $unsubscribe_link = "";
         $registrationPerson = RegistredPersonModel::getRegistredPersonByEmprAndRegistration($registration->numEmpr, $registration->id);
-        if ($registrationPerson->idPerson != 0) {
+        if (!empty($registrationPerson->idPerson) && $registrationPerson->idPerson != 0) {
             $unsubscribe_link = $registrationPerson->getUnsubscribeLink();
         }
         if (empty($unsubscribe_link)) {
@@ -126,15 +140,22 @@ class MailingAnimationModel extends MailingModel
 
         $empr->emprNom = ! empty($empr->emprNom) ? $empr->emprNom : $registration->name;
         $empr->emprPrenom = ! empty($empr->emprPrenom) ? $empr->emprPrenom : "";
-
+        
+        $eventEndDate = $anim->event->startDate;
+        $eventStartHour = "00:00" == $anim->event->startHour ? "" : $anim->event->startHour;
+        $eventEndHour = "00:00" == $anim->event->startHour ? "" : $anim->event->startHour;
+        if (!$anim->event->duringDay) {
+            $eventEndDate = $anim->event->endDate;
+            $eventEndHour = "00:00" == $anim->event->endHour ? "" : $anim->event->endHour;
+        }
         $replace = [
             $anim->name,
             $empr->emprNom,
             $empr->emprPrenom,
             $anim->event->startDate,
-            $anim->event->endDate,
-            $anim->event->startHour,
-            $anim->event->endHour,
+            $eventEndDate,
+            $eventStartHour,
+            $eventEndHour,
             $listRegistredPersons,
             $location,
             $unsubscribe_link
@@ -253,27 +274,38 @@ class MailingAnimationModel extends MailingModel
                 "associated_campaign" => $data->mailingAssociatedCampaign
             ];
         }
+        
+        // PJ du mail
+        if (!is_array($data->attachmentFile) && "undefined" == $data->attachmentFile) {
+            $attachments = array();
+        } else {
+            $attachments[] = array(
+                'contenu' => file_get_contents($data->attachmentFile["tmp_name"]),
+                'nomfichier' => $data->attachmentFile["name"]
+            );
+        }
+        
         //Recuperer les contacts pour l'animation courante
         $registrationContact = RegistrationModel::getRegistrations($anim->id);
         
         //appele de la methode sendMail
-        $response[$data->idAnimation . "-" . $anim->name] = self::sendMail($registrationContact, $anim, $data->template, $campaignDatas, $data->numSender);
+        $response[$data->idAnimation . "-" . $anim->name] = self::sendMail($registrationContact, $anim, $data->template, $campaignDatas, $data->numSender, $attachments);
         
         //Sauvegarde du mailing
         MailingListModel::saveMailing($data->idAnimation, MailingListModel::MANUAL_SEND, $data->template, $response, $campaignDatas, $data->numSender);
         return $data->idAnimation;
     }
     
-    public static function sendMail($registrationContact, $anim, $template, &$campaignDatas = array(), $idSender) 
+    public static function sendMail($registrationContact, $anim, $template, &$campaignDatas = array(), $idSender, $attachment = array()) 
     {
         global $charset;
         $contactList = [];
         // On commence a preparer le mail
         $headers = "MIME-Version: 1.0\n";
-        $headers .= "Content-type: text/html; charset=" . $charset . "\n";
+        $headers .= "Content-type: multipart/form-data; charset=" . $charset . "\n";
 
         // on recupere les infos du mail depuis le template
-        $sujet = $template->mailtplObjet;
+        $mailObject = $template->mailtplObjet;
         $content = $template->mailtplTpl;
 
         // Pour chaque contact
@@ -288,6 +320,7 @@ class MailingAnimationModel extends MailingModel
             }
 
             // On remplace les variables avec fillAnimationTemplate
+            $sujet = MailingAnimationModel::fillAnimationTemplate($mailObject, $contact);
             $body = MailingAnimationModel::fillAnimationTemplate($content, $contact);
 
             // On récupere les données du sender
@@ -312,10 +345,10 @@ class MailingAnimationModel extends MailingModel
             }
             if(!empty($campaignDatas) && !empty($campaignDatas['associated_campaign'])) {
                 $idEmpr = (!empty($contact->numEmpr) ? $contact->numEmpr : 0);
-                $r = $campaign->send_mail($idEmpr, $contact->name, $contact->email, $sujet, $body, $sender->name, $sender->email, $headers, "", "", 0) ;
+                $r = $campaign->send_mail($idEmpr, $contact->name, $contact->email, $sujet, $body, $sender->name, $sender->email, $headers, "", "", 0, $attachment) ;
             } else {
                 //on envoi le mail
-                $r = mailpmb($contact->name, $contact->email, $sujet, $body, $sender->name, $sender->email, $headers, "", "", 1);
+                $r = mailpmb($contact->name, $contact->email, $sujet, $body, $sender->name, $sender->email, $headers, "", "", 1, $attachment);
             }
             $contactList[] = [
                 "NAME" => $contact->name,
@@ -355,5 +388,39 @@ class MailingAnimationModel extends MailingModel
         }
         
         return $sender;
+    }
+
+    public function delete()
+    {
+        $orm = new MailingAnimationOrm($this->id);
+        if (!empty($orm)) {
+            $orm->delete();
+        }
+    }
+    
+    public static function sendMailToBibli($registration, $user, $template, $idSender)
+    {
+        global $charset;
+        // On commence a preparer le mail
+        $headers = "MIME-Version: 1.0\n";
+        $headers .= "Content-type: multipart/form-data; charset=" . $charset . "\n";
+        
+        // on recupere les infos du mail depuis le template
+        $mailObject = $template->mailtplObjet;
+        $content = $template->mailtplTpl;
+            
+        // On remplace les variables avec fillAnimationTemplate
+        $sujet = MailingAnimationModel::fillAnimationTemplate($mailObject, $registration);
+        $body = MailingAnimationModel::fillAnimationTemplate($content, $registration);
+        
+        // On récupere les données du sender
+        $sender = self::getSender($idSender);
+        
+        //on envoi le mail
+        $mail = $user["user_email"];
+        if (!empty($user["user_email_recipient"])) {
+            $mail = $user["user_email_recipient"];
+        }
+        $r = mailpmb($user["nom"], $mail, $sujet, $body, $sender->name, $sender->email, $headers, "", "", 1, array());
     }
 }

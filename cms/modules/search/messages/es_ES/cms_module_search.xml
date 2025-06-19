@@ -5,7 +5,7 @@
 ****************************************************************************************
 © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: cms_module_search.xml,v 1.2.2.1 2021/10/12 07:29:33 rtigero Exp $ -->
+$Id: cms_module_search.xml,v 1.2 2019/12/30 13:19:43 btafforeau Exp $ -->
 
 <XMLlist>
 	<entry code='cms_module_search_admin_form_label'>Configuración del destino de la búsqueda</entry>
@@ -19,5 +19,4 @@ $Id: cms_module_search.xml,v 1.2.2.1 2021/10/12 07:29:33 rtigero Exp $ -->
 	<entry code='cms_module_search_cms_pages'>Páginas</entry>
 	<entry code='cms_module_search_search_dest_search'>Destino de la búsqueda</entry>
     <entry code='cms_module_search_search_dest_search_opac'>Buscar en el OPAC</entry>
-    <entry code='cms_module_search_delete_search_dest'>¿Realmente quieres borrar esta búsqueda?</entry>
 </XMLlist>

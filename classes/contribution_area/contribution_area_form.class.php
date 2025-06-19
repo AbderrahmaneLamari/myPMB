@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area_form.class.php,v 1.53.2.14 2022/01/18 09:40:49 gneveu Exp $
+// $Id: contribution_area_form.class.php,v 1.68.4.1 2023/06/19 12:47:20 rtigero Exp $
 
 if (stristr($_SERVER ['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -1563,13 +1563,13 @@ class contribution_area_form {
 	                    }
 	                }
 	            } else {
-	                var_dump("Errors : ".self::$graphstore->get_errors());
+	                var_dump("Errors : ".$graphstore->get_errors());
 	                break;
 	            }
 	        }
             $scenario_list["count"] = $count;
 	    } else {
-	        var_dump("Errors : ".self::$graphstore->get_errors());
+	        var_dump("Errors : ".$graphstore->get_errors());
 	    }
 	    return $scenario_list;
 	}
@@ -1636,5 +1636,20 @@ class contribution_area_form {
 	
 	public function get_type() {
 	    return $this->type;
+	}
+
+	/**
+	 * Supprime une propriété du formulaire
+	 * @param string $property
+	 * @return void
+	 */
+	public function remove_property($property = "")
+	{
+		if(empty($this->unserialized_parameters->$property)) {
+			return;
+		}
+
+		unset($this->unserialized_parameters->$property);
+		self::save_parameters($this->id, serialize($this->unserialized_parameters));
 	}
 }

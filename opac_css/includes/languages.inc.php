@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: languages.inc.php,v 1.5.4.1 2021/06/25 11:53:33 dgoron Exp $
+// $Id: languages.inc.php,v 1.8 2022/12/20 09:50:20 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 function show_select_languages() {
-	global $common_tpl_lang_select, $msg, $charset, $opac_show_languages, $include_path, $lang ;
+	global $common_tpl_lang_select, $msg, $opac_show_languages, $include_path, $lang ;
 
 	$show_languages = substr($opac_show_languages,0,1) ;
 	
@@ -24,19 +24,7 @@ function show_select_languages() {
 		$common_tpl_lang_select=str_replace("!!msg_lang_select!!",$msg["common_tpl_lang_select"],$common_tpl_lang_select);
 		$action = substr($_SERVER['REQUEST_URI'], strrpos($_SERVER['REQUEST_URI'], '/')+1);
 		$combo = "<form method=\"post\" action=\"".$action."\" >";
-		if(count($_POST)) {
-		    foreach ($_POST as $name=>$value) {
-		        if(is_string($value)) {
-		            $combo .= "<input type='hidden' name=\"".$name."\" value=\"".htmlentities($value, ENT_QUOTES, $charset)."\" />";
-		        } elseif(is_array($value)) {
-		            foreach ($value as $sub_key=>$sub_value) {
-		                if(is_string($sub_value)) {
-		                  $combo .= "<input type='hidden' name=\"".$name."[".$sub_key."]\" value=\"".htmlentities($sub_value, ENT_QUOTES, $charset)."\" />";
-		                }
-		            }
-		        }
-		    }
-		}
+		$combo .= get_hidden_global_var('POST');
 		$combo .= "<select name=\"lang_sel\" onchange=\"this.form.submit();\">";
 		foreach ($lang_combo as $cle => $value) {
 			if(strcmp($cle, $lang) != 0) $combo .= "<option value='$cle'>$value</option>";

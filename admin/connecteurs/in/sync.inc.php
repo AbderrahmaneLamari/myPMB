@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sync.inc.php,v 1.13 2017/11/30 10:00:36 dgoron Exp $
+// $Id: sync.inc.php,v 1.13.12.2 2023/09/01 12:41:47 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -45,9 +45,11 @@ if (pmb_mysql_num_rows($resultat)) {
 } else {
 	if (isset($_GET["env"])) {
 		$env = unserialize($_GET["env"]);
+		$env = $conn->check_environnement($source_id, $env);
 	} else {
 		$env = $conn->get_maj_environnement($source_id);
 	}
+	
 	if (isset($_GET["converted"])) {
 		$env["converted"] = 1;
 	}
@@ -65,6 +67,7 @@ print "<div class='row' style='text-align:center'><input type='button' id='cance
 //highlight_string(print_r($env, true));
 
 ?>
+
 <script type="text/javascript">
 	function abort_request() {
 		//Envoi une requete synchrone pour annuler la synchro en cours
@@ -79,7 +82,7 @@ print "<div class='row' style='text-align:center'><input type='button' id='cance
 		         request = new ActiveXObject("Microsoft.XMLHTTP");
 		       } catch (failed) {
 		         request = false;
-		       }  
+		       }
 		     }
 		   }
 
@@ -92,7 +95,7 @@ print "<div class='row' style='text-align:center'><input type='button' id='cance
 	}
 
 	//Génère la requete de synchronisation:
-	
+
 	var request = false;
 	try {
     	request = new XMLHttpRequest();
@@ -104,7 +107,7 @@ print "<div class='row' style='text-align:center'><input type='button' id='cance
         		request = new ActiveXObject("Microsoft.XMLHTTP");
        		} catch (failed) {
         		request = false;
-       		}  
+       		}
 		}
 	}
 
@@ -113,7 +116,7 @@ print "<div class='row' style='text-align:center'><input type='button' id='cance
    		if (IE6 && (request.readyState == 3)) {
 	   		return;
    		}
-   		
+
    		if ((request.readyState > 2)) {
 	        if (request.status == 200) {
 		 		var serverResponse = request.responseText;
@@ -122,7 +125,7 @@ print "<div class='row' style='text-align:center'><input type='button' id='cance
 	        }
 	   	}
    }
-   
+
    if (!request) {
      alert("Error initializing XMLHttpRequest!");
    }
@@ -135,7 +138,7 @@ print "<div class='row' style='text-align:center'><input type='button' id='cance
    }
    request.send(null);
 </script>
-<?
+<?php
 
 
 

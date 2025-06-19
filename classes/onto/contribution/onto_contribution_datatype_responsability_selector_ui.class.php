@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_responsability_selector_ui.class.php,v 1.13.2.3 2021/08/31 14:17:26 qvarin Exp $
+// $Id: onto_contribution_datatype_responsability_selector_ui.class.php,v 1.18 2023/01/02 13:47:51 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -81,11 +81,14 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_common_
         
         $form = $ontology_contribution_tpl['form_row'];
         $form = str_replace("!!onto_row_label!!", htmlentities(encoding_normalize::charset_normalize($property->get_label(), 'utf-8'), ENT_QUOTES, $charset), $form);
+        $exploded_uri = explode("/", $item_uri);
+        $i = (count($exploded_uri) - 1);
         
+        $uri_suffix = str_replace('#', '_', $exploded_uri[$i]);
         $content = '';
         if (!$property->is_no_search()) {
             $content .= $ontology_contribution_tpl['form_row_content_input_sel'];
-            $content = str_replace("!!onto_current_range!!", $range_for_form, $content);
+            $content = str_replace("!!onto_current_range!!", $uri_suffix, $content);
         }
         
         if (!empty($datas)) {
@@ -124,7 +127,7 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_common_
                 $input = str_replace("!!property_name!!", rawurlencode($property->pmb_name), $input);
                 
                 $row = str_replace("!!onto_row_inputs!!", $input , $row);
-                
+                $vedette_row = "";
                 if ($pmb_authors_qualification) {
                     switch ($instance_name) {
                         case 'work':
@@ -168,7 +171,7 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_common_
             $input = $ontology_contribution_tpl['form_row_content_input_remove'];
             $input = str_replace("!!property_name!!", rawurlencode($property->pmb_name), $input);
             $row = str_replace("!!onto_row_inputs!!", $input , $row);
-            
+            $vedette_row = "";
             if ($pmb_authors_qualification) {
                 switch ($instance_name) {
                     case 'work':

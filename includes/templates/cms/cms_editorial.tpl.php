@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_editorial.tpl.php,v 1.47 2020/10/13 12:12:49 btafforeau Exp $
+// $Id: cms_editorial.tpl.php,v 1.49 2022/10/21 10:23:10 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -180,21 +180,23 @@ $cms_editorial_field_javascript = "
                 setTimeout(function() {
                     let frame = document.getElementById('!!field_id!!_form_iframe');
                     let elt = frame.contentWindow.document.getElementById('dijitEditorBody');
-                    elt.addEventListener('keydown', () => {
-                        let limitNode = document.getElementById('!!field_id!!_size_limit');
-                        if (checkTextSize(elt.innerHTML) >= 16777215) {
-                            if (!limitNode) {
-                                let em = document.createElement('em');
-                                em.id = '!!field_id!!_size_limit';
-                                em.appendChild(document.createTextNode(' (" . $msg['cms_editorial_form_size_limit'] . ")'));
-                                document.getElementById('!!field_id!!_label').appendChild(em);
-                            }
-                        } else {
-                            if (limitNode) {
-                                limitNode.remove();
-                            }
-                        }
-                    });
+					if(elt) {
+	                    elt.addEventListener('keydown', () => {
+	                        let limitNode = document.getElementById('!!field_id!!_size_limit');
+	                        if (checkTextSize(elt.innerHTML) >= 16777215) {
+	                            if (!limitNode) {
+	                                let em = document.createElement('em');
+	                                em.id = '!!field_id!!_size_limit';
+	                                em.appendChild(document.createTextNode(' (" . $msg['cms_editorial_form_size_limit'] . ")'));
+	                                document.getElementById('!!field_id!!_label').appendChild(em);
+	                            }
+	                        } else {
+	                            if (limitNode) {
+	                                limitNode.remove();
+	                            }
+	                        }
+	                    });
+					}
                 }, 2000);
             }
         }
@@ -244,7 +246,7 @@ $cms_editorial_desc_field = "
 		</div>
 		<div class='row'>
 			!!cms_categs!!
-			<div id='addcateg'/></div>
+			<div id='addcateg'></div>
 		</div>
 		<link href='./javascript/dojo/dojox/editor/plugins/resources/editorPlugins.css' type='text/css' rel='stylesheet' />
 		<link href='./javascript/dojo/dojox/editor/plugins/resources/css/InsertEntity.css' type='text/css' rel='stylesheet' />

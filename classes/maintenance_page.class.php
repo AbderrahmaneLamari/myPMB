@@ -2,14 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: maintenance_page.class.php,v 1.10.2.1 2021/07/13 08:09:56 dgoron Exp $
+// $Id: maintenance_page.class.php,v 1.11.4.4 2023/10/10 06:31:06 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $base_path, $include_path;
 global $maintenance_page_form;
 global $maintenance_page_activate;
-global $maintenance_page_content_body;
+global $maintenance_page_content;
 global $maintenance_page_content_title;
 global $maintenance_page_content_style;
 global $maintenance_page_default_content, $msg, $charset;
@@ -57,33 +57,38 @@ class maintenance_page {
 		$this->fetch_content();
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('maintenance_page_activate', 'admin_opac_maintenance_activate')
+		->add_input_node('boolean', $this->active)
+		->set_class('switch');
+		$interface_content_form->add_element('maintenance_page_content_title', 'admin_opac_maintenance_content_title')
+		->add_input_node('text', $this->content['title']);
+		$interface_content_form->add_element('maintenance_page_content', 'admin_opac_maintenance_content')
+		->add_textarea_node($this->content['body'])
+		->set_cols(120)
+		->set_rows(40);
+		$interface_content_form->add_element('maintenance_page_content_style', 'admin_opac_maintenance_content_style')
+		->add_textarea_node($this->content['style'])
+		->set_cols(120)
+		->set_rows(20);
+		return $interface_content_form->get_display();		
+	}
+		
 	public function get_form() {
-		global $maintenance_page_content_form;
-		
-		$content_form = $maintenance_page_content_form;
-		
 		$interface_form = new interface_form('admin_opac_maintenance_form');
-		$checked = '';
-		if ($this->active) {
-			$checked = 'checked="checked"';
-		}
-		$content_form = str_replace('!!maintenance_page_activate_checked!!', $checked, $content_form);
-		$content_form = str_replace('!!maintenance_page_content_title!!', $this->content['title'], $content_form);
-		$content_form = str_replace('!!maintenance_page_content_body!!', $this->content['body'], $content_form);
-		$content_form = str_replace('!!maintenance_page_content_style!!', $this->content['style'], $content_form);
-		
-		$interface_form->set_content_form($content_form);
+		$interface_form->set_content_form($this->get_content_form());
 		return $interface_form->get_display();
 	}
 	
 	public function get_values_from_form() {
 		global $maintenance_page_activate;
-		global $maintenance_page_content_body;
+		global $maintenance_page_content;
 		global $maintenance_page_content_title;
 		global $maintenance_page_content_style;
 		
 		$this->active = ($maintenance_page_activate*1 ? true : false);
-		$this->content['body'] = stripslashes($maintenance_page_content_body);
+		$this->content['body'] = stripslashes($maintenance_page_content);
 		$this->content['title'] = stripslashes($maintenance_page_content_title);
 		$this->content['style'] = stripslashes($maintenance_page_content_style);
 	}
@@ -99,17 +104,27 @@ class maintenance_page {
 	}
 	
 	protected function fetch_content() {
+	    global $maintenance_page_default_content, $msg;
+	    
 		$this->content = array();
 		if (file_exists($this->content_filename)) {
 			$html = file_get_contents($this->content_filename);
 			
 			$matches = array();
 			preg_match('/<title>(.*)<\/title>/s', $html, $matches);
-			$this->content['title'] = $matches[1];
+			if (!empty($matches[1])) {
+                $this->content['title'] = $matches[1];
+			} else {
+			    $this->content['title'] = $msg['admin_opac_maintenance'];
+			}
 			preg_match('/<style>(.*)<\/style>/s', $html, $matches);
 			$this->content['style'] = trim($matches[1]);
 			preg_match('/<body>(.*)<\/body>/s', $html, $matches);
-			$this->content['body'] = trim($matches[1]);
+			if (!empty(trim($matches[1]))) {
+                $this->content['body'] = trim($matches[1]);
+			} else {
+			    $this->content['body'] = $maintenance_page_default_content;
+			}
 		} else {
 			// Le fichier n'existe pas encore ou a été effacé, on va chercher le contenu par défaut
 			global $maintenance_page_default_content, $msg;

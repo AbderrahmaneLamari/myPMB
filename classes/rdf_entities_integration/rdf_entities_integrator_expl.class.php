@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_integrator_expl.class.php,v 1.2 2020/07/13 15:00:06 qvarin Exp $
+// $Id: rdf_entities_integrator_expl.class.php,v 1.4.4.1 2023/06/01 11:56:07 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,6 +14,8 @@ class rdf_entities_integrator_expl extends rdf_entities_integrator {
 	protected $table_name = 'exemplaires';
 	
 	protected $table_key = 'expl_id';
+	
+	protected $notice_id = 0;
 	
 	protected $ppersos_prefix = 'expl';
 	
@@ -53,16 +55,35 @@ class rdf_entities_integrator_expl extends rdf_entities_integrator {
 	
 	protected function post_create($uri) {
 		if ($this->entity_id) {
+		    if(!empty($this->notice_id)){
+		        $rqt = "UPDATE exemplaires SET expl_notice = '{$this->notice_id}' WHERE expl_id = '$this->entity_id'";
+		        pmb_mysql_query($rqt);
+		    }
+			//Gestion du cas ou on est sur la notice d'un bulletin
+			$bulletin_id = $this->get_bull_id($this->base_query_elements['expl_notice']);
+			if($bulletin_id !== false){
+				$query = "UPDATE exemplaires SET expl_bulletin = '{$bulletin_id}' WHERE expl_id = '$this->entity_id'";
+				pmb_mysql_query($query);
+			}
+			
 			$query = 'insert into audit (type_obj, object_id, user_id, type_modif, info, type_user) ';
 			$query.= 'values ("'.AUDIT_EXPL.'", "'.$this->entity_id.'", "'.$this->contributor_id.'", "'.$this->integration_type.'", "'.$this->create_audit_comment($uri).'", "'.$this->contributor_type.'")';
 			pmb_mysql_query($query);
-			
-			if ($this->integration_type == 1) {
-				$expl = new exemplaire('', $this->entity_id);
-				$cb = $expl->gen_cb();
-				$query = 'UPDATE exemplaires SET expl_cb = "'.$cb.'" WHERE expl_id = '.$this->entity_id;
-				pmb_mysql_query($query);
-			}
 		}
+	}
+	/**
+	 * Méthode retournant l'id de bulletin d'une notice s'il existe, renvoie false sinon
+	 * @return int | boolean
+	 */
+	protected function get_bull_id($notice_id)
+	{
+		$query = "SELECT bulletin_id FROM bulletins WHERE num_notice = '".$notice_id . "'";
+	    $result = pmb_mysql_query($query);
+	    if(pmb_mysql_num_rows($result)){
+	        $params = pmb_mysql_fetch_object($result);
+	        return $params->bulletin_id;
+	    } else {
+	        return false;
+	    }
 	}
 }

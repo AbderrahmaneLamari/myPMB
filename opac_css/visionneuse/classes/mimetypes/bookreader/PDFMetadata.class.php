@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: PDFMetadata.class.php,v 1.5 2017/07/03 09:07:10 dgoron Exp $
+// $Id: PDFMetadata.class.php,v 1.6 2022/05/09 14:42:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -44,9 +44,11 @@ class PDFMetadata {
 	
 	public function getPagesSizes(){
 		if(!count($this->pagesSizes)){
+			$output = array();
 			exec("pdfinfo -f 1 -l ".$this->nb_pages." ".$this->pdf , $output);
 			for ($i = 0; $i < count($output); $i++) {
 				if (substr($output[$i],0,5) == "Page "){
+					$matches = array();
 					if(preg_match('/^Page\D+(\d+)\D+(\d+[.]?\d+?)\D+(\d+[.]?\d+)/',$output[$i],$matches)){
 						$this->pagesSizes[$matches[1]] = array(
 							'width' => $matches[2],

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_integer.inc.php,v 1.9 2021/03/19 08:49:02 dgoron Exp $
+// $Id: ajax_integer.inc.php,v 1.10.4.1 2023/09/06 07:04:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -34,15 +34,19 @@ $z->signature = $signature;
 if($infos['notice']) $z->notice = $infos['notice'];
 if($infos['source_id']) $z->source_id = $infos['source_id'];
 $z->var_to_post();
-$ret=$z->insert_in_database(true);
+$ret=$z->insert_in_database();
 
 //on conserve la trace de l'origine de la notice...
-$id_notice = $ret[1];
-$rqt = "select recid from external_count where rid = '$item'";
+$id_notice = intval($ret[1]);
+$rqt = "select recid from external_count where rid = '".addslashes($item)."'";
 $res = pmb_mysql_query($rqt);
-if(pmb_mysql_num_rows($res)) $recid = pmb_mysql_result($res,0,0);
-$req= "insert into notices_externes set num_notice = '".$id_notice."', recid = '".$recid."'";
-pmb_mysql_query($req);
+if(pmb_mysql_num_rows($res)) {
+    $recid = pmb_mysql_result($res,0,0);
+}
+if($id_notice && $recid) {
+    $req= "insert into notices_externes set num_notice = '".$id_notice."', recid = '".addslashes($recid)."'";
+    pmb_mysql_query($req);
+}
 if ($ret[0]) {
 	if($z->bull_id && $z->perio_id){
 		$notice_display=new serial_display($ret[1],6);
@@ -59,8 +63,11 @@ if ($ret[0]) {
 			".$notice_display->result."
 		</div>
 	</div>";
-	if($z->bull_id && $z->perio_id) $url_view = analysis::get_permalink($ret[1], $z->bull_id);
-	else $url_view = notice::get_permalink($ret[1]);
+	if($z->bull_id && $z->perio_id) {
+	    $url_view = analysis::get_permalink($ret[1], $z->bull_id);
+	} else {
+	    $url_view = notice::get_permalink($ret[1]);
+	}
 	$retour .= "
 		<div class='row'>
 			<div class='row'>
@@ -74,7 +81,9 @@ if ($ret[0]) {
 } else if ($ret[1]){
 	if($z->bull_id && $z->perio_id){
 		$notice_display=new serial_display($ret[1],6);
-	} else $notice_display=new mono_display($ret[1],6);
+	} else {
+	    $notice_display=new mono_display($ret[1],6);
+	}
 	$retour = "
 	<script src='javascript/tablist.js'></script>
 	<br /><div class='erreur'>$msg[540]</div>
@@ -87,8 +96,11 @@ if ($ret[0]) {
 			".$notice_display->result."
 		</div>
 	</div>";
-	if($z->bull_id && $z->perio_id) $url_view = analysis::get_permalink($ret[1], $z->bull_id);
-	else $url_view = notice::get_permalink($ret[1]);
+	if($z->bull_id && $z->perio_id) {
+	    $url_view = analysis::get_permalink($ret[1], $z->bull_id);
+	} else {
+	    $url_view = notice::get_permalink($ret[1]);
+	}
 	$retour .= "
 	<div class='row'>
 			<div class='row'>

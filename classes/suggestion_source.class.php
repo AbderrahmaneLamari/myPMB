@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestion_source.class.php,v 1.5 2021/01/18 12:58:01 dgoron Exp $
+// $Id: suggestion_source.class.php,v 1.5.6.1 2023/06/28 07:57:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -33,14 +33,18 @@ class suggestion_source{
 		}
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle_source);
+		return $interface_content_form->get_display();
+	}
+	
 	/*
 	 * Formulaire d'ajout/modification
 	 */
 	public function get_form(){
-		global $src_content_form, $msg, $charset;
-		
-		$content_form = $src_content_form;
-		$content_form = str_replace('!!id!!', $this->id_source, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('srcform');
 		if(!$this->id_source){
@@ -48,11 +52,9 @@ class suggestion_source{
 		}else{
 			$interface_form->set_label($msg['acquisition_modif_src']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle_source, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id_source)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle_source." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('suggestions_source')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();

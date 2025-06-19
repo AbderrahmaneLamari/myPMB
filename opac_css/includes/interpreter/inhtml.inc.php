@@ -2,10 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: inhtml.inc.php,v 1.14.2.1 2021/06/25 11:53:33 dgoron Exp $
+// $Id: inhtml.inc.php,v 1.18 2022/12/20 09:50:19 dgoron Exp $
+
+global $include_path, $func_format;
 
 require_once ($include_path . "/misc.inc.php");
 
+if(empty($func_format)) {
+	$func_format= array();
+}
 $func_format['if_logged']= 'aff_if_logged';
 $func_format['if_logged_lang']= 'aff_if_logged_lang';
 $func_format['message_lang']= 'aff_message_lang';
@@ -14,7 +19,6 @@ $func_format['eval_php']= 'aff_eval_php';
 $func_format['perio_a2z']= 'aff_perio_a2z';
 $func_format['if_session_param']= 'aff_if_session_param';
 $func_format['hidden_global_var_form']= 'aff_hidden_global_var_form';
-
 
 
 $var_format = array();
@@ -63,8 +67,11 @@ function aff_if_logged_lang($param) {
 
 function aff_message_lang($param) {
 	global $lang;
-	if ($lang==$param[1])
-	return $param[0]; else return "";
+	if ($lang==$param[1]) {
+		return $param[0];
+	} else {
+		return "";
+	}
 }
 
 function aff_perio_a2z($param) {
@@ -76,26 +83,12 @@ function aff_perio_a2z($param) {
 }
 
 function aff_hidden_global_var_form($param) {
-    global $charset;
-    
     if(empty($param[0])) {
         $param[0] = 'hidden_global_var_form';
     }
     $action = substr($_SERVER['REQUEST_URI'], strrpos($_SERVER['REQUEST_URI'], '/')+1);
     $hidden_form = "<form method=\"post\" name='".$param[0]."' action=\"".$action."\" >";
-    if(count($_POST)) {
-        foreach ($_POST as $name=>$value) {
-            if(is_string($value)) {
-                $hidden_form .= "<input type='hidden' name=\"".$name."\" value=\"".htmlentities($value, ENT_QUOTES, $charset)."\" />";
-            } elseif(is_array($value)) {
-                foreach ($value as $sub_key=>$sub_value) {
-                    if(is_string($sub_value)) {
-                        $hidden_form .= "<input type='hidden' name=\"".$name."[".$sub_key."]\" value=\"".htmlentities($sub_value, ENT_QUOTES, $charset)."\" />";
-                    }
-                }
-            }
-        }
-    }
+    $hidden_form .= get_hidden_global_var('POST');
     if(!empty($param[1]) && (empty($_POST) || (!empty($_POST) && array_key_exists($param[1], $_POST) === false))) {
         $hidden_form .= "<input type='hidden' name=\"".$param[1]."\" value='' />";
     }

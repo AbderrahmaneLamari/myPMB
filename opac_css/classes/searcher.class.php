@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher.class.php,v 1.121.2.3 2021/11/08 10:21:25 tsamson Exp $
+// $Id: searcher.class.php,v 1.124.4.1 2023/10/02 13:39:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -1195,16 +1195,26 @@ class searcher_extended extends searcher{
 			$this->_set_in_cache();
 		}else{
 			$this->notices_ids = $cache_result;
-			if(!$this->notices_ids) return array();
+            if (! $this->notices_ids) {
+                return array();
+            }
 			$this->table = $this->get_temporary_table_name('get_result');
 			$rqt = "create temporary table ".$this->table." engine=memory select notice_id from notices where notice_id in(".$this->notices_ids.")";
-			$res = pmb_mysql_query($rqt);
+			pmb_mysql_query($rqt);
 			pmb_mysql_query("alter table ".$this->table." add index i_id(notice_id)");	
 			if (!empty($this->pert)) {
 			    $query="alter table ".$this->table." add pert decimal(16,1) default 1";
 			    pmb_mysql_query($query);
+			    //Adaptation du tableau pour ne plus réaliser un UPDATE par identifiant
+			    $reverse_pert = array();
 			    foreach ($this->pert as $id => $pert) {
-			        $query = "UPDATE ".$this->table." SET pert = $pert WHERE notice_id = $id";
+			        if(empty($reverse_pert[$pert])) {
+			            $reverse_pert[$pert] = array();
+			        }
+			        $reverse_pert[$pert][] = $id;
+			    }
+			    foreach ($reverse_pert as $pert => $records_ids) {
+			        $query = "UPDATE " . $this->table . " SET pert = $pert WHERE notice_id IN (".implode(',', $records_ids).")";
 			        pmb_mysql_query($query);
 			    }
 			}

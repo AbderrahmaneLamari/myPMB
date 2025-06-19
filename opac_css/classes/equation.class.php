@@ -2,11 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: equation.class.php,v 1.9 2018/02/09 11:00:41 dgoron Exp $
+// $Id: equation.class.php,v 1.12 2022/03/23 15:13:53 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 // définition de la classe de gestion des 'équations de recherche'
+global $class_path;
 require_once($class_path."/search.class.php");
 
 class equation {
@@ -27,26 +28,16 @@ class equation {
 	//		constructeur
 	// ---------------------------------------------------------------
 	public function __construct($id=0) {
-		$id += 0;
+		$this->id_equation = intval($id);
 		//Instantiation d'une classe recherche
 		$this->search_class=new search(false);
-		if ($id) {
-			// on cherche à atteindre une notice existante
-			$this->id_equation = $id;
-			$this->getData();
-		} else {
-			// la notice n'existe pas
-			$this->id_equation = 0;
-			$this->getData();
-		}
+		$this->getData();
 	}
 
 	// ---------------------------------------------------------------
 	//		getData() : récupération infos
 	// ---------------------------------------------------------------
 	public function getData() {
-		global $msg;
-		
 		$this->num_classement = 1 ;
 		$this->nom_equation="";
 		$this->comment_equation="";
@@ -73,46 +64,51 @@ class equation {
 	// ---------------------------------------------------------------
 	public function show_form() {
 		global $msg, $charset;
-		global $dsi_equation_form;
+		global $dsi_equation_content_form;
+		
+		$content_form = $dsi_equation_content_form;
+		$content_form = str_replace('!!id_equation!!', $this->id_equation, $content_form);
+		
+		$interface_form = new interface_dsi_form('saisie_equation');
+		if(!$this->id_equation){
+			$interface_form->set_label($msg['dsi_equ_form_creat']);
+		}else{
+			$interface_form->set_label($msg['dsi_equ_form_modif']);
+		}
+		$content_form = str_replace('!!nom_equation!!', htmlentities($this->nom_equation,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!num_classement!!', show_classement_utilise ('EQU', $this->num_classement, 0), $content_form);
+		$content_form = str_replace('!!comment_equation!!', htmlentities($this->comment_equation,ENT_QUOTES, $charset), $content_form);
+		
+		$content_form = str_replace('!!requete!!', htmlentities($this->requete,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!requete_human!!', $this->search_class->make_serialized_human_query($this->requete), $content_form);
+		/*
+		 if ($this->proprio_equation==0) {
+		 $content_form = str_replace('!!proprio_equation!!', htmlentities($msg['dsi_equ_no_proprio'],ENT_QUOTES, $charset), $content_form);
+		 } else {
+		 $content_form = str_replace('!!proprio_equation!!', "Choix de proprio à faire", $content_form);
+		 }
+		 */
+		$content_form = str_replace('!!proprio_equation!!', '', $content_form);
 		
 		if($this->id_equation) {
-			$action = "./dsi.php?categ=equations&sub=gestion&id_equation=".$this->id_equation."&suite=update";
-			$button_delete = "<input type='button' class='bouton' value='$msg[63]' onClick=\"confirm_delete();\">";
-			$libelle = $msg['dsi_equ_form_modif'];
 			$button_modif_requete = "<input type='button' class='bouton' value=\"$msg[dsi_equ_modif_requete]\" onClick=\"document.modif_requete_form_$this->id_equation.submit();\">";
 			$form_modif_requete = $this->make_hidden_search_form();
 		} else {
-			$action = "./dsi.php?categ=equations&sub=gestion&id_equation=0&suite=update";
-			$libelle = $msg['dsi_equ_form_creat'];
-			$button_delete ='';
 			$button_modif_requete = "";
 			$form_modif_requete = "";
 		}
-	
-		$dsi_equation_form = str_replace('!!libelle!!', $libelle, $dsi_equation_form);
-	
-		$dsi_equation_form = str_replace('!!id_equation!!', $this->id_equation, $dsi_equation_form);
-		$dsi_equation_form = str_replace('!!action!!', $action, $dsi_equation_form);
-		$dsi_equation_form = str_replace('!!nom_equation!!', htmlentities($this->nom_equation,ENT_QUOTES, $charset), $dsi_equation_form);
+		$content_form = str_replace('!!bouton_modif_requete!!', $button_modif_requete,  $content_form);
 		
-		$dsi_equation_form = str_replace('!!num_classement!!', show_classement_utilise ('EQU', $this->num_classement, 0), $dsi_equation_form);
-		
-		$dsi_equation_form = str_replace('!!comment_equation!!', htmlentities($this->comment_equation,ENT_QUOTES, $charset), $dsi_equation_form);
-	
-		$dsi_equation_form = str_replace('!!requete!!', htmlentities($this->requete,ENT_QUOTES, $charset), $dsi_equation_form);
-		$dsi_equation_form = str_replace('!!requete_human!!', $this->search_class->make_serialized_human_query($this->requete), $dsi_equation_form);
-		
-		if ($this->proprio_equation==0) {
-			$dsi_equation_form = str_replace('!!proprio_equation!!', htmlentities($msg['dsi_equ_no_proprio'],ENT_QUOTES, $charset), $dsi_equation_form);
-		} else { 
-			$dsi_equation_form = str_replace('!!proprio_equation!!', "Choix de proprio à faire", $dsi_equation_form);
-		}
-		
-		$dsi_equation_form = str_replace('!!delete!!', $button_delete,  $dsi_equation_form);
-		$dsi_equation_form = str_replace('!!bouton_modif_requete!!', $button_modif_requete,  $dsi_equation_form);
-		$dsi_equation_form = str_replace('!!form_modif_requete!!', $form_modif_requete,  $dsi_equation_form);
-		
-		return $dsi_equation_form;
+		$interface_form->set_object_id($this->id_equation)
+		->set_confirm_delete_msg($msg['confirm_suppr'])
+		->set_content_form($content_form)
+		->set_table_name('equations')
+		->set_field_focus('nom_equation')
+		->set_duplicable(true);
+		$display = $interface_form->get_display();
+		//formulaire caché intégré hors formulaire de l'équation
+		$display .= $form_modif_requete;
+		return $display;
 	}
 	
 	public function set_properties_from_form() {
@@ -123,19 +119,17 @@ class equation {
 		global $id_empr;
 		global $empr_nom, $empr_prenom;
 
-		$this->num_classement = $num_classement+0;
+		$this->num_classement = intval($num_classement);
 		$this->nom_equation = trim(stripslashes($equ_human));
 		$this->comment_equation = $empr_nom." ".$empr_prenom.' -> '.trim(stripslashes($nom_bannette));
 		$this->requete = stripslashes($equation);
-		$this->proprio_equation = $id_empr+0;
+		$this->proprio_equation = intval($id_empr);
 	}
 	
 	// ---------------------------------------------------------------
 	//		save
 	// ---------------------------------------------------------------
 	public function save() {
-		global $msg;
-	
 		if ($this->id_equation) {
 			// update
 			$query = "UPDATE equations set ";
@@ -174,7 +168,6 @@ class equation {
     public function make_hidden_search_form($url="") {
     	global $search;
     	global $charset;
-    	global $page;
     	$url = "./catalog.php?categ=search&mode=6" ;
     	// remplir $search
     	$this->search_class->unserialize_search($this->requete);

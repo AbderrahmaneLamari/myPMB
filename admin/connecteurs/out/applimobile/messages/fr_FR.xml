@@ -5,7 +5,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: fr_FR.xml,v 1.4 2021/03/11 11:37:56 dbellamy Exp $ -->
+$Id: fr_FR.xml,v 1.6 2022/05/13 10:12:06 rtigero Exp $ -->
 
 <XMLlist>
     <entry code="applimobile_configuration_ws_url">Adresse du web service de paramétrage</entry>
@@ -34,4 +34,17 @@ $Id: fr_FR.xml,v 1.4 2021/03/11 11:37:56 dbellamy Exp $ -->
     <entry code="applimobile_simple_search_type_COLLECTION">Collection</entry>
     <entry code="applimobile_simple_search_type_CATEGORIES">Catégories</entry>
     <entry code="applimobile_advanced_search_fields">Champs de recherche avancée à utiliser</entry>
+    <entry code="applimobile_associated_accounts_activate">Activer les comptes associés</entry>
+    <entry code="applimobile_rapid_search">La recherche rapide doit être localisée</entry>
+    <entry code="applimobile_disable_func">Désactiver des modules</entry>
+    <entry code="applimobile_loans">Prêts</entry>
+    <entry code="applimobile_cart">Panier</entry>
+    <entry code="applimobile_bookmarkedrecords">Favoris</entry>
+    <entry code="applimobile_simplesearch">Recherche simple</entry>
+    <entry code="applimobile_advancedsearch">Recherche avancée</entry>
+    <entry code="applimobile_suggestionlist">Suggestions</entry>
+    <entry code="applimobile_sections">Sections</entry>
+    <entry code="applimobile_barcodescanner">Scan de code-barres</entry>
+    <entry code="applimobile_barcodeinfo">Carte lecteur</entry>
+    <entry code="applimobile_library">Informations</entry>
 </XMLlist>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: custom_parametres_perso.class.php,v 1.43.2.4 2021/12/06 14:13:28 dgoron Exp $
+// $Id: custom_parametres_perso.class.php,v 1.50 2022/12/09 14:54:34 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,8 +11,11 @@ require_once($class_path."/parametres_perso.class.php");
 require_once($class_path."/translation.class.php");
 
 class custom_parametres_perso extends parametres_perso {
+	
 	public $num_type;
+	
 	protected static $definitions = array();
+	
 	protected static $out_values = array();
 	
 	public function  __construct($prefix,$custom_prefixe,$type,$base_url="",$option_navigation=array(), $option_visibilite=array()) {
@@ -42,9 +45,9 @@ class custom_parametres_perso extends parametres_perso {
 			$requete="select idchamp, name, titre, custom_prefixe, type, datatype, obligatoire, options, multiple, search, export, filters, exclusion_obligatoire, pond, opac_sort, comment from ".$this->prefix."_custom where custom_prefixe = '".$this->custom_prefixe."' and num_type = '".$this->num_type."' order by ordre";
 	
 			$resultat=pmb_mysql_query($requete);
-			if (pmb_mysql_num_rows($resultat)==0)
+			if (pmb_mysql_num_rows($resultat)==0) {
 				$this->no_special_fields=1;
-			else {
+			} else {
 				while ($r=pmb_mysql_fetch_object($resultat)) {
 					$this->t_fields[$r->idchamp]["DATATYPE"]=$r->datatype;
 					$this->t_fields[$r->idchamp]["NAME"]=$r->name;
@@ -61,6 +64,7 @@ class custom_parametres_perso extends parametres_perso {
 					$this->t_fields[$r->idchamp]["OPAC_SORT"]=$r->opac_sort;
 					$this->t_fields[$r->idchamp]["COMMENT"]=$r->comment;
 				}
+				pmb_mysql_free_result($resultat);
 			}
 			self::$definitions[$prefix.'_'.$custom_prefixe.'_'.$type]['no_fields'] = $this->no_special_fields;
 			self::$definitions[$prefix.'_'.$custom_prefixe.'_'.$type]['t_fields'] = $this->t_fields;
@@ -346,9 +350,13 @@ class custom_parametres_perso extends parametres_perso {
 					}
 					$this->values[$this->t_fields[$r[$this->prefix."_custom_champ"]]["NAME"]]['all_format_values'].=$format_value.' ';
 				}
+				pmb_mysql_free_result($requete);
 				$this->sort_out_values();
-			} else $this->values=array();
- 			self::$out_values[$id] = $this->values;
+			} else {
+				$this->values=array();
+			}
+
+			self::$out_values[$id] = $this->values;
 		}else {
 			$this->values = self::$out_values[$id];
 		}
@@ -481,6 +489,12 @@ class custom_parametres_perso extends parametres_perso {
 				$field["VALUES"]=$this->values[$key];
 				$field["PREFIX"]=$this->prefix;
 				$field["ID_ORIGINE"]=$id;
+				$field["AUTHPERSO"] = false;
+				
+				if ($field["OPTIONS"][0]["DATA_TYPE"][0]['value'] > 1000 && "query_auth" == $field["OPTIONS"][0]["FOR"]) {
+				    $field["AUTHPERSO"] = true;
+				}
+				
 				eval("\$aff=".$aff_list_empr[$this->t_fields[$key]['TYPE']]."(\$field,\$check_scripts);");
 				$t["AFF"]=$aff;
 				$t["NAME"]=$field["NAME"];
@@ -572,30 +586,31 @@ class custom_parametres_perso extends parametres_perso {
 	}
 	
 	public function get_formatted_output($values, $field_id, $keep_html=false){
-		global $val_list_empr, $charset;
+		global $val_list_empr;
 		
-		if(!empty($this->t_fields[$field_id])){
-    		$field=array();
-    		$field["ID"]=$field_id;
-    		$field["NAME"]=$this->t_fields[$field_id]["NAME"];
-    		$field["COMMENT"]=$this->t_fields[$field_id]["COMMENT"];
-    		$field["MANDATORY"]=$this->t_fields[$field_id]["MANDATORY"];
-    		$field["OPAC_SORT"]=$this->t_fields[$field_id]["OPAC_SORT"];
-    		$field["ALIAS"]=$this->t_fields[$field_id]["TITRE"];
-    		$field["DATATYPE"]=$this->t_fields[$field_id]["DATATYPE"];
-    		$field["OPTIONS"]=$this->t_fields[$field_id]["OPTIONS"];
-    		$field["VALUES"]=$values;
-    		$field["PREFIX"]=$this->prefix;
-    		$aff=$val_list_empr[$this->t_fields[$field_id]["TYPE"]]($field,$values);
+		if (!empty($this->t_fields[$field_id])) {
+    		$field = array();
+    		$field["ID"] = $field_id;
+    		$field["NAME"] = $this->t_fields[$field_id]["NAME"];
+    		$field["COMMENT"] = $this->t_fields[$field_id]["COMMENT"];
+    		$field["MANDATORY"] = $this->t_fields[$field_id]["MANDATORY"];
+    		$field["OPAC_SORT"] = $this->t_fields[$field_id]["OPAC_SORT"];
+    		$field["ALIAS"] = $this->t_fields[$field_id]["TITRE"];
+    		$field["DATATYPE"] = $this->t_fields[$field_id]["DATATYPE"];
+    		$field["OPTIONS"] = $this->t_fields[$field_id]["OPTIONS"];
+    		$field["VALUES"] = $values;
+    		$field["PREFIX"] = $this->prefix;
+
+    		$aff = call_user_func($val_list_empr[$this->t_fields[$field_id]["TYPE"]], $field, $values);
 		}
 		if (isset($aff)) {
-		    if (is_array($aff)) {		
-    		    if ($keep_html) {
-    		        return $aff['value'];
-    		    } else {
-    		        return $aff['withoutHTML'];
-    		    }
-            } else return $aff;
+		    if (is_array($aff)) {
+		        if ($keep_html) {
+		            return $aff['value'];
+		        } else {
+		            return $aff['withoutHTML'];
+		        }
+		    } else return $aff;
 		}
 		return '';
 	}

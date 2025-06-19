@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_cart.inc.php,v 1.47 2020/11/05 12:56:21 dgoron Exp $
+// $Id: empr_cart.inc.php,v 1.47.6.1 2023/09/04 14:36:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -53,7 +53,9 @@ function aff_paniers_empr($item=0, $lien_origine="./circ.php?", $action_click = 
 	print $list_empr_caddies_ui->get_display_list();
 	$script_submit = $list_empr_caddies_ui->get_script_submit();
 	if($sub=="gestion" && $quoi=="panier"){
-		print "<script src='./javascript/classementGen.js' type='text/javascript'></script>";
+		print "<script type='text/javascript'>
+            pmb_include('./javascript/classementGen.js');
+        </script>";
 	}
 	
 	if($sub!='gestion' && $sub!='action'&& $action != "del_cart") {

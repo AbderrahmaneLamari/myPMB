@@ -2,9 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interpreter.inc.php,v 1.17.2.1 2021/07/07 07:04:21 dgoron Exp $
+// $Id: interpreter.inc.php,v 1.20 2022/06/20 12:06:00 dgoron Exp $
+
+global $include_path, $func_format;
+
 require_once ($include_path . "/misc.inc.php");
 
+if(empty($func_format)) {
+	$func_format= array();
+}
 $func_format['romain']= 'aff_romain';
 $func_format['roman']= 'aff_romain';
 $func_format['date']= 'aff_date';
@@ -256,53 +262,44 @@ function aff_str_seasonS($param) {
 	return $local_msg["season_".$season];	
 }
 function aff_add_day($param) {
-	global $msg;
 	$date=$param[0];
 	$nb=$param[1];
 	return pmb_sql_value("SELECT DATE_ADD('" .$date. "', INTERVAL " .$nb. " DAY)");
 }
 function aff_add_month($param) {
-	global $msg;
 	$date=$param[0];
 	$nb=$param[1];
 	return pmb_sql_value("SELECT DATE_ADD('" .$date. "', INTERVAL " .$nb. " MONTH)");
 }
 function aff_add_year($param) {
-	global $msg;
 	$date=$param[0];
 	$nb=$param[1];
 	return pmb_sql_value("SELECT DATE_ADD('" .$date. "', INTERVAL " .$nb. " YEAR)");
 }
 function aff_sub_day($param) {
-	global $msg;
 	$date=$param[0];
 	$nb=$param[1];
 	return pmb_sql_value("SELECT DATE_SUB('" .$date. "', INTERVAL " .$nb. " DAY)");
 }
 function aff_sub_month($param) {
-	global $msg;
 	$date=$param[0];
 	$nb=$param[1];
 	return pmb_sql_value("SELECT DATE_SUB('" .$date. "', INTERVAL " .$nb. " MONTH)");
 }
 function aff_sub_year($param) {
-	global $msg;
 	$date=$param[0];
 	$nb=$param[1];
 	return pmb_sql_value("SELECT DATE_SUB('" .$date. "', INTERVAL " .$nb. " YEAR)");
 }
 function aff_quarter($param) {
-	global $msg;
 	$date=$param[0];
 	return pmb_sql_value("SELECT QUARTER('" .$date. "')");
 }
 function aff_dayofyear($param) {
-	global $msg;
 	$date=$param[0];
 	return pmb_sql_value("SELECT DAYOFYEAR('" .$date. "')");
 }
 function aff_curdate($param) {
-	global $msg;
 	return pmb_sql_value("SELECT CURDATE()");
 }
 function aff_ucase_firstletter($param) {
@@ -312,6 +309,9 @@ function aff_ucase($param) {
 	return strtoupper($param[0]);
 }
 function aff_ucase_firstletter_word($param) {
+	if(!empty($param[1])) {
+		return ucwords($param[0], $param[1]);
+	}
 	return ucwords($param[0]);
 }
 

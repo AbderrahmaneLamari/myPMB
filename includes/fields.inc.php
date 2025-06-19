@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: fields.inc.php,v 1.37 2020/11/03 13:16:46 dgoron Exp $
+// $Id: fields.inc.php,v 1.37.6.2 2023/11/28 15:19:43 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -16,9 +16,9 @@ $type_list=array("text"=>$msg["parperso_text"],"list"=>$msg["parperso_choice_lis
 $options_list=array("text"=>"options_text.php","list"=>"options_list.php","query_list"=>"options_query_list.php","date_box"=>"options_date_box.php","file_box"=>"options_file_box.php","selector"=>"options_selector.php");
 
 function aff_selector($field,&$check_scripts) {
-	
+
 	global $msg, $categ;
-	
+
 	if($field["OPTIONS"][0]["METHOD"]["0"]["value"]==1) {
 		$text_name=$field['NAME']."_label";
 		$hidden_name=$field['NAME'];
@@ -34,24 +34,24 @@ function aff_selector($field,&$check_scripts) {
 		$text_value = ${$param};
 		$hidden_value = '';
 	}
-	
+
 	$selection_parameters = get_authority_selection_parameters($field["OPTIONS"][0]["DATA_TYPE"]["0"]["value"]);
 	$what = $selection_parameters['what'];
 	$completion = $selection_parameters['completion'];
 	$ret="<span style='width: 251px;'><input type='text' name='".$text_name."' id='".$text_name."' value='".$text_value."' class='saisie-30emr' completion='$completion' autfield='$hidden_name'></span>";
-	
+
 	switch ($categ) {
 		case "planificateur" :
 			$form_name = "planificateur_form";
 			break;
 		default :
 			$form_name = "formulaire";
-			break;	
+			break;
 	}
 
-	$ret.="<input class='bouton' value='...' onclick=\"openPopUp('./select.php?what=".$what."&dyn=&caller=".$form_name."&param1=".$hidden_name."&param2=".$text_name."&p1=".$hidden_name."&p2=".$text_name."&deb_rech='+".pmb_escape()."(''), 'selector')\" type='button'>";
+	$ret.="<input class='bouton' value='...' onclick=\"openPopUp('./select.php?what=".$what."".(($selection_parameters['element']) ? "&element=".($selection_parameters['element']) : "")."&dyn=&caller=".$form_name."&param1=".$hidden_name."&param2=".$text_name."&p1=".$hidden_name."&p2=".$text_name."&deb_rech='+".pmb_escape()."(''), 'selector')\" type='button'>";
 	$ret.="<input name='".$hidden_name."' id='".$hidden_name."' value='".$hidden_value."' type='hidden'>";
-	
+
 	if ($field['MANDATORY']=="yes") $check_scripts.="if (document.".$form_name.".".$field['NAME'].".value==\"\") return cancel_submit(\"".sprintf($msg["parperso_field_is_needed"],$field['ALIAS'][0]['value'])."\");\n";
 	return $ret;
 }
@@ -63,31 +63,31 @@ function chk_selector($field,&$check_message) {
 
 
 function val_selector($field) {
-	
+
 	$name=$field['NAME'];
 	global ${$name};
-	
+
 	return ${$name};
 }
 
 
 function aff_file_box($field,&$check_scripts) {
-	
+
 	global $msg, $categ;
-	
+
 	//pré-remplissage
 	$param = $field['NAME'];
 	global ${$param};
-	
+
 	switch ($categ) {
 		case "planificateur" :
 			$form_name = "planificateur_form";
 			break;
 		default :
 			$form_name = "formulaire";
-			break;	
+			break;
 	}
-	
+
 	$ret="<input type=\"file\" name=\"".$field["NAME"]."\">";
 	if ($field['MANDATORY']=="yes") $check_scripts.="if (document.".$form_name.".".$field['NAME'].".value==\"\") return cancel_submit(\"".sprintf($msg["parperso_field_is_needed"],$field['ALIAS'][0]['value'])."\");\n";
 	return $ret;
@@ -95,10 +95,10 @@ function aff_file_box($field,&$check_scripts) {
 
 
 function chk_file_box($field,&$check_message) {
-	
+
 	global $msg;
 	global $_FILES;
-	
+
 	//Supression des vieux fichiers !
 	$dir=opendir("temp");
 	$files=array();
@@ -110,9 +110,9 @@ function chk_file_box($field,&$check_message) {
 		$date=filemtime("temp/".$file);
 		if (((time()-$date)>=24*60*60)&&(substr($file,0,13)=="proc_actions_")) {
 			unlink("temp/".$file);
-		} 
+		}
 	}
-	
+
 	if ($_FILES[$field['NAME']]["error"]) {
 		$check_message=$msg['field_file_download'];
 		return 0;
@@ -128,7 +128,7 @@ function chk_file_box($field,&$check_message) {
 				$check_message=$msg['field_file_copy'];
 				return 0;
 			}
-		} else {	
+		} else {
 			$field_name=$field['NAME'];
 			global ${$field_name};
 			$field_name_=${$field_name};
@@ -144,15 +144,16 @@ function chk_file_box($field,&$check_message) {
 
 
 function val_file_box($field) {
-	
+    global $default_tmp_storage_engine;
+
 	if ($field ['OPTIONS'][0]['METHOD'][0]['value']=="") $field ['OPTIONS'][0]['METHOD'][0]['value']=1;
 	if (($field ['OPTIONS'][0]['METHOD'][0]['value']==2)&&($field ['OPTIONS'][0]['DATA_TYPE'][0]['value']=="")) $field ['OPTIONS'][0]['DATA_TYPE'][0]['value']=1;
 	$val=array();
-	
+
 	$field_name=$field['NAME'];
 	global ${$field_name};
 	$field_name_=${$field_name};
-	
+
 	if (($fp=@fopen("temp/".$field_name_[0],"r"))) {
 		while (!feof($fp)) {
 			$val_=@fgets($fp);
@@ -168,7 +169,7 @@ function val_file_box($field) {
 			return $ret;
 		} else {
 			if ($field ['OPTIONS'][0]['DATA_TYPE'][0]['value']=="1") $data_type="varchar(255)"; else $data_type="integer";
-			$requete="create temporary table ".$field['OPTIONS'][0]['TEMP_TABLE_NAME'][0]['value']." (val $data_type, INDEX (val)) ENGINE=MyISAM ";
+			$requete="create temporary table ".$field['OPTIONS'][0]['TEMP_TABLE_NAME'][0]['value']." (val $data_type, INDEX (val)) ENGINE={$default_tmp_storage_engine} ";
 			@pmb_mysql_query($requete);
 			foreach ($val as $key => $value) {
 				$requete="insert into ".$field['OPTIONS'][0]['TEMP_TABLE_NAME'][0]['value']." values('".addslashes($value)."')";
@@ -181,25 +182,25 @@ function val_file_box($field) {
 
 
 function aff_text($field,&$check_scripts) {
-	
+
 	global $msg, $categ;
-	
+
 	//pré-remplissage
 	$param = $field['NAME'];
 	global ${$param};
-	
+
 	switch ($categ) {
 		case "planificateur" :
 			$form_name = "planificateur_form";
 			break;
 		default :
 			$form_name = "formulaire";
-			break;	
+			break;
 	}
-	
+
 	$options=$field['OPTIONS'][0];
 	$ret="<input type=\"text\" size=\"".$options['SIZE'][0]['value']."\" maxlength=\"".$options['MAXSIZE'][0]['value']."\" name=\"".$field['NAME']."\" value=\"".${$param}."\">";
-	
+
 	if ($field['MANDATORY']=="yes") $check_scripts.="if (document.".$form_name.".".$field['NAME'].".value==\"\") return cancel_submit(\"".sprintf($msg["parperso_field_is_needed"],$field['ALIAS'][0]['value'])."\");\n";
 	return $ret;
 }
@@ -211,22 +212,22 @@ function chk_text($field,&$check_message) {
 
 
 function val_text($field) {
-	
+
 	$name=$field['NAME'];
 	global ${$name};
-	
+
 	return ${$name};
 }
 
 
 function aff_date_box($field,&$check_scripts) {
-	
+
 	global $msg, $categ;
-	
+
 	//pré-remplissage
 	$param = $field['NAME'];
 	global ${$param};
-	
+
 	if (${$param} != '') {
 		if(preg_match('`^\d{4}\-\d{2}\-\d{2}$`',${$param})) {
 			$val=${$param};
@@ -237,18 +238,18 @@ function aff_date_box($field,&$check_scripts) {
 		}
 	} else {
 		$val=date("Y-m-d",time());
-		$val_popup=date("Ymd",time());	
+		$val_popup=date("Ymd",time());
 	}
-	
+
 	switch ($categ) {
 		case "planificateur" :
 			$form_name = "planificateur_form";
 			break;
 		default :
 			$form_name = "formulaire";
-			break;	
+			break;
 	}
-	
+
 	$ret="<input type='hidden' name='".$field['NAME']."' value='$val' />
 				<input class='bouton' type='button' name='".$field['NAME']."_lib' value='".formatdate($val_popup)."' onClick=\"openPopUp('./select.php?what=calendrier&caller=".$form_name."&date_caller=".$val_popup."&param1=".$field['NAME']."&param2=".$field['NAME']."_lib&auto_submit=NO&date_anterieure=YES', 'calendar')\" />";
 	if ($field['MANDATORY']=="yes") $check_scripts.="if (document.".$form_name.".elements[\"".$field['NAME']."[]\"].value==\"\") return cancel_submit(\"".sprintf($msg["parperso_field_is_needed"],$field['ALIAS'][0]['value'])."\");\n";
@@ -262,7 +263,7 @@ function chk_date_box($field,&$check_message) {
 
 
 function val_date_box($field) {
-	
+
 	$name=$field['NAME'];
 	global ${$name};
 
@@ -271,9 +272,9 @@ function val_date_box($field) {
 
 
 function aff_list($field,&$check_scripts) {
-	
+
 	global $charset;
-	
+
 	//pré-remplissage
 	$param = $field['NAME'];
 	global ${$param};
@@ -286,7 +287,7 @@ function aff_list($field,&$check_scripts) {
 	} else {
 		$sel_param[${$param}] = ${$param};
 	}
-	
+
 	$options=$field['OPTIONS'][0];
 	$ret="<select name=\"".$field['NAME'];
 	if ($options['MULTIPLE'][0]['value']=="yes") $ret.="[]";
@@ -305,9 +306,9 @@ function aff_list($field,&$check_scripts) {
 
 
 function chk_list($field,&$check_message) {
-	
+
 	global $msg;
-	
+
 	$name=$field['NAME'];
 	global ${$name};
 	$val=${$name};
@@ -322,12 +323,12 @@ function chk_list($field,&$check_message) {
 
 
 function val_list($field) {
-	
+
 	$name=$field['NAME'];
 	global ${$name};
-	
+
 	$val=${$name};
-	
+
 	if ($field['OPTIONS'][0]['MULTIPLE'][0]['value']=="yes") {
 		if (isset($field['OPTIONS'][0]['COLUMN_NAME'][0]['value']) && $field['OPTIONS'][0]['COLUMN_NAME'][0]['value']) {
 			$val_=implode(",",$val);
@@ -348,9 +349,9 @@ function val_list($field) {
 
 
 function aff_query_list($field,&$check_scripts) {
-	
+
 	global $charset;
-	
+
 	//pré-remplissage
 	$param = $field['NAME'];
 	global ${$param};
@@ -382,7 +383,7 @@ function aff_query_list($field,&$check_scripts) {
 
 
 function chk_query_list($field,&$check_message) {
-	
+
 	global $msg;
 
 	$name=$field['NAME'];
@@ -399,13 +400,13 @@ function chk_query_list($field,&$check_message) {
 
 
 function val_query_list($field) {
-	
+
 	$name=$field['NAME'];
 	global ${$name};
-	
+
 	$val=${$name};
-	
-	if ($field['OPTIONS'][0]['MULTIPLE'][0]['value']=="yes") {		
+
+	if ($field['OPTIONS'][0]['MULTIPLE'][0]['value']=="yes") {
 		$val_=implode("','",$val);
 		if ($val_!="") $val_="'".$val_."'";
 		//$val_=stripslashes($val_);

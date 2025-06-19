@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: abts_status.class.php,v 1.4 2021/01/21 07:42:27 dgoron Exp $
+// $Id: abts_status.class.php,v 1.4.6.1 2023/07/11 06:47:31 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,8 +34,8 @@ class abts_status{
 	public function getData() {
 		if(!$this->id) return;
 		
-		$requete = 'SELECT * FROM abts_status WHERE abts_status_id='.$this->id;
-		$result = @pmb_mysql_query($requete);
+		$query = 'SELECT * FROM abts_status WHERE abts_status_id='.$this->id;
+		$result = pmb_mysql_query($query);
 		if(!pmb_mysql_num_rows($result)) {
 			pmb_error::get_instance(static::class)->add_message("not_found", "not_found_object");
 			return;
@@ -48,12 +48,19 @@ class abts_status{
 		$this->bulletinage_active = $data->abts_status_bulletinage_active;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_gestion_libelle', 'docnum_statut_libelle')
+		->add_input_node('text', $this->gestion_libelle);
+		$interface_content_form->add_inherited_element('display_colors', 'form_class_html', 'docnum_statut_class_html')
+		->init_nodes([$this->class_html]);
+		$interface_content_form->add_element('form_bulletinage_active', 'docnum_statut_bulletinage_active', 'flat')
+		->add_input_node('boolean', $this->bulletinage_active);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $msg,$charset;
-		global $admin_abts_status_content_form;
-		
-		$content_form = $admin_abts_status_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('statusform');
 		if($this->id){
@@ -61,27 +68,9 @@ class abts_status{
 		}else{
 			$interface_form->set_label($msg['115']);
 		}
-		$couleur = array();
-		for ($i=1;$i<=20; $i++) {
-			if ($this->class_html == "statutnot".$i){
-				$checked = "checked";
-			}
-			else {
-				$checked = "";
-			}
-			$couleur[$i]="<span for='statutnot".$i."' class='statutnot".$i."' style='margin: 7px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' />
-					<input id='statutnot".$i."' type=radio name='form_class_html' value='statutnot".$i."' $checked class='checkbox' /></span>";
-			if ($i==10) $couleur[10].="<br />";
-			elseif ($i!=20) $couleur[$i].="<b>|</b>";
-		}
-		
-		$couleurs=implode("",$couleur);
-		$content_form = str_replace("!!class_html!!", $couleurs, $content_form);
-		$content_form = str_replace("!!bulletinage_active_checked!!", ($this->bulletinage_active ? 'checked=checked' : ''), $content_form);
-		$content_form = str_replace("!!gestion_libelle!!", htmlentities($this->gestion_libelle,ENT_QUOTES,$charset),$content_form);
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->gestion_libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('abts_status')
 		->set_field_focus('form_gestion_libelle');
 		return $interface_form->get_display();

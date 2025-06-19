@@ -18,7 +18,8 @@
 				<td>{{ mailingtype.name }}</td>
 				<td v-if="mailingtype.periodicity == 3">{{ pmb.getMessage("animation", "animation_mailing_registration") }}</td>
 				<td v-else-if="mailingtype.periodicity == 4">{{ pmb.getMessage("animation", "animation_mailing_confirmation") }}</td>
-				<td v-else>{{ pmb.getMessage("animation", "animation_mailing_annulation") }}</td>
+				<td v-else-if="mailingtype.periodicity == 5">{{ pmb.getMessage("animation", "animation_mailing_annulation") }}</td>
+				<td v-else>{{ pmb.getMessage("animation", "animation_mailing_sendtobibli") }}</td>
 				<td v-if="mailingtype.delay > 0">{{ mailingtype.delay }}</td>
 				<td v-else>{{ pmb.getMessage("animation", "animation_mailing_delay_now") }}</td>
 			</tr>

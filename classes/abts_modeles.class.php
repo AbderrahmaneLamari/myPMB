@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: abts_modeles.class.php,v 1.47.2.1 2021/07/22 12:24:51 dgoron Exp $
+// $Id: abts_modeles.class.php,v 1.48 2021/07/22 12:21:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

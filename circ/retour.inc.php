@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: retour.inc.php,v 1.37.8.1 2021/12/09 09:04:05 dgoron Exp $
+// $Id: retour.inc.php,v 1.38 2021/12/09 09:00:52 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

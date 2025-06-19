@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_bannetteslistabon_datasource_bannetteslistabon.class.php,v 1.1.8.1 2021/11/19 10:24:14 dgoron Exp $
+// $Id: cms_module_bannetteslistabon_datasource_bannetteslistabon.class.php,v 1.3 2022/09/27 14:13:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -20,7 +20,7 @@ class cms_module_bannetteslistabon_datasource_bannetteslistabon extends cms_modu
 	
 	public function __construct($id=0){
 		parent::__construct($id);
-		$this->sortable = false;
+		$this->sortable = true;
 		$this->limitable = false;
 	}
 	/*
@@ -37,7 +37,11 @@ class cms_module_bannetteslistabon_datasource_bannetteslistabon extends cms_modu
 	 */
 	protected function get_sort_criterias() {
 		return array (
-			"title"
+				"id_bannette",
+				"nom_bannette",
+				"comment_public",
+				"date_last_remplissage",
+				"date_last_envoi",
 		);
 	}
 	
@@ -56,7 +60,10 @@ class cms_module_bannetteslistabon_datasource_bannetteslistabon extends cms_modu
 			
 			if(count($return)){
 				$query = "select id_bannette, nom_bannette, comment_public from bannettes where id_bannette in (".implode(",",$return).")";
-
+				if (!empty($this->parameters["sort_by"])) {
+					$query .= " order by " . addslashes($this->parameters["sort_by"]);
+					if (!empty($this->parameters["sort_order"])) $query .= " ".addslashes($this->parameters["sort_order"]);
+				}
 				$result = pmb_mysql_query($query);
 				if(pmb_mysql_num_rows($result)){
 					$return = array();

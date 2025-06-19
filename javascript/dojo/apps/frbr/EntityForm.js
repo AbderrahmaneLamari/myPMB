@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: EntityForm.js,v 1.15.2.1 2022/01/21 13:32:39 tsamson Exp $
+// $Id: EntityForm.js,v 1.16 2022/01/21 13:47:24 tsamson Exp $
 
 
 define([

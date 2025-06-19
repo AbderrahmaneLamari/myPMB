@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_empr.class.php,v 1.2.8.1 2021/10/20 12:07:15 dgoron Exp $
+// $Id: selector_empr.class.php,v 1.3 2021/10/20 12:05:21 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

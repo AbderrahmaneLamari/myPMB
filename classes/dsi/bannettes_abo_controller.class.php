@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannettes_abo_controller.class.php,v 1.6 2021/04/21 18:40:31 dgoron Exp $
+// $Id: bannettes_abo_controller.class.php,v 1.6.6.1 2023/09/04 14:36:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -43,7 +43,9 @@ class bannettes_abo_controller extends bannettes_controller {
 				print $model_instance->show_form("abo");
 				if ($pmb_javascript_office_editor) {
 					print $pmb_javascript_office_editor ;
-					print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+					print "<script type='text/javascript'>
+                        pmb_include('$base_path/javascript/tinyMCE_interface.js');
+                    </script>";
 				}
 				break;
 			case 'delete':

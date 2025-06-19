@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: amazon.class.php,v 1.41 2021/02/09 13:43:57 dgoron Exp $
+// $Id: amazon.class.php,v 1.43 2022/02/08 16:08:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $class_path,$base_path, $include_path;
+global $class_path;
 require_once($class_path."/connecteurs.class.php");
 
 class amazon extends connector {
@@ -120,6 +120,7 @@ class amazon extends connector {
     
     public function make_serialized_source_properties($source_id) {
     	global $url,$response_group,$search_index,$max_return,$review_height,$review_width;
+    	$t=array();
     	$t["url"]=stripslashes($url);
     	$t["response_group"]=$response_group;
   		$t["search_index"]=$search_index;
@@ -171,7 +172,7 @@ class amazon extends connector {
 	}
 	
 	public function rec_record($record,$source_id,$search_id) {
-		global $base_path,$url,$search_index;
+		global $url,$search_index;
 
 		$date_import=date("Y-m-d H:i:s",time());
 		
@@ -376,7 +377,6 @@ class amazon extends connector {
 				for ($j=0; $j<count($query[$i]["VALUE"]); $j++) {
 					$query[$i]["VALUE"][$j]=convert_diacrit($query[$i]["VALUE"][$j]);
 				}
-				$req="";
 				for ($j=0; $j<count($query[$i]["FIELDS"]); $j++) {
 					for ($k=0; $k<count($query[$i]["VALUE"]); $k++) {
 						$param=[];
@@ -446,6 +446,7 @@ class amazon extends connector {
 		$parameters = unserialize($this->parameters);
 		$client->__setSoapHeaders($this->make_soap_headers('ItemSearch'));
 		
+		$paws=array();
 		$paws["Request"]=array(
 			"SearchIndex"=>$search_index[$url][0],
 			"ResponseGroup"=>"ItemIds"
@@ -516,8 +517,6 @@ class amazon extends connector {
 	}
 	
 	public function amazon_2_uni($item) {
-		global $charset;
-
 		$nt=$item["ItemAttributes"];
 		$unimarc=array();
 		$unimarc["001"][0]=$item["ASIN"];
@@ -594,6 +593,7 @@ class amazon extends connector {
 		$auttotal=array();
 		$authors=$this->soap2array($nt,"Author");
 		if (count($authors)) {
+			$aut=array();
 			if (count($authors)>1) $autf="701"; else $autf="700";
 			for ($i=0; $i<count($authors); $i++) {
 				$aut[$i]["a"][0]=$authors[$i];
@@ -1166,10 +1166,12 @@ class amazon extends connector {
 	    $curl = curl_init($signedRequest);
 	    curl_setopt($curl, CURLOPT_HEADER, false);
 	    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        configurer_proxy_curl($curl,$signedRequest);
 	    $response = curl_exec($curl);
+	    $status_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 	    curl_close($curl);
-	    if ($response === FALSE) {
-	        return array();
+	    if ($response === FALSE || $status_code !== 200) {
+			return array();
 	    } else {
 	        $xml = json_decode(json_encode(simplexml_load_string($response, "SimpleXMLElement", LIBXML_NOCDATA)),TRUE);
 	        if ($xml === FALSE) {

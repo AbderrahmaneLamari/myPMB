@@ -1,4 +1,4 @@
-<!-- $Id: scan_requests_header_list.tpl.html,v 1.2 2020/10/14 08:36:29 dgoron Exp $ -->
+<!-- $Id: scan_requests_header_list.tpl.html,v 1.2.6.1 2023/12/07 13:20:30 dgoron Exp $ -->
 <tr>
 	<th style="width:3%">
 		<div class='center'>
@@ -31,5 +31,5 @@
 	<th onclick='scan_requests_ui_sort_by("status", this.getAttribute("data-sorted"));' data-sorted='{% if global.scan_request_order_by == "status" %}{{ global.scan_request_order_by_sens }}{% endif %}' style='cursor:pointer;' title='{{ msg.sort_by }}'>
 		{{ msg.scan_request_status }}&nbsp;<i class='fa fa-sort{% if global.scan_request_order_by == "status" %}-{{ global.scan_request_order_by_sens }}{% endif %}'></i>
 	</th>
-	<th></th>
+	<th>{{ msg.scan_request_actions }}</th>
 </tr>

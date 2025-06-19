@@ -1,6 +1,7 @@
 import Vue from "vue";
 import searchform from "./components/searchform.vue";
 
+Vue.prototype.pmb = pmbDojo.messages;
 window.addEventListener('DOMContentLoaded', function(event) {
 	new Vue({
 		el: "#searchform",

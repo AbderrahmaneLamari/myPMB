@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_common_view.class.php,v 1.2.2.1 2021/08/09 13:25:54 tsamson Exp $
+// $Id: frbr_entity_common_view.class.php,v 1.4 2022/02/14 13:41:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,7 +11,7 @@ class frbr_entity_common_view extends frbr_entity_root{
 	protected $cadre;
 	
 	public function __construct($id=0){
-		$this->id = $id+0;
+		$this->id = intval($id);
 		parent::__construct();
 	}
 	
@@ -23,8 +23,8 @@ class frbr_entity_common_view extends frbr_entity_root{
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
 				$row = pmb_mysql_fetch_object($result);
-				$this->id = $row->id_cadre_content+0;
-				$this->num_cadre = $row->cadre_content_num_cadre+0;
+				$this->id = intval($row->id_cadre_content);
+				$this->num_cadre = intval($row->cadre_content_num_cadre);
 				$this->json_decode($row->cadre_content_data);
 			}	
 		}
@@ -59,7 +59,7 @@ class frbr_entity_common_view extends frbr_entity_root{
 	}
 	
 	public function set_num_cadre($id){
-		$this->num_cadre = $id+0;
+		$this->num_cadre = intval($id);
 	}
 	
 	public function set_cadre($cadre){
@@ -70,7 +70,6 @@ class frbr_entity_common_view extends frbr_entity_root{
 	 * Méthode de suppression
 	 */
 	public function delete(){
-		global $dbh;
 		if($this->id){
 			$query = "delete from frbr_cadres_content where id_cadre_content = '".$this->id."'";
 			$result = pmb_mysql_query($query);

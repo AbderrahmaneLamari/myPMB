@@ -4,19 +4,26 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
+$Id: manifest.xml,v 1.18.4.2 2024/01/05 11:35:13 tsamson Exp $ -->
 <manifest>
 	<name>pmbesClean</name>
+	<requirements>
+		<requirement group="pmbesTypes"/>
+	</requirements>
+	<types>
+		<type name="cleanGroup" imported="true" imported_from="pmbesTypes"/>
+	</types>
 	<methods>
 		<method name="indexGlobal" rights="" version="1.0" comment="msg:indexGlobal_description" language_independant="true">
 			<pmb_requirements>
+				<pmb_requirement start_path="class" file="scheduler/scheduler_indexation_stack.class.php"/>
 				<pmb_requirement start_path="class" file="notice.class.php"/>
 				<pmb_requirement start_path="class" file="noeuds.class.php"/>
 			</pmb_requirements>
 			<inputs/>
 			<outputs>
 				<description>msg:indexGlobal_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:indexGlobal_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:indexGlobal_result"/>
 			</outputs>
 		</method>
 		<method name="indexNotices" rights="" version="1.0" comment="msg:indexNotices_description" language_independant="true">
@@ -27,31 +34,43 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			</outputs>
 		</method>
 		<method name="cleanAuthors" rights="" version="1.0" comment="msg:cleanAuthors_description" language_independant="true">
+			<pmb_requirements>
+				<pmb_requirement start_path="class" file="author.class.php"/>
+			</pmb_requirements>
 			<inputs/>
 			<outputs>
 				<description>msg:cleanAuthors_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanAuthors_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanAuthors_result"/>
 			</outputs>
 		</method>
 		<method name="cleanPublishers" rights="" version="1.0" comment="msg:cleanPublishers_description" language_independant="true">
+			<pmb_requirements>
+				<pmb_requirement start_path="class" file="editor.class.php"/>
+			</pmb_requirements>
 			<inputs/>
 			<outputs>
 				<description>msg:cleanPublishers_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanPublishers_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanPublishers_result"/>
 			</outputs>
 		</method>
 		<method name="cleanCollections" rights="" version="1.0" comment="msg:cleanCollections_description" language_independant="true">
+			<pmb_requirements>
+				<pmb_requirement start_path="class" file="collection.class.php"/>
+			</pmb_requirements>
 			<inputs/>
 			<outputs>
 				<description>msg:cleanCollections_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanCollections_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanCollections_result"/>
 			</outputs>
 		</method>
 		<method name="cleanSubcollections" rights="" version="1.0" comment="msg:cleanSubcollections_description" language_independant="true">
+			<pmb_requirements>
+				<pmb_requirement start_path="class" file="subcollection.class.php"/>
+			</pmb_requirements>
 			<inputs/>
 			<outputs>
 				<description>msg:cleanSubcollections_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanSubcollections_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanSubcollections_result"/>
 			</outputs>
 		</method>
 		<method name="cleanCategories" rights="" version="1.0" comment="msg:cleanCategories_description" language_independant="true">
@@ -63,14 +82,17 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:cleanCategories_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanCategories_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanCategories_result"/>
 			</outputs>
 		</method>
 		<method name="cleanSeries" rights="" version="1.0" comment="msg:cleanSeries_description" language_independant="true">
+			<pmb_requirements>
+				<pmb_requirement start_path="class" file="serie.class.php"/>
+			</pmb_requirements>
 			<inputs/>
 			<outputs>
 				<description>msg:cleanSeries_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanSeries_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanSeries_result"/>
 			</outputs>
 		</method>
 		<method name="cleanTitresUniformes" rights="" version="1.0" comment="msg:cleanTitresUniformes_description" language_independant="true">
@@ -80,7 +102,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:cleanTitresUniformes_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanTitresUniformes_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanTitresUniformes_result"/>
 			</outputs>
 		</method>
 		<method name="cleanIndexint" rights="" version="1.0" comment="msg:cleanIndexint_description" language_independant="true">
@@ -90,7 +112,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:cleanIndexint_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanIndexint_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanIndexint_result"/>
 			</outputs>
 		</method>
 		<method name="cleanRelations" rights="" version="1.0" comment="msg:cleanRelations_description" language_independant="true">
@@ -107,7 +129,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:cleanNotices_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanNotices_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanNotices_result"/>
 			</outputs>
 		</method>
 		<method name="indexAcquisitions" rights="" version="1.0" comment="msg:indexAcquisitions_description" language_independant="true">
@@ -124,7 +146,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:genSignatureNotice_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:genSignatureNotice_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:genSignatureNotice_result"/>
 			</outputs>
 		</method>
 		<method name="genSignatureDocnum" rights="" version="1.0" comment="msg:genSignatureDocnum_description" language_independant="true">
@@ -134,7 +156,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:genSignatureDocnum_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:genSignatureDocnum_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:genSignatureDocnum_result"/>
 			</outputs>
 		</method>
 		<method name="genPhonetique" rights="" version="1.0" comment="msg:genPhonetique_description" language_independant="true">
@@ -145,7 +167,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:genPhonetique_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:genPhonetique_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:genPhonetique_result"/>
 			</outputs>
 		</method>
 		<method name="genAutLink" rights="" version="1.0" comment="msg:genAutLink_description" language_independant="true">
@@ -165,7 +187,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:nettoyageCleanTags_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:nettoyageCleanTags_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:nettoyageCleanTags_result"/>
 			</outputs>
 		</method>
 		<method name="cleanCategoriesPath" rights="" version="1.0" comment="msg:cleanCategoriesPath_description" language_independant="true">
@@ -177,14 +199,14 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:cleanCategoriesPath_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanCategoriesPath_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanCategoriesPath_result"/>
 			</outputs>
 		</method>
 		<method name="genDatePublicationArticle" rights="" version="1.0" comment="msg:genDatePublicationArticle_description" language_independant="true">
 			<inputs/>
 			<outputs>
 				<description>msg:genDatePublicationArticle_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:genDatePublicationArticle_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:genDatePublicationArticle_result"/>
 			</outputs>
 		</method>
 		<method name="genDateTri" rights="" version="1.0" comment="msg:genDateTri_description" language_independant="true">
@@ -194,14 +216,14 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:genDateTri_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:genDateTri_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:genDateTri_result"/>
 			</outputs>
 		</method>
 		<method name="indexDocnum" rights="" version="1.0" comment="msg:indexDocnum_description" language_independant="true">
 			<inputs/>
 			<outputs>
 				<description>msg:indexDocnum_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:indexDocnum_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:indexDocnum_result"/>
 			</outputs>
 		</method>
 		<method name="cleanRdfStore" rights="" version="1.0" comment="msg:cleanRdfStore_description" language_independant="true">
@@ -211,7 +233,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:cleanRdfStore_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanRdfStore_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanRdfStore_result"/>
 			</outputs>
 		</method>
 		<method name="cleanSynchroRdfStore" rights="" version="1.0" comment="msg:cleanSynchroRdfStore_description" language_independant="true">
@@ -222,7 +244,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:cleanSynchroRdfStore_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanSynchroRdfStore_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanSynchroRdfStore_result"/>
 			</outputs>
 		</method>
 		<method name="cleanFAQ" rights="" version="1.0" comment="msg:cleanFAQ_description" language_independant="true">
@@ -232,7 +254,7 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:cleanFAQ_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanFAQ_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanFAQ_result"/>
 			</outputs>
 		</method>
 		<method name="cleanCMS" rights="" version="1.0" comment="msg:cleanCMS_description" language_independant="true">
@@ -243,18 +265,18 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:cleanCMS_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanCMS_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanCMS_result"/>
 			</outputs>
 		</method>
 		<method name="cleanConcept" rights="" version="1.0" comment="msg:cleanConcept_description" language_independant="true">
 			<pmb_requirements>
 				<pmb_requirement start_path="class" file="onto/onto_index.class.php"/>
-				<pmb_requirement start_path="class" file="autoloader.class.php"/>
+				<pmb_requirement start_path="class" file="autoloader/classLoader.class.php"/>
 			</pmb_requirements>
 			<inputs/>
 			<outputs>
 				<description>msg:cleanConcept_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:cleanConcept_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:cleanConcept_result"/>
 			</outputs>
 		</method>
 		<method name="hashEmprPassword" rights="" version="1.0" comment="msg:hashEmprPassword_description" language_independant="true">
@@ -264,11 +286,12 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 			<inputs/>
 			<outputs>
 				<description>msg:hashEmprPassword_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:hashEmprPassword_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:hashEmprPassword_result"/>
 			</outputs>
 		</method>
 		<method name="indexAuthorities" rights="" version="1.0" comment="msg:indexAuthorities_description" language_independant="true">
 			<pmb_requirements>
+				<pmb_requirement start_path="class" file="scheduler/scheduler_indexation_stack.class.php"/>
 				<pmb_requirement start_path="class" file="indexation_authority.class.php"/>
 				<pmb_requirement start_path="class" file="indexation_authperso.class.php"/>
 				<pmb_requirement start_path="class" file="netbase/netbase_authorities.class.php"/>
@@ -282,10 +305,27 @@ $Id: manifest.xml,v 1.14.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
 		  		<requirement group="pmbesClean" name="indexTitresUniformes" version="1.0"/>
 		  		<requirement group="pmbesClean" name="indexAuthperso" version="1.0"/>
 			</pmb_requirements>
-			<inputs/>
+			<inputs>
+				<description>msg:indexAuthorities_input_description</description>
+				<param name="filters" type="scalar" dataType="array" description="msg:indexAuthorities_filters"/>
+			</inputs>
 			<outputs>
 				<description>msg:indexAuthorities_output_description</description>
-				<result name="result" type="scalar" dataType="string" description="msg:indexAuthorities_result"/>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:indexAuthorities_result"/>
+			</outputs>
+		</method>
+		<method name="genArk" rights="" version="1.0" comment="msg:genArk_description" language_independant="true">
+			<inputs/>
+			<outputs>
+				<description>msg:genArk_output_description</description>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:genArk_result"/>
+			</outputs>
+		</method>
+		<method name="genDocnumThumbnail" rights="" version="1.0" comment="msg:genDocnumThumbnail_description" language_independant="true">
+			<inputs/>
+			<outputs>
+				<description>msg:genDocnumThumbnail_output_description</description>
+				<result name="result" type="scalar" dataType="cleanGroup" description="msg:genDocnumThumbnail_result"/>
 			</outputs>
 		</method>
 	</methods>

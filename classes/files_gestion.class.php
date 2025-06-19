@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: files_gestion.class.php,v 1.8 2020/04/02 08:03:34 dgoron Exp $
+// $Id: files_gestion.class.php,v 1.9 2022/06/17 15:06:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -144,47 +144,10 @@ class files_gestion {
 		}
 		$this->fetch_data();
 		return($statut);
-	}	
-	
-	protected function get_file_template($from='bottom') {
-		global $files_gestion_list_add_file;
-		
-		$tpl = $files_gestion_list_add_file;
-		$tpl = str_replace('!!from!!',$from, $tpl);
-		return $tpl;
 	}
 	
-	public function get_list($post_url="admin.php?categ=mailtpl&sub=img") {
-		global $files_gestion_list_tpl,$files_gestion_list_line_tpl;
-		
-		$tpl=$files_gestion_list_tpl;
-		$tpl_list="";
-		$odd_even="odd";
-		foreach($this->info as $elt){
-			$tpl_elt=$files_gestion_list_line_tpl;
-			if($odd_even=='odd')$odd_even="even";
-			else $odd_even="odd";
-			$tpl_elt=str_replace('!!odd_even!!',$odd_even, $tpl_elt);
-			$tpl_elt=str_replace('!!name!!',$elt['name'], $tpl_elt);
-			$tpl_elt=str_replace('!!path!!',$elt['path'], $tpl_elt);
-			$tpl_elt=str_replace('!!type!!',$elt['type'], $tpl_elt);
-			$tpl_elt=str_replace('!!vignette!!',"<img height='15' width='15' src=\"".$this->url.urlencode($elt['name'])."\" alt=\"\" onmouseover=\"show_div_img(event,'".$this->url.urlencode($elt['name'])."')\" onmouseout=\"hide_div_img()\" />", $tpl_elt);
-			$tpl_elt=str_replace('!!urlencode_name!!',urlencode($elt['name']), $tpl_elt);
-			$tpl_list.=$tpl_elt;
-		}
-		$tpl=str_replace('!!list!!',$tpl_list, $tpl);
-		$tpl=str_replace('!!post_url!!',$post_url, $tpl);
-		if(count($this->info) > 20) {
-			$tpl=str_replace('!!add_file_top!!',$this->get_file_template('top'), $tpl);
-		} else {
-			$tpl=str_replace('!!add_file_top!!','', $tpl);
-		}
-		$tpl=str_replace('!!add_file_bottom!!',$this->get_file_template('bottom'), $tpl);
-		return $tpl;
-	}	
-	
 	public function get_sel($sel_name='select_file',$value_tpl="!!path!!!!name!!",$label_tpl="!!name!!") {
-		global $pmb_mail_html_format; 
+//		global $pmb_mail_html_format; 
 		$tpl="<select name='$sel_name' id='$sel_name'>";				
 		foreach($this->info as $elt){
 			$value=$value_tpl;

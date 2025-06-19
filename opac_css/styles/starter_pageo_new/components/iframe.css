@@ -1,0 +1,33 @@
+.pmb_solo .pmb_cp_medias {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin: 24px 0 32px;
+}
+
+.pmb_cp_medias li {
+    width: 31%;
+}
+
+.pmb_cp_medias li iframe {
+    width: 100%;
+    min-height: 300px;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.pmb_cp_medias li a {
+    color: var(--c-primary)!important;
+}
+
+@media (max-width: 1200px) {
+    .pmb_cp_medias li {
+        width: 48%;
+    }
+}
+
+@media (max-width: 960px) {
+    .pmb_cp_medias li {
+        width: 100%;
+    }
+}

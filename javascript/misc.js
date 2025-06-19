@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc.js,v 1.26.2.1 2021/06/16 14:44:20 tsamson Exp $
+// $Id: misc.js,v 1.27.4.2 2023/10/09 13:20:30 jparis Exp $
 
 
 // Fonction check_checkbox : Permet de changer l'etats d'une liste de checkbox.
@@ -559,4 +559,68 @@ function hide_elements(class_name) {
 		});
 		
 	} catch(e) {}
+}
+
+/**
+ * methode pour inclure des fichiers js et eviter les balises <script type='text/javascript' src='nom_fichier.js'></script>
+ */
+function pmb_include(file) {
+    if (typeof window.filesList == 'undefined') {
+        window['filesList'] = [];
+    }
+    if (window.filesList.includes(file)) {
+        return;
+    }
+    let script = document.createElement('script');
+    script.src = file;
+    script.type = 'text/javascript';
+    script.defer = true;
+ 
+    document.getElementsByTagName('head').item(0).appendChild(script);
+    window.filesList.push(file);
+}
+
+/**
+ * Methode pour afficher un loader sur tout l'ecran
+ */
+function pmb_show_loader(id) {
+    // Créez un élément div pour le conteneur principal avec les classes nécessaires
+    const loader_container = document.createElement('div');
+    loader_container.className = 'generic-loader';
+    loader_container.setAttribute('id', id + '_generic_loader');
+    loader_container.setAttribute('title', 'loading');
+    
+    // Créez un sous-conteneur div pour les éléments de chargement
+    const loader_sub_container = document.createElement('div');
+    loader_sub_container.className = 'generic-loader-container';
+    
+    // Créez l'icône de chargement
+    const spinner_icon = document.createElement('i');
+    spinner_icon.className = 'fa fa-spinner fa-spin fa-3x fa-fw';
+    
+    // Créez le texte 'loading' pour les lecteurs d'écran
+    const sr_only_text = document.createElement('span');
+    sr_only_text.className = 'sr-only';
+    sr_only_text.textContent = 'loading';
+    
+    // Ajoutez l'icône de chargement et le texte 'loading' au sous-conteneur
+    loader_sub_container.appendChild(spinner_icon);
+    loader_sub_container.appendChild(sr_only_text);
+    
+    // Ajoutez le sous-conteneur au conteneur principal
+    loader_container.appendChild(loader_sub_container);
+    
+    // Ajoutez le conteneur principal au corps du document
+    document.body.appendChild(loader_container);
+}
+ 
+/**
+ * Methode pour cacher un loader
+ */
+function pmb_hide_loader(id) {
+  // Supprimez l'élément de chargement du DOM s'il existe
+  const loader = document.getElementById(id + '_generic_loader');
+  if (loader) {
+    loader.remove();
+  }
 }

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: EntitiesGraph.js,v 1.6.2.1 2021/12/21 10:02:54 qvarin Exp $
+// $Id: EntitiesGraph.js,v 1.7 2021/12/21 10:30:24 qvarin Exp $
 
 
 define(["dojo/_base/declare",

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr.tpl.php,v 1.214.2.6 2022/01/25 08:14:19 gneveu Exp $
+// $Id: empr.tpl.php,v 1.232.2.3 2023/10/09 13:20:30 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -30,7 +30,7 @@ $empr_list_tmpl = "
 </div>
 ";
 
-$empr_search_cle_tmpl = "<h1>$msg[57] \"<strong>!!cle!!</strong>\" !!where_intitule!! <!--!!nb_total!!--></h1>"; 
+$empr_search_cle_tmpl = "<h1>$msg[57] \"<strong>!!cle!!</strong>\" !!where_intitule!! <!--!!nb_total!!--></h1>";
 // -----------------------------------
 
 // script1 - script2
@@ -49,10 +49,10 @@ function test_form(form)
 </script>
 ";
 if ($pmb_rfid_activate==1 ) {
-	$num_empr_rfid_test="if(0)";	
+	$num_empr_rfid_test="if(0)";
 } else 	{
 	$num_empr_rfid_test='';
-}	
+}
 $script1 = "
 <script type='text/javascript'>
 <!--
@@ -145,8 +145,7 @@ if ($pmb_rfid_activate==1 && $pmb_rfid_serveur_url ) {
 $empr_cb_tmpl .="</script>";
 
 // $login_empr_pret_tmpl : template pour le form de saisie login/password en mode circ restreint
-$login_empr_pret_tmpl = "
-<script type='text/javascript'>
+$login_empr_pret_tmpl = "<script type='text/javascript'>
 <!--
 function test_form(form) {
 	if (form.form_login.value.replace(/^\s+|\s+$/g,'').length == 0 || form.form_password.value.replace(/^\s+|\s+$/g,'').length == 0) {
@@ -219,32 +218,32 @@ if ($pmb_rfid_activate==1 ) {
 	}
 	if( $pmb_rfid_serveur_url){
 		$script_rfid_antivol="
-		
+
 		<script type='text/javascript'>
-			setTimeout(\"init_rfid_pret(!!id!!,'!!cb!!',$pmb_rfid_pret_mode);\",0);			
+			setTimeout(\"init_rfid_pret(!!id!!,'!!cb!!',$pmb_rfid_pret_mode);\",0);
 			window.onfocus=function(){rfid_focus_active=1;}
 			window.onblur=function(){rfid_focus_active=0;}
 		</script>
 		";
-		
+
 	} else {
 		$script_rfid_antivol="
 		<script type='text/javascript'>
 		init_sans_rfid_pret(!!id!!,'!!cb!!');
-		</script>";			
-	}	
+		</script>";
+	}
 	if($pmb_rfid_pret_mode)
 	$rfid_input_cb="<input type='text' class='saisie-15em' id='cb_doc' name='cb_doc' tabindex='1' value='' /><input  type='button'  id='ajouter' onClick=\"if(document.getElementById('cb_doc').value) flag_error =mode1_add_cb(document.getElementById('cb_doc').value);document.getElementById('cb_doc').value=''\" name='ajouter' class='bouton' value='$msg[925]' />";
 	else
 	$rfid_input_cb="<input type='text' class='saisie-15em' id='cb_doc' name='cb_doc' tabindex='1' value='' /><input  type='button'  id='ajouter' onClick=\"mode_lecture_cb[document.getElementById('cb_doc').value]='cb';flag_error =Ajax_add_cb(document.getElementById('cb_doc').value);\" name='ajouter' class='bouton' value='$msg[925]' />";
-	
+
 	$empr_pret_allowed="
 		<div id='loan_zone' >
 			<div class='row'>
 				<div class='left'>
 					$rfid_js_header
 					<script src='./javascript/rfid/rfid_pret.js'></script>
-						
+
 					$script_rfid_antivol
 					<!-- has_resa_available -->
 					$rfid_input_cb
@@ -319,11 +318,11 @@ $printer_ticket_script = '';
 $printer_ticket_link = '';
 
 if($pmb_printer_name || $pdfcartelecteur_printer_card_handler==2) {
-	
+
 	$printer_ticket_script = "
 	<div id='printer_script'></div>
 	<script type='text/javascript'>
-		
+
 		function printer_get_jzebra() {
 			if(!document.jzebra) {
 				var req = new http_request();
@@ -332,7 +331,7 @@ if($pmb_printer_name || $pdfcartelecteur_printer_card_handler==2) {
 				return false;
 			}
 		}
-		
+
 		function printer_jzebra_send_ticket(text,printer,encoding) {
 			var applet = document.jzebra;
 			var found=false;
@@ -340,7 +339,7 @@ if($pmb_printer_name || $pdfcartelecteur_printer_card_handler==2) {
 				applet.findPrinter(printer);
 				while (!applet.isDoneFinding()) {}
 				if(printer == applet.getPrinter()) {
-					found = true; 
+					found = true;
 					if(encoding) {
 						applet.setEncoding(encoding);
 					}
@@ -348,20 +347,20 @@ if($pmb_printer_name || $pdfcartelecteur_printer_card_handler==2) {
 					applet.print();
 				}
 			}
-			if(!found) {		     	     				
+			if(!found) {
          		alert('".$msg['printer_not_found']."');
          	}
-        } 
-         				
+        }
+
         function printer_raspberry_send_ticket(url) {
-         	
+
          	var req = new http_request();
          	var tpl;
          	var printer = '';
 			var printer_id = 0;
          	var raspberry_ip = '';
 			var printer_type = '';
-         	
+
          	//Quelle est l'imprimante sélectionnée ?
          	if (req.request('./ajax.php?module=circ&categ=zebra_print_pret&sub=get_selected_printer')) {
 				alert ( req.get_text() );
@@ -372,7 +371,7 @@ if($pmb_printer_name || $pdfcartelecteur_printer_card_handler==2) {
 				alert('".$msg['user_printer_not_found']."');
 				return;
 			}
-			
+
 			var temp = printer.split('@');
 			printer_id = temp[0];
 			raspberry_ip = temp[1];
@@ -405,18 +404,18 @@ if($pmb_printer_name || $pdfcartelecteur_printer_card_handler==2) {
 			xhr.open('POST', 'https://' + raspberry_ip + '/print?', true);
 			xhr.setRequestHeader('Content-type', 'text/plain;charset=utf-8');
 			xhr.send(JSON.stringify({idPrinter:printer_id,xml:tpl}));
-						
+
          	return;
-         				
+
         }
-		
+
 	</script>";
 }
 if($pmb_printer_name) {
 	if (substr($pmb_printer_name,0,9) == 'raspberry') {
 		$printer_ticket_script.= "
 		<script type='text/javascript'>
-		
+
 			function printer_jzebra_print_ticket(url) {
 				printer_raspberry_send_ticket(url);
 			}
@@ -425,7 +424,7 @@ if($pmb_printer_name) {
 	} else {
 		$printer_ticket_script.= "
 		<script type='text/javascript'>
-	
+
 			function printer_jzebra_print_ticket(url) {
 				printer_get_jzebra();
 				var req = new http_request();
@@ -443,54 +442,54 @@ if($pmb_printer_name) {
 	$printer_ticket_link="<a href='#' onclick=\"printer_jzebra_print_ticket('./ajax.php?module=circ&categ=zebra_print_pret&sub=all&id_empr=!!id!!'); return false;\"><img src='".get_url_icon('print.gif')."' alt='".htmlentities($msg['print_print'],ENT_QUOTES,$charset)."' title='".htmlentities($msg['print_print'],ENT_QUOTES,$charset)."' class='align_middle' border='0'></a>";
 
 }else if($pmb_printer_ticket_url) {
-	$printer_ticket_script="		
+	$printer_ticket_script="
 	<script type='text/javascript'>
 	function send_print_ticket(cmd) {
-		// Construction de la requete 
-		var url='$pmb_printer_ticket_url'; 
+		// Construction de la requete
+		var url='$pmb_printer_ticket_url';
 		// On initialise la classe:
 		var req = new http_request();
-		
+
 		if(typeof netscape !== 'undefined') {
 			if(netscape.security.PrivilegeManager)netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
 		}
 		// Execution de la requete
 		if(req.request(url,1,'xml='+".pmb_escape(false)."(cmd))){
 			// Il y a une erreur. Afficher le message retourne
-			alert ( req.get_text() );			
-		}else { 
+			alert ( req.get_text() );
+		}else {
 			// la commande est bien passee
-			return 1;	
+			return 1;
 		}
-	}		
+	}
 	function print_ticket(url) {
-		// Construction de la requete 
+		// Construction de la requete
 		// On initialise la classe:
 		var req = new http_request();
-		
+
 		if(typeof netscape !== 'undefined') {
 			if(netscape.security.PrivilegeManager)netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
 		}
 		// Execution de la requete
 		if(req.request(url)){
 			// Il y a une erreur. Afficher le message retourne
-			alert ( req.get_text() );			
-		}else { 
-			// la commande est bien passee		
+			alert ( req.get_text() );
+		}else {
+			// la commande est bien passee
 			send_print_ticket(req.get_text());
-			return 1;	
+			return 1;
 		}
 	}
 	</script>";
-	
+
 	$printer_ticket_link="&nbsp;<a href='#' onclick=\"print_ticket('./ajax.php?module=circ&categ=print_pret&sub=all&id_empr=!!id!!'); return false;\"><img src='".get_url_icon('print.gif')."' alt='Imprimer...' title='Imprimer...' class='align_middle' border='0'></a>";
 }
-									
+
 $empr_tmpl = "
 $printer_ticket_script
 <!-- script de confirmation de suppression -->
 <script type=\"text/javascript\">
-	
+
 	function confirm_delete()
 	{
 		result = confirm(\"${msg[932]}\");
@@ -508,7 +507,7 @@ $printer_ticket_script
 
 		patt=new RegExp(' '+y+' ','g');
 
-		if (patt.test(x)) 
+		if (patt.test(x))
 			z=x.replace(patt,'');
 		else
 			z=x+' '+y+' ';
@@ -524,7 +523,7 @@ $printer_ticket_script
 			if (document.forms['prolong'+id].elements['cbox_prol']) document.forms['prolong'+id].elements['cbox_prol'].click();
 		}
 	}
-	
+
 	function see_all_loan(form) {
 		if(confirm(pmbDojo.messages.getMessage('empr', 'loan_see_all'))) {
 			document.location = '!!link_see_all_loan!!';
@@ -644,19 +643,19 @@ switch ($pdfcartelecteur_printer_card_handler) {
 	//script "print_cb.php" a la racine sur le serveur web
 	default :
 	case '1' :
-		
+
 		if (file_exists("print_cb.php")) {
 			$empr_tmpl.= "<a href='#' onClick='h=new http_request(); h.request(\"print_cb.php?cb=!!cb!!&label=!!prenom!! !!nom!!\", false,\"\", false, function(){},function(){},\"impr_cb\")' ><img src='".get_url_icon('print.gif')."' alt='".htmlentities($msg['print_print'],ENT_QUOTES,$charset)."' title='".htmlentities($msg['print_print'],ENT_QUOTES,$charset)."' class='align_middle' border='0'></a>";
 		}
-		break;		
-		
+		break;
+
 	//impression avec applet jzebra
 	case '2' :
-		
+
 		if (substr($pmb_printer_name,0,9) == 'raspberry') {
 			$empr_tmpl.= "
 			<script type='text/javascript'>
-			
+
 				function printer_jzebra_print_card(url) {
 					var req = new http_request();
 					if(req.request(url)){
@@ -672,7 +671,7 @@ switch ($pdfcartelecteur_printer_card_handler) {
 			$empr_tmpl.= "
 			<script type='text/javascript'>
 				function printer_jzebra_print_card(url) {
-					
+
 					printer_get_jzebra();
 					var req = new http_request();
 					if(req.request(url)){
@@ -686,41 +685,41 @@ switch ($pdfcartelecteur_printer_card_handler) {
 		}
 		//AUCUN TEMPLATE DE CARTE PAR IMPRIMANTE TICKET DE PRET POUR LE MOMENT...
 		//$empr_tmpl.= "<a href='#' onclick=\"printer_jzebra_print_card('./ajax.php?module=circ&categ=zebra_print_card&sub=one&id_empr=!!id!!'); return false;\"><img src='".get_url_icon('print.gif')."' alt='".htmlentities($msg['print_print'],ENT_QUOTES,$charset)."' title='".htmlentities($msg['print_print'],ENT_QUOTES,$charset)."' class='align_middle' border='0'></a>";
-		
+
 		break;
-	
-	//impression raw directe	
+
+	//impression raw directe
 	case '3' :
 		$empr_tmpl.= "
 		<script type='text/javascript'>
 			function printer_ajax_send_ticket(post_datas) {
 				var url = '".$pdfcartelecteur_printer_card_url."';
-				var req=new http_request();		
-				req.request(url,true,post_datas,true); 	
-				window.setTimeout(function(){req.abort();},1000);		
-			}			
+				var req=new http_request();
+				req.request(url,true,post_datas,true);
+				window.setTimeout(function(){req.abort();},1000);
+			}
 			function printer_ajax_print_card(url) {
 				var req = new http_request();
 				if(req.request(url)){
-					// Il y a une erreur. 
-					alert ( req.get_text() );			
-				}else { 
+					// Il y a une erreur.
+					alert ( req.get_text() );
+				}else {
 					printer_ajax_send_ticket(req.get_text());
-					return 1;	
+					return 1;
 				}
 			}
 		</script>
 		";
-		
+
 		$empr_tmpl.= "<a href='#' onclick=\"printer_ajax_print_card('./ajax.php?module=circ&categ=zebra_print_card&sub=one&id_empr=!!id!!'); return false;\"><img src='".get_url_icon('print.gif')."' alt='".htmlentities($msg['print_print'],ENT_QUOTES,$charset)."' title='".htmlentities($msg['print_print'],ENT_QUOTES,$charset)."' class='align_middle' border='0'></a>";
 		break;
-		
+
 }
 
 $empr_tmpl .= "
 		!!voir_sugg!!
 	</div>
-	<div class='right'>			
+	<div class='right'>
 		<input type='button' name='supprimer' class='bouton' value='".$msg['supprimer']."' onClick=\"confirm_delete()\" />
 		</div>
 	</div>
@@ -732,14 +731,30 @@ if ($pmb_rfid_activate==1) {
 		<form class='form-$current_module' name='pret_doc' onsubmit=\"if(!document.getElementById('cb_doc').value && document.getElementById('div_confirm_pret').style.display=='inline'){Ajax_confirm_pret();return false;}
 		Ajax_add_cb(document.getElementById('cb_doc').value);return false;\">
 		";
-	}else {	
+	}else {
 		$empr_tmpl .= "
 		<form class='form-$current_module' name='pret_doc' onsubmit=\"if(!document.getElementById('cb_doc').value && document.getElementById('div_confirm_pret').style.display=='inline'){mode1_confirm_pret();return false;}
 		mode1_add_cb(document.getElementById('cb_doc').value);document.getElementById('cb_doc').value='';return false;\">
 		";
-	}	
+	}
 } else {
 	$empr_tmpl .= "
+    <script>
+        // Affichage de loader lors du submit du formulaire (#148428)
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementsByName('pret_doc')[0];
+            if(form) {
+                form.addEventListener('submit', () => {
+                    pmb_show_loader('pret_doc');
+                    form.setAttribute('onsubmit', '');
+                    const submit = form.querySelector('[type=submit]');
+                    if(submit) {
+                        submit.disabled = true;
+                    }
+                });
+            }
+        });
+    </script>
 	<form class='form-$current_module' name='pret_doc' action='circ.php' method='post'>
 	";
 }
@@ -772,7 +787,7 @@ $empr_tmpl .= "
 <script type='text/javascript'>
 if (document.forms['pret_doc'].elements['cb_doc']!=undefined){
    document.forms['pret_doc'].elements['cb_doc'].focus();
-}	
+}
 </script>
 
 <!-- <h3>$msg[379]</h3> -->
@@ -801,11 +816,15 @@ if ($pmb_utiliser_calendrier) {
 					}
 		  		}
 		  	};
-			req.send(null);			
+			req.send(null);
 		}
         function tout_prolonger(id_loc) {
             var date = document.getElementsByName('date_retbloc')[0].value;
             test_jour_ouverture('prolong_bloc', 'date_retbloc', date, id_loc);
+        }
+		function loan_extend(id_doc, id_loc) {
+            var date = document.getElementById('date_retour_'+id_doc).value;
+            test_jour_ouverture('prolong'+id_doc, 'date_retour', date, id_loc);
         }
 	</script>
 	";
@@ -879,15 +898,15 @@ $empr_tmpl.="
 	</tbody>
 </table>
 <div class='row'><hr /></div>";
-}			
-			
-$empr_tmpl.="			
+}
+
+$empr_tmpl.="
 <div class='row'>
 	<div class='left'>
 		<h3>$msg[350]&nbsp;<input type='button' name='Ajouterresa' class='bouton' value='$msg[925]' onClick=\"document.location='./circ.php?categ=resa&id_empr=!!id!!&groupID=$groupID';\" /></h3>
 	</div>
 	<div class='right'><span id='msg_chg_loc' class='erreur'></span></div>
-</div>	
+</div>
 <div class='row'></div>
 !!resa_list!!
 ";
@@ -913,12 +932,12 @@ $empr_tmpl.="
 </div>
 <div class='row'>
 	!!serialcirc_empr!!
-</div>	
+</div>
 <div id='empr_registration_list' class='row'>
     !!animations_empr!!
 </div>
 ";
-		
+
 //*************************************************************************************************************************
 $empr_tmpl_consultation = "
 <div id=\"el!!id!!Parent\" class=\"notice-parent\">
@@ -1024,33 +1043,33 @@ $empr_tmpl_consultation .= "
 
 // propriété du sélecteur de groupe
 if ($pmb_rfid_activate==1 && $pmb_rfid_serveur_url ) {
-		
+
 	$rfid_script_empr="
-		$rfid_js_header	
+		$rfid_js_header
 		<script type='text/javascript'>
 			var flag_cb_rfid=0;
 			flag_program_rfid_ask=0;
 
 			setTimeout('init_rfid_read_cb(f_empr,0);',0);
-			
+
 			function f_empr(cb) {
 				if(flag_program_rfid_ask==1) {
 					program_rfid();
-					flag_cb_rfid=0; 
+					flag_cb_rfid=0;
 					return;
 				}
 				if(cb.length==0) {
 					flag_cb_rfid=1;
 					return;
-				} 
+				}
 				if(!cb[0]) {
-					flag_cb_rfid=0; 
+					flag_cb_rfid=0;
 					return;
 				}
 				if(document.getElementById('f_cb').value == cb[0]) flag_cb_rfid=1;
 				else  flag_cb_rfid=0;
-				if(document.getElementById('f_cb').value == '') {	
-					flag_cb_rfid=0;				
+				if(document.getElementById('f_cb').value == '') {
+					flag_cb_rfid=0;
 					document.getElementById('f_cb').value=cb[0];
 				}
 			}
@@ -1059,7 +1078,7 @@ if ($pmb_rfid_activate==1 && $pmb_rfid_serveur_url ) {
 				    var confirmed = confirm(\"".addslashes($msg['rfid_programmation_confirmation'])."\");
 				    if (confirmed) {
 						return false;
-				    } 
+				    }
 				}
 			}
 
@@ -1074,25 +1093,25 @@ if ($pmb_rfid_activate==1 && $pmb_rfid_serveur_url ) {
 			function program_rfid() {
 				flag_semaphore_rfid=1;
 				flag_program_rfid_ask=0;
-				var cb = document.getElementById('f_cb').value;	
+				var cb = document.getElementById('f_cb').value;
 				init_rfid_erase(rfid_ack_erase);
 			}
-			
+
 			function rfid_ack_erase(ack) {
 				var cb = document.getElementById('f_cb').value;
 				init_rfid_write_empr(cb,rfid_ack_write);
-				
+
 			}
-			function rfid_ack_write(ack) {				
+			function rfid_ack_write(ack) {
 				alert (\"".addslashes($msg['rfid_etiquette_programmee_message'])."\");
 				flag_semaphore_rfid=0;
 			}
-			
+
 		</script>
 ";
 
-	$rfid_program_button="<input  type=button class='bouton' value=' ". $msg['rfid_configure_etiquette_button']." ' onClick=\"program_rfid_ask();\">";	
-}else {	
+	$rfid_program_button="<input  type=button class='bouton' value=' ". $msg['rfid_configure_etiquette_button']." ' onClick=\"program_rfid_ask();\">";
+}else {
 	$rfid_script_empr="";
 	$rfid_program_button="";
 }
@@ -1140,7 +1159,7 @@ $empr_content_form_cp = "
 </div>
 <div class='row'>
 	<input type='text' class='saisie-5em' id='form_cp' name='form_cp' maxlength='10' value='!!cp!!' onchange=\"openPopUp('./select.php?what=codepostal&caller=empr_form&param1=form_ville&param2=form_cp&deb_rech='+".pmb_escape()."(this.form.form_cp.value), 'selector')\" />
-</div>		
+</div>
 ";
 
 $empr_content_form_ville = "
@@ -1188,7 +1207,7 @@ $empr_content_form_tel2 = "
 </div>
 <div class='row'>
 	<input type='text' class='saisie-15em' id='form_tel2' name='form_tel2' value='!!tel2!!' />
-</div>		
+</div>
 ";
 
 $empr_content_form_mail = "
@@ -1219,7 +1238,7 @@ $empr_content_form_sexe = "
 		<option value='2' sexe_select_2>".$msg[127]."</option>
 		<option value='0' sexe_select_0>".$msg[128]."</option>
 	</select>
-</div>		
+</div>
 ";
 
 $empr_content_form_year = "
@@ -1246,7 +1265,7 @@ $empr_content_form_codestat = "
 </div>
 <div class='row'>
 	<select name='form_codestat' id='form_codestat' class='saisie-20em'>!!cstat!!</select>
-</div>		
+</div>
 ";
 
 $empr_content_form_ajoutgroupe = "
@@ -1257,7 +1276,7 @@ $empr_content_form_ajoutgroupe = "
 	!!groupe_ajout!!
 </div>
 ";
-		
+
 $empr_content_form_adhe_ini = "
 <div class='row'>
 	<label for='form_adhe_ini' class='etiquette'>".$msg[1403]." : ".$msg[1401]."</label>
@@ -1273,7 +1292,7 @@ $empr_content_form_adhe_end = "
 </div>
 <div class='row'>
 	!!expiration!!
-</div>		
+</div>
 ";
 
 $empr_content_form_lang = "
@@ -1291,7 +1310,7 @@ $empr_content_form_login = "
 </div>
 <div class='row'>
 	<input type='text' class='saisie-15em' id='form_empr_login' name='form_empr_login' value='!!empr_login!!' />
-</div>		
+</div>
 ";
 
 $empr_content_form_ldap = "
@@ -1300,7 +1319,7 @@ $empr_content_form_ldap = "
 </div>
 <div class='row'>
 	<input type='checkbox' id='form_ldap' name='form_ldap' !!ldap!! />
-</div>		
+</div>
 ";
 
 $empr_content_form_password = "
@@ -1308,13 +1327,14 @@ $empr_content_form_password = "
 	<label for='form_empr_password' class='etiquette'>".$msg['empr_password']." ". (($id) ? '('.$msg["circ_empr_empr_password_add"].')' : '') ."</label>
 </div>
 <div class='row'>
-	<input type='text' class='saisie-15em' id='form_empr_password' name='form_empr_password' value='' maxlength='255' />
+	<input type='text' class='saisie-30em' id='form_empr_password' name='form_empr_password' value='' maxlength='255' />
     <button type='button' class='bouton' onclick='rand_new_password()'>".$msg['circ_random_password']."</button>
 </div>
 <div class='row'>
-	<input type='checkbox' class='saisie-15em' id='form_empr_password_mail' name='form_empr_password_mail' value='1' ". ((empty($id) && $empr_send_pwd_by_mail)? 'checked' : '') ."/>
-	<label for='form_empr_password' class='etiquette'>".$msg['circ_empr_send_pwd']."</label>
+	<input type='checkbox' id='form_empr_password_mail' name='form_empr_password_mail' value='1' ". ((empty($id) && $empr_send_pwd_by_mail)? 'checked' : '') ."/>
+	<label for='form_empr_password_mail' class='etiquette'>".$msg['circ_empr_send_pwd']."</label>
 </div>
+<span style='".(password::check_external_authentication() ? "display:block" : "display:none" )."' class='erreur'>".$msg['circ_empr_password_no_rules_ext_auth']."</span>
 <span class='helper' id='form_empr_password_helper' ></span>
 ";
 
@@ -1344,7 +1364,7 @@ $empr_content_form = "
 	<div class='colonne'  id='g0_r0_f3' movable='yes' title='".$msg[38]."' >
 			!!camera!!
 	</div>
-	
+
 	<!--   Adresse 1   -->
 	<div class='colonne2'  id='g0_r1_f0' movable='yes' title='".$msg[69]."' >
 		".$empr_content_form_adr1."
@@ -1357,7 +1377,7 @@ $empr_content_form = "
 	<div class='colonne_suite' id='g0_r1_f2' movable='yes' title='".$msg[72]."' >
 		".$empr_content_form_ville."
 	</div>
-		
+
 	<!--   Adresse 2   -->
 	<div class='colonne2' id='g0_r2_f0' movable='yes' title='".$msg[70]."' >
 		".$empr_content_form_adr2."
@@ -1365,8 +1385,8 @@ $empr_content_form = "
 	<!--   Pays   -->
 	<div class='colonne_suite' id='g0_r2_f1' movable='yes' title='".$msg['empr_pays']."' >
 		".$empr_content_form_pays."
-	</div>				
-	
+	</div>
+
 	<!--   Téléphone 1   -->
 	<div class='colonne4' id='g0_r3_f0' movable='yes' title='".$msg[73]."' >
 		".$empr_content_form_tel1."
@@ -1376,9 +1396,7 @@ $empr_content_form = "
 		".$empr_content_form_tel2."
 	</div>
 	<!--   E-mail   -->
-	<div class='colonne_suite' id='g0_r3_f2' movable='yes' title='".$msg[58]."' >
-		".$empr_content_form_mail."
-	</div>
+	<div class='colonne_suite' id='g0_r3_f2' movable='yes' title='".$msg[58]."' >".$empr_content_form_mail."</div>
 	<div class='row'></div>
 </div>
 <div class='row'></div>
@@ -1415,7 +1433,7 @@ $empr_content_form = "
 	<!-- !!localisation!! -->
 	<div class='row'></div>
 </div>
-<div class='row'></div>	
+<div class='row'></div>
 <div class='form-empr-fgrp ui-clearfix' id='g3'  etirable='yes' >
 	<!--   Adhésion   -->
 	<div class='colonne4' id='g3_r0_f0' movable='yes' title='".$msg[1403]." : ".$msg[1401]."' >
@@ -1450,16 +1468,14 @@ if ($ldap_accessible) {
 		".$empr_content_form_ldap."
 	</div>";
 }
+
 $empr_content_form .= "
-	<div class='colonne_suite' id='g4_r0_f3' movable='yes'  title='".htmlentities($msg['empr_password'],ENT_QUOTES,$charset)."' >
-		".$empr_content_form_password."
-	</div>
-		
-	";
+	<div class='colonne_suite' id='g4_r0_f3' movable='yes'  title='".htmlentities($msg['empr_password'],ENT_QUOTES,$charset)."' >".$empr_content_form_password."</div>";
+
 if($pmb_opac_view_activate ){
 	$empr_content_form .= "
 	<!-- !!opac_view!! -->
-	
+
 	";
 }
 $empr_content_form .= "
@@ -1473,7 +1489,7 @@ $empr_content_form .= "
 	<div class='row'></div>
 </div>
 <div class='row'></div>
-<div class='form-empr-fgrp ui-clearfix' id='g6' etirable='yes'  >	
+<div class='form-empr-fgrp ui-clearfix' id='g6' etirable='yes'  >
 	!!champs_perso!!
 	<div class='row'></div>
 </div>
@@ -1518,7 +1534,7 @@ $empr_content_form_newgrid = "
 		".$empr_content_form_ville."
 	</div>
 </div>
-<div id='el0Child_4' class='row'>				
+<div id='el0Child_4' class='row'>
 	<!--   Adresse 2   -->
 	<div class='colonne2' id='el0Child_4_a' movable='yes' title='".$msg[70]."' >
 		".$empr_content_form_adr2."
@@ -1528,7 +1544,7 @@ $empr_content_form_newgrid = "
 		".$empr_content_form_pays."
 	</div>
 </div>
-<div id='el0Child_5' class='row'>	
+<div id='el0Child_5' class='row'>
 	<!--   Téléphone 1   -->
 	<div class='colonne4' id='el0Child_5_a' movable='yes' title='".$msg[73]."' >
 		".$empr_content_form_tel1."
@@ -1607,8 +1623,7 @@ $empr_content_form_newgrid = "
 	<div class='colonne4' id='el0Child_11_b' movable='yes'  title='".htmlentities($msg['empr_login'],ENT_QUOTES,$charset)."'>
 		".$empr_content_form_login."
 	</div>
-	<div class='colonne4' id='el0Child_11_c' movable='yes'  title='".htmlentities($msg['empr_password'],ENT_QUOTES,$charset)."' >
-		".$empr_content_form_password."
+	<div class='colonne4' id='el0Child_11_c' movable='yes'  title='".htmlentities($msg['empr_password'],ENT_QUOTES,$charset)."' >".$empr_content_form_password."
 	</div>";
 
 if ($ldap_accessible) {
@@ -1645,28 +1660,28 @@ $empr_form_password_constraints = "
     check_mail_empr();
 	//Declaration des fonctions de verification des contraintes de mot de passe de type class
  	var password_rules_check_functions = {
-			
+
 			is_different_from_login : function(password) {
 				try {
 					  let login = document.getElementById('form_empr_login').value;
 					  if (login == password) {
 		                     return false;
-		              } 
-				} catch(err) {}		        
+		              }
+				} catch(err) {}
 				return true;
 		    },
-		    
+
             is_different_from_year : function(password) {
             	try {
                     var year = document.getElementById('form_year').value;
                     if (year == password) {
                          return false;
-                    } 
+                    }
               } catch(err) {}
               return true;
           }
 	};
-	
+
 	//Verification contraintes mot de passe
     function check_new_password() {
 
@@ -1694,7 +1709,7 @@ $empr_form_password_constraints = "
         if(0 == nb_rules) {
             return password_enabled;
         }
-        
+
         for(let i = 0; i < nb_rules; i++) {
             let rule = enabled_password_rules[i];
             switch (rule.type) {
@@ -1726,12 +1741,12 @@ $empr_form_password_constraints = "
             }
         }
         if(true == password_enabled) {
-            new_password_helper.innerHTML = ''; 
+            new_password_helper.innerHTML = '';
             return true;
         }
-        
+
         if(0 == error_msg.length) {
-            new_password_helper.innerHTML = ''; 
+            new_password_helper.innerHTML = '';
         } else {
             let helper_msg = error_msg.join('<br />');
             new_password_helper.innerHTML = helper_msg;
@@ -1744,7 +1759,27 @@ $empr_form_password_constraints = "
     	let form_empr_password = document.getElementById('form_empr_password');
         let nb_rules = enabled_password_rules.length;
         if(0 == nb_rules) {
-            return password_enabled;
+            nb_rules = 3;
+            enabled_password_rules = [
+            {
+                'id': 'min_length',
+                'type': 'regexp',
+                'value': '12',
+                'regexp': '^.{12,}$',
+              },
+              {
+                'id': 'min_uppercase_chars',
+                'type': 'regexp',
+                'value': '1',
+                'regexp': '(?=(?:.*[A-Z]){1,}).*',
+              },
+              {
+                'id': 'min_numbers',
+                'type': 'regexp',
+                'value': '1',
+                'regexp': '(?=(?:.*[0-9]){1,}).*',
+              }
+            ];
         }
 
         var all = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_#$()!{}';
@@ -1752,7 +1787,7 @@ $empr_form_password_constraints = "
             'min_uppercase_chars': 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
             'min_lowercase_chars': 'abcdefghijklmnopqrstuvwxyz',
             'min_numbers': '0123456789',
-            'min_special_chars': '_#$()!{}'
+            'min_special_chars': '&?@=_#$()!{}'
         }
 
         var rand = function (min, max) {
@@ -1772,12 +1807,12 @@ $empr_form_password_constraints = "
             }
             return a.join('');
         }
-        
+
         let min_length = 1;
         for(let i = 0; i < nb_rules; i++) {
             let rule = enabled_password_rules[i];
             if (rule.id == 'min_length') {
-                min_length = rule.value;
+                min_length = parseInt(rule.value);
                 break;
             }
         }
@@ -1790,9 +1825,12 @@ $empr_form_password_constraints = "
                     break;
                 case 'regexp' :
                     if (values[rule.id]) {
-                        var max = values[rule.id].length - 1;
-                        for(let j = 0; j < rand(rule.value, rule.value+min_length); j++) {
-                            str += values[rule.id][rand(1, max)];
+                        const maxChar = values[rule.id].length - 1;
+                        const minRule = parseInt(rule.value);
+                        const size = rand(minRule, minRule+min_length);
+
+                        for(let j = 0; j < size; j++) {
+                            str += values[rule.id][rand(1, maxChar)];
                         }
                     }
                     break;
@@ -1809,9 +1847,9 @@ $empr_form_password_constraints = "
 
         form_empr_password.value = suffle(str);
     }
-    
+
 	var enabled_password_rules = !!enabled_password_rules!!;
-	
+
 	let check_timeout = null;
 		try {
 			document.getElementById('form_empr_password').addEventListener('input', function(e) {
@@ -1824,14 +1862,15 @@ $empr_form_password_constraints = "
 
     function check_mail_empr(){
         let mailInputValue = document.getElementById('form_mail_input').value;
-        var mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+		var mailformat = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         if(mailInputValue.match(mailformat)) {
             document.getElementById('form_empr_password_mail').disabled = '';
         } else {
+			document.getElementById('form_empr_password_mail').checked = '';
             document.getElementById('form_empr_password_mail').disabled = 'false';
         }
     }
-        
+
 </script>
 ";
 
@@ -1926,26 +1965,26 @@ $empr_autre_compte_tmpl="
 		 		document.getElementById('transactype_total').readOnly = false;
 		 		document.getElementById('transactype_total').focus();
 		 	}
-		 	
+
 		 	document.getElementById('transactype_id').value=transactype_id;
 		 }
-		 
+
 		 function calcul_total(){
 		 		var nb=document.getElementById('transactype_quantity').value *100;
 		 		var unit_price=document.getElementById('transactype_unit_price_val').value *100;
-		 		
-		 		document.getElementById('transactype_total').value=(unit_price * nb)/10000;		 
+
+		 		document.getElementById('transactype_total').value=(unit_price * nb)/10000;
 		 }
-		 
+
 		function ajoute_transaction(){
-		 		var total = document.getElementById('transactype_total').value;			 		
+		 		var total = document.getElementById('transactype_total').value;
 		 		var transactype_id = document.getElementById('transactype_id').value;
 		 		var quantity=document.getElementById('transactype_quantity').value;
-		 		
-		 		list_transactions.document.form_transactions.act.value='transac_add'; 
+
+		 		list_transactions.document.form_transactions.act.value='transac_add';
 		 		list_transactions.document.form_transactions.action='encaissement.php?transactype_total='+ total + '&transactype_id=' + transactype_id + '&quantity=' + quantity;
-		 		
-		 		list_transactions.document.form_transactions.submit();		 		
+
+		 		list_transactions.document.form_transactions.submit();
 		 }
 	</script>
 	<div class='row'>
@@ -1971,8 +2010,8 @@ $empr_autre_compte_tmpl="
 			<div class='colonne4' id='transactype_name'></div>
 			<input type='hidden' name='transactype_unit_price_val' id='transactype_unit_price_val' value='0'>
 			<input type='hidden' name='transactype_id' id='transactype_id' value='0'>
-			
-			
+
+
 			<div class='colonne4' id='transactype_unit_price' style='display:none' ></div>
 			<div class='colonne4' id='transactype_quantity_part' style='display:none' >
 				".$msg["transactype_finance_quantity"]."
@@ -1982,7 +2021,7 @@ $empr_autre_compte_tmpl="
 				<input type='text' size='10' name='transactype_total' id='transactype_total' value='0'  tabindex='2'>
 				<input type='button' class='bouton' value='".$msg["transactype_finance_add"]."' onClick=\"ajoute_transaction();\" tabindex='3'>
 			</div>
-			
+
 		</div>
 		<table>
 		<tr><td style='text-align:left'>
@@ -2044,10 +2083,10 @@ $empr_retard_tpl ="
 	</div>
 	<div class='row'><a href='circ.php?categ=pret&id_empr=!!id!!'>".$msg["finance_form_empr_go_back"]."</a></div>
 	<h3>".$msg["empr_histo_late"]."</h3>
-	
+
 		!!liste_retard!!
-	
-			
+
+
 	<div class='row'>&nbsp;</div>
 	<script type='text/javascript'>
 		 initIt();

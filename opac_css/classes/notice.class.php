@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice.class.php,v 1.55.2.3 2022/01/18 07:41:57 dgoron Exp $
+// $Id: notice.class.php,v 1.59.4.3 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -223,7 +223,7 @@ class notice {
             if($this->typdoc) {
 require_once($base_path."/classes/marc_table.class.php");
                 $doctype = new marc_list('doctype');
-                $this->typdocdisplay = $doctype->table[$this->typdoc];
+                $this->typdocdisplay = $doctype->table[$this->typdoc] ?? '';
                 }
             $this->validfields = $this->validfields | N_VALID_TYPDOC;
         }
@@ -287,7 +287,7 @@ require_once($base_path."/classes/subcollection.class.php");
         }
     }
 
-    public function print_resume($level = 2,$css)    {
+    public function print_resume($level = 2, $css = "")    {
         global $fonction_auteur;
         global $base_path ;
         // récupération localisation
@@ -567,25 +567,37 @@ require_once($base_path."/classes/subcollection.class.php");
 
         if (preg_match("#!!level1!!#", $print)) {
             if ($this->tparent) {
-                if ($this->tnvol) $titre_affiche = $this->tit1." - ".$this->tparent." [".$this->tnvol."]" ;
-                    else $titre_affiche = $this->tit1." - ".$this->tparent ;
-                } else $titre_affiche = $this->tit1 ;
-            if ($this->tit1) $titre = "<a href='".record_datas::format_url("index.php?lvl=notice_display&id=".$this->id)."'>$titre_affiche</a>";
-				elseif ($this->tit2) $titre = "<a href='".record_datas::format_url("index.php?lvl=notice_display&id=".$this->id)."'>$this->tit2</a>";
-					elseif ($this->tit3) $titre = "<a href='".record_datas::format_url("index.php?lvl=notice_display&id=".$this->id)."'>$this->tit3</a>";
-						elseif ($this->tit4) $titre = "<a href='".record_datas::format_url("index.php?lvl=notice_display&id=".$this->id)."'>$this->tit4</a>";
-                            else $titre = "";
+            	if ($this->tnvol) {
+            		$titre_affiche = $this->tit1." - ".$this->tparent." [".$this->tnvol."]" ;
+            	} else {
+            		$titre_affiche = $this->tit1." - ".$this->tparent;
+            	}
+            } else {
+            	$titre_affiche = $this->tit1;
+            }
+            
+            $titre = "";
+            if ($this->tit1) {
+            	$titre = "<a href='".record_datas::format_url("index.php?lvl=notice_display&id=".$this->id)."'>$titre_affiche</a>";
+            } elseif ($this->tit2) {
+            	$titre = "<a href='".record_datas::format_url("index.php?lvl=notice_display&id=".$this->id)."'>$this->tit2</a>";
+            } elseif ($this->tit3) {
+            	$titre = "<a href='".record_datas::format_url("index.php?lvl=notice_display&id=".$this->id)."'>$this->tit3</a>";
+            } elseif ($this->tit4) {
+            	$titre = "<a href='".record_datas::format_url("index.php?lvl=notice_display&id=".$this->id)."'>$this->tit4</a>";
+            }
 
             // ***
             //$this->responsabilites
             $auteur = gen_authors_header($this->responsabilites);
             // ***
+            
             $remplacement = $titre;
-            if (($remplacement != "") && ($auteur != ""))
-                $remplacement .= " / ".$auteur;
-
-            $print = str_replace("!!level1!!", $remplacement, $print);
+            if (($remplacement != "") && ($auteur != "")) {
+                $remplacement .= " {$msg['record_author_separator']} {$auteur}";            	
             }
+            $print = str_replace("!!level1!!", $remplacement, $print);
+        }
 
         return $print;
     }
@@ -629,7 +641,7 @@ require_once($base_path."/classes/subcollection.class.php");
     }
 
     public static function get_niveau_biblio($notice_id) {
-    	$query = "SELECT niveau_biblio FROM notices WHERE notice_id = ".$notice_id;
+    	$query = "SELECT niveau_biblio FROM notices WHERE notice_id = ".intval($notice_id);
     	$result = pmb_mysql_query($query);
     	return pmb_mysql_result($result, 0, 'niveau_biblio');
     }
@@ -638,6 +650,17 @@ require_once($base_path."/classes/subcollection.class.php");
     	$query = "SELECT typdoc FROM notices WHERE notice_id = ".$notice_id;
     	$result = pmb_mysql_query($query);
     	return pmb_mysql_result($result, 0, 'typdoc');
+    }
+    
+    public static function get_field($id, $field) {
+        $id = intval($id);
+        $param = '';
+        if($id) {
+            $query = "SELECT ".addslashes($field)." FROM notices WHERE notice_id = '".$id."' ";
+            $result = pmb_mysql_query($query);
+            $param = pmb_mysql_result($result, 0, 0);
+        }
+        return $param;
     }
     
     public static function get_permalink($notice_id) {
@@ -722,7 +745,8 @@ require_once($base_path."/classes/subcollection.class.php");
 
     //Récupérer une date au format AAAA-MM-JJ
     public static function get_date_parution($annee) {
-        return detectFormatDate($annee);
+        $date_parution = detectFormatDate($annee);
+        return (!empty($date_parution) ? $date_parution : "0000-00-00");
     }
     
     //Récupération de la no_image

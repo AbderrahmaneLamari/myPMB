@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docbnf.class.php,v 1.3 2019/06/06 09:56:19 btafforeau Exp $
+// $Id: docbnf.class.php,v 1.5 2022/09/09 07:10:59 dgoron Exp $
 
 
 if (stristr ($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/fpdf.class.php");
-
 	
 class docbnf {
 	protected $path;
@@ -228,7 +228,7 @@ class docbnf {
 								"text"=> $this->get_paragraphe($string),
 								'par' => array(
 									array(
-										'page' => ($num_page*1),
+										'page' => intval($num_page),
 										'page_height' => $height,
 										'b' => $height,
 										't' => 0,
@@ -241,7 +241,7 @@ class docbnf {
 												'r' => ($string->getAttribute("HPOS")+$string->getAttribute("WIDTH"))*$w_ratio,
 												'b' => ($string->getAttribute("VPOS")+$string->getAttribute("HEIGHT"))*$h_ratio,
 												't' => $string->getAttribute("VPOS")*$h_ratio,
-												'page' => ($num_page*1)
+												'page' => intval($num_page)
 											)
 										)
 									)
@@ -354,7 +354,7 @@ class docbnf {
 							$item['analysis_page'] = $child->getElementsByTagName("xref")->item($i)->nodeValue;
 							if($item['page']){
 								if(preg_match("/.*".$this->ref."\/([^.]+)[.].*/", $item['page'],$matches)){
-									$item['page'] = $matches[1]*1;
+									$item['page'] = intval($matches[1]);
 								}
 							}
 							$item['label'] = utf8_decode($item['label']);
@@ -425,7 +425,6 @@ class docbnf {
 	public function generateOCR($pageName){
 		if($this->file_exists($this->get_file_path("X/".$pageName.".xml.gz"))){
 			$filepath = $this->get_file($this->get_file_path("X/".$pageName.".xml.gz"));
-			print $file_path;
 			ob_start();
 			readgzfile($filepath);
 			$file=ob_get_clean();
@@ -477,6 +476,7 @@ class docbnf {
 					}
 				}
 			}
+			$line = array();
 			$printSpaces = $xml->getElementsByTagName("PrintSpace");
 			foreach($printSpaces as $printSpace){
 				//block de texte...
@@ -558,7 +558,7 @@ class docbnf {
 			$img_path = $this->resolution."/".$image.".JPG";
 		}
 		
-		$number = str_replace($this->resolution,"",$image)*1;
+		$number = intval(str_replace($this->resolution,"",$image));
  		$src_img = imagecreatefromstring($this->get_file_content(($this->get_file_path($img_path))));
  		$img=imagecreatetruecolor($this->getWidth($number),$this->getHeight($number));
 		ImageSaveAlpha($img, false);
@@ -584,7 +584,7 @@ class docbnf {
 				$image = str_replace("T",$this->resolution,$image);
 				$dimensions = $img->getAttribute("dimension");
 				$infos = explode(",",$dimensions);
-				$this->pagesSizes[($page->getAttribute("ordre")*1)] =array(
+				$this->pagesSizes[intval($page->getAttribute("ordre"))] =array(
 					'width' => $infos[0],
 					'height'=>  $infos[1]
 				);
@@ -759,12 +759,12 @@ class fpdf_bnf extends fpdf{
 		$this->_out('endobj');
 	}
 
-	public function _putresources(){
+	protected function _putresources(){
 		parent::_putresources();
 		$this->_putbookmarks();
 	}
 
-	public function _putcatalog(){
+	protected function _putcatalog(){
 		parent::_putcatalog();
 		if(count($this->outlines)>0)
 		{

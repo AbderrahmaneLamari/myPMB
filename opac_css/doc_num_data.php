@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: doc_num_data.php,v 1.46 2021/02/02 12:57:00 dgoron Exp $
+// $Id: doc_num_data.php,v 1.48 2022/12/19 13:16:38 dbellamy Exp $
 
 $base_path=".";
 require_once($base_path."/includes/init.inc.php");
@@ -51,55 +51,51 @@ require_once($class_path."/acces.class.php");
 
 // si paramétrage authentification particulière et pour la re-authentification ntlm
 if (file_exists($base_path.'/includes/ext_auth.inc.php')) require_once($base_path.'/includes/ext_auth.inc.php');
-$explnum_id=intval($explnum_id);
-$explnum = new explnum($explnum_id);
 
-if (!$explnum->explnum_id) {
+$explnum_id=intval($explnum_id);
+if (!$explnum_id) {
 	exit ;
 }
+$explnum = new explnum($explnum_id);
 
-$id_for_rigths = $explnum->explnum_notice;
+$id_for_rights = $explnum->explnum_notice;
 if($explnum->explnum_bulletin != 0){
 	//si bulletin, les droits sont rattachés à la notice du bulletin, à défaut du pério...
 	$req = "select bulletin_notice,num_notice from bulletins where bulletin_id =".$explnum->explnum_bulletin;
 	$res = pmb_mysql_query($req);
 	if(pmb_mysql_num_rows($res)){
 		$row = pmb_mysql_fetch_object($res);
-		$id_for_rigths = $row->num_notice;
-		if(!$id_for_rigths){
-			$id_for_rigths = $row->bulletin_notice;
+		$id_for_rights = $row->num_notice;
+		if(!$id_for_rights){
+			$id_for_rights = $row->bulletin_notice;
 		}
-	}$type = "" ;
+	}
 }
 
 
 //droits d'acces emprunteur/notice
+$rights = 0;
+$dom_2 = null;
 if ($gestion_acces_active==1 && $gestion_acces_empr_notice==1) {
 	$ac= new acces();
 	$dom_2= $ac->setDomain(2);
-	$rights= $dom_2->getRights($_SESSION['id_empr_session'],$id_for_rigths);
-} else {
-	$dom_2=null;
-	$rights = 0;
+	$rights= $dom_2->getRights($_SESSION['id_empr_session'],$id_for_rights);
 }
-
 //Accessibilité des documents numériques aux abonnés en opac
-$req_restriction_abo = "SELECT explnum_visible_opac, explnum_visible_opac_abon FROM notices,notice_statut WHERE notice_id='".$id_for_rigths."' AND statut=id_notice_statut ";
+$req_restriction_abo = "SELECT explnum_visible_opac, explnum_visible_opac_abon FROM notices,notice_statut WHERE notice_id='".$id_for_rights."' AND statut=id_notice_statut ";
 
 $result=pmb_mysql_query($req_restriction_abo);
 $expl_num=pmb_mysql_fetch_array($result,PMB_MYSQL_ASSOC);
 
 
 //droits d'acces emprunteur/document numérique
+$docnum_rights=0;
+$dom_3=null;
 if ($gestion_acces_active==1 && $gestion_acces_empr_docnum==1) {
 	$ac= new acces();
 	$dom_3= $ac->setDomain(3);
 	$docnum_rights= $dom_3->getRights($_SESSION['id_empr_session'],$explnum_id);
-} else {
-	$dom_3=null;
-	$docnum_rights=0;
 }
-
 //Accessibilité (Consultation/Téléchargement) sur le document numérique aux abonnés en opac
 $req_restriction_docnum_abo = "SELECT explnum_download_opac, explnum_download_opac_abon FROM explnum,explnum_statut WHERE explnum_id='".$explnum_id."' AND explnum_docnum_statut=id_explnum_statut ";
 

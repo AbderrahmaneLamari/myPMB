@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_integrator_authperso.class.php,v 1.7.2.2 2021/07/29 14:22:47 qvarin Exp $
+// $Id: rdf_entities_integrator_authperso.class.php,v 1.9 2021/07/29 14:26:46 qvarin Exp $
 
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");

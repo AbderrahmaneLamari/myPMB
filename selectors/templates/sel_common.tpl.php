@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sel_common.tpl.php,v 1.7 2020/07/09 09:27:00 dgoron Exp $
+// $Id: sel_common.tpl.php,v 1.7.6.1 2023/04/07 14:34:40 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "tpl.php")) die("no access");
 
@@ -12,6 +12,7 @@ global $jscript_common_selector;
 global $what;
 
 $jscript_common_selector_simple = "
+	<div id='indexation_infos' style='display:none;'></div>
 	<script type='text/javascript'>
 	<!--
 	function set_parent(f_caller, id_value, libelle_value, callback){
@@ -32,6 +33,7 @@ $jscript_common_selector_simple = "
 	</script>";
 
 $jscript_common_selector = "
+	<div id='indexation_infos' style='display:none;'></div>
 	<script type='text/javascript'>
 	<!--
 	function set_parent(f_caller, id_value, libelle_value, callback){

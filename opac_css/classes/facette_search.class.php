@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facette_search.class.php,v 1.104.2.3 2021/12/27 10:13:08 dgoron Exp $
+// $Id: facette_search.class.php,v 1.107.4.3 2024/01/04 08:57:50 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 global $base_path, $class_path;
 require_once($base_path."/includes/notice_affichage.inc.php");
@@ -187,8 +189,12 @@ class facettes extends facettes_root {
 								}
 							}
 						}
-						getlevel2=new http_request();
-						getlevel2.request('./ajax.php?module=ajax&categ=level1".($lvl == 'search_segment' ? '&segment_id='.$id : '')."',true,tosubmit,true,updateLevel1);";
+                        
+                        document.addEventListener('DOMContentLoaded', () => {
+    						getlevel2=new http_request();
+					        getlevel2.request('./ajax.php?module=ajax&categ=level1".($lvl == 'search_segment' ? '&segment_id='.$id : '')."',true,tosubmit,true,updateLevel1);
+                        });";
+				
 				$table.="</script>";
 				$table.="<h3>".htmlentities($msg['autolevel1_search'],ENT_QUOTES,$charset)."</h3>\n" .
 						"<img src='".get_url_icon('patience.gif')."' id='wait_level1'/>";
@@ -535,20 +541,17 @@ class facettes extends facettes_root {
 			$res = pmb_mysql_query($req);
 			$image = "";
 			if($r=pmb_mysql_fetch_object($res)){
-				if (substr($opac_notice_reduit_format_similaire,0,1)!="H" && $opac_show_book_pics=='1') {
-					if (($r->code && $opac_book_pics_url) || $r->thumbnail_url) {
-						$url_image_ok = getimage_url($r->code, $r->thumbnail_url);
-						$title_image_ok = "";
-						if(!$r->thumbnail_url) {
-							$title_image_ok = htmlentities($opac_book_pics_msg, ENT_QUOTES, $charset);
-						}
-						if(!trim($title_image_ok)){
-							$title_image_ok = htmlentities($r->tit1, ENT_QUOTES, $charset);
-						}
-						$image = "<a href='".$opac_url_base."index.php?lvl=notice_display&id=".$notice_id."'>"."<img class='vignetteimg_simili' src='".$url_image_ok."' title=\"".$title_image_ok."\" hspace='4' vspace='2'>"."</a>";
-					} else {
-						$image = "<a href='".$opac_url_base."index.php?lvl=notice_display&id=".$notice_id."'>"."<img class='vignetteimg_simili' src='".notice::get_picture_url_no_image($r->niveau_biblio, $r->typdoc)."' hspace='4' vspace='2'></a>";
+			    if (substr($opac_notice_reduit_format_similaire,0,1)!="H" && $opac_show_book_pics=='1') {
+			        $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+			        $url_image_ok = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $notice_id);
+					$title_image_ok = "";
+					if(!$r->thumbnail_url) {
+						$title_image_ok = htmlentities($opac_book_pics_msg, ENT_QUOTES, $charset);
 					}
+					if(!trim($title_image_ok)){
+						$title_image_ok = htmlentities($r->tit1, ENT_QUOTES, $charset);
+					}
+					$image = "<a href='".$opac_url_base."index.php?lvl=notice_display&id=".$notice_id."'>"."<img class='vignetteimg_simili' src='".$url_image_ok."' title=\"".$title_image_ok."\" hspace='4' vspace='2'>"."</a>";
 				}		
 				$notice = new $opac_notice_affichage_class($notice_id, "", 0,0,1);	
 				$notice->do_header_similaire();				

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_animationslist_view_django_directory.class.php,v 1.1 2021/03/26 13:47:46 btafforeau Exp $
+// $Id: cms_module_animationslist_view_django_directory.class.php,v 1.2 2022/11/17 09:27:35 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -53,7 +53,12 @@ class cms_module_animationslist_view_django_directory extends cms_module_common_
 		$render_data['animations'] = array();
 		$directory = $this->parameters['django_directory'];
 		
-		$H2o = H2o_collection::get_instance("$base_path/includes/templates/animations/$directory/animation_display.tpl.html");
+		$template_path = "$base_path/includes/templates/animations/$directory/animation_display.tpl.html";
+		if(file_exists("$base_path/includes/templates/animations/$directory/animation_display_subst.tpl.html")){
+		    $template_path = "$base_path/includes/templates/animations/$directory/animation_display_subst.tpl.html";
+		}
+		$H2o = H2o_collection::get_instance($template_path);
+		
 		if (is_array($data['animations'])) {
 			foreach ($data['animations'] as $animation_id) {
 			    $animation = new AnimationModel($animation_id);

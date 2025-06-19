@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_common_datasource_authperso.class.php,v 1.1.6.1 2021/07/15 07:59:56 tsamson Exp $
+// $Id: frbr_entity_common_datasource_authperso.class.php,v 1.2 2021/07/15 08:07:43 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

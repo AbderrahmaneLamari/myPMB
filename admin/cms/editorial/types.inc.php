@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: types.inc.php,v 1.5 2021/05/11 08:18:50 dgoron Exp $
+// $Id: types.inc.php,v 1.6 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -12,10 +12,6 @@ require_once($class_path."/cms/cms_editorial_type.class.php");
 require_once($class_path."/configuration/configuration_controller.class.php");
 require_once($class_path."/list/configuration/cms_editorial/list_configuration_cms_editorial_type_ui.class.php");
 require_once($class_path."/cms/cms_editorial_parametres_perso.class.php");
-
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("cms_modules",true);
 
 switch($quoi){
 	case "fields":

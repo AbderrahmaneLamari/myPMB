@@ -2,14 +2,16 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: dsi.php,v 1.12 2021/04/28 06:52:35 dgoron Exp $
+// $Id: dsi.php,v 1.14.4.1 2023/03/24 12:59:21 qvarin Exp $
 
-// définition du minimum nécéssaire 
+use Pmb\DSI\Controller\DsiController;
+
+// définition du minimum nécéssaire
 $base_path=".";
-$base_auth = "DSI_AUTH";  
+$base_auth = "DSI_AUTH";
 $base_use_dojo=1;
-$base_title = "\$msg[dsi_menu_title]";    
-require_once ("$base_path/includes/init.inc.php");  
+$base_title = "\$msg[dsi_menu_title]";
+require_once ("$base_path/includes/init.inc.php");
 
 // modules propres à autorites.php ou à ses sous-modules
 require_once($class_path."/modules/module_dsi.class.php");
@@ -19,7 +21,17 @@ require("$include_path/templates/dsi.tpl.php");
 
 module_dsi::get_instance()->proceed_header();
 
-include("./dsi/main.inc.php");
+if (2 == $dsi_active) {
+	$data = new stdClass();
+	$data->categ = $categ ?? "";
+	$data->sub = $sub ?? "";
+	$data->action = $action ?? "";
+
+	$controller = new DsiController($data);
+	$controller->proceed();
+} else {
+	include("./dsi/main.inc.php");
+}
 
 module_dsi::get_instance()->proceed_footer();
 

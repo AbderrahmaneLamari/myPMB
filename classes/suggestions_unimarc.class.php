@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestions_unimarc.class.php,v 1.5.10.1 2021/08/02 12:07:12 dgoron Exp $
+// $Id: suggestions_unimarc.class.php,v 1.6 2021/08/02 12:03:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

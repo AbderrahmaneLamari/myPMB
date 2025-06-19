@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entity_graph.class.php,v 1.16.8.1 2021/12/21 10:02:54 qvarin Exp $
+// $Id: entity_graph.class.php,v 1.17 2021/12/21 10:30:24 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

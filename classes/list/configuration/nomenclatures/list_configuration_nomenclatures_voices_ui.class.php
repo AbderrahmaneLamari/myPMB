@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_nomenclatures_voices_ui.class.php,v 1.2 2021/04/19 07:10:28 dgoron Exp $
+// $Id: list_configuration_nomenclatures_voices_ui.class.php,v 1.2.6.1 2023/05/05 13:45:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -18,7 +18,7 @@ class list_configuration_nomenclatures_voices_ui extends list_configuration_nome
 	protected static $field_order = 'voice_order';
 	
 	protected function get_object_instance($row) {
-		return new nomenclature_voice($row->id_voice);
+		return nomenclature_voice::get_instance($row->id_voice);
 	}
 	
 	protected function init_default_applied_sort() {

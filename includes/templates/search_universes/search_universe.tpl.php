@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_universe.tpl.php,v 1.16.2.1 2021/10/29 12:27:00 dbellamy Exp $
+// $Id: search_universe.tpl.php,v 1.18.4.2 2023/11/02 13:37:47 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -29,7 +29,15 @@ $search_universe_content_form ="
 </div>
 <div class='row'>
 	<input type='checkbox' name='universe_rmc_enabled' id='universe_rmc_enabled' value='1' !!universe_rmc_enabled!! />
-	<label class='etiquette' for='universe_rmc_enabled'>{$msg['search_universe_rmc_enabled']}</label>
+	<label class='etiquette' for='universe_rmc_enabled'>{$msg['search_universe_rmc_enabled']}</label> <i class='fa fa-info-circle' title='{$msg['search_universe_rmc_explication']}'></i>
+</div>
+<div class='row'>
+	<input type='checkbox' name='universe_perio_enabled' id='universe_perio_enabled' value='1' !!universe_perio_enabled!! />
+	<label class='etiquette' for='universe_perio_enabled'>{$msg['search_universe_perio_enabled']}</label>
+</div>
+<div class='row'>
+	<input type='checkbox' name='universe_autocomplete' id='universe_autocomplete' value='1' !!universe_autocomplete!! />
+	<label class='etiquette' for='universe_autocomplete'>{$msg['search_universe_autocomplete']}</label>
 </div>
 !!universe_permalink_field!!
 !!universe_opac_views!!

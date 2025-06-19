@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: author.class.php,v 1.176.2.5 2021/12/23 08:18:10 dgoron Exp $
+// $Id: author.class.php,v 1.183 2022/12/02 09:30:40 gneveu Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
 	die("no access");
-	
+
+use Pmb\Ark\Entities\ArkEntityPmb;
 	// définition de la classe de gestion des 'auteurs'
 if (! defined('AUTEUR_CLASS')) {
 	define('AUTEUR_CLASS', 1);
@@ -108,6 +109,8 @@ if (! defined('AUTEUR_CLASS')) {
 				$result = pmb_mysql_query($requete);
 				if (pmb_mysql_num_rows($result)) {
 					$row = pmb_mysql_fetch_object($result);
+					pmb_mysql_free_result($result);
+					
 					$this->id = $row->author_id;
 					$this->type = $row->author_type;
 					$this->name = $row->author_name;
@@ -649,6 +652,7 @@ if (! defined('AUTEUR_CLASS')) {
 		public function replace($by, $link_save = 0) {
 			global $msg;
 			global $pmb_synchro_rdf;
+			global $pmb_ark_activate;
 			
 			if (($this->id ==$by) ||(! $this->id)) {
 				return $msg[223];
@@ -726,6 +730,15 @@ if (! defined('AUTEUR_CLASS')) {
 			// nettoyage indexation
 			indexation_authority::delete_all_index($this->id, "authorities", "id_authority", AUT_TABLE_AUTHORS);
 			
+			if ($pmb_ark_activate) {
+			    $idReplaced = authority::get_authority_id_from_entity($this->id, AUT_TABLE_AUTHORS);
+			    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_AUTHORS);
+			    if ($idReplaced && $idReplacing) {
+			        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+			        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+			        $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+			    }
+			}
 			// effacement de l'identifiant unique d'autorité
 			$authority = new authority(0, $this->id, AUT_TABLE_AUTHORS);
 			$authority->delete();

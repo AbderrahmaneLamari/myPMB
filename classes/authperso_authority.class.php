@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authperso_authority.class.php,v 1.13 2021/02/15 15:42:10 gneveu Exp $
+// $Id: authperso_authority.class.php,v 1.15 2022/12/02 09:30:40 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once("$class_path/authperso.class.php");
 
 class authperso_authority {
@@ -18,23 +19,32 @@ class authperso_authority {
 	protected $responsabilities;
 	
 	public function __construct($id=0) {
-		$this->id=$id+0;
+		$this->id=intval($id);
 		$this->fetch_data();
 	}
 	
 	public function fetch_data() {
 		$this->info=array();
-		if(!$this->id) return;
+		
+		if (!$this->id) {
+			return;
+		}
 
-		$req="select authperso_authority_authperso_num from authperso_authorities where id_authperso_authority=". $this->id;
-		$res = pmb_mysql_query($req);
-		if(($r=pmb_mysql_fetch_object($res))) {
-			$authperso=$this->get_authperso_class($r->authperso_authority_authperso_num);
+		$query = "select authperso_authority_authperso_num from authperso_authorities where id_authperso_authority=". $this->id;
+		$result = pmb_mysql_query($query);
+		if (pmb_mysql_num_rows($result)) {
+			$row = pmb_mysql_fetch_object($result);
+			pmb_mysql_free_result($result);
+
+			$authperso = $this->get_authperso_class($row->authperso_authority_authperso_num);
+
 			//$this->info['isbd']=$authperso->get_isbd($this->id);
 			//$this->info['view']=$authperso->get_view($this->id);
-			$this->info['authperso']=$authperso->get_data();
-			$this->info['data']=$authperso->fetch_data_auth($this->id);
-			$this->info['authperso_num']=$r->authperso_authority_authperso_num;
+			
+			$this->info['authperso'] = $authperso->get_data();
+			$this->info['data'] = $authperso->fetch_data_auth($this->id);
+			$this->info['authperso_num'] = $row->authperso_authority_authperso_num;
+			
 			// AR - 20/04/2020 : Je n'ai pas retrouvé d'usage en gestion avec cette entrée... 
 			// Dans le cas qui se posait pour moi, ca sortait 67K d'instance de notice pour 1000 autorités... pas sur du réel besoin !
 			//$this->info['records']=$this->get_records_data();

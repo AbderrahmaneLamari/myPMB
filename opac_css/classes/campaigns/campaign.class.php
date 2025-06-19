@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: campaign.class.php,v 1.5.8.1 2022/01/19 11:46:43 dgoron Exp $
+// $Id: campaign.class.php,v 1.7.4.2 2023/11/14 17:05:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,7 +34,7 @@ class campaign {
 	
 	/**
 	 * Date
-	 * @var date
+	 * @var DateTime
 	 */
 	protected $date;
 	
@@ -157,27 +157,31 @@ class campaign {
 	
 	public function save_descriptors() {
 		static::delete_descriptors($this->id);
-		for($i=0 ; $i<count($this->descriptors) ; $i++){
-			$rqt = "insert into campaigns_descriptors set num_campaign = '".$this->id."', num_noeud = '".$this->descriptors[$i]."', campaign_descriptor_order='".$i."'";
-			pmb_mysql_query($rqt);
+		if (!empty($this->descriptors)){
+    		for($i=0 ; $i<count($this->descriptors) ; $i++){
+    			$rqt = "insert into campaigns_descriptors set num_campaign = '".$this->id."', num_noeud = '".$this->descriptors[$i]."', campaign_descriptor_order='".$i."'";
+    			pmb_mysql_query($rqt);
+    		}
 		}
 	}
 	
 	public function save_tags() {
 		static::delete_tags($this->id);
-		for($i=0 ; $i<count($this->tags) ; $i++){
-			$rqt = "insert into campaigns_tags set num_campaign = '".$this->id."', num_tag = '".$this->tags[$i]."', campaign_tag_order='".$i."'";
-			pmb_mysql_query($rqt);
+		if (!empty($this->tags)){
+    		for($i=0 ; $i<count($this->tags) ; $i++){
+    			$rqt = "insert into campaigns_tags set num_campaign = '".$this->id."', num_tag = '".$this->tags[$i]."', campaign_tag_order='".$i."'";
+    			pmb_mysql_query($rqt);
+    		}
 		}
 	}
 	
-	public function send_mail($id_empr, $to_nom="", $to_mail, $obj="", $corps="", $from_name="", $from_mail, $headers, $copie_CC="", $copie_BCC="", $faire_nl2br=0, $pieces_jointes=array()) {
+	public function send_mail($id_empr, $to_nom="", $to_mail="", $obj="", $corps="", $from_name="", $from_mail="", $headers="", $copie_CC="", $copie_BCC="", $faire_nl2br=0, $pieces_jointes=array(), $reply_name="", $reply_mail="", $is_mailing=false, $type="") {
 		$campaign_recipients = $this->get_recipients();
 		$recipient_instance = $campaign_recipients->add($id_empr, $to_mail, $corps);
 		
 		$corps = campaign_proxy::proxyfication($recipient_instance, $corps);
 	
-		return mailpmb($to_nom, $to_mail, $obj, $corps, $from_name, $from_mail, $headers, $copie_CC, $copie_BCC, $faire_nl2br, $pieces_jointes);
+		return mailpmb($to_nom, $to_mail, $obj, $corps, $from_name, $from_mail, $headers, $copie_CC, $copie_BCC, $faire_nl2br, $pieces_jointes, $reply_name, $reply_mail, $is_mailing, $type, $this->get_id());
 	}
 	
 	/**
@@ -219,6 +223,10 @@ class campaign {
 		return $this->label;
 	}
 
+	public function get_date() {
+		return $this->date;
+	}
+	
 	public function get_formatted_date() {
 		return $this->formatted_date;
 	}

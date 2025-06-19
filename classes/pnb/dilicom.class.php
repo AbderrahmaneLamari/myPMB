@@ -4,7 +4,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: dilicom.class.php,v 1.8 2021/02/05 13:07:19 dbellamy Exp $
+// $Id: dilicom.class.php,v 1.8.6.2 2023/12/14 14:03:21 jparis Exp $
 
 
 require_once($class_path.'/curl.class.php');
@@ -15,12 +15,13 @@ class dilicom {
 	private static $dilicom=null;
 	
 	public function __construct(){
-		global $pmb_pnb_param_login, $pmb_pnb_param_password, $pmb_pnb_param_dilicom_url;
+		global $pmb_pnb_param_login, $pmb_pnb_param_password;
 		$this->curl_instance = new Curl();
 		$this->curl_instance->set_option('CURLOPT_SSL_VERIFYPEER', false);
 		$this->curl_instance->set_option('CURLOPT_HTTPAUTH', CURLAUTH_BASIC);
 		$this->curl_instance->set_option('CURLOPT_USERPWD', $pmb_pnb_param_login.':'.$pmb_pnb_param_password);
 		$this->curl_instance->set_option('CURLOPT_HTTPHEADER', array('Content-Type:application/json'));
+		$this->curl_instance->timeout = 10;
 		$this->init_parameters();
 	}
 	
@@ -36,11 +37,14 @@ class dilicom {
 	public function query($function = '', $parameters = array()){
 		global $pmb_pnb_param_dilicom_url;
 		$parameters = array_merge($this->parameters, $parameters);
+		$payload = '{}';
 		if(is_string($function) && $function != ""){
 			$response = $this->curl_instance->post($pmb_pnb_param_dilicom_url.$function, $parameters);
-			return $response->__toString();
+			if(is_object($response) && isset($response->headers) && 200 == $response->headers['Status-Code']){
+			    $payload = $response->body;
+			}
 		}
-		return false;
+		return $payload;
 	}
 	
 	protected function init_parameters() {

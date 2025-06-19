@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_accounting_commandes_ui.class.php,v 1.12 2021/05/25 11:12:21 dgoron Exp $
+// $Id: list_accounting_commandes_ui.class.php,v 1.12.6.1 2023/03/07 15:35:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -48,18 +48,18 @@ class list_accounting_commandes_ui extends list_accounting_ui {
 	}
 	
 	protected function _get_object_property_statut($object) {
-		global $msg, $charset;
+		global $msg;
 		
 		$st = (($object->statut) & ~(STA_ACT_FAC | STA_ACT_PAY | STA_ACT_ARC));
 		switch ($st) {
 			case STA_ACT_AVA :
-				return htmlentities($msg['acquisition_cde_aval'], ENT_QUOTES, $charset);
+				return $msg['acquisition_cde_aval'];
 			case STA_ACT_ENC :
-				return htmlentities($msg['acquisition_cde_enc'], ENT_QUOTES, $charset);
+				return $msg['acquisition_cde_enc'];
 			case STA_ACT_REC :
-				return htmlentities($msg['acquisition_cde_liv'], ENT_QUOTES, $charset);
+				return $msg['acquisition_cde_liv'];
 			default :
-				return htmlentities($msg['acquisition_cde_enc'], ENT_QUOTES, $charset);
+				return $msg['acquisition_cde_enc'];
 		}
 	}
 	
@@ -74,7 +74,7 @@ class list_accounting_commandes_ui extends list_accounting_ui {
 				}
 				break;
 			case 'statut':
-				$statut = $this->_get_object_property_statut($object);
+				$statut = htmlentities($this->_get_object_property_statut($object), ENT_QUOTES, $charset);
 				if( ($object->statut & STA_ACT_PAY) == STA_ACT_PAY ) {
 					$st_fac = htmlentities($msg['acquisition_act_pay'], ENT_QUOTES, $charset); 
 				} elseif( ($object->statut & STA_ACT_FAC) == STA_ACT_FAC ) {

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: relations9.inc.php,v 1.4.8.2 2021/12/15 08:53:05 dgoron Exp $
+// $Id: relations9.inc.php,v 1.6.4.1 2023/06/15 11:57:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -26,4 +26,4 @@ $v_state .= $affected." ".htmlentities($msg["nettoyage_res_update_relations"], E
 // mise à jour de l'affichage de la jauge
 print netbase::get_display_final_progress();
 
-print netbase::get_process_state_form($v_state, $spec, '', '10');
+print netbase::get_process_state_form($v_state, $spec);

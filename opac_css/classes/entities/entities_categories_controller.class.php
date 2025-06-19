@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_categories_controller.class.php,v 1.3.2.2 2021/08/27 14:00:50 tsamson Exp $
+// $Id: entities_categories_controller.class.php,v 1.7 2022/04/11 08:33:47 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -42,7 +42,7 @@ class entities_categories_controller extends entities_authorities_controller {
 			$page=1;
 			$this->page = $page;
 		} else {
-			$this->page = $page+0;
+		    $this->page = (int) $page;
 		}
 		$debut =($this->page-1)*$nb_per_page_gestion;
 	
@@ -321,10 +321,6 @@ class entities_categories_controller extends entities_authorities_controller {
 			error_form_message($msg['categ_num_aut_not_unique']);
 			exit;
 		}
-		
-		//Si pas de parent, le parent est le noeud racine du thesaurus
-		if (!$category_parent_id) $category_parent_id = $thes->num_noeud_racine;
-		
 		//synchro_rdf : on empile les noeuds impactés pour les traiter plus loin
 		if($pmb_synchro_rdf){
 			$arrayIdImpactes=array();
@@ -333,7 +329,7 @@ class entities_categories_controller extends entities_authorities_controller {
 				//on est en mise à jour
 				$arrayIdImpactes[]=$this->id;
 				//parent
-				if($noeud->num_parent!=$thes->num_noeud_racine){
+				if($noeud->num_parent != $thes->num_noeud_racine && $this->id_thes == $noeud->num_thesaurus){
 					$arrayIdImpactes[]=$noeud->num_parent;
 				}
 				//enfants
@@ -353,32 +349,47 @@ class entities_categories_controller extends entities_authorities_controller {
 		}
 		//traitement noeud
 		
-		$authority_statut = $authority_statut+0;
+		$authority_statut = (int) $authority_statut;
 		if(!$authority_statut){
 			$authority_statut = 1;
 		}
 		if($this->id) {
 			//noeud existant
 			$noeud = new noeuds($this->id);
+			//Si pas de parent, le parent est le noeud racine du thesaurus
+			if (!$category_parent_id) {
+			    //on teste d'abord si le thesaurus en session est le même que celui du noeud
+			    if ($this->id_thes == $noeud->num_thesaurus) {
+			        $category_parent_id = $thes->num_noeud_racine;
+			    } else {
+			        $this->id_thes = $noeud->num_thesaurus;
+			        $thes = new thesaurus($this->id_thes);
+			        $category_parent_id = $thes->num_noeud_racine;
+			    }
+			}
 			if (!noeuds::isProtected($this->id)) {
 				$noeud->num_parent = $category_parent_id;
 				$noeud->num_renvoi_voir = $category_voir_id;
-				$noeud->authority_import_denied = $authority_import_denied=0;
-				$noeud->not_use_in_indexation = $not_use_in_indexation+0;
+				$noeud->authority_import_denied = (isset($authority_import_denied) ? $authority_import_denied : 0);
+				$noeud->not_use_in_indexation = (int) $not_use_in_indexation;
 				$noeud->autorite = $num_aut;
 				$noeud->num_statut = $authority_statut;
 				$noeud->thumbnail_url = $authority_thumbnail_url;
 				$noeud->save();
 			}
 		} else {
+		    //Si pas de parent, le parent est le noeud racine du thesaurus
+		    if (!$category_parent_id) {
+		        $category_parent_id = $thes->num_noeud_racine;
+		    }
 			//noeud a creer
 			$noeud = new noeuds();
 			$noeud->num_parent = $category_parent_id;
 			$noeud->num_renvoi_voir = $category_voir_id;
 			$noeud->autorite = $num_aut;
 			$noeud->num_thesaurus = $thes->id_thesaurus;
-			$noeud->authority_import_denied = $authority_import_denied=0;
-			$noeud->not_use_in_indexation = $not_use_in_indexation+0;
+			$noeud->authority_import_denied = (isset($authority_import_denied) ? $authority_import_denied : 0);
+			$noeud->not_use_in_indexation = (int) $not_use_in_indexation;
 			$noeud->num_statut = $authority_statut;
 			$noeud->thumbnail_url = $authority_thumbnail_url;
 			$noeud->save();
@@ -433,7 +444,7 @@ class entities_categories_controller extends entities_authorities_controller {
 				global ${$categ_id}, ${$categ_rec};
 				if (${$categ_id} && ${$categ_id}!=$this->id) {
 					$requete="INSERT INTO voir_aussi (num_noeud_orig, num_noeud_dest, langue) VALUES ($this->id,".${$categ_id}.",'".$thes->langue_defaut."' )";
-					@pmb_mysql_query($requete);
+					pmb_mysql_query($requete);
 					if (${$categ_rec}) {
 						$requete="INSERT INTO voir_aussi (num_noeud_orig, num_noeud_dest, langue) VALUES (".${$categ_id}.",".$this->id.",'".$thes->langue_defaut."' )";
 						$indexation_authority = new indexation_authority($include_path."/indexation/authorities/categories/champs_base.xml", "authorities", AUT_TABLE_CATEG);
@@ -441,7 +452,7 @@ class entities_categories_controller extends entities_authorities_controller {
 					} else {
 						$requete="DELETE from voir_aussi where num_noeud_dest = '".$id."' and num_noeud_orig = '".${$categ_id}."'	";
 					}
-					@pmb_mysql_query($requete);
+					pmb_mysql_query($requete);
 		
 				}
 			}
@@ -786,11 +797,11 @@ class entities_categories_controller extends entities_authorities_controller {
 	}
 	
 	public function set_parent($parent) {
-		$this->parent = $parent+0;
+	    $this->parent = (int) $parent;
 	}
 	
 	public function set_id_thes($id_thes) {
-		$this->id_thes = $id_thes+0;
+	    $this->id_thes = (int) $id_thes;
 	}
 	
 	public function get_back_url() {

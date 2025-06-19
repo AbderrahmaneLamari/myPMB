@@ -1,4 +1,4 @@
-<!-- $Id: animation_display.tpl.html,v 1.15 2021/03/29 07:46:09 qvarin Exp $ -->
+<!-- $Id: animation_display.tpl.html,v 1.18 2023/02/14 09:44:53 qvarin Exp $ -->
 
 {% if animation.name %}
 	<div class="asideContentAnim">
@@ -123,9 +123,11 @@
 									{% if animation.event.startHour != '00:00' %}
 										{{ animation.event.startHour }}
 									{% endif %}
-									{{ msg.animations_date_to }} {{ animation.event.endDate }} 
-									{% if animation.event.endHour != '00:00' %}
-										{{ animation.event.endHour }}
+									{% if !animation.event.duringDay %}
+										{{ msg.animations_date_to }} {{ animation.event.endDate }} 
+										{% if animation.event.endHour != '00:00' %}
+											{{ animation.event.endHour }}
+										{% endif %}
 									{% endif %}
 								{% else %}
 									{{ animation.event.startDate }}
@@ -150,14 +152,28 @@
 									<span>{{ msg.animation_quota_available }} :</span>
 								</td>
 								<td class="labelContent">
-									{% if animation.allQuotas.animationQuotas.global %}
+									{% if animation.allQuotas.animationQuotas.internet %}
+										{% if animation.allQuotas.availableQuotas.internet > 0 %}
 										<span>
-											{{ animation.allQuotas.availableQuotas.global }} / {{ animation.globalQuota }}
+											{{ animation.allQuotas.availableQuotas.internet }} 
 										</span>
+										{% else %}
+										<span>
+											{% if animation.location.0.locationLibelle %}
+												{{ msg.quotas_not_set }} : {{ animation.location.0.locationLibelle }}
+											{% else %}
+												{{ msg.quotas_not_set_biblio }}
+											{% endif %}
+										</span>
+										{% endif %}
 									{% else %}
-										<span>
-											{{ msg.animation_quota_no_limit }}
-										</span>
+										{% if animation.allQuotas.availableQuotas.global == 0 %}
+											{{ msg.animation_no_place }}
+										{% else %}
+											<span>
+												{{ msg.animation_quota_no_limit }}
+											</span>
+										{% endif %}
 									{% endif %}
 									<br>
 								</td>
@@ -293,7 +309,7 @@
 									{% block childrens_registration %}
 										<td class="labelContent">
 											{% if !children.hasChildrens and children.hasQuotas %}
-												{% if children.event.dateExpired %}
+												{% if 1 == children.event.dateExpired %}
 													<input type="checkbox" disabled="true" title="{{ msg.animation_event_date_expired }}">
 												{% else %}
 													{% if !children.alreadyRegistred %}
@@ -324,9 +340,11 @@
 											{% if children.event.startHour != '00:00' %}
 												{{ children.event.startHour }}
 											{% endif %}<br>
-											{{ msg.animations_date_to }} {{ children.event.endDate }} 
-											{% if children.event.endHour != '00:00' %}
-												{{ children.event.endHour }}
+											{% if !children.event.duringDay %}
+												{{ msg.animations_date_to }} {{ children.event.endDate }} 
+												{% if children.event.endHour != '00:00' %}
+													{{ children.event.endHour }}
+												{% endif %}
 											{% endif %}
 										</td>
 									{% endblock %}
@@ -343,9 +361,13 @@
 															{{ children.allQuotas.availableQuotas.global }} / {{ children.globalQuota }}
 														</span>
 													{% else %}
-														<span>
-															{{ msg.animation_quota_no_limit }}
-														</span>
+														{% if animation.allQuotas.availableQuotas.global == 0 %}
+															{{ msg.animation_no_place }}
+														{% else %}
+															<span>
+																{{ msg.animation_quota_no_limit }}
+															</span>
+														{% endif %}
 													{% endif %}
 												{% endif %}
 											{% endif %}
@@ -355,7 +377,9 @@
 								{% endfor %}
 							</tbody>
 						</table>
-						<input type="submit" class="bouton" value="{{ msg.animation_registration }}">
+						<button type="submit" class="bouton">
+						  {{ msg.animation_registration }}
+						</button>
 					</form>
 				</div>
 				{% endif %}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestion_import.class.php,v 1.7.8.1 2021/12/16 06:54:30 dgoron Exp $
+// $Id: suggestion_import.class.php,v 1.8 2021/12/16 06:50:42 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

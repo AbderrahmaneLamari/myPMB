@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_editions_states_ui.class.php,v 1.4.2.1 2021/09/21 16:43:41 dgoron Exp $
+// $Id: list_editions_states_ui.class.php,v 1.6.4.4 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -20,24 +20,13 @@ class list_editions_states_ui extends list_ui {
 		return new editions_state($row->id_editions_state);
 	}
 	
-	protected function _get_query_order() {
-	    if ($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'libproc_classement':
-					$order .= 'libproc_classement,editions_state_name';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'libproc_classement':
+	            return 'libproc_classement,editions_state_name';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	protected function init_default_settings() {
@@ -69,7 +58,7 @@ class list_editions_states_ui extends list_ui {
 	    $this->add_applied_sort('name');
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'libproc_classement');
 	}
 	
@@ -105,9 +94,7 @@ class list_editions_states_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_name() {
-		global $msg;
-		
-		return "<input class='saisie-80em' id='".$this->objects_type."_name' type='text' name='".$this->objects_type."_name' value=\"".$this->filters['name']."\" title='$msg[3001]' />";
+		return $this->get_search_filter_simple_text('name');
 	}
 	
 	/**
@@ -132,12 +119,11 @@ class list_editions_states_ui extends list_ui {
 	protected function add_column_execute() {
 		global $msg;
 		
-		$this->columns[] = array(
-				'property' => 'execute',
-				'label' => '',
-				'html' => "<input class='bouton' type='button' value=' $msg[708] ' onClick=\"document.location='".static::get_controller_url_base()."&sub=tab&action=show&id=!!id!!'\" />",
-				'exportable' => false
+		$html_properties = array(
+				'value' => $msg['708'],
+				'link' => static::get_controller_url_base()."&sub=tab&action=show&id=!!id!!"
 		);
+		$this->add_column_simple_action('execute', '', $html_properties);
 	}
 	
 	protected function get_button_add() {
@@ -180,19 +166,15 @@ class list_editions_states_ui extends list_ui {
 		return $content;
 	}
 
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch ($property) {
 			case 'name':
-				$attributes = array(
-					'onclick' => "document.location=\"".static::get_controller_url_base()."&action=edit&id=".$object->id."\""
+				return array(
+						'onclick' => "document.location=\"".static::get_controller_url_base()."&action=edit&id=".$object->id."\""
 				);
-				break;
 			default:
-				break;
+				return array();
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_display_left_actions() {

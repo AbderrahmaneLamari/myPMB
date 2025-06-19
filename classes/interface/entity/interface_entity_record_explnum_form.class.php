@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interface_entity_record_explnum_form.class.php,v 1.1 2021/05/17 12:18:18 dgoron Exp $
+// $Id: interface_entity_record_explnum_form.class.php,v 1.1.8.1 2023/05/31 07:56:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -173,7 +173,7 @@ class interface_entity_record_explnum_form extends interface_entity_record_form 
 		<form class='form-".$current_module."' id='".$this->name."' name='".$this->name."'  method='post' action=\"".$this->get_submit_action()."\" onSubmit=\"!!submit_action!!\" ".(!empty($this->enctype) ? "enctype='".$this->enctype."'" : "").">
 			<div class='row'>
 				<div class='left'>
-					<h3>".$this->get_display_label()."</h3>
+					".$this->get_display_label()."
 				</div>
 				<div class='right'>
 					".$this->get_editables_buttons()."

@@ -1,8 +1,8 @@
 <template>
 	<div class="container">
-		<div v-for="(field, customIndex) in customfields">
+		<div v-for="(field, customIndex) in customfields" :key="customIndex">
 			<div :id="'move_' + field.customField.name" movable='yes' :title="field.customField.titre">
-				<div class="row">
+				<div class="row" v-if="! disableTitle">
 					<label :for="field.customField.name">
 						{{ field.customField.titre }} <sup v-if="field.customField.mandatory == '1'">*</sup>
 					</label>
@@ -20,7 +20,7 @@
 	import customfield from "./customField.vue";
 
 	export default {
-		props : ["customfields", "customprefixe", "img", "pmb", "index"],
+		props : ["customfields", "customprefixe", "img", "pmb", "index", "disableTitle"],
 		
 		components : {
 			customfield

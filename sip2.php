@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sip2.php,v 1.8.8.1 2021/08/25 08:38:49 mbertin Exp $
+// $Id: sip2.php,v 1.9 2021/08/25 08:38:49 mbertin Exp $
 $time_log_start=microtime(true);
 // définition du minimum nécéssaire 
 $base_path=".";                            

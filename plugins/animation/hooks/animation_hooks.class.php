@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: animation_hooks.class.php,v 1.3.2.1 2022/01/18 09:12:47 qvarin Exp $
+// $Id: animation_hooks.class.php,v 1.5 2022/09/29 13:57:24 qvarin Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) {
     die("no access");
 }
@@ -36,6 +36,14 @@ class animation_hooks implements hook_interface
                     array(
                         "animation_hooks",
                         "get_templates"
+                    )
+                )
+            ),
+            'cms_editorial_data' => array(
+                'get_animation' => array(
+                    array(
+                        "animation_hooks",
+                        "get_animation"
                     )
                 )
             )
@@ -141,12 +149,22 @@ class animation_hooks implements hook_interface
         }
     }
 
+    public static function get_animation($event)
+    {
+    	$context = $event->getContext();
+    	$cms_animation = new cms_animation($context['instance']);
+    	$event->setData($cms_animation->{$context['attribute']});
+    }
+    
     public static function requires()
     {
         global $base_path;
         return array(
             $base_path . '/plugins/animation/classes/animation.class.php',
-            $base_path . '/plugins/animation/classes/animation_conf.class.php'
+            $base_path . '/plugins/animation/classes/animation_conf.class.php',
+            $base_path . '/plugins/animation/classes/custom_field.class.php',
+            $base_path . '/plugins/animation/classes/cms_animation.class.php',
+            $base_path . '/plugins/animation/classes/article.class.php'
         );
     }
 }

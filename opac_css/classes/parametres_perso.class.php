@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: parametres_perso.class.php,v 1.57.2.2 2021/08/04 07:31:30 dgoron Exp $
+// $Id: parametres_perso.class.php,v 1.59.4.1 2023/11/17 09:58:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -159,10 +159,48 @@ class parametres_perso {
 		return $perso;
 	}
 	
-	//Affichage des champs en lecture seule pour visualisation d'un fiche emprunteur ou autre...
-	public function show_fields($id) {
+	public function show_field($key, $val) {
 		global $val_list_empr, $charset;
 		
+		$field=array();
+		$titre = translation::get_text($this->t_fields[$key]['idchamp'], $this->prefix."_custom", 'titre',  $val['TITRE']);
+		$field['TITRE']='<b>'.htmlentities($titre,ENT_QUOTES,$charset).' : </b>';
+		$field['TITRE_CLEAN']=htmlentities($titre,ENT_QUOTES,$charset);
+		$field['OPAC_SHOW']=$val['OPAC_SHOW'];
+		if(!isset($this->values[$key])) $this->values[$key] = array();
+		if(!isset(static::$fields[$this->prefix][$key])){
+			static::$fields[$this->prefix][$key]=array();
+			static::$fields[$this->prefix][$key]['ID']=$key;
+			static::$fields[$this->prefix][$key]['NAME']=$this->t_fields[$key]['NAME'];
+			static::$fields[$this->prefix][$key]['MANDATORY']=$this->t_fields[$key]['MANDATORY'];
+			static::$fields[$this->prefix][$key]['SEARCH']=$this->t_fields[$key]['SEARCH'];
+			static::$fields[$this->prefix][$key]['OPAC_SORT']=$this->t_fields[$key]['OPAC_SORT'];
+			static::$fields[$this->prefix][$key]['COMMENT']=$this->t_fields[$key]['COMMENT'];
+			static::$fields[$this->prefix][$key]['ALIAS']=$this->t_fields[$key]['TITRE'];
+			static::$fields[$this->prefix][$key]['DATATYPE']=$this->t_fields[$key]['DATATYPE'];
+			static::$fields[$this->prefix][$key]['OPTIONS']=$this->t_fields[$key]['OPTIONS'];
+			static::$fields[$this->prefix][$key]['VALUES']=$this->values[$key];
+			static::$fields[$this->prefix][$key]['PREFIX']=$this->prefix;
+		}
+		$field['TYPE']=$this->t_fields[$key]['TYPE'];
+		$aff=$val_list_empr[$this->t_fields[$key]['TYPE']](static::$fields[$this->prefix][$key],$this->values[$key]);
+		if(is_array($aff) && $aff['ishtml'] == true){
+			$field['AFF'] = $aff['value'];
+			if(isset($aff['details'])) {
+				$field['DETAILS'] = $aff['details'];
+			}
+		} else {
+			$field['AFF'] = htmlentities($aff,ENT_QUOTES,$charset);
+		}
+		$field['ID']=static::$fields[$this->prefix][$key]['ID'];
+		$field['NAME']=static::$fields[$this->prefix][$key]['NAME'];
+		$field['DATATYPE']=static::$fields[$this->prefix][$key]['DATATYPE'];
+		$field['VALUES'] = $this->values[$key];
+		return $field;
+	}
+	
+	//Affichage des champs en lecture seule pour visualisation d'un fiche emprunteur ou autre...
+	public function show_fields($id) {
 		$perso=array();
 		//Récupération des valeurs stockées pour l'emprunteur
 		$this->get_values($id);
@@ -170,44 +208,23 @@ class parametres_perso {
 			//Affichage champs persos
 			reset($this->t_fields);
 			foreach ($this->t_fields as $key => $val) {
-				$t=array();
-				$titre = translation::get_text($this->t_fields[$key]['idchamp'], $this->prefix."_custom", 'titre',  $val['TITRE']);
-				$t['TITRE']='<b>'.htmlentities($titre,ENT_QUOTES,$charset).' : </b>';
-				$t['TITRE_CLEAN']=htmlentities($titre,ENT_QUOTES,$charset);
-				$t['OPAC_SHOW']=$val['OPAC_SHOW'];
-				if(!isset($this->values[$key])) $this->values[$key] = array();
-				if(!isset(static::$fields[$this->prefix][$key])){
-					static::$fields[$this->prefix][$key]=array();
-					static::$fields[$this->prefix][$key]['ID']=$key;
-					static::$fields[$this->prefix][$key]['NAME']=$this->t_fields[$key]['NAME'];
-					static::$fields[$this->prefix][$key]['MANDATORY']=$this->t_fields[$key]['MANDATORY'];
-					static::$fields[$this->prefix][$key]['SEARCH']=$this->t_fields[$key]['SEARCH'];
-					static::$fields[$this->prefix][$key]['OPAC_SORT']=$this->t_fields[$key]['OPAC_SORT'];
-					static::$fields[$this->prefix][$key]['COMMENT']=$this->t_fields[$key]['COMMENT'];
-					static::$fields[$this->prefix][$key]['ALIAS']=$this->t_fields[$key]['TITRE'];
-					static::$fields[$this->prefix][$key]['DATATYPE']=$this->t_fields[$key]['DATATYPE'];
-					static::$fields[$this->prefix][$key]['OPTIONS']=$this->t_fields[$key]['OPTIONS'];
-					static::$fields[$this->prefix][$key]['VALUES']=$this->values[$key];
-					static::$fields[$this->prefix][$key]['PREFIX']=$this->prefix;
-				}
-				$t['TYPE']=$this->t_fields[$key]['TYPE'];
-				$aff=$val_list_empr[$this->t_fields[$key]['TYPE']](static::$fields[$this->prefix][$key],$this->values[$key]);
-				if(is_array($aff) && $aff['ishtml'] == true){
-				    $t['AFF'] = $aff['value'];
-					if(isset($aff['details'])) {
-						$t['DETAILS'] = $aff['details'];
-					}
-				} else {
-				    $t['AFF'] = htmlentities($aff,ENT_QUOTES,$charset);
-				}
-				$t['ID']=static::$fields[$this->prefix][$key]['ID'];
-				$t['NAME']=static::$fields[$this->prefix][$key]['NAME'];
-				$t['DATATYPE']=static::$fields[$this->prefix][$key]['DATATYPE'];
-				$t['VALUES'] = $this->values[$key];
+				$t = $this->show_field($key, $val);
 				$perso['FIELDS'][]=$t;
 			}
 		}
 		return $perso;
+	}
+	
+	public function get_field_id_from_name($name) {
+	    $query = "select idchamp from ".$this->prefix."_custom where name='".addslashes($name)."'";
+	    $result = pmb_mysql_query($query);
+	    return pmb_mysql_result($result, 0, 0);
+	}
+	
+	public function get_field_name_from_id($id) {
+	    $query = "select name from ".$this->prefix."_custom where idchamp='".addslashes($id)."'";
+	    $result = pmb_mysql_query($query);
+	    return pmb_mysql_result($result, 0, 0);
 	}
 	
 	public function get_formatted_output($values,$field_id) {
@@ -311,8 +328,6 @@ class parametres_perso {
 	}	
 
 	public function get_ajax_list($name, $start) {
-		global $charset,$dbh;
-
 		$values=array();
 		reset($this->t_fields);
 		foreach ($this->t_fields as $key => $val) {
@@ -320,7 +335,7 @@ class parametres_perso {
 				switch ($val['TYPE']) {
 					case 'list' :
 						$q="select ".$this->prefix."_custom_list_value, ".$this->prefix."_custom_list_lib from ".$this->prefix."_custom_lists where ".$this->prefix."_custom_champ=".$key." order by ordre";
-						$r=pmb_mysql_query($q,$dbh);	
+						$r=pmb_mysql_query($q);	
 						if(pmb_mysql_num_rows($r)) {
 							while ($row=pmb_mysql_fetch_row($r)) {
 								$values[$row[0]]=$row[1];
@@ -328,9 +343,10 @@ class parametres_perso {
 						}
 						break;
 					case 'query_list' :
+						$field=array();
 						$field['OPTIONS']=$val['OPTIONS'];
 						$q=$field['OPTIONS'][0]['QUERY'][0]['value'];
-						$r = pmb_mysql_query($q,$dbh);
+						$r = pmb_mysql_query($q);
 						if(pmb_mysql_num_rows($r)) {
 							while ($row=pmb_mysql_fetch_row($r)) {
 								$values[$row[0]]=$row[1];
@@ -433,9 +449,11 @@ class parametres_perso {
 				if($val["NAME"] == $name) {
 					global ${$name};
 					$value=${$name};
-					for ($i=0; $i<count($value); $i++) {
-						if($value[$i]) {
-							$values[] = $value[$i];
+					if(is_array($value)) {
+						for ($i=0; $i<count($value); $i++) {
+							if($value[$i]) {
+								$values[] = $value[$i];
+							}
 						}
 					}
 				}

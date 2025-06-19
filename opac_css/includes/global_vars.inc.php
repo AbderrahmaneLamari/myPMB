@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: global_vars.inc.php,v 1.12 2021/03/12 10:08:04 arenou Exp $
+// $Id: global_vars.inc.php,v 1.13.4.4 2023/11/14 15:12:06 gneveu Exp $
 
 // fichier de configuration générale
 
@@ -23,7 +23,28 @@ $forbidden_overload = [
     'base_path',
     'include_path',
     'class_path',
-    'overload_global_parameters'
+    'overload_global_parameters',
+    'forbidden_overload',
+    'charset',
+    'javascript_path',
+    'SQL_MOTOR_TYPE',
+    'SQL_VARIABLES',
+    '_SERVER',
+    '_SESSION',
+    '_GET',
+    '_POST',
+    '_FILES',
+    '_COOKIE',
+    '_REQUEST',
+    '_ENV',
+    'known_int_variables',
+];
+
+$known_int_variables = [
+    "nbr_lignes",
+    "page",
+    "nb_per_page_custom",
+    "nb_per_page",
 ];
 
 function add_sl(&$var) {
@@ -37,25 +58,37 @@ function add_sl(&$var) {
 	}
 }
 
+function format_global($name, $val) {
+    global $known_int_variables;
+    switch (true) {
+        case in_array($name,$known_int_variables) :
+            // cas particuliers de certaines variables censees etre des nombres mais qu'on passe en chaine
+            if ($val === "") {
+                return $val;
+            }
+            return intval($val);
+        default :
+            add_sl($val);
+            return $val;
+    }
+}
+
 /* on récupère tout sans se poser de question, attention à la sécurité ! */
 foreach ($_GET as $__key__PMB => $val) {
     if (!in_array($__key__PMB,$forbidden_overload)) {
-		add_sl($val);
-		$GLOBALS[$__key__PMB] = $val;
+        $GLOBALS[$__key__PMB] = format_global($__key__PMB, $val);
 	}
 }
 foreach ($_POST as $__key__PMB => $val) {
     if (!in_array($__key__PMB,$forbidden_overload)) {
-		add_sl($val);
-		$GLOBALS[$__key__PMB] = $val;
+        $GLOBALS[$__key__PMB] = format_global($__key__PMB, $val);
 	}
 }
 
 //Post de fichiers
 foreach ($_FILES as $__key__PMB => $val) {
     if (!in_array($__key__PMB,$forbidden_overload)) {
-		add_sl($val);
-		$GLOBALS[$__key__PMB] = $val;
+        $GLOBALS[$__key__PMB] = format_global($__key__PMB, $val);
 	}
 }
 

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: avis.class.php,v 1.29 2020/05/29 14:02:18 qvarin Exp $
+// $Id: avis.class.php,v 1.30 2022/02/10 10:46:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path."/templates/avis.tpl.php");
 require_once($class_path."/liste_lecture.class.php");
 
@@ -59,7 +60,7 @@ class avis {
 	protected $object_string_type;
 
 	public function __construct($object_id, $object_type=AVIS_RECORDS) {
-		$this->object_id = $object_id;
+		$this->object_id = intval($object_id);
 		$this->object_type = $object_type;
 		$this->set_object_string_type($object_type);
 		$this->fetch_data();
@@ -340,7 +341,7 @@ class avis {
 		global $opac_avis_default_private;
 		
 		$form = $avis_tpl_form;
-		$id_avis += 0;
+		$id_avis = intval($id_avis);
 		if($id_avis) {
 			$query = "select num_empr, note, sujet, commentaire, avis_private, avis_num_liste_lecture from avis where id_avis = ".$id_avis;
 			$result = pmb_mysql_query($query);
@@ -379,8 +380,6 @@ class avis {
 	 * Affichage de l'entête de liste
 	 */
 	protected function get_display_header_detail($node_id, $label) {
-		global $msg;
-		
 		$display = "
 		<div id='".$node_id."_parent' class='avis-parent'>
             <br/>
@@ -478,9 +477,8 @@ class avis {
 	 * Affichage du détail des avis
 	 */
 	public function get_display_detail() {
-		global $msg, $charset;
+		global $msg;
 		global $action; // pour gérer l'affichage des avis en impression de panier
-		global $allow_avis_ajout;
 		global $opac_avis_allow;
 		global $opac_avis_note_display_mode;
 		
@@ -570,7 +568,7 @@ class avis {
 				$valide = 0;
 				$num_liste_lecture = 0; // un avis public ne sera pas associé à une liste de lecture
 			}
-			$id_avis += 0;
+			$id_avis = intval($id_avis);
 			if($id_avis) {
 				$query = "select avis_private, num_empr from avis where id_avis = '".$id_avis."'";
 				$result = pmb_mysql_query($query);
@@ -597,7 +595,7 @@ class avis {
 	}
 	
 	public static function delete_avis($id_avis) {
-		$id_avis += 0;
+		$id_avis = intval($id_avis);
 		if($id_avis) {
 			$query = "select avis_private, num_empr from avis where id_avis = '".$id_avis."'";
 			$result = pmb_mysql_query($query);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serialcirc_copy.class.php,v 1.1.2.4 2022/01/17 13:28:03 dgoron Exp $
+// $Id: serialcirc_copy.class.php,v 1.4 2022/08/01 09:50:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -72,39 +72,27 @@ class serialcirc_copy {
 	}
 	
 	public function copy_accept(){
-		global $msg, $biblio_name, $biblio_email, $PMBuseremailbcc;
-		
-		$objet=$msg["serialcirc_circ_title"];
-		$texte_mail = $msg["serialcirc_copy_accepted_mail_text"];
-		$texte_mail = str_replace("!!issue!!", $this->serial_tit1."-".$this->bulletin_numero, $texte_mail);
-		$texte_mail = str_replace("!!biblio_name!!", $biblio_name, $texte_mail);
-		
-		$empr = serialcirc::empr_info($this->num_empr);
-		mailpmb($empr["prenom"]." ".$empr["nom"], $empr["mail"], $objet, $texte_mail, $biblio_name, $biblio_email,"", "", $PMBuseremailbcc,1);
-		
+		$mail_serialcirc_copy_accept = new mail_serialcirc_copy_accept();
+		$mail_serialcirc_copy_accept->set_mail_to_id($this->num_empr);
+		$mail_serialcirc_copy_accept->set_serialcirc_copy($this);
+		$mail_serialcirc_copy_accept->send_mail();
+
 		$query = "update serialcirc_copy set serialcirc_copy_state=1  where id_serialcirc_copy=".$this->id;
 		pmb_mysql_query($query);
 		return true;
 	}
 	
 	public static function copy_isdone($bul_id){
-		global $msg,$biblio_name, $biblio_email,$PMBuseremailbcc;
-		global $opac_url_base;
-		
 		$query = "select * from serialcirc_copy where num_serialcirc_copy_bulletin=$bul_id ";
 		$result = pmb_mysql_query($query);
 		if ($result && pmb_mysql_num_rows($result)) {
 			$row = pmb_mysql_fetch_object($result);
 			$serialcirc_copy = new serialcirc_copy($row->id_serialcirc_copy);
 			
-			$objet=$msg["serialcirc_circ_title"];
-			$texte_mail = $msg['serialcirc_copy_isdone_mail_text'];
-			$texte_mail = str_replace("!!issue!!", $serialcirc_copy->get_serial_tit1()."-".$serialcirc_copy->get_bulletin_numero(), $texte_mail);
-			$texte_mail = str_replace("!!see!!", "<a href='".$opac_url_base."index.php?lvl=bulletin_display&id=".$serialcirc_copy->get_bulletin_id()."'>".$serialcirc_copy->get_bulletin_numero()."</a>", $texte_mail);
-			$texte_mail = str_replace("!!biblio_name!!", $biblio_name, $texte_mail);
-			
-			$empr = serialcirc::empr_info($serialcirc_copy->get_num_empr());
-			mailpmb($empr["prenom"]." ".$empr["nom"], $empr["mail"], $objet, $texte_mail, $biblio_name, $biblio_email,"", "", $PMBuseremailbcc,1);
+			$mail_serialcirc_copy_isdone = new mail_serialcirc_copy_isdone();
+			$mail_serialcirc_copy_isdone->set_mail_to_id($serialcirc_copy->get_num_empr());
+			$mail_serialcirc_copy_isdone->set_serialcirc_copy($serialcirc_copy);
+			$mail_serialcirc_copy_isdone->send_mail();
 			// on efface
 			$query = "delete from serialcirc_copy where num_serialcirc_copy_bulletin=$bul_id ";
 			pmb_mysql_query($query);
@@ -112,22 +100,15 @@ class serialcirc_copy {
 	}
 	
 	public function copy_none(){
-		global $msg, $biblio_name, $biblio_email, $PMBuseremailbcc;
-		
 // 		if(!$this->index_info_copy[$copy_id]) return false;
 		$query = "delete from serialcirc_copy where id_serialcirc_copy=".$this->id;
 		pmb_mysql_query($query);
 // 		$copy=$this->index_info_copy[$copy_id];
 		
-		$objet = $msg["serialcirc_circ_title"];
-		$texte_mail=$msg['serialcirc_copy_no_mail_text'];
-		$texte_mail=str_replace("!!issue!!", $this->serial_tit1."-".$this->bulletin_numero, $texte_mail);
-		$texte_mail = str_replace("!!biblio_name!!", $biblio_name, $texte_mail);
-		
-		$empr = serialcirc::empr_info($this->num_empr);
-		mailpmb($empr["prenom"]." ".$empr["nom"], $empr["mail"], $objet, $texte_mail, $biblio_name, $biblio_email,"", "", $PMBuseremailbcc,1);
-		
-		return true;
+		$mail_serialcirc_copy_none = new mail_serialcirc_copy_none();
+		$mail_serialcirc_copy_none->set_mail_to_id($this->num_empr);
+		$mail_serialcirc_copy_none->set_serialcirc_copy($this);
+		return $mail_serialcirc_copy_none->send_mail();
 	}
 	
 	public function get_id() {

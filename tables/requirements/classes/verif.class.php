@@ -2,15 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: verif.class.php,v 1.7 2021/04/30 12:06:05 rtigero Exp $
+// $Id: verif.class.php,v 1.8.4.1 2023/04/07 13:53:58 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
-    
+
 class verif
 {
-    private $extensions;
-    private $phpSuggestedSetup;
-    private $mysqlSetup;
+    private $php_extensions;
+    private $php_requirements;
+    private $mysql_requirements;
     private $install_msg;
     private $units = array("k"=>"000", "M"=>"000000", "G"=>"000000000");
     private $toogle = array(
@@ -18,68 +18,75 @@ class verif
         "<img src='images/tick.gif' style='height:16px;'/>",
         "<img src='images/warning.gif' style='height:16px;' />"
     );
-    private $sqlModes = array("", "NO_AUTO_CREATE_USER");
-    private $phpVersion = [
-        "min" => "7.3",
-        "max" => "7.4"
-    ];
-    private $mysqlVersion = [
-        "min" => "5.5",
-        "max" => "5.7"
-    ];
-    private $mariaDbVersion = [
-        "min" => "5.5",
-        "max" => "10.4"
-    ];
-
-    public function __construct($extensions, $phpSuggestedSetup, $mysqlSetup, $messages)
+    
+    const KO = 0;
+    const OK = 1;
+    const WARN = 2;
+    
+    public function __construct($messages = [], $php_extensions = [], $php_requirements = [], $mysql_requirements= [])
     {
-        $this->extensions = $extensions;
-        $this->phpSuggestedSetup = $phpSuggestedSetup;
-        $this->mysqlSetup = $mysqlSetup;
+        if(empty($messages)) {
+            require_once __DIR__.'/../../fr/messages.php';
+        }
         $this->install_msg = $messages;
+        if(empty($php_extensions)) {
+            require_once __DIR__.'/../php_extensions.php';
+        }
+        $this->php_extensions = $php_extensions;
+        if(empty($php_requirements)) {
+            require_once __DIR__.'/../php_requirements.php';
+        }
+        $this->php_requirements = $php_requirements;
+        if(empty($mysql_requirements)) {
+            require_once __DIR__.'/../mysql_requirements.php';
+        }
+        $this->mysql_requirements = $mysql_requirements;
     }
+    
     
     public function checkPhpVersion()
     {
+        $phpVersion = $this->php_requirements['version'];
+        
         $check = false;
         $version = PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;
         
-        if(version_compare($version, $this->phpVersion['min'], '>=') && version_compare($version, $this->phpVersion['max'], '<=')){
+        if(version_compare($version, $phpVersion['min'], '>=') && version_compare($version, $phpVersion['max'], '<=')){
             $check = true;
         }
         return [
             "check" => $check,
-            "required_version" => $this->phpVersion
+            "required_version" => $phpVersion
         ];
     }
     
     public function checkMySQLVersion($connexion = null)
     {
+        $mysqlVersion = $this->mysql_requirements['mysqlVersion'];
+        $mariadbVersion = $this->mysql_requirements['mariadbVersion'];
+        
         $checked = false;
-        is_null($connexion) ?
-        $result = pmb_mysql_query('select VERSION()')
-        : $result = pmb_mysql_query('select VERSION()', $connexion);
+        is_null($connexion) ? $result = pmb_mysql_query('select VERSION()') : $result = pmb_mysql_query('select VERSION()', $connexion);
         
         $row = pmb_mysql_fetch_all($result);
-
+        
         $explodedVersion = explode("-", $row[0][0]);
         $version = $explodedVersion[0];
         //Gestion du type de serveur de bdd
         switch($explodedVersion[1]){
             case "MariaDB" :
-                if(version_compare($version, $this->mariaDbVersion['min'], ">=") && version_compare($version, $this->mariaDbVersion['max'], "<=")){
+                if( version_compare($version, $mariadbVersion['min'], ">=") && ( empty($mariadbVersion['max']) || version_compare($version, $mariadbVersion['max'], "<=") ) ) {
                     $checked = true;
                 }
                 $engineType = $explodedVersion[1];
-                $requiredVersion = $this->mariaDbVersion;
+                $requiredVersion = $mariadbVersion;
                 break;
-            default : 
-                if(version_compare($version, $this->mysqlVersion['min'], ">=") && version_compare($version, $this->mysqlVersion['max'], "<=")){
+            default :
+                if( version_compare($version, $mysqlVersion['min'], ">=") && ( empty($mysqlVersion['max']) || version_compare($version, $mysqlVersion['max'], "<=") ) ) {
                     $checked = true;
                 }
                 $engineType = "MySQL";
-                $requiredVersion = $this->mysqlVersion;
+                $requiredVersion = $mysqlVersion;
                 break;
         }
         return [
@@ -89,18 +96,18 @@ class verif
             "required_version" => $requiredVersion
         ];
     }
-
+    
     public function checkExtensions()
     {
-        $required = $this->extensions;        
+        $required = $this->php_extensions;
         $extensions = get_loaded_extensions();
-        foreach($required as $extName => $ext){
-            $state = (in_array($extName, $extensions) ? 1 : 0);
-            if($state == 0 && $ext['optional']){
-                $state = 2;
+        foreach($required as $extName => $ext) {
+            $state = (in_array($extName, $extensions) ? verif::OK : verif::KO);
+            if( ($state == verif::KO) && !$ext['required'] ) {
+                $state = verif::WARN;
             }
             //Vérification de la version
-            if($state != 0 && !empty($ext['version'])){
+            if( $state != verif::KO && !empty($ext['version']) ) {
                 $neededVersion = explode(" ", $ext['version']);
                 $userVersion = phpversion($extName);
                 //Gestion particulière de libxml car phpversion ne fonctionne pas dessus
@@ -109,166 +116,280 @@ class verif
                 }
                 //Si la version utilisateur n'est pas >= à la version recommandée
                 if(!version_compare($userVersion, $neededVersion[1], $neededVersion[0])){
-                    $state = 0;
+                    $state = verif::KO;
                 }
             }
             $requirements[] = [
                 "name" => $extName,
                 "state" => $state,
-                "version" => $ext['version'],
-                "optional" => $ext['optional']
+                "version" => empty($ext['version']) ? '' :$ext['version'],
+                "required" => $ext['required']
             ];
         }
         return $requirements;
     }
-
+    
     public function checkPHP()
     {
-        $phpSetup = $this->phpSuggestedSetup;
         $checks = array();
+        $php_requirements = $this->php_requirements['options'];
         
-        foreach($phpSetup as $paramName => $suggestedValue){
-            $value = "";
-            $required = 1;
-            $currentParamValue = ini_get($paramName);
+        //Un peu de formatage
+        foreach($php_requirements as $setupName => &$setupValue){
             
-            switch($paramName){
-                case "date.timezone":
-                    if(empty($currentParamValue)){;
-                        $value = $this->install_msg['req_no_setting_defined'];
-                        $suggestedValue['value'] = $suggestedValue['value'].$this->install_msg['req_timezone_indication'];
-                        $required = 0;
-                    }
-                    break;
-                case "display_errors":
-                case "expose_php";
-                    if($currentParamValue){
-                        $value = "On";
-                        //si activé alors on lance un avertissement
-                        $required = 2;
-                    } else {
-                        $value = "Off";
-                    };
-                    break;
-                case "suhosin.request.max_vars":
-                case "suhosin.post.max_vars":
-                    if(!extension_loaded("suhosin")){
-                        $value = $this->install_msg['req_ext_not_installed'];
-                        $required = 2;
-                    }
-                    break;
-            }
-            //Si value est toujours vide, on lui affecte la valeur de currentParamValue
-            if(empty($value)){
-                $value = $currentParamValue;
+            $setupValue['suggested_value'] = empty($setupValue['suggested_value']) ? '' : $setupValue['suggested_value'];
+            $setupValue['required'] = empty($setupValue['required']) ? 0 : 1;
+            $setupValue['extension'] = empty($setupValue['extension']) ? '' : $setupValue['extension'];
+            
+            if( 'integer' == $setupValue['type']) {
+                $setupValue['min_value'] = !isset($setupValue['min_value']) ? 'none' : $this->toDecimal($setupValue['min_value']);
+                $setupValue['max_value'] = !isset($setupValue['max_value']) ? 'none' : $this->toDecimal($setupValue['max_value']);
             }
             
-            //Gestion des comparaisons
-            switch(true){
-                case !empty($suggestedValue['numeric_value']):
-                    //Récupération de la valeur numérique
-                    $userValue = str_replace(array_keys($this->units) , array_values($this->units), $currentParamValue);
-                    $storedValue = str_replace(array_keys($this->units) , array_values($this->units), $suggestedValue['numeric_value']);
-                    if((int)$userValue < (int)$storedValue){
-                        $required = 2;
-                    }
-                    break;
-                case !empty($currentParamValue):
-                    if((int)$suggestedValue['value'] != (int)$currentParamValue){
-                        $required = 2;
-                    }
-                    break;
+        }
+        
+        foreach($php_requirements as $setupName => &$setupValue) {
+            
+            $state = verif::OK;
+            $numeric_userValue = 0;
+            $userValue = ini_get($setupName);
+            if(false === $userValue) {
+                $userValue = 'none';
             }
-
+            if( 'boolean' == $setupValue['type']) {
+                $userValue = boolval($userValue) ? "On" : "Off";
+            }
+            if( 'integer' == $setupValue['type']) {
+                $numeric_userValue = $this->toDecimal($userValue);
+            }
+            // echo "$setupName = $userValue) <br/>";
+            
+            $done = false;
+            
+            //Le parametre n'existe pas
+            if ( !$done && ('none' == $userValue) ) {
+                //Si extension liee non chargee, pas de souci
+                if( '' !==  $setupValue['extension'] && !extension_loaded($setupValue['extension']) ) {
+                    $userValue = $this->install_msg['req_ext_not_installed'];
+                    $state = verif::OK;
+                    $done = true;
+                }
+                if( '' === $setupValue['extension'] ) {
+                    $userValue = $this->install_msg['req_no_sql_variable_value'];
+                    $state = verif::WARN;
+                    $done = true;
+                }
+            }
+            
+            // Le parametre doit avoir une valeur
+            if( !$done &&  $setupValue['required'] && ( '' == $userValue ) ) {
+                $userValue = $this->install_msg['req_no_sql_variable_value'];
+                $state = verif::KO;
+                $done = true;
+            }
+            
+            //Le parametre est un booleen
+            if( !$done && ( 'boolean' == $setupValue['type']) ) {
+                if( $userValue != $setupValue['suggested_value']) {
+                    $state = verif::WARN;
+                }
+                $done = true;
+            }
+            
+            //Le parametre doit avoir une valeur minimale
+            if( !$done && ( 'integer' == $setupValue['type']) && ('none' !== $setupValue['min_value']) ) {
+                if ( (int) $numeric_userValue  < (int) $setupValue['min_value'] ){
+                    $state = verif::WARN;
+                    $done = true;
+                }
+            }
+            
+            //Le parametre doit avoir une valeur maximale
+            if( !$done && ( 'integer' == $setupValue['type']) && ('none' !== $setupValue['max_value']) ) {
+                if ( (int) $numeric_userValue  > (int) $setupValue['max_value'] ){
+                    $state = verif::WARN;
+                    $done = true;
+                }
+            }
+            
+            //Le parametre est une chaine et doit faire partie d'un ensemble de valeurs
+            if(!$done && ( 'string' == $setupValue['type']) && !empty($setupValue['allowed_values']) ) {
+                if( !in_array($userValue, $setupValue['allowed_values'])) {
+                    $state = verif::WARN;
+                    $done = true;
+                }
+            }
+            
+            //Le parametre est un set et doit contenir uniquement certaines valeurs
+            if(!$done && ( 'set' == $setupValue['type']) && !empty($setupValue['allowed_values']) ) {
+                $values = explode(',', $userValue);
+                while(count($values) ) {
+                    if( !in_array(array_shift($values), $setupValue['allowed_values']) ) {
+                        $state = verif::WARN;
+                    }
+                }
+            }
+            
             $checks[] = [
-                "name" => $paramName,
-                "current_value" => $value,
-                "suggested_value" => $suggestedValue['value'],
-                "required" => $required
+                "name" => $setupName,
+                "value" => $userValue,
+                "suggestedValue" => $setupValue['suggested_value'],
+                'state' => $state,
             ];
         }
         return $checks;
     }
-
+    
+    
     public function checkMySQL($connexion = null)
     {
+        
         $checks = array();
-        $mysqlSetup = $this->mysqlSetup;
-        foreach($mysqlSetup as $setupName => $setupValue){
-            $state = null;
-            is_null($connexion) ? 
-                $result = pmb_mysql_query('show variables like "' . $setupName . '"')
-                : $result = pmb_mysql_query('show variables like "' . $setupName . '"', $connexion);
+        $mysql_requirements = $this->mysql_requirements['variables'];
+        
+        //Un peu de formatage
+        foreach($mysql_requirements as $setupName => &$setupValue){
             
-            $row = pmb_mysql_fetch_all($result);
-            $name = $row[0][0];
-            $suggestedValue =  $setupValue['value'];
-            $userValue = $row[0][1];
+            $setupValue['mode'] = empty($setupValue['mode']) ? 'session' : $setupValue['mode'];
+            $setupValue['suggested_value'] = empty($setupValue['suggested_value']) ? '' : $setupValue['suggested_value'];
+            $setupValue['required'] = empty($setupValue['required']) ? 0 : 1;
             
-            switch(true){
-                //Si le paramètre est vide
-                case empty($userValue):
-                    $userValue = $this->install_msg['req_no_sql_variable_value'];
-                    $state = 2;
+            if( 'integer' == $setupValue['type']) {
+                $setupValue['min_value'] = !isset($setupValue['min_value']) ? 'none' : $this->toDecimal($setupValue['min_value']);
+                $setupValue['max_value'] = !isset($setupValue['max_value']) ? 'none' : $this->toDecimal($setupValue['max_value']);
+            }
+        }
+        
+        foreach($mysql_requirements as $setupName => &$setupValue){
+            
+            $state = verif::OK;
+            
+            $query = 'show variables like "' . $setupName . '"';
+            $result = pmb_mysql_query($query, $connexion);
+            if(pmb_mysql_num_rows($result)) {
+                $row = pmb_mysql_fetch_all($result);
+                $userValue = $row[0][1];
+            } else {
+                $userValue = 'none';
+            }
+            //echo "$setupName = $userValue <br/>";
+            $done = false;
+            
+            //Le parametre n'existe pas
+            if ( !$done && 'none' == $userValue) {
+                $userValue = $this->install_msg['req_no_sql_variable_value'];
+                $state = verif::WARN;
+                $done = true;
+            }
+            
+            // Le parametre doit avoir une valeur
+            if( !$done &&  $setupValue['required'] && ( '' === $userValue ) ) {
+                $state = verif::KO;
+                $done = true;
+            }
+            
+            //Le parametre doit avoir une valeur minimale
+            if( !$done && ( 'integer' == $setupValue['type']) && ('none' !== $setupValue['min_value']) ) {
+                if ( (int) $userValue  < (int) $setupValue['min_value'] ){
+                    $state = verif::WARN;
+                    $done = true;
+                }
+            }
+            
+            //Le parametre doit avoir une valeur maximale
+            if( !$done && ( 'integer' == $setupValue['type']) && ('none' != $setupValue['max_value']) ) {
+                if ( (int) $userValue  > (int) $setupValue['max_value'] ){
+                    $state = verif::WARN;
+                    $done = true;
+                }
+            }
+            
+            //Le parametre est une chaine et doit faire partie d'un ensemble de valeurs
+            if( !$done && ( 'string' == $setupValue['type']) && !empty($setupValue['allowed_values']) ) {
+                if( !in_array($userValue, $setupValue['allowed_values'])) {
+                    $state = verif::WARN;
+                    $done = true;
+                }
+            }
+            
+            //Le parametre est un set et doit contenir uniquement certaines valeurs
+            if( !$done && ( 'set' == $setupValue['type']) && !empty($setupValue['allowed_values']) ) {
+                $values = explode(',', $userValue);
+                while(count($values) ) {
+                    if( !in_array(array_shift($values), $setupValue['allowed_values']) ) {
+                        $state = verif::WARN;
+                    }
+                }
+            }
+            
+            //Commentaire
+            $comment = '';
+            switch (true) {
+                //Erreur
+                case (verif::KO == $state) :
+                    $comment = 'req_mysql_variable_error';
                     break;
-                //Si le paramètre est sous taille numérique
-                case $setupValue['numeric_size'] && $setupValue['numeric_size'] == 'yes':
-                    $suggestedValue = str_replace(array_keys($this->units) , array_values($this->units), $suggestedValue);
-                    (int)$suggestedValue <= (int)$userValue ? $state = 1 : $state = 2;
+                    // Warning sur parametre session
+                case ( (verif::WARN == $state) && ('session' == $setupValue['mode']) ) :
+                    $comment = 'req_mysql_session_variable_warning';
                     break;
-                //Si le paramètre est sous format d'entier
-                case intval($userValue) != 0:
-                    intval($suggestedValue) <= intval($userValue) ? $state = 1 : $state = 2;
+                    //Warning sur parametre global
+                case ( (verif::WARN == $state) && ('global' == $setupValue['mode']) ) :
+                    $comment = 'req_mysql_global_variable_warning';
                     break;
-                //Sinon 
-                default:
-                    strpos(strtolower($suggestedValue), strtolower($userValue)) !== false ? $state = 1 : $state = 2;
+                    //Warning sur parametre statique
+                case ( (verif::WARN == $state) && ('static' == $setupValue['mode']) ) :
+                    $comment = 'req_mysql_static_variable_warning';
+                    break;
+                case (verif::OK == $state) :
+                default :
                     break;
             }
             
-            //Gestion des paramètres bloquants
-            switch($setupName){
-                case "default_storage_engine":
-                case "character_set_server":
-                case "collation_server":
-                    if($state == 2){
-                        $state = 0;
-                    }
-                    break;
-                case "sql_mode":
-                    //Si le paramètre n'est pas vide et ne fait pas partie des paramètres autorisés
-                    if($userValue != $this->install_msg['req_no_sql_variable_value'] && !in_array($userValue, $this->sqlModes)){
-                       $state = 0; 
-                    } else {
-                        $state = 1;
-                    }
-                    break;
-            }
-                        
             $checks[] = [
-                'name' => $name,
-                'value' => $userValue,
-                'suggestedValue' => $suggestedValue,
-                'state' => $state
+                'name' => $setupName,
+                'value' => ('' === $userValue) ? $this->install_msg['req_no_sql_variable_value'] : $userValue,
+                'state' => $state,
+                'comment' => $comment,
+                
+                'type' => $setupValue['type'],
+                'mode' => $setupValue['mode'],
+                'suggestedValue' =>  $setupValue['suggested_value'],
+                'min_value' => empty($setupValue['min_value']) ? '' : $setupValue['min_value'],
+                'max_value' => empty($setupValue['max_value']) ? '' : $setupValue['max_value'],
+                'allowed_values' => empty($setupValue['allowed_values']) ? [] : $setupValue['allowed_values'],
+                'required' => $setupValue['required'],
+                'pmb_var' => empty($setupValue['pmb_var']) ? '' : $setupValue['pmb_var'],
             ];
         }
         return $checks;
     }
-
-    private function get_numeric_size($size, $unit = 'M')
+    
+    
+    protected function toDecimal($val = '')
     {
-        $units = [
-            'o',
-            'k',
-            'M',
-            'G',
-            'T'
-        ];
-        $i = 0;
-        while ($size >= 1024) {
-            $size = $size / 1024;
-            $i ++;
+        if(preg_match("/^[0-9]+$/", $val)) {
+            return $val;
         }
-        return $size . $units[$i];
+        $val = (string) $val;
+        $unit = (string) $val;
+        $val = (int) preg_replace("/[^0-9]/", "", $val);
+        $unit = preg_replace("/[0-9]/", "", $unit);
+        switch($unit) {
+            case 'k' :
+                $val = $val * 1024;
+                break;
+            case 'M' :
+                $val = $val * 1024 * 1024;
+                break;
+            case 'G' :
+                $val = $val * 1024 * 1024 * 1024;
+                break;
+            case 'T' :
+                $val = $val * 1024 * 1024 * 1024 * 1024;
+                break;
+        }
+        return $val;
     }
+    
 }

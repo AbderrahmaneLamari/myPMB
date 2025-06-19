@@ -2,14 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: isbd.inc.php,v 1.80 2021/06/04 09:35:19 tsamson Exp $
+// $Id: isbd.inc.php,v 1.83.2.1 2023/12/26 08:12:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+use Pmb\Digitalsignature\Models\DocnumCertifier;
 
 global $class_path, $include_path, $msg, $charset;
 global $valid_id_avis, $avis_quoifaire;
 global $gestion_acces_active, $gestion_acces_user_notice, $z3950_accessible;
 global $pmb_allow_external_search, $pmb_url_base, $PMBuserid;
+global $acquisition_active, $pmb_scan_request_activate;
 
 require_once ($include_path."/avis_notice.inc.php");
 require_once ($include_path."/h2o/pmb_h2o.inc.php");
@@ -62,15 +65,15 @@ if ($acces_l==0) {
 	
 	$cart_click_isbd = "onClick=\"openPopUp('./cart.php?object_type=NOTI&item=$id', 'cart')\"";
 	$cart_over_out = "onMouseOver=\"show_div_access_carts(event,".$id.");\" onMouseOut=\"set_flag_info_div(false);\"";
-	$cart_click_isbd = "<img src='".get_url_icon('basket_small_20x20.gif')."' class='align_middle' alt='basket' title=\"${msg[400]}\" $cart_click_isbd $cart_over_out>" ;
+	$cart_click_isbd = "<img src='".get_url_icon('basket_small_20x20.gif')."' class='align_middle' alt='basket' title=\"".htmlentities($msg['400'], ENT_QUOTES, $charset)."\" $cart_click_isbd $cart_over_out>" ;
 	
 	if ($current!==false) {
-		$print_action = "&nbsp;<a href='#' onClick=\"openPopUp('./print.php?current_print=$current&notice_id=".$id."&action_print=print_prepare','print'); w.focus(); return false;\"><img src='".get_url_icon('print.gif')."' border='0' class='center' alt=\"".$msg["histo_print"]."\" title=\"".$msg["histo_print"]."\"/></a>";
+	    $print_action = "&nbsp;<a href='#' onClick=\"openPopUp('./print.php?current_print=$current&notice_id=".$id."&action_print=print_prepare','print'); w.focus(); return false;\"><img src='".get_url_icon('print.gif')."' border='0' class='center' alt=\"".htmlentities($msg["histo_print"], ENT_QUOTES, $charset)."\" title=\"".htmlentities($msg["histo_print"], ENT_QUOTES, $charset)."\"/></a>";
 	}
 	$visualise_click_notice="
 		<script type=\"text/javascript\" src='./javascript/select.js'></script>
 		
-		<a href='#' onClick='show_frame(\"$pmb_url_base"."opac_css/notice_view.php?id=$id\")'><img src='".get_url_icon('search.gif')."' class='align_middle' title=\"${msg["noti_see_gestion"]}\" name='imEx'  border='0' /></a>";   
+		<a href='#' onClick='show_frame(\"$pmb_url_base"."opac_css/notice_view.php?id=$id\")'><img src='".get_url_icon('search.gif')."' class='align_middle' title=\"".htmlentities($msg['noti_see_gestion'], ENT_QUOTES, $charset)."\" name='imEx'  border='0' /></a>";   
 	    
 	print pmb_bidi("<h1 class='section-title'>".$msg['record_see_title']."</h1>");
 	
@@ -79,26 +82,28 @@ if ($acces_l==0) {
 	<div class='row notice-perio'>
 			<h3 class='section-record-title' style='display: inline;'>".$isbd->aff_statut.$cart_click_isbd.$print_action.$visualise_click_notice.$isbd->header."</h3>");
 	
-	$boutons  = "<div class='row'><div class='left'><input type='button' name='modifier' class='bouton' value='$msg[62]' onClick=\"document.location='./catalog.php?categ=modif&id=$id';\" />&nbsp;";
-	$boutons .= "<input type='button' class='bouton' value='$msg[158]' onclick='document.location=\"./catalog.php?categ=remplace&id=".$id."\"' />&nbsp;";
-	if ($z3950_accessible) 
-		$boutons .= "<input type='button' class='bouton' value='$msg[notice_z3950_update_bouton]' onclick='document.location=\"./catalog.php?categ=z3950&id_notice=".$id."&isbn=".$isbd->isbn."\"' />&nbsp;";
-	if ($pmb_allow_external_search)
-		$boutons .= "<input type='button' class='bouton' value='$msg[notice_replace_external]' onclick='document.location=\"./catalog.php?categ=search&mode=7&external_type=simple&notice_id=".$id."&from_mode=0&code=".$isbd->isbn."\"' />&nbsp;";
-	if ($pmb_allow_external_search)
-		$boutons .= "<input type='button' class='bouton' value='".$msg["harvest_notice_replace"]."' onclick='document.location=\"./catalog.php?categ=harvest&notice_id=".$id."\"' />&nbsp;";
-		
-	$boutons .= "<input type='button' class='bouton' value='$msg[notice_duplicate_bouton]' onclick='document.location=\"./catalog.php?categ=duplicate&id=".$id."\"' />&nbsp;";
-	$boutons .= "<input type='button' class='bouton' value='$msg[notice_child_bouton]' onclick='document.location=\"./catalog.php?categ=create_form&id=0&notice_parent=".$id."\"' />&nbsp;";
+	$boutons  = "<div class='row'><div class='left'><input type='button' name='modifier' class='bouton' value='".htmlentities($msg['62'], ENT_QUOTES, $charset)."' onClick=\"document.location='./catalog.php?categ=modif&id=$id';\" />&nbsp;";
+	$boutons .= "<input type='button' class='bouton' value='".htmlentities($msg['158'], ENT_QUOTES, $charset)."' onclick='document.location=\"./catalog.php?categ=remplace&id=".$id."\"' />&nbsp;";
+	if ($z3950_accessible) {
+	    $boutons .= "<input type='button' class='bouton' value='".htmlentities($msg['notice_z3950_update_bouton'], ENT_QUOTES, $charset)."' onclick='document.location=\"./catalog.php?categ=z3950&id_notice=".$id."&isbn=".$isbd->isbn."\"' />&nbsp;";
+	}
+	if ($pmb_allow_external_search) {
+	    $boutons .= "<input type='button' class='bouton' value='".htmlentities($msg['notice_replace_external'], ENT_QUOTES, $charset)."' onclick='document.location=\"./catalog.php?categ=search&mode=7&external_type=simple&notice_id=".$id."&from_mode=0&code=".$isbd->isbn."\"' />&nbsp;";
+	}
+	if ($pmb_allow_external_search) {
+	    $boutons .= "<input type='button' class='bouton' value='".htmlentities($msg["harvest_notice_replace"], ENT_QUOTES, $charset)."' onclick='document.location=\"./catalog.php?categ=harvest&notice_id=".$id."\"' />&nbsp;";
+	}
+    $boutons .= "<input type='button' class='bouton' value='".htmlentities($msg['notice_duplicate_bouton'], ENT_QUOTES, $charset)."' onclick='document.location=\"./catalog.php?categ=duplicate&id=".$id."\"' />&nbsp;";
+    $boutons .= "<input type='button' class='bouton' value='".htmlentities($msg['notice_child_bouton'], ENT_QUOTES, $charset)."' onclick='document.location=\"./catalog.php?categ=create_form&id=0&notice_parent=".$id."\"' />&nbsp;";
 
 	$boutons.= form_mapper::get_action_button('notice', $id);
 
 	if($acquisition_active) {
-		$boutons .= "<input type='button' class='bouton' value='".$msg["acquisition_sug_do"]."' onclick='document.location=\"./catalog.php?categ=sug&action=modif&id_bibli=0&id_notice=".$id."\"' />";
+	    $boutons .= "<input type='button' class='bouton' value='".htmlentities($msg["acquisition_sug_do"], ENT_QUOTES, $charset)."' onclick='document.location=\"./catalog.php?categ=sug&action=modif&id_bibli=0&id_notice=".$id."\"' />";
 	}
 	
 	if((SESSrights & CIRCULATION_AUTH) && $pmb_scan_request_activate){
-		$boutons .= "<input type='button' class='bouton' value='".$msg["scan_request_record_button"]."' onclick='document.location=\"./circ.php?categ=scan_request&sub=request&action=edit&from_record=".$id."\"' />";
+	    $boutons .= "<input type='button' class='bouton' value='".htmlentities($msg["scan_request_record_button"], ENT_QUOTES, $charset)."' onclick='document.location=\"./circ.php?categ=scan_request&sub=request&action=edit&from_record=".$id."\"' />";
 	}
 	$evth = events_handler::get_instance();
 	$evt = new event_display_overload('notice', 'show_isbd_action');
@@ -118,23 +123,28 @@ if ($acces_l==0) {
 	$boutons .="</div>";
 	
 	global $at_least_one_has_expl;
+	
 	$requete_compte_expl_id="select 1 from exemplaires where expl_notice='".$id."'";
 	$resultat_compte_expl_id=pmb_mysql_query($requete_compte_expl_id);
-	if (!pmb_mysql_num_rows($resultat_compte_expl_id)) {
-		$message=$msg["confirm_suppr_notice"];
-		if ($isbd->nb_expl!=0) $at_least_one_has_expl++;
-		if ($at_least_one_has_expl) $message=$msg["del_expl_noti_child"];
-		$boutons .= "<div class='right'><script type=\"text/javascript\">
-						function confirm_delete() {
-							result = confirm(\"$message\");
-		       			if(result)
-		           			document.location = './catalog.php?categ=delete&id=".$id."'
-						}
-					</script>
-					<input type='button' class='bouton' value=\"".$msg['supprimer']."\" onClick=\"confirm_delete();\" />
-				</div>";
-		
-	} 
+	
+    $hasSignedDocnum = DocnumCertifier::hasSignedDocnumFromNoticeId($id);
+	if(!$hasSignedDocnum) {
+    	if (!pmb_mysql_num_rows($resultat_compte_expl_id)) {
+    		$message=$msg["confirm_suppr_notice"];
+    		if ($isbd->nb_expl!=0) $at_least_one_has_expl++;
+    		if ($at_least_one_has_expl) $message=$msg["del_expl_noti_child"];
+    		$boutons .= "<div class='right'><script type=\"text/javascript\">
+    						function confirm_delete() {
+    							result = confirm(\"$message\");
+    		       			if(result)
+    		           			document.location = './catalog.php?categ=delete&id=".$id."'
+    						}
+    					</script>
+    					<input type='button' class='bouton' value=\"".$msg['supprimer']."\" onClick=\"confirm_delete();\" />
+    				</div>";
+    		
+    	} 
+	}
 	$boutons .="</div>";
 
 	if($boutons) $isbd->isbd = str_replace('<!-- !!bouton_modif!! -->', $boutons, $isbd->isbd);
@@ -153,31 +163,6 @@ if ($acces_l==0) {
 	print pmb_bidi("
 		$isbd->isbd
 		</div>");
-	
-	// pour affichage de l'image de couverture
-	if ($pmb_book_pics_show=='1' && (($pmb_book_pics_url && $isbd->notice->code) || $isbd->notice->thumbnail_url)) {
-		print "<script type='text/javascript'>
-			<!--
-			var img = document.getElementById('PMBimagecover".$id."');
-			isbn=img.getAttribute('isbn');
-			vigurl=img.getAttribute('vigurl');
-			url_image=img.getAttribute('url_image');
-			if (vigurl) {
-				if (img.src.substring(img.src.length-8,img.src.length)=='vide.png') {
-					img.src=vigurl;
-				}
-			} else {
-				if (isbn) {
-					if (img.src.substring(img.src.length-8,img.src.length)=='vide.png') {
-						img.src=url_image.replace(/!!noticecode!!/,isbn);
-					}
-				}
-			}		
-			//-->
-			</script>
-			";
-	}	
-	
 	// form de création d'exemplaire
 	if ((!$explr_visible_mod)&&($pmb_droits_explr_localises)) {
 		$etiquette_expl="";
@@ -256,4 +241,3 @@ if ($acces_l==0) {
 	}
 	
 }
-?>

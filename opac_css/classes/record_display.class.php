@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: record_display.class.php,v 1.116.2.2 2022/01/05 15:29:50 dgoron Exp $
+// $Id: record_display.class.php,v 1.123.4.6 2023/12/15 07:49:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 global $base_path, $class_path, $include_path;
 require_once($class_path."/record_datas.class.php");
@@ -212,6 +214,8 @@ class record_display {
 			$column.="<td class='".$label."'>".nl2br(htmlentities($expl[$label],ENT_QUOTES, $charset))."</td>";
 		} elseif ($label=="expl_cb") {
 			$column.="<td id='expl_" . $expl['expl_id'] . "' class='".$label."'>".htmlentities($expl[$label],ENT_QUOTES, $charset)."</td>";
+		} elseif ($label=="section_libelle") {
+			$column.="<td id='expl_" . $expl['expl_id'] . "' class='".$label."'>".htmlentities((!empty($expl['section_libelle_opac']) ? $expl['section_libelle_opac'] : $expl[$label]),ENT_QUOTES, $charset)."</td>";
 		} else {
 			$column .="<td class='".$label."'>".htmlentities($expl[$label],ENT_QUOTES, $charset)."</td>";
 		}
@@ -405,6 +409,24 @@ class record_display {
 	} // fin function get_display_expl_responsive_list
 	
 	/**
+	 * Génère la liste des exemplaires
+	 * @param int $notice_id Identifiant de la notice à partir de l'UI
+	 * @return string
+	 */
+	static public function get_display_expl_ui_list($notice_id) {
+	    $record_datas = static::get_record_datas($notice_id);
+	    if(!$record_datas->is_numeric()) {
+	        $id = $record_datas->get_id();
+	        $bull = $record_datas->get_bul_info();
+	        $bull_id = (isset($bull['bulletin_id']) ? $bull['bulletin_id'] : '');
+	        if($bull_id) {
+	            return list_opac_items_bulletin_ui::get_instance(array('expl_bulletin' => $bull_id))->get_display_list();
+	        } else {
+	            return list_opac_items_record_ui::get_instance(array('expl_notice' => $id))->get_display_list();
+	        }
+	    }
+	}
+	/**
 	 * Fontion qui génère le bloc H3 + table des autres lectures
 	 * @param number $notice_id Identifiant de la notice
 	 * @param number $bulletin_id Identifiant du bulletin
@@ -528,12 +550,18 @@ class record_display {
 	static public function do_image($notice_id, &$entree,$depliable) {
 		global $charset;
 		global $msg;
+		global $use_opac_url_base;
 		
 		$record_datas = static::get_record_datas($notice_id);
 		$image = "";
 		if ($record_datas->get_code() || $record_datas->get_thumbnail_url()) {
-			if (static::get_parameter_value('show_book_pics')=='1' && (static::get_parameter_value('book_pics_url') || $record_datas->get_thumbnail_url())) {
-				$url_image_ok=getimage_url($record_datas->get_code(), $record_datas->get_thumbnail_url());
+		    if (static::get_parameter_value('show_book_pics')=='1') {
+		        $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+		        if($use_opac_url_base) {
+		            $url_image_ok = $thumbnailSourcesHandler->generateSrcBase64(TYPE_NOTICE, $notice_id);
+		        } else {
+		        	$url_image_ok = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $notice_id);
+		        }
 				$title_image_ok = "";
 				if(!$record_datas->get_thumbnail_url()){
 					$title_image_ok = htmlentities(static::get_parameter_value('book_pics_msg'), ENT_QUOTES, $charset);
@@ -681,8 +709,8 @@ class record_display {
 	 * @return string
 	 */
 	static public function get_display_suggestion($notice_id){
-		global $msg;
-		$do_suggest="<a href='#' title=\"".$msg['suggest_notice_opac']."\" onclick=\"w=window.open('./do_resa.php?lvl=make_sugg&oresa=popup&id_notice=".$notice_id."','doresa','scrollbars=yes,width=600,height=600,menubar=0,resizable=yes'); w.focus(); return false;\">".$msg['suggest_notice_opac']."</a>";
+		global $msg, $charset;
+		$do_suggest="<a href='#' title=\"".htmlentities($msg['suggest_notice_opac'],ENT_QUOTES,$charset)."\" onclick=\"w=window.open('./do_resa.php?lvl=make_sugg&oresa=popup&id_notice=".$notice_id."','doresa','scrollbars=yes,width=600,height=600,menubar=0,resizable=yes'); w.focus(); return false;\">".htmlentities($msg['suggest_notice_opac'],ENT_QUOTES,$charset)."</a>";
 		return $do_suggest;
 	}
 	
@@ -692,9 +720,20 @@ class record_display {
 	 * @return string
 	 */
 	static public function get_display_tag($notice_id){
-		global $msg;
-		return "<a href='#' title=\"".$msg['notice_title_tag']."\" onclick=\"openPopUp('addtags.php?noticeid=".$notice_id."','ajouter_un_tag'); return false;\">".$msg['notice_title_tag']."</a>";
+		global $msg, $charset;
+		return "<a href='#' title=\"".htmlentities($msg['notice_title_tag'],ENT_QUOTES,$charset)."\" onclick=\"openPopUp('addtags.php?noticeid=".$notice_id."','ajouter_un_tag'); return false;\">".htmlentities($msg['notice_title_tag'],ENT_QUOTES,$charset)."</a>";
 		
+	}
+	
+	/**
+	 * Fonction d'affichage de l'export d'une notice
+	 * @param int $notice_id Identifiant de la notice
+	 * @return string
+	 */
+	static public function get_display_export($notice_id){
+	    global $msg, $charset;
+	    return "<a href='#' title=\"".htmlentities($msg['notice_title_export_record'],ENT_QUOTES,$charset)."\" onclick=\"openPopUp('export.php?action=select&notice_id=$notice_id','exporter_la_notice'); return false;\">".htmlentities($msg['notice_title_export_record'],ENT_QUOTES,$charset)."</a>";
+	    
 	}
 	
 	/**
@@ -703,7 +742,7 @@ class record_display {
 	 * @return string
 	 */
 	static public function get_display_liste_lecture($notice_id){
-		global $msg;
+		global $msg, $charset;
 		return "
 			<script type='text/javascript' src='./includes/javascript/liste_lecture.js'></script>
 			<script type='text/javascript'>
@@ -715,12 +754,12 @@ class record_display {
 					<img src='".get_url_icon('liste_lecture_w.png')."' align='absmiddle' style='border:0px' title=\"".$msg['notice_title_liste_lecture']."\" alt=\"".$msg['notice_title_liste_lecture']."\" />
 				</span>
 				<span class='listeLectureN'>
-					".$msg['notice_title_liste_lecture']."
+					".htmlentities($msg['notice_title_liste_lecture'],ENT_QUOTES,$charset)."
 				</span>
 			</a>
 			<div data-dojo-type='dijit/Tooltip' data-dojo-props=\"connectId:'liste_lecture_display_tooltip_notice_".$notice_id."', position:['below']\">
 				<div class='row'>
-					".$msg['notice_title_liste_lecture']."
+					".htmlentities($msg['notice_title_liste_lecture'],ENT_QUOTES,$charset)."
 				</div>
 				<div class='row'>
 					".liste_lecture::gen_selector_my_list($notice_id)."
@@ -988,7 +1027,7 @@ class record_display {
 		global $base_path;
 		global $use_opac_url_base, $opac_url_base;
 	
-		$use_opac_url_base += 0;
+		$use_opac_url_base = intval($use_opac_url_base);
 		if(!isset(static::$linked_permalink[$use_opac_url_base])) {
 			if($use_opac_url_base) {
 				static::$linked_permalink[$use_opac_url_base] = array(
@@ -1214,17 +1253,13 @@ class record_display {
 	 * @return string
 	 */
 	static public function get_display_social_network($notice_id){
-		global $charset;
-		
-		$record_datas = static::get_record_datas($notice_id);
+		$opac_view = "";
 		if(isset($_SESSION["opac_view"])) {
-			$permalink = $record_datas->get_permalink()."&opac_view=".$_SESSION["opac_view"];
-		} else {
-			$permalink = $record_datas->get_permalink();
+			$opac_view = $_SESSION["opac_view"];
 		}
 		return "
 			<div id='el".$notice_id."addthis' class='addthis_toolbox addthis_default_style '
-				addthis:url='".static::get_parameter_value('url_base')."fb.php?title=".rawurlencode(strip_tags(($charset != "utf-8" ? utf8_encode($record_datas->get_tit1()) : $record_datas->get_tit1())))."&url=".rawurlencode(($charset != "utf-8" ? utf8_encode($permalink) : $permalink))."'>
+				addthis:url='".static::get_parameter_value('url_base')."fb.php?opac_view=" . $opac_view . "id=" . intval($notice_id) . "&type=" . intval(TYPE_NOTICE) . "'>
 			</div>
 			<script type='text/javascript'>
 				if(param_social_network){
@@ -1279,16 +1314,63 @@ class record_display {
 		return $html;
 	}
 	
+	static public function get_display_search_form_bulletins_list($notice_id) {
+	    global $msg, $charset;
+	    global $page, $nb_per_page_custom;
+	    global $bull_date_start, $bull_date_end;
+	    
+	    if(!$page) $page = 1;
+	    
+	    //Recherche dans les numéros
+	    global ${"bull_num_deb_".$notice_id};
+	    $start_num = ${"bull_num_deb_".$notice_id};
+	    
+	    //Recherche par numéro
+	    $num_field_start = "
+		<input type='hidden' name='f_bull_deb_id' id='f_bull_deb_id' />
+		<input id='bull_num_deb_".$notice_id."' name='bull_num_deb_".$notice_id."' type='text' size='10' completion='bull_num' autfield='f_bull_deb_id' value='".$start_num."'>";
+	    
+	    //Recherche par date
+	    $date_debut = "<div id='inputs_bull_date_start'>
+            ".get_input_date('bull_date_start', 'bull_date_start', $bull_date_start, false, '')."
+			</div>
+		";
+	    $date_fin = "<div id='inputs_bull_date_end'>
+            ".get_input_date('bull_date_end', 'bull_date_end', $bull_date_end, false, '')."
+			</div>
+		";
+	    
+	    $search_form = "<form name=\"form_values\" action='#tab_bulletins_serial_".$notice_id."' method=\"post\" onsubmit=\"if (document.getElementById('onglet_isbd".$notice_id."').className=='isbd_public_active') document.form_values.premier.value='ISBD'; else document.form_values.premier.value='PUBLIC';document.form_values.page.value=1;\">\n
+				<input type=\"hidden\" name=\"premier\" value=\"\">\n
+				<input type=\"hidden\" name=\"page\" value=\"".htmlentities($page, ENT_QUOTES, $charset)."\">\n
+				<input type=\"hidden\" name=\"nb_per_page_custom\" value=\"".htmlentities($nb_per_page_custom, ENT_QUOTES, $charset)."\">\n
+				<table role='presentation'>
+					<tr>
+						<td class='align_left' rowspan=2><strong>".$msg["search_bull"]."&nbsp;:&nbsp;</strong></td>
+						<td class='align_right'><strong>".$msg["search_per_bull_num"]." : ".$msg["search_bull_exact"]."</strong></td>
+						<td >".$num_field_start."</td>
+						<td >&nbsp;</td>
+					</tr>
+					<tr>
+						<td class='align_right'><strong>".$msg["search_per_bull_date"]." : ".$msg["search_bull_start"]."</strong></td>
+						<td>".$date_debut."</td>
+						<td><strong>".$msg["search_bull_end"]."</strong> ".$date_fin."</td>
+						<td>&nbsp;&nbsp;<input type='button' class='boutonrechercher' value='".$msg["142"]."' onclick='submit();'></td>
+					</tr>
+				</table>
+			</form>";
+	    
+	    return $search_form;
+	}
+	
 	static public function get_display_bulletins_list($notice_id, $bulletins_id = array()) {
-		global $page, $premier, $f_bull_deb_id, $nb_per_page_custom;
+		global $page, $premier, $f_bull_deb_id;
 		global $bull_date_start, $bull_date_end;
 		global $msg;
-		global $opac_show_links_invisible_docnums;
-		global $gestion_acces_active, $gestion_acces_empr_notice, $gestion_acces_empr_docnum;
 		global $opac_bull_results_per_page;
-		global $opac_fonction_affichage_liste_bull, $charset;
+		global $opac_fonction_affichage_liste_bull;
 		
-		$notice_id = $notice_id*1;
+		$notice_id = intval($notice_id);
 		
 		if ($notice_id) {
 			$record_datas = static::get_record_datas($notice_id);
@@ -1334,55 +1416,14 @@ class record_display {
 		$debut = ($page-1)*$opac_bull_results_per_page;
 		$limiter = " LIMIT ".$debut.",".$opac_bull_results_per_page;
 		
-		//Recherche par numéro
-		$num_field_start = "
-		<input type='hidden' name='f_bull_deb_id' id='f_bull_deb_id' />
-		<input id='bull_num_deb_".$notice_id."' name='bull_num_deb_".$notice_id."' type='text' size='10' completion='bull_num' autfield='f_bull_deb_id' value='".$start_num."'>";
-		
-		//Recherche par date
-		$deb_value = str_replace("-","",$bull_date_start);
-		$fin_value = str_replace("-","",$bull_date_end);
-		$date_deb_value = ($deb_value ? formatdate($deb_value) : '...');
-		$date_fin_value = ($fin_value ? formatdate($fin_value) : '...');
-		$date_debut = "<div id='inputs_bull_date_start'>
-		    <input type='text' style='width: 10em;' name='bull_date_start' id='bull_date_start' 
-				data-dojo-type='dijit/form/DateTextBox' required='false' value='".$bull_date_start."' />
-			<input type='button' class='bouton' name='del' value='X' onclick=\"empty_dojo_calendar_by_id('bull_date_start');\" />
-			</div>
-		";
-		$date_fin = "<div id='inputs_bull_date_end'>
-		    <input type='text' style='width: 10em;' name='bull_date_end' id='bull_date_end' 
-				data-dojo-type='dijit/form/DateTextBox' required='false' value='".$bull_date_end."' />
-			<input type='button' class='bouton' name='del' value='X' onclick=\"empty_dojo_calendar_by_id('bull_date_end');\" />
-			</div>
-		";
-		
 		$tableau = "
         <div id=\"perio_list_bulletins\" >
-		<a name='tab_bulletin'></a>
+		<a id='tab_bulletins_serial_".$notice_id."' name='tab_bulletin'></a>
 		<h3>".$msg['perio_list_bulletins']."</h3>
 		<div id='form_search_bull'>
 			<div class='row'></div>\n
 			<script src='./includes/javascript/ajax.js'></script>
-			<form name=\"form_values\" action='#tab_bulletin' method=\"post\" onsubmit=\"if (document.getElementById('onglet_isbd".$notice_id."').className=='isbd_public_active') document.form_values.premier.value='ISBD'; else document.form_values.premier.value='PUBLIC';document.form_values.page.value=1;\">\n
-				<input type=\"hidden\" name=\"premier\" value=\"\">\n
-				<input type=\"hidden\" name=\"page\" value=\"".htmlentities($page, ENT_QUOTES, $charset)."\">\n
-				<input type=\"hidden\" name=\"nb_per_page_custom\" value=\"".htmlentities($nb_per_page_custom, ENT_QUOTES, $charset)."\">\n
-				<table>
-					<tr>
-						<td class='align_left' rowspan=2><strong>".$msg["search_bull"]."&nbsp;:&nbsp;</strong></td>
-						<td class='align_right'><strong>".$msg["search_per_bull_num"]." : ".$msg["search_bull_exact"]."</strong></td>
-						<td >".$num_field_start."</td>
-						<td >&nbsp;</td>
-					</tr>
-					<tr>
-						<td class='align_right'><strong>".$msg["search_per_bull_date"]." : ".$msg["search_bull_start"]."</strong></td>
-						<td>".$date_debut."</td>
-						<td><strong>".$msg["search_bull_end"]."</strong> ".$date_fin."</td>
-						<td>&nbsp;&nbsp;<input type='button' class='boutonrechercher' value='".$msg["142"]."' onclick='submit();'></td>
-					</tr>
-				</table>
-			</form>
+			".static::get_display_search_form_bulletins_list($notice_id)."
 			<div class='row'></div><br />
 		</div>\n";
 		$html.= $tableau;
@@ -1394,79 +1435,54 @@ class record_display {
 		
 		$html.= "<script type='text/javascript'>ajax_parse_dom();</script>";
 	
-		$join_docnum_noti = $join_docnum_bull = "";
-		if (($gestion_acces_active == 1) && ($gestion_acces_empr_notice == 1)) {
-			$ac = new acces();
-			$dom_2= $ac->setDomain(2);
-			$join_noti = $dom_2->getJoin($_SESSION["id_empr_session"],4,"bulletins.num_notice");
-			$join_bull = $dom_2->getJoin($_SESSION["id_empr_session"],4,"bulletins.bulletin_notice");
-			if(!$opac_show_links_invisible_docnums){
-				$join_docnum_noti = $dom_2->getJoin($_SESSION["id_empr_session"],16,"bulletins.num_notice");
-				$join_docnum_bull = $dom_2->getJoin($_SESSION["id_empr_session"],16,"bulletins.bulletin_notice");
-			}
-		}else{
-			$join_noti = "join notices on bulletins.num_notice = notices.notice_id join notice_statut on notices.statut = notice_statut.id_notice_statut AND ((notice_visible_opac=1 and notice_visible_opac_abon=0)".($_SESSION["user_code"]?" or (notice_visible_opac_abon=1 and notice_visible_opac=1)":"").")";
-			$join_bull = "join notices on bulletins.bulletin_notice = notices.notice_id join notice_statut on notices.statut = notice_statut.id_notice_statut AND ((notice_visible_opac=1 and notice_visible_opac_abon=0)".($_SESSION["user_code"]?" or (notice_visible_opac_abon=1 and notice_visible_opac=1)":"").")";
-			if(!$opac_show_links_invisible_docnums){
-				$join_docnum_noti = "join notices on bulletins.num_notice = notices.notice_id join notice_statut on notices.statut = notice_statut.id_notice_statut AND ((explnum_visible_opac=1 and explnum_visible_opac_abon=0)".($_SESSION["user_code"]?" or (explnum_visible_opac_abon=1 and explnum_visible_opac=1)":"").")";
-				$join_docnum_bull = "join notices on bulletins.bulletin_notice = notices.notice_id join notice_statut on notices.statut = notice_statut.id_notice_statut AND ((explnum_visible_opac=1 and explnum_visible_opac_abon=0)".($_SESSION["user_code"]?" or (explnum_visible_opac_abon=1 and explnum_visible_opac=1)":"").")";
-			}
-		}
-		$join_docnum_explnum = "";
-		if(!$opac_show_links_invisible_docnums) {
-			if ($gestion_acces_active==1 && $gestion_acces_empr_docnum==1) {
-				$ac = new acces();
-				$dom_3= $ac->setDomain(3);
-				$join_docnum_explnum = $dom_3->getJoin($_SESSION["id_empr_session"],16,"explnum_id");
-			}else{
-				$join_docnum_explnum = "join explnum_statut on explnum_docnum_statut=id_explnum_statut and ((explnum_visible_opac=1 and explnum_visible_opac_abon=0)".($_SESSION["user_code"]?" or (explnum_visible_opac_abon=1 and explnum_visible_opac=1)":"").")";
-			}
-		}
-		
-		$restriction = " 1";
-		if (count($bulletins_id)) {
-			$restriction = " bulletins.bulletin_id in (".implode(",", $bulletins_id).")";
-		} else if ($notice_id) {
-			$restriction = " bulletin_notice = ".$notice_id;
-		}
-		
-		$requete_docnum_noti = "select bulletin_id, count(explnum_id) as nbexplnum from explnum join bulletins on explnum_bulletin = bulletin_id and explnum_notice = 0 ".$join_docnum_explnum." where ".$restriction." and explnum_bulletin in (select bulletin_id from bulletins ".$join_docnum_noti." where ".$restriction.") group by bulletin_id";
-		$requete_docnum_bull = "select bulletin_id, count(explnum_id) as nbexplnum from explnum join bulletins on explnum_bulletin = bulletin_id and explnum_notice = 0 ".$join_docnum_explnum." where ".$restriction." and explnum_bulletin in (select bulletin_id from bulletins ".$join_docnum_bull." where ".$restriction.") group by bulletin_id";
-		$requete_noti = "select bulletins.*,ifnull(nbexplnum,0) as nbexplnum from bulletins ".$join_noti." left join (".$requete_docnum_noti.") as docnum_noti on bulletins.bulletin_id = docnum_noti.bulletin_id where bulletins.num_notice != 0 and ".$restriction." ".$restrict_num." ".$restrict_date." GROUP BY bulletins.bulletin_id";
-		$requete_bull = "select bulletins.*,ifnull(nbexplnum,0) as nbexplnum from bulletins ".$join_bull." left join ($requete_docnum_bull) as docnum_bull on bulletins.bulletin_id = docnum_bull.bulletin_id where bulletins.num_notice = 0 and ".$restriction." ".$restrict_num." ".$restrict_date." GROUP BY bulletins.bulletin_id";
-	
-		$requete = "select * from (".$requete_noti." union ".$requete_bull.") as uni where 1 ".$restrict_num." ".$restrict_date;
-		$rescount1 = pmb_mysql_query($requete);
-		$count1 = pmb_mysql_num_rows($rescount1);
-	
-		//si on recherche par date ou par numéro, le résultat sera trié par ordre croissant
-		if ($restrict_num || $restrict_date) {
-			$requete.=" ORDER BY date_date, bulletin_numero*1 ";
+		if(!empty($opac_fonction_affichage_liste_bull) && $opac_fonction_affichage_liste_bull == 'affichage_liste_bulletins_tableau') {
+		    $filters = [];
+		    $filters['serial_id'] = $notice_id;
+		    $filters['bulletin_numero'] = $start_num;
+		    $filters['date_date_start'] = $bull_date_start;
+		    $filters['date_date_end'] = $bull_date_end;
+		    $pager = [];
+		    if(!empty($page)) {
+		        $pager['page'] = $page;
+		    }
+		    $html.= list_opac_bulletins_ui::get_instance($filters, $pager)->get_display_list();
 		} else {
-			$requete.= " ORDER BY date_date DESC, bulletin_numero*1 DESC";
+		    $record_datas = static::get_record_datas($notice_id);
+		    $requete = $record_datas->get_query_bulletins_list($restrict_num, $restrict_date, $bulletins_id);
+		    $rescount1 = pmb_mysql_query($requete);
+		    $count1 = pmb_mysql_num_rows($rescount1);
+		    
+		    //si on recherche par date ou par numéro, le résultat sera trié par ordre croissant
+		    if ($restrict_num || $restrict_date) {
+		        $requete.=" ORDER BY date_date, bulletin_numero*1 ";
+		    } else {
+		        $requete.= " ORDER BY date_date DESC, bulletin_numero*1 DESC";
+		    }
+		    $requete.= $limiter;
+		    $res = pmb_mysql_query($requete);
+		    $count = pmb_mysql_num_rows($res);
+		    
+		    if ($count) {
+		        if ($opac_fonction_affichage_liste_bull) {
+		            $html.= call_user_func_array($opac_fonction_affichage_liste_bull, array($res, false));
+		        } else {
+		            affichage_liste_bulletins_normale($res);
+		        }
+		    } else {
+		        $html.= "<br /><strong>".$msg["bull_no_found"]."</strong>";
+		    }
 		}
-		$requete.= $limiter;
-		$res = pmb_mysql_query($requete);
-		$count = pmb_mysql_num_rows($res);
-	
-		if ($count) {
-			if ($opac_fonction_affichage_liste_bull) {
-				$html.= call_user_func_array($opac_fonction_affichage_liste_bull, array($res, false));
-			} else {
-				affichage_liste_bulletins_normale($res);
-			}
-		} else {
-			$html.= "<br /><strong>".$msg["bull_no_found"]."</strong>";
-		}
-		$html.= "<br /><br /><div class='row'></div></div>";
-		// constitution des liens
-		if (!$count1) $count1 = $count;
-		$url_page = "javascript:if (document.getElementById(\"onglet_isbd".$notice_id."\")) if (document.getElementById(\"onglet_isbd".$notice_id."\").className==\"isbd_public_active\") document.form_values.premier.value=\"ISBD\"; else document.form_values.premier.value=\"PUBLIC\"; document.form_values.page.value=!!page!!; document.form_values.submit()";
-		$nb_per_page_custom_url = "javascript:document.form_values.nb_per_page_custom.value=!!nb_per_page_custom!!";
-		$action = "javascript:if (document.getElementById(\"onglet_isbd".$notice_id."\")) if (document.getElementById(\"onglet_isbd".$notice_id."\").className==\"isbd_public_active\") document.form_values.premier.value=\"ISBD\"; else document.form_values.premier.value=\"PUBLIC\"; document.form_values.page.value=document.form.page.value; document.form_values.submit()";
-		
-		if ($count) {
-		    $html.= pmb_bidi("<div class='row'></div><div id='navbar'><br />\n<div style='text-align:center'>".printnavbar($page, $count1, $opac_bull_results_per_page, $url_page, $nb_per_page_custom_url, $action)."</div></div>");
+		if(!empty($opac_fonction_affichage_liste_bull) && $opac_fonction_affichage_liste_bull != 'affichage_liste_bulletins_tableau') {
+		    $html.= "<br /><br /><div class='row'></div></div>";
+		    // constitution des liens
+		    if (!$count1) $count1 = $count;
+		    $url_page = "javascript:if (document.getElementById(\"onglet_isbd".$notice_id."\")) if (document.getElementById(\"onglet_isbd".$notice_id."\").className==\"isbd_public_active\") document.form_values.premier.value=\"ISBD\"; else document.form_values.premier.value=\"PUBLIC\"; document.form_values.page.value=!!page!!; document.form_values.submit()";
+		    $nb_per_page_custom_url = "javascript:document.form_values.nb_per_page_custom.value=!!nb_per_page_custom!!";
+		    $action = "javascript:if (document.getElementById(\"onglet_isbd".$notice_id."\")) if (document.getElementById(\"onglet_isbd".$notice_id."\").className==\"isbd_public_active\") document.form_values.premier.value=\"ISBD\"; else document.form_values.premier.value=\"PUBLIC\"; document.form_values.page.value=document.form.page.value; document.form_values.submit()";
+		    
+		    if ($count) {
+		        $html.= pmb_bidi("<div class='row'></div><div id='navbar'><br />\n<div style='text-align:center'>".printnavbar($page, $count1, $opac_bull_results_per_page, $url_page, $nb_per_page_custom_url, $action)."</div></div>");
+		    }
 		}
 		return $html;
 	}
@@ -1565,7 +1581,7 @@ class record_display {
 			$search_in_serial = '';
 			
 			if ($record_datas->get_bulletins()) {
-				$voir_bulletins="<a href='#tab_bulletin'><i>".$msg["see_bull"]."</i></a>";
+				$voir_bulletins="<a href='#tab_bulletins_serial_$notice_id'><i>".$msg["see_bull"]."</i></a>";
 			}
 			if (static::get_parameter_value('visionneuse_allow') && $record_datas->get_opac_visible_bulletinage()) {
 			    $nb_bulletins_docnums = 0;
@@ -1700,5 +1716,32 @@ class record_display {
 	    $record_datas = static::get_record_datas($notice_id);
 	    $template = static::get_template("record_in_contribution_display", $record_datas->get_niveau_biblio(), $record_datas->get_typdoc(), $django_directory);
 	    return static::render($notice_id, $template);
+	}
+	
+	/**
+	 * Retourne la liste des exemplaires numériques associés au bulletin parent de la notice
+	 * @param int $notice_id
+	 * @return array|boolean[]
+	 */
+	static public function get_parent_bulletin_explnums($notice_id)
+	{
+		$parent_explnums = array();
+		$record_datas = static::get_record_datas($notice_id);
+		$bul_infos = $record_datas->get_bul_info();
+		
+		if(!$bul_infos['bulletin_id']) {
+			return $parent_explnums;
+		}
+		
+		$query = "SELECT * FROM explnum WHERE explnum_bulletin = '" .$bul_infos['bulletin_id']."'";
+		if($bul_infos['id']) {
+			$query .= " OR explnum_notice = '". $bul_infos['id']."'";
+		}
+		
+		$result = pmb_mysql_query($query);
+		while($row = pmb_mysql_fetch_object($result)) {
+			$parent_explnums[] = $row;
+		}
+		return $parent_explnums;
 	}
 }

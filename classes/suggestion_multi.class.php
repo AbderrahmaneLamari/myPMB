@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestion_multi.class.php,v 1.21.8.1 2021/12/16 06:54:30 dgoron Exp $
+// $Id: suggestion_multi.class.php,v 1.24 2022/06/07 09:41:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -177,6 +177,7 @@ class suggestion_multi{
 							prix='".${$prix}."',
 							commentaires='".${$com}."',
 							commentaires_gestion='".${$com_gestion}."',
+							index_suggestion = ' ".strip_empty_words(${$tit})." ".strip_empty_words(${$edi})." ".strip_empty_words(${$aut})." ".${$code}." ".strip_empty_words(${$com})." ".strip_empty_words(${$com_gestion})." ',
 							url_suggestion='".${$url}."',
 							nb='".${$qte}."',
 							sugg_source='".${$src}."',
@@ -194,7 +195,7 @@ class suggestion_multi{
 					pmb_mysql_query($req);
 					$num_suggestion = pmb_mysql_insert_id();
 					
-					if (is_object($uni)) $uni->delete();
+					if (isset($uni) && is_object($uni)) $uni->delete();
 						
 					$sug_orig = new suggestions_origine($id_user, $num_suggestion);
 					$sug_orig->type_origine = $type_user;
@@ -249,6 +250,8 @@ class suggestion_multi{
 			$uni->sugg_uni_origine = $this->ori_unimarc;
 			$uni->save();
 			$this->liste_sugg[$n_notice]['id_uni'] = $uni->sugg_uni_id;
+		} else {
+			PHP_log::register(PHP_log::prepare($_FILES["import_file"]["name"]), $notice->error_message);
 		}
 	}
 	
@@ -262,20 +265,19 @@ class suggestion_multi{
 			$fp=@fopen("temp/$file_in.$suffix~","r");
 		if ($fp) {
 			$n=1;
-			$car=0x1d;
 			$i=false;
 			$notice="";
 			$notices="";
 			$this->ori_unimarc = microtime()."_unimulti";
 			while (!feof($fp)) {
 				$notices.=fread($fp,4096);
-				$i=strpos($notices,$car);
+				$i=strpos($notices,chr(0x1d));
 				while ($i!==false) {
 					$notice=substr($notices,0,$i+1);
 					$this->traite_notice($notice,$n);
 					$n++;
 					$notices=substr($notices,$i+1);
-					$i=strpos($notices,$car);
+					$i=strpos($notices,chr(0x1d));
 				}
 			}
 			if ($notices!="") {

@@ -1,8 +1,10 @@
 <?php
+use Pmb\Digitalsignature\Models\DocnumCertifier;
+
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: visionneuse.class.php,v 1.21 2021/02/02 12:57:00 dgoron Exp $
+// $Id: visionneuse.class.php,v 1.22 2022/06/20 15:15:03 gneveu Exp $
 
 require_once($visionneuse_path."/api/params.interface.php");
 require_once($visionneuse_path."/classes/docNum.class.php");
@@ -61,13 +63,29 @@ class visionneuse {
 			//on insère le contenu propre au document;
 			$docNum = new docNum($this->classParam->getCurrentDoc(),$this->classParam);
 			$this->do_stat_opac($docNum->id);
+			
+			
+			$link = "";
  			if($this->classParam->is_downloadable($docNum->id)) {
  				$link= "<span id='visio_current_download'><a href='!!expnum_download!!' target='_blank'>!!expnum_download_lib!!</a></span>";
   				$url_download_explnum =$this->classParam->getDocumentUrl($docNum->id);
  				$link = str_replace("!!expnum_download!!",$url_download_explnum,$link);
  				$link = str_replace("!!expnum_download_lib!!",htmlentities($this->message->table['download_doc'],ENT_QUOTES,$charset),$link);
- 			}else{
- 				$link = "";
+ 			}
+ 			
+			global $pmb_digital_signature_activate;
+ 			if ($pmb_digital_signature_activate) {
+ 			    $link .= DocnumCertifier::getJsCheck();
+ 			    $certifier = new DocnumCertifier(new explnum($docNum->id));
+ 			    
+ 			    if ($certifier->checkSignExists()) {
+ 			        $link .= "
+                        <span id='docnum_check_sign_" . $docNum->id . "'></span>
+                        <script>
+                            certifier.chksign(" . $docNum->id . ", 'docnum', true);
+                        </script>
+                    ";
+ 			    }
  			}
  			
  			

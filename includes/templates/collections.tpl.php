@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: collections.tpl.php,v 1.52 2021/05/26 22:46:59 dgoron Exp $
+// $Id: collections.tpl.php,v 1.52.6.1 2023/07/19 08:30:29 dgoron Exp $
 
 // templates pour gestion des autorités collections
 
@@ -163,7 +163,7 @@ $sub_collection_content_form = "
 $collection_replace_content_form = "
 <script type='text/javascript'>
     function f_coll_id_callback() {
-		ajax_get_entity('get_publisher', 'collection', document.getElementById('by').value, 'ed_libelle', 'ed_id');
+		ajax_get_entity('get_publisher', 'collection', document.getElementById('by').value, 'ed_id', 'ed_libelle');
 	}
 </script>
 <div class='row'>

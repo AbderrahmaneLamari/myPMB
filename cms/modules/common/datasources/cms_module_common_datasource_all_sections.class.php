@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_all_sections.class.php,v 1.6 2019/07/05 13:37:51 btafforeau Exp $
+// $Id: cms_module_common_datasource_all_sections.class.php,v 1.7 2022/09/06 07:52:18 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,6 +14,7 @@ class cms_module_common_datasource_all_sections extends cms_module_common_dataso
 		parent::__construct($id);
 		$this->sortable = true;
 		$this->limitable = true;
+		$this->paging = true;
 	}
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
@@ -57,8 +58,17 @@ class cms_module_common_datasource_all_sections extends cms_module_common_dataso
 			}
 		}
 		$this->all_section_order = $this->filter_datas("sections",$this->all_section_order);
-		if ($this->parameters["nb_max_elements"] > 0) $this->all_section_order = array_slice($this->all_section_order, 0, $this->parameters["nb_max_elements"]);
-		return $this->all_section_order;
+		
+		// Pagination
+		if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+		    $return["paging"] = $this->inject_paginator($this->all_section_order);
+		    $this->all_section_order = $this->cut_paging_list($this->all_section_order, $return["paging"]);
+		}else if ($this->parameters["nb_max_elements"] > 0) {
+		    $this->all_section_order = array_slice($this->all_section_order, 0, $this->parameters["nb_max_elements"]);
+		}
+		
+		$return["sections"] = $this->all_section_order;
+		return $return;
 	}
 	
 	public function get_datas_order($section_num) {		

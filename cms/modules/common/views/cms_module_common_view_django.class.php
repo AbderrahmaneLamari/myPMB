@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_view_django.class.php,v 1.42.2.1 2021/10/11 14:00:45 btafforeau Exp $
+// $Id: cms_module_common_view_django.class.php,v 1.45 2022/11/15 13:02:57 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 require_once($include_path."/h2o/h2o.php");
@@ -115,6 +115,20 @@ class cms_module_common_view_django extends cms_module_common_view{
 		if(!isset($datas['post_vars']) || !$datas['post_vars']){
 			$datas['post_vars'] = $_POST;
 		}
+		if(isset($datas['paging']) && $datas['paging']['activate']){
+		    $url = $_SERVER["REQUEST_URI"];
+		    
+		    if(strpos($url, "page=") === false) {
+		        if(strpos($url, "?")) {
+		            $url .= "&page=!!page!!";
+		        }else {
+		            $url .= "?page=!!page!!";
+		        }
+		    }
+		    
+		    $navbar = getNavbar($datas['paging']['page'], $datas['paging']['total'], $datas['paging']['nb_per_page'], $url);
+		    $datas['paginator'] = $navbar;
+		}
 		try{
 			$html = H2o::parseString($this->parameters['active_template'])->render($datas);
 			if (!empty($datas['css'])) $html.= '<style>'.$datas['css'].'</style>';
@@ -152,7 +166,7 @@ class cms_module_common_view_django extends cms_module_common_view{
 			}
 		}
 			$form.="
-				<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->module_class_name)."&quoi=views&elem=".$this->class_name."&cms_template=new&action=get_form'/>".$this->format_text($this->msg['cms_module_common_view_django_add_template'])."</a>
+				<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->module_class_name)."&quoi=views&elem=".$this->class_name."&cms_template=new&action=get_form'>".$this->format_text($this->msg['cms_module_common_view_django_add_template'])."</a>
 			";
 		$form.="
 			</div>

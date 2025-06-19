@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serials.tpl.php,v 1.244.2.2 2021/11/17 08:36:22 dgoron Exp $
+// $Id: serials.tpl.php,v 1.248 2022/04/19 08:03:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -166,7 +166,7 @@ $ptab[2] = "
 		</div>
 		<div id='el2Child_0b' class='row'>
 			<input type='text' completion='publishers' autfield='f_ed1_id' id='f_ed1' name='f_ed1' data-form-name='f_ed1' value=\"!!ed1!!\" class='saisie-30emr' />
-			<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=editeur&caller=notice&p1=f_ed1_id&p2=f_ed1&p3=dummy&p4=dummy&p5=dummy&p6=dummy&deb_rech='+".pmb_escape()."(this.form.f_ed1.value), '!!force_dialog_publisher!!')\" />
+			<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=editeur&caller=notice&p1=f_ed1_id&p2=f_ed1&p3=dummy&p4=dummy&p5=dummy&p6=dummy&deb_rech='+".pmb_escape()."(this.form.f_ed1.value), '!!force_dialog_publisher!!', '!!force_popup_publisher!!')\" />
 			<input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_ed1.value=''; this.form.f_ed1_id.value='0'; \" />
 			<input type='hidden' name='f_ed1_id' id='f_ed1_id' data-form-name='f_ed1_id' value=\"!!ed1_id!!\" />
 		</div>
@@ -187,7 +187,7 @@ $ptab[2] = "
 		</div>
 		<div id='el2Child_7b' class='row'>
 	    	<input type='text' completion='publishers' autfield='f_ed2_id' id='f_ed2' name='f_ed2' data-form-name='f_ed2' value=\"!!ed2!!\" class='saisie-30emr' />
-	    	<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=editeur&caller=notice&p1=f_ed2_id&p2=f_ed2&p3=dummy&p4=dummy&p5=dummy&p6=dummy&deb_rech='+".pmb_escape()."(this.form.f_ed2.value), '!!force_dialog_publisher!!')\" />
+	    	<input type='button' class='bouton' value='$msg[parcourir]' onclick=\"openPopUpSelector('./select.php?what=editeur&caller=notice&p1=f_ed2_id&p2=f_ed2&p3=dummy&p4=dummy&p5=dummy&p6=dummy&deb_rech='+".pmb_escape()."(this.form.f_ed2.value), '!!force_dialog_publisher!!', '!!force_popup_publisher!!')\" />
 	    	<input type='button' class='bouton' value='$msg[raz]' onclick=\"this.form.f_ed2.value=''; this.form.f_ed2_id.value='0'; \" />
 	    	<input type='hidden' name='dummy' />
 	    	<input type='hidden' name='f_ed2_id' id='f_ed2_id' data-form-name='f_ed2_id' value=\"!!ed2_id!!\" />
@@ -375,6 +375,9 @@ $serial_action_bar.="
 	<input type='button' class='bouton' value='$msg[serial_duplicate_bouton]'  onClick=\"document.location='./catalog.php?categ=serials&sub=serial_duplicate&serial_id=!!serial_id!!'\" />&nbsp;";
 if ($acquisition_active) {
 	$serial_action_bar.="<input type='button' class='bouton' value='".$msg["acquisition_sug_do"]."' onclick=\"document.location='./catalog.php?categ=sug&action=modif&id_bibli=0&id_notice=!!serial_id!!'\" />&nbsp;";
+}
+if((SESSrights & CIRCULATION_AUTH) && $pmb_scan_request_activate){
+	$serial_action_bar .= "<input type='button' class='bouton' value='".$msg["scan_request_record_button"]."' onclick='document.location=\"./circ.php?categ=scan_request&sub=request&action=edit&from_record=!!serial_id!!\"' />";
 }
 global $pmb_type_audit;
 if ($pmb_type_audit){

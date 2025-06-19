@@ -1,0 +1,12 @@
+.pmb_sections_home .pmb_img {
+    height: 180px;
+    margin-right: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.pmb_sections_home .pmb_img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

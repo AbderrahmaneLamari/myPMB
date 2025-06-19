@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_linked_record_selector_ui.class.php,v 1.16.2.2 2021/09/09 14:18:26 tsamson Exp $
+// $Id: onto_contribution_datatype_linked_record_selector_ui.class.php,v 1.19 2023/01/02 13:47:51 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -357,7 +357,7 @@ class onto_contribution_datatype_linked_record_selector_ui extends onto_contribu
 	            break;
 	    }
 	    
-	    $options .= "<optgroup class='erreur' label='".$label."'>";
+	    $options = "<optgroup class='erreur' label='".$label."'>";
 	    $total_options = count($type_relation->table);
 	    $options_hidden = 0;
 	    foreach($type_relation->table as $key => $val) {

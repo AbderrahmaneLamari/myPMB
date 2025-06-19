@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: vedette_ui.class.php,v 1.19.2.1 2021/08/25 09:22:35 qvarin Exp $
+// $Id: vedette_ui.class.php,v 1.20 2021/08/25 09:22:05 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_article.class.php,v 1.41 2020/12/15 10:38:47 moble Exp $
+// $Id: cms_article.class.php,v 1.42.4.1 2023/03/29 14:46:09 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -15,8 +15,10 @@ require_once $class_path.'/audit.class.php';
 require_once $class_path.'/acces.class.php';
 
 class cms_article extends cms_editorial {
-	
-	public function __construct($id=0,$num_parent=0){
+
+	protected $detail;
+
+	public function __construct($id=0, $num_parent=0) {
 		//on gère les propriétés communes dans la classe parente
 		parent::__construct($id,"article",$num_parent);
 
@@ -26,7 +28,6 @@ class cms_article extends cms_editorial {
 	}
 	
 	protected function fetch_data(){
-		
 		if(!$this->id)
 			return false;
 		
@@ -207,7 +208,8 @@ class cms_article extends cms_editorial {
 	protected function _recurse_parent_select($parent=0,$lvl=0){
 		global $charset;
 		$opts = "";
-		$rqt = "select id_section, section_title from cms_sections where section_num_parent = '".($parent*1)."'";
+		$parent = intval($parent);
+		$rqt = "select id_section, section_title from cms_sections where section_num_parent = '".$parent."'";
 		$res = pmb_mysql_query($rqt);
 		if(pmb_mysql_num_rows($res)){
 			while($row = pmb_mysql_fetch_object($res)){
@@ -220,9 +222,9 @@ class cms_article extends cms_editorial {
 	}
 	
 	public function update_parent_section($num_section,$order=0){
-		
-		$this->num_section = $num_section;
-		$update = "update cms_articles set num_section ='".$num_section."', article_order = '".$order."' where id_article = '".$this->id."'";
+		$this->num_section = intval($num_section);
+		$order = intval($order);
+		$update = "update cms_articles set num_section ='".$this->num_section."', article_order = '".$order."' where id_article = '".$this->id."'";
 		pmb_mysql_query($update);
 	}
 	
@@ -232,5 +234,27 @@ class cms_article extends cms_editorial {
 	
 	public static function get_format_data_structure($type="article",$full=true){
 		return cms_editorial::get_format_data_structure($type,$full);
+	}
+
+	public function get_detail()
+	{
+		global $include_path;
+
+		if (isset($this->detail)) {
+			return $this->detail;
+		}
+
+		$template = "{$include_path}/templates/cms/list/article_detail_subst.tpl.html";
+		if (!is_file($template)) {
+			$template = "{$include_path}/templates/cms/article_detail.tpl.html";
+		}
+		$this->detail = "";
+		if (is_file($template)) {
+			$h2o = \H2o_collection::get_instance($template);
+			$this->detail = $h2o->render([
+				"article" => $this
+			]);
+		}
+		return $this->detail;
 	}
 }

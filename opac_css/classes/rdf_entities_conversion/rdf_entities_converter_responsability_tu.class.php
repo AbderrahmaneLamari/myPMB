@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_converter_responsability_tu.class.php,v 1.2 2020/12/22 16:55:43 btafforeau Exp $
+// $Id: rdf_entities_converter_responsability_tu.class.php,v 1.3 2022/05/25 08:55:18 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -46,7 +46,7 @@ class rdf_entities_converter_responsability_tu extends rdf_entities_converter {
         $vedette_id = 0;
         
         $types_object = [TYPE_TU_RESPONSABILITY, TYPE_TU_RESPONSABILITY_INTERPRETER];
-        $query = "SELECT num_vedette AS id FROM vedette_link WHERE num_object = $this->entity_id AND type_object(" . implode(',', $types_object) . ")";
+        $query = "SELECT num_vedette AS id FROM vedette_link WHERE num_object = $this->entity_id AND type_object in (" . implode(',', $types_object) . ")";
         $res = pmb_mysql_query($query);
         if (pmb_mysql_num_rows($res)) {
             $row = pmb_mysql_fetch_object($res);

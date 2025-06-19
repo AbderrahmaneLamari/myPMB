@@ -2,11 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
+// $Id: import_clcc.inc.php,v 1.7 2022/09/07 15:13:30 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path;
-require_once("$class_path/emprunteur.class.php");
+global $action, $imp_empr;
+
+require_once $class_path."/emprunteur.class.php";
 
 function show_import_choix_fichier() {
 	global $msg;
@@ -57,8 +60,9 @@ print "
 }
 
 function import_lect_par_lect($tab){
+    
 	global $lect_cree,$lect_erreur,$lect_modif,$lect_non_traite;
-	//update empr set `empr_modif`= DATE_SUB(empr_modif, INTERVAL 6 MONTH),`empr_date_expiration`= DATE_SUB(`empr_date_expiration`, INTERVAL 6 MONTH)
+	
 	//On regarde si le lecteur existe déja en le recherchant par son badge
 	$requete="select id_empr,empr_modif from empr where empr_cb='".addslashes($tab[12])."'";
 	$select = pmb_mysql_query($requete);
@@ -77,13 +81,13 @@ function import_lect_par_lect($tab){
 			$requete=$requete." where empr_cb='".addslashes($tab[12])."' ";
 			if(!pmb_mysql_query($requete)){
 				$lect_erreur++;
-				echo "Erreur : requete echoué : ".$requete."<br />";
+				echo "Erreur requete : ".$requete."<br />";
 			}else{
 				$lect_modif++;
 			}
 		}else{
 			$lect_non_traite++;
-			echo "Information : Le lecteur  ".$tab[1]." ".$tab[2]." avec le code barres ".$tab[12]." est présent plusieurs fois dans le fichier ou le fichier à déjà été traité<br />";
+			echo "Information : Le lecteur  ".$tab[1]." ".$tab[2]." avec le code barres ".$tab[12]." est présent plusieurs fois dans le fichier ou le fichier a déjà été traité<br />";
 		}
 		return;
 	}elseif($nb_enreg > 1){
@@ -94,22 +98,20 @@ function import_lect_par_lect($tab){
 	
 	$data=array();
 	
-	//$data['categ_libelle_create']="Indéterminé";
+	$data['categ_libelle_create']="Indéterminé";
 	if($tab[8]){
 		$data['categ_libelle_create']=$tab[8];
-	}else{
-		$data['categ_libelle_create']="Indéterminé";
 	}
 	
+	$data['codestat_libelle_create']="Indéterminé";
 	if($tab[6]){
 		$data['codestat_libelle_create']=$tab[6];
-	}else{
-		$data['codestat_libelle_create']="Indéterminé";
 	}
 	
 	$data['date_adhesion']=date('Y-m-j');
 	$data['date_modif']=date('Y-m-j');
 	
+	$data['date_creation']=date('Y-m-j');
 	if($tab[3]){
 		$data3=array();
 		$data3=explode('/',$tab[3]);
@@ -118,8 +120,6 @@ function import_lect_par_lect($tab){
 		}else{
 			$data['date_creation']=date('Y-m-j');
 		}	
-	}else{
-		$data['date_creation']=date('Y-m-j');
 	}
 
 	if($tab[4]){
@@ -154,53 +154,35 @@ function import_lect_par_lect($tab){
 	}
 	$data['cb']=stripslashes($empr_cb2);
 	if($data['cb'] != $tab[12]){
-		echo "<b>Information : pour le lecteur ".$tab[1]." ".$tab[2]." son code barres sera ".$data['cb']." car le matricule ".$tab[12]." est déja utilisé comme code barre pour un autre lecteur</b><br />";
+		echo "<b>Information : pour le lecteur ".$tab[1]." ".$tab[2]." le code barres sera ".$data['cb']." car le matricule ".$tab[12]." est déja utilisé comme code barres pour un autre lecteur</b><br />";
 	}
 	
 	$data['nom']=$tab[1];
 	
 	$data['prenom']=$tab[2];
 
+	$data['sexe']=0;
 	if($tab[9] == "F"){
 		$data['sexe']=2;
 	}elseif($tab[9] == "M"){
 		$data['sexe']=1;
-	}else{
-		$data['sexe']=0;
 	}
 	
-	
 	$data['adr1']="";
-	
 	$data['adr2']="";
-
 	$data['ville']="";
-	
-
 	$data['pays']="";
-	
 	$data['cp']="";
-	
 	$data['mail']=$tab[13];
-
 	$data['tel1']=$tab[10];
-	
 	$data['tel2']="";
-	
 	$data['prof']=$tab[7];
-	
 	$data['year']="";
-	
 	$data['login'] = $tab[11];
-	
 	$data['password']=$tab[11];
-	
 	$data['location_libelle_create']= "Clcc";
-	
 	$data['msg']="";
-
 	$data['lang']='fr_FR';
-	
 	$data['statut_libelle_create']="Actif";
 	
 	$mon_emprunteur= new emprunteur();
@@ -227,6 +209,7 @@ function import_lect_par_lect($tab){
 }
 
 function import_empr(){
+    
 	global $lect_cree,$lect_erreur,$lect_modif,$lect_non_traite;
 	$lect_tot=0;
 	$lect_supprime=0;
@@ -240,9 +223,9 @@ function import_empr(){
     //MATRICULE;NOM_USAGE;PRENOM_USAGE;DAT_DER_ENTREE;DAT_SORTIE;COD_UF;LIB_UF;POSTE;SEXE;TELEPHONE;USER_NAME;BADGE;MAIL
     
     //Upload du fichier
-    if (!($_FILES['import_lec']['tmp_name']))
+	if (!($_FILES['import_lec']['tmp_name'])) {
         print "Cliquez sur Pr&eacute;c&eacute;dent et choisissez un fichier";
-    elseif (!(move_uploaded_file($_FILES['import_lec']['tmp_name'], "./temp/".basename($_FILES['import_lec']['tmp_name'])))) {
+	} elseif (!(move_uploaded_file($_FILES['import_lec']['tmp_name'], "./temp/".basename($_FILES['import_lec']['tmp_name'])))) {
         print "Le fichier n'a pas pu être téléchargé. Voici plus d'informations :<br />";
         print_r($_FILES)."<p>";
     }
@@ -256,7 +239,7 @@ function import_empr(){
         while (($verif = pmb_mysql_fetch_array($select))) {
         	$requete="update empr set empr_modif=DATE_SUB(empr_modif, INTERVAL 1 DAY) where id_empr='".addslashes($verif["id_empr"])."' ";
         	if(!pmb_mysql_query($requete)){
-				echo "Erreur : requete echoué : ".$requete."<br />";
+				echo "Erreur requete : ".$requete."<br />";
 			}
         }
     	
@@ -293,11 +276,11 @@ function import_empr(){
             }
             
             if(count($empr) == 1 or $empr[0] == "MATRICULE"){
-            	//Passe ici pour l'entête et les ligne vide (la dernière)
+            	//Passe ici pour l'entête et les lignes vides (la dernière)
             }elseif(count($empr) != 14){
             	$lect_tot++;
             	$lect_erreur++;
-            	print("<b>Erreur : Personne non prise en compte car le nombre de champ n'est pas valide : </b><br />");
+            	print("<b>Erreur : Personne non prise en compte car le nombre de champs n'est pas valide : </b><br />");
             	echo "<pre>";
           	 	print_r($empr);
             	echo "</pre>";
@@ -309,13 +292,13 @@ function import_empr(){
           	 	print_r($empr);
             	echo "</pre>";
             }else{
-            	//Tout les lecteurs à traiter
+            	//Tous les lecteurs à traiter
             	$lect_tot++;
             	import_lect_par_lect($empr);
             }	
     	}
     	
-    	 //On supprime tout les lecteurs qui ne sont pas dans le fichier et qui n'ont pas de prets en cours
+    	 //On supprime tous les lecteurs qui ne sont pas dans le fichier et qui n'ont pas de prets en cours
         $req_select_verif_pret = "SELECT distinct id_empr, pret_idempr FROM empr left join pret on id_empr=pret_idempr WHERE empr_modif != '".addslashes(date('Y-m-j'))."' ";
         $select_verif_pret = pmb_mysql_query($req_select_verif_pret);
         while (($verif_pret = pmb_mysql_fetch_array($select_verif_pret))) {
@@ -337,11 +320,11 @@ function import_empr(){
     	print("<br />_____________________<br />");
     	if($lect_erreur)echo "<b> Attention ".$lect_erreur." lecteur(s) n'a(ont) pas été traité(s) : voir erreur(s) ci-dessus </b><br />";
         echo "Nombre de lecteurs créés : ".$lect_cree."<br />";
-        echo "Nombre de lecteurs non traité (en double ou déjà traité) : ".$lect_non_traite."<br />";
-        echo "Nombre de lecteurs ou la date d'expiration à été repoussée : ".$lect_modif."<br />";
+        echo "Nombre de lecteurs non traités (en double ou déjà traités) : ".$lect_non_traite."<br />";
+        echo "Nombre de lecteurs pour lesquels la date d'expiration a été repoussée : ".$lect_modif."<br />";
         echo "Nombre total de lecteurs dans le fichier : ".$lect_tot."<br />";
-        echo "Nombre d'anciens lecteurs (non présent dans le fichier) supprimés : ".$lect_supprime."<br />";
-        echo "Nombre d'anciens lecteurs (non présent dans le fichier) avec un statut interdit (non supprimé car ils ont au moins un prêt en cours) : ".$lect_interdit."<br />";
+        echo "Nombre d'anciens lecteurs (non présents dans le fichier) supprimés : ".$lect_supprime."<br />";
+        echo "Nombre d'anciens lecteurs (non présents dans le fichier) avec un statut interdit (non supprimés car ils ont au moins un prêt en cours) : ".$lect_interdit."<br />";
   		
         fclose($fichier);
     }
@@ -362,4 +345,3 @@ switch($action) {
         show_import_choix_fichier();
         break;
 }
-?>

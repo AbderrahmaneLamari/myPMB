@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: print_concepts.php,v 1.3 2019/03/07 11:04:41 ngantier Exp $
+// $Id: print_concepts.php,v 1.4 2022/04/01 08:52:59 dgoron Exp $
 
 $base_path = ".";
 $base_auth = "AUTORITES_AUTH";
@@ -16,8 +16,13 @@ if ($_GET['action'] != "print") {
 	$base_noheader = 1;
 }
 require($base_path . "/includes/init.inc.php");
+
+global $msg, $action, $output, $typeimpression;
+global $scheme_id, $parent_id;
+
 @set_time_limit(0);
 
+$color = array();
 $color[0] = "#d7d8ff"; // violet
 $color[1] = "#fcffc5"; // jaune
 $color[2] = "#c9e9ff"; // bleu
@@ -121,7 +126,7 @@ if ($action == "print") {
 	print "</body></html>";
 }
 
-pmb_mysql_close($dbh);
+pmb_mysql_close();
 
 function enfants($uri, $niveau, $print_arbo = true) {
     global $list_uri, $data_noeud, $data_noeud_to_sort;

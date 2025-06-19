@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interface_entity_record_form.class.php,v 1.6 2021/06/02 13:18:27 dgoron Exp $
+// $Id: interface_entity_record_form.class.php,v 1.6.6.2 2023/05/31 07:56:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,6 +22,11 @@ class interface_entity_record_form extends interface_entity_form {
 	protected $id_bibli = 0;
 	protected $id_sug = 0;
 	protected $id_demande = 0;
+
+	/**
+	 * Permet de savoir si on est en duplication de notice
+	 */
+	protected $is_duplication = 0;
 	
 	protected function get_function_name_check_perso() {
 		return 'check_perso_form';
@@ -221,7 +226,8 @@ class interface_entity_record_form extends interface_entity_form {
 	protected function get_display_hidden_fields() {
 		return "
 		<input type='hidden' name='b_level' value='".$this->biblio_level."' />
-		<input type='hidden' name='h_level' value='".$this->hierar_level."' />";
+		<input type='hidden' name='h_level' value='".$this->hierar_level."' />
+		<input type='hidden' name='is_duplication' value='".$this->is_duplication."' />";
 	}
 	
 	protected function get_display_actions() {
@@ -349,7 +355,7 @@ class interface_entity_record_form extends interface_entity_form {
 		<form data-advanced-form='true' class='form-".$current_module."' id='".$this->name."' name='".$this->name."'  method='post' action=\"".$this->get_submit_action()."\" onSubmit=\"return false\" ".(!empty($this->enctype) ? "enctype='".$this->enctype."'" : "").">
 			<div class='row'>
 				<div class='left'>
-					<h3>".$this->get_display_label()."</h3>
+					".$this->get_display_label()."
 				</div>
 				<div class='right'>
 					".$this->get_editables_buttons()."
@@ -425,6 +431,11 @@ class interface_entity_record_form extends interface_entity_form {
 	
 	public function set_id_demande($id_demande) {
 		$this->id_demande = $id_demande;
+		return $this;
+	}
+
+	public function set_is_duplication($is_duplication) {
+		$this->is_duplication = $is_duplication;
 		return $this;
 	}
 }

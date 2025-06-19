@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: map_model.class.php,v 1.11.8.1 2021/12/24 08:40:09 dgoron Exp $
+// $Id: map_model.class.php,v 1.12 2021/12/24 08:34:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 global $class_path;

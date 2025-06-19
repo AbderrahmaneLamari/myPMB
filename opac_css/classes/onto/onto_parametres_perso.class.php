@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_parametres_perso.class.php,v 1.15.2.3 2021/08/25 09:22:35 qvarin Exp $
+// $Id: onto_parametres_perso.class.php,v 1.20 2023/02/22 10:10:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -236,23 +236,23 @@ class onto_parametres_perso extends parametres_perso {
 		$list_items = array();
 		
 		switch ($options['FOR']) {
-			case 'list':
-				$query = "SELECT ". $this->prefix . "_custom_list_value as id, ". $this->prefix . "_custom_list_lib as libelle  FROM " . $this->prefix ."_custom_lists WHERE " . $this->prefix . "_custom_champ = " . $id . " ORDER BY ordre";
-
-				$result = pmb_mysql_query($query);
-				if (pmb_mysql_num_rows($result)) {
-					while ($row = pmb_mysql_fetch_object($result)) {
-						$this->optional_properties.= "
-                            <pmb:list_item rdf:nodeID='list_item_".$this->uri_description."_".htmlspecialchars(encoding_normalize::utf8_normalize($row->id), ENT_QUOTES, 'utf-8')."'/>";
-                        $this->blank_nodes.= "
-                            <rdf:Description rdf:nodeID='list_item_".$this->uri_description."_".htmlspecialchars(encoding_normalize::utf8_normalize($row->id), ENT_QUOTES, 'utf-8')."'>
-                                <rdfs:label xml:lang='fr'>".htmlspecialchars(encoding_normalize::utf8_normalize($row->libelle), ENT_QUOTES, 'utf-8')."</rdfs:label>
-                                <pmb:identifier>".htmlspecialchars(encoding_normalize::utf8_normalize($row->id), ENT_QUOTES, 'utf-8')."</pmb:identifier>
+		    case 'list':
+		        $query = "SELECT ". $this->prefix . "_custom_list_value as id, ". $this->prefix . "_custom_list_lib as libelle, ordre FROM " . $this->prefix ."_custom_lists WHERE " . $this->prefix . "_custom_champ = " . $id . " ORDER BY ordre";
+		        $result = pmb_mysql_query($query);
+		        if (pmb_mysql_num_rows($result)) {
+		            while ($row = pmb_mysql_fetch_object($result)) {
+		                $this->optional_properties.= "
+        					<pmb:list_item rdf:nodeID='list_item_".$this->uri_description."_".htmlspecialchars(encoding_normalize::utf8_normalize($row->id), ENT_QUOTES, 'utf-8')."'/>";
+		                $this->blank_nodes.= "
+							<rdf:Description rdf:nodeID='list_item_".$this->uri_description."_".htmlspecialchars(encoding_normalize::utf8_normalize($row->id), ENT_QUOTES, 'utf-8')."'>
+								<rdfs:label xml:lang='fr'>".htmlspecialchars(encoding_normalize::utf8_normalize($row->libelle), ENT_QUOTES, 'utf-8')."</rdfs:label>
+								<pmb:identifier>".htmlspecialchars(encoding_normalize::utf8_normalize($row->id), ENT_QUOTES, 'utf-8')."</pmb:identifier>
                                 <pmb:msg_code></pmb:msg_code>
-                            </rdf:Description>";
-					}
-				}
-				break;
+                                <pmb:order>".htmlspecialchars(encoding_normalize::utf8_normalize(isset($row->ordre) ? $row->ordre : 0), ENT_QUOTES, 'utf-8')."</pmb:order>
+							</rdf:Description>";
+		            }
+		        }
+		        break;
 			case 'query_list':
 				$this->optional_properties.= "
                     <pmb:list_query>".htmlspecialchars($options['QUERY'][0]['value'], ENT_QUOTES, 'utf-8')."</pmb:list_query>";
@@ -461,6 +461,7 @@ class onto_parametres_perso extends parametres_perso {
 	}
 		
 	public function get_authority_type_from_query_auth ($choice) {
+		$choice = intval($choice);
 	    switch ($choice){
 	        case 1:
 	            return 'author';

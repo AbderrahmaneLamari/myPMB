@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authorities_cart.tpl.php,v 1.4.8.1 2021/06/14 12:46:52 dgoron Exp $
+// $Id: authorities_cart.tpl.php,v 1.5 2021/06/14 12:43:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 

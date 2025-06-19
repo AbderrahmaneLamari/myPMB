@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.8 2017/07/12 15:15:02 tsamson Exp $
+// $Id: search.class.php,v 1.9 2022/06/08 10:35:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $msg,$lang,$charset,$base_path,$class_path,$include_path;
+global $class_path;
 
 require_once($class_path.'/connecteurs.class.php');
 //Classe de gestion de la recherche spécial "combine"
@@ -35,9 +35,6 @@ class remote_serials_list{
     
     //fonction de récupération de l'affichage de la saisie du critère
     public function get_input_box() {
-    	global $msg;
-    	global $charset;
-    	global $get_input_box_id;
     	global $base_path;
 
     	//$this->s = new search(false,"search_simple_fields.xml");
@@ -47,7 +44,7 @@ class remote_serials_list{
     	global ${$valeur_};
     	$valeur=${$valeur_};
 
-    	$r.="
+    	$r ="
    			<script type='text/javascript'>
    				if(typeof(seriallist_fields)=='undefined'){
    					var seriallist_fields = new Array();
@@ -191,10 +188,8 @@ class remote_serials_list{
     public function get_ajax_params(){
     	global $selected_sources;
     	global $field_form;
-    	global $charset;
     	global $serial;
     	global $onchange;
-    	global $msg;
 		global $base_path;
 		
     	$response = array();

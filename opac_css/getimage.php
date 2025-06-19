@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: getimage.php,v 1.43.2.2 2022/01/18 07:41:57 dgoron Exp $
+// $Id: getimage.php,v 1.49 2023/02/20 13:33:14 dgoron Exp $
 
 global $opac_opac_view_activate, $current_opac_view, $opac_view, $pmb_opac_view_class, $opac_view_filter_class, $opac_default_style;
 global $css, $class_path, $notice_id, $etagere_id, $authority_id, $entity_id, $opac_curl_available, $pmb_notice_img_pics_max_size;
@@ -90,30 +90,15 @@ session_write_close();
 
 $poids_fichier_max=1024*1024;//Limite la taille de l'image à 1 Mo
 
-if(!isset($notice_id)){
-	$notice_id = 0;
-}
-
-if(!isset($etagere_id)){
-	$etagere_id = 0;
-}
-
-if(!isset($authority_id)){
-	$authority_id = 0;
-}
-
-if(!isset($entity_id)){
-	$entity_id = 0;
-}
-
-if(!isset($docnum_id)){
-    $docnum_id = 0;
-}
+$notice_id = intval($notice_id);
+$etagere_id = intval($etagere_id);
+$authority_id = intval($authority_id);
+$entity_id = intval($entity_id);
 
 $img_disk="";
 
 if(empty($no_caching)) {
-    $manag_cache=getimage_cache($notice_id, $etagere_id, $authority_id, $vigurl, $noticecode, $url_image, $docnum_id);
+	$manag_cache=getimage_cache($notice_id, $etagere_id, $authority_id, $vigurl, $noticecode, $url_image);
 	if (!empty($manag_cache['location'])) {
 		$img_disk=$manag_cache["location"];
 		if(!empty($manag_cache["hash_location"])){
@@ -159,7 +144,7 @@ $image="";
 if ($opac_curl_available) {
 	$aCurl = new Curl();
 	$aCurl->limit=$poids_fichier_max;//Limite la taille de l'image à 1 Mo
-	$aCurl->timeout=15;
+	$aCurl->timeout=5;
 	$aCurl->options["CURLOPT_SSL_VERIFYPEER"]="0";
 	$aCurl->options["CURLOPT_ENCODING"]="";
 	
@@ -182,12 +167,14 @@ if ($opac_curl_available) {
 			break;
 		}
 	}
-	if (!empty($noticecode) && ($image == '' || file_get_contents($base_path.'/images/white_pixel.gif') == $image)) {
+	if (!empty($noticecode) && ($image == '' || file_get_contents($base_path.'/images/white_pixel.gif') == $image || file_get_contents($base_path.'/images/white_pixel_2x2.png') == $image)) {
 	    $amazon = new amazon();
 	    $data = $amazon->get_images_by_code($noticecode);
 	    if (isset($data['MediumImage'])) {
 	        $content = $aCurl->get($data['MediumImage']);
 	        $image = $content->body;
+	    } else {
+	    	$image = '';
 	    }
 	}
 } else {

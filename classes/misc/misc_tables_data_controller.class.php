@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc_tables_data_controller.class.php,v 1.1.2.2 2021/11/25 14:31:39 dgoron Exp $
+// $Id: misc_tables_data_controller.class.php,v 1.1 2021/11/25 14:30:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

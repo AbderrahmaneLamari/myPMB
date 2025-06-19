@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cashdesk_list.class.php,v 1.17 2021/01/15 10:14:05 dgoron Exp $
+// $Id: cashdesk_list.class.php,v 1.17.6.1 2023/10/24 10:10:51 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -59,7 +59,8 @@ class cashdesk_list {
 		foreach ($this->cashdesk_list as $index =>$cashdesk){		
 			if(count($cashdesk_filter) ){
 				if(! in_array($cashdesk['id'], $cashdesk_filter)) continue;					
-			}			
+			}
+			$cashdesk['id'] = intval($cashdesk['id']);
 			$cashdesk_info=new cashdesk($cashdesk['id']);
 			$all_transactions=$cashdesk_info->summarize($start_date, $stop_date, 0, 0);			
 			foreach($all_transactions as $transactions){
@@ -67,7 +68,7 @@ class cashdesk_list {
 				$form.= "
 				<tr class='$pair_impair' onmouseout=\"this.className='$pair_impair'\" onmouseover=\"this.className='surbrillance'\" style='cursor: pointer'>
 					<td onmousedown=\"document.location='./admin.php?categ=finance&sub=cashdesk&action=edit&id=".$cashdesk['id']."'\" >".htmlentities($cashdesk['name'],ENT_QUOTES, $charset)."</td>
-					<td onmousedown=\"document.location='./admin.php?categ=finance&sub=transactype&action=edit&id=".$transactions['id']."'\" >".htmlentities($transactions['name'],ENT_QUOTES, $charset)."</td>
+					<td onmousedown=\"document.location='./admin.php?categ=finance&sub=transactype&action=edit&id=".intval($transactions['id'])."'\" >".htmlentities($transactions['name'],ENT_QUOTES, $charset)."</td>
 					<td>".htmlentities($this->format_price($transactions['unit_price']),ENT_QUOTES, $charset)."</td>
 					<td>".htmlentities($this->format_price($transactions['montant']),ENT_QUOTES, $charset)."</td>
 					<td>".htmlentities($this->format_price($transactions['realisee_no']),ENT_QUOTES, $charset)."</td>			

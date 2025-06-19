@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: etagere_caddies.class.php,v 1.2.2.1 2021/12/16 09:49:54 dgoron Exp $
+// $Id: etagere_caddies.class.php,v 1.4 2022/12/14 08:17:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -80,7 +80,7 @@ class etagere_caddies {
 				<a href='javascript:collapseAll()'><img src='".get_url_icon('collapse_all.gif')."' id='collapseall' style='border:0px'></a></div>");
 			foreach ($liste as $valeur) {
 				$rqt_autorisation=explode(" ",$valeur['autorisations']);
-				if (array_search ($PMBuserid, $rqt_autorisation)!==FALSE || $PMBuserid==1) {
+				if (array_search ($PMBuserid, $rqt_autorisation)!==FALSE || $valeur['autorisations_all'] || $PMBuserid==1) {
 					if(!is_object($myCart))$myCart = new caddie(0);
 					$myCart->type=$valeur['type'];
 					$print_cart[$myCart->type]["titre"]="<b>".$msg["caddie_de_".$myCart->type]."</b><br />";

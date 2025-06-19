@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: RegistrationController.php,v 1.10 2021/03/26 14:22:14 qvarin Exp $
+// $Id: RegistrationController.php,v 1.11 2023/02/20 14:07:00 qvarin Exp $
 namespace Pmb\Animations\Opac\Controller;
 
 use Pmb\Common\Opac\Controller\Controller;
@@ -120,43 +120,43 @@ class RegistrationController extends Controller
         print $view->render();
     }
 
-    public function deleteRegistrationAction(int $id_registration, string $hash, int $id_person = 0)
+    public function deleteRegistrationAction(int $idRegistration, string $hash, int $idPerson = 0)
     {
         try {
-            $registrationModel = new RegistrationModel($id_registration);
+            $registrationModel = new RegistrationModel($idRegistration);
         } catch (\Exception $e) {
             // On n'as réussi à récupérer l'inscription
             return $this->notAllowedAction();
         }
-        
+
         $param = $registrationModel->idRegistration.$registrationModel->date.$registrationModel->numAnimation;
-        
+
         $hashModel = new HashModel();
-        
+
         // Le hash est valide et correspond bien à l'inscription
         if (false === $hashModel->verifeHash($hash, $param) && $registrationModel->hash !== $hash) {
             return $this->notAllowedAction();
         }
-        
+
         try {
-            $registredPersonModel = new RegistredPersonModel($id_person);
+            $registredPersonModel = new RegistredPersonModel($idPerson);
         } catch (\Exception $e) {
             // On n'as réussi à récupérer la personne inscrite
             return $this->notAllowedAction();
         }
-        
-        $is_contact = false;
+
+        $isContact = false;
         // La personne de contact n'est pas forcement inscripte pour l'animation
-        if (empty($id_person) || ($registrationModel->numEmpr === $registredPersonModel->numEmpr)) {
+        if (empty($idPerson) || ($registrationModel->numEmpr === $registredPersonModel->numEmpr)) {
             // si c'est la personne de contact qui ce désinscrit on supprime tout
-            $is_contact = true;
+            $isContact = true;
         }
-        
+
         if (empty($registrationModel->idRegistration)) {
             return $this->notAllowedAction();
         }
-        
-        $registrationModel->delete($is_contact, $id_person);
+
+        $registrationModel->delete($isContact, $idPerson);
         $view = new AnimationsView('animations/registration', [
             'action' => 'delete',
             "formData" => array(
@@ -172,5 +172,6 @@ class RegistrationController extends Controller
 
         print $msg['not_allowed'];
         print "<script>window.location='./index.php'</script>";
+        return false;
     }
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: CategoryModel.php,v 1.3 2020/09/28 15:20:41 moble Exp $
+// $Id: CategoryModel.php,v 1.3.6.2 2023/03/14 15:22:11 gneveu Exp $
 
 namespace Pmb\Autorities\Models;
 
@@ -28,7 +28,7 @@ class CategoryModel extends Model
         pmb_mysql_query($rqtDel);
         $rqtIns = "INSERT INTO anim_animation_categories (num_animation, num_noeud, ordre_categorie) VALUES";
         foreach ($categories as $categ) {
-            if (! empty($categ->id)) {
+            if (!empty($categ->id)) {
                 $rqt = "$rqtIns ('$animationId', '$categ->id', '$ordre')";
                 pmb_mysql_query($rqt);
                 $ordre++;

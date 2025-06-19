@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_authorities.class.php,v 1.35.2.2 2022/01/04 09:32:38 dgoron Exp $
+// $Id: search_authorities.class.php,v 1.38 2023/02/06 14:35:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -236,6 +236,10 @@ class search_authorities extends search {
 		$entity_type = "mixed";
 		if (count($apply_sort_entities) == 1) {
 		    $entity_type = $apply_sort_entities[0];
+		    // on est sur une recherche d'autorités mixtes
+		    if($entity_type == 'authorities') {
+		    	$entity_type = "mixed";
+		    }
 		}
 		$this->sort_entity_type = $entity_type;
 		

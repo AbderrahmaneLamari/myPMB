@@ -2,7 +2,7 @@
  // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: options_resolve.php,v 1.10.8.1 2021/07/02 08:59:14 dgoron Exp $
+// $Id: options_resolve.php,v 1.11 2021/07/02 08:55:22 dgoron Exp $
 
 //Gestion des options de type resolve
 $base_path = "../..";

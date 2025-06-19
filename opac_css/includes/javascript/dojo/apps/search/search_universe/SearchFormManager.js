@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SearchFormManager.js,v 1.1.2.7 2021/12/15 11:26:15 gneveu Exp $
+// $Id: SearchFormManager.js,v 1.8 2021/12/15 11:26:48 gneveu Exp $
 
 define(['dojo/_base/declare',
         'dojo/_base/lang',
@@ -22,7 +22,7 @@ define(['dojo/_base/declare',
 		},
 		
 		manageForm: function() {
-           window.addEventListener('DOMContentLoaded', lang.hitch(this, function() {
+            window.addEventListener('DOMContentLoaded', lang.hitch(this, function() {
 				var form = query('form[name="search_form"]')[0];
 				if(form){
 			    	domAttr.remove(form, "onSubmit");

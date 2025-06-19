@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms.php,v 1.17 2021/02/13 16:18:59 dgoron Exp $
+// $Id: cms.php,v 1.19 2022/07/28 12:35:46 jparis Exp $
 
 
 // définition du minimum nécessaire 
@@ -13,12 +13,6 @@ $base_title = "\$msg[cms_onglet_title]";
 $base_use_dojo=1; 
 
 require_once ("$base_path/includes/init.inc.php");
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-if($cms_active && (SESSrights & CMS_BUILD_AUTH)) {
-	$autoloader->add_register("cms_modules",true);
-}
-$autoloader->add_register("frbr_entities",true);
 require_once($class_path."/modules/module_cms.class.php");
 require_once($include_path."/templates/cms.tpl.php");
 
@@ -74,6 +68,8 @@ require_once("./cms/cms.inc.php");
 
 // pied de page
 print $footer;
+
+html_builder();
 
 // deconnection MYSql
 pmb_mysql_close($dbh);

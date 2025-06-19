@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: noeuds.class.php,v 1.67.2.3 2021/11/05 16:13:15 jparis Exp $
+// $Id: noeuds.class.php,v 1.73.2.1 2023/04/06 15:23:49 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Ark\Entities\ArkEntityPmb;
 
 global $class_path, $include_path;
 require_once($class_path."/thesaurus.class.php");
@@ -36,7 +38,7 @@ class noeuds{
 	 
 	//Constructeur.	 
 	public function __construct($id=0) {
-		$this->id_noeud = $id+0;
+		$this->id_noeud = intval($id);
 		if ($this->id_noeud) {
 			$this->load();	
 		}
@@ -113,7 +115,7 @@ class noeuds{
 	}
 	
 	public static function process_categ_path($id_noeud=0, $path='') {
-		$id_noeud += 0;
+		$id_noeud = intval($id_noeud);
 		if(!$id_noeud) return;
 		
 		if($path) $path.='/';
@@ -173,7 +175,7 @@ class noeuds{
 
 	//supprime un noeud et toutes ses références
 	public static function delete($id_noeud=0, $indexation_active = true) {
-		$id_noeud += 0;
+		$id_noeud = intval($id_noeud);
 		if($id_noeud) {	
 			// Supprime les categories.
 			$q = "delete from categories where num_noeud = '".$id_noeud."' ";
@@ -329,7 +331,7 @@ class noeuds{
 	
 	//recherche si un noeud a des fils
 	public static function hasChild($id_noeud=0) {
-		$id_noeud += 0;
+		$id_noeud = intval($id_noeud);
 		if($id_noeud){
 			$q = "select count(1) from noeuds where num_parent = '".$id_noeud."' ";
 			$r = pmb_mysql_query($q);
@@ -341,7 +343,7 @@ class noeuds{
 		
 	//recherche si un noeud est le renvoi voir d'un autre noeud.
 	public static function isTarget($id_noeud=0) {
-		$id_noeud += 0;
+		$id_noeud = intval($id_noeud);
 		if($id_noeud){
 			$q = "select count(1) from noeuds where num_renvoi_voir = '".$id_noeud."' ";
 			$r = pmb_mysql_query($q);
@@ -353,7 +355,7 @@ class noeuds{
 
 	//Indique si un noeud est protégé (TOP, ORPHELINS et NONCLASSES).
 	public static function isProtected($id_noeud=0) {
-		$id_noeud += 0; 
+		$id_noeud = intval($id_noeud);
 		$q = "select autorite from noeuds where id_noeud = '".$id_noeud."' ";
 		$r = pmb_mysql_query($q);
 		$a = pmb_mysql_result($r, 0, 0);
@@ -374,7 +376,7 @@ class noeuds{
 
 	//Liste les ancetres d'un noeud et les retourne sous forme d'un tableau 
 	public static function listAncestors($id_noeud=0) {
-		$id_noeud += 0;
+		$id_noeud = intval($id_noeud);
 		$q = "select path from noeuds where id_noeud = '".$id_noeud."' ";
 		$r = pmb_mysql_query($q);
 		if($r && pmb_mysql_num_rows($r)){
@@ -385,19 +387,22 @@ class noeuds{
 			krsort($id_list);
 			return $id_list;		
 		}
+		
+		//si le chemin est vide, on le construit 
 		$thes = thesaurus::getByEltId($id_noeud);
 
 		$id_top = !empty($thes) ? $thes->num_noeud_racine : null;
 
-		$i = 0;		
-		$id_list[$i] = $id_noeud;
+		$id_list[] = $id_noeud;
+		$current_id = $id_noeud;
 		while (true) {
-			$q = "select num_parent from noeuds where id_noeud = '".$id_list[$i]."' limit 1";
+			$q = "select num_parent from noeuds where id_noeud = $current_id limit 1";
 			$r = pmb_mysql_query($q);
-			$id_cur = pmb_mysql_result($r, 0, 0);
-			if (!$id_cur || $id_cur == $id_top) break;
-			$i++;
-			$id_list[$i] = pmb_mysql_result($r, 0, 0);
+			$current_id = pmb_mysql_result($r, 0, 0);
+			if ( !$current_id || $current_id == $id_top || in_array($current_id, $id_list) ) {
+			   break;
+			}
+			$id_list[] = $current_id;
 		}
 		return $id_list;		
 	}
@@ -405,7 +410,7 @@ class noeuds{
 	
 	//Liste les enfants d'un noeud sous forme de resultset (si $renvoi=0, ne retourne pas les noeuds renvoyés)
 	public static function listChilds($id_noeud=0, $renvoi=0) {
-		$id_noeud += 0; 	
+		$id_noeud = intval($id_noeud);
 		$q = "select id_noeud from noeuds where num_parent = '".$id_noeud."' ";
 		$q.= "and autorite not in ('ORPHELINS', 'NONCLASSES') ";
 		if (!$renvoi) $q.= "and num_renvoi_voir = '0' ";
@@ -415,7 +420,7 @@ class noeuds{
 
 	//Liste les noeuds qui ont un renvoi voir d'un autre noeud sous forme de resultset
 	public static function listTargets($id_noeud=0) {
-		$id_noeud += 0; 	
+		$id_noeud = intval($id_noeud);
 		$q = "select id_noeud from noeuds where num_renvoi_voir = '".$id_noeud."' ";
 		$q.= "and autorite not in ('ORPHELINS', 'NONCLASSES') ";
 		$r = pmb_mysql_query($q);
@@ -425,7 +430,7 @@ class noeuds{
 	//Liste les noeuds termes orphelins qui ont un renvoi voir d'un autre noeud sous forme de tableau
 	public static function listTargetsOrphansOnly($id_noeud=0) {
 		$id_list = array();
-		$id_noeud += 0;
+		$id_noeud = intval($id_noeud);
 		
 		$thes = thesaurus::getByEltId($id_noeud);
 		
@@ -448,7 +453,7 @@ class noeuds{
 	//Liste les noeuds sauf termes orphelins qui ont un renvoi voir d'un autre noeud sous forme de tableau
 	public static function listTargetsExceptOrphans($id_noeud=0) {
 		$id_list = array();
-		$id_noeud += 0;
+		$id_noeud = intval($id_noeud);
 	
 		$thes = thesaurus::getByEltId($id_noeud);
 	
@@ -553,6 +558,7 @@ class noeuds{
 		global $msg;
 		global $pmb_synchro_rdf;
 		global $faq_active;
+		global $pmb_ark_activate;
 		
 		if (($this->id_noeud == $by) || (!$this->id_noeud) || (!$by))  {
 			return $msg["categ_imposible_remplace_elle_meme"];
@@ -682,7 +688,6 @@ class noeuds{
 		        $sections_to_index[] = intval($row->num_section);
 		    }
 		}
-		
 		$q = "UPDATE ignore cms_sections_descriptors SET num_noeud='".$by."' where num_noeud = '".$this->id_noeud."' ";
 		pmb_mysql_query($q);
 		
@@ -732,7 +737,8 @@ class noeuds{
 		    // Autorités liés (Auteurs, editeur...)
 		    $index = count($authorities_to_index);
 		    for ($i = 0; $i < $index; $i++) {
-		        $aut_link->maj_index($authorities_to_index[$i]["num"], $authorities_to_index[$i]["type"]);
+		        $entity_type = authority::aut_const_to_type_const($authorities_to_index[$i]["type"]);
+		        indexation_stack::push($authorities_to_index[$i]["num"], $entity_type, "aut_link");
 		    }
 		    
 		    // Contenu éditorial Article
@@ -796,7 +802,15 @@ class noeuds{
 				}
 			}
 		}
-		
+		if ($pmb_ark_activate) {
+		    $idReplaced = authority::get_authority_id_from_entity($this->id_noeud, AUT_TABLE_CATEGORIES);
+		    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_CATEGORIES);
+		    if ($idReplaced && $idReplacing) {
+		        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+		        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+		        $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		    }
+		}
 		return "";
 	}
 	

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: curl.class.php,v 1.16.2.2 2021/11/26 13:04:35 dgoron Exp $
+// $Id: curl.class.php,v 1.21 2022/06/14 13:08:30 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $include_path;
 require_once($include_path.'/misc.inc.php');
 
 /* Curl, CurlResponse
@@ -201,6 +202,23 @@ class Curl {
 		
 		if ($response) {
 			$response = new CurlResponse($response);
+			$response_status = substr($response->headers['Status-Code'], 0, 1);
+			if(empty($response->body)) {
+				if (preg_last_error() == PREG_BACKTRACK_LIMIT_ERROR) {
+					$uniqid = cURL_log::prepare_error('curl_error');
+					$uniqid = cURL_log::set_url_from($uniqid, $url);
+					cURL_log::register($uniqid, 'PCRE Backtrack limit was exhausted!');
+				}
+			} elseif ($response_status != '2' && $response_status != '3') {
+				$uniqid = cURL_log::prepare_error('curl_error');
+				$uniqid = cURL_log::set_url_from($uniqid, $url);
+				if($response->headers['Status-Code']){
+					$message = $this->reponsecurl[$response->headers['Status-Code']];
+				}else{
+					$message = 'Unknown code';
+				}
+				cURL_log::register($uniqid, $message);
+			}
 		} else {
 			$this->error = curl_errno($this->handle).' - '.curl_error($this->handle);
 			$uniqid = cURL_log::prepare_error('curl_error');

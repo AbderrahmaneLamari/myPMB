@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: catalog.xml,v 1.22 2020/04/22 08:49:34 dgoron Exp $ -->
+$Id: catalog.xml,v 1.23.2.1 2023/03/15 09:31:54 dbellamy Exp $ -->
 
 <catalog>
 	<item name="pmbesSearch" id="1"/>

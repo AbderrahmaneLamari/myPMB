@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: avis_notice.inc.php,v 1.22 2019/08/01 13:16:35 btafforeau Exp $
+// $Id: avis_notice.inc.php,v 1.22.8.1 2023/09/04 14:27:41 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -70,13 +70,13 @@ function avis_notice($id, $avis_quoifaire, $valid_id_avis) {
 	$nb_avis = 0;
 	$nb_avis = pmb_mysql_num_rows($r);
 	$aff = "
-		<script type='text/javascript' src='javascript/tablist.js'></script>
-		<script type=\"text/javascript\" src='./javascript/dyn_form.js'></script>
-		<script type=\"text/javascript\" src='./javascript/http_request.js'></script>
-		<script type='text/javascript' src='./javascript/bbcode.js'></script>
-		<script type='text/javascript' src='./javascript/avis_drop.js'></script>
-
 		<script type='text/javascript'>
+            pmb_include('./javascript/tablist.js');
+            pmb_include('./javascript/dyn_form.js');
+            pmb_include('./javascript/http_request.js');
+            pmb_include('./javascript/bbcode.js');
+            pmb_include('./javascript/avis_drop.js');
+            
 			function setCheckboxes(the_form, the_objet, do_check) {
 				var elts = document.forms[the_form].elements[the_objet+'[]'] ;
 				var elts_cnt  = (typeof(elts.length) != 'undefined')
@@ -91,7 +91,6 @@ function avis_notice($id, $avis_quoifaire, $valid_id_avis) {
 						} // end if... else
 				return true;
 			}
-
 		</script>
 
 		<form class='form-catalog' method='post' id='validation_avis_$id' name='validation_avis_$id' >";

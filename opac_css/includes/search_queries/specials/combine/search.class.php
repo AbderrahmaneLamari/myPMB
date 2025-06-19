@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.48.2.2 2021/11/19 10:09:59 jparis Exp $
+// $Id: search.class.php,v 1.52.2.2 2023/04/20 08:49:27 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $include_path;
 require_once($include_path."/rec_history.inc.php");
 
 //Classe de gestion de la recherche spécial "combine"
@@ -18,7 +19,7 @@ class combine_search {
     public const IS_RESPONSIVE = true;
 
 	//Constructeur
-	public function __construct($id,$n_ligne,$params,&$search) {
+    public function __construct($id,$n_ligne,$params,&$search) {
 		$this->id=$id;
 		$this->n_ligne=$n_ligne;
 		$this->params=$params;
@@ -214,7 +215,6 @@ class combine_search {
 	 * @return array
 	 */
 	public function make_human_query() {
-		global $msg;
 		global $include_path;
 
 		$litteral=array();
@@ -792,6 +792,35 @@ class combine_search {
 		);
 	}
 	
+	public static function etagere2mc($id) {
+		global $search;
+		
+		$id = intval($id);
+		if(empty($search)) {
+			$search=array();
+		}
+		$search[0]="f_14";
+		
+		//opérateur
+		$op="op_0_".$search[0];
+		global ${$op};
+		${$op}="EQ";
+		
+		//contenu de la recherche
+		$field="field_0_".$search[0];
+		$field_=array();
+		$field_[0]=$id;
+		global ${$field};
+		${$field}=$field_;
+		
+		$es=new search('search_simple_fields');
+		return array(
+				'serialized_search' => $es->serialize_search(),
+				'search_type' => 'search_simple_fields',
+				'search_instance' => $es
+		);
+	}
+			
 	public static function simple_search_to_mc($user_query = '', $to_json = false, $type = TYPE_NOTICE, &$search_instance = null) {
 	    global $opac_indexation_docnum_allfields;
 	    global $opac_search_other_function;
@@ -805,6 +834,20 @@ class combine_search {
     	        //$xml_file="search_simple_fields";
     	        $xml_file="search_fields";
     	        $search_instance = new search($xml_file);
+    	    } else if($type == TYPE_ANIMATION) {
+    	        $xml_file="search_fields_animations";
+    	        $search_instance = new search($xml_file);
+    	    } else if($type == TYPE_CMS_ARTICLE) {
+    	        $xml_file="search_fields_cms_article";
+    	        $search_instance = new search($xml_file);
+    	    } else if($type == TYPE_CMS_SECTION) {
+    	        $xml_file="search_fields_cms_section";
+    	        $search_instance = new search($xml_file);
+    	    } else if($type > 10000) {
+    	        $xml_file="search_fields_ontology";
+    	        $class_id = ((int) $type - 10000);
+    	        $ontology = new ontology(ontologies::get_ontology_id_from_class_uri(onto_common_uri::get_uri($class_id)));
+    	        $search_instance = new search_ontology($xml_file,$ontology->get_handler()->get_ontology());
     	    } else {
     	        $xml_file="search_fields_authorities";
     	        $search_instance = new search_authorities($xml_file);
@@ -851,12 +894,37 @@ class combine_search {
 			    $search[$n]="f_42";
 			    break;
 			case TYPE_AUTHPERSO:
-			default :
 			    if ((int) $type > 1000) {
 			        $id_authperso = ((int) $type - 1000);
 			        $search[$n] = "authperso_$id_authperso";
 			    }
 				break;
+			case TYPE_ANIMATION:
+			    $search[$n]="f_1";
+				break;
+			case TYPE_CMS_ARTICLE:
+			    $search[$n]="f_1";
+				break;
+			case TYPE_CMS_SECTION:
+			    $search[$n]="f_1";
+				break;
+			default :
+			    // DONT PUSH
+			    if((int) $type > 10000){
+			        $class_id = ((int) $type - 10000);
+			        $ontology = new ontology(ontologies::get_ontology_id_from_class_uri(onto_common_uri::get_uri($class_id)));
+			        $onto_ontology =$ontology->get_handler()->get_ontology();
+			        foreach ($onto_ontology->get_classes() as $c) {
+			            $uri  = onto_common_uri::get_uri($class_id);
+			            if($uri == $c->uri) {
+                            $class = $onto_ontology->get_class($c->uri);
+			                $field = $class->field;
+			                break;
+			            }
+			        }
+			        $search[$n] = 'f_'.$field.'s42'; 
+			    }
+			    break;
 		}
         $valeur_champ = $user_query;
         $t["is_num"][$n]= $opac_indexation_docnum_allfields;

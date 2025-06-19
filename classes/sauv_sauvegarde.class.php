@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sauv_sauvegarde.class.php,v 1.11.8.1 2022/01/12 07:57:53 dgoron Exp $
+// $Id: sauv_sauvegarde.class.php,v 1.13 2022/07/27 10:31:44 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -188,9 +188,7 @@ class sauv_sauvegarde {
 
 	//Préaparation du formulaire pour affichage
 	public function showForm() {
-		global $form;
-		global $first;
-		global $msg;
+		global $form, $first, $msg, $charset;
 		
 		//Si première connexion
 		if (!$first) {
@@ -203,7 +201,7 @@ class sauv_sauvegarde {
 				$resultat = pmb_mysql_query($requete);
 				if (pmb_mysql_num_rows($resultat) != 0)
 					$r = pmb_mysql_fetch_object($resultat);
-				$form = str_replace("!!quel_proc!!", $r -> sauv_sauvegarde_nom, $form);
+				$form = str_replace("!!quel_proc!!", htmlentities($r->sauv_sauvegarde_nom, ENT_QUOTES, $charset), $form);
 				$form = str_replace("!!delete!!", "<input type=\"submit\" value=\"".$msg["sauv_supprimer"]."\" onClick=\"if (confirm('".$msg["sauv_sauvegardes_confirm_delete"]."')) { this.form.act.value='delete'; return true; } else { return false; }\" class=\"bouton\">", $form);
 			} else {
 				//Sinon : Nouvelle fiche
@@ -222,8 +220,8 @@ class sauv_sauvegarde {
 				$r->sauv_sauvegarde_key2 = '';
 			}
 			$form = str_replace("!!sauv_sauvegarde_id!!", $this -> sauv_sauvegarde_id, $form);
-			$form = str_replace("!!sauv_sauvegarde_nom!!", $r -> sauv_sauvegarde_nom, $form);
-			$form = str_replace("!!sauv_sauvegarde_file_prefix!!", $r->sauv_sauvegarde_file_prefix, $form);
+			$form = str_replace("!!sauv_sauvegarde_nom!!", htmlentities($r->sauv_sauvegarde_nom, ENT_QUOTES, $charset), $form);
+			$form = str_replace("!!sauv_sauvegarde_file_prefix!!", htmlentities($r->sauv_sauvegarde_file_prefix, ENT_QUOTES, $charset), $form);
 			$form = str_replace("!!sauv_sauvegarde_tables!!", $this->showSelectList($r->sauv_sauvegarde_tables,"sauv_tables","sauv_table_id","sauv_table_nom","sauv_sauvegarde_tables"), $form);
 			$form = str_replace("!!sauv_sauvegarde_lieux!!", $this->showSelectList($r->sauv_sauvegarde_lieux,"sauv_lieux","sauv_lieu_id","sauv_lieu_nom","sauv_sauvegarde_lieux"), $form);
 			$form = str_replace("!!sauv_sauvegarde_users!!", $this->showSelectList($r->sauv_sauvegarde_users,"users","userid","username","sauv_sauvegarde_users"), $form);
@@ -276,7 +274,7 @@ class sauv_sauvegarde {
 	//Affichage de la liste des lieux existants dans la base
 	//linkToForm : true = rend la liste interactive avec le formulaire
 	public function showTree($linkToForm = true) {
-		global $msg;
+		global $msg, $charset;
 		
 		$tree = "<form><table class='nobrd'>\n";
 		$tree.= "<th class='brd' ".$msg["sauv_sauvegardes_tree_title"]."</th>\n";
@@ -284,12 +282,14 @@ class sauv_sauvegarde {
 		$requete = "select sauv_sauvegarde_id, sauv_sauvegarde_nom from sauv_sauvegardes order by sauv_sauvegarde_nom";
 		$resultat = pmb_mysql_query($requete) or die(pmb_mysql_error());
 		while ($res = pmb_mysql_fetch_object($resultat)) {
+			$res->sauv_sauvegarde_id = intval($res->sauv_sauvegarde_id);
+			
 			$tree.= "<tr><td class='nobrd'>";
 			$tree.= "<img src=\"images/file.png\" border=0 class='center'>&nbsp;";
 			if ($linkToForm == true) {
-				$tree.= "<a href=\"admin.php?categ=sauvegarde&sub=gestsauv&act=show&sauv_sauvegarde_id=".$res -> sauv_sauvegarde_id."&first=1\">";
+				$tree.= "<a href=\"admin.php?categ=sauvegarde&sub=gestsauv&act=show&sauv_sauvegarde_id=".$res->sauv_sauvegarde_id."&first=1\">";
 			}
-			$tree.= $res -> sauv_sauvegarde_nom;
+			$tree.= htmlentities($res->sauv_sauvegarde_nom, ENT_QUOTES, $charset);
 			if ($linkToForm == true) {
 				$tree.= "</a>";
 			}

@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authperso.tpl.php,v 1.34 2021/05/27 07:00:37 dgoron Exp $
+// $Id: authperso.tpl.php,v 1.35 2022/05/12 12:40:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $authperso_list_tpl, $authperso_list_line_tpl, $authperso_form_tpl, $authperso_content_form, $authperso_form_select, $authperso_replace_content_form, $msg;
+global $authperso_list_tpl, $authperso_list_line_tpl, $authperso_content_form, $authperso_form_select, $authperso_replace_content_form, $msg;
 global $charset, $current_module;
 
 $authperso_list_tpl="	
@@ -34,50 +34,6 @@ $authperso_list_line_tpl="
 	</td> 		
 	
 </tr> 	
-";
-
-$authperso_form_tpl="		
-<script type='text/javascript'>
-	function test_form(form){
-		if((form.name.value.length == 0) )		{
-			alert('".$msg["admin_authperso_name_error"]."');
-			return false;
-		}
-		return true;
-	}
-</script>
-<h1>!!msg_title!!</h1>		
-<form class='form-".$current_module."' id='authperso' name='authperso'  method='post' action=\"admin.php?categ=authorities&sub=authperso\" >
-
-	<input type='hidden' name='auth_action' id='auth_action' />
-	<input type='hidden' name='id_authperso' id='id_authperso' value='!!id_authperso!!'/>
-	<div class='form-contenu'>
-		<div class='row'>
-			<label class='etiquette' for='name'>".$msg['admin_authperso_form_name']."</label>
-		</div>
-		<div class='row'>
-			<input type='text' class='saisie-50em' name='name' id='name' value='!!name!!' data-pmb-deb-rech='1'/>
-		</div>				
-		<div class='row'>
-			<label class='etiquette' for='comment'>".$msg['admin_authperso_form_comment']."</label>
-		</div>
-		<div class='row'>
-			<textarea type='text' name='comment' id='comment' class='saisie-50em' rows='4' cols='50' >!!comment!!</textarea>
-		</div>
-		<div class='row'> 
-		</div>
-	</div>	
-	<div class='row'>	
-		<div class='left'>
-			<input type='button' class='bouton' value='".$msg['admin_authperso_save']."' onclick=\"document.getElementById('auth_action').value='save';if (test_form(this.form)) this.form.submit();\" />
-			<input type='button' class='bouton' value='".$msg['admin_authperso_exit']."'  onclick=\"document.location='./admin.php?categ=authorities&sub=authperso'\"  />
-		</div>
-		<div class='right'>
-			!!delete!!
-		</div>
-	</div>
-<div class='row'></div>
-</form>		
 ";
 	
 $authperso_content_form = "

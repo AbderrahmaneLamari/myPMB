@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes_type.class.php,v 1.1 2021/01/14 08:49:31 dgoron Exp $
+// $Id: demandes_type.class.php,v 1.1.8.1 2023/07/07 07:05:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,7 +54,7 @@ class demandes_type {
 		global $msg,$charset;
 		
 		$form = "
-		<table>
+		<table class='demandes-actions-types'>
 			<tr>
 				<th>".$msg['demandes_action_type']."</th>
 				<th>".$msg['demandes_action_type_allow']."</th>
@@ -74,11 +74,19 @@ class demandes_type {
 		return $form;
 	}
 	
-	public function get_form() {
-		global $demandes_type_content_form, $msg, $charset;
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle);
 		
-		$content_form = $demandes_type_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		$interface_content_form->add_element('actions')
+		->add_html_node($this->get_actions_form());
+		
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
 		$interface_form = new interface_admin_form('simple_list_form');
 		if(!$this->id){
@@ -86,12 +94,9 @@ class demandes_type {
 		}else{
 			$interface_form->set_label($msg['demandes_modif_type']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace("!!actions!!",$this->get_actions_form(), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['demandes_del_type'])
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('demandes_type')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();

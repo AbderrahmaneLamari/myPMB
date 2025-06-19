@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_selfservice_retour_ui.class.php,v 1.1 2021/03/05 07:33:05 dgoron Exp $
+// $Id: list_configuration_selfservice_retour_ui.class.php,v 1.2 2023/02/07 08:19:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -45,6 +45,14 @@ class list_configuration_selfservice_retour_ui extends list_configuration_selfse
 		$message = $this->get_parameter('selfservice', 'resa_loc_todo_msg');
 		$this->add_selfservice('selfservice_resa_loc_todo', $message, $action);
 		
+
+		$values = [
+		    ["value" => "0", "label" => $msg["selfservice_resa_ici_todo_valid_no"]],
+		    ["value" => "1", "label" => $msg["selfservice_resa_ici_todo_valid_yes"]]
+		];
+		$action = $this->get_parameter('selfservice', 'resa_ici_todo_valid', '', $values);
+		$this->add_selfservice('selfservice_resa_ici_todo_valid', false, $action);
+
 		$message = $this->get_parameter('selfservice', 'retour_retard_msg');
 		$this->add_selfservice('selfservice_admin_retour_retard', $message);
 		

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interface_entity_analysis_form.class.php,v 1.2.2.1 2021/11/19 15:05:55 dgoron Exp $
+// $Id: interface_entity_analysis_form.class.php,v 1.3.4.1 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -69,7 +69,7 @@ class interface_entity_analysis_form extends interface_entity_record_form {
 		
 		switch ($current_module) {
 			case 'catalog':
-				return $base_path."/catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=".$this->bulletin_id;
+				return $base_path."/catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=" . intval($this->bulletin_id);
 			default:
 				return parent::get_cancel_action();
 		}

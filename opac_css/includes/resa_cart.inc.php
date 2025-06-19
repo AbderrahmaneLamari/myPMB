@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: resa_cart.inc.php,v 1.15 2020/11/17 10:12:55 dgoron Exp $
+// $Id: resa_cart.inc.php,v 1.16 2022/10/19 13:15:04 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -142,7 +142,7 @@ if($opac_resa && $_SESSION['user_code']) {
     					}
     					if($resa->add($idloc)){
     						$resa_cart_display.= '<td>'.$resa->notice.'</td><td>'.$resa->message.'</td>';
-    						alert_mail_users_pmb($resa->id_notice, $resa->id_bulletin, $_SESSION["id_empr_session"]);
+    						reservation::alert_mail_users_pmb($resa->id_notice, $resa->id_bulletin, $_SESSION["id_empr_session"]);
     						//On retire la notice du panier ?
     						delete_cart_record($notice_id);
     					}else{
@@ -175,7 +175,7 @@ if($opac_resa && $_SESSION['user_code']) {
 				$resa = reservation::get_instance_from_empr_and_notice($id_empr, $notice_id);
 				if($resa->add($_SESSION['empr_location'])){
 					$resa_cart_display.= '<td>'.$resa->notice.'</td><td>'.$resa->message.'</td>';
-					alert_mail_users_pmb($resa->id_notice, $resa->id_bulletin, $_SESSION["id_empr_session"]);
+					reservation::alert_mail_users_pmb($resa->id_notice, $resa->id_bulletin, $_SESSION["id_empr_session"]);
 					//On retire la notice du panier ?
 					delete_cart_record($notice_id);
 				}else{

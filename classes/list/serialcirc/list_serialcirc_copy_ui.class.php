@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_serialcirc_copy_ui.class.php,v 1.1.2.4 2022/01/17 08:26:05 dgoron Exp $
+// $Id: list_serialcirc_copy_ui.class.php,v 1.5 2022/09/30 12:30:39 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -70,11 +70,12 @@ class list_serialcirc_copy_ui extends list_serialcirc_ui {
 	
 	protected function init_no_sortable_columns() {
 		$this->no_sortable_columns = array(
+				'date', 'serial', 'bulletin_numero', 'empr', 'comment', 'state',
 				'actions'
 		);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'classement');
 	}
 	
@@ -119,7 +120,7 @@ class list_serialcirc_copy_ui extends list_serialcirc_ui {
 					$content .= "
 						<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_reproduction_ok_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_copy_accept('copy','".$object->get_id()."'); return false;\"/>&nbsp;
 						<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_reproduction_none_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_copy_none('copy','".$object->get_id()."'); return false;\"/>&nbsp;
-						<div id='circ_actions_copy_".$object->get_id()."' class='erreur'>
+						<div id='circ_actions_copy_".$object->get_id()."' class='erreur'></div>
 					";
 				}
 				break;

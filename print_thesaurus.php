@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: print_thesaurus.php,v 1.31.2.5 2021/12/28 15:05:33 dgoron Exp $
+// $Id: print_thesaurus.php,v 1.39 2022/06/20 14:49:21 dgoron Exp $
 
 $base_path = ".";
 $base_auth = "AUTORITES_AUTH";
@@ -316,9 +316,13 @@ if ($action == "print") {
 						// echo "<br /><br />deb $posdeb - fin: $posfin mot: $mot LIB: ".$data->libelle_categorie ;
 						echo "
 							<tr>
-								<td class='align_right' style='vertical-align:top; text-align:right'>".($posdeb ? affiche_text(pmb_substr($data->libelle_categorie,0,$posdeb)) : '')."</td>
-								<td class='align_left' style='vertical-align:top'><b>".affiche_text(pmb_substr($data->libelle_categorie,$posdeb,($posfin-$posdeb)))."</b>".affiche_text(pmb_substr($data->libelle_categorie,$posfin));
-						echo infos_categorie($data->num_noeud, false, true)."</td></tr>";
+								<td class='align_right' valign='top' style='vertical-align:top; text-align:right'>".($posdeb ? affiche_text(pmb_substr($data->libelle_categorie,0,$posdeb)) : '')."</td>
+								<td class='align_left' valign='bottom' style='vertical-align:bottom'><b>".affiche_text(pmb_substr($data->libelle_categorie,$posdeb,($posfin-$posdeb)))."</b>".affiche_text(pmb_substr($data->libelle_categorie,$posfin))."</td>
+							</tr>
+							<tr>
+								<td class='align_right' valign='top' style='vertical-align:top; text-align:right'></td>
+								<td class='align_left' valign='top' style='vertical-align:top'>".infos_categorie($data->num_noeud, false, true)."</td>
+							</tr>";
 					}
 				}
 				// print_r($mots);
@@ -459,6 +463,10 @@ function infos_categorie($idnoeud, $printcategnoeud=true, $forcer_em=false) {
 					$res.= " (".$msg['thesaurus_printing_broad_term_autorite']." ".affiche_text($ancestors[$noeud_tg]['autorite']).")";
 					$res.= "</span>";
 				}
+			} elseif(!empty($data->autorite)) {
+				$res.= "\n<span style='color:red'>";
+				$res.= " (".$msg['thesaurus_printing_broad_term_autorite']." ".affiche_text($data->autorite).")";
+				$res.= "</span>";
 			}
 		}
 		

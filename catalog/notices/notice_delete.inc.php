@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_delete.inc.php,v 1.43 2021/03/17 13:32:14 dgoron Exp $
+// $Id: notice_delete.inc.php,v 1.45.4.1 2023/04/07 09:24:32 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+use Pmb\Digitalsignature\Models\DocnumCertifier;
 
 global $class_path, $msg, $charset;
 global $gestion_acces_active, $gestion_acces_user_notice, $pmb_confirm_delete_from_caddie, $caddie_confirmation;
@@ -44,10 +46,16 @@ if ($acces_m==0) {
     	    	    
     		$query = "select count(1) as qte from exemplaires where expl_notice=$id";
     		$result = pmb_mysql_query($query);
-    		$expl = pmb_mysql_result($result, 0, 0); 
+    		$expl = pmb_mysql_result($result, 0, 0);
+    		
+    		$hasSignedDocnum = DocnumCertifier::hasSignedDocnumFromNoticeId($id);
+    		
     		if($expl && !$is_numeric) {
     			// il y a des exemplaires : impossible de supprimer cette notice 
     			error_message($msg[416], $msg[420], 1, notice::get_permalink($id));
+    		} elseif($hasSignedDocnum) {
+    			// il y a des documents numerique signés : impossible de supprimer cette notice 
+    			error_message($msg[416], $msg['digital_signature_error_delete_notice'], 1, notice::get_permalink($id));
     		} else {
     			$notice_relations = notice_relations_collection::get_object_instance($id);
     			$notc = $notice_relations->get_nb_childs();
@@ -99,21 +107,32 @@ if ($acces_m==0) {
     								$ret_param= "?categ=serials&sub=view&serial_id=".$first_parent->get_linked_notice();
     							}
     						}
-    						//archivage
-    						if ($pmb_archive_warehouse) {
-    							notice::save_to_agnostic_warehouse(array(0=>$id),$pmb_archive_warehouse);
-    						}
     						
-    						if ($is_numeric) {
-    						    pnb::delete_pnb_record_links($id);
-    						}
-    						notice::del_notice($id);
-    						// affichage du message suppression en cours puis redirect vers page de catalogage
-    						print "<div class=\"row\"><div class='msg-perio'>".$msg['suppression_en_cours']."</div></div>
+    						// On déclenche un événement sur la supression
+    						$evt_handler = events_handler::get_instance();
+    						$event = new event_entity("entity", "has_deletion_rights");
+    						$event->set_entity_id($id);
+    						$event->set_entity_type(TYPE_NOTICE);
+    						$event->set_user_id($PMBuserid);
+    						$evt_handler->send($event);
+    						if($event->get_error_message()){
+    							information_message($msg[416], $event->get_error_message(), 1, notice::get_permalink($id));
+    						} else {
+    							//archivage
+    							if ($pmb_archive_warehouse) {
+    								notice::save_to_agnostic_warehouse(array(0=>$id),$pmb_archive_warehouse);
+    							}
+    							
+    							if ($is_numeric) {
+    								pnb::delete_pnb_record_links($id);
+    							}
+    							notice::del_notice($id);
+    							// affichage du message suppression en cours puis redirect vers page de catalogage
+    							print "<div class=\"row\"><div class='msg-perio'>".$msg['suppression_en_cours']."</div></div>
     							<script type=\"text/javascript\">
     								document.location='./catalog.php".$ret_param."';
     							</script>";
-    						
+    						}
     					}				
     				}
     			}	

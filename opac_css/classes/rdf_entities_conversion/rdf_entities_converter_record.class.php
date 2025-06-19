@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_converter_record.class.php,v 1.2 2021/02/05 16:00:24 gneveu Exp $
+// $Id: rdf_entities_converter_record.class.php,v 1.4 2022/03/10 12:56:56 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -46,7 +46,6 @@ class rdf_entities_converter_record extends rdf_entities_converter {
 		    "notice_is_new" => "http://www.pmbservices.fr/ontology#new_record",
 		    "commentaire_gestion" => "http://www.pmbservices.fr/ontology#comment",
 		    "thumbnail_url" => "http://www.pmbservices.fr/ontology#thumbnail_url",
-		    "thumbnail" => "http://www.pmbservices.fr/ontology#thumbnail",
 		    "statut" => "http://www.pmbservices.fr/ontology#has_record_status"
 		));
 		return $this->map_fields;
@@ -166,6 +165,12 @@ class rdf_entities_converter_record extends rdf_entities_converter {
 						'reference_field_name' => 'explnum_notice',
 						'external_field_name' => 'explnum_id',
 				),
+				'http://www.pmbservices.fr/ontology#has_expl' => array(
+				        'type' => 'expl',
+						'table' => 'exemplaires',
+						'reference_field_name' => 'expl_notice',
+						'external_field_name' => 'expl_id',
+				)
 		));
 	    
 	    //auth perso

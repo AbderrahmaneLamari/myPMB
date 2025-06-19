@@ -6,23 +6,7 @@
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $tpl_form_compare, $charset, $msg, $tpl_display_compare, $facette_search_compare_wrapper, $base_path, $facette_search_compare_header, $facette_search_compare_line, $facette_search_compare_element, $facette_search_compare_hidden_line, $facette_search_compare_hidden_element;
-
-$tpl_form_compare="
-<div class='row'>
-	<label for='notice_tpl'>".htmlentities($msg['notice_tpl_label'],ENT_QUOTES,$charset)."</label>
-</div>
-<div class='row'>
-	!!sel_notice_tpl!!
-</div>
-<br />
-<div class='row'>
-	<label for='notice_nb'>".htmlentities($msg['notice_nb_label'],ENT_QUOTES,$charset)."</label>
-</div>
-<div class='row'>
-	<input type='text' value='!!notice_nb!!' name='notice_nb'/>
-</div>
-";
+global $charset, $msg, $tpl_display_compare, $facette_search_compare_wrapper, $base_path, $facette_search_compare_header, $facette_search_compare_line, $facette_search_compare_element, $facette_search_compare_hidden_line, $facette_search_compare_hidden_element;
 
 $tpl_display_compare="
 	<div class='row'>

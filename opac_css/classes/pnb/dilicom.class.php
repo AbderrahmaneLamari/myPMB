@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: dilicom.class.php,v 1.6 2021/02/05 10:40:58 jlaurent Exp $
+// $Id: dilicom.class.php,v 1.6.6.1 2023/04/26 10:11:17 dbellamy Exp $
 
 require_once($class_path.'/curl.class.php');
 
@@ -16,19 +16,22 @@ class dilicom {
 		$this->curl_instance->set_option('CURLOPT_SSL_VERIFYPEER', false);
 		$this->curl_instance->set_option('CURLOPT_HTTPAUTH', CURLAUTH_BASIC);
 		$this->curl_instance->set_option('CURLOPT_USERPWD', $pmb_pnb_param_login.':'.$pmb_pnb_param_password);
+		$this->curl_instance->set_option('CURLOPT_HTTPHEADER', array('Content-Type:application/json'));
+		$this->curl_instance->timeout = 10;
 		$this->init_parameters();
 	}
 	
 	public function query($function = '', $parameters = array()){
 		global $pmb_pnb_param_dilicom_url;
 		$parameters = array_merge($this->parameters, $parameters);
+		$payload = '{}';
 		if(is_string($function) && $function != ""){
 			$response = $this->curl_instance->post($pmb_pnb_param_dilicom_url.$function, $parameters);
-			if ($response) {
-    			return $response->__toString();
+			if( 200 == $response->headers['Status-Code']){
+			    $payload = $response->body;
 			}
 		}
-		return false;
+		return $payload;
 	}
 	
 	protected function init_parameters() {

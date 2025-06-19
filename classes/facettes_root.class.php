@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facettes_root.class.php,v 1.27.2.2 2021/10/15 06:43:55 dgoron Exp $
+// $Id: facettes_root.class.php,v 1.32 2022/10/24 13:39:30 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/facette_search_compare.class.php");
 require_once($class_path."/encoding_normalize.class.php");
 
@@ -89,7 +90,7 @@ abstract class facettes_root {
 			}
 			$this->facettes[] = array(
 				'id'=> $row->id_facette+0,
-				'name'=> translation::get_text($row->id_facette, 'facettes', 'facette_name',  $row->facette_name),
+				'name'=> translation::get_translated_text($row->id_facette, 'facettes', 'facette_name',  $row->facette_name),
 				'id_critere'=>$row->facette_critere+0,
 				'id_ss_critere'=>$row->facette_ss_critere+0,
 				'nb_result'=>$row->facette_nb_result+0,
@@ -335,7 +336,7 @@ abstract class facettes_root {
 		} else {
 			$tmpArray = array();
 			$check_facette = static::get_checked();
-			foreach ($check_facette as $k=>$v) {
+			foreach ($check_facette as $v) {
 				$ajout=true;
 				if (count($tmpArray)) {
 					foreach ($tmpArray as $k2=>$v2) {
@@ -358,7 +359,7 @@ abstract class facettes_root {
 			//ajout facette : on vérifie qu'elle n'est pas déjà en session (rafraichissement page)
 			$trouve = false;
 			if (count($session_values)) {
-				foreach ($session_values as $k=>$v) {
+				foreach ($session_values as $v) {
 					if ($tmpArray == $v) {
 						$trouve = true;
 						break;
@@ -453,8 +454,6 @@ abstract class facettes_root {
 	}
 	
 	protected function get_display_clicked() {
-		global $msg;
-		
 		$display_clicked = "<table id='active_facette'>";
 		$n = 0;
 		foreach ($this->clicked as $k=>$v) {
@@ -694,7 +693,7 @@ abstract class facettes_root {
 	public static function get_compare_notice_active() {
 		if(!isset(static::$compare_notice_active)) {
 			global $opac_compare_notice_active;
-			static::$compare_notice_active = $opac_compare_notice_active*1;
+			static::$compare_notice_active = intval($opac_compare_notice_active);
 		}
 		return static::$compare_notice_active;
 	}
@@ -723,7 +722,7 @@ abstract class facettes_root {
 	 */
 	public static function get_list($type='notices') {
 		
-		$q = "select * from ".static::$table_name." where facette_type='".addslashes($type)."' order by facette_name";
+		$q = "select * from ".static::$table_name." where facette_type='".addslashes($type)."' order by facette_order";
 		
 		$r = pmb_mysql_query($q);
 		if(0 === pmb_mysql_num_rows($r)) {

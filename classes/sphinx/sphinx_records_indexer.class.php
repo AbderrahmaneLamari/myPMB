@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sphinx_records_indexer.class.php,v 1.10 2021/06/11 09:27:48 btafforeau Exp $
+// $Id: sphinx_records_indexer.class.php,v 1.11 2022/02/02 15:13:12 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -24,17 +24,31 @@ class sphinx_records_indexer extends sphinx_indexer {
 	}
 	
 	protected function addSpecificsFilters($id, $filters = array()) {
-		$filters = parent::addSpecificsFilters($id, $filters);
-		$result = pmb_mysql_query("SELECT typdoc, statut, TIMESTAMPDIFF(second, FROM_UNIXTIME(0), date_parution) AS date_parution FROM notices WHERE notice_id = $id");
-		$row = pmb_mysql_fetch_object($result);
-		$filters['multi']['statut'] = $row->statut;
-		$filters['multi']['typdoc'] = $row->typdoc;
-		
-	    $filters['bigint']['date_parution'] = $row->date_parution;
+	    $filters = parent::addSpecificsFilters($id, $filters);
+	    $tz_rqt = "SELECT @@system_time_zone";
+	    $tz_res = pmb_mysql_query($tz_rqt);
+	    if(pmb_mysql_num_rows($tz_res)){
+	        $system_tz = pmb_mysql_result($tz_res, 0,0);
+	    }
+	    if(isset($system_tz)){
+	        $ts = DateTime::createFromFormat('d-m-Y H:i:s','01-01-1970 00:00:00',  new DateTimeZone($system_tz));
+	    } else {
+	        $ts = DateTime::createFromFormat('d-m-Y H:i:s','01-01-1970 00:00:00');
+	    }
+	    $result = pmb_mysql_query("SELECT typdoc, statut, TIMESTAMPDIFF(second, (FROM_UNIXTIME(0)), date_parution) AS date_parution FROM notices WHERE notice_id = $id");
+	    $row = pmb_mysql_fetch_object($result);
+	    $filters['multi']['statut'] = $row->statut;
+	    $filters['multi']['typdoc'] = $row->typdoc;
+	    if(isset($row->date_parution)){
+	        $zoned_date = $row->date_parution + ($ts->format('U') > 0 ? -(abs($ts->format('U'))) : abs($ts->format('U')));
+	    } else {
+	        $zoned_date = $row->date_parution;
+	    }
+	    $filters['bigint']['date_parution'] = $zoned_date;
 	    if (empty($filters['bigint']['date_parution'])) {
-		    $filters['bigint']['date_parution'] = -9999999999999;
-		}
-		
-		return $filters;
+	        $filters['bigint']['date_parution'] = -9999999999999;
+	    }
+	    
+	    return $filters;
 	}
 }

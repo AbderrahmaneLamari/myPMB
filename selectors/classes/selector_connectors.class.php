@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_connectors.class.php,v 1.5.2.1 2021/10/20 11:57:44 dgoron Exp $
+// $Id: selector_connectors.class.php,v 1.7 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -53,16 +53,9 @@ class selector_connectors extends selector {
 	
 	protected function get_display_list() {
 		global $charset;
-		global $nb_per_page;
-		global $page;
 		global $base_path;
 		
 		$display_list = '';
-		if(!$page) {
-			$debut = 0;
-		} else {
-			$debut = ($page-1)*$nb_per_page;
-		}
 		$list = array();
 		$user_input = str_replace('*', '', $this->user_input);
 		
@@ -108,7 +101,7 @@ class selector_connectors extends selector {
 		}
 		$this->nbr_lignes = count($list);
 		if($this->nbr_lignes) {
-			$list = array_slice($list, $debut, $nb_per_page, true);
+			$list = array_slice($list, $this->get_start_list(), $this->get_nb_per_page_list(), true);
 			foreach ($list as $key=>$element) {
 				$display_list .= $this->get_display_element($key, $element);
 			}

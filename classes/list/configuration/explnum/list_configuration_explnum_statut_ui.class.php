@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_explnum_statut_ui.class.php,v 1.5 2021/04/19 07:10:23 dgoron Exp $
+// $Id: list_configuration_explnum_statut_ui.class.php,v 1.5.6.1 2023/03/24 08:11:06 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -40,21 +40,25 @@ class list_configuration_explnum_statut_ui extends list_configuration_explnum_ui
 		return $main_fields;
 	}
 
+	protected function get_default_attributes_format_cell($object, $property) {
+		switch($property) {
+			case 'gestion_libelle':
+				if ($object->id_explnum_statut < 2) {
+					return array(
+							'style' => 'font-weight:bold;'
+					);
+				}
+		}
+		return array();
+	}
+	
 	protected function get_cell_content($object, $property) {
 		$content = '';
 		switch($property) {
 			case 'gestion_libelle':
 				$content .= "<span class='".$object->class_html."'  style='margin-right: 3px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' /></span>";
-				if ($object->id_explnum_statut < 2) {
-					$content .= "<strong>".$object->gestion_libelle."</strong>";
-				} else {
-					$content .= $object->gestion_libelle;
-				}
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
 		}
+		$content .= parent::get_cell_content($object, $property);
 		return $content;
 	}
 	

@@ -2,14 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: reception.inc.php,v 1.28.2.1 2021/07/30 14:48:34 dgoron Exp $
+// $Id: reception.inc.php,v 1.30 2022/10/04 09:20:22 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $action, $sub, $msg, $charset, $PMBuserid, $database_window_title;
 global $liste_transfert,$statut_reception,$section_reception,$info;
 global $form_cb_expl, $transferts_reception_OK, $transferts_reception_erreur;
-global $deflt_docs_location, $site_origine, $nb_per_page, $page;
+global $site_origine, $nb_per_page, $page;
 
 $page = intval($page);
 
@@ -99,7 +99,7 @@ if ($action=="") {
 		}
 	}
 
-	$list_transferts_reception_ui = new list_transferts_reception_ui(array('etat_transfert' => 0, 'etat_demande' => 2, 'site_destination' => $deflt_docs_location, 'site_origine' => 0));
+	$list_transferts_reception_ui = new list_transferts_reception_ui(array('etat_transfert' => 0, 'etat_demande' => 2));
 	print $list_transferts_reception_ui->get_display_list();
 }
 

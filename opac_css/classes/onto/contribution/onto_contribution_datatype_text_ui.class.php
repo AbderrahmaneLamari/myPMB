@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_text_ui.class.php,v 1.1.2.3 2021/12/20 15:48:16 tsamson Exp $
+// $Id: onto_contribution_datatype_text_ui.class.php,v 1.5 2022/03/19 10:30:19 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -119,6 +119,7 @@ class onto_contribution_datatype_text_ui extends onto_common_datatype_ui {
 		
 		$form=str_replace("!!onto_rows!!",$content ,$form);
 		$form = str_replace("!!onto_row_scripts!!", static::get_scripts(), $form);
+		$form = self::get_form_with_special_properties($property, $datas, $instance_name, $form);
 		$form=str_replace("!!onto_row_id!!",$instance_name.'_'.$property->pmb_name , $form);
 		
 		return $form;

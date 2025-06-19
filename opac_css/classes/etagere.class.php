@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: etagere.class.php,v 1.4.2.2 2022/01/18 21:05:25 dgoron Exp $
+// $Id: etagere.class.php,v 1.7.4.1 2023/09/04 14:36:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,6 +13,7 @@ if ( ! defined( 'ETAGERE_CLASS' ) ) {
   
 global $class_path;
 require_once($class_path."/sort.class.php");
+require_once($class_path."/thumbnail.class.php");
 require_once($class_path."/translation.class.php");
 
 class etagere {
@@ -86,63 +87,84 @@ class etagere {
 		global $base_path;
 		global $PMBuserid;
 		global $pmb_javascript_office_editor;
-		global $etagere_form;
+		global $etagere_content_form;
 		
-		$form = $etagere_form;
-		if($this->idetagere) {
-			$form = str_replace('!!formulaire_titre!!', $msg['etagere_edit_etagere'], $form);
-			$form = str_replace('!!formulaire_action!!', $base_path."/catalog.php?categ=etagere&sub=gestion&action=save_etagere&idetagere=".$this->idetagere, $form);
-			$form = str_replace('!!autorisations_users!!', users::get_form_autorisations($this->autorisations,0), $form);
-			$button_duplicate = "<input type='button' class='bouton' value='".htmlentities($msg['duplicate'], ENT_QUOTES, $charset)."' onClick=\"document.location='".$base_path."/catalog.php?categ=etagere&sub=gestion&action=duplicate_etagere&idetagere=".$this->idetagere."'\" />";
-			$form = str_replace('!!button_duplicate!!', $button_duplicate, $form);
-		} else {
-			$form = str_replace('!!formulaire_titre!!', $msg['etagere_new_etagere'], $form);
-			$form = str_replace('!!formulaire_action!!', $base_path."/catalog.php?categ=etagere&sub=gestion&action=valid_new_etagere", $form);
-			$form = str_replace('!!autorisations_users!!', users::get_form_autorisations($this->autorisations,1), $form);
-			$form = str_replace('!!button_duplicate!!', "", $form);
+		$content_form = $etagere_content_form;
+		$content_form = str_replace('!!idetagere!!', $this->idetagere, $content_form);
+		
+		$interface_form = new interface_catalog_form('etagere_form');
+		$interface_form->set_enctype('multipart/form-data');
+		if(!$this->idetagere){
+			$interface_form->set_label($msg['etagere_new_etagere']);
+		}else{
+			$interface_form->set_label($msg['etagere_edit_etagere']);
 		}
-		$form = str_replace('!!formulaire_annuler!!', $base_path."/catalog.php?categ=etagere&sub=gestion&action=", $form);
-		$form = str_replace('!!idetagere!!', $this->idetagere, $form);
-		$form = str_replace('!!name!!', htmlentities($this->name,ENT_QUOTES, $charset), $form);
-		$bouton_suppr = "<input type='button' class='bouton' value=' ".$msg['supprimer']." ' onClick=\"javascript:confirmation_delete(".$this->idetagere.",'".htmlentities(addslashes($this->name),ENT_QUOTES, $charset)."')\" />" ;
-		$form = str_replace('<!--!!bouton_suppr!!-->', $bouton_suppr, $form);
-		$form = str_replace('!!comment!!', $this->comment, $form);
-		$form = str_replace('!!comment_gestion!!', $this->comment_gestion, $form);
+		if($this->idetagere) {
+			$content_form = str_replace('!!autorisations_users!!', users::get_form_autorisations($this->autorisations,0), $content_form);
+		} else {
+			$content_form = str_replace('!!autorisations_users!!', users::get_form_autorisations($this->autorisations,1), $content_form);
+		}
+		$content_form = str_replace('!!name!!', htmlentities($this->name,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!comment!!', $this->comment, $content_form);
+		$content_form = str_replace('!!comment_gestion!!', $this->comment_gestion, $content_form);
 		
 		if($this->id_tri>0){
 			$sort = new sort("notices","base");
-			$form = str_replace('!!tri!!', $this->id_tri, $form);
-			$form = str_replace('!!tri_name!!', $sort->descriptionTriParId($this->id_tri), $form);
+			$content_form = str_replace('!!tri!!', $this->id_tri, $content_form);
+			$content_form = str_replace('!!tri_name!!', $sort->descriptionTriParId($this->id_tri), $content_form);
 		}else{
-			$form = str_replace('!!tri!!', "", $form);
-			$form = str_replace('!!tri_name!!', $msg['etagere_form_no_active_tri'], $form);
+			$content_form = str_replace('!!tri!!', "", $content_form);
+			$content_form = str_replace('!!tri_name!!', $msg['etagere_form_no_active_tri'], $content_form);
 		}
 		if ($this->validite || !$this->idetagere) {
-			$form = str_replace('!!checkbox_all!!', "checked", $form);
-			$form = str_replace('!!form_visible_deb!!', "", $form);
-			$form = str_replace('!!form_visible_fin!!', "", $form);
+			$content_form = str_replace('!!checkbox_all!!', "checked", $content_form);
+			$content_form = str_replace('!!form_visible_deb!!', "", $content_form);
+			$content_form = str_replace('!!form_visible_fin!!', "", $content_form);
 		} else {
-			$form = str_replace('!!checkbox_all!!', "", $form);
-			$form = str_replace('!!form_visible_deb!!', $this->validite_date_deb_f, $form);
-			$form = str_replace('!!form_visible_fin!!', $this->validite_date_fin_f, $form);
+			$content_form = str_replace('!!checkbox_all!!', "", $content_form);
+			$content_form = str_replace('!!form_visible_deb!!', $this->validite_date_deb_f, $content_form);
+			$content_form = str_replace('!!form_visible_fin!!', $this->validite_date_fin_f, $content_form);
 		}
-		if ($this->visible_accueil) $form = str_replace('!!checkbox_accueil!!', "checked", $form);
-		else $form = str_replace('!!checkbox_accueil!!', "", $form);
+		if ($this->visible_accueil) $content_form = str_replace('!!checkbox_accueil!!', "checked", $content_form);
+		else $content_form = str_replace('!!checkbox_accueil!!', "", $content_form);
 			
 		$message_folder = static::validate_img_folder();
-		$form = str_replace('!!message_folder!!', $message_folder, $form);
-		$form = str_replace('!!thumbnail_url!!', $this->thumbnail_url, $form);
+		$content_form = str_replace('!!message_folder!!', $message_folder, $content_form);
+		$content_form = str_replace('!!thumbnail_url!!', $this->thumbnail_url, $content_form);
 		$classementGen = new classementGen('etagere', $this->idetagere);
-		$form = str_replace("!!object_type!!",$classementGen->object_type,$form);
-		$form = str_replace("!!classements_liste!!",$classementGen->getClassementsSelectorContent($PMBuserid,$classementGen->libelle),$form);
+		$content_form = str_replace("!!object_type!!",$classementGen->object_type,$content_form);
+		$content_form = str_replace("!!classements_liste!!",$classementGen->getClassementsSelectorContent($PMBuserid,$classementGen->libelle),$content_form);
 		
-		$js_script = confirmation_delete($base_path."/catalog.php?categ=etagere&action=del_etagere&idetagere=");
+		$js_script = "";
 		if($pmb_javascript_office_editor){
 			$js_script .= $pmb_javascript_office_editor;
-			$js_script .= "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+			$js_script .= "<script type='text/javascript'>
+                pmb_include('$base_path/javascript/tinyMCE_interface.js');
+            </script>";
 		}
-		$translation = new translation($this->idetagere, 'etagere');
-		$form .= $translation->connect('etagere_form');
+		$interface_form->set_object_id($this->idetagere)
+		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
+		->set_content_form($content_form)
+		->set_table_name('etagere')
+		->set_field_focus('form_etagere_name')
+		->set_duplicable(true);
+		$form = $interface_form->get_display();
+		$form .= "
+		<script type=\"text/javascript\">
+			function vadidite_check(form) {
+				if (form.form_visible_all.checked==true) {
+					form.form_visible_deb.disabled='disabled' ;
+					form.form_visible_deb.value='' ;
+					form.form_visible_fin.disabled='disabled' ;
+					form.form_visible_fin.value='' ;
+				} else {
+					form.form_visible_deb.disabled='';
+					form.form_visible_fin.disabled='';
+				}
+			}
+			vadidite_check(document.forms['etagere_form']);
+		</script>
+		";
 		return $js_script.$form;
 	}
 	
@@ -291,6 +313,19 @@ class etagere {
 	
 	public function get_translated_comment_gestion() {
 		return translation::get_translated_text($this->idetagere, 'etagere', 'comment_gestion',  $this->comment_gestion);
+	}
+	
+	public function get_classement_label() {
+		if(!trim($this->classementGen)) {
+			return classementGen::getDefaultLibelle();
+		}
+		return $this->classementGen;
+	}
+	
+	public function get_classement_selector() {
+		global $base_path, $PMBuserid;
+		$classementGen = new classementGen('etagere', $this->idetagere);
+		return $classementGen->show_selector($base_path.'/catalog.php?categ=etagere',$PMBuserid);
 	}
 } // fin de déclaration de la classe cart
   

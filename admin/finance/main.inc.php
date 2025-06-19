@@ -1,11 +1,15 @@
 <?php
+
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.12 2021/02/08 10:30:14 dgoron Exp $
+// $Id: main.inc.php,v 1.12.6.1 2024/01/03 08:44:29 gneveu Exp $
 // Gestion financière
 
-if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) {
+    die("no access");
+}
 
 switch($sub) {
     case 'abts':
@@ -31,8 +35,11 @@ switch($sub) {
         break;
     case 'blocage':
         include("./admin/finance/blocage.inc.php");
-    	break;
+        break;
+    case 'organization_account':
+        include("./admin/finance/payments.inc.php");
+        break;
     default:
         include("$include_path/messages/help/$lang/admin_gestion_financiere.txt");
         break;
-    }
+}

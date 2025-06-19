@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_cache.class.php,v 1.10 2019/01/04 13:39:31 dgoron Exp $
+// $Id: cms_cache.class.php,v 1.12 2022/09/26 07:36:42 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -86,9 +86,10 @@ final class cms_cache{
 	}
 	
 	public static function clean_cache_img(){
-		global $base_path;
+		global $base_path, $database;
 		
-		self::rmdir_files($base_path.'/opac_css/temp/cms_vign');
+		self::rmdir_files($base_path.'/opac_css/temp/cms_vign/'.$database);
+		self::rmdir_files($base_path.'/opac_css/temp/cms_document/'.$database);
 		//Il faut également vider le cache des cadres
 		static::clean_cache();
 	}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmb.class.php,v 1.65.2.2 2022/01/03 11:18:34 dgoron Exp $
+// $Id: pmb.class.php,v 1.68.4.1 2023/04/26 12:52:25 dgoron Exp $
 
 global $class_path, $include_path, $opac_search_other_function;
 require_once("$include_path/notice_affichage.inc.php");
@@ -10,6 +10,7 @@ require_once("$include_path/bulletin_affichage.inc.php");
 require_once("$class_path/upload_folder.class.php");
 require_once("$class_path/search.class.php");
 require_once("$class_path/searcher.class.php");
+require_once("$class_path/searcher/searcher_factory.class.php");
 require_once($class_path."/auth_popup.class.php");
 require_once($class_path."/search_universes/search_segment_searcher_extended.class.php");
 if($opac_search_other_function){
@@ -74,23 +75,23 @@ class pmb extends base_params implements params {
 		switch($this->params['mode']){
 			//nouvelle méthode...
 			case "title" :
-				$searcher = new searcher_title(stripslashes($this->params['user_query']));
+				$searcher = searcher_factory::get_searcher('records', 'title', stripslashes($this->params['user_query']));
 				break;
 			case "tous" :
-				$searcher = new searcher_all_fields(stripslashes($this->params['user_query']));
+				$searcher = searcher_factory::get_searcher('records', 'all_fields', stripslashes($this->params['user_query']));
 				break;
 			case "keyword" :
-				$searcher = new searcher_keywords(stripslashes($this->params['user_query']));
+				$searcher = searcher_factory::get_searcher('records', 'keywords', stripslashes($this->params['user_query']));
 				break;
 			case "extended" :
 				if($this->params['serialized_search']){
-					$searcher = new searcher_extended(stripslashes($this->params['serialized_search']));
+					$searcher = searcher_factory::get_searcher('records', 'extended', stripslashes($this->params['serialized_search']));
 				}else{
-					$searcher = new searcher_extended(stripslashes($this->params['search']));
+					$searcher = searcher_factory::get_searcher('records', 'extended', stripslashes($this->params['search']));
 				}
 				break;
 			case "abstract" :
-				$searcher = new searcher_abstract(stripslashes($this->params['user_query']));
+				$searcher = searcher_factory::get_searcher('records', 'abstract', stripslashes($this->params['user_query']));
 				break;
 			case "authperso_see" :
 				$requete_noti = "SELECT notice_id FROM notices_authperso, notices ".$acces_j." ".$statut_j." where notice_authperso_authority_num= ".$this->params["idautorite"]." and notice_authperso_notice_num = notice_id ".$statut_r." ";
@@ -505,6 +506,7 @@ class pmb extends base_params implements params {
 				$this->currentDoc["desc"]=aff_notice($this->listeDocs[$this->current]->explnum_notice,1,1,0,"",0,1);
 			else $this->currentDoc["desc"]=bulletin_affichage($this->listeDocs[$this->current]->explnum_bulletin,"visionneuse");
 		
+			$lop = array();
 			preg_match_all("/(<a href=[\"'][^#][^>]*>)(.*?)<\/a>/",$this->currentDoc["desc"],$lop);
 			for ($i = 0 ; $i <sizeof($lop[0]) ; $i++){
 				$plop = explode ($lop[0][$i],$this->currentDoc["desc"]);
@@ -699,6 +701,14 @@ class pmb extends base_params implements params {
 	
 	public function getDocumentUrl($id){
 		global $opac_url_base;
+		$evth = events_handler::get_instance();
+		$evt = new event_explnum('visionneuse', 'get_url');
+		$evt->set_explnum(new explnum($id));
+		$evth->send($evt);
+		$url = $evt->getIntegrationUrl();
+		if($url != ''){
+		    return $url;
+		}
 		return $opac_url_base."doc_num_data.php?explnum_id=".$id;
 	}
 	

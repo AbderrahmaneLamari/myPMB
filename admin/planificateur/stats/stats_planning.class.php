@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: stats_planning.class.php,v 1.3 2019/12/31 12:40:35 ngantier Exp $
+// $Id: stats_planning.class.php,v 1.4 2022/03/10 14:06:00 dgoron Exp $
 
 global $class_path;
 require_once($class_path."/scheduler/scheduler_planning.class.php");
@@ -12,7 +12,7 @@ class stats_planning extends scheduler_planning {
 
 	//formulaire spécifique au type de tâche
 	public function show_form ($param=array()) {
-		global $base_path,$dbh, $charset, $msg;
+		global $charset, $msg;
 				
 		//paramètres pré-enregistré
 		$liste_views = array();
@@ -27,7 +27,7 @@ class stats_planning extends scheduler_planning {
 		$date_ech = (isset($param["date_ech"]) ? $param["date_ech"] : '');
 		
 		$requete = "SELECT id_vue, date_consolidation, nom_vue, comment FROM statopac_vues";
-		$res = pmb_mysql_query($requete, $dbh);
+		$res = pmb_mysql_query($requete);
 		$nb_rows = pmb_mysql_num_rows($res);
 		//taille du selecteur
 		if ($nb_rows < 3) $nb=3;

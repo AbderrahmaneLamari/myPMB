@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_statopac_ui.class.php,v 1.7.2.4 2021/09/21 16:43:41 dgoron Exp $
+// $Id: list_statopac_ui.class.php,v 1.15.2.4 2023/12/12 14:26:07 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -17,32 +17,21 @@ class list_statopac_ui extends list_ui {
 	}
 	
 	protected function add_object($row) {
-// 		global $PMBuserid;
+		global $PMBuserid;
 		
-// 		$rqt_autorisation=explode(" ",$row->autorisations);
-// 		if ($PMBuserid==1 || $row->autorisations_all || array_search ($PMBuserid, $rqt_autorisation)!==FALSE) {
+		$rqt_autorisation=explode(" ",$row->autorisations);
+		if ($PMBuserid==1 || $row->autorisations_all || array_search ($PMBuserid, $rqt_autorisation)!==FALSE) {
 			$this->objects[] = $row;
-// 		}
+		}
 	}
 	
-	protected function _get_query_order() {
-	    if ($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'nom_vue':
-					$order .= 'nom_vue,name';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'nom_vue':
+	            return 'nom_vue,name';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	public function get_display_search_form() {
@@ -59,6 +48,7 @@ class list_statopac_ui extends list_ui {
 		$this->set_setting_display('search_form', 'visible', false);
 		$this->set_setting_display('search_form', 'export_icons', false);
 		$this->set_setting_display('query', 'human', false);
+		$this->set_setting_display('pager', 'visible', false);
 		$this->set_setting_column('default', 'align', 'left');
 		$this->settings['objects']['default']['display_mode'] = 'expandable_table';
 		$this->settings['grouped_objects']['level_1']['display_mode'] = 'expandable_table';
@@ -76,10 +66,6 @@ class list_statopac_ui extends list_ui {
 		$this->pager['all_on_page'] = true;
 	}
 	
-	protected function pager() {
-		return "";	
-	}
-	
 	/**
 	 * Initialisation du tri par défaut appliqué
 	 */
@@ -88,7 +74,7 @@ class list_statopac_ui extends list_ui {
 	    $this->add_applied_sort('name');
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'nom_vue');
 	}
 	
@@ -126,9 +112,7 @@ class list_statopac_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_name() {
-		global $msg;
-		
-		return "<input class='saisie-80em' id='".$this->objects_type."_name' type='text' name='".$this->objects_type."_name' value=\"".$this->filters['name']."\" title='$msg[3001]' />";
+		return $this->get_search_filter_simple_text('name');
 	}
 	
 	protected function get_search_filter_autorisations() {
@@ -165,23 +149,21 @@ class list_statopac_ui extends list_ui {
 	protected function add_column_execute() {
 		global $msg;
 		
-		$this->columns[] = array(
-				'property' => 'execute',
-				'label' => '',
-				'html' => "<input type='button' class='bouton_small' name='exec_request' value='$msg[708]' onClick='document.location=\"".static::get_controller_url_base()."&section=view_list&act=exec_req&id_req=!!id!!&id_view=!!id_vue!!\";'/>",
-				'exportable' => false
+		$html_properties = array(
+				'value' => $msg['708'],
+				'link' => static::get_controller_url_base().'&section=view_list&act=exec_req&id_req=!!id!!&id_view=!!id_vue!!'
 		);
+		$this->add_column_simple_action('execute', '', $html_properties);
 	}
 	
 	protected function add_column_export() {
 		global $msg;
 		
-		$this->columns[] = array(
-				'property' => 'export',
-				'label' => '',
-				'html' => "<input type='button' class='bouton_small' name='save_request' value='".$msg["procs_bt_export"]."' onClick='document.location=\"./export.php?quoi=stat&act=save_req&id_req=!!id!!&id_view=!!id_vue!!\";'/>",
-				'exportable' => false
+		$html_properties = array(
+				'value' => $msg['procs_bt_export'],
+				'link' => './export.php?quoi=stat&act=save_req&id_req=!!id!!&id_view=!!id_vue!!'
 		);
+		$this->add_column_simple_action('export', '', $html_properties);
 	}
 	
 	protected function get_button_add() {
@@ -237,6 +219,7 @@ class list_statopac_ui extends list_ui {
 					<small>".$object->comment."</small>";
 				break;
 			case 'configuration':
+				$query_parameters = array();
 				if (preg_match_all("|!!(.*)!!|U",$object->requete,$query_parameters)) {
 					$content .= "<a href='".static::get_controller_url_base()."&section=view_list&act=configure&id_req=".$object->idproc."'>".$msg["procs_options_config_param"]."</a>";
 				}
@@ -248,26 +231,21 @@ class list_statopac_ui extends list_ui {
 		return $content;
 	}
 
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch ($property) {
 			case 'name':
-				$attributes = array(
-				'onclick' => "document.location=\"".static::get_controller_url_base()."&section=query&act=update_request&id_req=".$object->idproc."&id_view=".$object->id_vue."\""
+				return array(
+						'onclick' => "document.location=\"".static::get_controller_url_base()."&section=query&act=update_request&id_req=".$object->idproc."&id_view=".$object->id_vue."\""
 				);
-				break;
 			default:
-				$attributes = array();
-				break;
+				return array();
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function gen_plus($id, $titre, $contenu, $maximise=0) {
-		global $msg, $open_view;
+		global $msg, $charset, $open_view;
 		
-		$cleaned_title = strip_tags($titre);
+		$cleaned_title = strip_tags(html_entity_decode($titre, ENT_QUOTES, $charset));
 		if(strpos($cleaned_title, "(") !== false) {
 		  $cleaned_title = substr($cleaned_title, 0, strpos($cleaned_title, "("));
 		}
@@ -303,8 +281,8 @@ class list_statopac_ui extends list_ui {
 			$res_sc=pmb_mysql_fetch_object($r_sc);
 			$min_date=$res_sc->min_date;
 			$max_date=$res_sc->max_date;
-			if ($min_date!='0000-00-00 00:00:00' && $min_date!='0000-00-00 00:00:00') {
-				$stat_scope = sprintf(htmlentities($msg['stat_scope'],ENT_QUOTES,$charset),formatdate($res_sc->min_date),formatdate($res_sc->max_date));
+			if ($min_date!='0000-00-00 00:00:00' && $max_date!='0000-00-00 00:00:00') {
+				$stat_scope = sprintf(htmlentities($msg['stat_scope'],ENT_QUOTES,$charset),formatdate($min_date),formatdate($max_date));
 			}
 		}
 		$options = "<div id='opt_consoParent' class='notice-parent'>";

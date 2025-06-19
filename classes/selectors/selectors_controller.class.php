@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selectors_controller.class.php,v 1.1.2.3 2021/10/26 09:33:36 dgoron Exp $
+// $Id: selectors_controller.class.php,v 1.2 2021/10/26 09:27:32 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

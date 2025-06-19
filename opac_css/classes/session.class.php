@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: session.class.php,v 1.1.2.4 2021/11/16 16:58:57 qvarin Exp $
+// $Id: session.class.php,v 1.4 2022/10/20 13:10:20 qvarin Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
     die("no access");
 
@@ -103,6 +103,12 @@ class session
      */
     public function set_data(string $data)
     {
+    	global $charset;
+    	
+	    if ($charset != "utf-8") {
+	    	$data = encoding_normalize::utf8_normalize($data);
+	    }
+	    
         $temp_data = encoding_normalize::json_decode($data, true);
         if (is_null($temp_data)) {
             $temp_data = encoding_normalize::json_decode(stripslashes($data), true);
@@ -347,7 +353,7 @@ class session
      */
     private function get_nav_item_tpl()
     {
-        global $include_path, $msg;
+    	global $include_path, $msg, $charset;
 
         $tpl = "";
 
@@ -438,7 +444,11 @@ class session
 
             // Contenu du template
             if (empty($item["search"]) && ! empty($item["entity"])) {
-                $tpl .= encoding_normalize::utf8_normalize(entities::get_entity_template($item["entity_id"], $item["entity"]));
+            	$entity_tpl = entities::get_entity_template($item["entity_id"], $item["entity"]);
+            	if ($charset == "utf-8") {
+            		$entity_tpl = encoding_normalize::utf8_normalize($entity_tpl);
+            	}
+            	$tpl .= $entity_tpl;
             }
         }
 

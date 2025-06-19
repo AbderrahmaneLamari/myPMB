@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authForm.js,v 1.5.8.2 2021/09/06 13:33:51 dgoron Exp $
+// $Id: authForm.js,v 1.7 2021/09/06 13:32:22 dgoron Exp $
 
 
 define(["dojo/_base/declare", "dojo/dom", "dojo/on", "dojo/topic", "dojo/_base/lang","dijit/form/TextBox", "dijit/form/Button", "dojo/dom-construct"], function(declare, dom, on, topic, lang, TextBox, Button, domConstruct){

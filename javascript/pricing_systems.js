@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pricing_systems.js,v 1.28 2021/04/08 07:57:51 dgoron Exp $
+// $Id: pricing_systems.js,v 1.29 2022/03/31 14:17:55 dgoron Exp $
 
 /**
  * Affichage Oui/Non de la grille dans la liste
@@ -142,20 +142,6 @@ function pricing_system_grid_confirm_reset() {
 	if(confirm(msg_pricing_system_grid_reset_confirm)) {
 		document.location='./admin.php?categ=acquisition&sub=pricing_systems&id_entity=!!id_entity!!&action=grid_reset&id=!!id!!';
 	}
-}
-
-function pricing_system_confirm_delete(){
-	if(confirm(msg_pricing_system_delete_confirm)) {
-		return true;
-	}
-	return false;
-}
-
-function pricing_system_confirm_duplicate(){
-	if(confirm(msg_pricing_system_duplicate_confirm)) {
-		return true;
-	}
-	return false;
 }
 
 function set_style_elements(form, elems, flag_error, msg_error) {

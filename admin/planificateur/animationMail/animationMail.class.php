@@ -3,7 +3,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: animationMail.class.php,v 1.3 2021/03/12 10:21:49 gneveu Exp $
+// $Id: animationMail.class.php,v 1.3.6.1 2023/03/16 14:18:36 dgoron Exp $
 
 use Pmb\Animations\Models\MailingAnimationModel;
 use Pmb\Animations\Models\AnimationModel;
@@ -35,7 +35,7 @@ class animationMail extends scheduler_task {
                     $report .= $this->format_response($r);
                 }
                 if (empty($report)) {
-                    $this->report[] = "<tr><th>".$this->msg['animation_mailing_no_send']."</th></tr>";
+                	$this->add_section_report($this->msg['animation_mailing_no_send']);
                 } else {
                     $this->report[] = $report;
                 }

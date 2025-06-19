@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: faq_theme.class.php,v 1.2 2021/01/14 09:23:40 dgoron Exp $
+// $Id: faq_theme.class.php,v 1.3.4.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -40,11 +40,15 @@ class faq_theme {
 		$this->libelle = $data->libelle_theme;
 	}
 
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $liste_simple_content_form, $msg, $charset;
-		
-		$content_form = $liste_simple_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('simple_list_form');
 		if(!$this->id){
@@ -52,11 +56,9 @@ class faq_theme {
 		}else{
 			$interface_form->set_label($msg['faq_modif_theme']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['faq_del_theme'])
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('faq_themes')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();
@@ -85,7 +87,7 @@ class faq_theme {
 		$query = "select id_faq_question from faq_questions where faq_question_num_theme = ".$this->id;
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)){
-			$index = new indexation($include_path."/indexation/faq/question.xml", "faq_questions");
+		    $index = indexations_collection::get_indexation(AUT_TABLE_FAQ);
 			while($row = pmb_mysql_fetch_object($result)){
 				$index->maj($row->id_faq_question,"theme");
 			}

@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: catalog.xml,v 1.35 2020/11/02 14:58:51 dbellamy Exp $ -->
+$Id: catalog.xml,v 1.36 2023/02/08 11:17:41 dbellamy Exp $ -->
 
 <catalog>
 	<item name="Z 39.50" path="z3950" id="1"/>
@@ -47,4 +47,5 @@ $Id: catalog.xml,v 1.35 2020/11/02 14:58:51 dbellamy Exp $ -->
 	<item name="Statista" path="statista" id="42"/>
 	<item name="Divercities" path="divercities" id="43"/>
     <item name="Legifrance DILA" path="legifrance_dila" id="44" />	
+    <item name="Mir@bel" path="mirabel" id="46" />
 </catalog>

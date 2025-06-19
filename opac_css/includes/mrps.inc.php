@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mrps.inc.php,v 1.11.2.1 2022/01/10 08:35:26 dgoron Exp $
+// $Id: mrps.inc.php,v 1.12 2022/01/10 08:31:27 dgoron Exp $
 
 function search_other_function_filters() {
 	global $cnl_bibli;

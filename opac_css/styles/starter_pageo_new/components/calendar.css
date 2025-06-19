@@ -1,0 +1,176 @@
+/*---------------------
+- COMPONENTS: CALENDAR -
+ ---------------------*/
+
+.tundra .dijitCalendarMonthContainer th {
+	background-image: none!important;
+}
+
+.dijitReset.dijitCalendarDecrementArrow, .dijitReset.dijitCalendarIncrementArrow{
+	margin: 15px;
+}
+
+.tundra .dijitCalendarIncrementControl {
+	width: 22px!important;
+	height: 22px!important;
+	background-image: url(images/arrow_left_agenda.png)!important;
+	background-repeat: no-repeat;
+}
+
+.tundra .dijitCalendarIncrease {
+  	background-position: 9px top!important;
+	background-image: url(images/arrow_right_agenda.png)!important;
+}
+.tundra .dijitButtonNode {
+	border: 0px solid transparent!important;
+}
+
+.tundra .dijitCalendarIncrementControl{
+	background-color: var(--c-bg-1);
+}
+
+.tundra .dijitDropDownButtonHover .dijitButtonNode {
+	border-bottom-color: #6c6c6c;
+}
+
+.dijitCalendarMonthMenu .dijitCalendarMonthLabel {
+	text-align: center;
+	color: #243C5F;
+}
+
+.dijitCalendarMonthMenu .dijitCalendarMonthLabel {
+	text-align: center;
+	color: #243C5F!important;
+	font-family: arial;
+	font-weight: 600;
+	font-size: 90%;
+	line-height: 22px;
+}
+
+.tundra .dijitCalendarMonthMenu .dijitCalendarMonthLabelHover {
+	background-color: #FFE3E2!important;
+	color: #444!important;
+}
+
+#form_search_bull .dijitTextBox input.dijitArrowButtonInner{
+    height:27px!important;
+    width: 100%!important;
+}
+
+.dijitReset.dijitRight.dijitButtonNode.dijitArrowButton.dijitDownArrowButton.dijitArrowButtonContainer > input {
+    border: none;
+}
+
+.tundra .pmb_calendar .dijitCalendarMonthLabel {
+	color: var(--title-color-secondary)!important;
+  	font-weight: 600!important;
+	font-size: 31px;
+	text-transform: capitalize;
+	padding: 0;
+}
+
+.tundra .dijitCalendarDayLabelTemplate {
+	background-image: none!important;
+	line-height: 35px;
+	border-top: 0px solid #eeeeee!important;
+	padding: 0px 0px;
+	font-weight: 600 !important;
+}
+
+.tundra .dijitCalendarMonthContainer th {
+	background-image: none!important;
+	padding: 5px 0px;
+}
+
+.tundra .dijitCalendarContainer {
+	margin-bottom: 5px;
+	border: none !important;
+	font-size: 0.9em;
+}
+
+.tundra .dijitCalendarBodyContainer td {
+	color: black;
+	padding: 1px 0px;
+	background: #fff;
+	transition-duration: 0.3s;
+	transition-timing-function: cubic-bezier(0.21, 0.35, 0.2, 0.6);
+}
+
+.tundra td[class^='cms_module_agenda_event_']{
+    color: #fff;
+}
+
+.tundra td.dijitCalendarPreviousMonth ,
+.tundra td.dijitCalendarNextMonth 		{
+	color: #7B7777;
+}
+
+.tundra .dijitCalendarHoveredDate {
+	background-color: #F3F3F3;
+	color: #777777!important;
+	box-shadow: 0px 0px 0px 50px rgba(21, 21, 21, 0.1) inset;
+}
+.tundra td[class^='cms_module_agenda_event_'].dijitCalendarHoveredDate {
+	color: #fff!important;
+	box-shadow: 0px 0px 0px 20px rgba(0, 0, 0, 0.13) inset;
+}
+.tundra td[class^='cms_module_agenda_event_'].dijitCalendarNextMonth {
+	transition-duration:0s;
+}
+span.dijitCalendarDateLabel, span.dijitCalendarDayLabel {
+	min-width: 17px;
+	display: inline-block;
+	padding: 4px 0px;
+	font: normal normal normal 1.6vw/41px Open Sans;
+    font-weight: 300;
+}
+
+ .dijitCalendarYearLabel .dijitCalendarSelectedYear {
+    font-weight: 600!important;
+    color: #444 !important;
+    padding-top: 3px!important;
+    background-color: transparent !important;
+}
+
+.dijitCalendarCurrentDate span.dijitCalendarDateLabel{
+    font-weight: 600;
+}
+
+.tundra .dijitCalendarYearContainer {
+	background: none!important;
+	border-bottom: 1px solid #ccc;
+    border-top: none!important;
+    margin-bottom: 20px;
+}
+.tundra .dijitCalendarYearLabel{
+	background: white;
+    padding: 0px 0 15px 0!important;
+    font-size: 2.15em !important;
+}
+
+.tundra .dijitMenu,
+.tundra .dijitMenuBar {
+	border: 1px solid rgba(0, 0, 0, 0.13);
+	margin: 0;
+	padding: 0;
+	background-color: #E94E1B;
+}
+
+.dijitReset.dijitCalendarMonthContainer{
+    width: auto!important;
+}
+
+#cms_module_agenda_85 > div.row > div{
+    width: 50%;
+	padding: 0px;
+	font-size: 0.714em;
+}
+
+.cms_module_agenda_view_calendar_eventslist{
+	margin:0px;
+}
+
+#widget_bull_date_start_dropdown {
+    background: white;
+    border: 1px solid;
+}

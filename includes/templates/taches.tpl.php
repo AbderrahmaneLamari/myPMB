@@ -2,17 +2,16 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: taches.tpl.php,v 1.9 2020/12/16 07:35:12 dgoron Exp $
+// $Id: taches.tpl.php,v 1.9.6.2 2023/07/26 05:54:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $planificateur_id, $subaction, $template_result, $base_path, $msg, $admin_planificateur_global_params, $planificateur_form;
+global $subaction, $template_result, $base_path, $msg, $current_module, $admin_planificateur_global_params, $planificateur_form;
 
-if(!isset($planificateur_id)) $planificateur_id = 0;
 if(!isset($subaction)) $subaction = '';
 
 $template_result = "
-<form name='planificateur_form_del' action='$base_path/admin.php?categ=planificateur&sub=manager&task=task_del&planificateur_id=".$planificateur_id."&confirm=1' method='post' class='form-$current_module'>
+<form name='planificateur_form_del' action='$base_path/admin.php?categ=planificateur&sub=manager&action=delete&id=!!id!!&confirm=1' method='post' class='form-$current_module'>
 	<h3>".$msg["planificateur_task_type_task"]." : !!libelle_type_task!!</h3>
 	<div class='form-contenu'>
 		<div class='row'>
@@ -24,7 +23,7 @@ $template_result = "
 
 $admin_planificateur_global_params="
 !!script_js!!
-<form name='planificateur_global_form' action='$base_path/admin.php?categ=planificateur&sub=manager&act=update&type_task_id=!!id!!' method='post' class='form-$current_module'>
+<form name='planificateur_global_form' action='$base_path/admin.php?categ=planificateur&sub=manager&action=type_update&id=!!id!!' method='post' class='form-$current_module'>
 	<h3>".$msg["planificateur_properties"]." !!comment!!</h3>
 	<div class='form-contenu'>
 		!!div_upload!!
@@ -64,7 +63,7 @@ $planificateur_form="
 		</div>
 		<div class='row'>
 		<div class='row'>
-			<div class='colonne3'><label for='task_desc'/>".$msg["planificateur_task_desc"]."</label></div><div class='colonne_suite'><textarea name='task_desc' id='task_desc' class='saisie-30em'/>!!task_desc!!</textarea></div>
+			<div class='colonne3'><label for='task_desc'/>".$msg["planificateur_task_desc"]."</label></div><div class='colonne_suite'><textarea name='task_desc' id='task_desc' class='saisie-30em'>!!task_desc!!</textarea></div>
 		</div>
 		<div class='row'>
 			<div class='colonne3'><label for='form_users'/>".$msg["planificateur_task_users"]."</label></div><div class='colonne_suite'>!!task_users!!</div>

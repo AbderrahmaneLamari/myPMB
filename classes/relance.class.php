@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: relance.class.php,v 1.10.2.5 2022/01/04 09:32:38 dgoron Exp $
+// $Id: relance.class.php,v 1.16 2022/08/01 06:44:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,7 +14,6 @@ require_once ("$class_path/author.class.php");
 require_once("$class_path/progress_bar.class.php");
 require_once($class_path."/filter_list.class.php");
 require_once($class_path."/expl_to_do.class.php");
-require_once($class_path."/mail/reader/loans/mail_reader_loans_late_relance.class.php");
 
 class relance {
 	

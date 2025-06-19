@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector.class.php,v 1.25.2.2 2021/11/12 13:55:45 dgoron Exp $
+// $Id: selector.class.php,v 1.29 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -137,6 +137,24 @@ class selector {
 		return $jscript;
 	}
 	
+	protected function get_start_list() {
+		global $page;
+		
+		$page = intval($page);
+		if(!$page) {
+			return 0;
+		} else {
+			return ($page-1)*$this->get_nb_per_page_list();
+		}
+	}
+	
+	protected function get_nb_per_page_list() {
+		global $nb_per_page;
+		
+		$nb_per_page = intval($nb_per_page);
+		return $nb_per_page;
+	}
+	
 	protected function get_display_object($id=0, $object_id=0) {
 	
 	}
@@ -170,20 +188,16 @@ class selector {
 	}
 	
 	public function get_pagination() {
-		global $nb_per_page;
 		global $page;
 		
 		// constitution des liens
-		$nbepages = ceil($this->nbr_lignes/$nb_per_page);
 		if(!$page) {
 			$page = 1;
 		}
-		$suivante = $page+1;
-		$precedente = $page-1;
 		
 		// affichage du lien précédent si nécéssaire
 		$pagination = "<div class='row'>&nbsp;<hr /></div><div class='center'>";
-		$pagination .= aff_pagination ($this->get_link_pagination(), $this->nbr_lignes, $nb_per_page, $page, 10, false, true) ;
+		$pagination .= aff_pagination ($this->get_link_pagination(), $this->nbr_lignes, $this->get_nb_per_page_list(), $page, 10, false, true) ;
 		$pagination .= "</div>";
 		return $pagination;
 	}
@@ -310,6 +324,7 @@ class selector {
 		global $what, $caller, $tab;
 		global $no_display, $bt_ajouter, $dyn, $callback, $infield;
 		global $max_field, $field_id, $field_name_id, $add_field;
+		global $module_from;
 		
 		// gestion d'un élément à ne pas afficher
 		if (!$no_display) $no_display=0;
@@ -328,6 +343,7 @@ class selector {
 		if($field_id) 		$base_url .= "&field_id=".$field_id;
 		if($field_name_id) 	$base_url .= "&field_name_id=".$field_name_id;
 		if($add_field) 		$base_url .= "&add_field=".$add_field;
+		if($module_from) 	$base_url .= "&module_from=".$module_from;
 		
 		foreach($_GET as $name => $value){
 			if(strpos($base_url, $name) === false){

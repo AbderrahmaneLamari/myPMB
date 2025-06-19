@@ -2,16 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: reindex_concept.inc.php,v 1.10.8.2 2021/12/15 08:53:05 dgoron Exp $
+// $Id: reindex_concept.inc.php,v 1.13 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $base_path, $msg, $charset;
 global $start, $v_state, $spec, $count;
-
-require_once($base_path.'/classes/autoloader.class.php');
-$autoloader = new autoloader();
-$autoloader->add_register("onto_class",true);
 
 // la taille d'un paquet de notices
 $lot = REINDEX_PAQUET_SIZE; // defini dans ./params.inc.php

@@ -2,18 +2,23 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: thumbnail.class.php,v 1.11.2.1 2021/12/11 09:47:05 tsamson Exp $
+// $Id: thumbnail.class.php,v 1.18.2.5 2023/10/27 13:47:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
+use Pmb\Common\Library\Image\CacheImage;
+use Pmb\Common\Helper\HelperEntities;
+
+global $include_path;
 require_once($include_path."/templates/thumbnail.tpl.php");
 
 class thumbnail {
-	
+
 	protected static $image;
-	
+
 	protected static $url_image;
-	
+
 	public static function get_parameter_img_folder_id($object_type = 'record') {
 		switch ($object_type) {
 			case 'authority':
@@ -30,7 +35,7 @@ class thumbnail {
 				break;
 		}
 	}
-	
+
 	public static function get_parameter_img_pics_max_size($object_type = 'record') {
 		switch ($object_type) {
 			case 'authority':
@@ -43,7 +48,7 @@ class thumbnail {
 				break;
 		}
 	}
-	
+
 	public static function get_img_prefix($object_type = 'record') {
 		switch ($object_type) {
 			case 'shelve':
@@ -60,10 +65,8 @@ class thumbnail {
 				break;
 		}
 	}
-	
+
 	public static function create($object_id, $object_type = 'record') {
-		global $opac_url_base;
-		
 		$thumbnail_url = '';
 		// vignette de la notice uploadé dans un répertoire
 		if(isset($_FILES['f_img_load']['name']) && $_FILES['f_img_load']['name'] && static::get_parameter_img_folder_id($object_type) && $object_id){
@@ -81,6 +84,7 @@ class thumbnail {
 					$image.=fread($fp,4096);
 					$size=strlen($image);
 				}
+				fclose($fp);
 				if ($img=imagecreatefromstring($image)) {
 					$parameter_img_pics_max_size = static::get_parameter_img_pics_max_size($object_type);
 					if(!($parameter_img_pics_max_size*1)) $parameter_img_pics_max_size=100;
@@ -122,9 +126,6 @@ class thumbnail {
 						case 'authority':
 							$manag_cache = getimage_cache(0, 0, $object_id);
 							break;
-						case 'docnum':
-						    $manag_cache = getimage_cache(0, 0, 0, 0, 0, 0, 0, 0, 0, $object_id);
-							break;
 						case 'record':
 						default:
 							$manag_cache = getimage_cache($object_id);
@@ -146,11 +147,27 @@ class thumbnail {
 		}
 		return $thumbnail_url;
 	}
-	
+
+	/**
+	 * Permet de supprimer la vignette en cache pour une entite donnee
+	 *
+	 * @param int $object_id
+	 * @param int $object_type
+	 * @return boolean
+	 */
+	public static function clearCache(int $object_id, int $object_type) {
+	    $namespace = HelperEntities::get_entities_namespace();
+	    if (!isset($namespace[$object_type])) {
+	        throw new \InvalidArgumentException("Unknown object type !");
+	    }
+	    $filename = CacheImage::generateFilename($namespace[$object_type], $object_id);
+	    if (CacheImage::exists($filename)) {
+	        return CacheImage::delete($filename);
+	    }
+	    return false;
+	}
+
 	public static function create_from_base64($object_id, $object_type = 'record', $thumbnail_base64='') {
-		global $opac_url_base;
-		
-		$thumbnail_url = '';
 		// vignette de la notice uploadé dans un répertoire
 		if(static::get_parameter_img_folder_id($object_type) && $object_id){
 			$query = "select repertoire_path from upload_repertoire where repertoire_id ='".static::get_parameter_img_folder_id($object_type)."'";
@@ -173,7 +190,7 @@ class thumbnail {
 		}
 		return false;
 	}
-	
+
 	//Suppression de la vignette de la notice si il y en a une d'uploadée
 	public static function delete($object_id, $object_type = 'record') {
 		if(static::get_parameter_img_folder_id($object_type)){
@@ -186,7 +203,7 @@ class thumbnail {
 			}
 		}
 	}
-	
+
 	public static function is_valid_folder($object_type='record') {
 		$is_valid = false;
 		if(static::get_parameter_img_folder_id($object_type)){
@@ -201,17 +218,16 @@ class thumbnail {
 		}
 		return $is_valid;
 	}
-	
+
 	public static function get_message_folder($object_type='record') {
 		global $msg;
-		
+
 		$message_folder="";
 		if(static::get_parameter_img_folder_id($object_type)){
 			if(!static::is_valid_folder($object_type)){
 				if (SESSrights & ADMINISTRATION_AUTH){
 					$requete = "select * from parametres where gestion=0 and type_param='pmb' and sstype_param='notice_img_folder_id' ";
 					$res = pmb_mysql_query($requete);
-					$i=0;
 					if($param=pmb_mysql_fetch_object($res)) {
 						$message_folder=" <a class='erreur' href='./admin.php?categ=param&action=modif&id_param=".$param->id_param."' >".$msg['notice_img_folder_admin_no_access']."</a> ";
 					}
@@ -222,13 +238,13 @@ class thumbnail {
 		}
 		return $message_folder;
 	}
-	
+
 	public static function get_image($code, $thumbnail_url) {
 		global $charset;
 		global $opac_show_book_pics;
 		global $opac_book_pics_url;
 		global $opac_book_pics_msg;
-		
+
 		if(!isset(static::$image[$code."_".$thumbnail_url])) {
 			if ($code || $thumbnail_url) {
 				if ($opac_show_book_pics=='1' && ($opac_book_pics_url || $thumbnail_url)) {
@@ -247,12 +263,11 @@ class thumbnail {
 		}
 		return static::$image[$code."_".$thumbnail_url];
 	}
-	
+
 	public static function get_url_image($code, $thumbnail_url) {
 		global $opac_show_book_pics;
 		global $opac_book_pics_url;
-		global $pmb_opac_url;
-		
+
 		if(!isset(static::$url_image[$code."_".$thumbnail_url])) {
 			if ($code || $thumbnail_url) {
 				if ($opac_show_book_pics=='1' && ($opac_book_pics_url || $thumbnail_url)) {
@@ -266,12 +281,12 @@ class thumbnail {
 		}
 		return static::$url_image[$code."_".$thumbnail_url];
 	}
-	
+
 	public static function get_js_function_chklnk_tpl() {
 		global $js_function_chklnk_tpl;
 		return $js_function_chklnk_tpl;
 	}
-	
+
 	public static function get_form($object_type, $value = '') {
 		global $msg, $charset;
 		$form = static::get_js_function_chklnk_tpl();
@@ -301,65 +316,66 @@ class thumbnail {
 		}
 		return $form;
 	}
-	
+
 	public static function do_image(&$entree, $notice) {
 		global $charset;
 		global $pmb_book_pics_show ;
-		global $pmb_book_pics_url ;
 		global $pmb_book_pics_msg;
 		// pour url OPAC en diff DSI
 		global $prefix_url_image ;
-		global $depliable ;
-		global $opac_url_base;
+		global $pmb_url_base;
+		global $use_opac_url_base;
 		if(!isset($prefix_url_image)){
 			$prefix_url_image = "./";
 		}
-		if (!empty($notice->code) || !empty($notice->thumbnail_url)) {
-			if ($pmb_book_pics_show=='1' && ($pmb_book_pics_url || $notice->thumbnail_url)) {
-				$url_image=$url_image_ok = getimage_url((!empty($notice->code) ? $notice->code : ''), ($notice->thumbnail_url ?? ""));
-				if ($depliable) {//MB - 22/06/2017: dépliable à 0 ou pas défini, on ne passe jamais ici je pense
-					$image = "<img class='img_notice align_right' id='PMBimagecover".$notice->notice_id."' src='".$prefix_url_image."images/vide.png' hspace='4' vspace='2' isbn='".$code_chiffre."' url_image='".$url_image."' vigurl=\"".$notice->thumbnail_url."\">";
-				} else {
-					/*
-					if ($notice->thumbnail_url) {
-						$title_image_ok="";
-					} else {
-						$title_image_ok = htmlentities($pmb_book_pics_msg, ENT_QUOTES, $charset) ;
-					}
-					*/
-					if($pmb_book_pics_msg) {
-						$title_image_ok = htmlentities($pmb_book_pics_msg, ENT_QUOTES, $charset);
-					}else {
-						$title_image_ok = htmlentities($notice->tit1, ENT_QUOTES, $charset);
-					}
-					$image = "<img class='img_notice align_right' id='PMBimagecover".$notice->notice_id."' src='".$url_image_ok."' alt=\"".$title_image_ok."\" hspace='4' vspace='2'>";
-				}
-			} else {
-				$image="";
+		$notice_id = 0;
+		if (!empty($notice->notice_id)) {
+		    $notice_id = intval($notice->notice_id);
+		}
+		if ($pmb_book_pics_show) {
+		    $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+		    $thumbnail_type = TYPE_NOTICE;
+		    if (!empty($notice->is_external)) {
+		        $thumbnail_type = TYPE_EXTERNAL;
+		    }
+		    if($use_opac_url_base) {
+		        $url_image_ok = $thumbnailSourcesHandler->generateSrcBase64($thumbnail_type, $notice_id);
+		    } else {
+		        $url_image_ok = $thumbnailSourcesHandler->generateUrl($thumbnail_type, $notice_id);
+		    }
+			if($pmb_book_pics_msg) {
+				$title_image_ok = htmlentities($pmb_book_pics_msg, ENT_QUOTES, $charset);
+			}else {
+				$title_image_ok = htmlentities($notice->tit1, ENT_QUOTES, $charset);
 			}
-			if ($image) {
-				$entree = "<table style='width:100%'><tr><td style='vertical-align:top'>$entree</td><td style='vertical-align:top' class='align_right'>$image</td></tr></table>" ;
-			} else {
-				$entree = "<table style='width:100%'><tr><td style='vertical-align:top'>$entree</td></tr></table>" ;
-			}
-	
+			$image = "<img class='img_notice align_right' id='PMBimagecover".$notice->notice_id."' src='".$url_image_ok."' alt=\"".$title_image_ok."\" hspace='4' vspace='2'>";
+		} else {
+			$image="";
+		}
+		if ($image) {
+			$entree = "<table style='width:100%'><tr><td style='vertical-align:top'>$entree</td><td style='vertical-align:top' class='align_right'>$image</td></tr></table>" ;
 		} else {
 			$entree = "<table style='width:100%'><tr><td style='vertical-align:top'>$entree</td></tr></table>" ;
 		}
 	}
-	
+
 	public static function get_thumbnail_url($object_id, $object_type) {
+	    global $opac_url_base;
+	    global $pmb_url_base;
+	    global $use_opac_url_base;
+	    
+	    $url_base = $pmb_url_base;
+	    if (!empty($use_opac_url_base)) {
+	        $url_base = $opac_url_base;
+	    }
 	    $object_id = intval($object_id);
-	    $thumbnail_url = "getimage.php?noticecode=&vigurl=";
+	    $thumbnail_url = $url_base."getimage.php?noticecode=&vigurl=";
 	    switch ($object_type) {
 	        case 'shelve':
 	            $thumbnail_url .= "&etagere_id=".$object_id;
 	            break;
 	        case 'authority':
 	            $thumbnail_url .= "&authority_id=".$object_id;
-	            break;
-	        case 'docnum':
-	            $thumbnail_url .= "&docnum_id=".$object_id;
 	            break;
 	        case 'record':
 	        default:

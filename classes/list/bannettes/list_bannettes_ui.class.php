@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_bannettes_ui.class.php,v 1.28.2.3 2021/09/21 16:43:41 dgoron Exp $
+// $Id: list_bannettes_ui.class.php,v 1.33.4.3 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,6 +14,8 @@ require_once($base_path."/dsi/func_common.inc.php");
 
 class list_bannettes_ui extends list_ui {
 	
+	protected static $equations = array();
+	
 	protected function _get_query_base() {
 		$query = 'select id_bannette, nom_bannette, proprio_bannette, comment_public FROM bannettes ';
 		return $query;
@@ -23,27 +25,18 @@ class list_bannettes_ui extends list_ui {
 		return new bannette($row->id_bannette);
 	}
 	
-	protected function _get_query_order() {
-	    if ($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'name':
-					$order .= 'nom_bannette, comment_public';
-					break;
-				case 'comment_public':
-					$order .= 'comment_public';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	/**
+	 * Champ(s) du tri SQL
+	 */
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'name':
+	            return 'nom_bannette, comment_public';
+	        case 'comment_public':
+	            return 'comment_public';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -82,6 +75,7 @@ class list_bannettes_ui extends list_ui {
 	protected function init_default_settings() {
 		parent::init_default_settings();
 		$this->set_setting_display('search_form', 'export_icons', false);
+		$this->set_setting_selection_actions('delete', 'visible', false);
 		$this->set_setting_column('name', 'align', 'left');
 		$this->set_setting_column('equations', 'align', 'left');
 		$this->set_setting_column('number_records', 'datatype', 'integer');
@@ -137,9 +131,7 @@ class list_bannettes_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_name() {
-		global $msg;
-		
-		return "<input class='saisie-20em' id='".$this->objects_type."_name' type='text' name='".$this->objects_type."_name' value=\"".$this->filters['name']."\" title='$msg[3000]' />";
+		return $this->get_search_filter_simple_text('name');
 	}
 	
 	protected function get_search_filter_id_classement() {
@@ -163,51 +155,39 @@ class list_bannettes_ui extends list_ui {
 		return "<input class='bouton' type='button' value='".$msg['ajouter']."' onClick=\"document.location='".static::get_controller_url_base().'&suite=add'."';\" />";
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
+	protected function _add_query_filters() {
 		global $sub;
 		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
 		if($sub == 'lancer') {
-			$filters [] = '(DATE_ADD(date_last_envoi, INTERVAL periodicite DAY) <= sysdate())';
+			$this->query_filters [] = '(DATE_ADD(date_last_envoi, INTERVAL periodicite DAY) <= sysdate())';
 		}
 		if($this->filters['auto'] !== '') {
-			$filters [] = 'bannette_auto = "'.$this->filters['auto'].'"';
+			$this->query_filters [] = 'bannette_auto = "'.$this->filters['auto'].'"';
 		}
 		if($this->filters['id_classement']) {
-			$filters [] = 'num_classement = "'.$this->filters['id_classement'].'"';
+			$this->query_filters [] = 'num_classement = "'.$this->filters['id_classement'].'"';
 		} elseif($this->filters['id_classement'] === 0) {
-			$filters [] = 'num_classement = "0"';
+			$this->query_filters [] = 'num_classement = "0"';
 		}
 		if($this->filters['name']) {
-			$filters [] = 'nom_bannette like "%'.str_replace("*", "%", addslashes($this->filters['name'])).'%"';
+			$this->query_filters [] = 'nom_bannette like "%'.str_replace("*", "%", addslashes($this->filters['name'])).'%"';
 		}
 		if($this->filters['num_empr'] != '') {
-			$filters [] = 'num_empr = "'.$this->filters['num_empr'].'"';
+			$this->query_filters [] = 'num_empr = "'.$this->filters['num_empr'].'"';
 		}
 		if($this->filters['proprio_bannette'] !== '') {
-			$filters [] = 'proprio_bannette = "'.$this->filters['proprio_bannette'].'"';
+			$this->query_filters [] = 'proprio_bannette = "'.$this->filters['proprio_bannette'].'"';
 		}
 		if($this->filters['type']) {
 			switch ($this->filters['type']) {
 				case 1:
-					$filters [] = 'proprio_bannette = 0';
+					$this->query_filters [] = 'proprio_bannette = 0';
 					break;
 				case 2:
-					$filters [] = 'proprio_bannette != 0';
+					$this->query_filters [] = 'proprio_bannette != 0';
 					break;
 			}
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
 	}
 	
 	protected function _get_label_cell_header($name) {
@@ -232,26 +212,33 @@ class list_bannettes_ui extends list_ui {
 	}
 
 	protected static function get_equations($id_bannette, $proprio_bannette=0) {
-	    global $msg;
-	    
-	    $requete = "select id_equation, num_classement, nom_equation, comment_equation, proprio_equation, num_bannette from equations, bannette_equation where num_equation=id_equation and proprio_equation='".$proprio_bannette."' and num_bannette='".$id_bannette."' order by nom_equation " ;
-		$resequ = pmb_mysql_query($requete);
-		$equ_trouvees =  pmb_mysql_num_rows($resequ) ;
-		$equations = "" ;
-		while ($equa=pmb_mysql_fetch_object($resequ)) {
-			$eq_form= new equation($equa->id_equation) ;
-			$equations .= "<li>".$equa->nom_equation.($proprio_bannette ? $eq_form->make_hidden_search_form("","PRI", $proprio_bannette) : '')."</li>";
+		if(!isset(static::$equations[$id_bannette])) {
+		    $requete = "select id_equation, num_classement, nom_equation, comment_equation, proprio_equation, num_bannette from equations, bannette_equation where num_equation=id_equation and proprio_equation='".$proprio_bannette."' and num_bannette='".$id_bannette."' order by nom_equation " ;
+			$resequ = pmb_mysql_query($requete);
+			static::$equations[$id_bannette] = array();
+			while ($equa=pmb_mysql_fetch_object($resequ)) {
+				$eq_form= new equation($equa->id_equation) ;
+				static::$equations[$id_bannette][] = $equa->nom_equation.($proprio_bannette ? $eq_form->make_hidden_search_form("","PRI", $proprio_bannette) : '');
+			}
 		}
-		if($equ_trouvees == 0) {
-			$equations .= $msg['dsi_ban_no_equ'];
+		return static::$equations[$id_bannette];
+	}
+	
+	protected static function get_formatted_equations($id_bannette, $proprio_bannette=0) {
+		global $msg;
+		
+		$formatted_equations = "";
+		$equations = static::get_equations($id_bannette, $proprio_bannette);
+		if(count($equations) == 0) {
+			$formatted_equations .= $msg['dsi_ban_no_equ'];
 		} else {
-			$equations = "<ul>".$equations."</ul>";
+			$formatted_equations = "<ul><li>".implode('</li><li>', $equations)."</li></ul>";
 		}
-		return $equations;
+		return $formatted_equations;
 	}
 	
 	protected function _get_object_property_equations($object) {
-		return static::get_equations($object->id_bannette);
+		return implode(' ', static::get_equations($object->id_bannette));
 	}
 	
 	protected function _get_object_property_number_records($object) {
@@ -272,7 +259,7 @@ class list_bannettes_ui extends list_ui {
 	}
 	
 	protected function get_cell_content($object, $property) {
-		global $charset;
+		global $msg, $charset;
 	
 		$content = '';
 		switch($property) {
@@ -283,6 +270,14 @@ class list_bannettes_ui extends list_ui {
 					<ul>
 						<em>".htmlentities($object->comment_gestion,ENT_QUOTES, $charset)."</em>
 					</ul>";
+				break;
+			case 'equations':
+				$equations = static::get_equations($object->id_bannette, $object->proprio_bannette);
+				if(count($equations) == 0) {
+					$content .= $msg['dsi_ban_no_equ'];
+				} else {
+					$content = "<ul><li>".implode('</li><li>', $equations)."</li></ul>";
+				}
 				break;
 			case 'number_subscribed':
 				$content .= $object->nb_abonnes;
@@ -305,7 +300,7 @@ class list_bannettes_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$onclick="";
 		switch($property) {
 			case 'name':
@@ -322,13 +317,10 @@ class list_bannettes_ui extends list_ui {
 				$onclick = " document.location=\"./dsi.php?categ=diffuser&sub=auto&id_bannette=".$object->id_bannette."\";";
 				break;
 		}
-		$attributes = array(
+		return array(
 				'style' => 'vertical-align:top;',
 				'onclick' => $onclick,
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function _get_query_property_filter($property) {
@@ -361,6 +353,23 @@ class list_bannettes_ui extends list_ui {
 	public function set_pager_in_session() {
 		$_SESSION['list_'.$this->objects_type.'_pager']['page'] = $this->pager['page'];
 		parent::set_pager_in_session();
+	}
+	
+	protected function init_default_selection_actions() {
+		global $msg;
+		
+		parent::init_default_selection_actions();
+		$delete_link = array(
+				'href' => static::get_controller_url_base()."&action=list_delete",
+				'confirm' => $msg['confirm_suppr']
+		);
+		$this->add_selection_action('delete', $msg['63'], 'interdit.gif', $delete_link);
+	}
+	
+	public static function delete_object($id) {
+		$id = intval($id);
+		$bannette = new bannette($id);
+		$bannette->delete();
 	}
 	
 	public static function get_ajax_controller_url_base() {

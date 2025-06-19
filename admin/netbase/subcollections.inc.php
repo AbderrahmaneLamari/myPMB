@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: subcollections.inc.php,v 1.15.8.1 2021/12/13 15:31:05 dgoron Exp $
+// $Id: subcollections.inc.php,v 1.17 2022/02/28 13:44:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -20,10 +20,13 @@ print "<br /><br /><h2 class='center'>".htmlentities($msg["nettoyage_suppr_subco
 
 $query = pmb_mysql_query("SELECT sub_coll_id from sub_collections left join notices on sub_coll_id=subcoll_id where subcoll_id is null ");
 $affected=0;
-if($affected = pmb_mysql_num_rows($query)){
+if(pmb_mysql_num_rows($query)){
 	while ($ligne = pmb_mysql_fetch_object($query)) {
 		$subcoll = new subcollection($ligne->sub_coll_id);
-		$subcoll->delete();
+		$deleted = $subcoll->delete();
+		if(!$deleted) {
+			$affected++;
+		}
 	}
 }
 

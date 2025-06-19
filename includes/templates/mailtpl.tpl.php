@@ -2,12 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mailtpl.tpl.php,v 1.24 2021/03/08 16:58:52 dbellamy Exp $
+// $Id: mailtpl.tpl.php,v 1.24.6.1 2023/09/02 07:29:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $mailtpl_attachments_form_tpl, $msg, $mailtpl_form_resavars, $mailtpl_form_selvars, $mailtpl_form_sel_img, $mailtpl_content_form;
-global $pdflettreresa_resa_prolong_email;
+global $mailtpl_attachments_form_tpl, $msg, $mailtpl_form_resavars, $mailtpl_form_selvars, $mailtpl_form_sel_img, $mailtpl_js_content_form;
 
 $mailtpl_form_resavars = "
 	<select name='resavars_id' id='resavars_id'>
@@ -76,7 +75,8 @@ $mailtpl_form_sel_img="
 
 </script>
 ";
-$mailtpl_content_form="	
+
+$mailtpl_js_content_form="	
 <script type='text/javascript'>
 	function test_form(form){
 		if((form.name.value.length == 0) )		{
@@ -92,50 +92,6 @@ $mailtpl_content_form="
 		return true;
 	}
 </script>
-<div class='row'>
-	<label class='etiquette' for='name'>".$msg['admin_mailtpl_form_name']."</label>
-</div>
-<div class='row'>
-	<input type='text' class='saisie-50em' name='name' id='name' value='!!name!!' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='f_objet_mail'>".$msg['empr_mailing_form_obj_mail']."</label>
-	<div class='row'>
-		<input type='text' class='saisie-80em' id='f_objet_mail'  name='f_objet_mail' value='!!objet!!' />
-	</div>
-</div>
-<div class='row'>
-	<label class='etiquette' for='f_message'>".$msg["admin_mailtpl_form_tpl"]."</label>
-	<div class='row'>
-		<textarea id='f_message' name='f_message' cols='100' rows='20'>!!tpl!!</textarea>
-	</div>
-</div>
-<div class='row'>
-	<label class='etiquette'>".$msg["admin_mailtpl_form_selvars"]."</label>
-	<div class='row'>
-		!!selvars!!
-	</div>
-</div>";
-if($pdflettreresa_resa_prolong_email){
-	$mailtpl_content_form.="
-	<div class='row'>
-		<label class='etiquette'>".$msg["admin_mailtpl_form_resa_prolong_selvars"]."</label>
-		<div class='row'>
-			!!resavars!!
-		</div>
-	</div>";
-}
-$mailtpl_content_form.="!!sel_img!!
-<div class='row'>
-	<input type='hidden' id='auto_id_list' name='auto_id_list' value='!!id_check_list!!' >
-	<label class='etiquette' for='form_comment'>".$msg['procs_autorisations']."</label>
-	<input type='button' class='bouton_small align_middle' value='".$msg['tout_cocher_checkbox']."' onclick='check_checkbox(document.getElementById(\"auto_id_list\").value,1);'>
-	<input type='button' class='bouton_small align_middle' value='".$msg['tout_decocher_checkbox']."' onclick='check_checkbox(document.getElementById(\"auto_id_list\").value,0);'>
-</div>
-<div class='row'>
-	!!autorisations_users!!
-</div>
-<input type='hidden' name='id_mailtpl' id='id_mailtpl' value='!!id_mailtpl!!'/>
 ";
 		
 $mailtpl_attachments_form_tpl="

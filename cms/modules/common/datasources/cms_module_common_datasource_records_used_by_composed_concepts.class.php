@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_used_by_composed_concepts.class.php,v 1.3 2016/05/20 13:04:53 apetithomme Exp $
+// $Id: cms_module_common_datasource_records_used_by_composed_concepts.class.php,v 1.4 2022/09/06 07:52:19 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,6 +10,11 @@ require_once($class_path.'/vedette/vedette_composee.class.php');
 
 class cms_module_common_datasource_records_used_by_composed_concepts extends cms_module_common_datasource_records_list{
 	
+    public function __construct($id=0){
+        parent::__construct($id);
+        $this->paging = true;
+    }
+    
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
 	 */
@@ -45,9 +50,19 @@ class cms_module_common_datasource_records_used_by_composed_concepts extends cms
 				}
 			}
 			$return['records'] = $this->filter_datas("notices",$return['records']);
-			if(!count($return['records'])) return false;
+			if(!count($return['records'])) {
+			    return false;
+			}
 			
-			return $this->sort_records($return['records']);
+			$return = $this->sort_records($return['records']);
+			
+			// Pagination
+			if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+			    $return["paging"] = $this->inject_paginator($return['records']);
+			    $return['records'] = $this->cut_paging_list($return['records'], $return["paging"]);
+			}
+			
+			return $return;
 		}
 		return false;
 	}

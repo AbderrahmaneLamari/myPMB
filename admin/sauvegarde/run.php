@@ -2,18 +2,20 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: run.php,v 1.12 2017/10/23 10:13:00 ngantier Exp $
+// $Id: run.php,v 1.12.12.1 2023/11/30 11:07:23 qvarin Exp $
 
 //Sauvegarde des jeux : initialisation de la sauvegarde d'un jeu, création du fichier SQL et compression éventuelle, log
 $base_path="../..";
 $base_auth="SAUV_AUTH|ADMINISTRATION_AUTH";
 $base_title="\$msg[sauv_misc_running]";
-require($base_path."/includes/init.inc.php");
 
-require_once("lib/api.inc.php");
+global $charset, $sauvegardes;
+
+require_once "{$base_path}/includes/init.inc.php";
+require_once "lib/api.inc.php";
 
 //Récupération de l'id utilisateur
-$requete="select userid from users where username='".SESSlogin."'";
+$requete = "select userid from users where username='" . addslashes(SESSlogin) . "'";
 $resultat=pmb_mysql_query($requete) or die(pmb_mysql_error());
 $userid=pmb_mysql_result($resultat,0,0);
 
@@ -25,24 +27,25 @@ if (!is_array($sauvegardes)) {
 
 //Entête
 print "<div id=\"contenu-frame\">\n";
-echo "<h1>".$msg["sauv_misc_export_running"]."</h1>\n";
-echo "<form class='form-$current_module' name=\"sauv\" action=\"\" method=\"post\">\n";
+echo "<h1>" . htmlentities($msg["sauv_misc_export_running"], ENT_QUOTES, $charset) . "</h1>\n";
+echo "<form class='form-". addslashes($current_module) ."' name=\"sauv\" action=\"\" method=\"post\">\n";
 echo "<br /><br />";
-echo "<input type=\"button\" value=\"".$msg["sauv_annuler"]."\" onClick=\"document.location='launch.php';\" class=bouton>\n";
+echo "<input type=\"button\" value=\"'" . addslashes($msg["sauv_annuler"]) . "\" onClick=\"document.location='launch.php';\" class=bouton>\n";
 
 //Pour le premier jeux de sauvegarde de la liste restante
+$sauvegardes = array_map('intval', $sauvegardes);
 $currentSauv=$sauvegardes[0];
 
 //Affichage des jeux restants
 for ($i=1; $i<count($sauvegardes); $i++) {
-	echo "<input type=\"hidden\" name=\"sauvegardes[]\" value=\"".$sauvegardes[$i]."\">\n";
+	echo "<input type=\"hidden\" name=\"sauvegardes[]\" value=\"".intval($sauvegardes[$i])."\">\n";
 }
 
 //Jeu en cours
-echo "<input type=\"hidden\" name=\"currentSauv\" value=\"".$currentSauv."\">\n";
+echo "<input type=\"hidden\" name=\"currentSauv\" value=\"".intval($currentSauv)."\">\n";
 
 //Recherche des paramètres de la sauvegarde
-$requete="select sauv_sauvegarde_nom, sauv_sauvegarde_file_prefix, sauv_sauvegarde_tables, sauv_sauvegarde_compress,sauv_sauvegarde_compress_command, sauv_sauvegarde_crypt from sauv_sauvegardes where sauv_sauvegarde_id=".$currentSauv;
+$requete="select sauv_sauvegarde_nom, sauv_sauvegarde_file_prefix, sauv_sauvegarde_tables, sauv_sauvegarde_compress,sauv_sauvegarde_compress_command, sauv_sauvegarde_crypt from sauv_sauvegardes where sauv_sauvegarde_id=". intval($currentSauv);
 $resultat=pmb_mysql_query($requete);
 $res=pmb_mysql_fetch_object($resultat);
 
@@ -53,7 +56,7 @@ $log_file=$res->sauv_sauvegarde_file_prefix."_".date("Y_m_d",time());
 //Recherche si nom de fichier déjà existant
 $n_version=0;
 if (!defined('SAUV_PREFIX')) define( 'SAUV_PREFIX', "" );
-	else define( 'SAUV_PREFIX', SAUV_PREFIX."_" );
+else define( 'SAUV_PREFIX', SAUV_PREFIX."_" );
 $log_file_test=SAUV_PREFIX.$log_file.".sav";
 while (file_exists("../../admin/backup/backups/".$log_file_test)) {
 	$n_version++;
@@ -61,7 +64,7 @@ while (file_exists("../../admin/backup/backups/".$log_file_test)) {
 }
 $log_file=$log_file_test;
 
-$requete="insert into sauv_log (sauv_log_start_date,sauv_log_file,sauv_log_messages,sauv_log_userid) values(now(),'$log_file','$log_messages',$userid)";
+$requete="insert into sauv_log (sauv_log_start_date,sauv_log_file,sauv_log_messages,sauv_log_userid) values(now(),'". addslashes($log_file) ."','". addslashes($log_messages) ."', ". intval($userid) .")";
 pmb_mysql_query($requete) or die(pmb_mysql_error());
 $logid=pmb_mysql_insert_id();
 
@@ -69,7 +72,10 @@ $logid=pmb_mysql_insert_id();
 echo "<input type=\"hidden\" name=\"filename\" value=\"../../admin/backup/backups/".$log_file."\">\n";
 echo "<input type=\"hidden\" name=\"logid\" value=\"".$logid."\">\n";
 echo "<input type=\"hidden\" name=\"sauv_sauvegarde_nom\" value=\"".$res->sauv_sauvegarde_nom."\">\n";
-echo "<h2>".sprintf($msg["sauv_misc_export_SQL"],$res->sauv_sauvegarde_nom)."</h2>";
+
+$lableSauvegarde = sprintf($msg["sauv_misc_export_SQL"], $res->sauv_sauvegarde_nom);
+echo "<h2>".htmlentities($lableSauvegarde, ENT_QUOTES, $charset) ."</h2>";
+
 
 //Création du fichier d'export
 $fe=@fopen("../../admin/backup/backups/".$log_file,"w+");
@@ -118,7 +124,7 @@ fwrite($fe,"#Compress : ".$res->sauv_sauvegarde_compress."\r\n");
 if ($res->sauv_sauvegarde_compress==1) {
 	fwrite($fe,"#Compress commands : ".$res->sauv_sauvegarde_compress_command."\r\n");
 	$command=explode(":",$res->sauv_sauvegarde_compress_command);
-	
+
 	switch ($command[0]) {
 		case 'external' :
 			$c_command=str_replace("%s","../../admin/backup/backups/".$temp_file,$command[1]);
@@ -126,7 +132,7 @@ if ($res->sauv_sauvegarde_compress==1) {
 			@unlink("../../admin/backup/backups/".$temp_file);
 			$temp_file="../../admin/backup/backups/".$temp_file.".".$command[3];
 			if (!file_exists($temp_file)) abort("Compression failed",$logid);
-		break;
+			break;
 		case 'internal' :
 			$fz=bzopen("../../admin/backup/backups/".$temp_file.".bz2","w");
 			if (!$fz) abort("Compression failed",$logid);
@@ -138,7 +144,7 @@ if ($res->sauv_sauvegarde_compress==1) {
 			fclose($ftemp);
 			unlink("../../admin/backup/backups/".$temp_file);
 			$temp_file="../../admin/backup/backups/".$temp_file.".bz2";
-		break;
+			break;
 	}
 	write_log("Compress OK : Compress is OK",$logid);
 } else {
@@ -159,4 +165,3 @@ echo "</form></body></html>";
 //Etape suivante
 echo "<script>document.sauv.action=\"$action\"; document.sauv.submit();</script>";
 print "</div>";
-?>

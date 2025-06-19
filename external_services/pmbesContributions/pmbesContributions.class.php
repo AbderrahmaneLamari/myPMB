@@ -2,18 +2,14 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesContributions.class.php,v 1.6 2020/11/10 15:42:19 gneveu Exp $
+// $Id: pmbesContributions.class.php,v 1.7.4.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path, $lang, $msg;
 require_once($class_path."/external_services.class.php");
 require_once($class_path."/external_services_caches.class.php");
 require_once($class_path."/encoding_normalize.class.php");
-
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("rdf_entities_integration", true);
-
 
 if (!isset($msg)) {
 	//Allons chercher les messages
@@ -24,12 +20,6 @@ if (!isset($msg)) {
 }
 
 class pmbesContributions extends external_services_api_class{
-	public $error=false;		//Y-a-t-il eu une erreur
-	public $error_message="";	//Message correspondant à l'erreur
-	
-	public function form_general_config() {
-		return false;
-	}
 	
 	public function integrate_entity($uri) {
 		$config = array(

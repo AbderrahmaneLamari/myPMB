@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: exercices.class.php,v 1.25.4.1 2021/12/22 10:43:26 dgoron Exp $
+// $Id: exercices.class.php,v 1.29.4.1 2023/09/02 07:10:39 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,6 +10,7 @@ global $class_path;
 require_once("$class_path/actes.class.php");
 require_once("$class_path/budgets.class.php");
 require_once("$class_path/entites.class.php");
+require_once("$class_path/interface/admin/interface_admin_acquisition_form.class.php");
 
 if(!defined('STA_EXE_CLO')) define('STA_EXE_CLO', 0);	//Statut		0 = Cloturé
 if(!defined('STA_EXE_ACT')) define('STA_EXE_ACT', 1);	//Statut		1 = Actif
@@ -45,37 +46,31 @@ class exercices{
 		$this->statut = $obj->statut;
 	}
 
-	public function get_form($id_entite) {
+	public function get_content_form() {
 	    global $msg;
 	    global $charset;
-	    global $exer_form;
 	    global $ptab;
 	    
-	    $exer_form = str_replace('!!id_entite!!', $id_entite, $exer_form);
-	    $exer_form = str_replace('!!id_exer!!', $this->id_exercice, $exer_form);
-	    
+	    $interface_content_form = new interface_content_form(static::class);
+	    $interface_content_form->add_element('libelle', '103')
+	    ->add_input_node('text', $this->libelle);
 	    if(!$this->id_exercice) {
-	        $exer_form = str_replace('!!form_title!!', htmlentities($msg['acquisition_ajout_exer'],ENT_QUOTES,$charset), $exer_form);
-	        $exer_form = str_replace('!!libelle!!', '', $exer_form);
 	        $interface_date = new interface_date('date_deb');
-	        $exer_form = str_replace('!!date_deb!!', $interface_date->get_display(), $exer_form);
+	        $content_date_debut = $interface_date->get_display();
 	        $interface_date = new interface_date('date_fin');
-	        $exer_form = str_replace('!!date_fin!!', $interface_date->get_display(), $exer_form);
-	        $exer_form = str_replace('!!statut!!', htmlentities($msg['acquisition_statut_actif'], ENT_QUOTES, $charset), $exer_form);
+	        $content_date_fin = $interface_date->get_display();
+	        $content_statut = htmlentities($msg['acquisition_statut_actif'], ENT_QUOTES, $charset);
 	    } else {
-	        $exer_form = str_replace('!!form_title!!', htmlentities($msg['acquisition_modif_exer'],ENT_QUOTES,$charset), $exer_form);
-	        $exer_form = str_replace('!!libelle!!', htmlentities($this->libelle,ENT_QUOTES,$charset), $exer_form);
-	        
 	        if (exercices::hasBudgets($this->id_exercice) || exercices::hasActes($this->id_exercice)) {
-	            $exer_form = str_replace('!!date_deb!!', formatdate($this->date_debut), $exer_form);
-	            $exer_form = str_replace('!!date_fin!!', formatdate($this->date_fin), $exer_form);
+	            $content_date_debut = formatdate($this->date_debut);
+	            $content_date_fin = formatdate($this->date_fin);
 	        } else {
 	            $interface_date = new interface_date('date_deb');
 	            $interface_date->set_value($this->date_debut);
-	            $exer_form = str_replace('!!date_deb!!', $interface_date->get_display(), $exer_form);
+	            $content_date_debut = $interface_date->get_display();
 	            $interface_date = new interface_date('date_fin');
 	            $interface_date->set_value($this->date_fin);
-	            $exer_form = str_replace('!!date_fin!!', $interface_date->get_display(), $exer_form);
+	            $content_date_fin = $interface_date->get_display();
 	        }
 	        switch ($this->statut) {
 	            case STA_EXE_CLO :
@@ -91,34 +86,49 @@ class exercices{
 	                $aff_bt_def = TRUE;
 	                break;
 	        }
-	        $exer_form = str_replace('!!statut!!', htmlentities($ms,ENT_QUOTES,$charset), $exer_form);
+	        $content_statut = htmlentities($ms,ENT_QUOTES,$charset);
 	        if ($aff_bt_def) {
-	            $exer_form = str_replace('<!-- case_def -->', $ptab[2], $exer_form);
-	        } else {
-	            $exer_form = str_replace('<!-- case_def -->', '', $exer_form);
+	            $content_statut .= $ptab[2];
 	        }
-	        $ptab = str_replace('!!id!!', $this->id_exercice, $ptab);
-	        $ptab = str_replace('!!libelle_suppr!!', addslashes($this->libelle), $ptab);
-	        
-	        //Affichage du bouton de cloture
-	        if($this->statut != STA_EXE_CLO) {
-	            $exer_form = str_replace('<!-- bouton_clot -->', $ptab[0], $exer_form);
-	        }
-	        $exer_form = str_replace('<!-- bouton_sup -->', $ptab[1], $exer_form);
 	    }
-	    $form = confirmation_suppression("./admin.php?categ=acquisition&sub=compta&action=del&ent=".$id_entite."&id=");
-	    $form .= confirmation_cloture("./admin.php?categ=acquisition&sub=compta&action=clot&ent=".$id_entite."&id=");
+	    $interface_content_form->add_element('date_debut', 'calendrier_date_debut')
+	    ->add_html_node($content_date_debut);
+	    $interface_content_form->add_element('date_fin', 'calendrier_date_fin')
+	    ->add_html_node($content_date_fin);
+	    $interface_content_form->add_element('statut', 'acquisition_statut')
+	    ->add_html_node($content_statut);
+	    return $interface_content_form->get_display();
+	}
+	
+	public function get_form($id_entite) {
+	    global $msg;
+	    global $charset;
 	    
+	    $interface_form = new interface_admin_acquisition_form('exerform');
+	    if(!$this->id_exercice){
+	    	$interface_form->set_label($msg['acquisition_ajout_exer']);
+	    }else{
+	    	$interface_form->set_label($msg['acquisition_modif_exer']);
+	    }
 	    $biblio = new entites($id_entite);
-	    $form .= "<div class='row'><label class='etiquette'>".htmlentities($biblio->raison_sociale,ENT_QUOTES,$charset)."</label></div>";
-	    $form .= $exer_form;
+	    $form = "<div class='row'><label class='etiquette'>".htmlentities($biblio->raison_sociale,ENT_QUOTES,$charset)."</label></div>";
+	    
+	    $interface_form->set_object_id($this->id_exercice)
+	    ->set_id_entity($id_entite)
+	    ->set_statut($this->statut)
+	    ->set_confirm_cloture_msg($msg['acquisition_compta_confirm_clot']." ".$this->libelle." ?")
+	    ->set_confirm_delete_msg($msg['acquisition_compta_confirm_suppr']." ".$this->libelle." ?")
+	    ->set_content_form($this->get_content_form())
+	    ->set_table_name('exercices')
+	    ->set_field_focus('libelle');
+	    $form .= $interface_form->get_display();
 	    return $form;
 	}
 	
 	public function set_properties_from_form() {
 		global $libelle, $ent, $date_deb, $date_fin;
 		
-		$this->libelle = $libelle;
+		$this->libelle = stripslashes($libelle);
 		$this->num_entite = $ent;
 		if ($date_deb && $date_fin) {
 			$this->date_debut = $date_deb;
@@ -130,12 +140,12 @@ class exercices{
 	public function save(){
 		if( (!$this->num_entite) || ($this->libelle == '') ) die("Erreur de création exercice");
 		if($this->id_exercice) {
-			$q = "update exercices set num_entite = '".$this->num_entite."', libelle ='".$this->libelle."', ";
+			$q = "update exercices set num_entite = '".$this->num_entite."', libelle ='".addslashes($this->libelle)."', ";
 			$q.= "date_debut = '".$this->date_debut."', date_fin = '".$this->date_fin."', statut = '".$this->statut."' ";
 			$q.= "where id_exercice = '".$this->id_exercice."' ";
 			pmb_mysql_query($q);
 		} else {
-			$q = "insert into exercices set num_entite = '".$this->num_entite."', libelle = '".$this->libelle."', ";
+			$q = "insert into exercices set num_entite = '".$this->num_entite."', libelle = '".addslashes($this->libelle)."', ";
 			$q.= "date_debut =  '".$this->date_debut."', date_fin = '".$this->date_fin."', statut = '".$this->statut."' ";
 			pmb_mysql_query($q);
 			$this->id_exercice = pmb_mysql_insert_id();
@@ -177,6 +187,7 @@ class exercices{
 
 	//Vérifie si un exercice existe
 	public static function exists($id_exercice){
+		$id_exercice = intval($id_exercice);
 		$q = "select count(1) from exercices where id_exercice = '".$id_exercice."' ";
 		$r = pmb_mysql_query($q);
 		return pmb_mysql_result($r, 0, 0);
@@ -186,7 +197,7 @@ class exercices{
 	public static function existsLibelle($id_entite, $libelle, $id_exercice=0){
 		$id_entite = intval($id_entite);
 		$id_exercice = intval($id_exercice);
-		$q = "select count(1) from exercices where libelle = '".$libelle."' and num_entite = '".$id_entite."' ";
+		$q = "select count(1) from exercices where libelle = '".addslashes($libelle)."' and num_entite = '".$id_entite."' ";
 		if ($id_exercice) $q.= "and id_exercice != '".$id_exercice."' ";
 		$r = pmb_mysql_query($q);
 		return pmb_mysql_result($r, 0, 0);
@@ -249,6 +260,8 @@ class exercices{
 	public static function getSessionExerciceId($id_bibli,$id_exer) {
 		global $deflt3exercice;
 
+		$id_bibli = intval($id_bibli);
+		$id_exer = intval($id_exer);
 		$q = "select id_exercice from exercices where num_entite = '".$id_bibli."' and (statut &  '".STA_EXE_ACT."') = '".STA_EXE_ACT."' ";
 		$q.= "order by statut desc ";
 		$r = pmb_mysql_query($q);

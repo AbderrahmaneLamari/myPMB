@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entrez.class.php,v 1.17 2019/12/30 15:58:51 btafforeau Exp $
+// $Id: entrez.class.php,v 1.21 2022/12/27 14:27:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -19,6 +19,7 @@ require_once($class_path."/curl.class.php");
 class entrez extends connector {
 	public  $available_entrezdatabases = array("pubmed" => "PubMed");
 	protected $base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
+	public $n_recu;				//Nombre de notices reçues
 	
     public function __construct($connector_path="") {
     	parent::__construct($connector_path);
@@ -34,7 +35,7 @@ class entrez extends connector {
 	}
     
     public function source_get_property_form($source_id) {
-    	global $charset,$pmb_default_operator;
+    	global $charset;
     	
     	$params=$this->get_source_params($source_id);
 		if ($params["PARAMETERS"]) {
@@ -108,9 +109,10 @@ class entrez extends connector {
     	global $entrez_database, $entrez_maxresults, $entrez_operator;
     	global $del_xsl_transform;
     	
-    	$t["entrez_database"]=stripslashes($entrez_database);
-    	$t["entrez_maxresults"]=$entrez_maxresults+0;
-    	$t["entrez_operator"]=$entrez_operator+0;
+    	$t=array();
+    	$t["entrez_database"] = stripslashes($entrez_database);
+    	$t["entrez_maxresults"] = (int) $entrez_maxresults;
+    	$t["entrez_operator"] = (int) $entrez_operator;
     	
     	//Vérification du fichier
     	if (($_FILES["xslt_file"])&&(!$_FILES["xslt_file"]["error"])) {
@@ -213,7 +215,7 @@ class entrez extends connector {
 			if($xsl_transform['code'])
 				$xsl_transform_content = $xsl_transform['code'];
 			else $xsl_transform_content = "";
-		}	
+		}
 		if($xsl_transform_content == "")
 			$xsl_transform_content = file_get_contents($base_path."/admin/connecteurs/in/entrez/xslt/pubmed_to_unimarc.xsl");
 
@@ -235,7 +237,7 @@ class entrez extends connector {
 	}
 	
 	public function rec_record($rec_uni_dom, $noticenode, $source_id, $search_id, $search_term="") {
-		global $charset,$base_path;
+		global $base_path;
 		
 		if (!$rec_uni_dom->error) {
 			//Initialisation
@@ -274,6 +276,7 @@ class entrez extends connector {
 				//Si pas de conservation ou refï¿½rence inexistante
 				if (($this->del_old)||((!$this->del_old)&&(!$ref_exists))) {
 					//Insertion de l'entï¿½te
+					$n_header=array();
 					$n_header["rs"]=$rec_uni_dom->get_value("rs", $noticenode);
 					$n_header["ru"]=$rec_uni_dom->get_value("ru", $noticenode);
 					$n_header["el"]=$rec_uni_dom->get_value("el", $noticenode);
@@ -321,6 +324,7 @@ class entrez extends connector {
 						pmb_mysql_query($requete);
 					}
 					$this->rec_isbd_record($source_id, $ref, $recid);
+					$this->insert_human_query_into_entrepot($source_id, $ref, $date_import, $search_term, $recid, $search_id);
 				}
 				$this->n_recu++;
 			}

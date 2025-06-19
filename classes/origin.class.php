@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: origin.class.php,v 1.5 2021/01/20 12:55:36 dgoron Exp $
+// $Id: origin.class.php,v 1.6.2.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -40,12 +40,19 @@ class origin {
 		}
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('origin_name', 'origin_name')
+		->add_input_node('text', $this->name);
+		$interface_content_form->add_element('origin_country', 'origin_country')
+		->add_input_node('text', $this->country);
+		$interface_content_form->add_element('origin_diffusible', 'origin_diffusible', 'flat')
+		->add_input_node('boolean', $this->diffusible);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form(){
-		global $msg,$charset;
-		global $origin_content_form;
-		
-		$content_form = $origin_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('origin');
 		if(!$this->id){
@@ -53,13 +60,9 @@ class origin {
 		}else{
 			$interface_form->set_label($msg['authorities_origin_modif']);
 		}
-		$content_form = str_replace('!!origin_name!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!origin_country!!', htmlentities($this->country, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace("!!checked!!",($this->diffusible ? "checked='checked'" : ""),$content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('origin_'.$this->type)
 		->set_field_focus('origin_name');
 		return $interface_form->get_display();
@@ -130,7 +133,7 @@ class origin {
 		return $selector;
 	}
 	
-	public static function import($type="authorities",$origin){
+	public static function import($type="authorities",$origin=array()){
 		if($origin!=""){
 			$query = "select id_origin_".$type." from origin_".$type." where  origin_".$type."_name = '".$origin['origin']."'";
 			$result = pmb_mysql_query($query);

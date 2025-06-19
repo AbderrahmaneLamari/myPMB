@@ -2,9 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bul_view.inc.php,v 1.12 2017/02/17 15:34:01 dgoron Exp $
+// $Id: bul_view.inc.php,v 1.13 2022/02/23 14:47:31 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $class_path, $msg, $charset, $bul_id, $PMBuserid;
+global $gestion_acces_active, $gestion_acces_user_notice, $serial_header;
+global $art_to_show;
 
 if(!isset($art_to_show)) $art_to_show = '';
 // page de switch gestion du bulletinage périodiques
@@ -21,7 +25,7 @@ if ($gestion_acces_active==1 && $gestion_acces_user_notice==1) {
 	if (!$art_to_show) {
 		$acces_j = $dom_1->getJoin($PMBuserid,4,'bulletin_notice'); //lecture
 		$q = "select count(1) from bulletins $acces_j  where bulletin_id=".$bul_id;
-		$r = pmb_mysql_query($q, $dbh);
+		$r = pmb_mysql_query($q);
 		if(pmb_mysql_result($r,0,0)==0) {
 			$acces_l=0;
 		}

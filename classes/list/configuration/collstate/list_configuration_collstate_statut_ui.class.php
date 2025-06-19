@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_collstate_statut_ui.class.php,v 1.4 2021/04/19 07:10:24 dgoron Exp $
+// $Id: list_configuration_collstate_statut_ui.class.php,v 1.4.6.1 2023/03/24 08:11:06 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -35,12 +35,9 @@ class list_configuration_collstate_statut_ui extends list_configuration_collstat
 		switch($property) {
 			case 'archstatut_gestion_libelle':
 				$content .= "<span class='".$object->archstatut_class_html."'  style='margin-right: 3px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' /></span>";
-				$content .= $object->archstatut_gestion_libelle;
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
 				break;
 		}
+		$content .= parent::get_cell_content($object, $property);
 		return $content;
 	}
 	

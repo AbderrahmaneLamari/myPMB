@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bul_expl_form.inc.php,v 1.62.2.1 2021/11/04 09:20:37 dgoron Exp $
+// $Id: bul_expl_form.inc.php,v 1.63 2021/11/04 09:20:12 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_accounting_suppliers_ui.class.php,v 1.1.2.3 2021/07/01 08:13:55 dgoron Exp $
+// $Id: list_accounting_suppliers_ui.class.php,v 1.3.4.1 2023/03/24 07:55:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -82,30 +82,21 @@ class list_accounting_suppliers_ui extends list_accounting_ui {
 		$this->add_column('hist_rel');
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		$filters[] = 'type_entite = "'.$this->filters['type_entite'].'"';
+	protected function _add_query_filters() {
+		$this->query_filters [] = 'type_entite = "'.$this->filters['type_entite'].'"';
 		if($this->filters['user_input']) {
 			$restrict = 'num_bibli=0 ';
 			if($this->filters['entite']) {
 				$restrict = "num_bibli in (0, ".$this->filters['entite'].") ";
 			}
 			$members = $this->get_analyse_query()->get_query_members("entites","raison_sociale","index_entite","id_entite",$restrict);
-			$filters[] = "(".$members["where"].")";
+			$this->query_filters [] = "(".$members["where"].")";
 		}
 		if($this->filters['entite']) {
-			$filters[] = "num_bibli IN (0, ".$this->filters['entite'].")";
+			$this->query_filters [] = "num_bibli IN (0, ".$this->filters['entite'].")";
 		} else {
-			$filters[] = "num_bibli=0";
+			$this->query_filters [] = "num_bibli=0";
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	protected function _get_query_order() {
@@ -129,42 +120,44 @@ class list_accounting_suppliers_ui extends list_accounting_ui {
 		return entites::get_hmtl_select_etablissements(SESSuserid, $this->filters['entite'], $sel_all, $sel_attr);
 	}
 	
-	protected function get_cell_content($object, $property) {
+	protected function _get_object_property_raison_sociale($object) {
 		global $msg;
 		
-		$content = '';
-		switch($property) {
-			case 'raison_sociale':
-				$content .= $object->raison_sociale;
-				if(!$object->num_bibli) {
-					$content .= $msg['acquisition_coord_all_in_parenthesis'];
-				}
-				break;
-			case 'condition':
-				$content .= "<a href='".static::get_controller_url_base()."&action=cond&id=".$object->id_entite."' >".$msg['acquisition_cond_fourn']."</a>";
-				break;
-			case 'hist_rel':
-				$content .= "<a href='".static::get_controller_url_base()."&action=histrel&id=".$object->id_entite."' >".$msg['acquisition_hist_rel_fou']."</a>";
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
+		$content = $object->raison_sociale;
+		if(!$object->num_bibli) {
+			$content .= $msg['acquisition_coord_all_in_parenthesis'];
 		}
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function _get_object_property_condition($object) {
+		global $msg;
+		
+		return $msg['acquisition_cond_fourn'];
+	}
+	
+	protected function _get_object_property_hist_rel($object) {
+		global $msg;
+		
+		return $msg['acquisition_hist_rel_fou'];
+	}
+	
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		switch ($property) {
 			case 'raison_sociale':
 				$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=modif&id=".$object->id_entite."\"";
 				break;
+			case 'condition':
+				$attributes['href'] = static::get_controller_url_base()."&action=cond&id=".$object->id_entite;
+				break;
+			case 'hist_rel':
+				$attributes['href'] = static::get_controller_url_base()."&action=histrel&id=".$object->id_entite;
+				break;
 			default:
 				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	public function get_display_header_list() {

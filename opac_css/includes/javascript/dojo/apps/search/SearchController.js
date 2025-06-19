@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SearchController.js,v 1.15.2.1 2021/10/15 15:19:14 tsamson Exp $
+// $Id: SearchController.js,v 1.16.4.1 2023/05/17 14:12:02 dgoron Exp $
 
 define(['dojo/_base/declare',
         'dijit/layout/ContentPane',
@@ -67,32 +67,34 @@ define(['dojo/_base/declare',
 			this.store = new Memory({data:[{id: 'root'}]});
 			var children = dojo.byId('add_field').children;
 			for (var i in children) {
-				if ((children[i].nodeName == 'OPTGROUP') && (children[i].children.length)) {
-					this.store.put({
-						id: 'parent_' + i,
-						label: children[i].label,
-						parent: 'root'
-					});
-					for (var j in children[i].children) {
-						if (children[i].children[j].nodeName == 'OPTION') {
-							this.store.put({
-								id: 'parent_' + i + '_children_' + children[i].children[j].value,
-								value: children[i].children[j].value,
-								label: children[i].children[j].label,
-								authperso: (domAttr.get(children[i].children[j], 'data-authperso_id') ? domAttr.get(children[i].children[j], 'data-authperso_id') : ""),
-								parent: 'parent_' + i,
-								leaf: true
-							});
+				if (children[i].nodeType == 1) {
+					if ((children[i].nodeName == 'OPTGROUP') && (children[i].children.length)) {
+						this.store.put({
+							id: 'parent_' + i,
+							label: children[i].label,
+							parent: 'root'
+						});
+						for (var j in children[i].children) {
+							if (children[i].children[j].nodeName == 'OPTION') {
+								this.store.put({
+									id: 'parent_' + i + '_children_' + children[i].children[j].value,
+									value: children[i].children[j].value,
+									label: children[i].children[j].label,
+									authperso: (domAttr.get(children[i].children[j], 'data-authperso_id') ? domAttr.get(children[i].children[j], 'data-authperso_id') : ""),
+									parent: 'parent_' + i,
+									leaf: true
+								});
+							}
 						}
+					} else if ((children[i].nodeName == 'OPTION') && (children[i].value)) {
+						this.store.put({
+							id: 'root_' + i + "_children_" + children[i].value,
+							label: children[i].label,
+	                        value: children[i].value,
+							parent: 'root',
+							leaf: true
+						});
 					}
-				} else if ((children[i].nodeName == 'OPTION') && (children[i].value)) {
-					this.store.put({
-						id: 'root_' + i + "_children_" + children[i].value,
-						label: children[i].label,
-                        value: children[i].value,
-						parent: 'root',
-						leaf: true
-					});
 				}
 			}
 			this.store.getChildren = function(object) {
@@ -100,7 +102,9 @@ define(['dojo/_base/declare',
 			};
 			domStyle.set(dojo.byId('choose_criteria'), 'display', 'none');
 			domStyle.set(dojo.byId('add_field'), 'display', 'none');
-			domStyle.set(dojo.byId('input_filter'), 'display', 'none');
+			if(dojo.byId('input_filter')) {
+				domStyle.set(dojo.byId('input_filter'), 'display', 'none');
+			}
 		},
 		
 		buildTree: function() {

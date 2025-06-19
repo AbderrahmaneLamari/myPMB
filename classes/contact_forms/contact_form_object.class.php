@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contact_form_object.class.php,v 1.3 2021/04/26 12:53:36 dgoron Exp $
+// $Id: contact_form_object.class.php,v 1.3.6.1 2023/07/04 12:11:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($class_path."/translation.class.php");
 require_once($class_path."/contact_forms/contact_form_recipients.class.php");
 require_once($include_path."/templates/contact_forms/contact_form.tpl.php");
@@ -48,12 +49,22 @@ class contact_form_object {
 		}
 	}
 	
-	public function get_form() {
-		global $msg, $charset;
-		global $contact_form_object_content_form_tpl;
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
 		
-		$content_form = $contact_form_object_content_form_tpl;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		$interface_content_form->add_element('object_label', 'admin_opac_contact_form_object_label')
+		->add_input_node('text', $this->label)
+		->set_attributes(array('data-translation-fieldname' => 'object_label'));
+		$interface_content_form->add_element('object_message', 'admin_opac_contact_form_object_message')
+		->add_textarea_node($this->message)
+		->set_attributes(array('data-translation-fieldname' => 'object_message'))
+		->set_cols(100)
+		->set_rows(20);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
 		$interface_form = new interface_form('contact_form_object_form');
 		if($this->id){
@@ -62,14 +73,9 @@ class contact_form_object {
 			$interface_form->set_label($msg['admin_opac_contact_form_object_form_add']);
 		}
 		$interface_form->add_url_base("&num_contact_form=".$this->num_contact_form);
-
-		$content_form = str_replace('!!label!!', htmlentities($this->label, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!message!!', htmlentities($this->message, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!num_contact_form!!', $this->num_contact_form, $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['admin_opac_contact_form_object_confirm_delete'])
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('contact_form_objects')
 		->set_field_focus('object_label');
 		return $interface_form->get_display();

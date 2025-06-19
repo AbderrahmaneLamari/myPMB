@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_statut.class.php,v 1.3 2021/01/12 07:42:45 dgoron Exp $
+// $Id: empr_statut.class.php,v 1.3.6.1 2023/07/05 15:33:38 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -83,13 +83,45 @@ class empr_statut {
 		$this->allow_pnb = $data->allow_pnb;
 	}
 
+	protected function get_list_allow() {
+		return array( 
+				'allow_loan' => 'empr_allow_loan',
+				'allow_loan_hist' => 'empr_allow_loan_hist',
+				'allow_book' => 'empr_allow_book',
+				'allow_opac' => 'empr_allow_opac',
+				'allow_dsi' => 'empr_allow_dsi',
+				'allow_dsi_priv' => 'empr_allow_dsi_priv',
+				'allow_sugg' => 'empr_allow_sugg',
+				'allow_dema' => 'empr_allow_dema',
+				'allow_liste_lecture' => 'empr_allow_liste_lecture',
+				'allow_prol' => 'empr_allow_prol',
+				'allow_avis' => 'empr_allow_avis',
+				'allow_tag' => 'empr_allow_tag',
+				'allow_pwd' => 'empr_allow_pwd',
+				'allow_self_checkout' => 'empr_allow_self_checkout',
+				'allow_self_checkin' => 'empr_allow_self_checkin',
+				'allow_serialcirc' => 'empr_allow_serialcirc',
+				'allow_scan_request' => 'empr_allow_scan_request',
+				'allow_contribution' => 'empr_allow_contribution',
+				'allow_pnb' => 'empr_allow_pnb'
+		);
+	}
+	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('statut_libelle', '103')
+		->add_input_node('text', $this->libelle);
+		
+		$list_allow = $this->get_list_allow();
+		foreach ($list_allow as $property=>$label_code) {
+			$interface_content_form->add_element($property)
+			->add_input_node('boolean', $this->{$property})->set_label_code($label_code);
+		}
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_empr_statut_content_form;
-		global $charset;
-		
-		$content_form = $admin_empr_statut_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('statutform');
 		if(!$this->id){
@@ -97,68 +129,9 @@ class empr_statut {
 		}else{
 			$interface_form->set_label($msg['empr_statut_modif']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!libelle_suppr!!', addslashes($this->libelle), $content_form);
-		
-		if ($this->allow_loan) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_loan!!', $checkbox, $content_form);
-		
-		if ($this->allow_loan_hist) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_loan_hist!!', $checkbox, $content_form);
-		
-		if ($this->allow_book) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_book!!', $checkbox, $content_form);
-		
-		if ($this->allow_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_opac!!', $checkbox, $content_form);
-		
-		if ($this->allow_dsi) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_dsi!!', $checkbox, $content_form);
-		
-		if ($this->allow_dsi_priv) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_dsi_priv!!', $checkbox, $content_form);
-		
-		if ($this->allow_sugg) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_sugg!!', $checkbox, $content_form);
-		
-		if($this->allow_liste_lecture) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_liste_lecture!!', $checkbox, $content_form);
-		
-		if ($this->allow_dema) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_dema!!', $checkbox, $content_form);
-		
-		if ($this->allow_prol) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_prol!!', $checkbox, $content_form);
-		
-		if ($this->allow_avis) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_avis!!', $checkbox, $content_form);
-		
-		if ($this->allow_tag) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_tag!!', $checkbox, $content_form);
-		
-		if ($this->allow_pwd) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_pwd!!', $checkbox, $content_form);
-		
-		if ($this->allow_self_checkout) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!allow_self_checkout!!', $checkbox, $content_form);
-		if ($this->allow_self_checkin) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!allow_self_checkin!!', $checkbox, $content_form);
-		
-		if ($this->allow_serialcirc) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!allow_serialcirc!!', $checkbox, $content_form);
-		
-		if ($this->allow_scan_request) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!allow_scan_request!!', $checkbox, $content_form);
-		
-		if ($this->allow_contribution) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!allow_contribution!!', $checkbox, $content_form);
-		
-		if ($this->allow_pnb) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!allow_pnb!!', $checkbox, $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('empr_statut')
 		->set_field_focus('statut_libelle');
 		return $interface_form->get_display();

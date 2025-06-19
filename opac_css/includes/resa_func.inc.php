@@ -2,11 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: resa_func.inc.php,v 1.59 2020/10/31 09:05:35 dgoron Exp $
+// $Id: resa_func.inc.php,v 1.62 2022/10/20 07:30:45 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $class_path;
 require_once("$class_path/quotas.class.php");
+//require_once("$class_path/resa.class.php"); génère une fatal dans les inclusions
 
 // permet de savoir si un CB expl est déjà affecté à une résa
 function verif_cb_utilise ($cb) {
@@ -49,7 +51,7 @@ function affecte_cb ($cb) {
 
 function desaffecte_cb ($cb) {
 	$rqt = "update resa set resa_cb='', resa_date_debut='0000-00-00', resa_date_fin='0000-00-00' where resa_cb='".$cb."' ";
-	$res = pmb_mysql_query($rqt) ;
+	pmb_mysql_query($rqt) ;
 	return pmb_mysql_affected_rows() ;
 }
 
@@ -185,122 +187,8 @@ function check_statut($id_notice=0, $id_bulletin=0) {
 	return  1;
 }
 
-function get_gestion_permalink($id_notice=0, $id_bulletin=0) {
-	global $pmb_url_base;
-	
-	$id_notice = intval($id_notice);
-	$id_bulletin = intval($id_bulletin);
-	$permalink = '';
-	if ($id_notice) {
-		$niveau_biblio = notice::get_niveau_biblio($id_notice);
-		switch ($niveau_biblio) {
-			case 'a':
-				$query = "SELECT analysis_bulletin FROM analysis WHERE analysis_notice = ".$id_notice;
-				$bul_id = pmb_mysql_result(pmb_mysql_query($query), 0, 0);
-				$permalink = $pmb_url_base."catalog.php?categ=serials&sub=analysis&action=analysis_form&bul_id=".$bul_id."&analysis_id=".$id_notice;
-				break;
-			case 's':
-				$permalink = $pmb_url_base."catalog.php?categ=serials&sub=view&serial_id=".$id_notice;
-				break;
-			case 'm':
-			default:
-				$permalink = $pmb_url_base."catalog.php?categ=isbd&id=".$id_notice;
-				break;
-		}
-	} else {
-		$permalink = $pmb_url_base."catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=".$id_bulletin;
-	}
-	return $permalink;
-}
-
 function alert_mail_users_pmb($id_notice=0, $id_bulletin=0, $id_empr, $annul=0, $resa_planning=0) {
-	global $msg, $charset;
-	global $opac_biblio_name, $opac_biblio_email ;
-	global $opac_url_base;
-	global $pmb_location_reservation,$pmb_resa_alert_localized;
-	global $pmb_transferts_actif, $transferts_choix_lieu_opac, $idloc;
-	global $use_opac_url_base;
-	
-	//Pas très propre mais pas mieux pour le moment / Réaffectation à la fin de la méthode
-	$temp_use_opac_url_base = $use_opac_url_base;
-	$use_opac_url_base=1;
-	
-	// paramétrage OPAC: choix du nom de la bibliothèque comme expéditeur
-	$requete = "select location_libelle, email, empr_location from empr, docs_location where empr_location=idlocation and id_empr='$id_empr' ";
-	$res = pmb_mysql_query($requete);
-	$loc=pmb_mysql_fetch_object($res) ;
-	$PMBusernom = $loc->location_libelle ;
-	$PMBuserprenom = '' ;
-	$PMBuseremail = $loc->email ;
-	if ($PMBuseremail) {
-		$query = "select distinct empr_prenom, empr_nom, empr_cb, empr_mail, empr_tel1, empr_tel2, empr_cp, empr_ville, location_libelle, nom, prenom, user_email, date_format(sysdate(), '".$msg["format_date_heure"]."') as aff_quand, deflt2docs_location, deflt_docs_location  from empr, docs_location, users where id_empr='$id_empr' and empr_location=idlocation and user_email like('%@%') and user_alert_resamail=1";
-		$result = @pmb_mysql_query($query);
-		$headers  = "MIME-Version: 1.0\n";
-		$headers .= "Content-type: text/html; charset=".$charset."\n";
-		$output_final='';
-		while ($empr=@pmb_mysql_fetch_object($result)) {
-			if ($pmb_location_reservation && $pmb_resa_alert_localized) {
-			    if ($pmb_resa_alert_localized==1 && $loc->empr_location!=$empr->deflt2docs_location) {
-					continue;
-			    }
-			    if ($pmb_resa_alert_localized==2 && $loc->empr_location!=$empr->deflt_docs_location) {
-				    continue;
-				}
-				if ($pmb_resa_alert_localized==3 && $loc->empr_location!=$empr->deflt2docs_location && $loc->empr_location!=$empr->deflt_docs_location) {
-				    continue;
-				}
-			}
-			if (!$output_final) {
-				$output_final = "<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><meta charset=\"".$charset."\" /></head><body>" ;
-				if ($annul==1) {
-					if ($resa_planning) {
-						$sujet = $msg["mail_obj_resa_planning_canceled"] ;
-					} else {
-						$sujet = $msg["mail_obj_resa_canceled"] ;
-					}
-					$output_final .= "<a href='".$opac_url_base."'><span style='color:red'><strong>".$sujet ;					
-				} elseif ($annul==2) {
-					if ($resa_planning) {
-						$sujet = $msg["mail_obj_resa_planning_reaffected"] ;
-					} else {
-						$sujet = $msg["mail_obj_resa_reaffected"] ;
-					}
-					$output_final .= "<a href='".$opac_url_base."'><span style='color:blue'><strong>".$sujet ;					
-				} else {
-					if ($resa_planning) {
-						$sujet = $msg["mail_obj_resa_planning_added"] ;
-					} else {
-						$sujet = $msg["mail_obj_resa_added"] ;
-					}
-					$output_final .= "<a href='".get_gestion_permalink($id_notice, $id_bulletin)."'><span style='color:green'><strong>".$sujet ;					
-				}
-				$output_final .= "</strong></span></a> ".$empr->aff_quand."
-									<br /><strong>".$empr->empr_prenom." ".$empr->empr_nom."</strong>
-									<br /><i>".$empr->empr_mail." / ".$empr->empr_tel1." / ".$empr->empr_tel2."</i>";
-				if ($empr->empr_cp || $empr->empr_ville) $output_final .= "<br /><u>".$empr->empr_cp." ".$empr->empr_ville."</u>";
-				$output_final .= "<hr />".$msg['resa_empr_location'].": ".$empr->location_libelle;
-				if (($pmb_transferts_actif=="1")&&($transferts_choix_lieu_opac=="1")) {
-					$docs_location = new docs_location($idloc);
-					$output_final .= "<br />".$msg['resa_loc_retrait'].": ".$docs_location->libelle;
-				}
-				$output_final .= "<hr />";
-				if ($id_notice) {
-					record_display::init_record_datas($id_notice);
-					$current = new notice_affichage($id_notice,array(),0,1);
-					$current->do_header();
-					$current->do_isbd(1,1);
-					$output_final .= "<h3>".$current->notice_header."</h3>";
-					$output_final .= $current->notice_isbd;
-					$output_final .= $current->affichage_expl ;
-				} else {
-					$output_final .= bulletin_affichage_reduit($id_bulletin) ;
-				}
-				$output_final .= "<hr /></body></html> ";
-			}
-			$res_envoi=mailpmb($empr->nom." ".$empr->prenom, $empr->user_email,$sujet." ".$empr->aff_quand,$output_final,$PMBusernom, $PMBuseremail, $headers, "", "", 1);
-		}
-	}
-	$use_opac_url_base = $temp_use_opac_url_base;
+	reservation::alert_mail_users_pmb($id_notice, $id_bulletin, $id_empr, $annul, $resa_planning);
 }
 
 function delete_cart_record($notice_id) {

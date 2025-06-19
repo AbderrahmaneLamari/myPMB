@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_responsability_selector_ui.class.php,v 1.36.2.4 2021/09/09 14:18:26 tsamson Exp $
+// $Id: onto_contribution_datatype_responsability_selector_ui.class.php,v 1.46 2022/10/28 09:05:49 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -80,7 +80,7 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_contrib
 	public static function get_form($item_uri, $property, $restrictions, $datas, $instance_name, $flag) {
 	    global $charset, $ontology_tpl, $area_id, $pmb_authors_qualification, $ontology_contribution_tpl;
 
-		$form=$ontology_tpl['form_row'];
+	    $form=$ontology_contribution_tpl['form_row_responsability'];
 		$form=str_replace("!!onto_row_label!!",htmlentities(encoding_normalize::charset_normalize($property->get_label(), 'utf-8') ,ENT_QUOTES,$charset) , $form);
 		
 		$content='';
@@ -103,10 +103,11 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_contrib
 				}else{
 					$order = $key;
 				}
-				
+				$add_button_form = ( $key == (count($datas)-1) ? $add_button : "");
 				$formated_value = $data->get_formated_value();
 				$row = self::get_template($item_uri, $property, $property->range[0], $order, $data, $formated_value['author']['is_draft']);
 				$row = str_replace("!!onto_row_inputs!!", ($property->pmb_extended['readonly'] == false ? self::get_inputs($item_uri, $property, $order, $add_button, $formated_value, $new_element_order) : ""), $row);
+				$row = str_replace("!!onto_row_inputs_add!!", $add_button_form, $row);
 				
 				// Hack afin d'avoir un meilleur affichage dans le cas des qualifs sans avoir à modifier toutes les contrib
 				$resource_selector = '';
@@ -153,7 +154,8 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_contrib
 			
 		    $row = self::get_template($item_uri, $property, $property->range[0], $order);
 		    $row = str_replace("!!onto_row_inputs!!", ($property->pmb_extended['readonly'] == false ? self::get_inputs($item_uri, $property, $order) : ""), $row);
-		
+		    $row = str_replace("!!onto_row_inputs_add!!", $add_button, $row);
+		    
 			$resource_selector = '';
 			if ($pmb_authors_qualification) {
 			    switch (explode('_', $instance_name)[0]) {
@@ -254,7 +256,8 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_contrib
 	        $form=str_replace("!!onto_rows!!",$content ,$form);
 	    }
 	    
-	    $form=str_replace("!!onto_row_id!!",$instance_name.'_'.$property->pmb_name , $form);
+	    $form = str_replace("!!onto_row_scripts!!", static::get_scripts(), $form);
+	    $form = str_replace("!!onto_row_id!!",$instance_name.'_'.$property->pmb_name , $form);
 	    
 	    return $form;
 	}
@@ -356,9 +359,9 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_contrib
 	 */
 	private static function get_template($item_uri, $property, $range, $order, $data = array(), $is_draft = false)
 	{
-	    global $ontology_tpl, $charset;
+	    global $ontology_tpl, $charset, $ontology_contribution_tpl;
 	    
-	    $row = $ontology_tpl['form_row_content_with_flex'];
+	    $row = $ontology_contribution_tpl['form_row_content_with_flex_responsability'];
 	    $template = $ontology_tpl['form_row_content_responsability_selector'];
 	    
 	    $label = "";
@@ -415,7 +418,7 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_contrib
 	 * @param string|int $new_element_order
 	 * @return string
 	 */
-	private static function get_inputs($item_uri, $property, $order, $add_button = "", $formated_value = array(), $new_element_order = 0)
+	protected static function get_inputs($item_uri, $property, $order, $add_button = "", $formated_value = array(), $new_element_order = 0)
 	{
 	    global $ontology_tpl;
 	    
@@ -514,6 +517,8 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_contrib
 	    }
 	    
 	    $params['scenario'] = $property->linked_scenarios[0] ?? 0;
+	    $params['attachment'] = $property->scenarios_tab[0]['attachmentId'] ?? 0;
+	    $params['area_id'] = $property->scenarios_tab[0]['area_id'] ?? 0;
 	    $params['multiple_scenarios'] = $property->has_multiple_scenarios;
 	    $params['select_tab'] = 0;
 	    $params['is_entity'] = $property->is_entity;
@@ -526,9 +531,9 @@ class onto_contribution_datatype_responsability_selector_ui extends onto_contrib
 	    $input = str_replace("!!onto_new_order!!", $order, $input);
 	    
 	    // On ajoute le "+" sur le dernier éléments
-	    if ($order == $new_element_order) {
-	        $input .= $add_button;
-	    }
+// 	    if ($order == $new_element_order) {
+// 	        $input .= $add_button;
+// 	    }
 	    
 	    return $input;
 	}

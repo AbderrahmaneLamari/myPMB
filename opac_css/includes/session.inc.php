@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: session.inc.php,v 1.54.2.1 2021/08/06 12:16:00 dgoron Exp $
+// $Id: session.inc.php,v 1.57.4.2 2024/01/03 08:44:30 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $include_path;
+global $include_path, $base_nocheck;
 
 require_once($include_path."/sessions.inc.php");
 
@@ -14,9 +14,6 @@ if(basename($_SERVER['SCRIPT_FILENAME']) !== "cms_vign.php"){
 	header("Expires: Sat, 01 Jan 2000 00:00:00 GMT");
 	header("Last-Modified: ".gmdate("D, d M Y H:i:s")." GMT");
 	header("Cache-Control: post-check=0, pre-check=0",false);
-}
-if(!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) != 'off'){
-    ini_set('session.cookie_secure', 1);
 }
 
 session_cache_limiter('must-revalidate');
@@ -26,9 +23,12 @@ session_start();
 $result=pmb_mysql_query("SELECT CURRENT_DATE()");
 $today = pmb_mysql_result($result, 0, 0);
 
-$check_empr = checkEmpr("PmbOpac");
-if (!$check_empr) {
-    unset($_SESSION["user_code"]);
+//Pas la peine de faire le checkEmpr si nocheck sauf si on veut peter la session de l'utilisateur
+if(empty($base_nocheck)) {
+	$check_empr = checkEmpr("PmbOpac");
+	if (!$check_empr) {
+		unset($_SESSION["user_code"]);
+	}
 }
 
 if(isset($_GET["logout"])) {
@@ -38,14 +38,14 @@ if (!isset($logout)) $logout=0;
 
 //Sauvegarde de l'environnement
 if (isset($_SESSION["user_code"]) && $_SESSION["user_code"]) {
-	$requete="select count(*) from opac_sessions where empr_id='".$_SESSION["id_empr_session"]."'";
+	$requete="select count(*) from opac_sessions where empr_id='".intval($_SESSION["id_empr_session"])."'";
 	if(!pmb_mysql_result(pmb_mysql_query($requete), 0, 0)) {
 		//Première connexion à l'OPAC
 		$_SESSION['empr_first_authentication'] = 1;
 	} else {
 		$_SESSION['empr_first_authentication'] = 0;
 	}
-	$requete="replace into opac_sessions (empr_id,session) values(".$_SESSION["id_empr_session"].",'".addslashes(serialize($_SESSION))."')";
+	$requete="replace into opac_sessions (empr_id,session) values(".intval($_SESSION["id_empr_session"]).",'".addslashes(serialize($_SESSION))."')";
 	pmb_mysql_query($requete);
 }
 
@@ -126,52 +126,52 @@ if (isset($_SESSION["user_code"]) && $_SESSION["user_code"]) {
 		$droit_pnb = 1;
 	}
 	//Préférences utilisateur
-	$query0 = "select * from empr, empr_statut where empr_login='".$_SESSION['user_code']."' and idstatut=empr_statut limit 1";
+	$query0 = "select * from empr, empr_statut where empr_login='".addslashes($_SESSION['user_code'])."' and idstatut=empr_statut limit 1";
 	$req0 = pmb_mysql_query($query0);
-	$data = pmb_mysql_fetch_array($req0);
-	$id_empr = $data['id_empr'];
-	$empr_cb = $data['empr_cb'];
-	$empr_nom = $data['empr_nom'];
-	$empr_prenom= $data['empr_prenom'];
-	$empr_adr1= $data['empr_adr1'];
-	$empr_adr2= $data['empr_adr2'];
-	$empr_cp= $data['empr_cp'];
-	$empr_ville= $data['empr_ville'];
-	$empr_mail= $data['empr_mail'];
-	$empr_tel1= $data['empr_tel1'];
-	$empr_tel2= $data['empr_tel2'];
-	$empr_prof= $data['empr_prof'];
-	$empr_year= $data['empr_year'];
-	$empr_categ= $data['empr_categ'];
-	$empr_codestat= $data['empr_codestat'];
-	$empr_sexe= $data['empr_sexe'];
-	$empr_login= $data['empr_login'];
-	$empr_password= $data['empr_password'];
-	$empr_location= $data['empr_location'];
-	$empr_date_adhesion= $data['empr_date_adhesion'];
-	$empr_date_expiration= $data['empr_date_expiration'];
-	$empr_statut= $data['empr_statut'];
+	$data0 = pmb_mysql_fetch_array($req0);
+	$id_empr = $data0['id_empr'];
+	$empr_cb = $data0['empr_cb'];
+	$empr_nom = $data0['empr_nom'];
+	$empr_prenom= $data0['empr_prenom'];
+	$empr_adr1= $data0['empr_adr1'];
+	$empr_adr2= $data0['empr_adr2'];
+	$empr_cp= $data0['empr_cp'];
+	$empr_ville= $data0['empr_ville'];
+	$empr_mail= $data0['empr_mail'];
+	$empr_tel1= $data0['empr_tel1'];
+	$empr_tel2= $data0['empr_tel2'];
+	$empr_prof= $data0['empr_prof'];
+	$empr_year= $data0['empr_year'];
+	$empr_categ= $data0['empr_categ'];
+	$empr_codestat= $data0['empr_codestat'];
+	$empr_sexe= $data0['empr_sexe'];
+	$empr_login= $data0['empr_login'];
+	$empr_password= $data0['empr_password'];
+	$empr_location= $data0['empr_location'];
+	$empr_date_adhesion= $data0['empr_date_adhesion'];
+	$empr_date_expiration= $data0['empr_date_expiration'];
+	$empr_statut= $data0['empr_statut'];
 	
 	// droits de l'utilisateur
-	$allow_loan= $data['allow_loan'] & $droit_loan;
-	$allow_loan_hist= $data['allow_loan_hist'] & $droit_loan_hist;
-	$allow_book= $data['allow_book'] & $droit_book;
-	$allow_opac= $data['allow_opac'] & $droit_opac;
-	$allow_dsi= $data['allow_dsi'] & $droit_dsi;
-	$allow_dsi_priv= $data['allow_dsi_priv'] & $droit_dsi_priv;
-	$allow_sugg= $data['allow_sugg'] & $droit_sugg;
-	$allow_dema= $data['allow_dema'] & $droit_dema;
-	$allow_prol= $data['allow_prol'] & $droit_prol;
-	$allow_avis= $data['allow_avis'] & $droit_avis;
-	$allow_tag= $data['allow_tag'] & $droit_tag;
-	$allow_pwd= $data['allow_pwd'] & $droit_pwd;
-	$allow_liste_lecture = $data['allow_liste_lecture'] & $droit_liste_lecture;
-	$allow_self_checkout= $data['allow_self_checkout'] & $droit_self_checkout;
-	$allow_self_checkin= $data['allow_self_checkin'] & $droit_self_checkin;
-	$allow_serialcirc= $data['allow_serialcirc'] & $droit_serialcirc;
-	$allow_scan_request = $data['allow_scan_request'] & $droit_scan_request;
-	$allow_contribution = $data['allow_contribution'] & $droit_contribution;
-	$allow_pnb = $data['allow_pnb'] & $droit_pnb;
+	$allow_loan= $data0['allow_loan'] & $droit_loan;
+	$allow_loan_hist= $data0['allow_loan_hist'] & $droit_loan_hist;
+	$allow_book= $data0['allow_book'] & $droit_book;
+	$allow_opac= $data0['allow_opac'] & $droit_opac;
+	$allow_dsi= $data0['allow_dsi'] & $droit_dsi;
+	$allow_dsi_priv= $data0['allow_dsi_priv'] & $droit_dsi_priv;
+	$allow_sugg= $data0['allow_sugg'] & $droit_sugg;
+	$allow_dema= $data0['allow_dema'] & $droit_dema;
+	$allow_prol= $data0['allow_prol'] & $droit_prol;
+	$allow_avis= $data0['allow_avis'] & $droit_avis;
+	$allow_tag= $data0['allow_tag'] & $droit_tag;
+	$allow_pwd= $data0['allow_pwd'] & $droit_pwd;
+	$allow_liste_lecture = $data0['allow_liste_lecture'] & $droit_liste_lecture;
+	$allow_self_checkout= $data0['allow_self_checkout'] & $droit_self_checkout;
+	$allow_self_checkin= $data0['allow_self_checkin'] & $droit_self_checkin;
+	$allow_serialcirc= $data0['allow_serialcirc'] & $droit_serialcirc;
+	$allow_scan_request = $data0['allow_scan_request'] & $droit_scan_request;
+	$allow_contribution = $data0['allow_contribution'] & $droit_contribution;
+	$allow_pnb = $data0['allow_pnb'] & $droit_pnb;
 }else{
 	//pas de session authentifiée... AR veut une trace quand même
 	check_anonymous_session('PmbOpac');

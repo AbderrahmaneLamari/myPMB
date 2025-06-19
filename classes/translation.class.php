@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: translation.class.php,v 1.11 2020/08/06 08:11:47 dgoron Exp $
+// $Id: translation.class.php,v 1.13.4.2 2023/11/15 07:54:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))	die("no access");
 
+global $include_path;
 require_once($include_path."/templates/translation.tpl.php");
 
 /**
@@ -42,7 +43,7 @@ class translation {
 	protected $type;
 	
 	public function __construct($num_field, $table_name) {
-		$this->num_field = $num_field+0;
+		$this->num_field = intval($num_field);
 		$this->table_name = $table_name;
 		$this->fetch_data();
 	}
@@ -53,17 +54,20 @@ class translation {
 		
 		if(!isset(static::$languages)) {
 			static::$languages = array();
-			$languages = explode(',', explode(' ', trim($opac_show_languages))[1]);
-			if(count($languages)) {
-				$langues = new XMLlist($include_path."/messages/languages.xml");
-				$langues->analyser();
-				$clang = $langues->table;
-				foreach ($languages as $language) {
-					if(static::get_user_lang() != $language) {
-						static::$languages[] = array(
-								'code' => $language,
-								'label' => (!empty($clang[$language]) ? $clang[$language] : $language)
-						);
+			if(!empty($opac_show_languages)) {
+				$languages = explode(',', explode(' ', trim($opac_show_languages))[1]);
+				if(count($languages)) {
+					$langues = new XMLlist($include_path."/messages/languages.xml");
+					$langues->analyser();
+					$clang = $langues->table;
+					foreach ($languages as $language) {
+// 						if(static::get_user_lang() != $language) {
+							static::$languages[] = array(
+									'code' => $language,
+									'label' => (!empty($clang[$language]) ? $clang[$language] : $language),
+                                    'is_current_lang' => (static::get_user_lang() == $language ? true : false)
+							);
+// 						}
 					}
 				}
 			}
@@ -74,13 +78,16 @@ class translation {
 	public function fetch_data() {
 		$this->data = array();
 		
-		$query = "SELECT * FROM translation WHERE trans_table='".$this->table_name."' and trans_num='".$this->num_field."' ";
+		$query = "SELECT * FROM translation WHERE trans_table='".addslashes($this->table_name)."' and trans_num='".addslashes($this->num_field)."' ";
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)){		
 			while(($row = pmb_mysql_fetch_object($result))) {
+			    if(empty($this->data[$row->trans_field])) {
+			        $this->data[$row->trans_field] = array();
+			    }
 				$this->data[$row->trans_field][$row->trans_lang] = ($row->trans_small_text ? $row->trans_small_text : $row->trans_text);
 			}	
-		}		
+		}
 	}
 	
 	/**
@@ -92,7 +99,7 @@ class translation {
 		<script type='text/javascript'>
 			require(['apps/pmb/Translations', 'dojo/ready'], function(Translations, ready){
 			ready(function() {
-				new Translations('".$dom_node_id."', '".encoding_normalize::json_encode($this->get_data())."');
+				new Translations('".$dom_node_id."', '".$this->get_json_data()."');
 			});
 		});
 		</script>";
@@ -221,6 +228,19 @@ class translation {
 		return $this->data;
 	}
 	
+	public function get_json_data() {
+		$data = $this->data;
+		foreach ($data as $field_name=>$field_data) {
+			foreach ($field_data as $lang=>$field_value) {
+				// on addslashes seulement les doubles quotes sinon il y a une erreur de JSON.parse dans Translation.js
+				$value = addcslashes($field_value, '"');
+				$value = str_replace(array("\n", "\r", "\t"), array("\\n", "\\r", "\\t"), $value);
+				$data[$field_name][$lang] = $value;
+			}
+		}
+		return encoding_normalize::json_encode($data);
+	}
+	
 	/**
 	 * Retourne la traduction dans la langue voulue
 	 */
@@ -284,6 +304,7 @@ class translation {
 			while(($row = pmb_mysql_fetch_assoc($result))) {
 				self::$text_fields[$table][$num][$lang][$row['trans_field']] = ($row['trans_small_text'] ? $row['trans_small_text'] : $row['trans_text']); 
 			}
+			pmb_mysql_free_result($result);
 		}
 		return self::$text_fields[$table][$num][$lang];
 	}

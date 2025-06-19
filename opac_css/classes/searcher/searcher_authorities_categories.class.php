@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_authorities_categories.class.php,v 1.2.2.1 2021/12/27 08:20:53 dgoron Exp $
+// $Id: searcher_authorities_categories.class.php,v 1.3.4.1 2023/08/08 08:36:28 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -57,9 +57,9 @@ class searcher_authorities_categories extends searcher_autorities {
 			// On va chercher le thesaurus
 			$query .= ' join thesaurus on '.$this->object_table.'.num_thesaurus = thesaurus.id_thesaurus';
 			// On va chercher le libellé dans la langue par défaut du thesaurus
-			$query .= ' left join categories as defcateg on '.$this->object_table.'.'.$this->object_key.' = defcateg.num_noeud and thesaurus.langue_defaut = defcateg.langue';
+			$query .= ' left join categories as defcateg on '.$this->object_table.'.'.$this->object_table_key.' = defcateg.num_noeud and thesaurus.langue_defaut = defcateg.langue';
 			// On va chercher le libellé dans la langue de l'interface
-			$query .= ' left join categories as lgcateg on '.$this->object_table.'.'.$this->object_key.' = lgcateg.num_noeud and lgcateg.langue = "'.$lang.'"';
+			$query .= ' left join categories as lgcateg on '.$this->object_table.'.'.$this->object_table_key.' = lgcateg.num_noeud and lgcateg.langue = "'.$lang.'"';
 			// On va chercher les filtres
 			$query .= ' where '.implode(' and ', $this->_get_authorities_filters());
 			// On trie

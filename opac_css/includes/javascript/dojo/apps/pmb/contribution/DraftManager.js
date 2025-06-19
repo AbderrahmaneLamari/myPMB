@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: DraftManager.js,v 1.13.2.2 2021/08/19 12:00:27 qvarin Exp $
+// $Id: DraftManager.js,v 1.17 2022/05/24 13:25:48 qvarin Exp $
 
 define([
         'dojo/_base/declare',
@@ -94,6 +94,8 @@ define([
 					}
 				}
 				
+				topic.publish("contribution/submit", "draft");
+				
 				var data = this.prepareData(form);
 				await xhr.post('./ajax.php?module=ajax&categ=contribution&action=save_draft', {
 					data: data,
@@ -119,13 +121,12 @@ define([
 							} else if (this.manualSave == false && formList.length > 1){
 							    topic.publish('Contribution', 'savedSubDraftForm', {widgetId: widget.parameters.tabId, response: response, autoSave: true});
 							}
-							
-							if (inputFiles) {
-								this.docnumSaved(inputFiles)
-							}
-							if (thumbnailFiles) {
-								this.thumbnailSaved(thumbnailFiles, response.thumbnail_name, response.thumbnail_data)
-							}
+						}
+						if (inputFiles) {
+							this.docnumSaved(inputFiles)
+						}
+						if (thumbnailFiles) {
+							this.thumbnailSaved(thumbnailFiles, response.thumbnail_name, response.thumbnail_data)
 						}
 						this.replaceId(form, response.id);
 					}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authority_import.class.php,v 1.11.2.1 2021/08/04 09:48:55 dgoron Exp $
+// $Id: authority_import.class.php,v 1.12 2021/08/04 09:45:42 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

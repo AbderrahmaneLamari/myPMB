@@ -3,7 +3,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facette_search_compare.class.php,v 1.20 2021/04/12 10:38:43 btafforeau Exp $
+// $Id: facette_search_compare.class.php,v 1.22.2.1 2023/07/05 15:50:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -50,15 +50,19 @@ class facette_search_compare {
 		return $tpl_display_compare;
 	}
 	
-	public function get_form(){
-		global $tpl_form_compare;
-		
-		$interface_form = new interface_admin_form('form_compare');
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
 		$sel_notice_tpl=notice_tpl_gen::gen_tpl_select("notice_tpl",$this->notice_tpl,'');
-		$content_form=$tpl_form_compare;
-		$content_form = str_replace('!!notice_nb!!', $this->notice_nb, $content_form);
-		$content_form = str_replace('!!sel_notice_tpl!!', $sel_notice_tpl, $content_form);
-		$interface_form->set_content_form($content_form);
+		$interface_content_form->add_element('notice_tpl', 'notice_tpl_label')
+		->add_html_node($sel_notice_tpl);
+		$interface_content_form->add_element('notice_nb', 'notice_nb_label')
+		->add_input_node('integer', $this->notice_nb);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form(){
+		$interface_form = new interface_admin_form('form_compare');
+		$interface_form->set_content_form($this->get_content_form());
 		return $interface_form->get_display_parameters();
 	}
 	
@@ -67,8 +71,8 @@ class facette_search_compare {
 		global $notice_tpl;
 		global $notice_nb;
 		
-		$this->notice_tpl=$notice_tpl*1;
-		$this->notice_nb=$notice_nb*1;
+		$this->notice_tpl = intval($notice_tpl);
+		$this->notice_nb = intval($notice_nb);
 		
 		$query="UPDATE parametres SET valeur_param='".$this->notice_tpl."' WHERE type_param='pmb' AND sstype_param='compare_notice_template'";
 		pmb_mysql_query($query);
@@ -218,7 +222,6 @@ class facette_search_compare {
 	 * @return string affichage en mode comparateur
 	 */
 	public function display_compare(){
-		global $base_path,$charset,$msg;
 		global $facette_search_compare_wrapper;
 		global $facette_search_compare_header;
 		global $facette_search_compare_line;
@@ -358,7 +361,7 @@ class facette_search_compare {
 		
 		$table_groupby='';
 		if(is_array($this->facette_groupby)) {
-			foreach($this->facette_groupby as $key=>$facette_groupby){
+			foreach($this->facette_groupby as $facette_groupby){
 				if(!$facette_groupby['available']){
 					$balise_start="<del>";
 					$balise_stop="</del>";
@@ -421,8 +424,6 @@ class facette_search_compare {
 	 * @param integer $notice_tpl l'identifiant du template d'affichage, si null, affiche le header de la classe d'affichage
 	 */
 	public static function call_notice_display(&$notices_ids, $notice_nb, $notice_tpl) {
-		global $base_path,$charset,$msg;
-		
 		$notices_ids = explode(",", $notices_ids);
 		
 		$notices = '';
@@ -571,7 +572,7 @@ class facette_search_compare {
 			}
 		}
 		$facettes_groupby_checked = static::get_groupby_checked_session();
-		if(sizeof($facettes_groupby_checked)){
+		if(is_countable($facettes_groupby_checked) && sizeof($facettes_groupby_checked)){
 			foreach($facettes_groupby_checked as $facette_groupby){
 				$form .= "<input type=\"hidden\" name=\"check_facette_groupby[]\" value=\"".htmlentities($facette_groupby['value'],ENT_QUOTES,$charset)."\">\n";
 			}
@@ -619,7 +620,6 @@ class facette_search_compare {
 	 * @return string les script js utile pour le comparateur
 	 */
 	public static function get_compare_wrapper(){
-		global $base_path;
 		global $msg;
 		$script="
 			function valid_facettes_compare(){

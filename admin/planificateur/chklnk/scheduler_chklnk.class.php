@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scheduler_chklnk.class.php,v 1.6.2.1 2021/08/04 12:44:31 dgoron Exp $
+// $Id: scheduler_chklnk.class.php,v 1.8 2022/02/28 14:58:05 dgoron Exp $
 
 global $base_path, $class_path;
 require_once($class_path."/scheduler/scheduler_task.class.php");
@@ -41,6 +41,9 @@ class scheduler_chklnk extends scheduler_task {
 			
 			chklnk::set_filtering_parameters($parameters["scheduler_chknk_filtering_parameters"]);
 			chklnk::set_parameters($parameters["scheduler_chknk_parameters"]);
+			if(!empty($parameters["scheduler_chknk_curltimeout"])) {
+				chklnk::set_curl_timeout($parameters["scheduler_chknk_curltimeout"]);
+			}
 			
 			chklnk::init_queries();
 			

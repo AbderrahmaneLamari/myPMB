@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_view.php,v 1.21.2.1 2021/06/28 16:06:46 dgoron Exp $
+// $Id: notice_view.php,v 1.22 2021/06/28 16:04:22 dgoron Exp $
 
 $base_path=".";
 //Affichage d'une notice

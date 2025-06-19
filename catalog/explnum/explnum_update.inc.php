@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum_update.inc.php,v 1.26.6.2 2021/11/24 15:08:43 dgoron Exp $
+// $Id: explnum_update.inc.php,v 1.30.4.1 2023/10/24 10:10:51 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+use Pmb\Digitalsignature\Models\DocnumCertifier;
 
 global $acces_m, $gestion_acces_active, $gestion_acces_user_notice, $class_path, $PMBuserid, $f_notice, $f_explnum_id, $charset, $forcage;
 global $ret_url, $retour, $nberrors, $msg, $pmb_explnum_controle_doublons, $base_path, $current_module, $signature, $nb_per_page_search;
@@ -70,6 +72,13 @@ if ($acces_m==0) {
 	}
 	
 	$explnum = new explnum($f_explnum_id);
+	
+    $docNumCertifier = new DocnumCertifier($explnum);
+    $check = $docNumCertifier->checkSignExists();
+    if ($check) {
+        return print return_error_message($msg["540"], $msg["digital_signature_already_signed_docnum_del"], 1, "./catalog.php?categ=isbd&id=".$explnum->explnum_notice);
+    }
+
 	$explnum->set_p_perso($p_perso);
 	if(!$forcage && $pmb_explnum_controle_doublons) {
 		$doublons = $explnum->has_doublons($_FILES['f_fichier']['tmp_name']);
@@ -125,8 +134,8 @@ if ($acces_m==0) {
 						$record_link = notice::get_gestion_link($doublon->explnum_notice);
 						$record_title = notice::get_notice_title($doublon->explnum_notice);
 					} else if ($doublon->explnum_bulletin) {
-						$record_link = './catalog.php?categ=serials&sub=view&sub=bulletinage&action=view&bul_id='.$doublon->explnum_bulletin;
-						$query = 'select bulletin_titre from bulletins where bulletin_id = '.$doublon->explnum_bulletin;
+					    $record_link = './catalog.php?categ=serials&sub=view&sub=bulletinage&action=view&bul_id=' . intval($doublon->explnum_bulletin);
+					    $query = 'select bulletin_titre from bulletins where bulletin_id = ' . intval($doublon->explnum_bulletin);
 						$record_title = pmb_mysql_result(pmb_mysql_query($query), 0, 0);
 					}
 					echo "

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_readers_relances_ui.class.php,v 1.29.2.3 2021/07/20 12:15:57 dgoron Exp $
+// $Id: list_readers_relances_ui.class.php,v 1.34.4.2 2024/01/09 12:51:50 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/emprunteur.class.php");
 
 class list_readers_relances_ui extends list_readers_ui {
@@ -125,12 +126,12 @@ class list_readers_relances_ui extends list_readers_ui {
 	
 	/**
 	 * Fonction de callback
-	 * @param object $a
-	 * @param object $b
+	 * {@inheritDoc}
+	 * @see list_readers_ui::_compare_objects()
 	 */
-	protected function _compare_objects($a, $b) {
-		if($this->applied_sort[0]['by']) {
-			$sort_by = $this->applied_sort[0]['by'];
+	protected function _compare_objects($a, $b, $index=0) {
+	    if($this->applied_sort[$index]['by']) {
+	        $sort_by = $this->applied_sort[$index]['by'];
 			switch($sort_by) {
 				case 'last_date':
 					return $this->strcmp($this->levels[$a->id]["level_min_date_relance"], $this->levels[$b->id]["level_min_date_relance"]);
@@ -139,7 +140,7 @@ class list_readers_relances_ui extends list_readers_ui {
 					return $this->intcmp($this->levels[$a->id]["printed"], $this->levels[$b->id]["printed"]);
 					break;
 				default :
-					return parent::_compare_objects($a, $b);
+				    return parent::_compare_objects($a, $b, $index);
 					break;
 			}
 		}
@@ -319,6 +320,7 @@ class list_readers_relances_ui extends list_readers_ui {
 	}
 	
 	protected function init_columns($columns=array()) {
+	    $this->columns = array();
 		if(count($this->selected_columns)) {
 			parent::init_columns($columns);
 			$this->add_column_next_levels();
@@ -357,81 +359,39 @@ class list_readers_relances_ui extends list_readers_ui {
 	}
 	
 	protected function get_link_action($action, $msg_confirm='') {
-	    global $msg;
-	    
 	    return array(
 	        'href' => static::get_controller_url_base()."&act=".$action,
 	        'confirm' => $msg_confirm
 	    );
 	}
 	
-	protected function get_selection_actions() {
-	    global $msg;
-	    
-	    if(!isset($this->selection_actions)) {
-	        $this->selection_actions = array();
-            $this->selection_actions[] = $this->get_selection_action('valid_all', $msg['relance_valid_all'], 'tick.gif', $this->get_link_action('valid'));
-            $this->selection_actions[] = $this->get_selection_action('print_nonprinted', $msg['relance_print_nonprinted'], 'print.gif', $this->get_link_action('print'));
-            $this->selection_actions[] = $this->get_selection_action('reprint', $msg['relance_reprint'], 'print.gif', $this->get_link_action('reprint'));
-//             $this->selection_actions[] = $this->get_selection_action('print_letters', $msg['relance_print_letters'], 'print.gif', $this->get_link_action('print_letters'));
-//             $this->selection_actions[] = $this->get_selection_action('print_letters_mails', $msg['relance_print_letters_mails'], 'print.gif', $this->get_link_action('print_letters_mails'));
-//             $this->selection_actions[] = $this->get_selection_action('export', $msg['relance_export'], 'tableur.gif', $this->get_link_action('export'));
-            $this->selection_actions[] = $this->get_selection_action('export_csv', $msg['relance_export_csv'], 'tableur.gif', $this->get_link_action('export_csv'));
-	    }
-	    return $this->selection_actions;
+	protected function init_default_selection_actions() {
+		global $msg;
+		
+		$this->add_selection_action('valid_all', $msg['relance_valid_all'], 'tick.gif', $this->get_link_action('valid'));
+		$this->add_selection_action('print_nonprinted', $msg['relance_print_nonprinted'], 'print.gif', $this->get_link_action('print'));
+		$this->add_selection_action('reprint', $msg['relance_reprint'], 'print.gif', $this->get_link_action('reprint'));
+// 		$this->add_selection_action('print_letters', $msg['relance_print_letters'], 'print.gif', $this->get_link_action('print_letters'));
+// 		$this->add_selection_action('print_letters_mails', $msg['relance_print_letters_mails'], 'print.gif', $this->get_link_action('print_letters_mails'));
+// 		$this->add_selection_action('export', $msg['relance_export'], 'tableur.gif', $this->get_link_action('export'));
+		$this->add_selection_action('export_csv', $msg['relance_export_csv'], 'tableur.gif', $this->get_link_action('export_csv'));
 	}
 	
 	protected function get_name_selected_objects() {
 	    return "empr";
 	}
 	
-	protected function add_event_on_selection_action($action=array()) {
-	    global $msg;
-	    
-	    $display = "
-			on(dom.byId('".$this->objects_type."_selection_action_".$action['name']."_link'), 'click', function() {
-				var selection = new Array();
-				query('.".$this->objects_type."_selection:checked').forEach(function(node) {
-					selection.push(node.value);
+	protected function get_inheritance_nodes_selected_objects_form($action=array()) {
+		return "
+			selection.forEach(function(selected_option) {
+				var next_actions_hidden = domConstruct.create('input', {
+					type : 'hidden',
+					name : 'action_'+selected_option,
+					value : dom.byId('action_'+selected_option).value
 				});
-				if(selection.length) {
-					var confirm_msg = '".(isset($action['link']['confirm']) ? addslashes($action['link']['confirm']) : '')."';
-					if(!confirm_msg || confirm(confirm_msg)) {
-						".(isset($action['link']['href']) && $action['link']['href'] ? "
-							var selected_objects_form = domConstruct.create('form', {
-								action : '".$action['link']['href']."',
-								name : '".$this->objects_type."_selected_objects_form',
-								id : '".$this->objects_type."_selected_objects_form',
-								method : 'POST'
-							});
-							selection.forEach(function(selected_option) {
-								var selected_objects_hidden = domConstruct.create('input', {
-									type : 'hidden',
-									name : '".$this->get_name_selected_objects()."[]',
-									value : selected_option
-								});
-								domConstruct.place(selected_objects_hidden, selected_objects_form);
-
-                                var next_actions_hidden = domConstruct.create('input', {
-									type : 'hidden',
-									name : 'action_'+selected_option,
-									value : dom.byId('action_'+selected_option).value
-								});
-								domConstruct.place(next_actions_hidden, selected_objects_form);
-							});
-							domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
-							dom.byId('".$this->objects_type."_selected_objects_form').submit();
-							"
-						    : "")."
-						".(isset($action['link']['openPopUp']) && $action['link']['openPopUp'] ? "openPopUp('".$action['link']['openPopUp']."&selected_objects='+selection.join(','), '".$action['link']['openPopUpTitle']."'); return false;" : "")."
-						".(isset($action['link']['onClick']) && $action['link']['onClick'] ? $action['link']['onClick']."(selection); return false;" : "")."
-					}
-				} else {
-					alert('".addslashes($msg['list_ui_no_selected'])."');
-				}
+				domConstruct.place(next_actions_hidden, selected_objects_form);
 			});
 		";
-	    return $display;
 	}
 	
 	protected function get_display_others_actions() {

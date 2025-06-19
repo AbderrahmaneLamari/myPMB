@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_external_search_result.class.php,v 1.8.2.5 2021/11/12 10:15:01 gneveu Exp $
+// $Id: search_segment_external_search_result.class.php,v 1.13 2021/11/12 10:19:21 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

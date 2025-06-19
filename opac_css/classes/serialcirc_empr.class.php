@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serialcirc_empr.class.php,v 1.30.2.1 2022/01/03 10:54:54 dgoron Exp $
+// $Id: serialcirc_empr.class.php,v 1.33.2.1 2023/12/21 13:49:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -278,57 +278,16 @@ class serialcirc_empr{
 	}
 
 	public function resume_ask_copy(){
-		global $charset,$msg;
-		global $opac_notice_affichage_class;
-		global $serialcirc_copy_resume;
-		global $opac_url_base;
-
-		$list="
-			<table>
-				<tr>
-					<th>".htmlentities($msg['serialcirc_ask_copy_date'],ENT_QUOTES,$charset)."</th>
-					<th>".htmlentities($msg['serialcirc_ask_copy_issue'],ENT_QUOTES,$charset)."</th>
-					<th>".htmlentities($msg['serialcirc_ask_copy_analysis'],ENT_QUOTES,$charset)."</th>
-					<th>".htmlentities($msg['serialcirc_ask_copy_msg'],ENT_QUOTES,$charset)."</th>
-					<th>".htmlentities($msg['serialcirc_ask_statut'],ENT_QUOTES,$charset)."</th>
-				</tr>";
-		$query="select * from serialcirc_copy where num_serialcirc_copy_empr = ".$this->empr_id." order by serialcirc_copy_state asc,serialcirc_copy_date asc";
-		$result = pmb_mysql_query($query);
-		if(pmb_mysql_num_rows($result)){
-			$i=0;
-			while($row = pmb_mysql_fetch_object($result)){
-				$analysis_ids = unserialize($row->serialcirc_copy_analysis);
-				if(count($analysis_ids)==0){
-					$analysis="n/a";
-				}else{
-					$analysis="";
-					for($j=0 ; $j<count($analysis_ids) ; $j++){
-						$notice = new $opac_notice_affichage_class($analysis_ids[$j]);
-						$notice->do_header();
-						if($analysis.="")$analysis.="<br />";
-						$analysis.= "<a href='".$opac_url_base."/index.php?lvl=notice_display&id=".$analysis_ids[$j]."'>".$notice->notice_header."</a>";
-					}
-				}
-				$list.="
-				<tr class='".($i%2 == 0 ? "odd" : "even")."'>
-					<td>".htmlentities(format_date($row->serialcirc_copy_date),ENT_QUOTES,$charset)."</td>
-					<td><a href='".$opac_url_base."index.php?lvl=bulletin_display&id=".$row->num_serialcirc_copy_bulletin."'>".bulletin_header($row->num_serialcirc_copy_bulletin)."</a></td>
-					<td>".$analysis."</td>
-					<td>".htmlentities($row->serialcirc_copy_comment,ENT_QUOTES,$charset)."</td>
-					<td>".htmlentities($msg['serialcirc_copy_statut_'.$row->serialcirc_copy_state],ENT_QUOTES,$charset)."</td>
-				</tr>";
-				$i++;
-			}
-		}
-		$list.="
-			</table>";
-		return str_replace("!!ask_copy_list!!",$list,$serialcirc_copy_resume);
+	    global $serialcirc_copy_resume;
+	    
+	    $list = list_opac_serialcirc_copy_reader_ui::get_instance(array('id_empr' => $this->empr_id))->get_display_list();
+	    return str_replace("!!ask_copy_list!!",$list,$serialcirc_copy_resume);
 	}
 
 	public function show_ask_form($expl_cb){
 		global $charset,$msg;
 
-		$query = "select expl_id from exemplaires where expl_cb = '".$expl_cb."'";
+		$query = "select expl_id from exemplaires where expl_cb = '".addslashes($expl_cb)."'";
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)){
 			$expl_id = pmb_mysql_result($result,0,0);
@@ -440,51 +399,11 @@ class serialcirc_empr{
 	}
 
 	public function resume_ask(){
-		global $charset,$msg;
-		global $opac_url_base;
-		
-		$query = "select * from serialcirc_ask where num_serialcirc_ask_empr = ".$this->empr_id." order by serialcirc_ask_type asc, serialcirc_ask_statut asc";
-		$result = pmb_mysql_query($query);
-		$display="
-			<div class='row'>
-				<table>
-					<tr>
-						<th>".htmlentities($msg['serialcirc_ask_type'],ENT_QUOTES,$charset)."</th>
-						<th>".htmlentities($msg['serialcirc_serial_name'],ENT_QUOTES,$charset)."</th>
-						<th>".htmlentities($msg['serialcirc_ask_date'],ENT_QUOTES,$charset)."</th>
-						<th>".htmlentities($msg['serialcirc_ask_statut'],ENT_QUOTES,$charset)."</th>
-						<th>".htmlentities($msg['serialcirc_ask_msg'],ENT_QUOTES,$charset)."</th>
-					</tr>
-					!!rows!!
-				</table>
-			</div>
-		";
-		$rows="";
-		if(pmb_mysql_num_rows($result)){
-			$i=0;
-			while($row = pmb_mysql_fetch_object($result)){
-				if($row->num_serialcirc_ask_perio!=0){
-					$query = "select tit1 from notices where notice_id = ".$row->num_serialcirc_ask_perio;
-					$res= pmb_mysql_query($query);
-					if(pmb_mysql_num_rows($res)){
-						$serial = pmb_mysql_result($res,0,0);
-					}
-				}else{
-					$serialcirc = new serialcirc($row->num_serialcirc_ask_serialcirc);
-					$serial = $serialcirc->get_serial_title();
-				}
-				$rows.= "
-					<tr class='".($i%2 == 0 ? "odd":"even")."'>
-						<td>".htmlentities($msg['serialcirc_ask_type_'.$row->serialcirc_ask_type],ENT_QUOTES,$charset)."</td>
-						<td><a href='".$opac_url_base."index.php?lvl=notice_display&id=".$row->num_serialcirc_ask_perio."'>".htmlentities($serial,ENT_QUOTES,$charset)."</a></td>
-						<td>".htmlentities(formatdate($row->serialcirc_ask_date),ENT_QUOTES,$charset)."</td>
-						<td>".htmlentities($msg['serialcirc_ask_statut_'.$row->serialcirc_ask_statut],ENT_QUOTES,$charset)."</td>
-						<td>".htmlentities($row->serialcirc_ask_comment,ENT_QUOTES,$charset)."</td>
-					</tr>";
-				$i++;
-			}
-		}
-		$display = str_replace("!!rows!!",$rows,$display);
+	    $display = "<div class='row'>";
+	    if($this->empr_id == $_SESSION["id_empr_session"]) {
+	        $display .= list_opac_serialcirc_ask_reader_ui::get_instance(array('id_empr' => $this->empr_id))->get_display_list();
+	    }
+	    $display .= "</div>";
 		return $display;
 	}
 	
@@ -523,9 +442,9 @@ class serialcirc_empr_circ{
 	public $num_serialcirc;
 	
 	public function __construct($empr_id,$id_serialcirc,$num_expl){
-		$this->empr_id = $empr_id*1;
-		$this->id_serialcirc = $id_serialcirc*1;
-		$this->num_expl = $num_expl*1;
+		$this->empr_id = intval($empr_id);
+		$this->id_serialcirc = intval($id_serialcirc);
+		$this->num_expl = intval($num_expl);
 		$this->fetch_data();
 	}
 
@@ -693,15 +612,15 @@ class serialcirc_empr_circ{
 		$row_tpl = "
 		<tr class='".$css_class."'>
 			<td><input type='checkbox' name='unsubscribe' value='".$this->id_serialcirc."' ".($this->unsubscribe ? "checked='checked' disabled='disabled'":"")."/></td>
-			<td><a href='".$opac_url_base."index.php?lvl=notice_display&id=".$this->get_serial_id()."'>".htmlentities($this->get_serial_title(),ENT_QUOTES,$charset)."</a></td>
-			<td>".htmlentities($msg['serialcirc_virtual_mode_'.$this->serialcirc['virtual']],ENT_QUOTES,$charset)."</td>
-			<td>".$issue."</td>
-			<td>".htmlentities($this->serialcirc_expl['start_date'],ENT_QUOTES,$charset)."</td>
-			<td>".htmlentities($this->serialcirc_expl['cb'],ENT_QUOTES,$charset)."</td>
-			<td>".htmlentities($this->rank,ENT_QUOTES,$charset)."</td>
-			<td>".htmlentities(format_date($current_empr['expected_date']),ENT_QUOTES,$charset)."</td>
-			<td>".htmlentities(format_date($this->get_transmission_date()),ENT_QUOTES,$charset)."</td>
-			<td>".$this->get_actions_form()."</td>
+			<td data-column-name='".htmlentities($msg['serialcirc_serial_name'],ENT_QUOTES,$charset)."'><a href='".$opac_url_base."index.php?lvl=notice_display&id=".$this->get_serial_id()."'>".htmlentities($this->get_serial_title(),ENT_QUOTES,$charset)."</a></td>
+			<td data-column-name='".htmlentities($msg['serialcirc_circ_mode'],ENT_QUOTES,$charset)."'>".htmlentities($msg['serialcirc_virtual_mode_'.$this->serialcirc['virtual']],ENT_QUOTES,$charset)."</td>
+			<td data-column-name='".htmlentities($msg['bulletin_retard_libelle_numero'],ENT_QUOTES,$charset)."'>".$issue."</td>
+			<td data-column-name='".htmlentities($msg['serialcirc_start_date'],ENT_QUOTES,$charset)."'>".htmlentities($this->serialcirc_expl['start_date'],ENT_QUOTES,$charset)."</td>
+			<td data-column-name='".htmlentities($msg['codebarre_sort'],ENT_QUOTES,$charset)."'>".htmlentities($this->serialcirc_expl['cb'],ENT_QUOTES,$charset)."</td>
+			<td data-column-name='".htmlentities($msg['serialcirc_nb'],ENT_QUOTES,$charset)."'>".htmlentities($this->rank,ENT_QUOTES,$charset)."</td>
+			<td data-column-name='".htmlentities($msg['serialcirc_expected_date'],ENT_QUOTES,$charset)."'>".htmlentities(format_date($current_empr['expected_date']),ENT_QUOTES,$charset)."</td>
+			<td data-column-name='".htmlentities($msg['serialcirc_transmission_date'],ENT_QUOTES,$charset)."'>".htmlentities(format_date($this->get_transmission_date()),ENT_QUOTES,$charset)."</td>
+			<td data-column-name='".htmlentities($msg['serialcirc_actions'],ENT_QUOTES,$charset)."'>".$this->get_actions_form()."</td>
 		</tr>";
 		return $row_tpl;
 	}
@@ -898,7 +817,7 @@ class serialcirc_empr_circ{
 		$query = "select serialcirc_circ_subscription from serialcirc_circ where num_serialcirc_circ_empr = ".$empr_id." and num_serialcirc_circ_expl = ".$expl_id;
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)){
-			$subscribe = pmb_mysql_result($result,0,0)*1;
+			$subscribe = intval(pmb_mysql_result($result,0,0));
 			if($subscribe == 1){
 				return true;
 			}else return false;
@@ -1051,7 +970,7 @@ class serialcirc_empr_circ{
 		}
 	}
 
-	private function _send_mail($dest,$cc="", $subject, $content,$from_name="",$from_mail=""){
+	private function _send_mail($dest,$cc="", $subject="", $content="",$from_name="",$from_mail=""){
 		global $charset;	
 		global $opac_biblio_name;
 		global $opac_biblio_email;

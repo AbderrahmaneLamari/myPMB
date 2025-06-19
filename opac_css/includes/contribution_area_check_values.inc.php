@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area_check_values.inc.php,v 1.5.2.1 2021/06/11 13:53:32 qvarin Exp $
+// $Id: contribution_area_check_values.inc.php,v 1.6 2021/06/11 13:55:12 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

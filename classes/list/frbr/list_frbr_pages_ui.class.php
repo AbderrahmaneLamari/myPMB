@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_frbr_pages_ui.class.php,v 1.4.2.2 2021/10/29 08:21:16 rtigero Exp $
+// $Id: list_frbr_pages_ui.class.php,v 1.9.4.2 2023/09/29 06:47:59 dgoron Exp $
 if (stristr ( $_SERVER ['REQUEST_URI'], ".class.php" )) die ( "no access" );
 
 class list_frbr_pages_ui extends list_ui {
@@ -19,24 +19,13 @@ class list_frbr_pages_ui extends list_ui {
 		return new frbr_page($row->id_page);
 	}
 	
-	protected function _get_query_order() {
-		if ($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'order':
-					$order .= 'page_order, page_name';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'order':
+	            return 'page_order, page_name';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	protected function init_default_applied_sort() {
@@ -44,7 +33,7 @@ class list_frbr_pages_ui extends list_ui {
 		$this->add_applied_sort('name');
 	}
 
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'entity');
 	}
 	
@@ -84,6 +73,9 @@ class list_frbr_pages_ui extends list_ui {
 		$this->set_setting_display('search_form', 'visible', false);
 		$this->set_setting_display('search_form', 'export_icons', false);
 		$this->set_setting_display('query', 'human', false);
+		$this->set_setting_column('records_list', 'datatype', 'boolean');
+		$this->set_setting_column('facettes_list', 'datatype', 'boolean');
+		$this->set_setting_column('isbd', 'datatype', 'boolean');
 		$this->settings['objects']['default']['display_mode'] = 'expandable_table';
 		$this->settings['grouped_objects']['level_1']['display_mode'] = 'expandable_table';
 	}
@@ -98,12 +90,12 @@ class list_frbr_pages_ui extends list_ui {
 
 	protected function add_column_build() {
 		global $msg;
-		$this->columns[] = array(
-			'property' => '',
-			'label' => '',
-			'html' => '<input type="button" class="bouton" value="'.$msg['frbr_page_tree_build'].'" onclick=\'document.location="'.static::get_controller_url_base().'&sub=build&num_page=!!id!!&num_parent=0"\' />',
-			'exportable' => false
+		
+		$html_properties = array(
+				'value' => $msg['frbr_page_tree_build'],
+				'link' => static::get_controller_url_base().'&sub=build&num_page=!!id!!&num_parent=0'
 		);
+		$this->add_column_simple_action('', '', $html_properties);
 	}
 	
 	/**
@@ -129,6 +121,26 @@ class list_frbr_pages_ui extends list_ui {
 		return $managed_entities[$object->get_entity()]['name'];
 	}
 	
+	protected function _get_object_property_records_list($object) {
+		return $object->get_parameter_value('records_list');
+	}
+	
+	protected function _get_object_property_facettes_list($object) {
+		return $object->get_parameter_value('facettes_list');
+	}
+	
+	protected function _get_object_property_isbd($object) {
+		return $object->get_parameter_value('isbd');
+	}
+	
+	protected function _get_object_property_template_directory($object) {
+		return $object->get_parameter_value('template_directory');
+	}
+	
+	protected function _get_object_property_record_template_directory($object) {
+		return $object->get_parameter_value('record_template_directory');
+	}
+		
 	protected function get_cell_content($object, $property) {
 		global $msg, $charset;
 		
@@ -146,10 +158,6 @@ class list_frbr_pages_ui extends list_ui {
 				if ($object->get_parameter_value($property)) {
 					$content .= "X";
 				}
-				break;
-			case 'template_directory':
-			case 'record_template_directory':
-				$content .= $object->get_parameter_value($property);
 				break;
 			default :
 				$content .= parent::get_cell_content($object, $property);
@@ -193,7 +201,7 @@ class list_frbr_pages_ui extends list_ui {
 		return $this->get_button_add();
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		switch ($property) {
 			case 'order':
@@ -205,14 +213,13 @@ class list_frbr_pages_ui extends list_ui {
 			default:
 				$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&sub=edit&id=".$object->get_id()."\"";
 				break;
-		}		
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		}
+		return $attributes;
 	}
 	
 	public static function get_controller_url_base() {
 		global $base_path;
-		return $base_path.'/cms.php?categ=frbr_pages';
+		//On considere la liste des pages comme la page par défaut du module, sinon cela pose probleme au paginateur
+		return $base_path.'/cms.php?categ=frbr_pages&sub=list';
 	}
 }

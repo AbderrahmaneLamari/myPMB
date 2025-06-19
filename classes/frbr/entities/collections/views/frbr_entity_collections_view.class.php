@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_collections_view.class.php,v 1.3.8.1 2021/08/09 13:25:55 tsamson Exp $
+// $Id: frbr_entity_collections_view.class.php,v 1.4 2021/08/09 13:48:24 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

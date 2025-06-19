@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_ui.tpl.php,v 1.40.2.10 2021/08/25 13:57:16 qvarin Exp $
+// $Id: onto_common_datatype_ui.tpl.php,v 1.53 2022/03/17 13:01:05 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -476,7 +476,7 @@ $ontology_tpl['form_row_content_linked_record_selector']='
 	att_id_filter="!!onto_current_range!!"
 	autocomplete="off"
 	 />
-<input type="hidden" value="!!onto_row_content_marclist_range!!" name="!!onto_row_id!![!!onto_row_order!!][type]" id="!!onto_row_id!!_!!onto_row_order!!_type"/>
+<input type="hidden" value="!!onto_row_content_marclist_range!!" name="!!onto_row_id!![!!onto_row_order!!][marclist_type]" id="!!onto_row_id!!_!!onto_row_order!!_marclist_type"/>
 <input type="hidden" value="!!form_row_content_linked_record_selector_value!!" name="!!onto_row_id!![!!onto_row_order!!][value]" id="!!onto_row_id!!_!!onto_row_order!!_value">
 <input type="hidden" value="!!form_row_content_linked_record_selector_range!!" name="!!onto_row_id!![!!onto_row_order!!][type]" id="!!onto_row_id!!_!!onto_row_order!!_type"/>
 ';
@@ -518,10 +518,10 @@ $ontology_tpl['form_row_content_linked_authority_selector']='
 
 <div class="row" id="!!onto_row_id!!_!!onto_row_order!!">
     <div class="contribution_area_flex">
-        !!onto_row_content_authority_type!!
         <select name="!!onto_row_id!![!!onto_row_order!!][relation_type_authority]" id="!!onto_row_id!!_!!onto_row_order!!_relation_type_authority">
         	!!onto_row_content_marclist_options!!
         </select>
+        !!onto_row_content_authority_type!!
         <img class="img_plus" border="0" hspace="3" src="'.get_url_icon('plus.gif').'" id="!!onto_row_id!!_!!onto_row_order!!_img_plus" data-prefix="!!onto_row_id!!_!!onto_row_order!!"
         	onclick="show_comment_area(this.dataset.prefix);"/>		
         <input type="text" value="!!form_row_content_linked_authority_selector_display_label!!" class="saisie-80emr" id="!!onto_row_id!!_!!onto_row_order!!_display_label" name="!!onto_row_id!![!!onto_row_order!!][display_label]"
@@ -822,3 +822,7 @@ $ontology_tpl['form_row_content_resource_selector_hidden']='
 // Champ obligatoire
 $ontology_tpl['form_row_content_mandatory_sign'] = '
 <span class="contribution_mandatory_fields" title="'.$msg['is_required'].'">*</span>';
+
+$ontology_tpl['form_row_content_input_json_data']='
+<input type="hidden" id="!!onto_row_id!!_!!onto_row_order!!_json_data" value="!!onto_json_data!!"/>
+';

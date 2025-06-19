@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: titres_uniformes.tpl.php,v 1.88.2.1 2021/12/16 10:12:46 rtigero Exp $
+// $Id: titres_uniformes.tpl.php,v 1.89.4.1 2023/05/30 12:53:11 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -368,6 +368,7 @@ function check_link(id) {
 		<input type='hidden' name='page' value='!!page!!' />
 		<input type='hidden' name='nbr_lignes' value='!!nbr_lignes!!' />
 		<input type='hidden' name='user_input' value=\"!!user_input!!\" />
+		<input type='hidden' name='is_duplication' value=\"!!is_duplication!!\" />
 	</div>
 	<div class='right'>
 		!!delete!!

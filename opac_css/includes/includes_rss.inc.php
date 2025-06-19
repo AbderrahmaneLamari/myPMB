@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: includes_rss.inc.php,v 1.30.2.1 2022/01/10 10:35:57 dgoron Exp $
+// $Id: includes_rss.inc.php,v 1.31.4.1 2023/08/02 09:10:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -53,37 +53,22 @@ function genere_link_rss() {
 	$rqt = "select id_rss_flux, nom_rss_flux, descr_rss_flux, metadata_rss_flux from rss_flux order by 2 ";
 	$res = pmb_mysql_query($rqt);
 	while ($obj=pmb_mysql_fetch_object($res)) {
-	    if(!$obj->metadata_rss_flux) continue;
+	    if(!$obj->metadata_rss_flux) {
+	        continue;
+	    }
 		if($opac_view_filter_class){
 			if(!$opac_view_filter_class->is_selected("flux_rss", $obj->id_rss_flux))  continue; 
 		}
 		$liens .= "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"".htmlentities($obj->nom_rss_flux,ENT_QUOTES, $charset)."\" href=\"".$opac_url_base."rss.php?id=".$obj->id_rss_flux."\" />" ;
 	}
-	if ($liens) $logo_rss_si_rss = "<a href='index.php?lvl=rss_see&id=' title=\"".htmlentities($msg['show_rss_dispo'], ENT_QUOTES, $charset)."\"><img id=\"rss_logo\" alt='rss' src='".get_url_icon('rss.png', 1)."' style='vertical-align:middle;border:0px' /></a>" ;
+	if ($liens) {
+	    $logo_rss_si_rss = "<a href='index.php?lvl=rss_see&id=' title=\"".htmlentities($msg['show_rss_dispo'], ENT_QUOTES, $charset)."\"><img id=\"rss_logo\" alt='rss' src='".get_url_icon('rss.png', 1)."' style='vertical-align:middle;border:0px' /></a>" ;
+	}
 	return $liens ;
 }
 
 function genere_page_rss($id=0) {
-	global $opac_url_base, $charset, $msg ;
-	global $opac_view_filter_class;
-	
-	if ($id) $clause = " where id_rss_flux='$id' ";  
-	$rqt = "select id_rss_flux, nom_rss_flux, img_url_rss_flux from rss_flux $clause order by 2 ";
-	$res = pmb_mysql_query($rqt);
-	while ($obj=pmb_mysql_fetch_object($res)) {
-		if($opac_view_filter_class){
-			if(!$opac_view_filter_class->is_selected("flux_rss", $obj->id_rss_flux))  continue; 
-		}		
-		$liens .= "
-		<tr>
-			<td style='width:10%'>";
-		if ($obj->img_url_rss_flux) $liens .= "<a href=\"index.php?lvl=rss_see&id=".$obj->id_rss_flux."\"><img src='".$obj->img_url_rss_flux."' border=none /></a>";
-		$liens .= "</td><td style='width:50%'><a href=\"index.php?lvl=rss_see&id=".$obj->id_rss_flux."\">".htmlentities($obj->nom_rss_flux,ENT_QUOTES, $charset)."</a>
-			</td><td><a href=\"".$opac_url_base."rss.php?id=".$obj->id_rss_flux."\" title=\"".$msg['abonne_rss_dispo']."\"><img id=\"rss_logo\" alt='rss' src='".get_url_icon('rss.png', 1)."' border=0 /></a>
-			".htmlentities($opac_url_base."rss.php?id=".$obj->id_rss_flux,ENT_QUOTES, $charset)."
-				</td></tr>" ;
-		}
-	if ($liens) $liens = "<table class='rss_list_table'> $liens </table>" ;
-	return $liens ;
+	$id = intval($id);
+	return list_opac_rss_ui::get_instance(array('id' => $id))->get_display_list();
 }
 

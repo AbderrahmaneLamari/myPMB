@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: abts_func.inc.php,v 1.12.6.1 2021/08/04 07:16:26 dgoron Exp $
+// $Id: abts_func.inc.php,v 1.13 2021/08/04 07:13:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

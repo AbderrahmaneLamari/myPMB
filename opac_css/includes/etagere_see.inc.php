@@ -2,13 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: etagere_see.inc.php,v 1.71.2.2 2021/12/16 08:47:23 dgoron Exp $
+// $Id: etagere_see.inc.php,v 1.74 2022/02/11 10:19:11 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $base_path, $include_path, $msg, $begin_result_liste, $page, $add_cart_link, $alert_see_mc_values;
 global $opac_nb_aut_rec_per_page, $opac_search_allow_refinement, $opac_notices_depliable;
-global $id;
+global $opac_allow_bannette_priv, $allow_dsi_priv;
+global $gestion_acces_active, $gestion_acces_empr_notice;
+global $id, $nb_per_page_custom;
 
 require_once($class_path."/etagere.class.php");
 require_once($class_path.'/etagere_caddies.class.php');
@@ -49,10 +51,10 @@ if ($id) {
 	
 	/**
 	 * 19/10/2021 : Désactivation de la création/modification d'alerte à partir de l'étagère
-	 * Il faudrait que ce soit le résultat d'une recherche pour que cela fonctionne..
+	 * 11/02/2022 : Réactivation de la création/modification d'alerte à partir de l'étagère
 	 */
 	// pour la DSI - création d'une alerte
-	/*if ($nbr_lignes && $opac_allow_bannette_priv && $allow_dsi_priv && ((isset($_SESSION['abon_cree_bannette_priv']) && $_SESSION['abon_cree_bannette_priv']==1) || $opac_allow_bannette_priv==2)) {
+	if ($nbr_lignes && $opac_allow_bannette_priv && $allow_dsi_priv && ((isset($_SESSION['abon_cree_bannette_priv']) && $_SESSION['abon_cree_bannette_priv']==1) || $opac_allow_bannette_priv==2)) {
 		print "<input type='button' class='bouton' name='dsi_priv' value=\"$msg[dsi_bt_bannette_priv]\" onClick=\"document.mc_values.action='./empr.php?lvl=bannette_creer'; document.mc_values.submit();\"><span class=\"espaceResultSearch\">&nbsp;</span>";
 	}
 	
@@ -62,7 +64,7 @@ if ($id) {
 	}
 	if ($nbr_lignes && $opac_allow_bannette_priv && $allow_dsi_priv && (isset($_SESSION['abon_edit_bannette_priv']) && $_SESSION['abon_edit_bannette_priv']==1)) {
 		print "<input type='button' class='bouton' name='dsi_priv' value=\"".$msg['dsi_bannette_edit']."\" onClick=\"document.mc_values.action='./empr.php?lvl=bannette_edit&id_bannette=".$_SESSION['abon_edit_bannette_id']."'; document.mc_values.submit();\"><span class=\"espaceResultSearch\">&nbsp;</span>";
-	}*/
+	}
 	
 	if(!$page) $page=1;
 	$debut =($page-1)*$opac_nb_aut_rec_per_page;
@@ -83,15 +85,6 @@ if ($id) {
 		print $etagere_caddies->show_tris();
 		
 		print $add_cart_link;
-		
-		//affinage
-		//enregistrement de l'endroit actuel dans la session
-		if(empty($_SESSION["last_module_search"])) {
-		    $_SESSION["last_module_search"] = array();
-		}
-		$_SESSION["last_module_search"]["search_mod"]="etagere_see";
-		$_SESSION["last_module_search"]["search_id"]=$id;
-		$_SESSION["last_module_search"]["search_page"]=$page;
 		
 		// Gestion des alertes à partir de la recherche simple
  		include_once($include_path."/alert_see.inc.php");
@@ -134,6 +127,26 @@ $facettes_tpl = '';
 $_SESSION['facette']=array();
 if($nbr_lignes){
 	require_once($base_path.'/classes/facette_search.class.php');
+	//droits d'acces emprunteur/notice
+	$acces_j='';
+	if ($gestion_acces_active==1 && $gestion_acces_empr_notice==1) {
+		require_once("$class_path/acces.class.php");
+		$ac= new acces();
+		$dom_2= $ac->setDomain(2);
+		$acces_j = $dom_2->getJoin($_SESSION['id_empr_session'],4,'notice_id');
+	}
+	
+	if($acces_j) {
+		$statut_j='';
+		$statut_r='';
+	} else {
+		$statut_j=',notice_statut';
+		$statut_r="and statut=id_notice_statut and ((notice_visible_opac=1 and notice_visible_opac_abon=0)".($_SESSION["user_code"]?" or (notice_visible_opac_abon=1 and notice_visible_opac=1)":"").")";
+	}
+	if($_SESSION["opac_view"] && $_SESSION["opac_view_query"] ){
+		$opac_view_restrict=" notice_id in (select opac_view_num_notice from  opac_view_notices_".$_SESSION["opac_view"].") ";
+		$statut_r.=" and ".$opac_view_restrict;
+	}
 	$query = "select distinct notice_id from caddie_content, etagere_caddie, notices $acces_j $statut_j ";
 	$query .= "where etagere_id=$id and caddie_content.caddie_id=etagere_caddie.caddie_id and notice_id=object_id $statut_r ";
 	$facettes_tpl .= facettes::get_display_list_from_query($query);

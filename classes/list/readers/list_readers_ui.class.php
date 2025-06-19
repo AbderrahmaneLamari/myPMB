@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_readers_ui.class.php,v 1.58.2.6 2021/11/30 09:28:06 dgoron Exp $
+// $Id: list_readers_ui.class.php,v 1.76.2.4 2023/09/29 08:02:21 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -27,7 +27,7 @@ class list_readers_ui extends list_ui {
 	}
 	
 	protected function _get_query_base() {
-		$query = 'SELECT id_empr FROM empr
+		$query = 'SELECT DISTINCT id_empr FROM empr
 				JOIN empr_statut ON empr.empr_statut=empr_statut.idstatut
 				JOIN empr_categ ON empr.empr_categ=empr_categ.id_categ_empr
 				JOIN empr_codestat ON empr.empr_codestat = empr_codestat.idcode
@@ -142,16 +142,23 @@ class list_readers_ui extends list_ui {
 				'caddies' => array(),
                 'empr_ids' => array(),
 				'expl_locations' => array(),
+				'id_diffusion' => 0
 		);
 		if(static::class == 'list_readers_bannette_ui' || static::class == 'list_readers_relances_ui') {
 			$this->filters['empr_location_id'] = '';
 			$this->filters['locations'] = ($pmb_lecteurs_localises ? array($deflt2docs_location) : array());
-		} else if(static::class == 'list_readers_group_ui' || static::class == 'list_readers_recouvr_ui') {
+		} else if(static::class == 'list_readers_group_ui' || static::class == 'list_readers_recouvr_ui' || static::class == 'list_readers_bannette_diffusion_ui') {
             $this->filters['empr_location_id'] = '';
             $this->filters['locations'] = array();
 		} else {
 			$this->filters['empr_location_id'] = ($pmb_lecteurs_localises ? $deflt2docs_location : '');
 			$this->filters['locations'] = array();
+		}
+		if(!empty($filters['empr_location_id'])) {
+			if(empty($this->selected_filters['location']) && !empty($this->selected_filters['locations'])) {
+				$filters['locations'] = array($filters['empr_location_id']);
+				$filters['empr_location_id'] = '';
+			}
 		}
 		parent::init_filters($filters);
 		
@@ -226,7 +233,8 @@ class list_readers_ui extends list_ui {
             		'tel1' => '73',
             		'tel2' => '73tel2',
             		'nb_resas_and_validated' => 'groupes_nb_resa_dont_valides',
-            		'nb_loans_including_late' => 'nb_loans_including_late'
+            		'nb_loans_including_late' => 'nb_loans_including_late',
+            		'empr_msg' => 'empr_msg'
 	            )
 	        );
 	    }
@@ -310,69 +318,43 @@ class list_readers_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-	
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'id':
-					$order .= 'id_empr';
-					break;
-				case 'empr_name' :
-					$order .= 'empr_nom, empr_prenom';
-					break;
-				case 'cb':
-					$order .= 'empr_cb';
-					break;
-				case 'adr1':
-					$order .= 'empr_adr1';
-					break;
-				case 'ville':
-					$order .= 'empr_ville';
-					break;
-				case 'birth':
-					$order .= 'empr_year';
-					break;
-				case 'mail':
-					$order .= 'empr_mail';
-					break;
-				case 'tel1':
-					$order .= 'empr_tel1';
-					break;
-				case 'tel2':
-					$order .= 'empr_tel2';
-					break;
-				case 'aff_date_adhesion':
-					$order .= 'empr_date_adhesion';
-					break;
-				case 'aff_date_expiration':
-					$order .= 'empr_date_expiration';
-					break;
-				case 'empr_statut_libelle':
-					$order .= 'empr_statut.statut_libelle';
-					break;
-				case 'categ_libelle':
-					$order .= 'empr_categ.libelle';
-					break;
-				case 'codestat_libelle':
-					$order .= 'empr_codestat.libelle';
-					break;
-				case 'location':
-					$order .= 'docs_location.location_libelle';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-			    return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'id':
+	            return 'id_empr';
+	        case 'empr_name' :
+	            return 'empr_nom, empr_prenom';
+	        case 'cb':
+	            return 'empr_cb';
+	        case 'adr1':
+	            return 'empr_adr1';
+	        case 'ville':
+	            return 'empr_ville';
+	        case 'birth':
+	            return 'empr_year';
+	        case 'mail':
+	            return 'empr_mail';
+	        case 'tel1':
+	            return 'empr_tel1';
+	        case 'tel2':
+	            return 'empr_tel2';
+	        case 'aff_date_adhesion':
+	            return 'empr_date_adhesion';
+	        case 'aff_date_expiration':
+	            return 'empr_date_expiration';
+	        case 'empr_statut_libelle':
+	            return 'empr_statut.statut_libelle';
+	        case 'categ_libelle':
+	            return 'empr_categ.libelle';
+	        case 'codestat_libelle':
+	            return 'empr_codestat.libelle';
+	        case 'location':
+	            return 'docs_location.location_libelle';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	protected function set_filters_from_filter_list() {
@@ -454,9 +436,31 @@ class list_readers_ui extends list_ui {
 		global $empr_statut_edit;
 		global $empr_categ_filter;
 		global $empr_codestat_filter;
+		global $sort_by, $sort_asc_desc;
 		
-		if(isset($empr_location_id)) {
-			$this->filters['empr_location_id'] = intval($empr_location_id);
+		$initialization = $this->objects_type.'_initialization';
+		global ${$initialization};
+		if(isset(${$initialization}) && ${$initialization} == 'reset') {
+			if(empty($this->selected_filters['location']) && empty($this->selected_filters['locations'])) {
+				$empr_location_id = 0;
+			}
+		}
+		if(isset($empr_location_id) && $empr_location_id !== '') {
+			$empr_location_id = intval($empr_location_id);
+			if($empr_location_id != -1) {
+				if(!empty($this->selected_filters['locations'])) {
+					if($empr_location_id) {
+						$this->filters['locations'] = array($empr_location_id);
+					} else {
+						$this->filters['locations'] = array();
+					}
+					if(empty($this->selected_filters['location'])) {
+						$this->filters['empr_location_id'] = '';
+					}
+				} else {
+					$this->filters['empr_location_id'] = $empr_location_id;
+				}
+			}
 		}
 		if(isset($empr_statut_edit)) {
 			$this->filters['empr_statut_edit'] = intval($empr_statut_edit);
@@ -492,7 +496,7 @@ class list_readers_ui extends list_ui {
 		$this->set_filter_from_form('caddies');
 		
 		//Filtres provenant de la classe filter_list
-		if(!empty(static::$used_filter_list_mode)) {
+		if(!empty(static::$used_filter_list_mode) && empty($sort_by) && empty($sort_asc_desc)) {
 		    $this->set_filters_from_filter_list();
 		}
 		
@@ -588,9 +592,7 @@ class list_readers_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_name() {
-		global $msg, $charset;
-		
-		return "<input type='text' class='saisie-30em' name='".$this->objects_type."_name' value=\"".htmlentities($this->filters['name'], ENT_QUOTES, $charset)."\" title='$msg[3000]'/>";
+		return $this->get_search_filter_simple_text('name');
 	}
 	
 	protected function get_search_filter_has_mail() {
@@ -604,9 +606,7 @@ class list_readers_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_mail() {
-		global $charset;
-	
-		return "<input type='text' class='saisie-30em' name='".$this->objects_type."_mail' value=\"".htmlentities($this->filters['mail'], ENT_QUOTES, $charset)."\" />";
+		return $this->get_search_filter_simple_text('mail');
 	}
 	
 	protected function get_search_filter_date_creation() {
@@ -725,144 +725,106 @@ class list_readers_ui extends list_ui {
 		return $filter_join_query;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
+	protected function _add_query_filters() {
 		global $pmb_lecteurs_localises;
 		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
 		if(!empty($this->filters['simple_search'])) {
-		    $elts = explode(' ', $this->filters['simple_search']);
-		    if(count($elts)>1) {
-		        $sql_elts = array();
-		        foreach ($elts as $elt) {
-		            $elt = str_replace("*", "%", trim($elt));
-		            if($elt) {
-		                $sql_elts[] = "(empr_nom like '".$elt."%' OR empr_nom like '% ".$elt."%' OR empr_nom like '%-".$elt."%' OR empr_prenom like '".$elt."%' OR empr_prenom like '% ".$elt."%' OR empr_prenom like '%-".$elt."%')";
-		            }
-		        }
-		        if(count($sql_elts)) {
-		        	$filters [] = "((".implode(' AND ',$sql_elts).") OR empr_cb like '".str_replace("*", "%", $this->filters['simple_search'])."%')" ;
-		        }
-		    } else {
-		    	$elt = str_replace("*", "%", $this->filters['simple_search']);
-		    	$filters [] = "(empr_nom like '".$elt."%' OR empr_nom like '%-".$elt."%' OR empr_prenom like '".$elt."%' OR empr_prenom like '%-".$elt."%' OR empr_cb like '".$elt."%')" ;
-		    }
+			$elts = explode(' ', $this->filters['simple_search']);
+			if(count($elts)>1) {
+				$sql_elts = array();
+				foreach ($elts as $elt) {
+					$elt = str_replace("*", "%", trim($elt));
+					if($elt) {
+						$sql_elts[] = "(empr_nom like '".$elt."%' OR empr_nom like '% ".$elt."%' OR empr_nom like '%-".$elt."%' OR empr_prenom like '".$elt."%' OR empr_prenom like '% ".$elt."%' OR empr_prenom like '%-".$elt."%')";
+					}
+				}
+				if(count($sql_elts)) {
+					$this->query_filters [] = "((".implode(' AND ',$sql_elts).") OR empr_cb like '".str_replace("*", "%", $this->filters['simple_search'])."%')" ;
+				}
+			} else {
+				$elt = str_replace("*", "%", $this->filters['simple_search']);
+				$this->query_filters [] = "(empr_nom like '".$elt."%' OR empr_nom like '%-".$elt."%' OR empr_prenom like '".$elt."%' OR empr_prenom like '%-".$elt."%' OR empr_cb like '".$elt."%')" ;
+			}
 		}
 		if(!empty($this->filters['empr_location_id']) && $this->filters['empr_location_id'] != -1) {
-			$filters [] = 'empr_location = "'.$this->filters['empr_location_id'].'"';
+			$this->query_filters [] = 'empr_location = "'.$this->filters['empr_location_id'].'"';
 		}
-		if($this->filters['empr_statut_edit']) {
-			$filters [] = 'empr_statut = "'.$this->filters['empr_statut_edit'].'"';
-		}
-		if($this->filters['empr_categ_filter']) {
-			$filters [] = 'empr_categ = "'.$this->filters['empr_categ_filter'].'"';
-		}
-		if($this->filters['empr_codestat_filter']) {
-			$filters [] = 'empr_codestat = "'.$this->filters['empr_codestat_filter'].'"';
-		}
-		if($this->filters['group']) {
-			$filters [] = 'groupe_id = "'.$this->filters['group'].'"';
-		}
+		$this->_add_query_filter_simple_restriction('empr_statut_edit', 'empr_statut', 'integer');
+		$this->_add_query_filter_simple_restriction('empr_categ_filter', 'empr_categ', 'integer');
+		$this->_add_query_filter_simple_restriction('empr_codestat_filter', 'empr_codestat', 'integer');
+		$this->_add_query_filter_simple_restriction('group', 'groupe_id', 'integer');
+		
 		if($pmb_lecteurs_localises && array_key_exists('locations', $this->filters) && is_array($this->filters['locations']) && count($this->filters['locations'])) {
-		    $filters [] = 'empr_location IN ('.implode(',', $this->filters['locations']).')';
+			$this->query_filters [] = 'empr_location IN ('.implode(',', $this->filters['locations']).')';
 		}
-		if(is_array($this->filters['categories']) && count($this->filters['categories'])) {
-			$filters [] = 'empr_categ IN ('.implode(',', $this->filters['categories']).')';
-		}
-		if(is_array($this->filters['status']) && count($this->filters['status'])) {
-			$filters [] = 'empr_statut IN ('.implode(',', $this->filters['status']).')';
-		}
-		if(is_array($this->filters['codestat']) && count($this->filters['codestat'])) {
-			$filters [] = 'empr_codestat IN ('.implode(',', $this->filters['codestat']).')';
-		}
-		if(is_array($this->filters['groups']) && count($this->filters['groups'])) {
-			$filters [] = 'groupe_id IN ('.implode(',', $this->filters['groups']).')';
-		}
+		$this->_add_query_filter_multiple_restriction('categories', 'empr_categ', 'integer');
+		$this->_add_query_filter_multiple_restriction('status', 'empr_statut', 'integer');
+		$this->_add_query_filter_multiple_restriction('codestat', 'empr_codestat', 'integer');
+		$this->_add_query_filter_multiple_restriction('groups', 'groupe_id', 'integer');
 		if($this->filters['id']) {
-			$filters [] = 'id_empr = "'.$this->filters['id'].'"';
+			$this->query_filters [] = 'id_empr = "'.$this->filters['id'].'"';
 		}
-		if($this->filters['name']) {
-			$filters [] = 'empr_nom like "%'.str_replace('*', '%', $this->filters['name']).'%"';
-		}
+		$this->_add_query_filter_combine_restrictions(array(
+				$this->_get_query_filter_simple_restriction('name', 'empr_nom', 'boolean_search'),
+				$this->_get_query_filter_simple_restriction('name', 'empr_prenom', 'boolean_search')
+		));
 		if($this->filters['mail']) {
-			$filters [] = 'empr_mail like "%'.str_replace('*', '%', $this->filters['mail']).'%"';
+			$this->query_filters [] = 'empr_mail like "%'.str_replace('*', '%', $this->filters['mail']).'%"';
 		}
 		if($this->filters['has_mail']) {
-			$filters [] = 'empr_mail <> ""';
+			$this->query_filters [] = 'empr_mail <> ""';
 		}
 		if($this->filters['has_affected']) {
 			$query_affected = $this->_get_query_filter_affected();
 			if($query_affected) {
-				$filters [] = $this->_get_query_filter_affected();
+				$this->query_filters [] = $this->_get_query_filter_affected();
 			}
 		}
-		if($this->filters['date_creation_start']) {
-			$filters [] = 'empr_creation >= "'.$this->filters['date_creation_start'].'"';
-		}
-		if($this->filters['date_creation_end']) {
-			$filters [] = 'empr_creation < "'.$this->filters['date_creation_end'].'"';
-		}
-		if($this->filters['date_adhesion_start']) {
-			$filters [] = 'empr_date_adhesion >= "'.$this->filters['date_adhesion_start'].'"';
-		}
-		if($this->filters['date_adhesion_end']) {
-			$filters [] = 'empr_date_adhesion < "'.$this->filters['date_adhesion_end'].'"';
-		}
-		if($this->filters['date_expiration_start']) {
-			$filters [] = 'empr_date_expiration >= "'.$this->filters['date_expiration_start'].'"';
-		}
-		if($this->filters['date_expiration_end']) {
-			$filters [] = 'empr_date_expiration < "'.$this->filters['date_expiration_end'].'"';
-		}
+		$this->_add_query_filter_interval_restriction('date_creation', 'empr_creation', 'date');
+		$this->_add_query_filter_interval_restriction('date_adhesion', 'empr_date_adhesion', 'date');
+		$this->_add_query_filter_interval_restriction('date_expiration', 'empr_date_expiration', 'date');
+		
 		if($this->filters['date_expiration_limit']) {
-			$filters [] = $this->filters['date_expiration_limit'];
+			$this->query_filters [] = $this->filters['date_expiration_limit'];
 		}
 		if($this->filters['change_categ']) {
-			$filters [] = $this->filters['change_categ'];
+			$this->query_filters [] = $this->filters['change_categ'];
 		}
-		if(is_array($this->filters['cp']) && count($this->filters['cp'])) {
-		    $filters [] = 'empr_cp IN ('.implode(',', $this->filters['cp']).')';
-		}
-		if(is_array($this->filters['villes']) && count($this->filters['villes'])) {
-		    $filters [] = 'empr_ville IN ("'.implode('","', addslashes_array($this->filters['villes'])).'")';
-		}
-		if(is_array($this->filters['birth_dates']) && count($this->filters['birth_dates'])) {
-		    $filters [] = 'empr_year IN ('.implode(',', $this->filters['birth_dates']).')';
-		}
-		if(is_array($this->filters['last_level_validated']) && count($this->filters['last_level_validated'])) {
-		    $filters [] = 'niveau_relance IN ('.implode(',', $this->filters['last_level_validated']).')';
-		}
-		if(is_array($this->filters['last_dates']) && count($this->filters['last_dates'])) {
-			$filters [] = 'date_relance IN ("'.implode('","', addslashes_array($this->filters['last_dates'])).'")';
-		}
-		if(is_array($this->filters['types_abts']) && count($this->filters['types_abts'])) {
-		    $filters [] = 'type_abt IN ('.implode(',', $this->filters['types_abts']).')';
-		}
+		
+		$this->_add_query_filter_multiple_restriction('cp', 'empr_cp', 'integer');
+		$this->_add_query_filter_multiple_restriction('villes', 'empr_ville');
+		$this->_add_query_filter_multiple_restriction('birth_dates', 'empr_year');
+		$this->_add_query_filter_multiple_restriction('last_level_validated', 'niveau_relance', 'integer');
+		$this->_add_query_filter_multiple_restriction('last_dates', 'date_relance');
+		$this->_add_query_filter_multiple_restriction('types_abts', 'type_abt', 'integer');
+		
 		if(is_array($this->filters['expl_locations']) && count($this->filters['expl_locations'])) {
 			//Géré par la classe filter_list
 		}
-		if(is_array($this->filters['caddies']) && count($this->filters['caddies'])) {
-			$filters [] = 'empr_caddie_id IN ('.implode(',', $this->filters['caddies']).')';
-		}
-		if(is_array($this->filters['empr_ids']) && count($this->filters['empr_ids'])) {
-		    $filters [] = 'id_empr IN ('.implode(',', $this->filters['empr_ids']).')';
-		}
+		$this->_add_query_filter_multiple_restriction('caddies', 'empr_caddie_id', 'integer');
+		$this->_add_query_filter_multiple_restriction('empr_ids', 'id_empr', 'integer');
 		$custom_fields_filters = $this->_get_query_custom_fields_filters();
 		if(!empty($custom_fields_filters)) {
 			foreach ($custom_fields_filters as $custom_field_filter) {
-				$filters [] = $custom_field_filter; 
+				$this->query_filters [] = $custom_field_filter;
 			}
 		}
-		if(count($filters)) {
+	}
+	
+	/**
+	 * Filtre SQL
+	 */
+	protected function _get_query_filters() {
+		$filter_query = '';
+		
+		$this->set_filters_from_form();
+		
+		$this->query_filters = array();
+		$this->_add_query_filters();
+		if(count($this->query_filters)) {
 			$filter_query .= $this->_get_query_join_filters();
 			$filter_query .= $this->_get_query_join_custom_fields_filters('empr', 'id_empr');
-			$filter_query .= ' where '.implode(' and ', $filters);
+			$filter_query .= ' where '.implode(' and ', $this->query_filters);
 		}
 		return $filter_query;
 	}
@@ -871,10 +833,11 @@ class list_readers_ui extends list_ui {
 	 * Fonction de callback
 	 * @param object $a
 	 * @param object $b
+	 * @param number $index
 	 */
-	protected function _compare_objects($a, $b) {
-	    if($this->applied_sort[0]['by']) {
-	        $sort_by = $this->applied_sort[0]['by'];
+	protected function _compare_objects($a, $b, $index=0) {
+	    if($this->applied_sort[$index]['by']) {
+	        $sort_by = $this->applied_sort[$index]['by'];
 			switch($sort_by) {
 				case 'aff_date_adhesion':
 					return strcmp($a->date_adhesion, $b->date_adhesion);
@@ -887,7 +850,7 @@ class list_readers_ui extends list_ui {
 				case 'nb_loans_including_late':
 					return $this->intcmp(emprunteur::get_nb_loans($a->id), emprunteur::get_nb_loans($b->id));
 				default :
-					return parent::_compare_objects($a, $b);
+				    return parent::_compare_objects($a, $b, $index);
 			}
 		}
 	}
@@ -898,7 +861,7 @@ class list_readers_ui extends list_ui {
 	    $img_ajout_empr_caddie="";
 	    if ($empr_show_caddie) {
 	        $img_ajout_empr_caddie = "\n<img src='".get_url_icon('basket_empr.gif')."' class='align_middle' alt='basket' title=\"".$msg[400]."\" ";
-	        $img_ajout_empr_caddie .= "onmousedown=\"if (event) e=event; else e=window.event; if (e.target) elt=e.target; else elt=e.srcElement; e.cancelBubble = true; if (e.stopPropagation) e.stopPropagation();\" onmouseup=\"if (event) e=event; else e=window.event; if (e.target) elt=e.target; else elt=e.srcElement; if (elt.nodeName=='IMG') openPopUp('./cart.php?object_type=EMPR&item=".$id_emprunteur."', 'cart'); return false;\" ";
+	        $img_ajout_empr_caddie .= "onclick=\"if (event) e=event; else e=window.event; if (e.target) elt=e.target; else elt=e.srcElement; e.cancelBubble = true; if (e.stopPropagation) e.stopPropagation();\" onmouseup=\"if (event) e=event; else e=window.event; if (e.target) elt=e.target; else elt=e.srcElement; if (elt.nodeName=='IMG') openPopUp('./cart.php?object_type=EMPR&item=".$id_emprunteur."', 'cart'); return false;\" ";
 	        $img_ajout_empr_caddie .= "onMouseOver=\"show_div_access_carts(event,".$id_emprunteur.",'EMPR');\" onMouseOut=\"set_flag_info_div(false);\" ";
 	        $img_ajout_empr_caddie .= "style=\"cursor: pointer\">\n";
 	    }
@@ -943,7 +906,7 @@ class list_readers_ui extends list_ui {
 	}
 	
 	protected function _get_object_property_groups($object) {
-		return implode(',', emprunteur::get_groupes($object->id));
+		return strip_tags(implode(',', emprunteur::get_groupes($object->id)));
 	}
 	
 	protected function _get_object_property_location($object) {
@@ -956,6 +919,9 @@ class list_readers_ui extends list_ui {
 		
 		$content = '';
 		switch($property) {
+			case 'groups':
+				$content .= implode(',', emprunteur::get_groupes($object->id));
+				break;
 			case 'categ_change':
 				$today = getdate();
 				$age_lecteur = $today["year"] - $object->birth;
@@ -984,6 +950,9 @@ class list_readers_ui extends list_ui {
 			case 'add_empr_cart':
 			    $content .= $this->iconepanier($object->id);
 			    break;
+			case 'empr_msg':
+				$content .= nl2br($object->empr_msg);
+				break;
 			default :
 				$content .= parent::get_cell_content($object, $property);
 				break;
@@ -1069,6 +1038,9 @@ class list_readers_ui extends list_ui {
 		global $msg;
 		
 		$humans = $this->_get_query_human_main_fields();
+		if(empty($this->selected_filters['location']) && !empty($this->filters['empr_location_id']) && $this->filters['empr_location_id'] != -1) {
+			$humans['location'] = $this->_get_query_human_main_field('location', $msg['location']);
+		}
 		if($this->filters['empr_statut_edit']) {
 			$query = "select statut_libelle from empr_statut where idstatut = ".$this->filters['empr_statut_edit'];
 			$humans['status'] = $this->_get_label_query_human_from_query($msg['statut_empr'], $query);

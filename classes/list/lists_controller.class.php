@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lists_controller.class.php,v 1.21.2.6 2021/12/13 08:37:51 dgoron Exp $
+// $Id: lists_controller.class.php,v 1.31.2.1 2023/04/19 06:26:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -25,6 +25,12 @@ class lists_controller {
 	 * @var string
 	 */
 	protected static $url_base = '';
+	
+	/**
+	 * Aller directement à l'objet
+	 * @var string
+	 */
+	protected static $object_id = 0;
 	
 	protected static function get_model_instance($id) {
 		return new static::$model_class_name($id);
@@ -101,12 +107,16 @@ class lists_controller {
 				break;
 			default:
 				$list_ui_instance = static::get_list_ui_instance();
+				$list_ui_instance->set_object_id($id);
 				switch($dest) {
 					case "TABLEAU":
 						$list_ui_instance->get_display_spreadsheet_list();
 						break;
 					case "TABLEAUHTML":
 						print $list_ui_instance->get_display_html_list();
+						break;
+					case "TABLEAUCSV":
+						print $list_ui_instance->get_display_csv_list();
 						break;
 					default:
 						print $list_ui_instance->get_display_list();
@@ -116,13 +126,14 @@ class lists_controller {
 	}
 	
 	public static function redirect_display_list() {
+		$location_url = static::get_url_base().(!empty(static::$object_id) ? "&id=".static::$object_id : '');
 		if(headers_sent()) {
 			print "
 				<script type='text/javascript'>
-					window.location.href='".static::get_url_base()."';
+					window.location.href='".$location_url."';
 				</script>";
 		} else {
-			header('Location: '.static::get_url_base());
+			header('Location: '.$location_url);
 		}
 	}
 	
@@ -141,7 +152,8 @@ class lists_controller {
 			}
 			$filters = (!empty($filters) ? encoding_normalize::json_decode(stripslashes($filters), true) : array());
 			$pager = (!empty($pager) ? encoding_normalize::json_decode(stripslashes($pager), true) : array());
-			$instance_class_name = new $class_name($filters, $pager, array('by' => $sort_by, 'asc_desc' => (!empty($sort_asc_desc) ? $sort_asc_desc : '')));
+			$sort = (!empty($sort_by) ? array('by' => $sort_by, 'asc_desc' => (!empty($sort_asc_desc) ? $sort_asc_desc : '')) : array());
+			$instance_class_name = new $class_name($filters, $pager, $sort);
 			$instance_class_name->set_ancre($ancre);
 			$display_mode = $instance_class_name->get_setting('objects', 'default', 'display_mode');
 			switch ($display_mode) {
@@ -189,11 +201,11 @@ class lists_controller {
 								static::load_class('/list/'.$class_name.'.class.php');
 							}
 							$instance_class_name = new $class_name();
-							$instance_class_name->add_selected_filter($filter_property, $filter_label);
+							$instance_class_name->add_selected_filter($filter_property, stripslashes($filter_label));
 							if($instance_class_name->is_custom_field_filter($filter_property)) {
-								$filter_form = $instance_class_name->get_search_filter_custom_field_form($filter_property, $filter_label, true);
+								$filter_form = $instance_class_name->get_search_filter_custom_field_form($filter_property, stripslashes($filter_label), true);
 							} else {
-								$filter_form = $instance_class_name->get_search_filter_form($filter_property, $filter_label, true);
+								$filter_form = $instance_class_name->get_search_filter_form($filter_property, stripslashes($filter_label), true);
 							}
 							print encoding_normalize::utf8_normalize($filter_form);
 							break;
@@ -272,10 +284,18 @@ class lists_controller {
 	}
 	
 	public static function get_url_base() {
+		global $base_path, $current_module, $categ, $sub;
+		if(empty(static::$url_base)) {
+			static::$url_base = $base_path.'/'.$current_module.'.php?categ='.$categ.(!empty($sub) ? '&sub='.$sub : '');
+		}
 		return static::$url_base;
 	}
 	
 	public static function set_url_base($url_base) {
 		static::$url_base = $url_base;
+	}
+	
+	public static function set_object_id($object_id) {
+		static::$object_id = $object_id;
 	}
 }

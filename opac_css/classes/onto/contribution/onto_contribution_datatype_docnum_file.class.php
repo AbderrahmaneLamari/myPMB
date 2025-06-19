@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_docnum_file.class.php,v 1.5 2018/02/26 16:16:28 apetithomme Exp $
+// $Id: onto_contribution_datatype_docnum_file.class.php,v 1.6 2022/05/09 10:26:00 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -61,9 +61,13 @@ class onto_contribution_datatype_docnum_file extends onto_common_datatype_file {
 				${$var_name} = $values;
 			}
 		}		
-		if (${$var_name}[0]['value'] == '' && $_POST[$var_name][0]['default_value']) {
-			${$var_name}[0]['value'] = $_POST[$var_name][0]['default_value'];
-			${$var_name}[0]['type'] = $_POST[$var_name][0]['type'];
+		if ((empty(${$var_name})) || (${$var_name}[0]['value'] == '' && $_POST[$var_name][0]['default_value'])) {
+			${$var_name} = [
+			    [
+			        'value' => $_POST[$var_name][0]['default_value'],
+                    'type' => $_POST[$var_name][0]['type'],
+		        ],
+			];
 		}
 		return parent::get_values_from_form($instance_name, $property, $uri_item);
 	}

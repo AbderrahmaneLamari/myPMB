@@ -2,15 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sauvegarde_list.class.php,v 1.17 2017/11/07 15:20:00 ngantier Exp $
+// $Id: sauvegarde_list.class.php,v 1.17.12.2 2023/04/28 09:58:44 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+global $include_path;
 
 //Formulaire de gestion des listes de sauvegardes
 include ($include_path."/templates/sauvegarde_list.tpl.php");
 
 class sauvegarde_list {
-	
+
 	//Données
 	public $date_saving; //Liste des dates de sauvegarde
 	public $logid; //Liste des fichiers à supprimer ou a restaurer
@@ -20,12 +22,12 @@ class sauvegarde_list {
     	global $date_saving;
     	global $logid;
     	global $act;
-    	
+
     	$this->date_saving=$date_saving;
     	$this->logid=$logid;
     	$this->act=$act;
     }
-    
+
     public function proceed() {
     	global $msg;
     	//Actions possibles :
@@ -33,7 +35,7 @@ class sauvegarde_list {
     	//restore : restoration immédiate des jeux cochés
     	//chaine vide : affichage
     	switch ($this->act) {
-    		
+
     		case "delete":
     			if (!is_array($this->logid)) {
     				echo "<script>alert(\"".$msg["sauv_list_unselected_set"]."\"); history.go(-1);</script>";
@@ -54,7 +56,7 @@ class sauvegarde_list {
     	}
     	return $this->showForm();
     }
-    
+
     public function read_infos($filename) {
     	$tInfo=array();
     	$f=@fopen($filename,"r");
@@ -67,13 +69,14 @@ class sauvegarde_list {
     		$line=fgets($f,4096);
     		$line=rtrim($line);
     	}
-    	return $tInfo;    	
+    	fclose($f);
+    	return $tInfo;
     }
-    
+
     public function showForm() {
     	global $form;
     	global $msg;
-    	
+
     	//Récupération des dates présentes dans la base
     	if (!is_array($this->date_saving)) $this->date_saving=array();
     	$date_list="<select name=\"date_saving[]\" multiple>\n";
@@ -87,9 +90,9 @@ class sauvegarde_list {
     		$date_list.=">".$tDate[2]."/".$tDate[1]."/".$tDate[0]."</option>\n";
     	}
     	$date_list.="</select>";
-    	
+
     	$form=str_replace("!!date_saving!!",$date_list,$form);
-    	
+
     	$requete="select sauv_log_id,sauv_log_start_date,sauv_log_file,sauv_log_succeed,sauv_log_messages,concat(prenom,' ',nom) as name from sauv_log,users where sauv_log_userid=userid";
     	if (count($this->date_saving)!=0) {
     		$dates=implode("','",$this->date_saving);
@@ -98,10 +101,9 @@ class sauvegarde_list {
     	}
     	$requete.=" order by sauv_log_start_date desc";
     	$resultat=pmb_mysql_query($requete);
-    	
+
 		$sty="class='brd center'";
-		$sty0="class='brd2 center'";
-    	
+
     	$sauvegarde_list="<table class='center' celpadding=0 cellspacing=0>\n";
 		$sauvegarde_list.="<th $sty>&nbsp;</th><th $sty>&nbsp;</th>";
     	$sauvegarde_list.="<th $sty colspan='4'>".$msg["sauv_list_th_info_set"]."</th>";
@@ -121,16 +123,16 @@ class sauvegarde_list {
     	while ($res=pmb_mysql_fetch_object($resultat)) {
     		$sauvegarde_list.="<tr><td $sty><input type=\"checkbox\" name=\"logid[]\" value=\"".$res->sauv_log_id."\"></td>";
     		$sauvegarde_list.="<td $sty>";
-    		if ($res->sauv_log_succeed==1) { 
+    		if ($res->sauv_log_succeed==1) {
     			$infos=$this->read_infos("admin/backup/backups/".$res->sauv_log_file);
     			if (count($infos)==0) {
     				$res->sauv_log_succeed=0;
     			}
     		}
-    		if ($res->sauv_log_succeed==1) { 
-    			$succeed="sauv_succeed.png"; 
+    		if ($res->sauv_log_succeed==1) {
+    			$succeed="sauv_succeed.png";
     			$succeed_message=$msg["sauv_list_succeed"];
-    		} else { 
+    		} else {
     			$succeed="sauv_failed.png";
     			//Recherche du message d'erreur
     			$tMessages=explode("\n",$res->sauv_log_messages);
@@ -153,19 +155,19 @@ class sauvegarde_list {
     			$sauvegarde_list.="<td $sty>".$infos["Name"]."</td>";
     			$sauvegarde_list.="<td $sty>".$infos["Start time"]."</td>";
     			$sauvegarde_list.="<td $sty>";
-    			if (isset($infos["Compress"]) && $infos["Compress"]=="1") $sauvegarde_list.="<img src=\"images/sauv_compress.png\">"; 
+    			if (isset($infos["Compress"]) && $infos["Compress"]=="1") $sauvegarde_list.="<img src=\"images/sauv_compress.png\">";
     				else $sauvegarde_list.="&nbsp;";
     			$sauvegarde_list.="</td>";
     			$sauvegarde_list.="<td $sty>";
-    			if (isset($infos["Crypt"]) && $infos["Crypt"]=="1") $sauvegarde_list.="<img src=\"images/sauv_crypted.png\">"; 
+    			if (isset($infos["Crypt"]) && $infos["Crypt"]=="1") $sauvegarde_list.="<img src=\"images/sauv_crypted.png\">";
     				else $sauvegarde_list.="<img src=\"images/sauv_noncrypted.png\">";
     			$sauvegarde_list.="</td>";
     			$sauvegarde_list.="<td $sty><input type=\"button\" value=\"".$msg["sauv_list_download"]."\" class=\"bouton\" onClick=\"document.location='admin/sauvegarde/download.php?logid=".$res->sauv_log_id."'\"></td>";
-    			$sauvegarde_list.="<td $sty><input type=\"button\" value=\"".$msg["sauv_list_restaure"]."\" class=\"bouton\" onClick=\"openPopUp('admin/sauvegarde/restaure.php?filename=".rawurlencode("../backup/backups/".$res->sauv_log_file)."&logid=".$res->sauv_log_id."&critical=','restore_win',700,500,-2,-2,'menubar=no,resizable=yes,scrollbars=yes');\"></td>";    			
+    			$sauvegarde_list.="<td $sty><input type=\"button\" value=\"".$msg["sauv_list_restaure"]."\" class=\"bouton\" onClick=\"openPopUp('admin/sauvegarde/restaure.php?filename=".rawurlencode($res->sauv_log_file)."&logid=".$res->sauv_log_id."&critical=','restore_win',700,500,-2,-2,'menubar=no,resizable=yes,scrollbars=yes');\"></td>";
     		} else {
     			$sauvegarde_list.="<td $sty colspan=4>".$msg["sauv_list_fnodisp"]."</td>";
     			$sauvegarde_list.="<td $sty>&nbsp;</td>";
-    			$sauvegarde_list.="<td $sty>&nbsp;</td>";    			
+    			$sauvegarde_list.="<td $sty>&nbsp;</td>";
     		}
     		$sauvegarde_list.="<td $sty><input type=\"button\" value=\"".$msg["sauv_list_log"]."\" class=\"bouton\" onClick=\"openPopUp('admin/sauvegarde/show_log.php?logid=".$res->sauv_log_id."','show_log',300,300,-2,-2,'menubar=no,resizable=1,scrollbars=yes');\"></td>";
     		$sauvegarde_list.="</tr>\n";
@@ -175,4 +177,3 @@ class sauvegarde_list {
     	return $form;
     }
 }
-?>

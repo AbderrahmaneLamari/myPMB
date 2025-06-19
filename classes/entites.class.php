@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entites.class.php,v 1.68.2.1 2021/12/22 10:43:26 dgoron Exp $
+// $Id: entites.class.php,v 1.70 2022/12/02 09:30:40 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -56,23 +56,26 @@ class entites{
 	public function load(){
 		$q = "select * from entites where id_entite = '".$this->id_entite."' ";
 		$r = pmb_mysql_query($q);
-		$obj = pmb_mysql_fetch_object($r);
-		$this->type_entite = $obj->type_entite;
-		$this->num_bibli = $obj->num_bibli;		
-		$this->raison_sociale = $obj->raison_sociale;
-		$this->commentaires = $obj->commentaires;
-		$this->siret = $obj->siret;
-		$this->naf = $obj->naf;
-		$this->rcs = $obj->rcs;
-		$this->tva = $obj->tva;
-		$this->num_cp_client = $obj->num_cp_client;
-		$this->num_cp_compta = $obj->num_cp_compta;
-		$this->site_web = $obj->site_web;
-		$this->logo = $obj->logo;
-		$this->autorisations = $obj->autorisations;
-		$this->num_frais = $obj->num_frais;
-		$this->num_paiement = $obj->num_paiement;		
-
+		if(pmb_mysql_num_rows($r)){
+			$obj = pmb_mysql_fetch_object($r);
+			pmb_mysql_free_result($r);
+			
+			$this->type_entite = $obj->type_entite;
+			$this->num_bibli = $obj->num_bibli;		
+			$this->raison_sociale = $obj->raison_sociale;
+			$this->commentaires = $obj->commentaires;
+			$this->siret = $obj->siret;
+			$this->naf = $obj->naf;
+			$this->rcs = $obj->rcs;
+			$this->tva = $obj->tva;
+			$this->num_cp_client = $obj->num_cp_client;
+			$this->num_cp_compta = $obj->num_cp_compta;
+			$this->site_web = $obj->site_web;
+			$this->logo = $obj->logo;
+			$this->autorisations = $obj->autorisations;
+			$this->num_frais = $obj->num_frais;
+			$this->num_paiement = $obj->num_paiement;		
+		}
 	}
 	
 	public function get_form() {

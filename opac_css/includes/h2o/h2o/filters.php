@@ -74,7 +74,7 @@ class StringFilters extends FilterCollection {
 
     public static function humanize($string) {
         $string = preg_replace('/\s+/', ' ', trim(preg_replace('/[^A-Za-z0-9()!,?$]+/', ' ', $string)));
-        return capfirst($string);
+        return self::capfirst($string);
     }
     
     public static function capitalize($string) {

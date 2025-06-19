@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_list.class.php,v 1.1.10.1 2021/10/20 11:57:44 dgoron Exp $
+// $Id: selector_list.class.php,v 1.3 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -46,15 +46,7 @@ class selector_list extends selector {
 	}
 	
 	protected function get_display_list() {
-		global $nb_per_page;
-		global $page;
-		
 		$display_list = '';
-		if(!$page) {
-			$debut = 0;
-		} else {
-			$debut = ($page-1)*$nb_per_page;
-		}
 		$values_list = $this->get_values_list();
 		foreach($values_list as $index=>$value ) {
 			$display_list .= $this->get_display_element($index, $value);

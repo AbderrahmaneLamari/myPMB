@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatch_item.class.php,v 1.61.2.3 2022/01/20 10:35:39 dgoron Exp $
+// $Id: docwatch_item.class.php,v 1.65.2.1 2023/03/29 14:46:07 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -171,6 +171,8 @@ class docwatch_item{
 	 * Format ISBD des tags
 	 */
 	protected $tags_isbd;
+	
+	protected $detail;
 	
 	/**
 	 * @return void
@@ -1080,13 +1082,15 @@ class docwatch_item{
 					"num_watch"=>$this->num_watch,
 					"watch"=>$this->watch,
 					"publication_date"=>$publication_date,
-					"formated_publication_date"=>$formated_publication_date,
+        		    "formated_publication_date"=>$formated_publication_date,
+        		    "raw_publication_date"=>$this->publication_date,
 					"interesting"=>$this->interesting,
 					"descriptors_isbd"=>$this->get_descriptors_isbd(),
 					"tags_isbd"=>$this->get_tags_isbd(),
 					"descriptors"=>$this->get_descriptors(),
 					"tags"=>$this->get_tags(),
-		            "concepts_isbd" => $this->get_concepts_isbd() ?? ""
+		            "concepts_isbd" => $this->get_concepts_isbd() ?? "",
+		            "detail" => $this->get_detail() ?? ""
 				);
 		
 		if($this->num_notice){
@@ -1129,6 +1133,10 @@ class docwatch_item{
 				),
 				array(
 						'var' => "publication_date",
+						'desc' => $msg['cms_module_item_datasource_desc_publication_date']
+				),
+				array(
+						'var' => "raw_publication_date",
 						'desc' => $msg['cms_module_item_datasource_desc_publication_date']
 				),
 				array(
@@ -1255,5 +1263,28 @@ class docwatch_item{
         	    }
 	        }
 	    }
+	}
+
+	public function get_detail()
+	{
+		global $include_path;
+
+		if (isset($this->detail)) {
+			return $this->detail;
+		}
+
+		$template = "{$include_path}/templates/docwatch/docwatch_detail_subst.tpl.html";
+		if (!is_file($template)) {
+			$template = "{$include_path}/templates/docwatch/docwatch_detail.tpl.html";
+		}
+
+		$this->detail = "";
+		if (is_file($template)) {
+			$h2o = \H2o_collection::get_instance($template);
+			$this->detail = $h2o->render([
+				"itemwatch" => $this
+			]);
+		}
+		return $this->detail;
 	}
 } // end of docwatch_item

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entity_graph.class.php,v 1.7.8.1 2021/12/21 10:02:51 qvarin Exp $
+// $Id: entity_graph.class.php,v 1.9 2022/04/13 12:29:07 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,6 +10,7 @@ if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 // require_once($class_path.'/authority.class.php');
 require_once($class_path.'/index_concept.class.php');
 require_once($class_path.'/notice.class.php');
+require_once($class_path.'/serials.class.php');
 require_once($class_path.'/marc_table.class.php');
 
 class entity_graph {
@@ -866,9 +867,11 @@ class entity_graph {
 			case 'indexed_concept':
 			case 'concepts':
 			case 'concept':
-				return '65,93,94';
+			    return '65,93,94';
+			case 'expl':
+			case 'expls':
+			    return '225, 153, 76';
 			case self::ADDITIONNAL_TYPE:
-			    return '';
 			default :
 				return '';
 		}
@@ -1145,6 +1148,21 @@ class entity_graph {
 	        $ajax_type = $node['entities_type'];
 	        $entity_id = $node['elements'][$i];
 	        switch ($node['entities_type']) {
+	            case 'expls':
+	                $node_id = 'expls_' . $entity_id;
+	                $name = exemplaire::get_expl_isbd($entity_id);
+	                $radius = 10;
+	                
+	                $record_id = exemplaire::get_expl_notice_from_id($entity_id);
+	                if (empty($record_id)) {
+	                    $issue_id = exemplaire::get_expl_bulletin_from_id($entity_id);
+	                    $url = bulletinage::get_permalink($issue_id);
+	                } else {
+	                    $url = notice::get_permalink($record_id) . '&quoi=common_entity_graph';
+	                }
+	                // On met 0 pour l'ajaxParams
+                    $entity_id = 0;
+	                break;
 	            case 'records':
 	                $node_id = 'records_' . $entity_id;
 	                $name = notice::get_notice_title($entity_id);

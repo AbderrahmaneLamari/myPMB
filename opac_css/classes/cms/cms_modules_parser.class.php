@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_modules_parser.class.php,v 1.12.8.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: cms_modules_parser.class.php,v 1.13.4.1 2024/01/08 15:06:46 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -30,8 +30,8 @@ class cms_modules_parser {
 				//on parcours tout le répertoire
 				while(($dir = readdir($dh)) !== false){
 					//le répertoire parent et common ne sont pas des modules
-					if($dir != "common"  & substr($dir,0,1) != "."){
-						$this->folders_list[] = $dir;
+				    if($dir != "common" && substr($dir,0,1) != "." && $dir != "CVS"){
+				        $this->folders_list[] = $dir;
 					}
 				}
 				closedir($dh);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_record_formation.class.php,v 1.31.4.2 2022/01/21 08:46:17 dgoron Exp $
+// $Id: nomenclature_record_formation.class.php,v 1.34.4.3 2023/12/20 08:11:55 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -38,123 +38,130 @@ class nomenclature_record_formation{
 	public $instruments_other =array();
 	public $instruments_data =array();
 	public $id = 0;
+	public $instruments_index_data;
+	public $voices_index_data;
+	
+	/**
+	 * Tableau d'instances
+	 * @var array
+	 */
+	protected static $instances = array();
 	
 	/**
 	 * Constructeur
 	 *
 	 * @param int id de nomenclature_notices_nomenclatures: id_notice_nomenclature
-	 
+
 	 * @return void
 	 * @access public
 	 */
 	public function __construct($id=0) {
-		$this->id = intval($id);			
+		$this->id = intval($id);
 		$this->fetch_datas();
 	} // end of member function __construct
 
 	public function fetch_datas(){
-		$this->num_record=0;		
-		$this->num_formation=0;		
-		$this->num_type=0;	
+		$this->num_record=0;
+		$this->num_formation=0;
+		$this->num_type=0;
 		$this->label="";
 		$this->abbreviation="";
 		$this->notes="";
 		$this->families_notes=array();
 		$this->exotic_instruments_note="";
-		$this->order=0;										
-		$this->workshops=array();			
+		$this->order=0;
+		$this->workshops=array();
 		$this->instruments =array();// non standard
 		$this->instruments_other =array();// non standard
 		$this->instruments_data=array();
 		$this->nature=0;
 		$this->voices = array();
-		
+
 		if($this->id){
 			$query = "select * from nomenclature_notices_nomenclatures where id_notice_nomenclature = ".$this->id;
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
-				if($row = pmb_mysql_fetch_object($result)){
-					$this->num_record=$row->notice_nomenclature_num_notice;		
-					$this->num_formation=$row->notice_nomenclature_num_formation;		
-					$this->num_type=$row->notice_nomenclature_num_type;	
+				$row = pmb_mysql_fetch_object($result);
+				if(!empty($row)) {
+					$this->num_record=$row->notice_nomenclature_num_notice;
+					$this->num_formation=$row->notice_nomenclature_num_formation;
+					$this->num_type=$row->notice_nomenclature_num_type;
 					$this->label=$row->notice_nomenclature_label;
 					$this->abbreviation=$row->notice_nomenclature_abbreviation;
 					$this->notes=$row->notice_nomenclature_notes;
 					$this->families_notes=unserialize($row->notice_nomenclature_families_notes);
 					$this->exotic_instruments_note=$row->notice_nomenclature_exotic_instruments_note;
-					$this->order=$row->notice_nomenclature_order;	
+					$this->order=$row->notice_nomenclature_order;
 					
-					$formation=new nomenclature_formation($row->notice_nomenclature_num_formation);		
+					$formation = nomenclature_formation::get_instance($row->notice_nomenclature_num_formation);		
 					$this->nature=$formation->get_nature();
 					if(!$this->nature){
 						// formation instruments
 						// Ateliers de la nomenclature de la notice
 						$query = "select id_workshop from nomenclature_workshops where workshop_num_nomenclature = ".$this->id." order by workshop_order, workshop_label";
-						$result = pmb_mysql_query($query);
-						if($result){
-							if(pmb_mysql_num_rows($result)){
-								while($row = pmb_mysql_fetch_object($result)){	
-									$this->add_workshop( new nomenclature_workshop($row->id_workshop));				
-								}	
+						$result_w = pmb_mysql_query($query);
+						if($result_w && pmb_mysql_num_rows($result_w)){
+							while($row = pmb_mysql_fetch_object($result_w)){	
+								$this->add_workshop(nomenclature_workshop::get_instance($row->id_workshop));				
 							}
+							pmb_mysql_free_result($result_w);
 						}
 						// Instruments non standard de la nomenclature de la notice
 						$query = "select * from nomenclature_exotic_instruments where exotic_instrument_num_nomenclature = ".$this->id." order by exotic_instrument_order";
-						$result = pmb_mysql_query($query);
-						if($result){
-							if(pmb_mysql_num_rows($result)){
-								while($row = pmb_mysql_fetch_object($result)){	
-									$id_exotic_instrument=$row->id_exotic_instrument;	
-									$this->add_instrument($id_exotic_instrument,new nomenclature_instrument($row->exotic_instrument_num_instrument));
-									$this->instruments_data[$id_exotic_instrument]['effective']=$row->exotic_instrument_number;
-									$this->instruments_data[$id_exotic_instrument]['order']=$row->exotic_instrument_order;	
-									$this->instruments_data[$id_exotic_instrument]['id']=$row->exotic_instrument_num_instrument;
-									$this->instruments_data[$id_exotic_instrument]['id_exotic_instrument']=$id_exotic_instrument;
-									$this->instruments_data[$id_exotic_instrument]['other']=array();
-									$query = "select * from nomenclature_exotic_other_instruments where exotic_other_instrument_num_exotic_instrument = ".$id_exotic_instrument." order by exotic_other_instrument_order";
-									$result_other = pmb_mysql_query($query);
-									if($result_other){
-										if(pmb_mysql_num_rows($result_other)){
-											while($row = pmb_mysql_fetch_object($result_other)){
-												$id_exotic_other_instrument = $row->id_exotic_other_instrument;
-												$this->add_other_instrument($id_exotic_instrument, $id_exotic_other_instrument, new nomenclature_instrument($row->exotic_other_instrument_num_instrument));
-												$this->instruments_data[$id_exotic_instrument]['other'][$id_exotic_other_instrument]['id']=$row->exotic_other_instrument_num_instrument;
-												$this->instruments_data[$id_exotic_instrument]['other'][$id_exotic_other_instrument]['order']=$row->exotic_other_instrument_order;
-												$this->instruments_data[$id_exotic_instrument]['other'][$id_exotic_other_instrument]['id_exotic_instrument'] = $id_exotic_other_instrument;
-											}
-										}
+						$result_i = pmb_mysql_query($query);
+						if ($result_i && pmb_mysql_num_rows($result_i)) {
+							while ($row = pmb_mysql_fetch_object($result_i)){
+								$id_exotic_instrument=$row->id_exotic_instrument;
+								$this->add_instrument($id_exotic_instrument, nomenclature_instrument::get_instance($row->exotic_instrument_num_instrument));
+								$this->instruments_data[$id_exotic_instrument]['effective']=$row->exotic_instrument_number;
+								$this->instruments_data[$id_exotic_instrument]['order']=$row->exotic_instrument_order;
+								$this->instruments_data[$id_exotic_instrument]['id']=$row->exotic_instrument_num_instrument;
+								$this->instruments_data[$id_exotic_instrument]['id_exotic_instrument']=$id_exotic_instrument;
+								$this->instruments_data[$id_exotic_instrument]['other']=array();
+								$query = "select * from nomenclature_exotic_other_instruments where exotic_other_instrument_num_exotic_instrument = ".$id_exotic_instrument." order by exotic_other_instrument_order";
+								$result_other = pmb_mysql_query($query);
+								if ($result_other && pmb_mysql_num_rows($result_other)) {
+									while ($row = pmb_mysql_fetch_object($result_other)) {
+										$id_exotic_other_instrument = $row->id_exotic_other_instrument;
+										$this->add_other_instrument($id_exotic_instrument, $id_exotic_other_instrument, nomenclature_instrument::get_instance($row->exotic_other_instrument_num_instrument));
+										$this->instruments_data[$id_exotic_instrument]['other'][$id_exotic_other_instrument]['id']=$row->exotic_other_instrument_num_instrument;
+										$this->instruments_data[$id_exotic_instrument]['other'][$id_exotic_other_instrument]['order']=$row->exotic_other_instrument_order;
+										$this->instruments_data[$id_exotic_instrument]['other'][$id_exotic_other_instrument]['id_exotic_instrument'] = $id_exotic_other_instrument;
 									}
-								}		
+									pmb_mysql_free_result($result_other);
+								}
 							}
+							pmb_mysql_free_result($result_i);
 						}
 					// fin formation instrument
 					}else{
 						// formation voix
-						
+
 					}// fin formation voix
-				}		
+				}
+				pmb_mysql_free_result($result);
 			}
 		}
 	}
-	
+
 	public function get_formation_nature($formation) {
 		return($formation->nature);
-	}	
-	
+	}
+
 	public function add_workshop( $workshop ) {
 		$this->workshops[] = $workshop;
 	}
-	
+
 	public function add_instrument($id_exotic_instrument, $instrument) {
 		$this->instruments[$id_exotic_instrument]= $instrument;
 	}
-	
+
 	public function add_other_instrument($id_exotic_instrument, $id_other_exotic_instrument, $instrument) {
 		$this->instruments_other[$id_exotic_instrument][$id_other_exotic_instrument] = $instrument;
 	}
-	
+
 	public function get_data($duplicate = false){
-		
+
 		// Ateliers de la nomenclature de la notice
 		$data_workshop=array();
 		foreach($this->workshops as $workshop){
@@ -174,10 +181,10 @@ class nomenclature_record_formation{
 					$data_other['id_exotic_instrument'] = ($duplicate ? 0 : $other_key);
 					$data['other'][]=$data_other;
 				}
-			}			
+			}
 			$data_intruments[]=$data;
 		}
-		
+
 		// data de la nomenclature de la notice
 		return (
 			array(
@@ -197,24 +204,24 @@ class nomenclature_record_formation{
 			)
 		);
 	}
-	
+
 	public function save_form($data) {
-		$this->num_record = intval($data["num_record"]);		
-		$this->num_formation = intval($data["num_formation"]);		
-		$this->num_type = intval($data["num_type"]);	
+		$this->num_record = intval($data["num_record"]);
+		$this->num_formation = intval($data["num_formation"]);
+		$this->num_type = intval($data["num_type"]);
 		$this->label = stripslashes($data["label"]);
 		$this->abbreviation = stripslashes($data["abbr"]);
 		$this->notes = !empty($data['notes']) ? stripslashes($data["notes"]) : '';
 		$this->families_notes = !empty($data["families_notes"]) ? stripslashes_array($data["families_notes"]) : array();
 		$this->exotic_instruments_note = (isset($data["exotic_instruments_note"]) ? stripslashes($data["exotic_instruments_note"]) : '');
-		$this->order = intval($data["order"]);	
+		$this->order = intval($data["order"]);
 
 		$this->delete_old_instruments($data);
-		
-		$this->workshops = array();			
+
+		$this->workshops = array();
 		$this->instruments = array();// non standard
 		$this->instruments_data = array();
-	
+
 		// instruments non standards de la nomenclature de la notice
 		if(isset($data["instruments"]) && is_array($data["instruments"])){
 			foreach($data["instruments"] as $form_id => $formation_instrument){
@@ -234,25 +241,25 @@ class nomenclature_record_formation{
 		}
 
 		$this->save();
-		
+
 		$workshops = array();
 		// Ateliers de la nomenclature de la notice
 		if(isset($data["workshops"]) && is_array($data["workshops"])){
 			foreach($data["workshops"] as $formation_workshop){
-				$workshop = new nomenclature_workshop($formation_workshop["id"]);
+				$workshop = nomenclature_workshop::get_instance($formation_workshop["id"]);
 				$formation_workshop["num_nomenclature"]=$this->id;
 				$workshop->save_form($formation_workshop);
 				$workshops[] = $workshop->get_data();
-			}		
+			}
 		}
-		
+
 		return array(
 				'nomenclature_id' => $this->id,
 				'exotic_instruments' => $this->instruments_data,
 				'workshops' => $workshops
 		);
 	}
-	
+
 	public function save(){
 		$fields="
 			notice_nomenclature_num_notice='".$this->num_record."',
@@ -264,7 +271,7 @@ class nomenclature_record_formation{
 			notice_nomenclature_families_notes='". addslashes(serialize($this->families_notes)) ."',
 			notice_nomenclature_exotic_instruments_note='". addslashes($this->exotic_instruments_note) ."',
 			notice_nomenclature_order='".$this->order."'
-		";		
+		";
 		if(!$this->id){
 			$req= 'INSERT INTO nomenclature_notices_nomenclatures SET '.$fields;
 			pmb_mysql_query($req);
@@ -280,7 +287,7 @@ class nomenclature_record_formation{
 			exotic_instrument_number=".$formation_instrument["effective"].",
 			exotic_instrument_order=".$formation_instrument["order"].",
 			exotic_instrument_num_nomenclature=".$this->id;
-			
+
 			if($formation_instrument["id_exotic_instrument"]){
 				$req = "UPDATE nomenclature_exotic_instruments SET ".$req." where id_exotic_instrument = ".$formation_instrument["id_exotic_instrument"]; //add where clause
 				pmb_mysql_query($req);
@@ -290,10 +297,10 @@ class nomenclature_record_formation{
 				pmb_mysql_query($req);
 				$id_exotic_instrument = pmb_mysql_insert_id();
 			}
-			
+
 			if(is_array($formation_instrument["other"]) && $id_exotic_instrument){
 				foreach($formation_instrument["other"] as $instrument_other){
-					
+
 					$req = "exotic_other_instrument_num_instrument=".$instrument_other["id"].",
 						    exotic_other_instrument_order=".$instrument_other["order"].",
 						    exotic_other_instrument_num_exotic_instrument=".$id_exotic_instrument;
@@ -303,7 +310,7 @@ class nomenclature_record_formation{
 						$req = "INSERT INTO nomenclature_exotic_other_instruments SET ".$req;
 					}
 					pmb_mysql_query($req);
-				}	
+				}
 			}
 		}
  		if($audit_type == 'creation'){
@@ -313,47 +320,47 @@ class nomenclature_record_formation{
  		}
 		$this->fetch_datas();
 	}
-	
+
 	public function delete(){
 		foreach($this->workshops as $workshop){
 			$workshop->delete();
 		}
-		
+
 		foreach($this->instruments_data as $id_exotic_instrument => $formation_instrument){
 			$req = "DELETE FROM nomenclature_exotic_other_instruments WHERE exotic_other_instrument_num_exotic_instrument=".$id_exotic_instrument;
 			pmb_mysql_query($req);
 		}
-		
+
 		$req = "DELETE FROM nomenclature_exotic_instruments WHERE exotic_instrument_num_nomenclature=".$this->id;
 		pmb_mysql_query($req);
-		
+
 		$req="DELETE from nomenclature_notices_nomenclatures WHERE id_notice_nomenclature = ".$this->id;
 		pmb_mysql_query($req);
-		
+
 		$this->id=0;
 		$this->fetch_datas();
 	}
-	
+
 	public function get_id(){
 		return $this->id;
 	}
-	
+
 	public function get_label(){
 		return $this->label;
 	}
-	
+
 	public function get_nature(){
 		return $this->nature;
 	}
-	
+
 	public function get_abbreviation(){
 		return $this->abbreviation;
 	}
-	
+
 	public function get_num_formation(){
 		return $this->num_formation;
 	}
-	
+
 	protected function delete_old_instruments($data){
 		$ids_exotics_instruments = array();
 		$ids_others_exotics_instruments = array();
@@ -363,7 +370,7 @@ class nomenclature_record_formation{
 				$ids_others_exotics_instruments[$instruments["id_exotic_instrument"]] = array();
 				if(isset($instruments["other"]) && is_array($instruments["other"])){
 					foreach($instruments["other"] as $others_instruments){
-						$ids_others_exotics_instruments[$instruments["id_exotic_instrument"]][] = $others_instruments["id_exotic_instrument"];  
+						$ids_others_exotics_instruments[$instruments["id_exotic_instrument"]][] = $others_instruments["id_exotic_instrument"];
 					}
 				}
 				$ids_exotics_instruments[] = $instruments["id_exotic_instrument"];
@@ -373,7 +380,7 @@ class nomenclature_record_formation{
 			if(!in_array($instrument_data["id_exotic_instrument"], $ids_exotics_instruments)){
 				$req = "DELETE FROM nomenclature_exotic_other_instruments WHERE exotic_other_instrument_num_exotic_instrument=".$instrument_data["id_exotic_instrument"];
 				pmb_mysql_query($req);
-				
+
 				$req = "DELETE FROM nomenclature_exotic_instruments WHERE id_exotic_instrument=".$instrument_data["id_exotic_instrument"];
 				pmb_mysql_query($req);
 			}else{
@@ -385,93 +392,102 @@ class nomenclature_record_formation{
 				}
 			}
 		}
-		
+
 		$ids_workshops = array();
 		if(isset($data["workshops"]) && is_array($data["workshops"])){
 			foreach($data["workshops"] as $workshop){
 				$ids_workshops[] = $workshop['id'];
 			}
 		}
-		
+
 		foreach($this->workshops as $workshop){
 			if(!in_array($workshop->get_id(), $ids_workshops)){
-				$workshop->delete();	
+				$workshop->delete();
 			}
 		}
-		
-		
+
+
 		/**
 		 * TODO: Détruire également les Workshops
 		 */
-		
+
 	}
-	
+
 	public function get_instruments_index_data() {
-	    $nomenclature = new nomenclature_nomenclature();
-	    $nomenclature->set_abbreviation($this->abbreviation);
-	    $nomenclature->analyze();
-	    $data=[];
-	    for($i=0 ; $i<count($nomenclature->get_families()) ; $i++){
-	        $family = $nomenclature->get_families()[$i];
-	        for($j=0 ; $j<count($family->get_musicstands()) ; $j++){
-	            $musicstand = $family->get_musicstands()[$j];
-	            for($k=0 ; $k<count($musicstand->get_instruments()); $k++){
-	                
-	                $instrument = $musicstand->get_instruments()[$k];
-	                $instru_infos = $instrument->get_tree_informations();
-	                $instru_infos["formation"] = $this->get_label();
-	                $instru_infos["family"] = $family->get_id();
-	                $instru_infos["musicstand"] = $musicstand->get_name();
-	                $data = $this->add_instrument_to_index_data($data,$instru_infos);
-	                
-	                for($l=0 ; $l<count($instrument->get_others_instruments()); $l++){
-	                    $other_instrument = $instrument->get_others_instruments()[$l];
-	                    $other_instru_infos = $other_instrument->get_tree_informations();
-	                    $other_instru_infos["formation"] = $this->get_label();
-	                    $other_instru_infos["family"] = $family->get_id();
-	                    $other_instru_infos["musicstand"] = $musicstand->get_name();
-	                    $data = $this->add_instrument_to_index_data($data,$other_instru_infos);
-	                }
-	            }
-	        }
-	    }
-	    //exotic
-	    $instruments = $this->get_data()["instruments"];
-	    foreach($instruments as $instru) {	
-	        $instru["musicstand"] = "";
-	        $instru["family"] = "exotic";
-	        $instru["formation"] = $this->get_label();
-	        $data = $this->add_instrument_to_index_data($data,$instru);
-	    }
-	    //workshops
-	    $workshops = $this->get_data()["workshops"];
-	    foreach ($workshops as $workshop) {
-	        foreach($workshop["instruments"] as $instru) {
-	            $instru["musicstand"] = "";
-	            $instru["family"] = "workshop";
-	            $instru["formation"] = $this->get_label();
-	            $data = $this->add_instrument_to_index_data($data,$instru);
-	        }
-	    }
-	    return $data;
+		if (empty($this->instruments_index_data)) {
+		    $nomenclature = new nomenclature_nomenclature();
+		    $nomenclature->set_abbreviation($this->abbreviation);
+		    $nomenclature->analyze();
+		    $data=[];
+		    for($i=0 ; $i<count($nomenclature->get_families()) ; $i++){
+		        $family = $nomenclature->get_families()[$i];
+		        for($j=0 ; $j<count($family->get_musicstands()) ; $j++){
+		            $musicstand = $family->get_musicstands()[$j];
+		            if (0 == intval($musicstand->get_effective())) {
+		                continue;
+		            }
+		            for($k=0 ; $k<count($musicstand->get_instruments()); $k++){
+		                
+		                $instrument = $musicstand->get_instruments()[$k];
+		                $instru_infos = $instrument->get_tree_informations();
+		                $instru_infos["formation"] = $this->get_label();
+		                $instru_infos["family"] = $family->get_id();
+		                $instru_infos["musicstand"] = $musicstand->get_name();
+		                $data = $this->add_instrument_to_index_data($data,$instru_infos);
+		                
+		                for($l=0 ; $l<count($instrument->get_others_instruments()); $l++){
+		                    $other_instrument = $instrument->get_others_instruments()[$l];
+		                    $other_instru_infos = $other_instrument->get_tree_informations();
+		                    $other_instru_infos["formation"] = $this->get_label();
+		                    $other_instru_infos["family"] = $family->get_id();
+		                    $other_instru_infos["musicstand"] = $musicstand->get_name();
+		                    $data = $this->add_instrument_to_index_data($data,$other_instru_infos);
+		                }
+		            }
+		        }
+		    }
+		    //exotic
+		    $instruments = $this->get_data()["instruments"];
+		    foreach($instruments as $instru) {	
+		        $instru["musicstand"] = "";
+		        $instru["family"] = "exotic";
+		        $instru["formation"] = $this->get_label();
+		        $data = $this->add_instrument_to_index_data($data,$instru);
+		    }
+		    //workshops
+		    $workshops = $this->get_data()["workshops"];
+		    foreach ($workshops as $workshop) {
+		        foreach($workshop["instruments"] as $instru) {
+		            $instru["musicstand"] = "";
+		            $instru["family"] = "workshop";
+		            $instru["formation"] = $this->get_label();
+		            $data = $this->add_instrument_to_index_data($data,$instru);
+		        }
+		    }
+		    $this->instruments_index_data = $data;
+		}
+		return $this->instruments_index_data;
 	}
 	
 	public function get_voices_index_data() {
-	    $nomenclature = new nomenclature_nomenclature();
-	    $nomenclature->set_abbreviation($this->abbreviation);
-	    $nomenclature->analyze_voices();
-	    $voices = $nomenclature->get_voices();
-	    $nb = count($voices);
-	    $data=[];
-	    for ($i = 0; $i < $nb; $i++) {
-    	    $query = 'select voice_name, id_voice as id from nomenclature_voices where voice_code = "'.$voices[$i]['code'].'"';
-    	    $result = pmb_mysql_fetch_assoc(pmb_mysql_query($query));
-    	    $voices[$i]['name'] = $result['voice_name'];
-    	    $voices[$i]['formation'] = $this->get_label();
-    	    $voices[$i]['id'] = $result['id'];
-    	    $data = $this->add_voice_to_index_data($data,$voices[$i]);
-	    }
-	    return $data;
+		if (empty($this->voices_index_data)) {
+		    $nomenclature = new nomenclature_nomenclature();
+		    $nomenclature->set_abbreviation($this->abbreviation);
+		    $nomenclature->analyze_voices();
+		    $voices = $nomenclature->get_voices();
+		    $nb = (is_countable($voices) ? count($voices) : 0);
+		    $data=[];
+		    for ($i = 0; $i < $nb; $i++) {
+	    	    $query = 'select voice_name, id_voice as id from nomenclature_voices where voice_code = "'.$voices[$i]['code'].'"';
+	    	    $result = pmb_mysql_fetch_assoc(pmb_mysql_query($query));
+	    	    $voices[$i]['name'] = $result['voice_name'];
+	    	    $voices[$i]['formation'] = $this->get_label();
+	    	    $voices[$i]['id'] = $result['id'];
+	    	    $data = $this->add_voice_to_index_data($data,$voices[$i]);
+		    }
+		    $this->voices_index_data = $data;
+		}
+	    return $this->voices_index_data;
 	}
 	
 	private function add_instrument_to_index_data($data,$instrument){
@@ -480,7 +496,7 @@ class nomenclature_record_formation{
 	    for($i=0 ; $i<$nb ; $i++){
 	        if ($data[$i]['id'] === $instrument['id'] && $data[$i]['family'] === $instrument['family']){
 	            $inserted= true;
-	            $data[$i]['effective']+= $instrument['effective'];
+	            $data[$i]['effective']+= intval($instrument['effective']);
 	        }
 	    }
 	    if($inserted === false){
@@ -495,13 +511,20 @@ class nomenclature_record_formation{
         for($i=0 ; $i<$nb ; $i++){
             if ($data[$i]['id'] === $voice['id']){
                 $voice_inserted= true;
-                $data[$i]['effective']+= $voice['effective'];
+                $data[$i]['effective']+= intval($voice['effective']);
             }
         }
         if ($voice_inserted === false) {
             $data[] = $voice;
         }
         return $data;
+	}
+	
+	public static function get_instance($id) {
+		if(!isset(static::$instances[$id])) {
+			static::$instances[$id] = new nomenclature_record_formation($id);
+		}
+		return static::$instances[$id];
 	}
 
 } // end of nomenclature_record_formation

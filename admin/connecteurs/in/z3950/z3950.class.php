@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: z3950.class.php,v 1.27.2.1 2021/08/03 09:20:31 dgoron Exp $
+// $Id: z3950.class.php,v 1.29.4.1 2023/12/06 10:58:13 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -377,16 +377,18 @@ class z3950 extends connector {
 				}
 				$exemplaires[]=$t;					
 			}
-			else if ($record["F"][$i]["value"]) 
+			else if (!empty($record["F"][$i]["value"])) 
 				$r[$record["F"][$i]["C"]][]=$record["F"][$i]["value"];
 			else {
 				$t=array();
-				for ($j=0; $j<count($record["F"][$i]["S"]); $j++) {
-					//Sous champ
-					$sub=$record["F"][$i]["S"][$j];
-					$t[$sub["C"]][]=$sub["value"];
+				if(!empty($record["F"][$i]["S"])) {
+					for ($j=0; $j<count($record["F"][$i]["S"]); $j++) {
+						//Sous champ
+						$sub=$record["F"][$i]["S"][$j];
+						$t[$sub["C"]][]=$sub["value"];
+					}
+					$r[$record["F"][$i]["C"]][]=$t;
 				}
-				$r[$record["F"][$i]["C"]][]=$t;
 			}
 		}
 		$record=$r;
@@ -544,6 +546,7 @@ class z3950 extends connector {
 		if (yaz_error($yaz_id)) {
 			$this->error=true;
 			$this->error_message=yaz_error($yaz_id);
+			PHP_log::register(PHP_log::prepare("yaz_search rpn : ".$rpn), $this->error_message);
 		} else {
 			$n_results=yaz_hits($yaz_id);
 			if ($n_results>$z3950_max_notices) $n_results=$z3950_max_notices;

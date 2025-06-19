@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: aut_link.class.php,v 1.21.2.3 2022/01/11 08:35:21 dgoron Exp $
+// $Id: aut_link.class.php,v 1.24 2022/01/11 08:30:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 // gestion des liens entre autorités
@@ -41,16 +41,16 @@ define('AUT_TABLE_AUTHORITY',13);
 define('AUT_TABLE_ANIMATION',14);
 
 $aut_table_name_list=array(
-	AUT_TABLE_AUTHORS => 'authors',
-	AUT_TABLE_CATEG => 'categ',
-	AUT_TABLE_PUBLISHERS=> 'publishers',
-	AUT_TABLE_COLLECTIONS => 'collection',
-	AUT_TABLE_SUB_COLLECTIONS => 'sub_collections',
-	AUT_TABLE_SERIES => 'series',
-	AUT_TABLE_TITRES_UNIFORMES => 'titres_uniformes',
-	AUT_TABLE_INDEXINT => 'indexint',
-	AUT_TABLE_CONCEPT => 'concept',
-	AUT_TABLE_INDEX_CONCEPT => 'concept',
+    AUT_TABLE_AUTHORS => 'authors',
+    AUT_TABLE_CATEG => 'categ',
+    AUT_TABLE_PUBLISHERS=> 'publishers',
+    AUT_TABLE_COLLECTIONS => 'collection',
+    AUT_TABLE_SUB_COLLECTIONS => 'sub_collections',
+    AUT_TABLE_SERIES => 'series',
+    AUT_TABLE_TITRES_UNIFORMES => 'titres_uniformes',
+    AUT_TABLE_INDEXINT => 'indexint',
+    AUT_TABLE_CONCEPT => 'concept',
+    AUT_TABLE_INDEX_CONCEPT => 'concept',
     AUT_TABLE_AUTHPERSO => 'authperso',
     AUT_TABLE_ANIMATION => 'anim_animations'
 );

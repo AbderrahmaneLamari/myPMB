@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Contribution.js,v 1.1.10.1 2021/08/05 13:07:44 gneveu Exp $
+// $Id: Contribution.js,v 1.2 2021/08/05 13:09:57 gneveu Exp $
 
 
 define([

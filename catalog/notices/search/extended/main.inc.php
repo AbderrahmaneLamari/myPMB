@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.21 2021/03/17 13:32:14 dgoron Exp $
+// $Id: main.inc.php,v 1.22 2022/06/27 14:04:39 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -39,6 +39,7 @@ switch ($sub) {
 			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["SEARCH_TYPE"]="extended";
 			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]['TEXT_LIST_QUERY']='';
 			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["TEXT_QUERY"]="";
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["EXTENDED_SEARCH"]=$sc->json_encode_search();
 		}
 		if($pmb_map_activate){
 			$sc->check_emprises();

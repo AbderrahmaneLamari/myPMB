@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_property.class.php,v 1.8.2.2 2021/09/03 08:14:43 qvarin Exp $
+// $Id: onto_common_property.class.php,v 1.11 2023/02/07 15:31:40 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -137,6 +137,10 @@ class onto_common_property extends onto_common_root {
 	 */
 	protected $no_search = false;
 	
+	protected $framework_params;
+	
+	public $subfield;
+	
 	public function __construct($uri,$ontology) {
 		parent::__construct($uri,$ontology);
 		$this->fetch_pmb_datatype();
@@ -185,6 +189,7 @@ class onto_common_property extends onto_common_root {
 	}
 	
 	public function set_range($range){
+	    if(is_array($range)) sort($range);
 		$this->range = $range;
 	}
 	
@@ -241,11 +246,28 @@ class onto_common_property extends onto_common_root {
 		return $label;
 	}
 	
-	public function set_pmb_extended($pmb_extended) {
-		$this->pmb_extended = $pmb_extended;
+	public function set_mandatory($mandatory) {
+		$this->mandatory = $mandatory;
 		return $this;
 	}
-
+	
+	public function is_mandatory() {
+	    return $this->mandatory;
+	}
+	
+	public function set_hidden($hidden) {
+	    $this->hidden = $hidden;
+	    return $this;
+	}
+	
+	public function is_hidden() {
+	    return $this->hidden;
+	}
+	
+	public function set_pmb_extended($pmb_extended) {
+	    $this->pmb_extended = $pmb_extended;
+	}
+	
 	public function set_form_id($form_id) {
 	    $this->form_id = $form_id;
 		return $this;
@@ -260,7 +282,20 @@ class onto_common_property extends onto_common_root {
 		return $this->pmb_extended;
 	}
 	
+	public function set_framework_params($framework_params){
+	    if(!isset($this->framework_params)){
+	        $this->framework_params = $framework_params;
+	    }
+	}
+	
+	public function get_framework_params(){
+	    return $this->framework_params;
+	}
+	
 	public function get_label() {
+	    if(empty($this-->label)){
+	        $this->fetch_label();
+	    }
 	    $this->label = onto_common_ui::get_message($this->label);
 	    return $this->label;
 	}
@@ -286,5 +321,9 @@ class onto_common_property extends onto_common_root {
 	public function is_no_search() {
 	    return $this->no_search;
 	}
-	
+		
+	public function set_subfield($subfield)
+	{
+	    $this->subfield = $subfield;
+	}
 } // end of onto_common_property

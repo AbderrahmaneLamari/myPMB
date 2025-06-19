@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: clean_planning.class.php,v 1.3.8.1 2021/12/13 15:31:05 dgoron Exp $
+// $Id: clean_planning.class.php,v 1.5.4.1 2023/09/15 10:01:35 tsamson Exp $
 
 global $class_path;
 require_once($class_path."/scheduler/scheduler_planning.class.php");
@@ -33,7 +33,7 @@ class clean_planning extends scheduler_planning {
     	global $clean_series, $clean_titres_uniformes, $clean_indexint;
     	global $clean_relations, $clean_notices, $index_acquisitions;
     	global $gen_signature_notice, $gen_phonetique, $nettoyage_clean_tags, $clean_categories_path;
-    	global $gen_date_publication_article, $gen_date_tri, $reindex_docnum;
+    	global $gen_date_publication_article, $gen_date_tri, $reindex_docnum, $gen_ark, $gen_docnum_thumbnail;
     	global $clean_opac_search_cache, $clean_cache_amende, $clean_cache_temporary_files, $clean_cache_apcu;
     	global $index_rdfstore, $index_synchrordfstore;
     	global $index_faq, $index_cms, $index_concept, $hash_empr_password;
@@ -80,6 +80,8 @@ class clean_planning extends scheduler_planning {
 		if($index_date_flot) $t_clean["index_date_flot"] = $index_date_flot;
 		if($clean_entities_data) $t_clean["clean_entities_data"] = $clean_entities_data;
 		if($clean_docnum_thumbnail) $t_clean["clean_docnum_thumbnail"] = $clean_docnum_thumbnail;
+		if($gen_ark) $t_clean["gen_ark"] = $gen_ark;
+		if($gen_docnum_thumbnail) $t_clean["gen_docnum_thumbnail"] = $gen_docnum_thumbnail;
 		
 		$t["clean"] = $t_clean;
 

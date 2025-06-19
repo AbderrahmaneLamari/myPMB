@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_resource_selector_ui.class.php,v 1.19.2.4 2021/09/03 08:14:43 qvarin Exp $
+// $Id: onto_contribution_datatype_resource_selector_ui.class.php,v 1.24 2022/09/20 07:37:22 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -47,7 +47,10 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
         } else {
             $range_for_form = $property->range;            
         }
+        $exploded_uri = explode("/", $item_uri);
+        $i = (count($exploded_uri) - 1);
         
+        $uri_suffix = str_replace('#', '_', $exploded_uri[$i]);
         /** **/
         /** TODO: à revoir avec le chef ** /
          /** On part du principe que l'on a qu'un range **/
@@ -56,7 +59,7 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
         $content='';
         if (!$property->is_no_search()) {
             $content .= $ontology_contribution_tpl['form_row_content_input_sel'];
-            $content = str_replace("!!onto_current_range!!", $range_for_form, $content);
+            $content = str_replace("!!onto_current_range!!", $uri_suffix, $content);
         }
         
         if (($restrictions->get_max() < count($datas) || $restrictions->get_max() === -1) && !$property->is_no_search()) {
@@ -87,7 +90,7 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
                 
                 $inside_row = str_replace("!!form_row_content_resource_selector_display_label!!", $display_label, $inside_row);
 				$inside_row = str_replace("!!onto_current_element!!", onto_common_uri::get_id($item_uri), $inside_row);
-                $inside_row = str_replace("!!onto_current_range!!", $range_for_form, $inside_row);
+				$inside_row = str_replace("!!onto_current_range!!", $uri_suffix, $inside_row);
                 $inside_row = str_replace("!!onto_row_content_range!!", $range_for_form, $inside_row);
                 
                 $value = "";
@@ -134,7 +137,7 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
             $inside_row = str_replace("!!form_row_content_resource_selector_value!!", "", $inside_row);
             $inside_row = str_replace("!!form_row_content_resource_selector_range!!", $range_for_form, $inside_row);
             $inside_row = str_replace("!!onto_current_element!!", onto_common_uri::get_id($item_uri), $inside_row);
-            $inside_row = str_replace("!!onto_current_range!!", $range_for_form, $inside_row);
+            $inside_row = str_replace("!!onto_current_range!!", $uri_suffix, $inside_row);
             $inside_row = str_replace("!!onto_row_content_range!!", $range_for_form, $inside_row);
             
             $row = str_replace("!!onto_inside_row!!", $inside_row, $row);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contibution_area_no_form_available.tpl.php,v 1.2.2.1 2021/08/03 13:22:29 qvarin Exp $
+// $Id: contibution_area_no_form_available.tpl.php,v 1.3 2021/08/03 13:38:04 qvarin Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
 global $entity_no_form_available, $entity_no_scenario_available, $entity_no_convert_available, $msg;

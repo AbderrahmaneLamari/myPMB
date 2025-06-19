@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bull_info.inc.php,v 1.86.2.3 2022/01/10 10:59:02 dgoron Exp $
+// $Id: bull_info.inc.php,v 1.89.4.3 2023/09/22 08:54:13 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -393,38 +393,29 @@ function get_expl($expl, $show_in_reception=0, $return_count = false) {
 function get_analysis($bul_id) {
 	global $explnum_popup_edition_script;
 	global $pmb_enable_explnum_edition_popup;
+	global $link_analysis, $link_serial, $link_bulletin;
+	
 	if(!$bul_id) return '';
 
 	$requete = "SELECT * FROM analysis WHERE analysis_bulletin=$bul_id ORDER BY analysis_notice"; 	
 	$myQuery = pmb_mysql_query($requete);
 
-	// attention, c'est complexe là. on définit ce qui va se passer pour les liens affichés dans les notices
-	// 1. si le lien est vers une notice chapeau de périodique
 	$link_serial = serial::get_pattern_link();
-	// 2. si le lien est vers un dépouillement
 	$link_analysis = "./catalog.php?categ=serials&sub=analysis&action=analysis_form&bul_id=$bul_id&analysis_id=!!id!!";
-	// 3. si le lien est vers un bulletin
 	$link_bulletin = bulletinage::get_pattern_link();
-	// note : si une de ces trois variables est vide, aucun lien n'est crée en ce qui la concerne dans les notices
-	// exemple : dans cette page, on affiche les infos sur ce bulletinage, il ne sert donc à rien d'afficher un lien
-	// vers celui-ci. donc :
-	$link_bulletin = '';
 	 
 	$analysis_list = '';
+	$list = [];
 	while($analysis=pmb_mysql_fetch_object($myQuery)) {
-		$link_explnum = "./catalog.php?categ=serials&sub=analysis&action=explnum_form&analysis_id=$analysis->analysis_notice&bul_id=$bul_id&explnum_id=!!explnum_id!!";
-		// function serial_display ($id, $level='1', $action_serial='', $action_analysis='', $action_bulletin='', $lien_suppr_cart="", $lien_explnum="", $bouton_explnum=1,$print=0,$show_explnum=1, $show_statut=0, $show_opac_hidden_fields=true ) {
-		$display = new serial_display($analysis->analysis_notice, 6, $link_serial, $link_analysis, $link_bulletin,"",$link_explnum, 1, 0, 1, 1, true, 1);		
-			
-		global $avis_quoifaire,$valid_id_avis;			
-		$display->result = str_replace('<!-- !!avis_notice!! -->', avis_notice($analysis->analysis_notice,$avis_quoifaire,$valid_id_avis), $display->result);
-		$display->result = str_replace('<!-- !!caddies_notice!! -->', caddie_controller::get_display_list_from_item('display', 'NOTI', $analysis->analysis_notice), $display->result);
-		if(explnum::get_default_upload_directory()){
-		    $display->result = str_replace('<!-- !!explnum_drop_zone!! -->', explnum::get_drop_zone($analysis->analysis_notice, 'article', $analysis->analysis_bulletin), $display->result);
-		}
-		$analysis_list .= $display->result;
-		
+	    $list[] = $analysis->analysis_notice;
 	}
+	$elements_records_list_ui = new elements_records_list_ui($list, count($list), false);
+	$elements_records_list_ui->set_button_explnum(1);
+	$elements_records_list_ui->set_link_serial($link_serial);
+	$elements_records_list_ui->set_link_analysis($link_analysis);
+	$elements_records_list_ui->set_link_bulletin($link_bulletin);
+	
+	$analysis_list .= $elements_records_list_ui->get_elements_list();
 	if($pmb_enable_explnum_edition_popup){
 	    $analysis_list.= $explnum_popup_edition_script;
 	}
@@ -445,7 +436,9 @@ function show_bulletinage_info($bul_id, $lien_cart_ajout=1, $lien_cart_suppr=0, 
 
 	$cart_click_bull = "onClick=\"openPopUp('./cart.php?object_type=BULL&item=!!item!!', 'cart')\"";
 	$cart_over_out = "onMouseOver=\"show_div_access_carts(event,".$bul_id.",'BULL');\" onMouseOut=\"set_flag_info_div(false);\"";
-	
+	$nb_per_page = $nb_per_page ?? 0;
+	$nb_after_suppr = 0;
+	$page_suppr = 0;
 	//Calcul des variables pour la suppression d'items
 	if($nb_per_page){
 		$modulo = $nbr_lignes%$nb_per_page;
@@ -485,7 +478,6 @@ function show_bulletinage_info($bul_id, $lien_cart_ajout=1, $lien_cart_suppr=0, 
 
 			$link_parent .= "<a href='".bulletinage::get_permalink($bul_id)."'>$link_bulletin</a>" ;
 			$affichage_final .= "<div class='row'><div class='perio-barre'>".$link_parent."</div></div>";
-			
 			if ($lien_cart_ajout) {
 				$cart_link = "<img src='".get_url_icon('basket_small_20x20.gif')."' class='align_middle' alt='basket' title=\"${msg[400]}\" $cart_click_bull $cart_over_out>";
 				$cart_link = str_replace('!!item!!', $bul_id, $cart_link);
@@ -571,7 +563,6 @@ function show_bulletinage_info($bul_id, $lien_cart_ajout=1, $lien_cart_suppr=0, 
 		}
 	}
 	$aff_expandable = str_replace('!!ISBD!!', $affichage_final, $aff_expandable);
-
 	return $aff_expandable ;
 }
 

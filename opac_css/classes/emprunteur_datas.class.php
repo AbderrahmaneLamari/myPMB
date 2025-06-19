@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: emprunteur_datas.class.php,v 1.11 2021/01/04 10:19:16 dbellamy Exp $
+// $Id: emprunteur_datas.class.php,v 1.11.6.1 2023/02/27 14:04:59 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -221,7 +221,7 @@ class emprunteur_datas {
 	        $cleaned_fields = [];
     	    $query = "SELECT empr_renewal_form_field_code 
                     FROM empr_renewal_form_fields 
-                    WHERE empr_renewal_form_field_display = 1";
+                    WHERE empr_renewal_form_field_alterable = 1";
     	    $result = pmb_mysql_query($query);
     	    if (pmb_mysql_num_rows($result)) {
     	        while ($row = pmb_mysql_fetch_array($result)) {

@@ -2,13 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: gen_code_exemplaire_monarch.php,v 1.3 2019/12/17 07:49:27 dbellamy Exp $
+// $Id: gen_code_exemplaire_monarch.php,v 1.4 2022/03/10 14:06:00 dgoron Exp $
 
-function init_gen_code_exemplaire($notice_id,$bull_id)
-{
-	global $dbh;
+function init_gen_code_exemplaire($notice_id,$bull_id){
 	$requete="select max(expl_cb)as cb from exemplaires WHERE expl_pnb_flag=0 and expl_cb like 'GEN%'";
-	$query = pmb_mysql_query($requete, $dbh);
+	$query = pmb_mysql_query($requete);
 	if(pmb_mysql_num_rows($query)) {	
     	if(($cb = pmb_mysql_fetch_object($query)))
 			$code_exemplaire= $cb->cb;
@@ -17,8 +15,7 @@ function init_gen_code_exemplaire($notice_id,$bull_id)
 	return $code_exemplaire;  	   						
 }
 
-function gen_code_exemplaire($notice_id,$bull_id,$code_exemplaire)
-{
+function gen_code_exemplaire($notice_id,$bull_id,$code_exemplaire){
 	$code_exemplaire++;
 	return $code_exemplaire;
 }

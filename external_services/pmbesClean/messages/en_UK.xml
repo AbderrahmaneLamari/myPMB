@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: en_UK.xml,v 1.3.2.1 2021/12/13 15:31:05 dgoron Exp $ -->
+$Id: en_UK.xml,v 1.5.4.1 2024/01/05 11:35:13 tsamson Exp $ -->
 
 <!DOCTYPE XMLlist SYSTEM "../../../includes/XMLlist.dtd" >
 <XMLlist>
@@ -173,5 +173,29 @@ concept
 -->
   <entry code="cleanConcept_description">Reindex the concepts</entry>
   <entry code="cleanConcept_output_description"></entry>
-  <entry code="cleanConcept_result">Result of the reindexing of the concepts</entry>   
+  <entry code="cleanConcept_result">Result of the reindexing of the concepts</entry>
+    <!--
+hashEmprPassword
+-->
+  <entry code="hashEmprPassword_description">Encoder les mots de passe lecteurs pour la connexion à l'Opac</entry>
+  <entry code="hashEmprPassword_output_description"></entry>
+  <entry code="hashEmprPassword_result">Résultat du réencodage des mots de passe</entry>
+<!--
+indexAuthorities
+-->
+  <entry code="indexAuthorities_description">Réindexer toutes les autorités</entry>
+  <entry code="indexAuthorities_output_description"></entry>
+  <entry code="indexAuthorities_result">Résultat de la réindexation des autorités</entry>   
+<!--
+genArk
+-->
+  <entry code="genArk_description">Générer les ARK</entry>
+  <entry code="genArk_output_description"></entry>
+  <entry code="genArk_result">Résultat de la génération des ARK</entry>   
+<!--
+genDocnumThumbnail
+-->
+  <entry code="genDocnumThumbnail_description">Générer les vignettes de document numérique</entry>
+  <entry code="genDocnumThumbnail_output_description"></entry>
+  <entry code="genDocnumThumbnail_result">Résultat de la génération des vignettes de document numérique</entry>   
 </XMLlist>

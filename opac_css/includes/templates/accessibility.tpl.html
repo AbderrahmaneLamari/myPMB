@@ -1,0 +1,39 @@
+<!-- $Id: accessibility.tpl.html,v 1.2.4.1 2023/10/02 14:33:32 jparis Exp $ -->
+
+{% comment %}
+
+	Attention l'identifiant "accessibility" est obligatoire pour les pages OPAC.
+
+{% endcomment %}
+
+{% block content %}
+<div id="accessibility">
+    {% comment %}
+		Attention l'input est obligatoire si le paramètre opac_accessibility est à 2.
+    {% endcomment %}
+	<input type="hidden" id="opacAccessibility" name="opacAccessibility" value="{{ global.opac_accessibility }}"/>
+	<ul class="accessibility_font_size">
+		<li class="accessibility_font_size_small">
+			<a href="javascript:accessibilityFontSize(1);" title="{{ msg.accessibility_font_size_small }}">A-</a>
+		</li>
+		<li class="accessibility_font_size_normal">
+			<a href="javascript:accessibilityFontSize(0);" title="{{ msg.accessibility_font_size_normal }}">A</a>
+		</li>
+		<li class="accessibility_font_size_big">
+			<a href="javascript:accessibilityFontSize(2);" title="{{ msg.accessibility_font_size_big }}">A+</a>
+		</li>
+	</ul>
+</div>
+{% endblock content %}
+
+
+{% block script %}
+<script type="text/javascript" src="{{ global.include_path }}/javascript/accessibility.js"></script>
+
+{% if fontSize %}
+<script type="text/javascript">
+	accessibilitySetFontSize("{{ fontSize }}");
+</script>
+{% endif %}
+
+{% endblock script %}

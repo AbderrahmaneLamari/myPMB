@@ -1,0 +1,34 @@
+/*------------
+- OPAC: TITLE -
+ ------------*/
+
+/*-----------------------------------------------------------------------------------------------------------
+- CENTRALISATION DES DIFFÉRENTS TITRES DES PAGES OPAC QUI ONT DES CLASS DIFFÉRENTES ET OÙ PAS LA MÊME BALISE -
+ -----------------------------------------------------------------------------------------------------------*/
+
+ 
+#websubscribe h2.subs_intro_services,
+#websubscribe h2.subs_intro_explication,
+#perio_a2z h3,
+#a2z_perio h3 .titre_exemplaires,
+#error_connection .popup_connexion_empr h3,
+#empr-all h3,
+#empr-resa h3,
+#empr-old h3,
+#zone_exemplaires h3,
+#search_result h3,
+#aut_details h3,
+#empr-list h3,
+#cart_action h3.title_basket,
+#search_history_container h3.title_history,
+#titre_docnum,
+#titre_depouillements,
+.expl_voisin_search h3,
+.simili_search h3,
+#docnum h3
+ {
+  font: var(--font-subtitle);
+  color: var(--c-black);
+  margin: 24px 0 12px;
+  font-weight: bold;
+}

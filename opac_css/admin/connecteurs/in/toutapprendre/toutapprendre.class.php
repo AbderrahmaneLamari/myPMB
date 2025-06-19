@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: toutapprendre.class.php,v 1.10.2.1 2022/01/05 09:00:58 dgoron Exp $
+// $Id: toutapprendre.class.php,v 1.11 2022/01/05 08:50:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

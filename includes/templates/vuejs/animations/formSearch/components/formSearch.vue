@@ -91,103 +91,113 @@
     	<div class="result-contenu" v-if="searchResult.length">
       		<div class="result">
         		<table class="uk-table uk-table-small uk-table-striped uk-table-middle">
-          			<thead>
-            			<tr>
-							<th style="cursor:pointer;" @click="setSort('name')">
-								{{ pmb.getMessage("animation", "list_animation_name") }} <i :class="getClassSort('name')"></i>
-							</th>
-							<th style="cursor:pointer;">
-								{{ pmb.getMessage("animation", "list_animation_location") }}
-							</th>
-							<th style="cursor:pointer;" @click="setSort('event.rawStartDate')">
-								{{ pmb.getMessage("animation", "update_add_animation_startDate") }} <i :class="getClassSort('event.rawStartDate')"></i>
-							</th>
-							<th style="cursor:pointer;" @click="setSort('event.rawEndDate')">
-								{{ pmb.getMessage("animation", "update_add_animation_endDate") }} <i :class="getClassSort('event.rawEndDate')"></i>
-							</th>
-							<th style="cursor:pointer;" @click="setSort('status.label')">
-								{{ pmb.getMessage("animation", "list_animation_status") }} <i :class="getClassSort('status.label')"></i>
-							</th>
-							<th style="cursor:pointer;" @click="setSort('type.label')">
-								{{ pmb.getMessage("animation", "list_animation_type") }} <i :class="getClassSort('type.label')"></i>
-							</th>
-							<th style="cursor:pointer;">
-								{{ pmb.getMessage("animation", "list_animation_available_place") }} 
-							</th>
-							<th style="cursor:pointer;">
-								{{ pmb.getMessage("animation", "list_animation_reserved_place") }} 
-							</th>
-							<th></th>
-							<th></th>
-            			</tr>
-          			</thead>
-	          		<tbody>
-						<template v-for="(animation, index) in filtreResult">
-							<tr :key="index" @mouseover="hover = index" @mouseout="hover = -1" 
-								:class="[ index%2 == 0 ? 'even' : 'odd', index == hover ? 'surbrillance' : '' ]" 
-								style='cursor: pointer'>
-								<td @click="view(animation.id)">{{ animation.name }}</td>
-								<td @click="view(animation.id)">
-									<template v-if="animation.location.length">
-										<template v-for="loc in animation.location">
-											{{ loc.locationLibelle }}
-										</template>
-									</template>
-									<template v-else>{{ pmb.getMessage("animation", "form_search_no_location") }}</template>
-								</td>
-								<td @click="view(animation.id)">
-									<template v-if="animation.event">{{ animation.event.startDate }}</template>
-									<template v-else>{{ pmb.getMessage("animation", "form_search_no_event") }}</template>
-								</td>
-								<td @click="view(animation.id)">
-									<template v-if="animation.event">{{ animation.event.endDate }}</template>
-									<template v-else>{{ pmb.getMessage("animation", "form_search_no_event") }}</template>
-								</td>
-								<td @click="view(animation.id)">
-									<template v-if="animation.status.label">{{ animation.status.label }}</template>
-									<template v-else>{{ pmb.getMessage("animation", "form_search_no_status") }}</template>
-								</td>
-								<td @click="view(animation.id)">
-									<template>{{ animation.type.label }}</template>
-								</td>
-								<td @click="view(animation.id)">
-									<template v-if='animation.hasChildrens'>
-										{{ pmb.getMessage("animation", "form_search_NA") }}
-									</template>
-									<template v-else-if="animation.allQuotas.animationQuotas.global">
-										<template v-if="typeof animation.allQuotas.availableQuotas.global !== 'undefined' ">
-											{{ animation.allQuotas.availableQuotas.global }} / {{ animation.allQuotas.animationQuotas.global  }} 
-										</template>
-									</template>
-									<template v-else>
-										{{ pmb.getMessage("animation", "form_search_illimited_quotas") }}
-									</template>
-								</td>
-								<td @click="view(animation.id)">
-									<template v-if='animation.hasChildrens'>
-										{{ pmb.getMessage("animation", "form_search_NA") }}
-									</template>
-									<template v-else-if="animation.allQuotas.reserved.global >= 0">
-											{{ animation.allQuotas.reserved.global }}
-									</template>
-								</td>
-								<td class="center">
-									<template v-if="!animation.event.dateExpired">
-										<template v-if="(animation.allQuotas.availableQuotas.global > 0 && animation.allQuotas.animationQuotas.global && animation.hasChildrens === false) || (animation.allQuotas.animationQuotas.global == 0 && animation.hasChildrens === false) || (animation.allowWaitingList == 1 && animation.hasChildrens === false)">
+                    <paginator :list="filtreResult" :perPage="10" :startPage="1" :nbPage="6" :nbResultDisplay="false">
+                        <template #content="{ list }">
+		          			<thead>
+		            			<tr>
+									<th style="cursor:pointer;" @click="setSort('name')">
+										{{ pmb.getMessage("animation", "list_animation_name") }} <i :class="getClassSort('name')"></i>
+									</th>
+									<th style="cursor:pointer;">
+										{{ pmb.getMessage("animation", "list_animation_location") }}
+									</th>
+									<th style="cursor:pointer;" @click="setSort('event.rawStartDate')">
+										{{ pmb.getMessage("animation", "update_add_animation_startDate") }} <i :class="getClassSort('event.rawStartDate')"></i>
+									</th>
+									<th style="cursor:pointer;" @click="setSort('event.rawEndDate')">
+										{{ pmb.getMessage("animation", "update_add_animation_endDate") }} <i :class="getClassSort('event.rawEndDate')"></i>
+									</th>
+									<th style="cursor:pointer;" @click="setSort('status.label')">
+										{{ pmb.getMessage("animation", "list_animation_status") }} <i :class="getClassSort('status.label')"></i>
+									</th>
+									<th style="cursor:pointer;" @click="setSort('type.label')">
+										{{ pmb.getMessage("animation", "list_animation_type") }} <i :class="getClassSort('type.label')"></i>
+									</th>
+									<th style="cursor:pointer;" @click="setSort('calendar.name')">
+										{{ pmb.getMessage("animation", "list_animation_calendar") }} <i :class="getClassSort('calendar.name')"></i>
+									</th>
+									<th style="cursor:pointer;">
+										{{ pmb.getMessage("animation", "list_animation_available_place") }} 
+									</th>
+									<th style="cursor:pointer;">
+										{{ pmb.getMessage("animation", "list_animation_reserved_place") }} 
+									</th>
+									<th></th>
+									<th></th>
+		            			</tr>
+		          			</thead>
+			          		<tbody>
+								<template v-for="(animation, index) in list">
+									<tr :key="index" @mouseover="hover = index" @mouseout="hover = -1" 
+										:class="[ index%2 == 0 ? 'even' : 'odd', index == hover ? 'surbrillance' : '' ]" 
+										style='cursor: pointer'>
+										<td @click="view(animation.id)">{{ animation.name }}</td>
+										<td @click="view(animation.id)">
+											<template v-if="animation.location.length">
+												<template v-for="loc in animation.location">
+													{{ loc.locationLibelle }}
+												</template>
+											</template>
+											<template v-else>{{ pmb.getMessage("animation", "form_search_no_location") }}</template>
+										</td>
+										<td @click="view(animation.id)">
+											<template v-if="animation.event">{{ animation.event.startDate }}</template>
+											<template v-else>{{ pmb.getMessage("animation", "form_search_no_event") }}</template>
+										</td>
+										<td @click="view(animation.id)">
+											<template v-if="!animation.event.duringDay">{{ animation.event.endDate }}</template>
+											<template v-else>{{ pmb.getMessage("animation", "form_event_during_day") }}</template>
+										</td>
+										<td @click="view(animation.id)">
+											<template v-if="animation.status.label">{{ animation.status.label }}</template>
+											<template v-else>{{ pmb.getMessage("animation", "form_search_no_status") }}</template>
+										</td>
+										<td @click="view(animation.id)">
+											<template>{{ animation.type.label }}</template>
+										</td>
+										<td @click="view(animation.id)">
+											<template>{{ animation.calendar.name }}</template>
+										</td>
+										<td @click="view(animation.id)">
+											<template v-if='animation.hasChildrens'>
+												{{ pmb.getMessage("animation", "form_search_NA") }}
+											</template>
+											<template v-else-if="animation.allQuotas.animationQuotas.global">
+												<template v-if="typeof animation.allQuotas.availableQuotas.global !== 'undefined' ">
+													{{ animation.allQuotas.availableQuotas.global }} / {{ animation.allQuotas.animationQuotas.global  }} 
+												</template>
+											</template>
+											<template v-else>
+												{{ pmb.getMessage("animation", "form_search_illimited_quotas") }}
+											</template>
+										</td>
+										<td @click="view(animation.id)">
+											<template v-if='animation.hasChildrens'>
+												{{ pmb.getMessage("animation", "form_search_NA") }}
+											</template>
+											<template v-else-if="animation.allQuotas.reserved.global >= 0">
+													{{ animation.allQuotas.reserved.global }}
+											</template>
+										</td>
+										<td class="center">
+											<template v-if="!animation.event.dateExpired">
+												<template v-if="(animation.allQuotas.availableQuotas.global > 0 && animation.allQuotas.animationQuotas.global && animation.hasChildrens === false) || (animation.allQuotas.animationQuotas.global == 0 && animation.hasChildrens === false) || (animation.allowWaitingList == 1 && animation.hasChildrens === false)">
+													<div class="center">
+														<i @click="addRegistration(animation.id)" class="fa fa-user-plus" :title="pmb.getMessage('animation', 'animation_add_registration')"></i>
+													</div>
+												</template>
+											</template>
+										</td>
+										<td @click.stop="" class="center">
 											<div class="center">
-												<i @click="addRegistration(animation.id)" class="fa fa-user-plus" :title="pmb.getMessage('animation', 'animation_add_registration')"></i>
+												<i class="fa fa-envelope" @click="mailing(animation)" :title="pmb.getMessage('animation', 'animation_go_mailing')"></i>
 											</div>
-										</template>
-									</template>
-								</td>
-								<td @click.stop="" class="center">
-									<div class="center">
-										<i class="fa fa-envelope" @click="mailing(animation)" :title="pmb.getMessage('animation', 'animation_go_mailing')"></i>
-									</div>
-								</td>
-	            			</tr>
-						</template>
-	          		</tbody>
+										</td>
+			            			</tr>
+								</template>
+			          		</tbody>
+                        </template>
+                    </paginator>
         		</table>
       		</div>
 		</div>
@@ -195,6 +205,8 @@
 </template>
 
 <script>
+import paginator from "../../../common/paginator/paginator.vue";
+
 export default {
   props: ["pmb", "formdata"],
   data: function() {
@@ -218,6 +230,9 @@ export default {
 		},
     };
   },
+  components : {
+      paginator
+  },
   computed : {
 	  filtreResult: function () {
 		  this.filtredResult.splice(0);
@@ -233,15 +248,15 @@ export default {
 	sendSearch : function(event) {
 		event.preventDefault();
 		this.completeForm();
-		
+
 		var data = new FormData();
         data.append('data', JSON.stringify({searchFields : this.searchData}));
-        
+
 		var requestContent = {
 			method : "POST",
 			body: data
 		}
-		
+
 		fetch("./ajax.php?module=animations&categ=animations&action=search", requestContent)
 		.then((response) => {
 			if (response.ok) {
@@ -259,7 +274,7 @@ export default {
 	completeForm : function () {
 		let searchFlag = false;
 		let fields = Object.keys(this.searchData);
-		
+
 		for (let field of fields) {
 			if (typeof this.searchData[field] === 'string') {
 				if (this.searchData[field] !== '') {
@@ -273,20 +288,20 @@ export default {
 				}
 			}
 		}
-		
+
 		if (!searchFlag) {
 			this.searchData.tlc = '*';
 		}
 	},
 	setSort : function (sortName) {
 		this.filter.name = sortName;
-		
+
 		if (this.filter.sort == "asc") {
 			this.filter.sort = "desc";
 		} else {
 			this.filter.sort = "asc";
 		}
-		
+
 		var sortTab = sortName.split('.');
 
 		// TODO : Arriver à gerer le filter pour aller chercher dans des sous objets
@@ -334,14 +349,14 @@ export default {
 		}
 		return className;
 	},
-	
+
 	filterAnimation : function(animation) {
 		// On filtre en fonction du statut
 		let status = false;
 		if (this.filter.status.includes('0') || (animation.status && this.filter.status.includes(animation.status.id))) {
 			status = true;
 		}
-		
+
 		// On filtre en fonction de la localisation
 		let location = false;
 		let flagLoc = false;
@@ -355,24 +370,24 @@ export default {
 		if (this.filter.locations.includes('0') || flagLoc) {
 			location = true;
 		}
-		
+
 		// On filtre en fonction du type
 		let types = false;
 		if (this.filter.types.includes('0') || (animation.type && this.filter.types.includes(animation.type.id))) {
 			types = true;
 		}
-		
+
 		// On vérifie si on doit afficher ou non cette animation
 		if (status && location && types) {
 			return true;
 		}
 		return false;
 	},
-	
+
 	view : function(id) {
 		document.location = './animations.php?categ=animations&action=view&id=' + id;
 	},
-	
+
 	addRegistration : function(id) {
 		document.location = './animations.php?categ=registration&action=add&numAnimation=' + id;
 	},
@@ -382,7 +397,7 @@ export default {
 			document.location = './animations.php?categ=animations&action=mailing&id=' + animation.id;
 		} else {
 			alert(this.pmb.getMessage('animation', 'animation_mailing_no_registred_persons'));
-		}	
+		}
 	}
   }
 };

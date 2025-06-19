@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ExplnumUpload.js,v 1.7.2.1 2021/11/25 12:59:06 dgoron Exp $
+// $Id: ExplnumUpload.js,v 1.8 2021/11/25 12:54:54 dgoron Exp $
 
 define([
         "dojo/_base/declare",

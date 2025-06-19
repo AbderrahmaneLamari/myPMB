@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: vign_middle.php,v 1.16.8.1 2022/01/03 10:36:10 dgoron Exp $
+// $Id: vign_middle.php,v 1.17 2022/01/03 10:35:09 dgoron Exp $
 
 $base_path=".";
 require_once($base_path."/includes/init.inc.php");

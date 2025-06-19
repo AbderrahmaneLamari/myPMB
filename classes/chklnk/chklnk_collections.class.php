@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: chklnk_collections.class.php,v 1.1 2017/10/09 11:34:43 dgoron Exp $
+// $Id: chklnk_collections.class.php,v 1.1.12.1 2023/07/05 08:59:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -17,7 +17,7 @@ class chklnk_collections extends chklnk {
     }
     
     protected function get_query() {
-    	return "select collection_id, collection_web as link from collections where collection_web!='' and collection_web is not null order by index_coll ";
+    	return "select collection_id as id, collection_web as link from collections where collection_web!='' and collection_web is not null order by index_coll ";
     }
     
     protected function get_label_progress_bar() {

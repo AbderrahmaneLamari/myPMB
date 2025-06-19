@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.2.16.1 2021/12/09 09:04:06 dgoron Exp $
+// $Id: main.inc.php,v 1.3.4.1 2023/04/20 10:22:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -12,7 +12,7 @@ global $biblio_name, $biblio_adr1, $biblio_town, $biblio_phone, $biblio_email;
 
 require_once('./circ/print_pret/func.inc.php');
 
-$empr=get_info_empr($id_empr);
+$empr=print_get_info_empr($id_empr);
 //global $biblio_name, $biblio_logo, $biblio_adr1, $biblio_adr2, $biblio_cp, $biblio_town, $biblio_state, $biblio_country, $biblio_phone, $biblio_email, $biblio_website ;
 	
 $xml_bibli="<text style=\"header\">".htmlspecialchars($biblio_name,ENT_QUOTES,$charset)."</text>";
@@ -29,7 +29,7 @@ $xml_bibli.="<text style=\"p1\"></text>";
 
 function print_expl($cb_doc) {
 	global $msg, $charset;
-	$expl=get_info_expl($cb_doc);
+	$expl=print_get_info_expl($cb_doc);
 	$xml_expl.="<text style=\"p1\"></text>";
 	
 	$titre=substr($expl->tit,0,25);

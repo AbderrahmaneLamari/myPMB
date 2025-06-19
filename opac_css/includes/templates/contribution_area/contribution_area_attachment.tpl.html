@@ -1,4 +1,4 @@
-<!-- $Id: contribution_area_attachment.tpl.html,v 1.2 2020/08/20 14:05:04 qvarin Exp $ -->
+<!-- $Id: contribution_area_attachment.tpl.html,v 1.3 2022/05/17 07:31:52 gneveu Exp $ -->
 
 {% block contributionDivContainer %}
 <div class="contributionDivContainer">
@@ -9,7 +9,7 @@
 		{% for scenario in attachment.scenarios %}
 			<div class='row'>
 				{% block link_scenario %}
-					<a href="#" title="{{ scenario.name }}" data-form_url="{{ scenario.ajax_link }}">
+					<a href="#" title="{{ scenario.name }}" data-form_url="{{ scenario.ajax_link }}" data-scenario_id="{{ scenario.id }}">
 						{% if scenario.response %}
 							{{ scenario.response }}
 						{% else %}

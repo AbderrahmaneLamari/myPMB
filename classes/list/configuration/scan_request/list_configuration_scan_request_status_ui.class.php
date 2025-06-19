@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_scan_request_status_ui.class.php,v 1.2 2021/04/20 06:44:56 dgoron Exp $
+// $Id: list_configuration_scan_request_status_ui.class.php,v 1.2.6.1 2023/03/24 07:55:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -48,12 +48,11 @@ class list_configuration_scan_request_status_ui extends list_configuration_scan_
 		switch($property) {
 			case 'scan_request_status_label':
 				$content .= "<span class='".$object->scan_request_status_class_html."'  style='margin-right: 3px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' /></span>";
-				$content .= $object->scan_request_status_label;
 				break;
 			default :
-				$content .= parent::get_cell_content($object, $property);
 				break;
 		}
+		$content .= parent::get_cell_content($object, $property);
 		return $content;
 	}
 	

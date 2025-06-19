@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pnb_check.class.php,v 1.5 2021/01/27 10:26:45 dbellamy Exp $
+// $Id: pnb_check.class.php,v 1.5.6.1 2023/04/25 13:35:56 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,7 +16,7 @@ require_once "$class_path/log.class.php";
 class pnb_check {
 	
 	const LOG_MAX_LEVELS = 10;
-	const LOG_FILENAME = "pnb_check.log";
+	const LOG_FILENAME = "pnb_check.txt";
 	
 	protected static $last_level = 0;
 	
@@ -127,7 +127,7 @@ class pnb_check {
 				$report = log::$log_msg;
 				log::print_log();
 				
-				$report = pmb_utf8_decode($report);
+				$report = encoding_normalize::charset_normalize($report, 'utf-8');
 				$report = htmlentities($report, ENT_QUOTES, $charset);
 				$report = nl2br($report);
 				
@@ -142,7 +142,7 @@ class pnb_check {
 				if(is_readable($base_path."/temp/".static::LOG_FILENAME)) {
 
 					$report = file_get_contents($base_path."/temp/".static::LOG_FILENAME);
-					$report = pmb_utf8_decode($report);
+					$report = encoding_normalize::charset_normalize($report, 'utf-8');
 					$report = htmlentities($report, ENT_QUOTES, $charset);
 					$report = nl2br($report);
 					
@@ -704,7 +704,7 @@ class pnb_check {
 				$notice_full_title.= ($tnvol)?$tnvol.' ':'';
 				$notice_full_title.= ($tit1)?$tit1:'';
 				$notice_full_title.= ($tit4)?' '.$tit4:'';
-				$notice_full_title = static::strip_empty_words($notice_full_title,);
+				$notice_full_title = static::strip_empty_words($notice_full_title);
 				$offer_full_title = $title;
 				$offer_full_title.= ($subtitle)?' '.$subtitle:'';
 				$offer_full_title = static::strip_empty_words($offer_full_title);

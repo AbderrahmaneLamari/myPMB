@@ -35,12 +35,11 @@
 								{{ anim.event.startDate }} 
 								<template v-if="'00:00' !== anim.event.startHour">{{ anim.event.startHour}}</template>
 							</template>
-							<template v-if="anim.event">
+							<template v-if="!formdata.animation.event.duringDay">
 								<br />
 								{{ anim.event.endDate }} 
 								<template v-if="'00:00' !== anim.event.endHour">{{ anim.event.endHour}}</template>
 							</template>
-							<template v-else>X</template>
 						</td>
 						<td>
 							<template v-if='anim.hasChildrens'>

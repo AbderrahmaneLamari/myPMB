@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: connectors_categ.class.php,v 1.1 2021/02/23 12:47:30 dgoron Exp $
+// $Id: connectors_categ.class.php,v 1.1.8.1 2023/07/07 07:26:45 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -27,30 +27,25 @@ class connectors_categ {
 	public function getData() {
 		if(!$this->id) return;
 	
-		$requete = 'SELECT * FROM connectors_categ WHERE connectors_categ_id='.$this->id;
-		$result = @pmb_mysql_query($requete);
+		$query = 'SELECT * FROM connectors_categ WHERE connectors_categ_id='.$this->id;
+		$result = pmb_mysql_query($query);
 		if(!pmb_mysql_num_rows($result)) {
 			pmb_error::get_instance(static::class)->add_message("not_found", "not_found_object");
 			return;
 		}
-			
 		$data = pmb_mysql_fetch_object($result);
 		$this->name = $data->connectors_categ_name;
 		$this->opac_expanded = $data->opac_expanded;
 	}
 
-	public function get_form() {
-		global $msg;
-		global $charset;
+	public function get_content_form() {
+		global $msg, $charset;
 		
-		$content_form = '
-		<div class=row>
-			<label class="etiquette" for="categ_name">'.$msg["connecteurs_categ_caption"].'</label><br />
-			<input name="categ_name" type="text" value="'.htmlentities($this->name,ENT_QUOTES, $charset).'" class="saisie-80em">
-		</div>
-		<div class=row><label class="etiquette" for="categ_opac_expanded">'.$msg["connecteurs_categ_opac_expanded"].'</label><br />
-			<input name="categ_opac_expanded" type="checkbox" '.($this->opac_expanded ? "checked" : "").' >
-		</div>';
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('categ_name', 'connecteurs_categ_caption')
+		->add_input_node('text', $this->name);
+		$interface_content_form->add_element('categ_opac_expanded', 'connecteurs_categ_opac_expanded')
+		->add_input_node('boolean', $this->opac_expanded);
 		
 		$sources = array();
 		$sources_sql = 'SELECT connectors_sources.source_id, connectors_sources.name, connectors_categ_sources.num_categ, id_connector
@@ -62,22 +57,26 @@ class connectors_categ {
 		}
 		$nbsources=count($sources);
 		$content_input = '<select MULTIPLE name="categ_content[]" size="'.($nbsources+4).'">';
-		if (!$nbsources)
+		if (!$nbsources) {
 			$content_input .= '<option value="">'.($msg["connecteurs_categories_none"]).'</option>';
-			$idconnectorconserve="";
-			foreach ($sources as $source) {
-				if ($source->id_connector!=$idconnectorconserve) {
-					$idconnectorconserve=$source->id_connector;
-					$content_input .= '<optgroup label="'.$idconnectorconserve.'" class="erreur">';
-				}
-				$content_input .= '<option value="'.$source->source_id.'" '.($source->num_categ ? 'SELECTED' : '').' style="color: rgb(0, 0, 0);">'.htmlentities($source->name ,ENT_QUOTES, $charset).'</option>';
+		}
+		$idconnectorconserve="";
+		foreach ($sources as $source) {
+			if ($source->id_connector!=$idconnectorconserve) {
+				$idconnectorconserve=$source->id_connector;
+				$content_input .= '<optgroup label="'.$idconnectorconserve.'" class="erreur">';
 			}
-			$content_input .= '</select>';
-		$content_form .= '
-		<div class=row>
-			<label class="etiquette" for="categ_content">'.$msg["connecteurs_included_sources"].'</label><br />
-			'.$content_input.'
-		</div>';
+			$content_input .= '<option value="'.$source->source_id.'" '.($source->num_categ ? 'SELECTED' : '').' style="color: rgb(0, 0, 0);">'.htmlentities($source->name ,ENT_QUOTES, $charset).'</option>';
+		}
+		$content_input .= '</select>';
+		$interface_content_form->add_element('categ_content', 'connecteurs_included_sources')
+		->add_html_node($content_input);
+		
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 			
 		$interface_form = new interface_admin_form('form_categ');
 		if(!$this->id){
@@ -88,7 +87,7 @@ class connectors_categ {
 		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('connectors_categ')
 		->set_field_focus('categ_name');
 		return $interface_form->get_display();

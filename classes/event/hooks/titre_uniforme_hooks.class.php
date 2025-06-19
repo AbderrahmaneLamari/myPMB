@@ -3,7 +3,7 @@
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir
 // www.sigb.net)
 // +-------------------------------------------------+
-// $Id: titre_uniforme_hooks.class.php,v 1.1.12.1 2022/01/05 15:29:50 dgoron Exp $
+// $Id: titre_uniforme_hooks.class.php,v 1.2 2022/01/05 15:25:28 dgoron Exp $
 if (stristr($_SERVER ['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path;

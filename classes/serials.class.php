@@ -2,12 +2,16 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serials.class.php,v 1.259.2.4 2022/01/11 08:29:49 qvarin Exp $
+// $Id: serials.class.php,v 1.272.2.4 2023/10/26 14:13:45 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 // classes de gestion des périodiques
 global $base_path, $class_path, $include_path;
+
+use Pmb\Ark\Models\ArkModel;
+use Pmb\Ark\Entities\ArkEntityPmb;
+
 require_once($class_path."/notice.class.php");
 require_once($class_path."/parametres_perso.class.php");
 require_once($include_path."/notice_authors.inc.php");
@@ -74,8 +78,6 @@ class serial extends notice {
 		    
 	// récupération des infos en base
 	public function fetch_serial_data() {
-		global $msg;
-		
 		$this->fetch_data();
 		
 		// type du document
@@ -100,7 +102,9 @@ class serial extends notice {
 		$value['niveau_hierar'] = "1";
 	
 		// champ d'indexation libre
-		if ($value['index_l']) $value['index_l']=clean_tags($value['index_l']);
+		if (!empty($value['index_l'])) {
+		    $value['index_l']=clean_tags($value['index_l']);
+		}
 		
 		$values = '';
 		foreach ($value as $cle => $valeur) {
@@ -185,6 +189,7 @@ class serial extends notice {
 		$ptab[2] = str_replace('!!ed2_id!!',	$this->ed2_id	, $ptab[2]);
 		$ptab[2] = str_replace('!!ed2!!',		htmlentities($this->ed2,ENT_QUOTES, $charset)	, $ptab[2]);
 		$ptab[2] = str_replace('!!force_dialog_publisher!!', $this->is_force_dialog('publisher'), $ptab[2]);
+		$ptab[2] = str_replace('!!force_popup_publisher!!', $this->is_force_popup('publisher'), $ptab[2]);
 		
 		$content_form = str_replace('!!tab2!!', $ptab[2], $content_form);
 		
@@ -305,7 +310,7 @@ class serial extends notice {
 	// ---------------------------------------------------------------
 	public function replace_form() {
 		global $perio_replace;
-		global $msg;
+		global $msg, $charset;
 		global $include_path;
 		global $deflt_notice_replace_keep_categories;
 		global $perio_replace_categories, $perio_replace_category;
@@ -361,10 +366,7 @@ class serial extends notice {
 	}
 	
 	public function save() {
-		global $msg;
-		global $current_module;
 		global $gestion_acces_active, $gestion_acces_user_notice;
-		global $id_form;
 	
 		$saved = parent::save();
 		if($saved) {
@@ -397,6 +399,7 @@ class serial extends notice {
 		global $pmb_synchro_rdf;
 		global $keep_categories;
 		global $notice_replace_links;
+		global $pmb_ark_activate;
 		
 		if (($this->id == $by) || (!$this->id))  {
 			return $msg[223];
@@ -416,12 +419,17 @@ class serial extends notice {
 		
 		// remplacement des docs numériques
 		$requete = "update explnum SET explnum_notice='$by' WHERE explnum_notice='$this->id' " ;
-		@pmb_mysql_query($requete);
+		pmb_mysql_query($requete);
 			
 		// remplacement des etats de collections
 		$requete = "update collections_state SET id_serial='$by' WHERE id_serial='$this->id' " ;
-		@pmb_mysql_query($requete);	
-			
+		pmb_mysql_query($requete);	
+		
+		if ($pmb_ark_activate) {
+		    $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_NOTICE, $this->id);
+		    $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_NOTICE, $by);
+		    $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		}
 		if($supprime){
 			$this->serial_delete();
 		}
@@ -465,7 +473,7 @@ class serial extends notice {
 		
 		//suppression des demandes d'abonnement aux listes de circulation
 		$requete = "delete from serialcirc_ask where num_serialcirc_ask_perio=".$this->id;
-		@pmb_mysql_query($requete);
+		pmb_mysql_query($requete);
 		
 		static::del_notice($this->id);
 		
@@ -664,12 +672,14 @@ class bulletinage extends notice {
 		if ($this->bulletin_cb)	
 			$this->display .= ". ".$this->bulletin_cb;
 		if ($this->bull_num_notice) {
-			if($this->notice_show_expl) {
-				$m_display=new mono_display($this->bull_num_notice,5);
-			} else {
-				$m_display=new mono_display($this->bull_num_notice,5,'',0,'','','',0,0,0, 1);
+			$record = new elements_records_list_ui([$this->bull_num_notice], 1, false); 
+			$record->set_level(5);
+			if(empty($this->notice_show_expl)) {
+			    $record->set_show_explnum(0);
+			    $record->set_show_expl(0);
+			    $record->set_show_statut(1);
 			}
-			$this->display.="<blockquote>".gen_plus($m_display->notice_id,$m_display->header,$m_display->isbd)."</blockquote>";
+			$this->display.="<blockquote>".$record->get_elements_list()."</blockquote>";
 		}
 	}
 	
@@ -731,8 +741,8 @@ class bulletinage extends notice {
 		
 		if(is_array($value)) {
 			$this->bulletin_titre  = $value['bul_titre'];
-			$this->bulletin_numero = $value['bul_no'];
-			$this->bulletin_cb     = $value['bul_cb'];
+			$this->bulletin_numero = $value['bul_no'] ?? "";
+			$this->bulletin_cb     = $value['bul_cb'] ?? "";
 			$this->mention_date    = $value['bul_date'];
 			
 			// Note YPR : à revoir
@@ -770,7 +780,7 @@ class bulletinage extends notice {
 		if (!$dont_update_bul) {
 			// formatage des valeurs de $value
 			// $value est un tableau contenant les infos du périodique
-			if(!$value['tit1']) {
+			if(empty($value['tit1'])) {
 				$this->bull_num_notice=0;
 				//return;
 			}
@@ -782,21 +792,21 @@ class bulletinage extends notice {
 			unset($value['bul_date']);
 			unset($value['date_date']);
 			
-			if ($value['index_l']) $value['index_l']=clean_tags($value['index_l']);
+			if (!empty($value['index_l'])) $value['index_l']=clean_tags($value['index_l']);
 			
-			if(is_array($value['aut']) && $value['aut'][0]['id']) $value['aut']='aut_exist';
+			if(!empty($value['aut']) && is_array($value['aut']) && $value['aut'][0]['id']) $value['aut']='aut_exist';
 			else $value['aut']='';	
 			
-			if(is_array($value['categ']) && $value['categ'][0]['id']) $value['categ']='categ_exist';
+			if(!empty($value['categ']) && is_array($value['categ']) && $value['categ'][0]['id']) $value['categ']='categ_exist';
 			else $value['categ']='';	
 			
-			if ($value["concept"]) $value["concept"] = 'concept_exist';
+			if (!empty($value["concept"])) $value["concept"] = 'concept_exist';
 			else $value["concept"] = '';
 			
 			//type de document
 			//$value['typdoc']=$value['typdoc'];
 			$empty = "";
-			if ($value['force_empty'])
+			if (!empty($value['force_empty']))
 				$empty = "perso";
 			unset($value['force_empty']);
 				
@@ -973,8 +983,8 @@ class bulletinage extends notice {
 		$content_form = str_replace('!!bul_date!!',htmlentities($this->mention_date,ENT_QUOTES, $charset),$content_form);
 		$content_form = str_replace('!!bul_cb!!',$this->bulletin_cb,     $content_form);
 		
-		if(!$this->bulletin_id) {
-			//$this->date_date = today();
+		if(!$this->bulletin_id && ($this->date_date == '0000-00-00' || empty($this->date_date))) {
+			$this->date_date = today();
 		}
 		$date_date = "<input type='date' name='date_date' value='" . $this->date_date . "' />";
 		$content_form = str_replace('!!date_date!!', $date_date, $content_form);
@@ -1051,7 +1061,7 @@ class bulletinage extends notice {
 	}	
 		
 	public function set_properties_from_form() {
-	    global $bul_no, $bul_date, $date_date, $bul_cb, $bul_titre;
+	    global $bul_no, $bul_date, $date_date, $bul_cb, $bul_titre, $f_tit1;
 
 	    parent::set_properties_from_form();
 	    $this->bulletin_numero = clean_string(stripslashes($bul_no));
@@ -1061,7 +1071,8 @@ class bulletinage extends notice {
 	    $this->bulletin_titre = stripslashes($bul_titre);
 	    
 	    $this->tit1 = $this->bulletin_numero.($this->mention_date?" - ".$this->mention_date:"").($this->bulletin_titre?" - ".$this->bulletin_titre:"");
-	    
+	    //Set de la globale f_tit1 pour pouvoir ajouter une signature sur la notice du bulletin
+	    $f_tit1 = $this->tit1;
 	    if($this->date_date == '0000-00-00' || empty($date_date)) {
 	        $this->year = "";
 	    } else {
@@ -1094,7 +1105,7 @@ class bulletinage extends notice {
 	    global $msg;
 	    global $pmb_notice_img_folder_id;
 	    global $pmb_synchro_rdf;
-	    
+	    global $pmb_ark_activate;
 	    //Pour la synchro rdf
 	    if($pmb_synchro_rdf){
 	        $synchro_rdf=new synchro_rdf();
@@ -1163,6 +1174,9 @@ class bulletinage extends notice {
 	    } else {
 	        error_message_history($msg["notice_champs_perso"],$p_perso->error_message,1);
 	        exit();
+	    }
+	    if ($pmb_ark_activate) {
+	        ArkModel::saveArkFromEntity($this);
 	    }
 	    return $this->bulletin_id;
 	}
@@ -1247,10 +1261,10 @@ class bulletinage extends notice {
 	//		replace($by) : remplacement du périodique
 	// ---------------------------------------------------------------
 	public function replace($by,$del_article=0) {
-		global $msg;
 		global $pmb_synchro_rdf;
 		global $keep_categories;
 		global $notice_replace_links;
+		global $pmb_ark_activate;
 		
 		// traitement des dépouillements du bulletin
 		if($del_article) {
@@ -1259,7 +1273,7 @@ class bulletinage extends notice {
 		} else {	
 			// sinon on ratache les dépouillements existants
 			$requete = "UPDATE analysis SET analysis_bulletin=$by where analysis_bulletin=".$this->bulletin_id;
-			@pmb_mysql_query($requete);
+			pmb_mysql_query($requete);
 		}
 		
 		//gestion des liens
@@ -1284,11 +1298,11 @@ class bulletinage extends notice {
 		
 		// ratachement des exemplaires
 		$requete = "UPDATE exemplaires SET expl_bulletin=$by WHERE expl_bulletin=".$this->bulletin_id;
-		@pmb_mysql_query($requete);
+		pmb_mysql_query($requete);
 		
 		// élimination des docs numériques
 		$requete = "UPDATE explnum SET explnum_bulletin=$by WHERE explnum_bulletin=".$this->bulletin_id;
-		@pmb_mysql_query($requete);
+		pmb_mysql_query($requete);
 		
 		//Mise à jour des articles reliés
 		if($pmb_synchro_rdf){
@@ -1300,13 +1314,19 @@ class bulletinage extends notice {
 				$synchro_rdf->addRdf($row->analysis_notice,0);
 			}
 		}
-						
+		
+		if ($pmb_ark_activate) {
+		    $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_BULLETIN, $this->bulletin_id);
+		    $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_BULLETIN, $by);
+		    $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		}
 		$this->delete();
 		return false;
 	}
 	// Suppression de bulletin
 	public function delete() {
 		global $pmb_synchro_rdf;
+		global $pmb_ark_activate;
 		
 		//suppression des notices de dépouillement
 		$this->delete_analysis();
@@ -1320,21 +1340,21 @@ class bulletinage extends notice {
 		//suppression des exemplaires
 		$req_expl = "select expl_id from exemplaires where expl_bulletin ='".$this->bulletin_id."' " ;
 		
-		$result_expl = @pmb_mysql_query($req_expl);
+		$result_expl = pmb_mysql_query($req_expl);
 		while(($expl = pmb_mysql_fetch_object($result_expl))) {
 			exemplaire::del_expl($expl->expl_id);		
 		}
 	
 		// expl numériques 	
 		$req_explNum = "select explnum_id from explnum where explnum_bulletin=".$this->bulletin_id." ";
-		$result_explNum = @pmb_mysql_query($req_explNum);
+		$result_explNum = pmb_mysql_query($req_explNum);
 		while(($explNum = pmb_mysql_fetch_object($result_explNum))) {
 			$myExplNum = new explnum($explNum->explnum_id);
 			$myExplNum->delete();		
 		}		
 		
 		$requete = "delete from caddie_content using caddie, caddie_content where caddie_id=idcaddie and type='BULL' and object_id='".$this->bulletin_id."' ";
-		@pmb_mysql_query($requete);
+		pmb_mysql_query($requete);
 		
 		// Suppression des résas du bulletin
 		$requete = "DELETE FROM resa WHERE resa_idbulletin=".$this->bulletin_id;
@@ -1375,6 +1395,12 @@ class bulletinage extends notice {
 		$requete = "DELETE FROM bulletins WHERE bulletin_id=".$this->bulletin_id;
 		pmb_mysql_query($requete);
 		audit::delete_audit (AUDIT_BULLETIN, $this->bulletin_id) ;	
+		
+		
+		if ($pmb_ark_activate) {
+		    $arkEntity = ArkEntityPmb::getEntityClassFromType(TYPE_BULLETIN, $this->bulletin_id);
+		    $arkEntity->markAsDeleted();
+		}
 	}
 	
 	public function get_serial() {
@@ -1423,7 +1449,7 @@ class bulletinage extends notice {
 	public function move($to_serial) {
 	    // rattachement du bulletin au périodique
 	    $requete = 'UPDATE bulletins SET bulletin_notice = '.$to_serial.' WHERE bulletin_id='.$this->bulletin_id;
-	    @pmb_mysql_query($requete);
+	    pmb_mysql_query($requete);
 	    
 	    return false;
 	}
@@ -1444,6 +1470,14 @@ class bulletinage extends notice {
 	    }
 	}
 	
+	public static function get_date_date_from_id($bulletin_id) {
+		$bulletin_id = intval($bulletin_id);
+		$query = "SELECT date_date FROM bulletins WHERE bulletin_id = ".$bulletin_id;
+		$result = pmb_mysql_query($query);
+		$row = pmb_mysql_fetch_object($result);
+		return $row->date_date;
+	}
+	
 	public static function get_pattern_link() {
 		global $base_path;
 		return $base_path.'/catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=!!id!!';
@@ -1451,7 +1485,7 @@ class bulletinage extends notice {
 	
 	public static function get_permalink($bulletin_id, $parent_id=0) {
 		global $base_path;
-		return $base_path.'/catalog.php?categ=serials&sub=bulletinage&action=view&bul_id='.$bulletin_id;
+		return $base_path.'/catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=' . intval($bulletin_id);
 	}
 	
 	protected static function format_url($url='') {
@@ -1494,6 +1528,7 @@ class analysis extends notice {
 		global $pmb_serial_thumbnail_url_article;
 		// param : l'article hérite-t-il de l'URL de la vignette de la notice bulletin
 		global $pmb_bulletin_thumbnail_url_article;
+		global $opac_url_base;
 		$this->id = intval($analysis_id);
 		if ($bul_id) $this->id_bulletinage = $bul_id;
 		
@@ -1532,11 +1567,11 @@ class analysis extends notice {
 			}
 			// Héritage du lien de la vignette de la notice chapeau
 			if ($pmb_serial_thumbnail_url_article) {
-				$this->thumbnail_url = $this->get_bulletinage()->get_serial()->thumbnail_url;
+			    $this->thumbnail_url = $opac_url_base."thumbnail.php?type=1&id=".$this->get_bulletinage()->get_serial()->id;
 			}
 			// Héritage du lien de la vignette de la notice bulletin
-			if ($pmb_bulletin_thumbnail_url_article && $this->get_bulletinage()->thumbnail_url !="") {
-				$this->thumbnail_url = $this->get_bulletinage()->thumbnail_url;
+			if ($pmb_bulletin_thumbnail_url_article && !empty($this->get_bulletinage()->bull_num_notice)) {
+			    $this->thumbnail_url = $opac_url_base."thumbnail.php?type=1&id=".$this->get_bulletinage()->bull_num_notice;
 			}
 		}
 		// afin d'avoir forcément un typdoc
@@ -1760,7 +1795,6 @@ class analysis extends notice {
 	// fonction de mise à jour d'une entrée MySQL de bulletinage
 	
 	public function analysis_update($values, $other_fields="") {
-		global $opac_url_base;
 		global $pmb_map_activate;
 		
 		// clean des vieilles nouveautés
@@ -1916,7 +1950,7 @@ class analysis extends notice {
 	
 		// rattachement du dépouillement
 		$requete = 'UPDATE analysis SET analysis_bulletin='.$to_bul.' WHERE analysis_notice='.$this->id;
-		@pmb_mysql_query($requete);
+		pmb_mysql_query($requete);
 		
 		//dates
 		$myBul = new bulletinage($to_bul);
@@ -1925,7 +1959,7 @@ class analysis extends notice {
 		
 		
 		$requete = 'UPDATE notices SET year="'.$year.'", date_parution="'.$date_parution.'", update_date=sysdate() WHERE notice_id='.$this->id.' LIMIT 1';
-		@pmb_mysql_query($requete);
+		pmb_mysql_query($requete);
 	
 		//Indexation du dépouillement
 		notice::majNoticesTotal($this->id);
@@ -1954,7 +1988,7 @@ class analysis extends notice {
 	
 	public static function get_permalink($notice_id, $parent_id=0) {
 		global $base_path;
-		return $base_path.'/catalog.php?categ=serials&sub=bulletinage&action=view&bul_id='.$parent_id.'&art_to_show='.$notice_id;
+		return $base_path.'/catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=' . intval($parent_id).'&art_to_show=' . intval($notice_id);
 	}
 	
 	protected static function format_url($url='') {

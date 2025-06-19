@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_voice.class.php,v 1.4 2021/01/27 10:46:30 dgoron Exp $
+// $Id: nomenclature_voice.class.php,v 1.4.6.2 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -36,6 +36,12 @@ class nomenclature_voice{
 	protected $order;
 
 	/**
+	 * Tableau d'instances
+	 * @var array
+	 */
+	protected static $instances = array();
+	
+	/**
 	 * Constructeur
 	 *
 	 * @param int id Identifiant de la voix
@@ -65,11 +71,17 @@ class nomenclature_voice{
 		}
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('code', 'admin_nomenclature_voice_form_code')
+		->add_input_node('text', $this->code);
+		$interface_content_form->add_element('name', 'admin_nomenclature_voice_form_name')
+		->add_input_node('text', $this->name);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $nomenclature_voice_content_form_tpl,$msg,$charset;
-		
-		$content_form = $nomenclature_voice_content_form_tpl;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_nomenclature_form('nomenclature_voice_form');
 		if(!$this->id){
@@ -77,13 +89,10 @@ class nomenclature_voice{
 		}else{
 			$interface_form->set_label($msg['admin_nomenclature_voice_form_edit']);
 		}
-		$content_form = str_replace('!!name!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!code!!', htmlentities($this->code, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_object_type('voice')
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('nomenclature_voices')
 		->set_field_focus('code');
 		return $interface_form->get_display();
@@ -175,6 +184,13 @@ class nomenclature_voice{
 	        $voice_name = $row->voice_name;
 	    }
 	    return $voice_name;
+	}
+	
+	public static function get_instance($id) {
+		if(!isset(static::$instances[$id])) {
+			static::$instances[$id] = new nomenclature_voice($id);
+		}
+		return static::$instances[$id];
 	}
 	
 } // end of nomenclature_voice

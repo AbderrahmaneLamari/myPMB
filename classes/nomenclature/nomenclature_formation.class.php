@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_formation.class.php,v 1.8 2021/01/27 10:46:30 dgoron Exp $
+// $Id: nomenclature_formation.class.php,v 1.9.4.2 2023/07/13 14:12:52 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -38,6 +38,11 @@ class nomenclature_formation{
 	 */	
 //	public $record_formation;
 	
+	/**
+	 * Tableau d'instances
+	 * @var array
+	 */
+	protected static $instances = array();
 	
 	/**
 	 * Constructeur
@@ -62,6 +67,8 @@ class nomenclature_formation{
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
 				$row = pmb_mysql_fetch_object($result);
+				pmb_mysql_free_result($result);
+				
 				$this->set_name($row->formation_name);
 				$this->set_nature($row->formation_nature);
 				$this->set_order($row->formation_order);
@@ -71,34 +78,23 @@ class nomenclature_formation{
 				$result = pmb_mysql_query($query);
 				if(pmb_mysql_num_rows($result)){
 					while($row = pmb_mysql_fetch_object($result)){
-						$this->add_type(new nomenclature_type($row->id_type));
+						$this->add_type(nomenclature_type::get_instance($row->id_type));
 					}
+					pmb_mysql_free_result($result);
 				}				
 			}
 		}
 	}
 	
-	public function get_form() {
-		global $nomenclature_formation_content_form_tpl,$msg,$charset;
+	public function get_content_form() {
+		global $msg;
 		
-		$content_form = $nomenclature_formation_content_form_tpl;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
-		
-		$interface_form = new interface_admin_nomenclature_form('nomenclature_formation_form');
-		if(!$this->id){
-			$interface_form->set_label($msg['admin_nomenclature_formation_form_add']);
-		}else{
-			$interface_form->set_label($msg['admin_nomenclature_formation_form_edit']);
-		}
-		$content_form = str_replace('!!name!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		
-		if($this->nature){// voix
-			$content_form=str_replace('!!nature_checked_0!!',"",$content_form);
-			$content_form=str_replace('!!nature_checked_1!!',"checked",$content_form);
-		}else{// instruments
-			$content_form=str_replace('!!nature_checked_0!!',"checked",$content_form);
-			$content_form=str_replace('!!nature_checked_1!!',"",$content_form);
-		}
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('name', 'admin_nomenclature_formation_form_name')
+		->add_input_node('text', $this->name);
+		$element = $interface_content_form->add_element('nature', 'admin_nomenclature_formation_form_nature');
+		$element->add_input_node('radio', '0')->set_checked(($this->nature ? false : true))->set_label($msg['admin_nomenclature_formation_form_nature_instrument']);
+		$element->add_input_node('radio', '1')->set_checked(($this->nature ? true : false))->set_label($msg['admin_nomenclature_formation_form_nature_voice']);
 		
 		$tpl_types="
 		<script type='text/javascript' src='./javascript/sorttable.js'></script>
@@ -119,13 +115,26 @@ class nomenclature_formation{
 		}
 		$tpl_types.="
 		</table>";
+		$interface_content_form->add_element('types', 'admin_nomenclature_formation_types')
+		->add_html_node($tpl_types);
 		
-		$content_form=str_replace('!!types!!',$tpl_types,$content_form);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
+		
+		$interface_form = new interface_admin_nomenclature_form('nomenclature_formation_form');
+		if(!$this->id){
+			$interface_form->set_label($msg['admin_nomenclature_formation_form_add']);
+		}else{
+			$interface_form->set_label($msg['admin_nomenclature_formation_form_edit']);
+		}
 		
 		$interface_form->set_object_id($this->id)
 		->set_object_type('formation')
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('nomenclature_formations')
 		->set_field_focus('name');
 		return $interface_form->get_display();
@@ -313,5 +322,11 @@ class nomenclature_formation{
 		return $this->id;
 	}
 
+	public static function get_instance($id) {
+		if(!isset(static::$instances[$id])) {
+			static::$instances[$id] = new nomenclature_formation($id);
+		}
+		return static::$instances[$id];
+	}
 
 } // end of nomenclature_formation

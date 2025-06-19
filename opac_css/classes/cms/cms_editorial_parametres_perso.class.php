@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_editorial_parametres_perso.class.php,v 1.42.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: cms_editorial_parametres_perso.class.php,v 1.43.4.1 2023/09/13 08:57:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -496,7 +496,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 				$resultat=pmb_mysql_query($requete);
 				while ($r=pmb_mysql_fetch_array($resultat)) {
 					$requete="insert into ".$generic->prefix."_custom_values (".$generic->prefix."_custom_champ,".$generic->prefix."_custom_origine,".$generic->prefix."_custom_small_text, ".$generic->prefix."_custom_text, ".$generic->prefix."_custom_integer, ".$generic->prefix."_custom_date, ".$generic->prefix."_custom_float, ".$generic->prefix."_custom_order) 
-						values(".$r[$generic->prefix."_custom_champ"].",".$id.",'".$r[$generic->prefix."_custom_small_text"]."','".$r[$generic->prefix."_custom_text"]."','".$r[$generic->prefix."_custom_integer"]."','".$r[$generic->prefix."_custom_date"]."','".$r[$generic->prefix."_custom_float"]."','".$r[$generic->prefix."_custom_order"]."')";
+						values(" . $r[$generic->prefix."_custom_champ"] . "," . $id . ",'" . addslashes($r[$generic->prefix."_custom_small_text"]) . "','" . addslashes($r[$generic->prefix."_custom_text"]) . "','" . addslashes($r[$generic->prefix."_custom_integer"]) . "','" . addslashes($r[$generic->prefix."_custom_date"]) . "','" . addslashes($r[$generic->prefix."_custom_float"]) . "','" . addslashes($r[$generic->prefix."_custom_order"]) . "')";
 					pmb_mysql_query($requete);
 				}
 			}
@@ -505,7 +505,7 @@ class cms_editorial_parametres_perso extends parametres_perso {
 		$resultat=pmb_mysql_query($requete);
 		while ($r=pmb_mysql_fetch_array($resultat)) {
 			$requete="insert into ".$this->prefix."_custom_values (".$this->prefix."_custom_champ,".$this->prefix."_custom_origine,".$this->prefix."_custom_small_text, ".$this->prefix."_custom_text, ".$this->prefix."_custom_integer, ".$this->prefix."_custom_date, ".$this->prefix."_custom_float, ".$this->prefix."_custom_order) 
-				values(".$r[$this->prefix."_custom_champ"].",".$id.",'".$r[$this->prefix."_custom_small_text"]."','".$r[$this->prefix."_custom_text"]."','".$r[$this->prefix."_custom_integer"]."','".$r[$this->prefix."_custom_date"]."','".$r[$this->prefix."_custom_float"]."','".$r[$this->prefix."_custom_order"]."')";
+				values(" . $r[$this->prefix . "_custom_champ"] . "," . $id . ",'" . addslashes($r[$this->prefix . "_custom_small_text"]) . "','" . addslashes($r[$this->prefix . "_custom_text"]) . "','" . addslashes($r[$this->prefix . "_custom_integer"]) . "','" . addslashes($r[$this->prefix . "_custom_date"]) . "','" . addslashes($r[$this->prefix . "_custom_float"]) . "','" . addslashes($r[$this->prefix . "_custom_order"]) . "')";
 			pmb_mysql_query($requete);
 		}
 	}

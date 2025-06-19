@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: connexion_empr.inc.php,v 1.17 2020/05/28 14:32:15 qvarin Exp $
+// $Id: connexion_empr.inc.php,v 1.18.4.1 2023/10/17 09:04:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 function do_formulaire_connexion() {
-	global $dbh,$msg,$charset ;
+	global $msg,$charset ;
 	global $id_notice ;
 	global $id_bulletin ;
 	global $lvl;
@@ -25,11 +25,15 @@ function do_formulaire_connexion() {
 				<div class='popup_connexion_empr'>
 					<h3>".$msg['resa_doit_etre_abon']."</h3>
 						<blockquote>
-							<form action='do_resa.php' method='post' name='loginform'>
+							<form action='do_resa.php' method='post' name='loginform' data-csrf='true'>
 							<label>".$msg['resa_empr_login']."</label><br />
 							<input type='text' name='login' size='20' border='0' value=\"".$msg['common_tpl_cardnumber']."\" onFocus=\"this.value='';\" /><br />
 							<label>".$msg['resa_empr_password']."</label><br />
-							<input type='password' name='password' size='20' border='0' value='' onFocus=\"this.value='';\" /><br />
+							<div class='password-text-visually'>
+            				    <input type='password' id='password_text' name='password' size='20' border='0' value='' onFocus=\"this.value='';\" />
+                                <button type='button' class='fa fa-eye' id='password_visually' onclick='toggle_password(this, \"password_text\");' title='".htmlentities($msg['rgaa_password_field_desc'], ENT_QUOTES, $charset)."'></button>
+                            </div>
+                            <br />
 							<input type='hidden' name='id_notice' value='$id_notice' />
 							<input type='hidden' name='id_bulletin' value='$id_bulletin' />
 							<input type='hidden' name='lvl' value='resa_planning' />
@@ -54,11 +58,15 @@ function do_formulaire_connexion() {
 				<div class='popup_connexion_empr'>
 					<h3>".$msg['avis_doit_etre_abon']."</h3>
 						<blockquote>
-						<form action='avis.php' method='post' name='loginform'>
-							<label>$msg[sugg_empr_login]</label><br />
+						<form action='avis.php' method='post' name='loginform' data-csrf='true'>
+							<label>".$msg['sugg_empr_login']."</label><br />
 							<input type='text' name='login' size='20' border='0' value=\"".$msg['common_tpl_cardnumber']."\" onFocus=\"this.value='';\"><br />
-							<label>$msg[sugg_empr_password]</label><br />
-							<input type='password' name='password' size='20' border='0' value='' onFocus=\"this.value='';\"><br />
+							<label>".$msg['sugg_empr_password']."</label><br />
+							<div class='password-text-visually'>
+            				    <input type='password' id='password_text' name='password' size='20' border='0' value='' onFocus=\"this.value='';\" />
+                                <button type='button' class='fa fa-eye' id='password_visually' onclick='toggle_password(this, \"password_text\");' title='".htmlentities($msg['rgaa_password_field_desc'], ENT_QUOTES, $charset)."'></button>
+                            </div>
+                            <br />
 							<input type='hidden' name='lvl' value='$lvl' >
 							<input type='hidden' name='todo' value='$todo' >
 							<input type='hidden' name='noticeid' value='$noticeid' >
@@ -74,11 +82,15 @@ function do_formulaire_connexion() {
 				<div class='popup_connexion_empr'>
 					<h3>".$msg['tag_doit_etre_abon']."</h3>
 					<blockquote>
-						<form action='addtags.php' method='post' name='loginform'>
-							<label>$msg[sugg_empr_login]</label><br />
+						<form action='addtags.php' method='post' name='loginform' data-csrf='true'>
+							<label>".$msg['sugg_empr_login']."</label><br />
 							<input type='text' name='login' size='20' border='0' value=\"".$msg['common_tpl_cardnumber']."\" onFocus=\"this.value='';\"><br />
-							<label>$msg[sugg_empr_password]</label><br />
-							<input type='password' name='password' size='20' border='0' value='' onFocus=\"this.value='';\"><br />
+							<label>".$msg['sugg_empr_password']."</label><br />
+							<div class='password-text-visually'>
+            				    <input type='password' id='password_text' name='password' size='20' border='0' value='' onFocus=\"this.value='';\" />
+                                <button type='button' class='fa fa-eye' id='password_visually' onclick='toggle_password(this, \"password_text\");' title='".htmlentities($msg['rgaa_password_field_desc'], ENT_QUOTES, $charset)."'></button>
+                            </div>
+                            <br />
 							<input type='hidden' name='lvl' value='$lvl' >
 							<input type='hidden' name='noticeid' value='$noticeid' >
 							<input type='submit' name='ok' value=\"".$msg[11]."\" class='bouton'>
@@ -92,11 +104,15 @@ function do_formulaire_connexion() {
 				<div class='popup_connexion_empr'>
 				<h3>".$msg['sugg_doit_etre_abon']."</h3>
 					<blockquote>
-						<form action='do_resa.php' method='post' name='loginform'>
-							<label>$msg[sugg_empr_login]</label><br />
+						<form action='do_resa.php' method='post' name='loginform' data-csrf='true'>
+							<label>".$msg['sugg_empr_login']."</label><br />
 							<input type='text' name='login' size='20' border='0' value=\"".$msg['common_tpl_cardnumber']."\" onFocus=\"this.value='';\"><br />
-							<label>$msg[sugg_empr_password]</label><br />
-							<input type='password' name='password' size='20' border='0' value='' onFocus=\"this.value='';\"><br />
+							<label>".$msg['sugg_empr_password']."</label><br />
+                            <div class='password-text-visually'>
+            				    <input type='password' id='password_text' name='password' size='20' border='0' value='' onFocus=\"this.value='';\" />
+                                <button type='button' class='fa fa-eye' id='password_visually' onclick='toggle_password(this, \"password_text\");' title='".htmlentities($msg['rgaa_password_field_desc'], ENT_QUOTES, $charset)."'></button>
+                            </div>
+                            <br />
 							<input type='hidden' name='lvl' value='make_sugg' >
 							<input type='hidden' name='connectmode' value='popup' >
 							<input type='submit' name='ok' value=\"".$msg[11]."\" class='bouton'>
@@ -110,11 +126,15 @@ function do_formulaire_connexion() {
 				<div class='popup_connexion_empr'>
 					<h3>".$msg['bannette_doit_etre_abon']."</h3>
 					<blockquote>
-						<form action='./empr.php?tab=dsi&lvl=bannette_gerer' method='post' name='bannette_gerer'>
+						<form action='./empr.php?tab=dsi&lvl=bannette_gerer' method='post' name='bannette_gerer' data-csrf='true'>
 							<label>$msg[resa_empr_login]</label><br />
 							<input type='text' name='login' size='20' border='0' value=\"".$msg['common_tpl_cardnumber']."\" onFocus=\"this.value='';\"><br />
-							<label>$msg[resa_empr_password]</label><br />
-							<input type='password' name='password' size='20' border='0' value='' onFocus=\"this.value='';\"><br />
+							<label>".$msg['resa_empr_password']."</label><br />
+                            <div class='password-text-visually'>
+            				    <input type='password' id='password_text' name='password' size='20' border='0' value='' onFocus=\"this.value='';\" />
+                                <button type='button' class='fa fa-eye' id='password_visually' onclick='toggle_password(this, \"password_text\");' title='".htmlentities($msg['rgaa_password_field_desc'], ENT_QUOTES, $charset)."'></button>
+                            </div>
+                            <br />
 							<input type='hidden' name='enregistrer' value='PUB' >
 							<input type='hidden' name='tab' value='dsi' >
 							<input type='hidden' name='lvl' value='bannette_gerer' >
@@ -139,11 +159,15 @@ function do_formulaire_connexion() {
 				<div class='popup_connexion_empr'>
 				<h3>".$msg['resa_doit_etre_abon']."</h3>
 				<blockquote>
-				<form action='do_resa.php' method='post' name='loginform'>
+				<form action='do_resa.php' method='post' name='loginform' data-csrf='true'>
 				<label>".$msg['resa_empr_login']."</label><br />
 				<input type='text' name='login' size='20' border='0' value=\"".$msg['common_tpl_cardnumber']."\" onFocus=\"this.value='';\"><br />
 				<label>".$msg['resa_empr_password']."</label><br />
-				<input type='password' name='password' size='20' border='0' value='' onFocus=\"this.value='';\"><br />
+                <div class='password-text-visually'>
+				    <input type='password' id='password_text' name='password' size='20' border='0' value='' onFocus=\"this.value='';\" />
+                    <button type='button' class='fa fa-eye' id='password_visually' onclick='toggle_password(this, \"password_text\");' title='".htmlentities($msg['rgaa_password_field_desc'], ENT_QUOTES, $charset)."'></button>
+                </div>
+                <br />
 				<input type='hidden' name='id_notice' value='$id_notice' >
 				<input type='hidden' name='id_bulletin' value='$id_bulletin' >
 				<input type='hidden' name='lvl' value='resa' >
@@ -178,11 +202,15 @@ function get_default_connexion_form() {
 	<div class='popup_connexion_empr'>
 		<h3>".$msg['authentification_page_mandatory']."</h3>
 		<blockquote>
-		<form action='".$url_redirect."' method='post' name='loginform'>
+		<form action='".$url_redirect."' method='post' name='loginform' data-csrf='true'>
 			<label>".$msg['resa_empr_login']."</label><br />
 			<input type='text' name='login' size='20' border='0' value=\"".$msg['common_tpl_cardnumber']."\" onFocus=\"this.value='';\"><br />
 			<label>".$msg['resa_empr_password']."</label><br />
-			<input type='password' name='password' size='20' border='0' value='' onFocus=\"this.value='';\"><br />
+			<div class='password-text-visually'>
+                <input type='password' id='password_text' name='password' size='20' border='0' value='' onFocus=\"this.value='';\" />
+                <button type='button' class='fa fa-eye' id='password_visually' onclick='toggle_password(this, \"password_text\");' title='".htmlentities($msg['rgaa_password_field_desc'], ENT_QUOTES, $charset)."'></button>
+            </div>
+            <br />
 			<input type='hidden' id='direct_access' name='direct_access' value='".(!empty($_SERVER['HTTP_REFERER']) ? 0 : 1)."' />
 			<input type='submit' name='ok' value=\"".$msg[11]."\" class='bouton'> $loginform_forgotten ";
 		

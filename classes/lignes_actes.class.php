@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lignes_actes.class.php,v 1.36.4.1 2021/12/08 13:55:46 dgoron Exp $
+// $Id: lignes_actes.class.php,v 1.37 2021/12/08 13:54:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

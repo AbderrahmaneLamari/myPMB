@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 
 <!-- sources de données pour les éditions
-$Id: datasources.xml,v 1.10 2020/03/18 08:34:24 dgoron Exp $ -->
+$Id: datasources.xml,v 1.13 2022/04/04 07:10:53 dgoron Exp $ -->
 
 <!-- DTD Rapide pour la formation du fichier
 datasources -> balise racine
@@ -133,7 +133,7 @@ value (dans values) -> Les valeurs de la liste ou le nom du fichier xml de PMB
 					<query>select idsection as id, section_libelle as list_value from docs_section order by 2 asc</query>	
 				</values>
 			</field>
-			<field id='docs_statut_statut_libelle' field='docs_statut.statut_libelle' label='msg:297' type='integer' input='list'>
+			<field id='docs_statut_statut_libelle' field='docs_statut.statut_libelle' label='msg:editions_datasource_expl_statut' type='integer' input='list'>
 				<join field_join='docs_statut.idstatut'>left join docs_statut on exemplaires.expl_statut = docs_statut.idstatut</join>
 				<values type='query'>
 					<query>select idstatut as id, statut_libelle as list_value from docs_statut order by 2 asc</query>	
@@ -578,7 +578,7 @@ value (dans values) -> Les valeurs de la liste ou le nom du fichier xml de PMB
 			<field id='notices_lien' field='notices.lien' label='msg:275' type='text' input='manual'/>
 			<field id='notices_eformat' field='notices.eformat' label='msg:276' type='text' input='manual'/>
 			<field id='notices_index_l' field='notices.index_l' label='msg:324' type='text' input='manual'/>
-			<field id='notices_prix' field='notices.prix' label='msg:4050' type='text' input='manual'/>
+			<field id='notices_prix' field='notices.prix' label='msg:notice_prix' type='text' input='manual'/>
 			<field id='notices_auteurprinc' field='CONCAT(aut1.author_name, IF((aut1.author_rejete != ""),CONCAT(", ",aut1.author_rejete),""), IF((aut1.author_date != ""),CONCAT(" (",aut1.author_date,")"),"")) AS aut_princ'  field_alias='aut_princ' label='msg:244' type='integer' input='list'>
 				<join field_join='aut1.author_id'>left join responsability AS resp1 ON notices.notice_id = resp1.responsability_notice AND resp1.responsability_type=0 LEFT JOIN authors AS aut1 ON resp1.responsability_author=aut1.author_id</join>
 				<values type='query'>
@@ -610,6 +610,17 @@ value (dans values) -> Les valeurs de la liste ou le nom du fichier xml de PMB
 			<field id='notices_update_date' field='notices.update_date' label='msg:date_update_query' type='date' input='calc'/>
 			<field id='notices_commentaire_gestion' field='notices.commentaire_gestion' label='msg:comment_gestion_query' type='text' input='manual'/>
 			<field id='notices_thumbnail_url' field='notices.thumbnail_url' label='msg:notice_thumbnail_url' type='text' input='manual'/>
+			<field id='notices_indexation_lang' field='notices.indexation_lang' label='msg:indexation_lang_select' type='text' input='list'>
+				<values type='xml'>
+					<value>languages</value>
+				</values>
+			</field>
+			<field id='notices_notice_is_new' field='notices.notice_is_new' label='msg:notice_is_new_gestion' type='integer' input='list'>
+				<values type='enum'>
+					<value code='0'>msg:39</value>
+					<value code='1'>msg:40</value>	
+				</values>
+			</field>
 			<field id='notices_lib_origine' field='CONCAT(origine_notice.orinot_nom,IF((origine_notice.orinot_pays != ""),origine_notice.orinot_pays,"")) AS origine' field_alias='origine' label='msg:origine_notice_query' type='integer' input='list'>
 				<join field_join='notices.origine_catalogage'>left join origine_notice on notices.origine_catalogage = origine_notice.orinot_id</join>
 				<values type='query'>
@@ -702,7 +713,7 @@ value (dans values) -> Les valeurs de la liste ou le nom du fichier xml de PMB
 					<query>select idsection as id, section_libelle as list_value from docs_section order by 2 asc</query>	
 				</values>
 			</field>
-			<field id='notices_expl_statut_libelle' field='docs_statut.statut_libelle' label='msg:297' type='integer' input='list'>
+			<field id='notices_expl_statut_libelle' field='docs_statut.statut_libelle' label='msg:editions_datasource_expl_statut' type='integer' input='list'>
 				<before_joins>left join exemplaires ON exemplaires.expl_notice=notices.notice_id AND exemplaires.expl_bulletin=0</before_joins>
 				<join field_join='docs_statut.idstatut'>left join docs_statut on exemplaires.expl_statut = docs_statut.idstatut</join>
 				<values type='query'>

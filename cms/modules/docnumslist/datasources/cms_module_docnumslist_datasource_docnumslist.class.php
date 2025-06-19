@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_docnumslist_datasource_docnumslist.class.php,v 1.7.8.1 2022/01/12 07:57:53 dgoron Exp $
+// $Id: cms_module_docnumslist_datasource_docnumslist.class.php,v 1.8 2022/01/12 07:49:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

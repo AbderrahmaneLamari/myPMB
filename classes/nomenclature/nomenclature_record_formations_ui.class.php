@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_record_formations_ui.class.php,v 1.29.4.1 2022/01/21 08:46:17 dgoron Exp $
+// $Id: nomenclature_record_formations_ui.class.php,v 1.30.4.1 2023/05/05 13:45:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -31,6 +31,7 @@ class nomenclature_record_formations_ui {
 	 */
 
 	public $record_formations;
+	public $id;
 		
 	/**
 	 * Constructeur
@@ -150,7 +151,7 @@ class nomenclature_record_formations_ui {
 					if(is_array($record_formation['families_notes'])) {
 						foreach ($record_formation['families_notes'] as $id_family=>$family_note) {
 							if($family_note != '') {
-								$nomenclature_family = new nomenclature_family($id_family);
+								$nomenclature_family = nomenclature_family::get_instance($id_family);
 								$families_notes_tpl .= "<br />".$msg['nomenclature_js_family_note']." ".$nomenclature_family->get_name()." : ".$family_note;
 							}
 						}

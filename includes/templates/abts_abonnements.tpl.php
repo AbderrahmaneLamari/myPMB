@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: abts_abonnements.tpl.php,v 1.42 2021/01/21 07:42:27 dgoron Exp $
+// $Id: abts_abonnements.tpl.php,v 1.42.6.1 2023/07/11 06:47:31 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
 global $abonnement_view,$abonnement_list,$abonnement_form;
-global $antivol_form, $msg, $creation_abonnement_form, $edition_abonnement_form, $current_module, $tpl_calendrier, $abonnement_serialcirc_empr_list_empr, $abonnement_serialcirc_empr_list_group, $abonnement_serialcirc_empr_list_group_elt, $admin_abts_status_content_form;
+global $antivol_form, $msg, $creation_abonnement_form, $edition_abonnement_form, $current_module, $tpl_calendrier, $abonnement_serialcirc_empr_list_empr, $abonnement_serialcirc_empr_list_group, $abonnement_serialcirc_empr_list_group_elt;
 global $pmb_serialcirc_active;
 
 $abonnement_view = "
@@ -398,27 +398,4 @@ $abonnement_serialcirc_empr_list_group_elt="
 <br />
 <div class='row'>!!empr_libelle!!</div>
 ";
-
-
-//statuts de contribution
-$admin_abts_status_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>".$msg["docnum_statut_libelle"]."</label>
-</div>
-<div class='row'>
-	<input type=text name='form_gestion_libelle' value='!!gestion_libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne5'>
-		<label class='etiquette' for='form_class_html'>".$msg["docnum_statut_class_html"]."</label>
-	</div>
-	<div class='colonne_suite'>
-		!!class_html!!
-	</div>
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_bulletinage_active'>".$msg["docnum_statut_bulletinage_active"]."</label>
-	<input id='form_bulletinage_active' name='form_bulletinage_active' value='1' class='checkbox' type='checkbox' !!bulletinage_active_checked!!>
-</div>";
 

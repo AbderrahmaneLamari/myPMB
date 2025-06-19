@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmb2prisme.class.php,v 1.3 2019/06/24 08:17:28 btafforeau Exp $
+// $Id: pmb2prisme.class.php,v 1.4 2022/05/05 06:44:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $base_path, $class_path;
 require_once("$class_path/marc_table.class.php");
 require_once("$class_path/category.class.php");
 require_once($base_path."/admin/convert/convert.class.php");

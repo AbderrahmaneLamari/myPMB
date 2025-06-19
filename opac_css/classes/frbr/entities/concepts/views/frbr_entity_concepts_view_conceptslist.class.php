@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_concepts_view_conceptslist.class.php,v 1.4 2021/03/01 11:04:07 tsamson Exp $
+// $Id: frbr_entity_concepts_view_conceptslist.class.php,v 1.4.6.1 2023/12/07 15:07:35 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,8 +14,8 @@ class frbr_entity_concepts_view_conceptslist extends frbr_entity_common_view_dja
 		$this->default_template = "<div>
 {% for concept in concepts %}
 <h3>{{concept.uri}}</h3>
-<blockquote>{{concept.broaders_list}}</blockquote>
-<blockquote>{{concept.narrowers_list}}</blockquote>
+<div>{{concept.broaders_list}}</div>
+<div>{{concept.narrowers_list}}</div>
 {% endfor %}
 </div>";
 	}

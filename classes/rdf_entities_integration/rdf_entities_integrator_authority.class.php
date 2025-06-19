@@ -2,13 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_integrator_authority.class.php,v 1.2.2.1 2021/07/02 13:34:25 tsamson Exp $
+// $Id: rdf_entities_integrator_authority.class.php,v 1.4.4.1 2023/04/06 15:23:49 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 require_once($class_path.'/rdf_entities_integration/rdf_entities_integrator.class.php');
 require_once($class_path.'/marc_table.class.php');
 require_once($class_path.'/aut_link.class.php');
+require_once($class_path.'/authority.class.php');
 
 class rdf_entities_integrator_authority extends rdf_entities_integrator {
     protected function init_special_fields() {
@@ -58,11 +59,17 @@ class rdf_entities_integrator_authority extends rdf_entities_integrator {
             $authority_uri = $this->store->get_property($value["value"], "pmb:has_authority");
             $authority_id = $this->store->get_property($authority_uri[0]["value"], "pmb:identifier");
             $authority_id = $authority_id[0]["value"];
-            if (empty($authority_id)) {
-                continue;
-            }
             $aut_link_type = $this->store->get_property($value["value"], "pmb:authority_type");
             $aut_link_type = $aut_link_type [0]["value"] ?? 0;
+            if (empty($authority_id)) {
+                //ajout via un sous formulaire
+                $authority = $this->integrate_entity($authority_uri[0]['value'], true);
+                if (empty($authority['id'])) {
+                    continue;
+                }
+                $authority_id = $authority['id'];
+                $this->entity_data['children'][] = $authority;
+            }
             $aut_link_relation_type = $this->store->get_property($value["value"], "pmb:relation_type_authority");
             $aut_link_relation_type = $aut_link_relation_type[0]["value"] ?? "";
             $aut_link_comment = $this->store->get_property($value["value"], "pmb:comment");
@@ -121,7 +128,6 @@ class rdf_entities_integrator_authority extends rdf_entities_integrator {
                 $reciproc_id = pmb_mysql_insert_id();
                 $query = "UPDATE aut_link SET aut_link_reverse_link_num=" . $reciproc_id . " WHERE id_aut_link=" . $last_id;
                 pmb_mysql_query($query);
-                $aut_link->maj_index($authority_id, $aut_link_type > 1000 ? 9 : $aut_link_type);
             }
             $i++;
         }

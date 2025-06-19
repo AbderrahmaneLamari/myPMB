@@ -2,14 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: retours.inc.php,v 1.15.2.1 2021/07/30 14:48:34 dgoron Exp $
+// $Id: retours.inc.php,v 1.17 2022/10/04 09:20:22 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $action, $sub, $msg, $database_window_title;
 global $liste_transfert;
 global $form_cb_expl, $transferts_retour_acceptation_OK, $transferts_retour_acceptation_erreur;
-global $deflt_docs_location, $site_destination, $nb_per_page;
+global $site_destination, $nb_per_page;
 
 require_once($class_path."/mono_display_expl.class.php");
 
@@ -53,7 +53,7 @@ if ($action == "") {
 		}
 	} 
 	
-	$list_transferts_retours_ui = new list_transferts_retours_ui(array('etat_transfert' => 0, 'type_transfert' => 1, 'etat_demande' => 3, 'site_destination' => $deflt_docs_location), array(), array('by' => 'date_retour'));
+	$list_transferts_retours_ui = new list_transferts_retours_ui(array('etat_transfert' => 0, 'type_transfert' => 1, 'etat_demande' => 3), array(), array('by' => 'date_retour'));
 	print $list_transferts_retours_ui->get_display_list();
 }
 

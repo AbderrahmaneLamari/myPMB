@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cashdesk.class.php,v 1.20 2021/02/23 08:21:19 dgoron Exp $
+// $Id: cashdesk.class.php,v 1.20.6.1 2023/03/21 13:48:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -169,9 +169,9 @@ class cashdesk  {
 	}
 	
 	public function summarize( $date_begin="",$date_end="", $transactype=0,$encaissement=0 ){
-		global $pmb_gestion_abonnement, $pmb_gestion_amende, $pmb_gestion_tarif_prets;
+	    global $pmb_gestion_abonnement, $pmb_gestion_amende, $pmb_gestion_tarif_prets, $pmb_gestion_animation;
 		global $msg;
-		
+
 		$transactype = intval($transactype);
 		$transactype_filter = $encaissement_filter = $date_begin_filter = $date_end_filter = '';
 		if($transactype){
@@ -187,37 +187,37 @@ class cashdesk  {
 			$date_end_filter= " and date_effective <= '$date_end' ";
 		}
 		$all_filter = $transactype_filter.$encaissement_filter.$date_begin_filter.$date_end_filter;
-		
+
 		$requete="select *, SUM(montant)as cash from transactions, transactype where cashdesk_num=".$this->id." and transactype_num=transactype_id  $all_filter
 			group by transactype_num";
-		
+
 		$i=0;
 		$data=array();
 		$res=pmb_mysql_query($requete);
 		if(pmb_mysql_num_rows($res)){
 			while ($row = pmb_mysql_fetch_object($res)){
-		
+
 				$data[$i]["id"]=$row->transactype_num;
 				$data[$i]["name"]=$row->transactype_name;
 				$data[$i]["montant"]=$row->cash;
 				$data[$i]["unit_price"]=$row->transactype_unit_price;				
-				
+
 				$req="select SUM(montant)as cash from transactions where cashdesk_num=".$this->id." and transactype_num=".$row->transactype_num." and realisee=0 $all_filter";				
 				$res_sum=pmb_mysql_query($req);
 				if($row_sum= pmb_mysql_fetch_object($res_sum))	$data[$i]["realisee_no"]=$row_sum->cash;
 				else $data[$i]["realisee_no"]="";
-				
+
 				$req="select SUM(montant)as cash from transactions where cashdesk_num=".$this->id." and transactype_num=".$row->transactype_num." and realisee=1 $all_filter";				
 				$res_sum=pmb_mysql_query($req);
 				if($row_sum= pmb_mysql_fetch_object($res_sum))	$data[$i]["realisee"]=$row_sum->cash;
 				else $data[$i]["realisee"]="";
-				
+
 				$req="select SUM(montant)as cash from transactions where cashdesk_num=".$this->id." and transactype_num=".$row->transactype_num." and encaissement=0 
 				and transacash_num=0 $all_filter";
 				$res_sum=pmb_mysql_query($req);
 				if($row_sum= pmb_mysql_fetch_object($res_sum))	$data[$i]["encaissement_no"]=$row_sum->cash;
 				else $data[$i]["encaissement_no"]="";
-				
+
 				$req="select SUM(montant)as cash from transactions where cashdesk_num=".$this->id." and transactype_num=".$row->transactype_num." 
 				and transacash_num>0 $all_filter";		
 				$res_sum=pmb_mysql_query($req);
@@ -226,16 +226,16 @@ class cashdesk  {
 				    $data[$i]["encaissement_payment_method"] = $this->get_payment_method(0, $all_filter, $row->transactype_num);				    
 				}
 				else $data[$i]["encaissement"]="";
-				
+
 				$i++;
 			}
-						
-		}	
-		
+
+		}
+
 		$compte = array();
 		if ($pmb_gestion_abonnement) {
 			$aff_flag=0;
-						
+
 			$compte["id"]="cpt_1";
 			$compte["name"]=$msg["finance_solde_abt"];
 			$compte["montant"]='';
@@ -261,7 +261,7 @@ class cashdesk  {
 			if($row_sum->cash)$aff_flag=1;
 			$compte["realisee"]=$row_sum->cash;
 			}else $compte["realisee"]="";
-			
+
 			//Ecaissé
 			$requete="select SUM(montant)as cash from transactions,  comptes where cashdesk_num=".$this->id."
 			and encaissement=1 and type_compte_id=1 and id_compte =compte_id $all_filter
@@ -272,24 +272,24 @@ class cashdesk  {
 				$compte["encaissement"]=$row_sum->cash;
 				$compte["encaissement_payment_method"] = $this->get_payment_method(1, $all_filter);
 			}else $compte["encaissement"]="";
-			
+
 			$compte["encaissement_no"] = -($compte["encaissement"] - $compte["realisee"]);
 			if(!$compte["encaissement_no"])	$compte["encaissement_no"]='';
-			
+
 			if($aff_flag){
 				$data[$i]=$compte;
 				$i++;
 			}
 		}
-		
+
 		if ($pmb_gestion_amende) {
 			$aff_flag=0;
-			
+
 			$compte["id"]="cpt_2";
 			$compte["name"]=$msg["finance_solde_amende"];
 			$compte["montant"]='';
 			$compte["unit_price"]='';
-			
+
 			// Non Validée
 			$requete="select SUM(montant)as cash from transactions,  comptes where cashdesk_num=".$this->id."
 			and encaissement=0 and realisee=0 and type_compte_id=2 and id_compte =compte_id $all_filter
@@ -309,7 +309,7 @@ class cashdesk  {
 			if($row_sum->cash)$aff_flag=1;
 			$compte["realisee"]=$row_sum->cash;
 			}else $compte["realisee"]="";
-			
+
 			//Ecaissé
 			$requete="select SUM(montant)as cash from transactions,  comptes where cashdesk_num=".$this->id."
 			and encaissement=1 and type_compte_id=2 and id_compte =compte_id $all_filter
@@ -320,19 +320,19 @@ class cashdesk  {
 				$compte["encaissement"]=$row_sum->cash;
 				$compte["encaissement_payment_method"] = $this->get_payment_method(2, $all_filter);
 			}else $compte["encaissement"]="";
-			
+
 			$compte["encaissement_no"] = -($compte["encaissement"] - $compte["realisee"]);
 			if(!$compte["encaissement_no"])	$compte["encaissement_no"]='';
-			
+
 			if($aff_flag){
 				$data[$i]=$compte;
 				$i++;
 			}
 		}
-		
+
 		if ($pmb_gestion_tarif_prets) {
 			$aff_flag=0;
-						
+
 			$compte["id"]="cpt_3";
 			$compte["name"]=$msg["finance_solde_pret"];
 			$compte["montant"]='';
@@ -356,8 +356,8 @@ class cashdesk  {
 			if($row_sum= pmb_mysql_fetch_object($res_sum)){
 			if($row_sum->cash)$aff_flag=1;
 			$compte["realisee"]=$row_sum->cash;
-			}else $compte["realisee"]="";			
-			
+			}else $compte["realisee"]="";
+
 			//Ecaissé
 			$requete="select SUM(montant)as cash from transactions,  comptes where cashdesk_num=".$this->id."
 			and encaissement=1 and type_compte_id=3 and id_compte =compte_id $all_filter
@@ -368,19 +368,79 @@ class cashdesk  {
 				$compte["encaissement"]=$row_sum->cash;
 				$compte["encaissement_payment_method"] = $this->get_payment_method(3, $all_filter);
 			}else $compte["encaissement"]="";
-		
+
 			$compte["encaissement_no"] = -($compte["encaissement"] - $compte["realisee"]);
 			if(!$compte["encaissement_no"])	$compte["encaissement_no"]='';
-			
+
 			if($aff_flag){
 				$data[$i]=$compte;
 				$i++;
-			}		
-			
+			}
+
+		}
+
+		if ($pmb_gestion_animation) {
+			$aff_flag=0;
+
+			$compte["id"]="cpt_22";
+			$compte["name"]=$msg["transactype_empr_animation"];
+			$compte["montant"]='';
+			$compte["unit_price"]='';
+
+			// Non Validée
+			$requete="select SUM(montant)as cash from transactions,  comptes where cashdesk_num=".$this->id."
+			and encaissement=0 and realisee=0 and type_compte_id=22 and id_compte =compte_id $all_filter
+			";
+			$res_sum=pmb_mysql_query($requete);
+			if ($row_sum= pmb_mysql_fetch_object($res_sum)) {
+			    if ($row_sum->cash) {
+			        $aff_flag=1;
+			    }
+                $compte["realisee_no"]=$row_sum->cash;
+			}else {
+			    $compte["realisee_no"]="";
+			}
+
+			//Validée
+			$requete="select SUM(montant)as cash from transactions,  comptes where cashdesk_num=".$this->id."
+			and encaissement=0 and realisee=1 and type_compte_id=22 and id_compte =compte_id $all_filter";
+			$res_sum=pmb_mysql_query($requete);
+			if ($row_sum= pmb_mysql_fetch_object($res_sum)) {
+			    if ($row_sum->cash) {
+			        $aff_flag=1;
+			    }
+                $compte["realisee"]=$row_sum->cash;
+			} else {
+			    $compte["realisee"]="";
+			}
+
+			//Ecaissé
+			$requete="select SUM(montant)as cash from transactions,  comptes where cashdesk_num=".$this->id."
+			and encaissement=1 and type_compte_id=22 and id_compte =compte_id $all_filter";
+			$res_sum=pmb_mysql_query($requete);
+			if ($row_sum= pmb_mysql_fetch_object($res_sum)) {
+			    if ($row_sum->cash) {
+			        $aff_flag=1;
+			    }
+				$compte["encaissement"]=$row_sum->cash;
+				$compte["encaissement_payment_method"] = $this->get_payment_method(22, $all_filter);
+			} else {
+			    $compte["encaissement"]="";
+			}
+
+			$compte["encaissement_no"] = -($compte["encaissement"] - $compte["realisee"]);
+			if (!$compte["encaissement_no"])	{
+			    $compte["encaissement_no"]='';
+			}
+
+			if ($aff_flag) {
+				$data[$i]=$compte;
+				$i++;
+			}
 		}
 		return $data;
 	}
-	
+
 	public function get_payment_method($type_compte_id, $all_filter='', $transactype_num=0) {
 	    $data = array();
 	    $requete = "

@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: groupexpl.tpl.php,v 1.12 2021/04/21 20:49:30 dgoron Exp $
+// $Id: groupexpl.tpl.php,v 1.12.6.1 2023/11/17 14:31:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
 global $url_gestion, $groupexpl_list_tpl, $msg, $current_module, $groupexpl_list_line_tpl, $groupexpl_see_form_tpl;
-global $groupexpl_see_form_principale_tpl, $groupexpl_confirm_form_tpl, $groupexpl_content_form_tpl;
+global $groupexpl_see_form_principale_tpl, $groupexpl_confirm_form_tpl;
 global $groupexpl_form_add_expl_tpl;
 
 if(!isset($url_gestion)) $url_gestion = '';
@@ -152,39 +152,6 @@ $groupexpl_confirm_form_tpl="
 	</div>
 <div class='row'></div>
 </form>		
-";		
-			
-$groupexpl_content_form_tpl="
-<div class='row'>
-	<label class='etiquette' for='name'>".$msg['groupexpl_form_name']."</label>
-</div>
-<div class='row'>
-	<input type='text' class='saisie-50em' name='name' id='name' value='!!name!!' />
-</div>
-!!location!!
-<div class='row'>
-	<label class='etiquette' for='statut_principal'>".$msg['groupexpl_form_statut_principal']."</label>
-</div>
-<div class='row'>
-	!!statut_principal!!
-</div>
-<div class='row'>
-	<label class='etiquette' for='statut_others'>".$msg['groupexpl_form_statut_others']."</label>
-</div>
-<div class='row'>
-	!!statut_others!!
-</div>
-<div class='row'>
-	<label class='etiquette' for='comment'>".$msg["groupexpl_form_comment"]."</label>
-	<div class='row'>
-		<textarea id='comment' name='comment' cols='50' rows='2'>!!comment!!</textarea>
-	</div>
-</div>
-<div class='row'> 
-</div>		
-<div class='row'>
-	!!expl_list!!
-</div>
 ";
 
 $groupexpl_form_add_expl_tpl="

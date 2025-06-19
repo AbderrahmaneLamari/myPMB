@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_contribution.class.php,v 1.22.2.2 2021/09/09 14:18:26 tsamson Exp $
+// $Id: selector_contribution.class.php,v 1.29 2023/01/03 14:02:19 gneveu Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -236,6 +236,7 @@ class selector_contribution extends selector {
 	        $type = $this->data['type'] ?? "record";
 	        switch ($type) {
 	            case "record" :
+	            case "bull" :
 	                $this->searcher_tabs_instance = new searcher_selectors_tabs('records');
 	                break;
 	            default:
@@ -307,7 +308,8 @@ class selector_contribution extends selector {
                         selectTab:'.$select_tab.',
                         multiScenario:'.$multi_scenario.',
                         multiScenarioTitle : "'.$sub_title.'",
-                        tabId:"'.$tab_id.'"
+                        tabId:"'.$tab_id.'",
+                        noSearch:"'.intval($this->data['no_search']).'",
                     },
                     "widget-container_'.$tab_id.'"
                 );
@@ -339,6 +341,7 @@ class selector_contribution extends selector {
 	    global $current_module;
 	    global $msg;
 	    global $mode;
+	    global $current_scenario_id;
 	    
 	    //onglets de recherche objets
 	    $searcher_tabs = $this->get_searcher_tabs_instance();
@@ -346,9 +349,14 @@ class selector_contribution extends selector {
 	        $mode = $searcher_tabs->get_mode_objects_type($this->get_objects_type());
 	    }
 	    
+	    if (!empty($current_scenario_id)) {
+	        $this->data['scenario'] = $current_scenario_id;
+	    }
+	    
 	    if (empty($this->data['scenario'])) {
 	        $this->data['scenario'] = 0;
 	    }
+	    
 	    if (empty($this->data['area_id'])) {
 	        $this->data['area_id'] = 0;
 	    }
@@ -449,7 +457,8 @@ class selector_contribution extends selector {
 	    $form_url = "";
 	    if (!$this->data['multiple_scenarios'] && $this->data['edit_contribution']) {
 	        // On est en édition d'une entité
-	        $form_url = './ajax.php?module=ajax&categ=contribution&sub=convert&action=edit_entity';
+	        $form_url = './ajax.php?module=ajax&categ=contribution&sub=convert';
+	        $form_url .= '&action='.(!empty($this->data['id']) ? 'edit_entity' : 'edit');
 	        $form_url .= '&sub_tab=1';
 	        $form_url .= '&sub_form=1';
 	        $form_url .= '&entity_type='.($this->data['type'] ?? '');
@@ -477,7 +486,7 @@ class selector_contribution extends selector {
     	    
             $form_url .= '&sub_tab=1';
             $form_url .= '&entity=true';
-            $form_url .= '&action=edit_entity';
+            $form_url .= '&action='.(!empty($this->data['id']) ? 'edit_entity' : 'edit');
             $form_url .= '&entity_type='.($this->data['type'] ?? '');
 	    }
 	    return $form_url;
@@ -519,6 +528,7 @@ class selector_contribution extends selector {
 	            }
 	        }
 	    }
+	    $form_url .= '&entity_type='.($this->data['type'] ?? '');
 	    
 	    return $form_url;
 	}

@@ -2,14 +2,16 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: import_genes.inc.php,v 1.19.6.1 2021/12/27 14:05:14 dgoron Exp $
+// $Id: import_genes.inc.php,v 1.21 2022/09/07 15:13:30 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path;
-require_once($class_path."/parametres_perso.class.php");
-require_once($class_path."/docs_location.class.php");
-require_once("$class_path/emprunteur.class.php");
+global $action, $empr_location_id, $imp_elv, $Sep_Champs, $type_import, $file_format;
+
+require_once $class_path."/parametres_perso.class.php";
+require_once $class_path."/docs_location.class.php";
+require_once "$class_path/emprunteur.class.php";
 
 // on récupère les champs personnalisés emprunteurs
 $idchamp=array();
@@ -39,8 +41,11 @@ switch($action) {
 		}
 		
     	if ($imp_elv){
-    		if($file_format=='ensae')	import_eleves_ensae($Sep_Champs, $type_import);
-            else import_eleves_ensai($Sep_Champs, $type_import);
+    	    if($file_format=='ensae'){
+    	        import_eleves_ensae($Sep_Champs, $type_import);
+    	    } else {
+    	        import_eleves_ensai($Sep_Champs, $type_import);
+    	    }
         } else {
             show_import_choix_fichier();
         }
@@ -53,6 +58,7 @@ switch($action) {
 }
 
 function show_import_choix_fichier() {
+    
 	global $msg, $deflt2docs_location;
 	global $current_module, $PMBuserid ;
 
@@ -152,7 +158,7 @@ function update_ensae(value) {
 							<div class='colonne_suite'>";
 								print "<div class='row'>
 											<div class='row'>
-												<label for='form_empr_location' class='etiquette'>$msg[empr_location]:</label>
+												<label for='form_empr_location' class='etiquette'>".$msg['empr_location'].":</label>
 											</div>
 											<div class='row'>
 												".docs_location::gen_combo_box_empr($deflt2docs_location, 0)."
@@ -184,6 +190,7 @@ function update_ensae(value) {
 }
 
 function cre_login($nom, $prenom) {
+    
     $empr_login = substr($prenom,0,1).$nom ;
     $empr_login = strtolower($empr_login);
     $empr_login = clean_string($empr_login) ;
@@ -207,19 +214,24 @@ function cre_login($nom, $prenom) {
 }
 
 function import_eleves_ensae($separateur, $type_import){
-	global $idchamp, $id_grp, $empr_location_id, $empr_location_lib, $id_categ_empr, $idemprcaddie ;
-
-	if (!isset($id_grp)) $id_grp=array();
+    
     //La structure du fichier texte doit être la suivante : 
     //id_etudiant/CB/Voie/Nom/Prénom/courriel/courriel_perso/casier/libelle_etat_civil/année de naissance/tel dom/tel_mobile/identifiant OPAC/
     
-    $eleve_abrege = array("Numéro identifiant","Nom","Prénom");
+	global $idchamp, $id_grp, $empr_location_id, $empr_location_lib, $id_categ_empr, $idemprcaddie ;
+	global $lang;
+	$cpt_insert = 0;
+	$cpt_maj = 0;
+	$cpt_suppr = 0;
+	
+	if (!isset($id_grp)) $id_grp=array();
     $date_auj = date("Y-m-d", time());
     $date_an_proch = date("Y-m-d", time()+3600*24*30.42*12);
     
     //Upload du fichier
-    if (!($_FILES['import_lec']['tmp_name'])) print "Cliquez sur Pr&eacute;c&eacute;dent et choisissez un fichier";
-    elseif (!(move_uploaded_file($_FILES['import_lec']['tmp_name'], "./temp/" .basename($_FILES['import_lec']['tmp_name'])))) {
+    if (!($_FILES['import_lec']['tmp_name'])) {
+        print "Cliquez sur Pr&eacute;c&eacute;dent et choisissez un fichier";
+    } elseif (!(move_uploaded_file($_FILES['import_lec']['tmp_name'], "./temp/" .basename($_FILES['import_lec']['tmp_name'])))) {
         print "Le fichier n'a pas pu être téléchargé. Voici plus d'informations :<br />";
         print_r($_FILES)."<p>";
     }
@@ -235,7 +247,6 @@ function import_eleves_ensae($separateur, $type_import){
 			while ($empr=pmb_mysql_fetch_object($r)) {
 				pmb_mysql_query("update empr set empr_prof='!!A SUPPRIMER!!' where id_empr=".$empr->empr_id) or die("update empr set empr_prof='!!A SUPPRIMER!!' where id_empr=".$empr->empr_id);
 			} 
-
         }
         
         $totallignes=0;
@@ -281,11 +292,16 @@ function import_eleves_ensae($separateur, $type_import){
 				$rqt="select empr_custom_origine as id_empr from empr_custom_values where empr_custom_champ=".$idchamp['id_etudiant']." and empr_custom_small_text='".addslashes($idetudiant)."' ";
             	$nb = pmb_mysql_query($rqt);
             	$nb_enreg=pmb_mysql_num_rows($nb);
+            	
 	            switch ($nb_enreg) {
+	                
 	                case 0:
 	                	//Cet élève n'est pas enregistré
-	                	if (!$loginopacfic) $login = cre_login($nom, $prenom);
-	                	else $login = $loginopacfic;
+	                    if (!$loginopacfic) {
+	                        $login = cre_login($nom, $prenom);
+	                    } else {
+	                        $login = $loginopacfic;
+	                    }
 	                    $req_insert = "insert into empr SET empr_nom='".addslashes($nom)."', empr_prenom='".addslashes($prenom)."', empr_cb='".addslashes($cb)."', ";
 	                    $req_insert .= "empr_tel1='".addslashes($tel1)."', empr_tel2='".addslashes($tel2)."', empr_year='".addslashes($anneenaiss)."', empr_categ =$id_categ_empr, empr_codestat=8, empr_sexe='$sexe', ";
 	                    $req_insert .= "empr_login='".$login."', empr_password='".addslashes($anneenaiss)."', empr_mail='".addslashes($emails)."', ";
@@ -293,20 +309,34 @@ function import_eleves_ensae($separateur, $type_import){
 	                    $req_insert .= "empr_location='$empr_location_id', ";
 	                    $req_insert .= "empr_modif='$date_auj', empr_date_adhesion = '$date_auj', empr_date_expiration = '$date_an_proch' ";
 						$insert = pmb_mysql_query($req_insert) or die("<br />".pmb_mysql_error()."<br />".$req_insert);
+						
 	                    if (!$insert) {
+	                        
 	                        print("<b>Echec de la création de l'élève suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
 	                        print("<br />");
+	                        
 	                    } else {
+	                        
 		                    $id_cree = pmb_mysql_insert_id();
-		                    emprunteur::update_digest($login,$anneenaiss);
-		                    emprunteur::hash_password($login,$anneenaiss);
-		                    $resu = gestion_groupe($id_groupe, $id_cree);
+		                    		                    
+		                    //Chiffrement du mot de passe
+		                    //On verifie que le mot de passe lecteur correspond aux regles de saisie definies
+		                    //Si non, encodage dans l'ancien format
+		                    $old_hash = false;
+		                    $check_password_rules = emprunteur::check_password_rules((int) $id_cree, $anneenaiss, [], $lang);
+		                    if( !$check_password_rules['result'] ) {
+		                        $old_hash = true;
+		                    }
+		                    emprunteur::update_digest($login, $anneenaiss);
+		                    emprunteur::hash_password($login, $anneenaiss, $old_hash);
+		                    
+		                    gestion_groupe($id_groupe, $id_cree);
 		                    gestion_champ_portail($id_cree);
 		                    gestion_champ_numero_casier($id_cree, $casier);
 		                    gestion_champ_id_etudiant($id_cree, $idetudiant);
+		                    
 	                    	$cpt_insert ++;
 	                    }
-	                    $j++;                    
 	                    break;
 	
 	                case 1:
@@ -322,18 +352,21 @@ function import_eleves_ensae($separateur, $type_import){
 	                    $req_update .= "empr_date_expiration = '$date_an_proch' ";
 	                    $req_update .= "WHERE id_empr = '".$empr->id_empr."'";
 	                    $update = pmb_mysql_query($req_update) or die("<br />".pmb_mysql_error()."<br />".$req_update);
+	                    
 	                    if (!$update) {
+	                        
 	                        print("<b>Echec de la modification de l'élève suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
 	                        print("<br />");
+	                        
 	                    } else {
-	                    	$resu = gestion_groupe($id_groupe, $empr->id_empr);
+	                    	gestion_groupe($id_groupe, $empr->id_empr);
 		                    gestion_champ_portail($empr->id_empr);
 		                    gestion_champ_numero_casier($empr->id_empr, $casier);
+		                    
 	                    	$cpt_maj ++;
 	                    }
-
-	                    $j++;
 	                    break;
+	                    
 	                default:
 	                    print("<b>Echec pour l'élève suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
 	                    print "<ul><li><span style='color:red'><b>Absent de la base PMB $voie</b></span></li>
@@ -346,8 +379,8 @@ function import_eleves_ensae($separateur, $type_import){
 						break;
 				}				
 				$totallignes++;
-            } // fin if pas première ligne ni vide
-        } // while
+            }
+        }
         
         // post traitement
         if ($type_import == 'maj_complete' && implode(',',$id_grp)!="") {
@@ -360,6 +393,7 @@ function import_eleves_ensae($separateur, $type_import){
 				pmb_mysql_query("insert into empr_caddie_content set empr_caddie_id=$idemprcaddie, object_id=".$verif_pret["id_empr"]) ;
                 $cpt_suppr++;
             }
+            
         	// On supprime les groupes qui ne sont plus utilisés parmi ceux qui étaient sélectionnés bien entendu
         	pmb_mysql_query("create temporary table tmpidgroupe as SELECT distinct id_groupe FROM groupe left join empr_groupe on groupe_id=id_groupe WHERE empr_id is null") or die(pmb_mysql_error()."<br />");
         	$req_del_groupe = "delete from groupe where id_groupe in (select id_groupe from tmpidgroupe) and id_groupe in (".implode(',',$id_grp).")";
@@ -464,18 +498,19 @@ function quel_groupe($lib) {
 }
 
 function import_eleves_ensai($separateur, $type_import){
-	global $idchamp, $id_grp, $empr_location_lib, $id_categ_empr, $idemprcaddie ;
-	
-	if (!isset($id_grp)) $id_grp=array();
+    
     //La structure du fichier texte doit être la suivante : 
 	//empr_nom	empr_prenom	empr_mail	categ	Groupe1	Groupe2	statut_libelle	location_libelle	Pays	empr_date_adhesion	
 	//empr_date_expiration	Numéro	Identifiant OPAC 	
-    
-    $eleve_abrege = array("Numéro identifiant","Nom","Prénom");
+	
+	global $idchamp, $id_grp, $empr_location_lib, $id_categ_empr, $lang;
+	$cpt_insert = 0;
+	
+	if (!isset($id_grp)) $id_grp=array();
     $date_auj = date("Y-m-d", time());
-    $date_an_proch = date("Y-m-d", time()+3600*24*30.42*12);
     $empr_codestat_local=gestion_empr_idcode_codestat(8);
     $empr_codestat_etranger=gestion_empr_idcode_codestat(9);    
+    
     //Upload du fichier
     if (!($_FILES['import_lec']['tmp_name'])) {
     	print "Cliquez sur Pr&eacute;c&eacute;dent et choisissez un fichier";
@@ -510,7 +545,6 @@ function import_eleves_ensai($separateur, $type_import){
 				$groupe2=trim($tab[6]);
 				$groupe3=trim($tab[7]);
 				$statut_libelle=trim($tab[8]);
-				$location_libelle=trim($tab[9]);
 				$pays=trim($tab[10]);
 				$empr_date_adhesion=trim($tab[11]);
 				$empr_date_expiration=trim($tab[12]);
@@ -547,33 +581,51 @@ function import_eleves_ensai($separateur, $type_import){
 				$rqt="select * from empr where empr_cb='".addslashes($cb)."'  ";
             	$nb = pmb_mysql_query($rqt);
             	$nb_enreg=pmb_mysql_num_rows($nb);
+            	
 	            switch ($nb_enreg) {
+	                
 	                case 0:
 	                	//Cet élève n'est pas enregistré
-	                	if (!$identifiant_opac) $login = cre_login($nom, $prenom);
-	                	else $login = $identifiant_opac;
+	                    if (!$identifiant_opac) {
+	                        $login = cre_login($nom, $prenom);
+	                    } else {
+	                        $login = $identifiant_opac;
+	                    }
 	                    $req_insert = "insert into empr SET empr_nom='".addslashes($nom)."', empr_prenom='".addslashes($prenom)."', empr_cb='".addslashes($cb)."', empr_pays='".addslashes($pays)."', ";
 	                    $req_insert .= "empr_tel1='".addslashes($tel1)."', empr_tel2='".addslashes($tel2)."', empr_categ =$id_categ_empr, empr_codestat=$empr_codestat, ";
 	                    $req_insert .= "empr_login='".$login."', empr_password='".addslashes($login)."', empr_mail='".addslashes($emails)."', ";
 	                    $req_insert .= "empr_prof='', empr_lang='fr_FR', empr_statut='".$id_statut_empr."', "; //4=Inactif
 	                    $req_insert .= "empr_location='17', "; //17=ENSAI
 	                    $req_insert .= "empr_creation='$date_auj', empr_modif='$date_auj', empr_date_adhesion = '$date_adhesion', empr_date_expiration = '$date_fin_adhesion' ";
-	                    
 	                    $insert = pmb_mysql_query($req_insert) or die("<br />".pmb_mysql_error()."<br />".$req_insert);
+	                    
 	                    if (!$insert) {
+	                        
 	                        print("<b>Echec de la création de l'élève suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
 	                        print("<br />");
+	                        
 	                    } else {
+	                        
 		                    $id_cree = pmb_mysql_insert_id();
+		                    
+		                    //Chiffrement du mot de passe
+		                    //On verifie que le mot de passe lecteur correspond aux regles de saisie definies
+		                    //Si non, encodage dans l'ancien format
+		                    $old_hash = false;
+		                    $check_password_rules = emprunteur::check_password_rules((int) $id_cree, $login, [], $lang);
+		                    if( !$check_password_rules['result'] ) {
+		                        $old_hash = true;
+		                    }
 		                    emprunteur::update_digest($login,$login);
-		                    emprunteur::hash_password($login,$login);
+		                    emprunteur::hash_password($login,$login, $old_hash);
+		                    
 		                    gestion_groupe_add($id_groupe1, $id_cree);
 		                    gestion_groupe_add($id_groupe2, $id_cree);
 		                    gestion_groupe_add($id_groupe3, $id_cree);
 	                    	$cpt_insert ++;
 	                    }
-	                    $j++;                    
-	                break;
+	                   break;
+	                   
 	                default:
 	                  
 	                    print "<ul><li><span style='color:red'><b>Echec pour l'élève suivant déjà présent: </b></span></li>
@@ -585,8 +637,8 @@ function import_eleves_ensai($separateur, $type_import){
 						break;
 				}				
 				$totallignes++;
-            } // fin if pas première ligne ni vide
-        } // while      
+            }
+        }
 
         //Affichage des insert et update
         if ($cpt_insert) print($cpt_insert." élèves créés. <br />");
@@ -595,4 +647,3 @@ function import_eleves_ensai($separateur, $type_import){
         fclose($fichier);
     }
 }
-?>

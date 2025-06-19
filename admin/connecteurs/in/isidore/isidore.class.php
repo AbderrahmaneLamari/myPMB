@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: isidore.class.php,v 1.6 2019/06/13 15:26:51 btafforeau Exp $
+// $Id: isidore.class.php,v 1.6.10.1 2023/09/01 12:41:47 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -69,9 +69,12 @@ class isidore extends connector {
 			</div>
 			<div class='colonne_suite'>
 				<select name='isidore_hal_domains'>";
-    	for ($i = 0; $i < count($hal_domains); $i++) {
-    		$form.= "
-    				<option value='".$hal_domains[$i]['@key']."' ".(($hal_domains[$i]['@key'] == $isidore_hal_domains) ? "selected='selected'" : "").">".htmlentities($hal_domains[$i]['label']['$'], ENT_QUOTES, $charset)." ".sprintf($this->msg['isidore_nb_items'], $hal_domains[$i]['@items'])."</option>";
+    	
+    	if (!empty($hal_domains) && is_countable($hal_domains)) {
+        	for ($i = 0; $i < count($hal_domains); $i++) {
+        		$form.= "
+        				<option value='".$hal_domains[$i]['@key']."' ".(($hal_domains[$i]['@key'] == $isidore_hal_domains) ? "selected='selected'" : "").">".htmlentities($hal_domains[$i]['label']['$'], ENT_QUOTES, $charset)." ".sprintf($this->msg['isidore_nb_items'], $hal_domains[$i]['@items'])."</option>";
+        	}
     	}
     	$form.= "
 				</select>
@@ -82,11 +85,15 @@ class isidore extends connector {
 				<label for='isidore_doc_types'>".$this->msg["isidore_doc_types"]."</label>
 			</div>
 			<div class='colonne_suite'>
-				<select name='isidore_doc_types[]' multiple='multiple' size='".(count($doc_types) <= 30 ? count($doc_types) : 30)."'>";
-    	for ($i = 0; $i < count($doc_types); $i++) {
-    		$form.= "
-    				<option value='".$doc_types[$i]['@key']."' ".(in_array($doc_types[$i]['@key'], $isidore_doc_types) ? "selected='selected'" : "").">".htmlentities($doc_types[$i]['label']['$'], ENT_QUOTES, $charset)."</option>";
+				<select name='isidore_doc_types[]' multiple='multiple' size='".(is_countable($doc_types) && count($doc_types) <= 30 ? count($doc_types) : 30)."'>";
+    	
+    	if (!empty($doc_types) && is_countable($doc_types)) {
+        	for ($i = 0; $i < count($doc_types); $i++) {
+        		$form.= "
+        				<option value='".$doc_types[$i]['@key']."' ".(in_array($doc_types[$i]['@key'], $isidore_doc_types) ? "selected='selected'" : "").">".htmlentities($doc_types[$i]['label']['$'], ENT_QUOTES, $charset)."</option>";
+        	}
     	}
+    	    
     	$form.= "
 				</select>
 			</div>
@@ -297,7 +304,7 @@ class isidore extends connector {
     	$envt["form_radio"]=$form_radio;
     	return $envt;
     }
-    
+
     public function isidore_2_uni($nt) {
 
 		$unimarc = array();
@@ -422,5 +429,30 @@ class isidore extends connector {
 		$header = array();
 		return $header;
 	}
+
+	/**
+	 * Permet de verifier les donnees passees dans l'environnement
+	 *
+	 * @param int $source_id
+	 * @param array $env
+	 * @return array
+	 */
+	public function check_environnement($source_id, $env) {
+	    
+	    if (!in_array($env['form_radio'], ['last_sync', 'date_sync'], true)) {
+	        $env['form_radio'] = 'last_sync';
+	    }
+	    
+	    // Format accepte : "Y-m-d"
+	    if (!preg_match("/^[0-9]{4}(-[0-9]{2}){2}$/", $env['form_from'])) {
+	        $env['form_from'] = date("Y-m-d", time());
+	    }
+	    
+	    $clean_env = [];
+	    $clean_env['form_radio'] = $env['form_radio'] ?? "";
+	    $clean_env['form_from'] = $env['form_from'];
+	    $clean_env['form_from_lib'] = formatdate($env['form_from']);
+	    
+	    return $clean_env;
+	}
 }
-?>

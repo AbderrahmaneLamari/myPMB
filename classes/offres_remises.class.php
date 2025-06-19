@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: offres_remises.class.php,v 1.11 2019/08/20 09:18:41 btafforeau Exp $
+// $Id: offres_remises.class.php,v 1.12 2022/02/10 10:46:07 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -15,8 +15,8 @@ class offres_remises{
 	 
 	//Constructeur.	 
 	public function __construct($num_fournisseur=0, $num_produit=0) {
-		$this->num_fournisseur = $num_fournisseur+0;
-		$this->num_produit = $num_produit+0;
+		$this->num_fournisseur = intval($num_fournisseur);
+		$this->num_produit = intval($num_produit);
 		if ($this->num_fournisseur || $this->num_produit) {
 			$this->load();			
 		}
@@ -55,11 +55,10 @@ class offres_remises{
 
 	//supprime un exercice de la base
 	public static function delete($num_fournisseur, $num_produit) {
-		$num_fournisseur += 0;
-		$num_produit += 0;
+		$num_fournisseur = intval($num_fournisseur);
+		$num_produit = intval($num_produit);
 		$q = "delete from offres_remises where num_fournisseur = '".$num_fournisseur."' and num_produit = '".$num_produit."' ";
-		$r = pmb_mysql_query($q);
-				
+		pmb_mysql_query($q);
 	}
 	
 	//optimization de la table offres_remises

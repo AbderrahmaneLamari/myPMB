@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatch_datasource_monitoring_website.class.php,v 1.19.2.2 2021/10/19 12:16:47 dgoron Exp $
+// $Id: docwatch_datasource_monitoring_website.class.php,v 1.21 2021/10/19 12:14:56 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

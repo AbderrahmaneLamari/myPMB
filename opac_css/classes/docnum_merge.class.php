@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docnum_merge.class.php,v 1.8.10.1 2021/12/28 13:33:53 dgoron Exp $
+// $Id: docnum_merge.class.php,v 1.9.4.1 2023/03/06 08:54:57 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -60,6 +60,8 @@ class docnum_merge {
                 }
 					
 				//droits d'acces emprunteur/notice
+                $rights = 0;
+                $dom_2 = 0;
 				if ($gestion_acces_active==1 && $gestion_acces_empr_notice==1) {
 					$ac= new acces();
 					$dom_2= $ac->setDomain(2);

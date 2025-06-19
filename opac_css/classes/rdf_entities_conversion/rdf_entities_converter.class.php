@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_converter.class.php,v 1.11.2.2 2021/09/03 08:14:43 qvarin Exp $
+// $Id: rdf_entities_converter.class.php,v 1.14 2022/05/25 08:24:25 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -237,7 +237,7 @@ class rdf_entities_converter {
 	            foreach ($linked_entity['other_fields'] as $key => $value) {
 	                $query .= ' AND '.$key.' = "'.$value.'"';
 	            }
-	        }	        
+	        }
 	        $result = pmb_mysql_query($query);
 	        if (pmb_mysql_num_rows($result)) {
 	            while ($row = pmb_mysql_fetch_array($result)) {

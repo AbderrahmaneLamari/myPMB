@@ -13,6 +13,8 @@
 		            	<th>{{ pmb.getMessage("animation", "empr_registration_list_animation") }}</th>
 		            	<th>{{ pmb.getMessage("animation", "empr_registration_list_animation_start_date") }}</th>
 		            	<th>{{ pmb.getMessage("animation", "empr_registration_list_animation_end_date") }}</th>
+		            	<th>{{ pmb.getMessage("animation", "list_animation_status") }}</th>
+		            	<th>{{ pmb.getMessage("animation", "list_animation_types") }}</th>
 		            	<th>{{ pmb.getMessage("animation", "list_animation_location") }}</th>
 		            	<th>{{ pmb.getMessage("animation", "empr_registration_list_animation_price") }}</th>
 		            	<th>{{ pmb.getMessage("animation", "empr_registration_list_animation_available_places") }}</th>
@@ -25,10 +27,22 @@
 			            	<td><a :href='animationLink(registration.animation)'>{{ registration.animation.name }}</a></td>
 			            	<td>{{ registration.animation.event.startDate }} {{ registration.animation.event.startHour }}</td>
 			            	<td>{{ registration.animation.event.endDate }} {{ registration.animation.event.endHour }}</td>
+							<td>
+								<template v-if="registration.animation.status.label"> {{ registration.animation.status.label }} </template>
+								<template v-else> {{ pmb.getMessage("animation", "form_search_no_status") }} </template>
+							</td>
+							<td>
+								<template v-if="registration.animation.type.label"> {{ registration.animation.type.label }} </template>
+								<template v-else><!-- On ne devrait pas avoir d'animation sans type --></template>
+							</td>
 			            	<td>
-			            		<template v-for="location in registration.animation.location">
-			            			{{ location.locationLibelle }}<br>
-			            		</template>
+								<template v-if="registration.animation.location.length">
+									<span v-for="(loc, index) in registration.animation.location">
+										{{ loc.locationLibelle }}
+										<br v-if="!(index == registration.animation.location.length - 1)">
+									</span>
+								</template>
+								<template v-else>{{ pmb.getMessage("animation", "form_search_no_location") }}</template>
 			            	</td>
 			            	<td>
 			            		<template v-for="price in registration.animation.prices">
@@ -39,12 +53,14 @@
 			            		<template v-if="registration.animation.hasChildrens">
 			            			{{ pmb.getMessage("animation", "empr_registration_list_animation_places_NA") }}
 			            		</template>
-			            		<template v-else-if="!registration.animation.allQuotas.global || registration.animation.allQuotas.global == 0">
-			            			{{ pmb.getMessage("animation", "empr_registration_list_animation_illimited_places") }}
-			            		</template>
-			            		<template v-else>
-			            			{{ registration.animation.availableQuotas.global }} / {{ registration.animation.allQuotas.global }}
-			            		</template>
+		            			<template v-else-if="registration.animation.allQuotas.animationQuotas.global ">
+									<template v-if="typeof registration.animation.allQuotas.availableQuotas.global !== 'undefined' ">
+										{{ registration.animation.allQuotas.availableQuotas.global }} / {{ registration.animation.allQuotas.animationQuotas.global  }} 
+									</template>
+								</template>
+								<template v-else>
+									{{ pmb.getMessage("animation", "form_search_illimited_quotas") }}
+								</template>
 			            	</td>
 			            	<td>
 			            		<input type="button" class='bouton' :value="pmb.getMessage('animation', 'animation_edit_registration')" @click="editRegistration(registration)">

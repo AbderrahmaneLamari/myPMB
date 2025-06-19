@@ -1,4 +1,4 @@
-<!-- $Id: gabarit.html,v 1.32.2.2 2022/01/18 10:46:07 arenou Exp $ -->
+<!-- $Id: gabarit.html,v 1.36.2.1 2023/03/10 16:00:24 tsamson Exp $ -->
 
 <style type="text/css">
 .aut_display_table {
@@ -100,6 +100,20 @@
 									{% endif %}
 								{% endfor %}
 							{% endblock %}
+							{% block ark_link %}
+								{% if global.pmb_show_permalink %}
+									{% if authority.permalink %}
+											<div class="aut_display_row">
+												<div class="aut_display_cell">
+													<b>{{ msg.opac_permalink }} :</b>
+												</div>
+												<div class="aut_display_cell">
+													<a href="{{authority.permalink}}">{{authority.permalink}}</a>
+												</div>
+											</div>
+									{% endif %}
+								{% endif %}
+							{% endblock %}
 							{% block responsabilities %}
 							{% endblock %}
 							{% block enrichment %}
@@ -121,7 +135,8 @@
 		var display_table = document.getElementById('authority_display_table');
 		var tr_container = document.getElementById('authority_container');
 		var content = display_table.innerHTML;
-		if(content.trim() != ""){
+		var map = document.getElementById('map_notice');
+		if(content.trim() != "" || map){
 			tr_container.setAttribute('style', 'display:block;');
 		}
 	</script>

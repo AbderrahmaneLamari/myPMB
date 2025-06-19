@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: titres_uniformes.inc.php,v 1.6.8.1 2021/12/13 15:31:04 dgoron Exp $
+// $Id: titres_uniformes.inc.php,v 1.8 2022/02/28 13:44:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -20,14 +20,17 @@ print "<br /><br /><h2 class='center'>".htmlentities($msg["nettoyage_suppr_titre
 
 $query = pmb_mysql_query("SELECT tu_id from titres_uniformes left join notices_titres_uniformes on ntu_num_tu=tu_id where ntu_num_tu is null");
 $affected=0;
-if($affected = pmb_mysql_num_rows($query)){
+if(pmb_mysql_num_rows($query)){
 	while ($ligne = pmb_mysql_fetch_object($query)) {
 		$tu = new titre_uniforme($ligne->tu_id);
-		$tu->delete();
+		$deleted = $tu->delete();
+		if(!$deleted) {
+			$affected++;
+		}
 	}
 }
 
-//Nettoyage des informations d'autorités pour les sous collections
+//Nettoyage des informations d'autorités pour les titres uniformes
 titre_uniforme::delete_autority_sources();
 
 $query = pmb_mysql_query("delete notices_titres_uniformes from notices_titres_uniformes left join titres_uniformes on ntu_num_tu=tu_id where tu_id is null");

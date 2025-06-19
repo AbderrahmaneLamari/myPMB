@@ -2,9 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_info.class.php,v 1.79.2.1 2022/01/11 08:35:21 dgoron Exp $
+// $Id: notice_info.class.php,v 1.83.4.2 2023/10/27 13:47:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+
+use Pmb\Ark\Models\ArkModel;
+use Pmb\Ark\Entities\ArkRecord;
+use Pmb\Ark\Entities\ArkBulletin;
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 // Récupération des info de notices
 global $class_path, $include_path;
@@ -23,6 +29,8 @@ require_once($class_path."/avis_records.class.php");
 require_once($class_path."/notice_relations_collection.class.php");
 require_once($class_path."/thumbnail.class.php");
 require_once($class_path."/caddie.class.php");
+require_once($class_path."/notice.class.php");
+require_once($class_path."/serials.class.php");
 
 global $tdoc;
 if (empty($tdoc)) $tdoc = marc_list_collection::get_instance('doctype');
@@ -130,16 +138,16 @@ class notice_info {
 	public $print_mode = 0;
 	
 	public function __construct($id,$environement=array()) {			
-		$this->notice_id=$id+0;
+		$this->notice_id=intval($id);
 		$this->environement=$environement;
 		if(!isset($this->environement["short"])) $this->environement["short"] = 6;
 		if(!isset($this->environement["ex"]))	$this->environement["ex"] = 0;
 		if(!isset($this->environement["exnum"])) $this->environement["exnum"] = 1;
 		
-		if(!isset($this->environement["link"])) $this->environement["link"] = "./catalog.php?categ=isbd&id=!!id!!" ;
-		if(!isset($this->environement["link_analysis"])) $this->environement["link_analysis"] = "./catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=!!bul_id!!&art_to_show=!!id!!" ;
+		if(!isset($this->environement["link"])) $this->environement["link"] = notice::get_pattern_link();
+		if(!isset($this->environement["link_analysis"])) $this->environement["link_analysis"] = analysis::get_pattern_link();
 		if(!isset($this->environement["link_explnum"])) $this->environement["link_explnum"] = "./catalog.php?categ=serials&sub=analysis&action=explnum_form&bul_id=!!bul_id!!&analysis_id=!!analysis_id!!&explnum_id=!!explnum_id!!" ;
-		if(!isset($this->environement["link_bulletin"])) $this->environement["link_bulletin"] = "./catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=!!id!!" ;
+		if(!isset($this->environement["link_bulletin"])) $this->environement["link_bulletin"] = bulletinage::get_pattern_link();
 		
 		$this->fetch_data();
 	}
@@ -319,15 +327,14 @@ class notice_info {
 	//Icone type de Document
 	public function get_memo_icondoc() {
 		global $tdoc;
-		global $use_opac_url_base;
+		
 		if(!isset($this->memo_icondoc)) {
 			$icon_doc = marc_list_collection::get_instance('icondoc');
 			$icon = $icon_doc->table[$this->notice->niveau_biblio.$this->notice->typdoc];
 			if ($icon) {
 				$biblio_doc = marc_list_collection::get_instance('nivbiblio');
 				$info_bulle_icon=$biblio_doc->table[$this->notice->niveau_biblio]." : ".$tdoc->table[$this->notice->typdoc];
-				if ($use_opac_url_base)	$this->memo_icondoc="<img src=\"".get_url_icon($icon, 1)."\" alt=\"$info_bulle_icon\" title=\"$info_bulle_icon\" class='align_top' />";
-				else $this->memo_icondoc="<img src=\"".get_url_icon($icon)."\" alt=\"$info_bulle_icon\" title=\"$info_bulle_icon\" class='align_top' />";
+				$this->memo_icondoc="<img src=\"".get_url_icon($icon)."\" alt=\"$info_bulle_icon\" title=\"$info_bulle_icon\" class='align_top' />";
 			} else {
 				$this->memo_icondoc="";
 			}
@@ -1167,9 +1174,19 @@ class notice_info {
 	}
 	
 	public function get_memo_image() {
+	    global $use_opac_url_base;
+	    
 		if(!isset($this->memo_image)) {
-			$this->memo_image = thumbnail::get_image($this->notice->code, $this->notice->thumbnail_url);
-			$this->memo_url_image = thumbnail::get_url_image($this->notice->code, $this->notice->thumbnail_url);
+		    $this->memo_image = "";
+		    $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+		    if($use_opac_url_base) {
+		        $this->memo_url_image = $thumbnailSourcesHandler->generateSrcBase64(TYPE_NOTICE, $this->notice_id);
+		    } else {
+		        $this->memo_url_image = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $this->notice_id);
+		    }
+		    if (!empty($this->memo_url_image)) {
+			    $this->memo_image = "<img class='vignetteimg align_right' src='".$this->memo_url_image."' title=\"\" hspace='4' vspace='2' style='max-width : 140px; max-height: 200px;' >";
+		    }
 		}
 		return $this->memo_image;
 	}
@@ -1184,6 +1201,12 @@ class notice_info {
 	//calcul du permalink...
 	public function get_permalink() {
 		global $opac_url_base;
+	    global $pmb_ark_activate;
+	    
+	    if ($pmb_ark_activate && !empty($this->get_ark_link())) {
+	        return $this->get_ark_link();
+	    }
+	    
 		if(!isset($this->permalink)) {
 			if($this->notice->niveau_biblio != "b"){
 				$this->permalink = $opac_url_base."index.php?lvl=notice_display&id=".$this->notice_id;
@@ -1192,6 +1215,25 @@ class notice_info {
 			}
 		}
 		return $this->permalink;
+	}
+	
+	public function get_ark_link() {
+	    if (empty($this->ark_link)) {
+	        global $pmb_ark_activate;
+	        if ($pmb_ark_activate) {
+	            
+	            if ($this->notice->niveau_biblio == 'b') {
+	                $this->get_bul_info();
+	                $arkEntity = new ArkBulletin(intval($this->parent['bulletin_id']));
+	            } else {
+	                $arkEntity = new ArkRecord(intval($this->id));
+	            }
+	            
+	            $ark = ArkModel::getArkFromEntity($arkEntity);
+	            $this->ark_link = $ark->getArkLink();
+	        }
+	    }
+	    return $this->ark_link;
 	}
 	
 	//Traitement des avis
@@ -1392,4 +1434,3 @@ class notice_info {
 		return $this->look_for_attribute_in_class($this, $name);
 	}
 }
-?>

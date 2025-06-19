@@ -1,8 +1,8 @@
 <?php
 // +-------------------------------------------------+
-// Â© 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: shorturl_type_authenticate.class.php,v 1.2 2019/10/25 09:55:44 dbellamy Exp $
+// $Id: shorturl_type_authenticate.class.php,v 1.3 2022/07/29 12:29:02 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,7 +11,9 @@ require_once $class_path."/encoding_normalize.class.php";
 
 class shorturl_type_authenticate extends shorturl_type {
 	    
-    public static function create_hash($type,$action,$context=array()) 
+    protected static $default_duration = 300;
+    
+    public static function create_hash($type, $action, $context=array() ) 
     {
         $hash = bin2hex(openssl_random_pseudo_bytes(64));
         $context = encoding_normalize::json_encode($context);
@@ -28,18 +30,27 @@ class shorturl_type_authenticate extends shorturl_type {
     }
     
     
-    public function generate_hash($action, $context=array()) 
+    public static function delete_callback_by_hash($hash)
+    {
+        if(!is_string($hash)) {
+            return;
+        }
+        $q = "delete from shorturls where shorturl_type='authenticate' and shorturl_action='callback' and shorturl_hash='".addslashes($hash)."' limit 1";
+        pmb_mysql_query($q);
+    }
+    
+    
+    public function generate_hash($action, $context= []) 
     {
 		if(method_exists($this, $action)){
-			$hash = static::create_hash('authenticate',$action,$context);
+			$hash = static::create_hash('authenticate', $action, $context);
 		}
 		return $hash;
 	}
 	
 	
-	public function generate_callback ($context=array('target'=>'opac')) 
+	public function generate_callback ($context = ['target'=>'opac'], $renew = false) 
 	{
-	    static::clean_callbacks();
 	    global $opac_url_base, $pmb_url_base, $database;
 	    
 	    $url_base = $opac_url_base;
@@ -58,16 +69,39 @@ class shorturl_type_authenticate extends shorturl_type {
 	    if(isset($parsed_url_base['port']) && $parsed_url_base['port']) {
 	        $tempo_url_base.= ':'.$parsed_url_base['port'];
 	    }	    
-	    $context['creation_time'] = mktime();
+	    $context['creation_time'] = time();
+	    if( empty($context['duration']) ) {
+	       $context['duration'] = static::$default_duration;
+	    }
 	    $context['url_base'] = $url_base;
 	    $context['database'] = $database;
 	    $context['method'] = $_SERVER['REQUEST_METHOD'];
 	    $context['url'] = $tempo_url_base.$_SERVER['REQUEST_URI'];
 	    $context['post'] = $_POST;    
-	    return $this->generate_hash('callback', $context);	  
+	    
+	    $hash = '';
+	    if($renew) {
+	        $hash = $this->update_context($context);	
+	    } else {
+	        $hash = $this->generate_hash('callback', $context);	
+	    }
+	    static::clean_callbacks();
+	    return $hash ;
 	}
 	
 	
+	protected function update_context($context = [])
+	{
+	    if( empty($this->id) || empty($this->hash)) {
+	        return '';
+	    }
+	    $context = $context = encoding_normalize::json_encode($context);
+	    $q = 'update shorturls set shorturl_context = "'.addslashes($context).'" where id_shorturl='.$this->id;
+	    pmb_mysql_query($q);
+	    return $this->hash;
+	}
+	
+
 	public function callback () 
 	{
 	    global $charset;
@@ -75,8 +109,12 @@ class shorturl_type_authenticate extends shorturl_type {
 	    $context = encoding_normalize::json_decode($this->context, true);  
 	    $this->delete_callback();
 	    
-	    $current_time = mktime();
-	    if( ($current_time - $context['creation_time']) > 300 ) {
+	    $current_time = time();
+	    $duration = static::$default_duration;
+	    if( !empty($context['duration']) ) {
+	        $duration = $context['duration'];
+	    }
+	    if( $duration && (($current_time - $context['creation_time']) > $duration) ) {
 	        throw new Exception('Time elapsed');
 	    }
 	    session_write_close();
@@ -121,17 +159,20 @@ class shorturl_type_authenticate extends shorturl_type {
 	}
 	
 	
-	
 	public static function clean_callbacks() 
 	{	    
-	    $current_time = mktime();
+	    $current_time = time();
 	    $shorturl_ids = [];
         $q = "select id_shorturl, shorturl_context from shorturls where shorturl_type='authenticate' and shorturl_action='callback' ";
         $r = pmb_mysql_query($q);
         if (pmb_mysql_num_rows($r)) {
             while($row = pmb_mysql_fetch_assoc($r)) {
                 $context = encoding_normalize::json_decode($row['shorturl_context'], true);
-                if( $current_time - $context['creation_time'] > 300 ) {
+                $duration = static::$default_duration;
+                if( !empty($context['duration']) ) {
+                    $duration = static::$default_duration;
+                }
+                if( $duration && (($current_time - $context['creation_time']) > $duration) ) {
                     $shorturl_ids[] = $row['id_shorturl'];
                 }
             }

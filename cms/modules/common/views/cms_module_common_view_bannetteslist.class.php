@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_view_bannetteslist.class.php,v 1.11.6.1 2021/09/22 13:04:25 btafforeau Exp $
+// $Id: cms_module_common_view_bannetteslist.class.php,v 1.12.4.2 2023/06/09 08:21:08 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 class cms_module_common_view_bannetteslist extends cms_module_common_view_django{
 	
@@ -135,13 +137,10 @@ class cms_module_common_view_bannetteslist extends cms_module_common_view_django
 			$resultat = pmb_mysql_query($requete);
 			$cpt_record=0;
 			$datas["bannettes"][$i]['records']=array();
+			$thumbnailSourcesHandler = new ThumbnailSourcesHandler();
 			while ($r=pmb_mysql_fetch_object($resultat)) {	
 				$content="";
-				
-				$url_vign = "";
-				if (($r->code || $r->thumbnail_url) && ($opac_show_book_pics=='1' && ($opac_book_pics_url || $r->thumbnail_url))) {
-					$url_vign = getimage_url($r->code, $r->thumbnail_url);
-				}
+				$url_vign = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $r->num_notice);
 				
 				$notice_class = new $opac_notice_affichage_class($r->num_notice, $liens_opac);
 				if (!empty($this->parameters['used_template'])) {
@@ -198,10 +197,7 @@ class cms_module_common_view_bannetteslist extends cms_module_common_view_django
 				        $is_parent_bulletin = true;
 				    }
 				    
-				    $url_parent_vign = '';
-				    if ((!empty($notice_parent_class->notice->code) || !empty($notice_parent_class->notice->thumbnail_url)) && ($opac_show_book_pics == '1' && ($opac_book_pics_url || !empty($notice_class->notice->thumbnail_url)))) {
-				        $url_parent_vign = getimage_url($notice_parent_class->notice->code, $notice_parent_class->notice->thumbnail_url);
-				    }
+				    $url_parent_vign = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $parent_notice_id);
 				    
 				    $datas["bannettes"][$i]['records'][$cpt_record]['parent'] = [
 				        'id' => $parent_notice_id,

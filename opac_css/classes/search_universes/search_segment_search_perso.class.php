@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_search_perso.class.php,v 1.1.8.3 2021/11/03 15:48:48 tsamson Exp $
+// $Id: search_segment_search_perso.class.php,v 1.5 2022/02/11 10:16:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $include_path;
 require_once($include_path."/templates/search_universes/search_segment_search_perso.tpl.php");
 
 class search_segment_search_perso {
@@ -17,7 +18,7 @@ class search_segment_search_perso {
 	protected $url_base;
 	
 	public function __construct($num_segment = 0){
-		$this->num_segment = $num_segment+0;
+		$this->num_segment = intval($num_segment);
 		$this->fetch_data();
 		$this->url_base = "./index.php?lvl=search_segment&id=".$this->num_segment;
 	}
@@ -42,7 +43,7 @@ class search_segment_search_perso {
 	}
 	
 	public function get_form($type = 'record') {
-	    global $msg, $charset, $base_url;
+	    global $charset, $base_url;
 	    global $segment_search_perso_list_form, $segment_search_perso_list_line_form;
 	    
 	    $lst = "";
@@ -90,7 +91,7 @@ class search_segment_search_perso {
 	}
 	
 	public static function delete($id=0) {
-		$id += 0;
+		$id = intval($id);
 		if (!$id) {
 			return;
 		}
@@ -143,7 +144,6 @@ class search_segment_search_perso {
 	}
 	
 	public function get_tab(search_persopac $search_persopac) {
-	    global $base_path;
 	    global $onglet_persopac;
 	    global $search_index;
 	    
@@ -181,7 +181,6 @@ class search_segment_search_perso {
                 <br/>";
 	    } 
 	    $my_search->pull();
-// 	    }
 	    return $forms_search.$links;
 	}
 }

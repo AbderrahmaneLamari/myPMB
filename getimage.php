@@ -2,7 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: getimage.php,v 1.36.2.1 2021/12/11 09:47:04 tsamson Exp $
+// $Id: getimage.php,v 1.41 2023/02/20 13:33:14 dgoron Exp $
+
+global $class_path, $pmb_curl_available, $empr_pics_max_size;
+global $notice_id, $etagere_id, $authority_id;
+global $no_caching;
 
 if(isset($_GET['noticecode'])){
 	$noticecode=$_GET['noticecode'];
@@ -41,30 +45,14 @@ session_write_close();
 
 $poids_fichier_max=1024*1024;//Limite la taille de l'image à 1 Mo
 
-if(!isset($notice_id)){
-	$notice_id = 0;
-}
-
-if(!isset($etagere_id)){
-	$etagere_id = 0;
-}
-
-if(!isset($authority_id)){
-	$authority_id = 0;
-}
-
-if(!isset($docnum_id)){
-    $docnum_id = 0;
-}
-
-if(!isset($cached_in_opac)){
-    $cached_in_opac = 0;
-}
+$notice_id = intval($notice_id);
+$etagere_id = intval($etagere_id);
+$authority_id = intval($authority_id);
 
 $img_disk="";
 
 if(empty($no_caching)) {
-    $manag_cache=getimage_cache($notice_id, $etagere_id, $authority_id, $vigurl, $noticecode, $url_image, $empr_pic, $cached_in_opac, $docnum_id);
+	$manag_cache=getimage_cache($notice_id, $etagere_id, $authority_id, $vigurl, $noticecode, $url_image, $empr_pic);
 	if (!empty($manag_cache['location'])) {
 		$img_disk=$manag_cache["location"];
 		if(!empty($manag_cache["hash_location"])){
@@ -110,7 +98,7 @@ $image="";
 if ($pmb_curl_available) {
 	$aCurl = new Curl();
 	$aCurl->limit=$poids_fichier_max;//Limite la taille de l'image à 1 Mo
-	$aCurl->timeout=15;
+	$aCurl->timeout=5;
 	$aCurl->options["CURLOPT_SSL_VERIFYPEER"]="0";
 	$aCurl->options["CURLOPT_ENCODING"]="";
 	
@@ -132,13 +120,15 @@ if ($pmb_curl_available) {
 			break;
 		}
 	}
-	if (!empty($noticecode) && ($image == '' || file_get_contents($base_path.'/images/white_pixel.jpg') == $image)) {
-	    $amazon = new amazon();
-	    $data = $amazon->get_images_by_code($noticecode);
-	    if (isset($data['MediumImage'])) {
-	        $content = $aCurl->get($data['MediumImage']);
-	        $image = $content->body;
-	    }
+	if (!empty($noticecode) && ($image == '' || file_get_contents($base_path.'/images/white_pixel.jpg') == $image || file_get_contents($base_path.'/images/white_pixel_2x2.png') == $image)) {
+		$amazon = new amazon();
+		$data = $amazon->get_images_by_code($noticecode);
+		if (isset($data['MediumImage'])) {
+			$content = $aCurl->get($data['MediumImage']);
+			$image = $content->body;
+		} else {
+			$image = '';
+		}
 	}
 } else {
 	// priorité à vigurl si fournie

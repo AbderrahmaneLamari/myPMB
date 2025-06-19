@@ -1,7 +1,7 @@
 -- +-------------------------------------------------+
 -- © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 -- +-------------------------------------------------+
--- $Id: data_test.sql,v 1.27 2021/04/21 15:41:09 rtigero Exp $
+-- $Id: data_test.sql,v 1.27.6.1 2023/08/31 12:56:44 qvarin Exp $
 
 -- MySQL dump 10.17  Distrib 10.3.25-MariaDB, for debian-linux-gnu (x86_64)
 --
@@ -8774,7 +8774,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `notices_relations` WRITE;
 /*!40000 ALTER TABLE `notices_relations` DISABLE KEYS */;
-INSERT INTO `notices_relations` (`id_notices_relations`, `num_notice`, `linked_notice`, `relation_type`, `rank`, `direction`, `num_reverse_link`) VALUES (1,60,24,'b',1,'up',0);
+INSERT INTO `notices_relations` (`id_notices_relations`, `num_notice`, `linked_notice`, `relation_type`, `ranking`, `direction`, `num_reverse_link`) VALUES (1,60,24,'b',1,'up',0);
 /*!40000 ALTER TABLE `notices_relations` ENABLE KEYS */;
 UNLOCK TABLES;
 

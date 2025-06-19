@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mail_waiting.class.php,v 1.1.4.1 2021/07/16 09:17:12 dgoron Exp $
+// $Id: mail_waiting.class.php,v 1.3 2022/08/02 13:56:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -19,6 +19,7 @@ class mail_waiting extends mail {
 			$query = "select * from ".static::$table_name." where id_mail = ".$this->id;
 			$result = pmb_mysql_query($query);
 			$row = pmb_mysql_fetch_assoc($result);
+			$this->type = $row['mail_waiting_type'];
 			$this->to_name = $row['mail_waiting_to_name'];
 			$this->to_mail = explode(';', $row['mail_waiting_to_mail']);
 			$this->object = $row['mail_waiting_object'];
@@ -34,6 +35,7 @@ class mail_waiting extends mail {
 			$this->reply_mail = $row['mail_waiting_reply_mail'];
 			$this->date = $row['mail_waiting_date'];
 			$this->from_uri = $row['mail_waiting_from_uri'];
+			$this->num_campaign = $row['mail_waiting_num_campaign'];
 		}
 	}
 	
@@ -42,6 +44,7 @@ class mail_waiting extends mail {
 			return false;
 		}
 		$query = "insert into ".static::$table_name." set
+			mail_waiting_type = '".addslashes($this->type)."',
 			mail_waiting_to_name = '".addslashes($this->to_name)."',
 			mail_waiting_to_mail = '".addslashes(implode(';', $this->to_mail))."',
 			mail_waiting_object = '".addslashes($this->object)."',
@@ -56,7 +59,8 @@ class mail_waiting extends mail {
 			mail_waiting_reply_name = '".addslashes($this->reply_name)."',
 			mail_waiting_reply_mail = '".addslashes($this->reply_mail)."',
 			mail_waiting_date = '".addslashes($this->date)."',
-			mail_waiting_from_uri = '".addslashes($this->from_uri)."'";
+			mail_waiting_from_uri = '".addslashes($this->from_uri)."',
+			mail_waiting_num_campaign = '".intval($this->num_campaign)."'";
 		$result = pmb_mysql_query($query);
 		if($result) {
 			$this->id = pmb_mysql_insert_id();

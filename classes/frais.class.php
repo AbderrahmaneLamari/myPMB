@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frais.class.php,v 1.17 2021/01/18 12:58:01 dgoron Exp $
+// $Id: frais.class.php,v 1.18.4.1 2023/06/28 07:57:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -18,7 +18,7 @@ class frais{
 	
 	//Constructeur.	 
 	public function __construct($id_frais= 0) {
-		$this->id_frais = $id_frais+0;
+		$this->id_frais = intval($id_frais);
 		if ($this->id_frais) {
 			$this->load();	
 		}
@@ -41,49 +41,46 @@ class frais{
 		$this->add_to_new_order = $obj->add_to_new_order;
 	}
 	
-	public function get_form() {
-		global $msg, $charset;
-		global $frais_content_form;
+	public function get_content_form() {
+		global $pmb_gestion_devise;
 		global $acquisition_gestion_tva;
 		
-		$content_form = $frais_content_form;
-		$content_form = str_replace('!!id!!', $this->id_frais, $content_form);
-		
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle);
+		$interface_content_form->add_element('condition', 'acquisition_frais_cond')
+		->add_textarea_node($this->condition_frais)
+		->set_cols(62)
+		->set_rows(6)
+		->set_attributes(array('wrap' => 'virtual'));
+		$interface_content_form->add_element('montant', 'acquisition_frais_montant')
+		->add_input_node('float', ($this->id_frais ? $this->montant : ''))
+		->set_label(' '.$pmb_gestion_devise);
+		$interface_content_form->add_element('cp_compta', 'acquisition_num_cp_compta')
+		->add_input_node('integer', $this->num_cp_compta)
+		->set_class('saisie-20em');
+		if ($acquisition_gestion_tva) {
+			$interface_content_form->add_element('tva_achat', 'acquisition_num_tva_achat')
+			->add_query_node('select', tva_achats::listTva(), $this->num_tva_achat);
+		}
+		$interface_content_form->add_element('add_to_new_order', 'acquisition_frais_add_to_new_order')
+		->add_input_node('boolean', $this->add_to_new_order)
+		->set_class('switch')
+		->set_label_code('acquisition_frais_add_to_new_order_enable');
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		$interface_form = new interface_admin_form('fraisform');
 		if(!$this->id_frais){
 			$interface_form->set_label($msg['acquisition_ajout_frais']);
-			$content_form = str_replace('!!montant!!', '', $content_form);
-			$content_form = str_replace('!!cp_compta!!', '', $content_form);
 		}else{
 			$interface_form->set_label($msg['acquisition_modif_frais']);
-			$content_form = str_replace('!!montant!!', htmlentities($this->montant, ENT_QUOTES, $charset), $content_form);
-			$content_form = str_replace('!!cp_compta!!', htmlentities($this->num_cp_compta, ENT_QUOTES, $charset), $content_form);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!condition!!', htmlentities($this->condition_frais, ENT_QUOTES, $charset), $content_form);
-		
-		if ($acquisition_gestion_tva) {
-			$form_tva = "<select id='tva_achat' name ='tva_achat' >";
-			$q = tva_achats::listTva();
-			$res = pmb_mysql_query($q);
-			while ($row=pmb_mysql_fetch_object($res)) {
-				$form_tva.="<option value='".$row->id_tva."' ";
-				if ($this->id_frais) {
-					if ($this->num_tva_achat == $row->id_tva) $form_tva.="selected ";
-				}
-				$form_tva.=">".$row->libelle." - ".$row->taux_tva." %</option>";
-			}
-			$form_tva.="</select>";
-			$content_form = str_replace('!!tva_achat!!', $form_tva, $content_form);
-		}
-		
-		$frais_form_add_to_new_order = "<input type=\"checkbox\" id=\"add_to_new_order\" name=\"add_to_new_order\" class=\"switch\" ".(!empty($this->add_to_new_order) ? "checked=\"checked\" " : "")." value=\"1\" />
-        <label for=\"add_to_new_order\">".htmlentities($msg['acquisition_frais_add_to_new_order_enable'], ENT_QUOTES, $charset)."</label></td>";
-		$content_form = str_replace('!!add_to_new_order!!', $frais_form_add_to_new_order, $content_form);
-		
 		$interface_form->set_object_id($this->id_frais)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('frais')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();

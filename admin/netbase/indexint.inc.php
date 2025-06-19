@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: indexint.inc.php,v 1.5.8.1 2021/12/13 15:31:05 dgoron Exp $
+// $Id: indexint.inc.php,v 1.7 2022/02/28 13:44:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -20,10 +20,13 @@ print "<br /><br /><h2 class='center'>".htmlentities($msg["nettoyage_suppr_index
 
 $query = pmb_mysql_query("SELECT indexint_id from indexint left join notices on indexint=indexint_id where notice_id is null");
 $affected=0;
-if($affected = pmb_mysql_num_rows($query)){
+if(pmb_mysql_num_rows($query)){
 	while ($ligne = pmb_mysql_fetch_object($query)) {
-		$tu = new indexint($ligne->indexint_id);
-		$tu->delete();
+		$indexint = new indexint($ligne->indexint_id);
+		$deleted = $indexint->delete();
+		if(!$deleted) {
+			$affected++;
+		}
 	}
 }
 

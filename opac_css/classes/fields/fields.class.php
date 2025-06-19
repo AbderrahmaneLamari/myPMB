@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: fields.class.php,v 1.2 2020/03/06 15:50:32 tsamson Exp $
+// $Id: fields.class.php,v 1.3.4.1 2023/08/31 12:56:45 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/onto/onto_index.class.php');
 require_once($class_path.'/skos/skos_datastore.class.php');
 require_once($class_path.'/skos/skos_onto.class.php');
@@ -22,8 +23,15 @@ class fields {
 	protected $field_tableName;
 	protected $field_keyName;
 	protected static $pp;
+	public $type;
+	public $xml_indexation;
+	
+	public $current_engine;
 
 	public function __construct($type='', $xml_indexation="", $sub_type = "") {
+	    global $default_tmp_storage_engine;
+	    
+	    $this->current_engine = $default_tmp_storage_engine;
 	    $this->type = $type;
 	    if ($sub_type) {
 	        $this->sub_type = $sub_type;
@@ -83,7 +91,7 @@ class fields {
 
 			self::$fields[$type] = _parser_text_no_function_($xml,"INDEXATION",$file);
 			$tmp_fields = array();
-			foreach (self::$fields[$type]["FIELD"] as $i=>$field) {
+			foreach (self::$fields[$type]["FIELD"] as $field) {
 				if(self::$fields[$type]['REFERENCE'][0]["value"] == "authperso_authorities") {
 					$field['ID'] = str_replace('!!id_authperso!!', $this->get_id_authperso(), $field['ID']);
 				}
@@ -120,7 +128,7 @@ class fields {
 		global $msg;
 
 		$array_grouped = array();
-		foreach (self::$fields[$this->type]['FIELD'] as $i => $field) {
+		foreach (self::$fields[$this->type]['FIELD'] as $field) {
 		    if(!empty($msg[$field['NAME']]) && $tmp = $msg[$field['NAME']]){
 				$lib = $tmp;
 			}else{
@@ -225,6 +233,21 @@ class fields {
 		}
 	}
 	
+	protected function upgrade_columns_temporary_table($table_name, $field_keyName, $with_pert=false) {
+		if (!pmb_mysql_num_rows(pmb_mysql_query("show columns from ".$table_name." like 'idiot'"))) {
+			$query="alter table ".$table_name." add idiot int(1)";
+			pmb_mysql_query($query);
+		}
+		$query="alter table ".$table_name." add unique($field_keyName)";
+		pmb_mysql_query($query);
+		if($with_pert) {
+			if (!pmb_mysql_num_rows(pmb_mysql_query("show columns from ".$table_name." like 'pert'"))) {
+				$query="alter table ".$table_name." add pert decimal(16,1) default 1";
+				pmb_mysql_query($query);
+			}
+		}
+	}
+	
 	/**
 	 * Ajoute une colonne à la table temporaire du nom et du type précisé
 	 */
@@ -252,6 +275,8 @@ class fields {
 	}
 	
 	protected function add_values_temporary_table($temporary_table_name, $field, $type, $datas=array(), $use_authority_id = false) {
+	    global $default_tmp_storage_engine;
+
 		$f=explode("_",$field);
 		$query = "select distinct ".$this->field_keyName.", value from ".$this->field_tableName." where code_champ = ".$f[1];
 		if($f[2]) {
@@ -284,7 +309,7 @@ class fields {
 		//On met le tout dans une table temporaire
 		//
 		pmb_mysql_query("DROP TEMPORARY TABLE IF EXISTS ".$temporary_table_name."_update");
-		pmb_mysql_query("CREATE TEMPORARY TABLE ".$temporary_table_name."_update ENGINE=MyISAM (".$query.")");
+		pmb_mysql_query("CREATE TEMPORARY TABLE ".$temporary_table_name."_update ENGINE={$default_tmp_storage_engine} (".$query.")");
 		pmb_mysql_query("alter table ".$temporary_table_name."_update add index(".$this->field_keyName.")");
 			
 		//

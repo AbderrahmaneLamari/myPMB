@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sticks_sheet_output.class.php,v 1.1.12.1 2022/01/21 08:46:16 dgoron Exp $
+// $Id: sticks_sheet_output.class.php,v 1.3 2022/03/10 15:19:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -33,7 +33,7 @@ class sticks_sheet_output {
 	 */
 	public function __construct($id, $display_class) {
 		global $class_path;
-		$this->sticks_sheet = new sticks_sheet($id*1);
+		$this->sticks_sheet = new sticks_sheet($id);
 		$this->sticks_sheet_stick = null;
 		if(file_exists($class_path."/sticks_sheet/stick/".$display_class.".class.php")) {
 			require_once($class_path."/sticks_sheet/stick/".$display_class.".class.php");

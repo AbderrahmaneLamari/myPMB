@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ButtonAddAuthority.js,v 1.1.2.1 2021/08/24 13:37:19 qvarin Exp $
+// $Id: ButtonAddAuthority.js,v 1.2 2021/08/24 13:41:52 qvarin Exp $
 
 define([
 	'dojo/_base/declare',

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: readers_relances_controller.class.php,v 1.5.2.1 2021/06/15 09:16:43 dgoron Exp $
+// $Id: readers_relances_controller.class.php,v 1.7 2022/12/06 15:29:39 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -87,33 +87,33 @@ class readers_relances_controller extends readers_controller {
 		global $act;
 		
 		switch ($act) {
-			case 'solo':
+			case 'solo':     //Valider  une ligne 
 				relance::do_action(static::$id_empr);
 				break;
-			case 'solo_print':
+			case 'solo_print':   //Imprimer une ligne
 				print_relance(static::$id_empr,false);
 				break;
-			case 'solo_mail':
+			case 'solo_mail':    //Envoyer un mail pour une ligne
 				print_relance(static::$id_empr);
 				break;
-			case 'valid':
+			case 'valid':    //Valider toutes les actions
 				foreach (static::$empr as $id_empr) {
 					relance::do_action($id_empr);
 				}
 				break;
-			case 'print':
+			case 'print':    //Impression mails non envoyés
 				static::proceed_print();
 				break;
-			case 'reprint':
+			case 'reprint':  //Réimprimer les relances
 			    static::proceed_reprint();
 			    break;
-			case 'print_letters':
+			case 'print_letters': // ??
 				static::proceed_print_letters();
 				break;
-			case 'print_letters_mails':
+			case 'print_letters_mails': // ??
 				static::proceed_print_letters_mails();
 				break;
-			case 'export':
+			case 'export': // ??
 				static::proceed_export();
 				break;
 			case 'print_not_sended':
@@ -122,10 +122,10 @@ class readers_relances_controller extends readers_controller {
 			case 'send_not_sended':
 				//static::proceed_send_not_sended();
 				break;
-			case 'export_csv':
+			case 'export_csv':   //Export CSV
 				static::proceed_export_csv();
 				break;
-			case 'raz_printed':
+			case 'raz_printed':  // RAZ des impressions du
 				static::proceed_raz_printed();
 				break;
 			default:

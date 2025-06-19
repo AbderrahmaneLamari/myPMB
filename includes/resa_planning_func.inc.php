@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: resa_planning_func.inc.php,v 1.44 2020/11/05 10:35:40 dgoron Exp $
+// $Id: resa_planning_func.inc.php,v 1.47 2022/08/01 06:44:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $include_path;
 require_once($include_path."/mail.inc.php") ;
-require_once($class_path."/mail/reader/resa/mail_reader_resa_planning.class.php");
 
 // defines pour flag affichage info de gestion
 if (!defined('NO_INFO_GESTION')) define ('NO_INFO_GESTION', 0); // 0 >> aucune info de gestion : liste simple
@@ -16,13 +16,10 @@ if (!defined('LECTEUR_INFO_GESTION')) define ('LECTEUR_INFO_GESTION', 2); // pou
 if (!defined('EDIT_INFO_GESTION')) define ('EDIT_INFO_GESTION', 3); // pour affichage en édition
 
 function planning_list($idnotice=0, $idbulletin=0, $idempr=0, $order='', $where='', $info_gestion=NO_INFO_GESTION, $url_gestion='', $ancre='') {
-
-	global $dbh,$msg,$charset;
+	global $msg,$charset;
 	global $montrerquoi, $f_loc_empr, $f_loc_ret ;
-	global $current_module ;
-	global $pdflettreresa_priorite_email_manuel;
 	global $pmb_lecteurs_localises, $deflt2docs_location;
-	global $pmb_location_resa_planning, $pmb_location_reservation,$deflt_docs_location, $deflt_resas_location;
+	global $pmb_location_resa_planning,$deflt_docs_location, $deflt_resas_location;
 	global $tdoc;
 
 	if($info_gestion == GESTION_INFO_GESTION) {
@@ -31,7 +28,7 @@ function planning_list($idnotice=0, $idbulletin=0, $idempr=0, $order='', $where=
 	}
 
 	$q_loc = 'select idlocation, location_libelle FROM docs_location order by location_libelle';
-	$r_loc = pmb_mysql_query($q_loc,$dbh);
+	$r_loc = pmb_mysql_query($q_loc);
 
 	//Tableau + selecteur de localisations emprunteurs / nb de previsions
 	$tab_loc_empr = array();
@@ -138,7 +135,7 @@ function planning_list($idnotice=0, $idbulletin=0, $idempr=0, $order='', $where=
 	if ($idempr) $q.= "and id_empr = '".$idempr."' ";
 	$q.= "order by ".$order;
 
-	$r = pmb_mysql_query($q,$dbh) or die("Erreur SQL !=$q");
+	$r = pmb_mysql_query($q) or die("Erreur SQL !=$q");
 	$nb_prev = pmb_mysql_num_rows($r);
 
 	if (!$nb_prev) {
@@ -175,9 +172,6 @@ function planning_list($idnotice=0, $idbulletin=0, $idempr=0, $order='', $where=
 			$aff_final .= "<tr class='even' onmouseover=\"this.className='surbrillance'\" onmouseout=\"this.className='even'\">";
 			$odd_even=0;
 		}
-
-		$link = '';
-		$type_doc_aff = "alt='".htmlentities($tdoc->table[$data->typdoc],ENT_QUOTES, $charset)."' title='".htmlentities($tdoc->table[$data->typdoc],ENT_QUOTES, $charset)."' ";
 
 		//Nom lecteur
 		if (SESSrights & CIRCULATION_AUTH) {
@@ -232,7 +226,7 @@ function resa_planning_loc_retrait($id_resa) {
 function aff_entete($id_empr,&$layout_begin='',&$empr_cb=0) {
 	global $charset;
 	$exists=false;
-	$id_empr+=0;
+	$id_empr = intval($id_empr);
 	if($id_empr) {
 		// récupération nom emprunteur
 		$q = "SELECT empr_nom, empr_prenom, empr_cb FROM empr WHERE id_empr=$id_empr LIMIT 1";
@@ -256,8 +250,8 @@ function aff_entete($id_empr,&$layout_begin='',&$empr_cb=0) {
 
 
 function check_record($id_notice,$id_bulletin) {
-	$id_notice+=0;
-	$id_bulletin+=0;
+	$id_notice = intval($id_notice);
+	$id_bulletin = intval($id_bulletin);
 	$exists=false;
 	if($id_notice || $id_bulletin) {
 		$q = "SELECT expl_id FROM exemplaires where expl_notice=$id_notice and expl_bulletin=$id_bulletin LIMIT 1";
@@ -315,7 +309,7 @@ function alert_empr_resa_planning($id_resa=0, $id_empr_concerne=0) {
 	$query .= "trim(concat(ifnull(notices_m.tit1,''),ifnull(notices_s.tit1,''),' ',ifnull(bulletin_numero,''), if (mention_date, concat(' (',mention_date,')') ,''))) as tit, ";
 	$query .= "date_format(resa_date_fin, '".$msg["format_date"]."') as aff_resa_date_fin, ";
 	$query .= "date_format(resa_date_debut, '".$msg["format_date"]."') as aff_resa_date_debut, ";
-	$query .= "empr_prenom, empr_nom, empr_cb, empr_mail, empr_tel1, empr_sms, id_resa, ";
+	$query .= "id_empr, empr_prenom, empr_nom, empr_cb, empr_mail, empr_tel1, empr_sms, id_resa, ";
 	$query .= "trim(concat(ifnull(notices_m.niveau_biblio,''), ifnull(notices_s.niveau_biblio,''))) as niveau_biblio, ";
 	$query .= "trim(concat(ifnull(notices_m.notice_id,''), ifnull(notices_s.notice_id,''))) as id_notice ";
 	$query .= "from (((resa_planning LEFT JOIN notices AS notices_m ON resa_idnotice = notices_m.notice_id ) LEFT JOIN bulletins ON resa_idbulletin = bulletins.bulletin_id) LEFT JOIN notices AS notices_s ON bulletin_notice = notices_s.notice_id), empr ";
@@ -327,7 +321,9 @@ function alert_empr_resa_planning($id_resa=0, $id_empr_concerne=0) {
 		while ($o=pmb_mysql_fetch_object($result)) {
 			if (($pdflettreresa_priorite_email_manuel==1 || $pdflettreresa_priorite_email_manuel==2) && $o->empr_mail) {
 				$mail_reader_resa_planning = new mail_reader_resa_planning();
-				$res_envoi = $mail_reader_resa_planning->send_mail($o);
+				$mail_reader_resa_planning->set_mail_to_id($o->id_empr);
+				$mail_reader_resa_planning->set_empr($o);
+				$res_envoi = $mail_reader_resa_planning->send_mail();
 				if (!$res_envoi || $pdflettreresa_priorite_email_manuel==2) {
 					print "<script type='text/javascript'>openPopUp('./pdf.php?pdfdoc=lettre_resa_planning&id_resa=$tmp_id_resa', 'lettre_confirm_resa".$tmp_id_resa."', 600, 500, -2, -2, 'toolbar=no, dependent=yes, resizable=yes, scrollbars=yes');</script>";
 				}

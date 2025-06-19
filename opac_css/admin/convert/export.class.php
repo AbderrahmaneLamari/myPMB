@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: export.class.php,v 1.49 2021/06/08 08:32:04 dgoron Exp $
+// $Id: export.class.php,v 1.49.6.2 2023/06/07 13:40:09 dgoron Exp $
 
 //Export d'une notice PMB en XML PMB MARC
 
@@ -49,6 +49,13 @@ class export {
 	//Conversion au format XML du tableau de donnees
 	public function toxml() {
 		global $charset;
+		
+		$charset_encoding = strtolower($charset);
+		if($charset_encoding == 'iso-8859-1') {
+			//Necessaire pour le flag ENT_DISALLOWED
+			$charset_encoding = 'iso-8859-15';
+		}
+		
 		$this -> notice = "<notice>\n";
 		//Record descriptor
 		$desc=array("rs","dt","bl","hl","el","ru");
@@ -61,7 +68,7 @@ class export {
 			$this -> notice.= "  <f";
 			foreach ( $this -> xml_array["f"][$i] as $key => $value ) { //Pour chaque attribut
 				if((!is_array($value)) && ($key!="ind") && ($key!="value")){ // Si c'est un attr et pas l'indicateur "ind"
-       				$this -> notice.= " ".$key."=\"".htmlspecialchars($value,ENT_NOQUOTES,$charset)."\""; //On construit le champ f avec nom de l'attribut = sa valeur
+					$this -> notice.= " ".$key."=\"".htmlspecialchars($value, ENT_NOQUOTES|ENT_DISALLOWED, $charset_encoding)."\""; //On construit le champ f avec nom de l'attribut = sa valeur
 				}
 			}
 			if (!isset($this -> xml_array["f"][$i]["value"]) || $this -> xml_array["f"][$i]["value"] == "") {
@@ -71,11 +78,11 @@ class export {
 			if (!isset($this -> xml_array["f"][$i]["value"]) || $this -> xml_array["f"][$i]["value"] == "") {
 				$this->notice.="\n";
 				for ($j = 0; $j < count($this -> xml_array["f"][$i]["s"]); $j ++) {
-					$this -> notice.= "    <s c=\"".$this -> xml_array["f"][$i]["s"][$j]["c"]."\">".htmlspecialchars($this -> xml_array["f"][$i]["s"][$j]["value"],ENT_NOQUOTES,$charset)."</s>\n";
+					$this -> notice.= "    <s c=\"".$this -> xml_array["f"][$i]["s"][$j]["c"]."\">".htmlspecialchars($this -> xml_array["f"][$i]["s"][$j]["value"], ENT_NOQUOTES|ENT_DISALLOWED, $charset_encoding)."</s>\n";
 				}
 				$this->notice.="  ";
 			} else {
-				$this -> notice.=htmlspecialchars($this -> xml_array["f"][$i]["value"],ENT_NOQUOTES,$charset);
+				$this -> notice.=htmlspecialchars($this -> xml_array["f"][$i]["value"], ENT_NOQUOTES|ENT_DISALLOWED, $charset_encoding);
 			}
 
 			$this -> notice.= "</f>\n";

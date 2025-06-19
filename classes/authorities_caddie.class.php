@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authorities_caddie.class.php,v 1.51.2.2 2021/12/22 14:56:30 dgoron Exp $
+// $Id: authorities_caddie.class.php,v 1.60.4.1 2023/04/12 09:22:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,7 +11,6 @@ global $class_path, $include_path;
 require_once ($class_path."/caddie_root.class.php");
 require_once ($include_path."/templates/authorities_cart.tpl.php");
 require_once ($include_path."/templates/cart.tpl.php");
-require_once($class_path."/autoloader.class.php");
 require_once($class_path.'/event/events/event_users_group.class.php');
 
 class authorities_caddie extends caddie_root {
@@ -68,9 +67,9 @@ class authorities_caddie extends caddie_root {
 		}
 	}
 	
-	protected function get_template_form() {
-		global $cart_form;
-		return $cart_form;
+	protected function get_template_content_form() {
+		global $cart_content_form;
+		return $cart_content_form;
 	}
 	
 	protected function get_warning_delete() {
@@ -91,30 +90,6 @@ class authorities_caddie extends caddie_root {
 	
 	public static function get_types() {
 		return array('MIXED', 'AUTHORS', 'CATEGORIES', 'PUBLISHERS', 'COLLECTIONS', 'SUBCOLLECTIONS', 'SERIES', 'TITRES_UNIFORMES', 'INDEXINT', 'CONCEPTS', 'AUTHPERSO');
-	}
-	
-	// formulaire
-	public function get_form($form_action="", $form_cancel="", $form_duplicate="") {
-		global $msg, $charset;
-		global $liaison_tpl;
-		
-		$form = parent::get_form($form_action, $form_cancel, $form_duplicate);
-		$form=str_replace('!!cart_type!!', $this->get_type_form(), $form);
-		if ($this->get_idcaddie()) {
-			$info_liaisons = $this->get_links_form();
-			$message_delete_warning = "";
-			if($info_liaisons){
-				$liaison_tpl=str_replace("<!-- info_liaisons -->",$info_liaisons,$liaison_tpl);
-				$form = str_replace('<!-- liaisons -->', $liaison_tpl, $form);
-				$message_delete_warning = $this->get_warning_delete();
-			}
-			$button_delete = "<input type='button' class='bouton' value=' ".$msg['supprimer']." ' onClick=\"javascript:confirmation_delete(".$this->get_idcaddie().",'".htmlentities(addslashes($this->name),ENT_QUOTES, $charset)."')\" />";
-			$form = str_replace('!!button_delete!!', $button_delete, $form);
-			$form .= confirmation_delete("./autorites.php?categ=caddie&action=del_cart&idcaddie=",$message_delete_warning);
-		} else {
-			$form = str_replace('!!button_delete!!', '', $form);
-		}
-		return $form;
 	}
 	
 	// Liaisons pour le panier
@@ -205,7 +180,7 @@ class authorities_caddie extends caddie_root {
 	public function create_cart() {
 		$requete = "insert into authorities_caddie set name='".addslashes($this->name)."', type='".$this->type."', comment='".addslashes($this->comment)."', autorisations='".$this->autorisations."', autorisations_all='".$this->autorisations_all."', caddie_classement='".addslashes($this->classementGen)."', acces_rapide='".$this->acces_rapide."', favorite_color='".addslashes($this->favorite_color)."' ";
 		$user = $this->get_info_user();
-		if(count($user)) {
+		if(is_object($user)) {
 			$requete .= ", creation_user_name='".addslashes($user->name)."', creation_date='".date("Y-m-d H:i:s")."'";
 		}
 		pmb_mysql_query($requete);
@@ -257,50 +232,52 @@ class authorities_caddie extends caddie_root {
 		$authority = new authority($item);
 		$object_instance = $authority->get_object_instance();
 		
-		switch ($authority->get_type_object()) {
-			case AUT_TABLE_INDEX_CONCEPT :
-			case AUT_TABLE_CONCEPT :
-				global $class_path;
-								
-				$autoloader = new autoloader();
-				$autoloader->add_register("onto_class",true);
-				
-				$params = new stdClass();
-				$params->action = 'delete_from_cart';
-				$params->categ = 'concepts';
-				$params->sub = 'concept';
-				$params->id = $object_instance->get_id();
-				
-				static::get_handler();
-				
-				$onto_skos_controler = new onto_skos_controler(static::$handler, $params);
-				//$response = $onto_skos_controler->proceed();
-				
-				$skos_concept = new skos_concept($object_instance->get_id());
-				$response = $skos_concept->delete();
-				
-				if ($response === false) {
-					return CADDIE_ITEM_AUT_USED;
-				} else {
-					return CADDIE_ITEM_SUPPR_BASE_OK;
-				}
-				break;
-			case AUT_TABLE_AUTHPERSO :
-				$authperso = new authperso(0, $object_instance->id);
-				if ($authperso->delete($object_instance->id) === false) {
-					return CADDIE_ITEM_SUPPR_BASE_OK;
-				} else  {
-					return CADDIE_ITEM_AUT_USED;
-				}
-				break;
-			default :
-				if ($object_instance->delete() === false) {
-					return CADDIE_ITEM_SUPPR_BASE_OK;
-				} else  {
-					return CADDIE_ITEM_AUT_USED;
-				}
-				break;
-		}	
+		$entity_type = authority::aut_const_to_type_const($authority->get_type_object());
+		if($this->has_del_item_base_rights($item, $entity_type)){
+			switch ($authority->get_type_object()) {
+				case AUT_TABLE_INDEX_CONCEPT :
+				case AUT_TABLE_CONCEPT :
+					global $class_path;
+					
+					$params = new stdClass();
+					$params->action = 'delete_from_cart';
+					$params->categ = 'concepts';
+					$params->sub = 'concept';
+					$params->id = $object_instance->get_id();
+					
+					static::get_handler();
+					
+					$onto_skos_controler = new onto_skos_controler(static::$handler, $params);
+					//$response = $onto_skos_controler->proceed();
+					
+					$skos_concept = new skos_concept($object_instance->get_id());
+					$response = $skos_concept->delete();
+					
+					if ($response === false) {
+						return CADDIE_ITEM_AUT_USED;
+					} else {
+						return CADDIE_ITEM_SUPPR_BASE_OK;
+					}
+					break;
+				case AUT_TABLE_AUTHPERSO :
+					$authperso = new authperso(0, $object_instance->id);
+					if ($authperso->delete($object_instance->id) === false) {
+						return CADDIE_ITEM_SUPPR_BASE_OK;
+					} else  {
+						return CADDIE_ITEM_AUT_USED;
+					}
+					break;
+				default :
+					if ($object_instance->delete() === false) {
+						return CADDIE_ITEM_SUPPR_BASE_OK;
+					} else  {
+						return CADDIE_ITEM_AUT_USED;
+					}
+					break;
+			}
+		} else {
+			return CADDIE_ITEM_NO_DELETION_RIGHTS;
+		}
 		/* Appeler la methode delete pour chacun des types d'autorités
 		 * Faire attention au retour de chacune des méthodes pour retourner la bonne constante : CADDIE_ITEM_SUPPR_BASE_OK - CADDIE_ITEM_AUTHORITY_USED - CADDIE_ITEM_OK
 		 */
@@ -365,49 +342,35 @@ class authorities_caddie extends caddie_root {
 	public function compte_items() {
 		parent::compte_items();
 	}
-
-	static public function show_actions($id_caddie = 0, $type_caddie = '') {
-		global $cart_action_selector,$cart_action_selector_line;
-		
-		$array_actions = self::get_array_actions($id_caddie, $type_caddie);
-		$lines = '';
-		foreach($array_actions as $item_action){
-			$tmp_line = str_replace('!!cart_action_selector_line_location!!',$item_action['location'],$cart_action_selector_line);
-			$tmp_line = str_replace('!!cart_action_selector_line_msg!!',$item_action['msg'],$tmp_line);
-			$lines.= $tmp_line;
-		}
-		
-		//On récupère le template
-		$to_show = str_replace('!!cart_action_selector_lines!!',$lines,$cart_action_selector);
-		
-		return $to_show;
-	}
 	
 	public static function get_array_actions($id_caddie = 0, $type_caddie = '', $actions_to_remove = array()) {
 		global $msg;
 		$array_actions = array();
 		if (empty($actions_to_remove['edit_cart'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_edit_panier"], 'location' => './autorites.php?categ=caddie&sub=gestion&quoi=panier&action=edit_cart&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_edit_panier"], 'location' => static::get_constructed_link('gestion', 'panier', 'edit_cart', $id_caddie, '&item=0'));
+		}
+		if (empty($actions_to_remove['pointage_raz'])) {
+			$array_actions[] = array('msg' => $msg["caddie_menu_pointage_raz"], 'location' => static::get_constructed_link('pointage', 'raz', '', $id_caddie));
 		}
 		if (empty($actions_to_remove['supprpanier'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_suppr_panier"], 'location' => './autorites.php?categ=caddie&sub=action&quelle=supprpanier&action=choix_quoi&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_suppr_panier"], 'location' => static::get_constructed_link('action', 'supprpanier', 'choix_quoi', $id_caddie, '&item=0'));
 		}
-		//$array_actions[] = array('msg' => $msg["caddie_menu_action_transfert"], 'location' => './autorites.php?categ=caddie&sub=action&quelle=transfert&action=transfert&object_type=NOTI&idcaddie='.$id_caddie.'&item=');
+// 		$array_actions[] = array('msg' => $msg["caddie_menu_action_transfert"], 'location' => static::get_constructed_link('action', 'transfert', 'transfert', $id_caddie, '&item=0'));
 		if (empty($actions_to_remove['edition'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_edition"], 'location' => './autorites.php?categ=caddie&sub=action&quelle=edition&action=choix_quoi&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_edition"], 'location' => static::get_constructed_link('action', 'edition', 'choix_quoi', $id_caddie, '&item=0'));
 		}
-		//$array_actions[] = array('msg' => $msg["caddie_menu_action_export"], 'location' => './autorites.php?categ=caddie&sub=action&quelle=export&action=choix_quoi&object_type=NOTI&idcaddie='.$id_caddie.'&item=0');
+		//$array_actions[] = array('msg' => $msg["caddie_menu_action_export"], 'location' => static::get_constructed_link('action', 'export', 'choix_quoi', $id_caddie, '&item=0'));
 		if (empty($actions_to_remove['selection'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_selection"], 'location' => './autorites.php?categ=caddie&sub=action&quelle=selection&action=&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_selection"], 'location' => static::get_constructed_link('action', 'selection', '', $id_caddie, '&item=0'));
 		}
 		$evt_handler = events_handler::get_instance();
 		$event = new event_users_group("users_group", "get_autorisation_del_base");
 		$evt_handler->send($event);
 		if(!$event->get_error_message() && empty($actions_to_remove['supprbase'])){
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_suppr_base"], 'location' => './autorites.php?categ=caddie&sub=action&quelle=supprbase&action=choix_quoi&object_type='.$type_caddie.'&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_suppr_base"], 'location' => static::get_constructed_link('action', 'supprbase', 'choix_quoi', $id_caddie, '&object_type='.$type_caddie.'&item=0'));
 		}
 		if (empty($actions_to_remove['reindex'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_reindex"], 'location' => './autorites.php?categ=caddie&sub=action&quelle=reindex&action=choix_quoi&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_reindex"], 'location' => static::get_constructed_link('action', 'reindex', 'choix_quoi', $id_caddie, '&item=0'));
 		}
 		return $array_actions;
 	}
@@ -436,7 +399,7 @@ class authorities_caddie extends caddie_root {
 	
 	public function get_edition_form($action="", $action_cancel="") {
 		if(!$action) $action = "./autorites/caddie/action/edit.php?idcaddie=".$this->get_idcaddie();
-		if(!$action_cancel) $action_cancel = "./autorites.php?categ=caddie&sub=action&quelle=edition&action=&idcaddie=0" ;
+		if(!$action_cancel) $action_cancel = static::get_constructed_link('action', 'edition');
 		$form = parent::get_edition_form($action, $action_cancel);
 		$form = str_replace('<!-- !!boutons_supp!! -->', '', $form);
 		$form = str_replace('<!-- notice_template -->', '', $form);
@@ -445,10 +408,7 @@ class authorities_caddie extends caddie_root {
 	
 	private function generate_authority($authority){
 		global $include_path;
-		$template_path = $include_path.'/templates/authorities/list/'.$authority->get_string_type_object().'.html';
-		if(file_exists($include_path.'/templates/authorities/list/'.$authority->get_string_type_object().'_subst.html')){
-			$template_path = $include_path.'/templates/authorities/list/'.$authority->get_string_type_object().'_subst.html';
-		}
+		$template_path = $authority->find_template("list");
 		if(file_exists($template_path)){
 			$h2o = H2o_collection::get_instance($template_path);
 			$context = array('list_element' => $authority);
@@ -508,8 +468,8 @@ class authorities_caddie extends caddie_root {
 		} else {
 			print $this->get_js_script_cart_objects('autorites');
 			print $begin_result_liste;
-			print authorities_caddie::show_actions($this->get_idcaddie());
-			foreach ($liste as $cle => $object) {
+			print authorities_caddie::show_actions($this->get_idcaddie(), $this->type);
+			foreach ($liste as $object) {
 				$authority = new authority($object['object_id']);
 				if (!$no_del) {
 					$lien_suppr_cart = "<a href='$url_base&action=del_item&item=".$object['object_id']."&page=$page_suppr&nbr_lignes=$nb_after_suppr&nb_per_page=$nb_per_page'><img src='".get_url_icon('basket_empty_20x20.gif')."' alt='basket' title=\"".$msg['caddie_icone_suppr_elt']."\" /></a>";
@@ -533,7 +493,7 @@ class authorities_caddie extends caddie_root {
 	public function aff_cart_titre() {
 		global $msg;
 		
-		$link = "./autorites.php?categ=caddie&sub=gestion&quoi=panier&action=&object_type=$this->type&idcaddie=$this->idcaddie&item=0";
+		$link = static::get_constructed_link('gestion', 'panier', '', $this->idcaddie, '&object_type='.$this->type.'&item=0');
 		return "
 			<div class='titre-panier'>
 				<h3>
@@ -551,7 +511,7 @@ class authorities_caddie extends caddie_root {
 		global $msg;
 		
 		$pb = new progress_bar($msg['caddie_situation_reindex_encours'], count($liste), 5);
-		foreach ($liste as $cle => $object) {
+		foreach ($liste as $object) {
 		    $authority = new authority($object);
 		    switch ($authority->get_type_object()) {
 		        case AUT_TABLE_CONCEPT :
@@ -572,14 +532,17 @@ class authorities_caddie extends caddie_root {
 	}
 	
 	public function del_items_base_from_list($liste=array()) {
-		$res_aff_suppr_base = '';
-		
+		$res_aff_suppr_base = array();
 		foreach ($liste as $object) {
-			if ($this->del_item_base($object) == CADDIE_ITEM_SUPPR_BASE_OK) {
+			$del_item_base = $this->del_item_base($object);
+			if ($del_item_base == CADDIE_ITEM_SUPPR_BASE_OK) {
 				$this->del_item_all_caddies($object, $this->type) ;
 			} else {
 				$authority = new authority($object);
-				$res_aff_suppr_base .= $this->generate_authority($authority);
+				if(empty($res_aff_suppr_base[$del_item_base])) {
+					$res_aff_suppr_base[$del_item_base] = array();
+				}
+				$res_aff_suppr_base[$del_item_base][] = $this->generate_authority($authority);
 			}
 		}
 		return $res_aff_suppr_base;
@@ -811,7 +774,7 @@ class authorities_caddie extends caddie_root {
         WHERE ".static::$field_content_name."='".$this->get_idcaddie()."' ";
 	    
 	    if ($elt_flag && $elt_no_flag ) $complement_clause = "";
-	    if (!$elt_flag && $elt_no_flag ) $complement_clause = " and flag is null ";
+	    if (!$elt_flag && $elt_no_flag ) $complement_clause = " and (flag is null or flag = '') ";
 	    if ($elt_flag && !$elt_no_flag ) $complement_clause = " and flag is not null ";
 	    $query .= $complement_clause." order by object_id";
 	    $result = pmb_mysql_query($query);
@@ -869,5 +832,35 @@ class authorities_caddie extends caddie_root {
 	    }
 	    
 	    return parent::write_tableau();
+	}
+	
+	public static function get_constructed_link($sub = '', $sub_categ = '', $action = '', $idcaddie = 0, $args_others = '') {
+		global $base_path;
+		
+		$link = $base_path . "/autorites.php?categ=caddie&sub=" . $sub;
+		if ($sub_categ) {
+			switch ($sub) {
+				case 'gestion':
+					$link .= "&quoi=" . $sub_categ;
+					break;
+				case 'collecte':
+				case 'pointage':
+					$link .= "&moyen=" . $sub_categ;
+					break;
+				case 'action':
+					$link .= "&quelle=" . $sub_categ;
+					break;
+			}
+		}
+		if ($action) {
+			$link .= "&action=" . $action;
+		}
+		if ($args_others) {
+			$link .= $args_others;
+		}
+		if ($idcaddie) {
+			$link .= "&idcaddie=" . $idcaddie;
+		}
+		return $link;
 	}
 } // fin de déclaration de la classe caddie

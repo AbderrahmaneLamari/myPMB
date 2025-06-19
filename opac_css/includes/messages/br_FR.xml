@@ -2,18 +2,22 @@
 <!DOCTYPE XMLlist SYSTEM "../XMLlist.dtd" [<!ENTITY nbsp "&amp;nbsp;">]>
 
 <!-- messages localisés en breton pour l'OPAC de PMB
-$Id: br_FR.xml,v 1.597.2.27 2022/01/11 08:59:11 gneveu Exp $ -->
+$Id: br_FR.xml,v 1.653.2.36 2024/01/04 08:57:51 jparis Exp $ -->
 
 <XMLlist>
 <entry code="not_allowed">N'oc'h ket aotreet d'ober an dra-se</entry>
 <entry code="10">Klask</entry>
 <entry code="11">ok</entry>
+<entry code="74">Profession</entry>
 <entry code="110">Rummoù</entry>
+<entry code="125">Sexe</entry>
 <entry code="200">Fichenn dianv pe ziamen</entry>
 <entry code="201">Kiriegezhioù</entry>
 <entry code="202">Lakaat ar fichenn-mañ er baner</entry>
 <entry code="203">E-barzh ez eus</entry>
 <entry code="204">Diverradenn/Tennad</entry>
+<entry code="294">Support</entry>
+<entry code="4016">Cote</entry>
 <entry code="format_date">%d/%m/%Y</entry>
 <entry code="format_date_sql">%d/%m/%Y</entry>
 <entry code="format_date_input">%d/%d/%d</entry>
@@ -519,9 +523,9 @@ $Id: br_FR.xml,v 1.597.2.27 2022/01/11 08:59:11 gneveu Exp $ -->
 <entry code="acquisition_sug_rec">reçu</entry>
 <entry code="acquisition_sug_arc">archivé</entry>
 <entry code="voir_contenu_detail">Voir le contenu en détail</entry>
-<entry code="mdp_txt_intro_demande">Give your email so that we can send you your connexion informations.</entry>
+<entry code="mdp_txt_intro_demande">Saisissez votre email, s'il correspond à un compte, un lien de réinitialisation vous sera adressé.</entry>
 <entry code="mdp_bt_send">Send</entry>
-<entry code="mdp_mail_body"><![CDATA[Bonjour,<br /><br />Pour faire suite à votre demande de réinitialisation de mot de passe à <b>!!biblioname!!</b>, veuillez trouver ci-dessous le lien qui vous permettra d'effectuer ce changement : <br /><br />!!lien_mdp!!<br /><br />La clé de connexion automatique sera effacée après ouverture du lien pour des raisons de sécurité.<br /><br /> - Pour rappel, votre identifiant est : !!login!!<br /><br />Si vous rencontrez des difficultés, adressez un mail à !!biblioemail!!.<br /><br />]]></entry>
+<entry code="mdp_mail_body"><![CDATA[Bonjour !!empr_name!! !!empr_fistname!!,<br /><br />Pour faire suite à votre demande de réinitialisation de mot de passe à <b>!!biblioname!!</b>, veuillez trouver ci-dessous le lien qui vous permettra d'effectuer ce changement : <br /><br />!!lien_mdp!!<br /><br />La clé de connexion automatique sera effacée après ouverture du lien pour des raisons de sécurité.<br /><br /> - Pour rappel, votre identifiant est : !!login!!<br /><br />Si vous n'êtes pas à l'origine de cette demande merci d'ignorer ce mail.<br />Si vous rencontrez des difficultés, adressez un mail à !!biblioemail!!.<br /><br />]]></entry>
 <entry code="mdp_mail_obj">Connexion information for !!biblioname!!</entry>
 <entry code="mdp_sent_ok">The connexion informations have been sent to </entry>
 <entry code="mdp_no_email">Wrong or unknown email, if you're having trouble send a mail to !!biblioemail!!.</entry>
@@ -670,21 +674,21 @@ $Id: br_FR.xml,v 1.597.2.27 2022/01/11 08:59:11 gneveu Exp $ -->
 <entry code="subs_intro_services"><![CDATA[<h2 class='subs_intro_services'><span>S'inscrire pour plus de services</span></h2>Vous pouvez vous créer un compte pour accéder à certains services comme la création d'alertes aux nouveautés ou bien la possibilité de donner votre avis. <em>Cette inscription n'est pas nécessaire si vous êtes déjà emprunteur !</em>]]></entry>
 <entry code="subs_intro_explication"><![CDATA[<h2 class='subs_intro_explication'><span>Comment créer son compte ?</span></h2>Remplissez simplement le formulaire ci-dessous puis validez. Vous recevrez un mail permettant de confirmer votre inscription.<br />Vous devrez confirmer votre inscription dans les !!nb_h_valid!! heures. <em>Les champs <b>en gras</b> sont obligatoires.</em><br /><br />]]></entry>
 <entry code="subs_titre_form">S'identifier: </entry>
-<entry code="subs_f_nom">Nom: </entry>
-<entry code="subs_f_prenom">Prénom: </entry>
-<entry code="subs_f_email">Email: </entry>
-<entry code="subs_f_login">Identifiant: </entry>
-<entry code="subs_f_password">Mot de passe: </entry>
-<entry code="subs_f_passwordv"><![CDATA[Mot de passe (vérification)&nbsp;: ]]></entry>
-<entry code="subs_f_image">Code d'enregistrement: </entry>
-<entry code="subs_f_verifcode">Code de vérification: </entry>
-<entry code="subs_f_adr1">Adresse 1: </entry>
-<entry code="subs_f_adr2">Adresse 2: </entry>
+<entry code="subs_f_nom">Nom</entry>
+<entry code="subs_f_prenom">Prénom</entry>
+<entry code="subs_f_email">Email</entry>
+<entry code="subs_f_login">Identifiant</entry>
+<entry code="subs_f_password">Mot de passe</entry>
+<entry code="subs_f_passwordv"><![CDATA[Mot de passe (vérification)]]></entry>
+<entry code="subs_f_image">Code d'enregistrement</entry>
+<entry code="subs_f_verifcode">Code de vérification</entry>
+<entry code="subs_f_adr1">Adresse 1</entry>
+<entry code="subs_f_adr2">Adresse 2</entry>
 <entry code="subs_f_cp">Code postal - </entry>
-<entry code="subs_f_ville">Ville: </entry>
-<entry code="subs_f_pays">Pays: </entry>
-<entry code="subs_f_tel1">Téléphone: </entry>
-<entry code="subs_f_msg">Commentaires: </entry>
+<entry code="subs_f_ville">Ville</entry>
+<entry code="subs_f_pays">Pays</entry>
+<entry code="subs_f_tel1">Téléphone</entry>
+<entry code="subs_f_msg">Commentaires</entry>
 <entry code="subs_txt_codeverif">Afin de limiter les robots vous devez renseigner le code figurant sur cette image:</entry>
 <entry code="subs_bouton_form">Valider l'inscription</entry>
 <entry code="subs_form_obligatoire">Saisie incomplète, vous devez renseigner tous les champs en gras !</entry>
@@ -1097,7 +1101,7 @@ $Id: br_FR.xml,v 1.597.2.27 2022/01/11 08:59:11 gneveu Exp $ -->
 <entry code="avis_validation_en_cours">Votre avis est bien enregistré. Il est en attente de validation.</entry>
 <entry code="opac_keywords">OPAC, web, library, opensource, catalog, catalogue, bibliothèque, médiathèque, pmb, phpmybibli</entry>
 <entry code="collstate_form_surloc">Sur localisation</entry>
-<entry code="subs_f_loc">Localisation : </entry>
+<entry code="subs_f_loc">Localisation</entry>
 <entry code="label_title_facette">Liste des facettes</entry>
 <entry code="search_facette">facette</entry>
 <entry code="233">Titre</entry>
@@ -2095,7 +2099,7 @@ $Id: br_FR.xml,v 1.597.2.27 2022/01/11 08:59:11 gneveu Exp $ -->
 <entry code="download_docnum_no_doc">Votre sélection ne contient aucun document numérique téléchargeable.</entry>
 
 <entry code="scan_request_creation_mail_title">Nouvelle demande de numérisation</entry>
-<entry code="scan_request_creation_mail_content"><![CDATA[Une demande de numérisation a été créée :<br><br><b>Titre :</b> !!scan_title!!<br><b>Description :</b> !!scan_desc!!<br><b>Destinataire :</b> !!scan_dest!!]]></entry>
+<entry code="scan_request_creation_mail_content"><![CDATA[Une demande de numérisation a été créée :<br><br><b>Titre :</b> !!scan_title!!<br><b>Description :</b> !!scan_desc!!<br><b>Destinataire :</b> !!scan_dest!!<br><b>Permalien :</b> !!permalink!!]]></entry>
 
 <entry code="facette_moins_link">[-]</entry>
 
@@ -2937,7 +2941,7 @@ $Id: br_FR.xml,v 1.597.2.27 2022/01/11 08:59:11 gneveu Exp $ -->
 <entry code="open_link_url">Ouvrir le lien</entry>
 <entry code="authority_display_forbidden">Vous ne pouvez pas accéder à cette autorité.</entry>
 <entry code="print_emaildest_not_found">Aucune adresse mail n'est associée à votre compte.</entry>
-<entry code="onto_contribution_cancel_title">Retour a la liste des contributions</entry>
+<entry code="onto_contribution_cancel_title">Retour à la liste des contributions</entry>
 <entry code="onto_contribution_save_push_title">Valider la contribution</entry>
 <entry code="onto_contribution_push_title">Proposer la contribution</entry>
 <entry code="onto_contribution_save_title">Enregistrer la contribution en brouillon</entry>
@@ -3020,4 +3024,171 @@ $Id: br_FR.xml,v 1.597.2.27 2022/01/11 08:59:11 gneveu Exp $ -->
 <entry js="searchform" code="search_help">Aide</entry>
 <entry code="graph_node_limited">%s lien(s) non affiché(s)</entry>
 <entry code="explnum_associate_docnum">Document numérique</entry>
+<entry code="print_full_records_title">Résultats à imprimer</entry>
+<entry code="print_full_records_yes">Imprimer tous les résultats</entry>
+<entry code="print_full_records_no">Imprimer les résultats de la page courante</entry>
+<entry code="notice_title_export_record">Exporter la notice</entry>
+<entry code="notice_title_export_record_button">Exporter</entry>
+<entry code="close_export_record_popup">Fermer la fenêtre</entry>
+<entry code="quotas_not_set">Plus de places disponibles sur Internet, veuillez contacter</entry>
+<entry code="quotas_not_set_biblio">Plus de places disponibles sur Internet, veuillez contacter votre bibliothèque</entry>
+<entry code="empr_password_not_modified">Le nouveau mot de passe doit être différent de l'ancien mot de passe.</entry>
+<entry code="portal_default_label">Portail par défaut</entry>
+<entry code="portal_default_gabarit_label">Modèle par défaut</entry>
+<entry code="portal_default_page_label">Page par défaut</entry>
+<entry code="digital_signature_metadata">Métadonnées</entry>
+<entry code="digital_signature_download_button">Télécharger la signature</entry>
+<entry code="digital_signature_date_metadata">Date de signature : </entry>
+<entry code="digital_signature_publish_date_metadata">Date de publication : </entry>
+<entry code="digital_signature_signer_metadata">Signataire : </entry>
+<entry js="facettes_modal" code="alphabet">a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z</entry>
+<entry js="facettes_modal" code="close_modal">Fermer</entry>
+<entry js="facettes_modal" code="numeric_facettes">0-9</entry>
+<entry js="facettes_modal" code="validate_modal">Valider</entry>
+<entry js="facettes_modal" code="cancel_modal">Annuler</entry>
+<entry code="language_code_en_UK">UK</entry>
+<entry code="contribution_code_barre_not_valid">Veuillez saisir un code barre valide</entry>
+<entry code="captcha_play_image">Play CAPTCHA Audio</entry>
+<entry code="captcha_loading_image">Loading audio</entry>
+<entry code="captcha_refresh_image">Refresh Image</entry>
+<entry code="mdp_sent_succesfully">Si un compte est lié à %s, un lien pour réinitialiser votre mot de passe vient d'être envoyé.</entry>
+<entry code="cms_module_favoriteslist_saved">Liste des favoris enregistrée</entry>
+<entry code="captcha_image">CAPTCHA Image</entry>
+<entry js="facettes_modal" code="description_facette">Affichage de la liste en ordre alphabétique.</entry>
+<entry code="expl_date_creation_query">Date de création de l'exemplaire</entry>
+<entry code="resa_waiting_already_loaned">Réservation impossible : vous avez rendu ce document il y a moins de !!nb_days!! jours.</entry>
+<entry code="record_author_separator"><![CDATA[/]]></entry>
+<entry code="admin_nomenclature_formation_form_name">Nom</entry>
+<entry code="admin_nomenclature_formation_form_nature">Nature de la formation</entry>
+<entry code="admin_nomenclature_formation_form_nature_instrument">Instruments</entry>
+<entry code="admin_nomenclature_formation_form_nature_voice">Voix</entry>
+<entry code="admin_nomenclature_formation_types">Liste des Types</entry>
+<entry code="admin_nomenclature_formation_type_form_name">Nom</entry>
+<entry code="animation_mail_registration_waiting"><![CDATA[- %s, inscrit sur liste d'attente.<br>]]></entry>
+<entry code="animation_mail_registration_pending_validation"><![CDATA[- %s, inscription en attente de validation.<br>]]></entry>
+<entry code="animation_mail_registration_validate"><![CDATA[- %s, inscription validée.<br>]]></entry>
+<entry code="external_search_analysis_id">Identifiant d'article (PMID, DOI, ...) </entry>
+<entry js="animation" code="animation_registration_error_contact_mail">Merci de renseigner un mail valide pour la personne de contact</entry>
+<entry js="animation" code="animation_empr_registration_status">Inscription</entry>
+<entry js="animation" code="animation_registration_error_barcode">Merci de renseigner un code barre</entry>
+<entry js="animation" code="animation_registration_error_contact_barcode">Merci de renseigner un code barre valide pour la personne de contact</entry>
+<entry code="animation_registration_error_contact_barcode">Merci de renseigner un code barre valide pour la personne de contact</entry>
+<entry code="animation_registration_error_barcode">Merci de renseigner un code barre valide pour %s</entry>
+<entry code="animation_registration_error_name">Merci de renseigner un nom valide pour la personne n°%s</entry>
+<entry code="selvars_empr_auth_opac_change_password_link">Lien de changement de mot de passe</entry>
+<entry code="selvars_empr_auth_opac_subscribe_link">Lien de réabonnement</entry>
+<entry code="animation_comment_cmpte_subscribe_animation">inscription à l'animation</entry>
+<entry code="animation_comment_cmpte_unsubscribe_animation">désinscription à l'animation</entry>
+<entry code="animation_comment_cmpte_animation_of">du</entry>
+<entry code="search_custom_animations">Personnalisables des animations</entry>
+<entry code="search_custom_cms_article">Personnalisables des articles</entry>
+<entry code="search_custom_cms_section">Personnalisables des rubriques</entry>
+<entry code="search_universe_cms_article_title">Titre d'articles</entry>
+<entry code="search_universe_cms_section_title">Titre de la rubrique</entry>
+<entry code="search_universe_cms_article_num_section">Rubrique parente</entry>
+<entry code="search_universe_cms_article_type">Type de contenu</entry>
+<entry code="search_universe_cms_article_status">Statut de publication</entry>
+<entry code="search_universe_cms_section_num_section">Rubrique parente</entry>
+<entry code="search_universe_cms_section_type">Type de contenu</entry>
+<entry code="search_universe_cms_section_status">Statut de publication</entry>
+<entry code="empr_no_right_of_access_pwd">Vous n'avez pas les droits pour modifier votre mot de passe</entry>
+<entry code="cms_menu_editorial">Contenu editorial</entry>
+<entry code="date_to_come">"À venir</entry>
+<entry js="search_autocomplete" code="see_entity">Voir</entry>
+<entry code="list_ui_search">Filtres / Tri</entry>
+<entry code="ville_empr">Ville</entry>
+<entry code="categ_empr">Catégorie</entry>
+<entry code="statut_empr">Statut</entry>
+<entry code="year_empr">Année de naissance</entry>
+<entry code="codestat_empr">Code statistique</entry>
+<entry code="circ_date_emprunt">Sortie</entry>
+<entry code="circ_date_retour">Retour</entry>
+<entry code="acquisition_cp">Code Postal</entry>
+<entry code="resa_suppr_th">Suppr.</entry>
+<entry code="list_ui_objects_not_grouped">Sans groupement</entry>
+<entry code="list_ui_selection">Pour la sélection</entry>
+<entry code="list_ui_no_selected">Aucune ligne n'a été sélectionnée.</entry>
+<entry code="list_ui_no_filter">Aucun filtre</entry>
+<entry code="list_ui_filter_date_start">Après le</entry>
+<entry code="list_ui_filter_date_end">Avant le</entry>
+<entry code="list_ui_initialization">Réinitialiser</entry>
+<entry js="dsi" code="unsubscribe_success">Votre désinscription de la diffusion "!!diffusion_name!!" a bien été prise en compte.</entry>
+<entry code="group_prolonge_pret_confirm">Confirmez-vous la prolongation des prêts des membres du groupe ?</entry>
+<entry code="acquisition_sug_com">Commentaires</entry>
+<entry code="acquisition_sug_cod">ISBN</entry>
+<entry code="acquisition_sug_pri">Prix</entry>
+<entry code="acquisition_sug_qte">Quantité</entry>
+<entry code="aut_categs_children">Catégories enfants</entry>
+<entry code="apply">Appliquer</entry>
+<entry code="filter">Filtrer</entry>
+<entry code="sort_by">Trier par</entry>
+<entry code="export_tableur">Export tableur</entry>
+<entry code="export_tableau_html">Export tableau HTML</entry>
+<entry code="export_csv">Export CSV</entry>
+<entry code="search_segment_user_query_search">Recherche</entry>
+<entry code="editeur_web">Site web</entry>
+<entry code="ed_comment">Commentaire</entry>
+<entry code="adresse_empr">Adresse</entry>
+<entry code="editeur_ville">Ville</entry>
+<entry code="dsi_format_date">d/m/Y H:i:s</entry>
+<entry js="dsi" code="public_alerts">Liste des alertes publiques</entry>
+<entry js="dsi" code="self_alerts">Liste des alertes privées</entry>
+<entry js="dsi" code="tag_filter_default_value">Sélectionner une étiquette</entry>
+<entry js="dsi" code="alert_list_name">Nom</entry>
+<entry js="dsi" code="alert_list_last_diffusion">Date de la dernière diffusion</entry>
+<entry js="dsi" code="alert_list_taglist">Etiquettes</entry>
+<entry js="dsi" code="alert_list_subscribe_status">Statut de l'abonnement</entry>
+<entry js="dsi" code="alert_list_subscribe_status_checkbox">Abonné</entry>
+<entry js="dsi" code="alert_list_number_elements">Nombre d'éléments</entry>
+<entry js="dsi" code="search_filter_placeholder">Rechercher...</entry>
+<entry code="rgaa_password_field_desc">Afficher ou masquer le mot de passe</entry>
+<entry js="dsi" code="show_filters">Filtrer</entry>
+<entry js="dsi" code="alert_list_not_subscribe_status_checkbox">Désabonné</entry>
+<entry js="dsi" code="tag_filter_label">Filtrer par étiquette</entry>
+<entry js="graph" code="infovis_resize">Redimensionner la zone</entry>
+<entry code="link_more">En savoir plus</entry>
+<entry js="dsi" code="diffusion_private_title">Créer une alerte</entry>
+<entry js="dsi" code="diffusion_private_name">Nom de l'alerte :</entry>
+<entry js="dsi" code="diffusion_private_periodicity">Periodicité (en jours) :</entry>
+<entry js="dsi" code="diffusion_private_time">Heure d'envoi :</entry>
+<entry js="dsi" code="diffusion_private_save">Enregistrer</entry>
+<entry js="dsi" code="diffusion_private_remove">Supprimer l'alerte</entry>
+<entry code="diffusion_private_error_delete">Impossible de supprimer l'alerte privée</entry>
+<entry js="dsi" code="diffusion_private_delete_confirm">Voulez-vous vraiment supprimer cette alerte ?</entry>
+<entry js="dsi" code="title_alerts">Liste des alertes</entry>
+<entry js="dsi" code="alert_list_search_input">Recherche</entry>
+<entry js="graph" code="zoom_in_button">Zoom avant</entry>
+<entry js="graph" code="zoom_out_button">Zoom arrière</entry>
+<entry code="diffusion_private_unavailable">Alertes privées non disponibles</entry>
+<entry js="dsi" code="alert_btn_title_show_history">Consulter les précédentes diffusions de l'alerte</entry>
+<entry js="dsi" code="alert_paragraph_show_history">Liste des précédentes diffusions de l'alerte (maximum : !!nb_history!!)</entry>
+<entry js="dsi" code="alert_before_diffusion_date">Diffusion du </entry>
+<entry js="dsi" code="alert_no_history">Aucune diffusion précédente </entry>
+<entry js="dsi" code="alert_show_diffusion">Consulter l'alerte</entry>
+<entry js="dsi" code="unsubscribe_diffusion_deleted">Diffusion déjà supprimée. Aucune action requise de votre part.</entry>
+<entry code="aut_menu_titre_uniforme">Oeuvres / Expressions</entry>
+<entry code="indexint_menu">Indexations décimales</entry>
+<entry code="133">Auteur</entry>
+<entry code="135">Éditeur</entry>
+<entry code="search_extended_group_art">Articles</entry>
+<entry code="search_extended_serial_id">Articles issus du périodique</entry>
+<entry code="finance_cmpte_abt">Compte abonnement</entry>
+<entry code="finance_cmpte_prets">Compte prêts</entry>
+<entry code="finance_cmpte_amendes">Compte amendes</entry>
+<entry code="finance_cmpte_animation">Compte animations</entry>
+<entry js="payments" code="transactions">Transactions</entry>
+<entry js="payments" code="frozen">En attente</entry>
+<entry js="payments" code="transaction_list">Mes paiements</entry>
+<entry js="payments" code="order_number">Numéro de facture</entry>
+<entry js="payments" code="order_number_date">Date du paiement</entry>
+<entry js="payments" code="order_number_status">Statut du paiement</entry>
+<entry js="payments" code="order_number_status_in_progress">En cours de paiement</entry>
+<entry js="payments" code="order_number_finish">Paiement validé</entry>
+<entry js="payments" code="order_number_abandoned">Paiement refusé</entry>
+<entry js="payments" code="transaction_payment">Payer mes comptes</entry>
+<entry code="376">Exemplaire</entry>
+<entry code="search_explnum">Exemplaire numérique</entry>
+<entry code="search_by_authperso_title">Autorité personnalisée</entry>
+<entry code="search_concept_title">Concept</entry>
+<entry code="selvars_animation_name">Nom de l'animation</entry>
 </XMLlist>

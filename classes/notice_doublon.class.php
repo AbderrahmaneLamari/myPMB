@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_doublon.class.php,v 1.13.10.1 2022/01/03 15:49:26 dgoron Exp $
+// $Id: notice_doublon.class.php,v 1.16 2022/06/28 08:59:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -62,9 +62,17 @@ class notice_doublon {
 	}
 	
 	public function read_field_form($field) {
-		if($this->external) $html=static::$fields[$field]["html_ext"];
-		else $html=static::$fields[$field]["html"];
-		$size_max=	static::$fields[$field]["size_max"];
+		if(!empty(static::$fields[$field])) {
+			if($this->external) $html=static::$fields[$field]["html_ext"];
+			else $html=static::$fields[$field]["html"];
+		} else {
+			$html='';
+		}
+		if(!empty(static::$fields[$field])) {
+			$size_max=	static::$fields[$field]["size_max"];
+		} else {
+			$size_max= 0;
+		}
 		
 		if(!$html) {
 			// c'est surement un param perso
@@ -121,7 +129,10 @@ class notice_doublon {
 					$chaine.= $this->read_field_database($field,$id);
 				}	
 			}	
-		}		
+		}
+		if($metod == 3 && $chaine) {
+			$chaine = pmb_strtolower(strip_empty_chars(convert_diacrit($chaine)));
+		}
 		// encodage signature par SOUNDEX (option 2) et par md5 (32 caractères)
 		if($metod == 2) {	
 			$rqt = "SELECT SOUNDEX('".addslashes($chaine)."')";
@@ -129,7 +140,7 @@ class notice_doublon {
 			if (($row = pmb_mysql_fetch_row($result) ) ) {
 	        	$chaine = $row[0];
 			}					
-		}		
+		}
 		$this->signature = md5($chaine);	
 		return $this->signature;
 	}			

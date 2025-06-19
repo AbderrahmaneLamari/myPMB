@@ -2,13 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: subcollection.class.php,v 1.25 2018/10/16 09:50:56 dgoron Exp $
+// $Id: subcollection.class.php,v 1.26 2022/02/10 08:18:42 dgoron Exp $
 
 // définition de la classe de gestion des 'sous-collections'
 
 if ( ! defined( 'SUB_COLLECTION_CLASS' ) ) {
   define( 'SUB_COLLECTION_CLASS', 1 );
 
+global $class_path;
 require_once($class_path."/authorities_collection.class.php");
 
 class subcollection {
@@ -39,7 +40,7 @@ class subcollection {
 	// ---------------------------------------------------------------
 
 	public function __construct($id=0) {
-		$this->id = $id+0;
+		$this->id = intval($id);
 		$this->getData();
 	}
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: upload_folder_storage.class.php,v 1.4.6.1 2022/01/19 13:37:17 dgoron Exp $
+// $Id: upload_folder_storage.class.php,v 1.5.4.1 2023/09/22 14:54:40 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -52,7 +52,10 @@ class upload_folder_storage extends storage {
 	public function add($file){
 		if($this->parameters['id_rep']){
 			$this->filepath = $this->get_filepath($file);
-			return rename("./temp/".$file,$this->filepath);
+			if (copy("./temp/".$file,$this->filepath)) {
+			    unlink("./temp/".$file);
+			    return true;
+			}
 		}
 		return false;
 	}

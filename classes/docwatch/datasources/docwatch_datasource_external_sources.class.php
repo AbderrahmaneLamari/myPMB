@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatch_datasource_external_sources.class.php,v 1.4.8.1 2022/01/04 12:48:22 dgoron Exp $
+// $Id: docwatch_datasource_external_sources.class.php,v 1.5 2022/01/04 12:44:53 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

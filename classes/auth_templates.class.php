@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: auth_templates.class.php,v 1.3.12.1 2022/01/04 09:32:38 dgoron Exp $
+// $Id: auth_templates.class.php,v 1.5 2022/12/06 11:27:32 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -52,5 +52,16 @@ class auth_templates {
 			}
 		}
 		return $tpl;
+	}
+	
+	public static function get_directories() {
+		$result = array();
+		$dirs = array_filter(glob('./opac_css/includes/templates/authorities/*'), 'is_dir');
+		foreach($dirs as $dir){
+			if(basename($dir) != "CVS"){
+				$result[] = basename($dir);
+			}
+		}
+		return $result;
 	}
 }

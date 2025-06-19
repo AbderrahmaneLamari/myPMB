@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_indexint_view.class.php,v 1.4.8.1 2021/08/09 13:25:54 tsamson Exp $
+// $Id: frbr_entity_indexint_view.class.php,v 1.5.4.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,7 +13,7 @@ class frbr_entity_indexint_view extends frbr_entity_common_view_django{
 		parent::__construct($id);
 		$this->default_template = "<div>
 <h3>{{indexint.name}}</h3>
-<blockquote>{{indexint.comment}}</blockquote>
+<div>{{indexint.comment}}</div>
 </div>";
 	}
 		

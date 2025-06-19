@@ -2,19 +2,25 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: analysis_update.inc.php,v 1.73.2.1 2022/01/07 11:41:08 dgoron Exp $
+// $Id: analysis_update.inc.php,v 1.75.4.1 2023/09/06 07:04:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $msg, $charset, $current_module, $pmb_notice_controle_doublons;
 global $analysis_id, $serial_id, $bul_id, $nb_per_page_search;
 global $gestion_acces_active, $gestion_acces_user_notice, $PMBuserid, $pmb_synchro_rdf;
-global $serial_header, $ret_url, $forcage, $id_form, $id, $f_tit1;
+global $serial_header, $ret_url, $forcage, $id_form, $id, $f_tit1, $f_year;
 
 if(!isset($forcage)) $forcage = 0;
 
 require_once($class_path."/notice_doublon.class.php");
 require_once($class_path."/serials.class.php");
+
+// valorisation du champ f_year à partir de la date de parution du bulletin
+// on le fait ici car il peut être nécessaire pour le calcul de dédoublonnage
+if($bul_id && empty($f_year)) {
+	$f_year = substr(bulletinage::get_date_date_from_id($bul_id),0,4);
+}
 
 $sign = new notice_doublon();
 $signature = $sign->gen_signature();
@@ -158,7 +164,11 @@ if ($acces_m==0) {
 				$synchro_rdf->addRdf(0,$bul_id);
 			}
 		}
-		
+		if($analysis_id && $bul_id) {
+		    //Assurons-nous que la relation dans analysis existe
+		    //Traité pour le cas des articles de périodique orphelins
+		    import_records::insert_relation_analysis_bulletin($analysis_id, $bul_id);
+		}
 		$myAnalysis = new analysis($analysis_id, $bul_id);
 		$myAnalysis->signature = $signature;
 		$myAnalysis->set_properties_from_form();

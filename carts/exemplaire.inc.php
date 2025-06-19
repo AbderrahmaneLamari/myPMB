@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: exemplaire.inc.php,v 1.18.2.1 2021/06/16 14:44:20 tsamson Exp $
+// $Id: exemplaire.inc.php,v 1.19 2021/06/16 14:46:41 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

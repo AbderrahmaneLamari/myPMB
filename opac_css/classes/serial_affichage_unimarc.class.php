@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serial_affichage_unimarc.class.php,v 1.6.2.1 2022/01/10 10:35:57 dgoron Exp $
+// $Id: serial_affichage_unimarc.class.php,v 1.7 2022/01/10 10:23:05 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

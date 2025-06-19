@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: plugins.class.php,v 1.16.4.2 2022/01/03 10:58:27 tsamson Exp $
+// $Id: plugins.class.php,v 1.18.4.1 2023/04/28 09:58:44 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], '.class.php')) die('no access');
 
@@ -19,28 +19,28 @@ class plugins {
 	private static $messages= array();
 	protected $plugins = array();
 	private static $plugins_instances = array();
-	
+
 	/**
 	 * Constructeur...
 	 */
 	private function __construct(){
 		$this->parse();
 	}
-	
+
 	public static function get_instance(){
 		if(is_null(self::$_instance)) {
 			self::$_instance = new plugins();
 		}
 		return self::$_instance;
 	}
-	
+
 	public static function get_plugin_instance($plugin_name){
 		if(!isset(self::$plugins_instances[$plugin_name])){
 			self::$plugins_instances[$plugin_name] = new plugin($plugin_name);
 		}
 		return self::$plugins_instances[$plugin_name];
 	}
-	
+
 	/**
 	 * Méthode de parcours du répertoire de plugins...
 	 * Elle déclenche l'analyse de chaque plugin présent
@@ -56,9 +56,10 @@ class plugins {
 					}
 				}
 			}
+			closedir($dh);
 		}
 	}
-	
+
 	/**
 	 * Détermine si un plugin est activé ou non. Toujours vrai pour le moment, cela permet d'envisager une évolution plus tard!
 	 * @param string $plugin_path
@@ -67,7 +68,7 @@ class plugins {
 	private function is_activated($plugin){
 		return true;
 	}
-	
+
 	/**
 	 * Méthode d'analyse d'un plugin
 	 * @param string $plugin_path
@@ -99,7 +100,7 @@ class plugins {
 					$menu = $manifest['MENUS'][0]['MENU'][$i];
 					$this->plugins[basename($plugin_path)]['menus'][$menu['MODULE']] = array();
 					if(isset($menu['TABS']) && is_array($menu['TABS'])){
-						for ($j=0 ; $j<count($menu['TABS'][0]['TAB']) ; $j++){	
+						for ($j=0 ; $j<count($menu['TABS'][0]['TAB']) ; $j++){
 							$this->plugins[basename($plugin_path)]['menus'][$menu['MODULE']][$menu['TABS'][0]['TAB'][$j]['ID']] = array(
 								'name' => $menu['TABS'][0]['TAB'][$j]['value'],
 								'items' => array()
@@ -111,29 +112,20 @@ class plugins {
 								$item = array();
 								$item['sub'] = $xml_item['SUB'];
 								$item['name'] = $xml_item['NAME'];
-								
 								if(isset($xml_item['TITLE'])){
 								    $item['title'] = $xml_item['TITLE'][0]['value'];
 								}
 								if(isset($xml_item['HMENU'])&& is_array($xml_item['HMENU']) && is_array($xml_item['HMENU'][0]['ITEM'])){
 									$item['hmenu'] = array();
 									for($k=0 ; $k<count($xml_item['HMENU'][0]['ITEM']) ; $k++){
-									    $args = '';
-									    $default = false;
+										$args = '';
 										foreach($xml_item['HMENU'][0]['ITEM'][$k] as $key => $value){
-										    if($key == "DEFAULT"){
-										        $default = true;
-										        continue;
-										    }
-										    if($key != 'value'){
+											if($key != 'value'){
 												if($args){
 													$args.= "&";
 												}
 												$args.=$key.'='.$value;
 											}
-										}
-										if($default == true && empty($item['default'])){
-										  $item['default'] = strtolower($args);
 										}
 										$item['hmenu'][strtolower($args)]= $xml_item['HMENU'][0]['ITEM'][$k]['value'];
 									}
@@ -142,11 +134,11 @@ class plugins {
 							}
 						}
 					}
-				}	
+				}
 			}
 		}
 	}
-	
+
 	/**
 	 * Méthode qui construit le menu pour un module de PMB
 	 * @param string $module
@@ -161,12 +153,8 @@ class plugins {
 					<h3 onclick="menuHide(this,event)">'.htmlentities(self::check_for_msg($plugin_name, $tab['name']),ENT_QUOTES,$charset).'</h3>
 					<ul>';
 					foreach($tab['items'] as $item){
-					    $link = $module.'.php?categ=plugin&plugin='.$plugin_name.'&sub='.$item['sub'];
-					    if(!empty($item['default'])){
-					        $link.='&'.$item['default'];
-					    }
-						$html.= '		
-						<li><a href="'.$link.'">'.htmlentities(self::check_for_msg($plugin_name, $item['name']),ENT_QUOTES,$charset).'</a></li>';
+						$html.= '
+						<li><a href="'.$module.'.php?categ=plugin&plugin='.$plugin_name.'&sub='.$item['sub'].'">'.htmlentities(self::check_for_msg($plugin_name, $item['name']),ENT_QUOTES,$charset).'</a></li>';
 					}
 					$html.= '
 					</ul>';
@@ -175,7 +163,7 @@ class plugins {
 		}
 		return $html;
 	}
-	
+
 	private function get_context_menu($module,$plugin,$sub){
 		global $charset;
 		$html = '';
@@ -203,7 +191,7 @@ class plugins {
 		}
 		return '';
 	}
-	
+
 	public static function check_for_msg($plugin, $code){
 		if(strpos($code,'msg:') !== false){
 			return self::get_message($plugin, str_replace('msg:','',$code));
@@ -213,11 +201,11 @@ class plugins {
 
 	public function proceed($module, $plugin, $sub, $layout = "!!menu_contextuel!!"){
 		global $base_path;
-		
+
 		$module = plugins::clean_string($module);
 		$plugin = plugins::clean_string($plugin);
 		$sub = plugins::clean_string($sub);
-		
+
 		if(strpos($layout,'!!menu_contextuel!!') !== false){
 			$layout = str_replace('!!menu_contextuel!!',$this->get_context_menu($module,$plugin,$sub),$layout);
 		}
@@ -227,25 +215,25 @@ class plugins {
 		}
 		return false;
 	}
-	
+
 	public function proceed_ajax($module, $plugin, $sub){
 		global $base_path;
-		
+
 		$module = plugins::clean_string($module);
 		$plugin = plugins::clean_string($plugin);
-		
+
 		if(file_exists($base_path.'/plugins/'.$plugin.'/'.$module.'/ajax_main.inc.php')){
 			return $base_path.'/plugins/'.$plugin.'/'.$module.'/ajax_main.inc.php';
 		}
 		return false;
 	}
-	
+
 	public static function clean_string($string){
 		if($string){
 			return str_replace(' ', '', pmb_alphabetic('^a-z0-9_\-\s', ' ',pmb_strtolower($string)));
 		}
 	}
-	
+
 	public static function get_message($plugin,$code){
 		global $base_path,$msg, $lang;
 		if(!isset(self::$messages[$plugin])){
@@ -263,7 +251,7 @@ class plugins {
 		}
 		return $code;
 	}
-	
+
 	public static function get_all_messages($plugin) {
 	    global $base_path,$msg, $lang;
 	    if(!isset(self::$messages[$plugin])){
@@ -274,5 +262,9 @@ class plugins {
 	        }
 	    }
 	    return self::$messages[$plugin];
+	}
+
+	public function get_plugins() {
+	    return $this->plugins;
 	}
 }

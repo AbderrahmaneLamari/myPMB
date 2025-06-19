@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: campaign_view.class.php,v 1.5.6.1 2022/01/19 11:46:43 dgoron Exp $
+// $Id: campaign_view.class.php,v 1.6 2022/01/19 11:44:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

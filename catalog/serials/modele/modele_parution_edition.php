@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: modele_parution_edition.php,v 1.10.8.1 2022/01/03 10:28:30 dgoron Exp $
+// $Id: modele_parution_edition.php,v 1.11 2022/01/03 10:20:17 dgoron Exp $
 
 // définition du minimum nécéssaire
 $base_path="./../../..";

@@ -2,14 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: divers.inc.php,v 1.26.2.1 2021/07/07 08:29:42 tsamson Exp $
+// $Id: divers.inc.php,v 1.28.4.1 2023/02/24 14:41:17 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 // formatdate() : retourne une date formatée comme il faut
 function formatdate($date_a_convertir, $with_hour=0) {
 	global $msg;
-	global $dbh;
 	
 	if ($with_hour) $resultatdate=pmb_mysql_query("select date_format('".$date_a_convertir."', '".$msg["format_date_heure"]."') as date_conv ");
 	else $resultatdate=pmb_mysql_query("select date_format('".$date_a_convertir."', '".$msg["format_date_sql"]."') as date_conv ");
@@ -21,7 +20,6 @@ function formatdate($date_a_convertir, $with_hour=0) {
 // formatdate_input() : retourne une date formatée comme il faut
 function formatdate_input($date_a_convertir) {
 	global $msg;
-	global $dbh;
 
 	$resultatdate=pmb_mysql_query("select date_format('".$date_a_convertir."', '".$msg["format_date_input_model"]."') as date_conv ");
 	$date_conv=pmb_mysql_result($resultatdate,0,0);
@@ -43,6 +41,7 @@ function extraitdate($date_a_convertir) {
 	$format_local = str_replace (".","",$format_local);
 	$format_local = str_replace (" ","",$format_local);
 	$format_local = str_replace ($msg["format_date_input_separator"],"",$format_local);
+	$date=array();
 	list($date[substr($format_local,0,1)],$date[substr($format_local,1,1)],$date[substr($format_local,2,1)]) = sscanf($date_a_convertir,$msg["format_date_input"]) ;
 	if ($date['Y'] && $date['m'] && $date['d']){
 		 //$date_a_convertir = $date['Y']."-".$date['m']."-".$date['d'] ;
@@ -61,10 +60,12 @@ function detectFormatDate($date_a_convertir, $compl="01", $date_flot = false){
 	    //cas particulier des intervalles
 	    //on ne tien compte de que la 1ère date
 	    $date = detectFormatDate($matches[1]);
-	}else if(preg_match("#(\d{4}-\d{2}-\d{2})#",$date_a_convertir, $matches)){
-	    $date = $matches[0];
-	}else if(preg_match("#(\d{4}.\d{2}.\d{2})#",$date_a_convertir, $matches)){
-	    $date = str_replace('.', '-', $matches[0]);
+	}else if(preg_match("#(\d{4})[-/\.](\d{2})[-/\.](\d{2})#",$date_a_convertir, $matches)){
+	    try{
+	        $date = $matches[1]."-".$matches[2]."-".$matches[3];
+	    }catch(Exception $e){
+	        $date = "0000-00-00";
+	    }
 	}else if(preg_match("#(\d{1,2})[-/\.](\d{2})[-/\.](\d{4})#",$date_a_convertir, $matches)){
 	    $tmp_date = new DateTime($matches[1]."-".$matches[2]."-".$matches[3]);
 	    $date = date_format($tmp_date, 'Y-m-d');
@@ -87,8 +88,8 @@ function detectFormatDate($date_a_convertir, $compl="01", $date_flot = false){
 			} else{
 			    $date = sprintf("%04d-%02d-%02s",$date_array['Y'],$date_array['m'],$compl);
 			}
-		}elseif ($dateArray['Y']){
-		    $date = sprintf("%04d-%02d-%02s",$dateArray['Y'],"01","01");
+		}elseif ($date_array['Y']){
+			$date = sprintf("%04d-%02d-%02s",$date_array['Y'],"01","01");
 		}else{
 			$date = "0000-00-00";
 		}
@@ -191,7 +192,6 @@ function getDojoPattern($date) {
 
 // verif_date permet de vérifier si une date saisie est valide
 function verif_date($date) {
-	global $msg;
 	$mysql_date= extraitdate($date);
 	$rqt= "SELECT DATE_ADD('" .$mysql_date. "', INTERVAL 0 DAY)";
 	if($result=pmb_mysql_query($rqt))

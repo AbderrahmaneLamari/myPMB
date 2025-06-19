@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: abts_pointage.class.php,v 1.95.2.3 2021/07/07 06:44:33 dgoron Exp $
+// $Id: abts_pointage.class.php,v 1.100 2023/02/08 07:38:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
 	die("no access");
@@ -258,6 +258,7 @@ class abts_pointage {
 					$deja_bulletine=0;
 					while ($r_prochain = pmb_mysql_fetch_object($res_prochain)) {
 						$prochain_id_bull=$r_prochain->id_bull;
+						$fiche_prochain=array();
 						$fiche_prochain['date_parution']=$r_prochain->date_parution;
 						$fiche_prochain['periodique']="<a href=\"./catalog.php?categ=serials&sub=view&serial_id=" . $r->num_notice . "\">$r->tit1</a>";
 						$fiche_prochain['libelle_notice']=$r->tit1;
@@ -600,36 +601,30 @@ class abts_pointage {
 			}
 		}
 		
-		function nonrecevable(obj,e) {	
-				
-			var bull_layer=document.getElementById('bull_layer');
-			if (undefined==bull_layer) {
-				
-				bull_layer=document.createElement('div');
-				bull_layer.setAttribute('id','bull_layer');
-				bull_layer.setAttribute('style','position:absolute;left:0;z-index:1001;');
-				bull_layer.setAttribute('onclick','kill_frame_periodique();');
-				bull_layer.style.width=getWindowWidth()+'px';
-				bull_layer.style.height=getWindowHeight()+'px';
-				bull_layer.style.top=getWindowScrollY()+'px';
-				document.getElementsByTagName('body')[0].appendChild(bull_layer);
-		
-			}
-			bull_frame=document.createElement('iframe');		
-			bull_frame.setAttribute('id','bull_frame');
-			bull_frame.setAttribute('name','bull_frame');
-			
+		function nonrecevable(obj,e) {			
 			var obj_2=obj+'_2';
 			var id_obj=document.getElementById(obj_2);
 			var num=id_obj.getAttribute('num');
 			
-			var url='./pointage_exemplarise.php?nonrecevable=1&id_bull='+obj+'&numero='+num;
-			bull_frame.src=url;
-			bull_resizeFrame(obj);
-			bull_frame.style.visibility='visible';	
-			bull_frame.style.display='block';	
-			bull_layer.appendChild(bull_frame);		
-			bull_layer.parentNode.style.overflow = 'hidden';
+			var url='./ajax.php?module=catalog&categ=serials&sub=pointage&action=nonrecevable';
+			
+			var span = document.getElementById(obj+'_3_action_response');
+			if(span) {
+				span.innerHTML = '<img src=\"".get_url_icon('patience.gif')."\"/>';
+			}
+			var req = new http_request();
+			req.request(url,1, 'id_bull='+obj+'&numero='+num, true, function(response) {
+				var data = JSON.parse(response);
+				if(data.status) {
+					if(span) {
+						span.innerHTML = '<img src=\"".get_url_icon('tick.gif')."\"/>';
+					}
+				} else {
+					if(span) {
+						span.innerHTML = '<img src=\"".get_url_icon('cross.png')."\"/>';
+					}
+				}
+            });
 		}
 		
 		function kill_frame_periodique() {
@@ -1033,26 +1028,25 @@ class abts_pointage {
 		foreach($rel_id_list as $rel_id){
 			
 			if(!$rel_id) continue;
-			$nb=0;
+			$rel_nb=0;
 			$bulletin_info=array();
 			$req="SELECT * from perio_relance where rel_id=$rel_id ";
 			$result = pmb_mysql_query($req);	
 			if(pmb_mysql_num_rows($result)){
 				$r = pmb_mysql_fetch_object($result);
-				$nb=$r->rel_nb;
+				$rel_nb=$r->rel_nb;
 				$bulletin_info['abt_id']=$r->rel_abt_num;
 				$bulletin_info['date_parution']=$r->rel_date_parution;
 				$bulletin_info['libelle_numero']=$r->rel_libelle_numero;
 			} else continue;
-			if($nb) continue;
 			// recherche de la plus grande relance
+			$max_rel_nb = 0;
 			$req="SELECT max(rel_nb)as nb from perio_relance where rel_abt_num='".$bulletin_info['abt_id']."' and rel_date_parution='".$bulletin_info['date_parution']."' and  rel_libelle_numero='".addslashes($bulletin_info['libelle_numero'])."' ";
-			$result = pmb_mysql_query($req);	
+			$result = pmb_mysql_query($req);
 			if(pmb_mysql_num_rows($result)){
 				$r = pmb_mysql_fetch_object($result);
-				$nb=$r->nb;
+				$max_rel_nb=$r->nb;
 			}			
-			$nb++;	
 			
 			$req="SELECT * from perio_relance,abts_abts where abt_id=".$bulletin_info['abt_id']." and rel_id=$rel_id";
 			$result = pmb_mysql_query($req);
@@ -1063,8 +1057,12 @@ class abts_pointage {
 					$this->liste_rel[$r->fournisseur][$r->num_notice][$r->rel_abt_num][$r->rel_id]["rel_libelle_numero"]=$r->rel_libelle_numero;
 					$this->liste_rel[$r->fournisseur][$r->num_notice][$r->rel_abt_num][$r->rel_id]["rel_comment_gestion"]=$r->rel_comment_gestion;
 					$this->liste_rel[$r->fournisseur][$r->num_notice][$r->rel_abt_num][$r->rel_id]["rel_nb"]=$r->rel_nb;
-					$req= "update perio_relance set rel_nb=$nb, rel_date=now() where rel_id=".$r->rel_id."  ";				
-					pmb_mysql_query($req);		
+					if(!$rel_nb) {
+						$nb = $max_rel_nb;
+						$nb++;
+						$req= "update perio_relance set rel_nb=$nb, rel_date=now() where rel_id=".$r->rel_id."  ";				
+						pmb_mysql_query($req);
+					}
 				//}		
 			}
 		}
@@ -1077,10 +1075,22 @@ class abts_pointage {
 	}
 	
 	public static function delete_retard($abt_id,$date_parution='',$libelle_numero=''){
+		$abt_id = intval($abt_id);
 		$req="DELETE from perio_relance where rel_abt_num='".$abt_id."' ";
-		if($date_parution)	$req.=" and rel_date_parution='".$date_parution."'  ";
+		if($date_parution)	$req.=" and rel_date_parution='".addslashes($date_parution)."'  ";
 		if($libelle_numero)	$req.=" and rel_libelle_numero='".addslashes($libelle_numero)."' ";
-		@pmb_mysql_query($req);
+		pmb_mysql_query($req);
+	}
+	
+	public static function get_num_abt_from_id_bull($id_bull) {
+		$id_bull = intval($id_bull);
+		$query = "SELECT * FROM abts_grille_abt WHERE id_bull='$id_bull'";
+		$result = pmb_mysql_query($query);
+		if(pmb_mysql_num_rows($result)) {
+			$row = pmb_mysql_fetch_object($result);
+			return $row->num_abt;
+		}
+		return 0;
 	}
 	
 	public function generate_PDF(){

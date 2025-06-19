@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_skos_concept_ui.class.php,v 1.50 2021/02/08 14:50:44 gneveu Exp $
+// $Id: onto_skos_concept_ui.class.php,v 1.52 2022/10/31 10:24:49 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path.'/templates/onto/skos/onto_skos_concept_ui.tpl.php');
 require_once($class_path.'/authorities_statuts.class.php');
 
@@ -58,7 +59,7 @@ class onto_skos_concept_ui extends onto_common_ui{
 	 * @return string $selector
 	 */
 	public static function get_scheme_list_selector($controler,$params,$empty=false,$onchange='',$name='',$id='',$multiple=false){
-		global $msg,$charset,$lang,$base_path,$ontology_tpl;
+		global $msg,$charset,$lang,$ontology_tpl;
 		if($params->action=='list_selector'){
 			$list=$controler->get_scheme_list();
 			if(!empty($params->unique_scheme) && $params->concept_scheme[0] != -1){
@@ -201,7 +202,7 @@ class onto_skos_concept_ui extends onto_common_ui{
 		$breadcrumb=$controler->handle_breadcrumb();
 		$return='';
 		if(is_array($breadcrumb) && count($breadcrumb)) {
-			foreach($breadcrumb as $key=>$parent_id){
+			foreach($breadcrumb as $parent_id){
 				if($return){
 					$return.=' > ';
 				}
@@ -243,7 +244,7 @@ class onto_skos_concept_ui extends onto_common_ui{
 		$form = str_replace('<!-- imprimer_concepts -->', $lien_imprimer_concepts, $form);
 		
 		$form = str_replace('!!skos_concept_search_form_title!!', $title, $form);
-		$form = str_replace('<!-- sel_authority_statuts -->', authorities_statuts::get_form_for(AUT_TABLE_CONCEPT, ($authority_statut+0), true), $form);
+		$form = str_replace('<!-- sel_authority_statuts -->', authorities_statuts::get_form_for(AUT_TABLE_CONCEPT, intval($authority_statut), true), $form);
 		$form = str_replace('!!skos_concept_search_form_selector!!', self::get_scheme_list_selector($controler, $params,false,$onchange_scheme_list_selector,$name_scheme_list_selector,$id_scheme_list_selector), $form);
 		
 		$onchange_only_top_concepts = '';
@@ -474,6 +475,8 @@ class onto_skos_concept_ui extends onto_common_ui{
 		
 		if($params->objs){
 			$property=$controler->get_onto_property_from_pmb_name($params->objs);
+			// AR - 31/10/22 Pas d'ordre naturel à  la lecture de l'ontologie, donc on trie arbitrairement pour garantir une cohérence dans les ids d'onglets
+			sort($property->range);
 			$element = $property->range[$params->range];
 		}else {
 			$property=null;
@@ -505,7 +508,7 @@ class onto_skos_concept_ui extends onto_common_ui{
 		$onchange_scheme_list_selector = '';
 		$name_scheme_list_selector='concept_scheme';
 		$id_scheme_list_selector='id_concept_scheme';
-		$form=str_replace('<!-- sel_authority_statuts -->', authorities_statuts::get_form_for(AUT_TABLE_CONCEPT, ($authority_statut+0), true), $form);
+		$form=str_replace('<!-- sel_authority_statuts -->', authorities_statuts::get_form_for(AUT_TABLE_CONCEPT, intval($authority_statut), true), $form);
 		$form=str_replace('!!skos_concept_search_form_selector!!', self::get_scheme_list_selector($controler, $params,false,$onchange_scheme_list_selector,$name_scheme_list_selector,$id_scheme_list_selector), $form);
 
 		$onchange_only_top_concepts = '';
@@ -546,7 +549,7 @@ class onto_skos_concept_ui extends onto_common_ui{
 		$breadcrumb=$controler->handle_breadcrumb();
 		$return='';
 		if(is_array($breadcrumb) && count($breadcrumb)) {
-			foreach($breadcrumb as $key=>$parent_id){
+			foreach($breadcrumb as $parent_id){
 				if($return){
 					$return.=' > ';
 				}

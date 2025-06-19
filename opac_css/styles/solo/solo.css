@@ -2,7 +2,7 @@
 /* +--------------------------------------------------------------------------+
 // 2013 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: solo.css,v 1.11.2.1 2021/12/28 15:10:42 lbeguin Exp $ */
+// $Id: solo.css,v 1.14 2022/01/27 13:04:11 lbeguin Exp $ */
 /*------------------------------------------------------------------------------------------*/
 /* ========================================================================
    Component: Base
@@ -66,6 +66,10 @@ div[id^="cms_module"]:empty,
 div:empty,
 :not(div.clear):empty:not(iframe,i,area,base,br,col,embed,hr,img,input,textarea,link,meta,param,source,track,wbr){
      display:none;
+}
+
+.even.expl-empr-retard > td {
+	display: table-cell !important;
 }
 
 .even {
@@ -7699,4 +7703,9 @@ body#pmbopac.popup>table{
 	display: inline-block;
 	width: 33%;
 	padding: 20px;
+}
+
+/* outils georeferencement */
+#pmbopac div.olButton:empty {
+    display: block;
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: barcodes_sheets_controller.class.php,v 1.1.2.2 2021/07/19 13:23:13 dgoron Exp $
+// $Id: barcodes_sheets_controller.class.php,v 1.1 2021/07/19 13:17:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -1,8 +1,11 @@
-(function(){
+window.addEventListener('DOMContentLoaded', () => {
+	const addField = document.getElementById('add_field');
+	var options = addField ? addField.children : [];
 	
-	var options = document.getElementById('add_field').children;
 	var input = document.getElementById('input_filter');
-	input.addEventListener('input', filter_select);
+	if (input) {
+		input.addEventListener('input', filter_select);
+	}
 	
 	function filter_select(event) {
 		let needle = event.target.value.toLowerCase();
@@ -47,4 +50,4 @@
 			}
 		}
 	}
-})();
+});

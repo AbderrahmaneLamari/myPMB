@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormConceptContainer.js,v 1.6.2.1 2021/07/06 11:54:37 gneveu Exp $
+// $Id: FormConceptContainer.js,v 1.7 2021/07/06 11:58:16 gneveu Exp $
 
 /*****
  * 

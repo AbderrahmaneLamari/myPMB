@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cookies_consent.class.php,v 1.1.2.8 2021/12/06 13:34:14 dgoron Exp $
+// $Id: cookies_consent.class.php,v 1.7 2021/12/06 13:29:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

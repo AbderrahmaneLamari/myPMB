@@ -2,13 +2,23 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_records_bulletins_collstate_edition_ui.class.php,v 1.9 2021/03/26 10:28:18 dgoron Exp $
+// $Id: list_records_bulletins_collstate_edition_ui.class.php,v 1.10.4.2 2023/09/29 08:02:21 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-require_once($include_path."/templates/list/records/list_records_bulletins_collstate_edition_ui.tpl.php");
-
 class list_records_bulletins_collstate_edition_ui extends list_records_bulletins_ui {
+	
+	/**
+	 * Initialisation des filtres disponibles
+	 */
+	protected function init_available_filters() {
+		parent::init_available_filters();
+		$this->available_filters['main_fields']['user_query'] = '1914';
+	}
+	
+	protected function init_default_selected_filters() {
+		$this->add_selected_filter('user_query');
+	}
 	
 	/**
 	 * Initialisation de la pagination par défaut
@@ -34,28 +44,29 @@ class list_records_bulletins_collstate_edition_ui extends list_records_bulletins
 		$this->set_setting_column('default', 'align', 'left');
 	}
 	
-	/**
-	 * Initialisation du groupement appliqué à la recherche
-	 */
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'record_header');
 	}
 	
-	protected function _get_query_order() {
-		$this->applied_sort_type = 'SQL';
-		return " order by pert, index_sew, date_date DESC, bulletin_id DESC";
+	protected function _get_query_field_order($sort_by) {
+	    return " pert, index_sew, date_date DESC, bulletin_id DESC";
 	}
 	
 	/**
-	 * Affichage des filtres du formulaire de recherche
+	 * Filtres provenant du formulaire
 	 */
-	public function get_search_filters_form() {
-		global $list_records_bulletins_collstate_edition_ui_search_filters_form_tpl;
-		
-		$search_filters_form = $list_records_bulletins_collstate_edition_ui_search_filters_form_tpl;
-		$search_filters_form = str_replace("!!user_query!!", $this->filters['user_query'], $search_filters_form);
-		$search_filters_form = str_replace('!!objects_type!!', $this->objects_type, $search_filters_form);
-		return $search_filters_form;
+	public function set_filters_from_form() {
+		$this->set_filter_from_form('user_query');
+		parent::set_filters_from_form();
+	}
+	
+	/**
+	 * Affichage du formulaire de recherche
+	 */
+	public function get_display_search_form() {
+		$this->is_displayed_add_filters_block = false;
+		$display_search_form = parent::get_display_search_form();
+		return $display_search_form;
 	}
 	
 	/**

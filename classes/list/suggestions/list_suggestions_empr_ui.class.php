@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_suggestions_empr_ui.class.php,v 1.3.2.2 2021/11/23 11:52:56 dgoron Exp $
+// $Id: list_suggestions_empr_ui.class.php,v 1.6.4.1 2023/09/29 09:55:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,23 +54,10 @@ class list_suggestions_empr_ui extends list_ui {
 		return $this->get_suggestions_map()->getStateSelector($this->filters['state']);
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+	protected function _add_query_filters() {
 		if($this->filters['state'] && $this->filters['state'] != '-1') {
-			$filters[] = "statut='".$this->filters['state']."'";
+			$this->query_filters [] = "statut='".$this->filters['state']."'";
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 			
 	/**
@@ -133,25 +120,17 @@ class list_suggestions_empr_ui extends list_ui {
 	}
 	
 	/**
+	 * Champ(s) du tri SQL
+	 */
+	protected function _get_query_field_order($sort_by) {
+	    return $sort_by;
+	}
+	
+	/**
 	 * Tri SQL
 	 */
 	protected function _get_query_order() {
-		
-		if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				default :
-					$order .= $sort_by;
-					break;
-			}
-			if($order) {
-				$this->applied_sort_type = 'SQL';
-				return " group by name order by ".$order." ".$this->applied_sort[0]['asc_desc'];
-			} else {
-				return " group by name";
-			}
-		}
+	    return " group by name ".parent::_get_query_order();
 	}
 	
 	/**

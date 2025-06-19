@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: print_docnum.inc.php,v 1.11.8.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: print_docnum.inc.php,v 1.12.4.2 2023/12/22 08:34:50 dgoron Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $include_path, $sub, $select_noti, $number, $id_etagere, $id_liste;
@@ -21,15 +21,24 @@ switch($sub){
 		} elseif (!empty($id_liste)) {
 		    $liste = new liste_lecture($id_liste*1);
 		    $id_notices = $liste->notices;
-		} else $id_notices=$_SESSION["cart"];
+		} else {
+		    $id_notices=$_SESSION["cart"] ?? [];
+		}
 		ajax_http_send_response( doc_num_get_list($id_notices) );
 		break;
 }
 function doc_num_get_list($id_notices){
-	global $msg, $gestion_acces_active,$gestion_acces_empr_notice,$gestion_acces_empr_docnum;
+    global $msg, $gestion_acces_active,$gestion_acces_empr_notice,$gestion_acces_empr_docnum, $liens_opac, $charset;
 	$cpt_doc_num=0;
+	
+	if (empty($id_notices)) {
+	    return "";
+	}
+	
+	$tpl = "";
 	foreach($id_notices as $notice_id){
-		
+	    $notice_id = intval($notice_id);
+
 		$query = "SELECT explnum_id from explnum where explnum_notice=$notice_id and explnum_mimetype IN ('application/pdf','application/x-pdf') ";
 		$query .= " union ";
 		$query .= " select explnum_id from explnum ,bulletins where explnum_bulletin=bulletin_id and num_notice=$notice_id and explnum_mimetype IN ('application/pdf','application/x-pdf')";
@@ -37,6 +46,7 @@ function doc_num_get_list($id_notices){
 		$nb_result = pmb_mysql_num_rows($result) ;
 		if (!$nb_result)	continue;		
 		// pour tout les pdf de la notice
+		
 		while($row = pmb_mysql_fetch_object($result)){
 			$explnum_id=$row->explnum_id;
 			
@@ -58,6 +68,8 @@ function doc_num_get_list($id_notices){
 			}
 						
 			//droits d'acces emprunteur/notice
+			$rights = 0;
+			$dom_2 = null;
 			if ($gestion_acces_active==1 && $gestion_acces_empr_notice==1) {
 				$ac= new acces();
 				$dom_2= $ac->setDomain(2);
@@ -79,6 +91,8 @@ function doc_num_get_list($id_notices){
 			$expl_num=pmb_mysql_fetch_array($res_restriction_abo);
 			
 			//droits d'acces emprunteur/document numérique
+			$docnum_rights = 0;
+			$dom_3 = null;
 			if ($gestion_acces_active==1 && $gestion_acces_empr_docnum==1) {
 				$ac= new acces();
 				$dom_3= $ac->setDomain(3);
@@ -96,7 +110,7 @@ function doc_num_get_list($id_notices){
 				if (($ligne->explnum_data)||($ligne->explnum_path)) {
 					$notice = new notice_affichage($expl_num["notice_id"], $liens_opac) ;
 					$notice->do_header_without_html();
-					$tpl.="<input id='doc_num_list_".$explnum_id."' type='checkbox' name='doc_num_list[]' value='".$explnum_id."'> ".$notice->notice_header_without_html." : ".$ligne->explnum_nom."<br />";
+					$tpl.="<div class='row'><input id='doc_num_list_".$explnum_id."' type='checkbox' name='doc_num_list[]' value='".$explnum_id."'> <label for='doc_num_list_".$explnum_id."'>".$notice->notice_header_without_html." : ".$ligne->explnum_nom."</label></div>";
 					$cpt_doc_num++;
 				}
 			}	
@@ -105,8 +119,8 @@ function doc_num_get_list($id_notices){
 	if($cpt_doc_num){
 		$tpl=" 		
 		<br /><b>".$msg["print_output_docnum_list"]."</b>
-		<input type='button' id='list_lecture_cart_checked_all' class='bouton' value=\"".$msg["list_docnum_checked_all"]."\" title=\"".$msg["list_docnum_checked_all"]."\" onClick=\"setCheckboxes('print_options', 'doc_num_list', true); return false;\" />		
-		<input type='button' id='list_lecture_cart_checked_all' class='bouton' value=\"".$msg["list_docnum_unchecked_all"]."\" title=\"".$msg["list_docnum_unchecked_all"]."\" onClick=\"setCheckboxes('print_options', 'doc_num_list', false); return false;\" />
+		<input type='button' id='list_docnum_cart_checked_all' class='bouton' value=\"".htmlentities($msg["list_docnum_checked_all"],ENT_QUOTES,$charset)."\" title=\"".htmlentities($msg["list_docnum_checked_all"],ENT_QUOTES,$charset)."\" onClick=\"setCheckboxes('print_options', 'doc_num_list', true); return false;\" />		
+		<input type='button' id='list_docnum_cart_unchecked_all' class='bouton' value=\"".htmlentities($msg["list_docnum_unchecked_all"],ENT_QUOTES,$charset)."\" title=\"".htmlentities($msg["list_docnum_unchecked_all"],ENT_QUOTES,$charset)."\" onClick=\"setCheckboxes('print_options', 'doc_num_list', false); return false;\" />
 		<br />". $tpl;
 	}else {
 		$tpl="<b>".$msg["print_output_docnum_list_no_file"]."<br /></b>";

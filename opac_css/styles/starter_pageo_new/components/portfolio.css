@@ -1,0 +1,9 @@
+.pmb_documents {
+    margin: 24px 0 44px;
+}
+
+.pmb_document_title {
+    margin-top: 4px;
+    color: var(--c-primary);
+    display: block;
+}

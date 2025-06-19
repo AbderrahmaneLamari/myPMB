@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_collection.class.php,v 1.7.8.1 2021/10/20 11:57:44 dgoron Exp $
+// $Id: selector_collection.class.php,v 1.10 2023/02/08 16:27:59 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -49,13 +49,13 @@ class selector_collection extends selector_authorities {
 		return new authority($authority_id, $object_id, AUT_TABLE_COLLECTIONS);
 	}
 	
-	protected function get_display_object($authority_id=0, $object_id=0) {
+	protected function get_display_object($id=0, $object_id=0) {
 		global $charset;
 		global $caller;
 		global $callback;
 		
 		$display = '';
-		$authority = $this->get_authority_instance($authority_id, $object_id);
+		$authority = $this->get_authority_instance($id, $object_id);
 		$collection = $authority->get_object_instance();
 		
 		$display .= pmb_bidi($authority->get_display_statut_class_html()."
@@ -63,10 +63,6 @@ class selector_collection extends selector_authorities {
 				".$collection->name."</a>");
 		$display .= pmb_bidi(".&nbsp;".$collection->editeur."<br />");
 		return $display;
-	}
-	
-	protected function get_searcher_instance() {
-		return searcher_factory::get_searcher('collections', '', $this->user_input);
 	}
 	
 	protected function get_entities_controller_instance($id=0) {

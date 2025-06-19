@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: domain.xml,v 1.6 2020/12/21 10:19:59 gneveu Exp $ -->
+$Id: domain.xml,v 1.6.6.1 2023/11/20 16:28:45 dbellamy Exp $ -->
 
 <domain>
 
@@ -80,7 +80,7 @@ $Id: domain.xml,v 1.6 2020/12/21 10:19:59 gneveu Exp $ -->
 			<ref type="table" name="empr_statut" key="idstatut" value="statut_libelle" />
 		</property>
 		<property id="10" lib="msg:contribution_area_default_area">
-            <ref type="callable" name="area_editing_entity" class_path="./classes/contribution_area/contribution_area.class.php" class="contribution_area" method="get_acces_editing_entity" />
+            <ref type="callable" name="area_editing_entity" class="contribution_area" method="get_acces_editing_entity" />
         </property>
 	</properties>
 

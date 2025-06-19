@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: licence_profiles.inc.php,v 1.3 2021/04/16 07:59:13 dgoron Exp $
+// $Id: licence_profiles.inc.php,v 1.4 2022/03/31 14:17:55 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -16,7 +16,7 @@ switch ($profileaction) {
 		print '<div class="row"><div class="msg-perio">'.$msg['sauv_misc_running'].'</div></div>';
 		$explnum_licence_profile = new explnum_licence_profile($profileid);
 		$explnum_licence_profile->set_explnum_licence_num($id);
-		$explnum_licence_profile->get_values_from_form();
+		$explnum_licence_profile->set_properties_from_form();
 		$explnum_licence_profile->save();
 		print '<script type ="text/javascript">
 					document.location = "./admin.php?categ=docnum&sub=licence&action=settings&id='.$id.'&what=profiles";

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Contribution.js,v 1.26.2.2 2021/08/05 13:07:44 gneveu Exp $
+// $Id: Contribution.js,v 1.29 2022/05/24 13:25:48 qvarin Exp $
 
 define([
         'dojo/_base/declare',
@@ -92,6 +92,9 @@ define([
 			var form = e.target.form;
 			var params = ioQuery.queryToObject(form.action.substring(form.action.indexOf("?") + 1));
 			form.setAttribute("accept-charset", "utf-8");
+			
+			topic.publish("contribution/submit", "save");
+			
 			iframe('./ajax.php?module=ajax&categ=contribution&iframe=1&action=save', {
 				form: form.id,
 				data: params,
@@ -152,6 +155,9 @@ define([
 			var form = e.target.form;
 			var params = ioQuery.queryToObject(form.action.substring(form.action.indexOf("?") + 1));
 			form.setAttribute("accept-charset", "utf-8");
+			
+			topic.publish("contribution/submit", "push");
+			
 			iframe('./ajax.php?module=ajax&categ=contribution&iframe=1&action=save_push', {
 				form: form.id,
 				data: params,

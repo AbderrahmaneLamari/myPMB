@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: DateHelper.php,v 1.2 2020/10/06 15:31:28 btafforeau Exp $
+// $Id: DateHelper.php,v 1.2.6.1 2023/10/11 09:45:18 dbellamy Exp $
 
 namespace Pmb\Common\Helper;
 
@@ -49,7 +49,7 @@ class DateHelper
     }
 
     /**
-     * 
+     *
      * @param \DateTime $day
      * @return \DateTime
      */
@@ -119,7 +119,7 @@ class DateHelper
         }
         return $nbWeeks + 1;
     }
-    
+
     /**
      * @param \DateTime $day
      * @return array
@@ -130,10 +130,23 @@ class DateHelper
         $date = new \DateTime();
         $date->sub(new \DateInterval("P2Y"));
         $year = $date->format('Y');
-        
+
         for ($i = 0; $i < 10; $i++) {
             $years[] = $year + $i;
         }
         return $years;
+    }
+
+
+    /**
+     * Retourne le nb de secondes entre deux dates
+     *
+     * @param \DateTime $start
+     * @param \DateTime $end
+     * @return number
+     */
+    public static function getDiffInSeconds(\DateTime $start, \DateTime $end)
+    {
+        return $end->format('U') - $start->format('U');
     }
 }

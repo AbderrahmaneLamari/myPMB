@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cache_factory.class.php,v 1.3 2020/11/03 14:48:06 dgoron Exp $
+// $Id: cache_factory.class.php,v 1.4 2022/10/24 07:55:50 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -20,6 +20,11 @@ class cache_factory {
 	public function getFromCache($key) {
 		return false;
 	}
+	
+	public function deleteFromCache($key) {
+	    return false;
+	}
+	
 
 	/**
 	 * 

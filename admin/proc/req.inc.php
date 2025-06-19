@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: req.inc.php,v 1.3.12.1 2022/01/05 08:13:43 dgoron Exp $
+// $Id: req.inc.php,v 1.5 2022/03/31 14:17:55 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -16,44 +16,31 @@ require_once ($include_path.'/templates/requests.tpl.php');
 
 $rqt = new requester();
 
-function show_req_add_form($step=0) {
-	global $msg;
-	global $rqt;
-	global $req_add_form;
-	
-	$form_title = $msg['req_form_tit_add'];
-
-	switch($step) {
-		default :
-		case '0' :
-			$req_add_form = str_replace('!!form_title!!', $form_title, $req_add_form);
-
-			$num_classement=0;
-			$combo_clas= gen_liste ("SELECT idproc_classement,libproc_classement FROM procs_classements ORDER BY libproc_classement ", "idproc_classement", "libproc_classement", "form_classement", "", $num_classement, 0, $msg['proc_clas_aucun'],0, $msg['proc_clas_aucun']) ;
-			$req_add_form = str_replace('!!classement!!', $combo_clas, $req_add_form);
-			
-			$req_add_form = str_replace('!!req_name!!', '', $req_add_form);
-			$req_add_form = str_replace('!!req_type!!',$rqt->getTypeSelector('1','req_typeChg();'), $req_add_form);
-			$req_add_form = str_replace('!!req_univ!!',$rqt->getUnivSelector('1','req_univChg();'), $req_add_form);
-			$req_add_form = str_replace('!!req_comm!!','', $req_add_form);
-			$req_add_form = str_replace('!!req_code!!','', $req_add_form);
-			$req_add_form = str_replace('!!req_auth!!', request::getAutorisationsForm(), $req_add_form);
-			break;
-	}
-
-	print $req_add_form; 	
-}
-
 //traitement des actions
 switch($action) {
-	
 	case 'add':
-		show_req_add_form();
+		print "
+		<script type='text/javascript' src='./javascript/select.js'></script>
+		<script type='text/javascript' src='./javascript/requests.js'></script>
+		<script type='text/javascript'>
+		function test_form(form) {
+			if(form.req_name.value.length == 0) {
+				alert('".addslashes($msg[702])."');
+				form.req_name.focus();
+				return false;
+			}
+			if(form.req_code.value.length == 0) {
+				alert('".addslashes($msg[703])."');
+				form.req_code.focus();
+				return false;
+			}
+			return true;
+		}
+		</script>";
+		print $rqt->getForm();
 		break;
-
 	case 'modif':
 		break;
-
 	case 'update':
 		if($req_name && $req_code) {
 			$requete = "SELECT count(1) FROM procs WHERE name='".$req_name."' ";
@@ -78,11 +65,8 @@ switch($action) {
 			print "<script type='text/javascript'> document.location='./admin.php?categ=proc&sub=proc&action='</script>";
 		}
 		break;
-
-		
 	case 'del':
 		break;
-
 	case 'list':
 	default:
 		break;

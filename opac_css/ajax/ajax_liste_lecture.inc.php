@@ -2,11 +2,16 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_liste_lecture.inc.php,v 1.16.4.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: ajax_liste_lecture.inc.php,v 1.19.4.1 2023/10/17 14:03:22 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $include_path, $quoifaire, $id, $id_empr_to_deleted, $id_empr_to_added, $id_notice, $nom_liste, $id_liste;
+$id = intval($id);
+$id_empr_to_deleted = intval($id_empr_to_deleted);
+$id_empr_to_added = intval($id_empr_to_added);
+$id_notice = intval($id_notice);
+$id_liste = intval($id_liste);
 
 require_once($class_path."/liste_lecture.class.php");
 require_once($include_path."/mail.inc.php");
@@ -99,25 +104,16 @@ function show_refus_form(){
  * Envoyer un mail de demande d'accès à la liste confidentielle
  */
 function send_demande($id_liste){
-	global $com, $id_empr, $empr_nom, $empr_prenom,$empr_mail, $msg, $opac_url_base, $opac_connexion_phrase;
+	global $com, $id_empr;
 	
 	$requete = "replace into  abo_liste_lecture (num_empr,num_liste,commentaire,etat) values ('".$id_empr."','".$id_liste."','".$com."','1')";
 	pmb_mysql_query($requete);
 	
-	//Coordonnées du diffuseur de la liste
-	$req = "select empr_login, empr_mail, concat(empr_prenom,' ',empr_nom) as nom, nom_liste from opac_liste_lecture, empr where num_empr=id_empr and id_liste='".$id_liste."'";
-	$res = pmb_mysql_query($req);
-	$diffuseur = pmb_mysql_fetch_object($res);
-	
-	$objet = sprintf($msg['list_lecture_objet_mail'],$diffuseur->nom_liste);
-	$date = time();
-	$login = $diffuseur->empr_login;
-	$code=md5($opac_connexion_phrase.$login.$date);
-	$corps = sprintf($msg['list_lecture_intro_mail'],$diffuseur->nom,$diffuseur->nom_liste).", <br />".sprintf($msg['list_lecture_corps_mail'],$empr_prenom." ".$empr_nom,$diffuseur->nom_liste);
-	if($com) $corps .= sprintf("<br />".$msg['list_lecture_corps_com_mail'],$empr_prenom." ".$empr_nom,"<br />".$com);
-	$corps .= "<br /><br /><a href='".$opac_url_base."empr.php?code=$code&emprlogin=$login&date_conex=$date&tab=lecture&lvl=demande_list' >".$msg['list_lecture_activation_mail']."</a>";
-	
-	mailpmb($diffuseur->nom,$diffuseur->empr_mail,$objet,stripslashes($corps),$empr_prenom." ".$empr_nom,$empr_mail);
+	$mail_opac_reader_readinglist_request_access = new mail_opac_reader_readinglist_request_access();
+	$liste_lecture = new liste_lecture($id_liste);
+	$mail_opac_reader_readinglist_request_access->set_mail_to_id($liste_lecture->num_owner);
+	$mail_opac_reader_readinglist_request_access->set_id_liste($id_liste);
+	return $mail_opac_reader_readinglist_request_access->send_mail();
 }
 
 function unicite_nom_liste($nom_liste, $id_liste){

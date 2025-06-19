@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: extensions.php,v 1.7 2019/11/15 15:11:01 tsamson Exp $
+// $Id: extensions.php,v 1.8 2022/07/28 12:35:46 jparis Exp $
 
 // définition du minimum nécéssaire
 $base_path=".";
@@ -30,6 +30,8 @@ if (file_exists("$include_path/extensions.inc.php"))
 // print "</div></div>";
 
 print $footer;
+
+html_builder();
 
 // deconnection MYSql
 pmb_mysql_close($dbh);

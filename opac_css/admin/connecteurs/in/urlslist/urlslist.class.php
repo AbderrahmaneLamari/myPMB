@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: urlslist.class.php,v 1.7.10.1 2022/01/10 10:35:57 dgoron Exp $
+// $Id: urlslist.class.php,v 1.8 2022/01/10 10:23:05 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -1,0 +1,257 @@
+/* mon titre de fomulaire */
+
+#contact_form_content h3 {
+    font: var(--font-subtitle);
+    color: var(--c-primary);
+    margin: 12px 0;
+}
+
+#contact_form_content label,
+#contact_form_content .contact_form_field_mandatory {
+    /* je stylise mes labels */
+    font: var(--font-resume);
+    font-weight: 500;
+    color: var(--c-black);
+    margin: 8px 0;
+}
+
+#contact_form_content .colonne2:first-of-type,
+.contact_form_field_mandatory::after {
+    color: red;
+}
+
+/* je stylise mes champs select, input et textarea */
+
+#contact_form_content .dijitSelect,
+#contact_form_content .dijitTextBox {
+    background: none;
+    border: 1px solid var(--c-primary);
+    border-radius: var(--border-radius);
+}
+
+.dijitSelect {
+    width: 468px !important;
+    height: 50px !important;
+}
+
+#contact_form_content .dijitSelect,
+#contact_form_content .dijitTextBox,
+#contact_form_content .dijitSelect .dijitButtonContents {
+    border: none !important;
+}
+
+#contact_form_content .dijitSelect,
+#contact_form_content .dijitTextBox input,
+#contact_form_parameter_email,
+#contact_form_content #contact_form_text {
+    border: 1px solid var(--c-primary) !important;
+    height: 48px !important;
+    box-shadow: none;
+    padding: 0 16px !important;
+    box-sizing: border-box;
+    font: var(--font-resume);
+}
+
+#contact_form_content .dijitFocused input,
+#contact_form_parameter_email:focus,
+#contact_form_content #contact_form_text:focus,
+#contact_form_content .dijitSelect:focus {
+    border: 1px solid var(--c-thirdly) !important;
+    outline: none;
+}
+
+#contact_form_content .dijitSelect .dijitButtonContents {
+    border: none;
+    background-color: transparent;
+    vertical-align: middle;
+    background: none;
+    height: 42px;
+    color: var(--c-white);
+}
+
+#contact_form_content .dijitSelect {
+    background-color: var(--c-primary);
+    color: var(--c-white);
+}
+
+#contact_form_content .dijitSelectHover {
+    background-color: var(--c-primary);
+    color: var(--c-white);
+}
+
+#contact_form_content {
+    max-width: 1000px;
+    margin: 0 auto;
+    background-color: var(--c-white);
+    position: relative;
+    padding: 60px 80px;
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    border-radius: var(--border-radius);
+}
+
+#contact_form_content #add_attachments .bouton {
+    padding: 0;
+    height: 30px;
+    width: 30px;
+    border-radius: var(--border-radius);
+}
+
+#add_attachments>* {
+    margin-bottom: 6px !important;
+}
+
+#contact_form_content .dijitButtonNode {
+    border: none;
+    padding: 0.1em 0.2em 0.2em 0.2em;
+    background: none;
+}
+
+#contact_form_parameter_attachments .row input {
+    padding: 0;
+    margin-bottom: 4px;
+}
+
+input[type="file"] {
+    max-width: 400px;
+}
+
+.contact_form_field_error {
+    color: red;
+    margin: 12px;
+  }
+
+/* je passe les champs les uns au dessous des autres */
+
+#contact_form .form-contenu div:not(.contact_form_separator)>div:first-of-type {
+    clear: both;
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+#contact_form .form-contenu div:not(.contact_form_separator)>div:last-of-type {
+    margin-bottom: 0;
+    width: 500px;
+    margin-top: 0;
+}
+
+#contact_form_content #contact_form_text.dijitTextArea {
+    height: 250px !important;
+    width: 100% !important;
+    padding: 24px 16px !important;
+}
+
+.contact_form_text .colonne2:last-of-type {
+    width: 100% !important;
+}
+
+/* je stylise mes selects (flèche) */
+
+#contact_form .dijitSelect .dijitArrowButton {
+    display: none;
+}
+
+#contact_form .dijitButtonText {
+    width: 100%;
+    background: url("../images/arrow_down_white.png") no-repeat 100% 50% !important;
+    text-align: left;
+  }
+
+/* du grid pour arranger le placement du captcha */
+
+.contact_form_code .colonne2:last-of-type {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    grid-column-gap: 16px;
+}
+
+.contact_form_text_verif {
+    grid-area: 1 / 1 / 2 / 9;
+}
+
+#captcha_image {
+    grid-area: 2 / 1 / 4 / 4;
+}
+
+#captcha_image_audio_controls {
+    grid-area: 2 / 4 / 3 / 5;
+}
+
+.contact_form_code .colonne2:last-of-type>a {
+    grid-area: 3 / 4 / 4 / 5;
+}
+
+.contact_form_verifcode {
+    grid-area: 2 / 5 / 3 / 8;
+}
+
+#widget_contact_form_verifcode,
+#contact_form_verifcode {
+    width: 250px !important;
+}
+
+/* et on stylise le bouton d'envoi */
+
+#contact_form .center {
+    text-align: left;
+    margin-top: 24px;
+}
+
+#contact_form>.row {
+    text-align: right;
+}
+
+#contact_form .center input {
+    font: var(--font-link);
+    padding: 11px 24px 10px 24px;
+    border-radius: var(--border-radius);
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    transition: var(--transition);
+    text-align: center;
+}
+
+
+@media (max-width: 768px) {
+    #contact_form .form-contenu div:not(.contact_form_separator)>div:last-of-type {
+        width: 100%;
+    }
+
+    .dijitSelect {
+        width: 90% !important;
+    }
+
+    #contact_form_content {
+        padding: 24px 32px;
+    }
+
+    input[type="file"] {
+        max-width: 300px;
+    }
+
+    .contact_form_verifcode {
+        grid-area: 4 / 1 / 4 / 8;
+    }
+
+    #contact_form_verifcode {
+        margin-top: 6px;
+    }
+
+    .contact_form_code .colonne2:last-of-type {
+        grid-template-rows: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    #captcha_image {
+        grid-area: 2 / 1 / 4 / 5;
+    }
+
+    #captcha_image_audio_controls {
+        grid-area: 2 / 5 / 3 / 5;
+    }
+
+    .contact_form_code .colonne2:last-of-type>a {
+        grid-area: 3 / 5 / 4 / 5;
+    }
+}

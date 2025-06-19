@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_docs_section_ui.class.php,v 1.5 2021/04/19 07:10:06 dgoron Exp $
+// $Id: list_configuration_docs_section_ui.class.php,v 1.5.6.1 2023/03/24 07:55:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -33,21 +33,32 @@ class list_configuration_docs_section_ui extends list_configuration_docs_ui {
 		$this->set_setting_column('section_visible_opac', 'datatype', 'boolean');
 	}
 	
-	protected function get_cell_content($object, $property) {
-		$content = '';
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch($property) {
 			case 'section_libelle':
 				if ($object->sdoc_owner) {
-					$content .= "<i>".$object->section_libelle."</i>";
+					return array(
+							'style' => 'font-style:italic;'
+					);
 				} else {
-					$content .= "<strong>".$object->section_libelle."</strong>";
+					return array(
+							'style' => 'font-weight:bold;'
+					);
 				}
-				break;
+		}
+		return parent::get_default_attributes_format_cell($object, $property);
+	}
+	
+	protected function get_cell_content($object, $property) {
+		global $charset;
+		
+		$content = '';
+		switch($property) {
 			case 'section_visible_loc':
 				$rqtloc = "select location_libelle from docsloc_section, docs_location where num_section='".$object->idsection."' and idlocation=num_location order by location_libelle " ;
 				$resloc = pmb_mysql_query($rqtloc);
 				$localisations=array();
-				while ($loc=pmb_mysql_fetch_object($resloc)) $localisations[]=$loc->location_libelle ;
+				while ($loc=pmb_mysql_fetch_object($resloc)) $localisations[]=htmlentities($loc->location_libelle, ENT_QUOTES, $charset);
 				$content .= implode("<br />",$localisations) ;
 				break;
 			default :

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: avis.class.php,v 1.7.2.1 2022/01/19 11:46:44 dgoron Exp $
+// $Id: avis.class.php,v 1.8.4.1 2023/09/04 14:27:41 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -186,7 +186,10 @@ class avis {
 		global $msg;
 		global $current_module;
 
-		$form = "<script type='text/javascript' src='./javascript/bbcode.js'></script>
+		$form = "
+            <script type='text/javascript'>
+                pmb_include('./javascript/bbcode.js');
+            </script>
 			<form class='form-".$current_module."' method='post' id='validation_avis' name='validation_avis' >
 					<h3>".$msg['avis_titre_form']."</h3>
 					<div class='form-contenu'>";

@@ -2,33 +2,20 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_skos_concept_item.tpl.php,v 1.24.2.1 2021/12/02 08:40:34 dgoron Exp $
+// $Id: onto_skos_concept_item.tpl.php,v 1.28 2022/10/31 11:31:20 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $ontology_tpl, $pmb_form_authorities_editables, $PMBuserid,$what, $select_concept_prop, $PMBuserid, $current_module, $msg;
+global $ontology_tpl, $pmb_form_authorities_editables, $PMBuserid, $select_concept_prop, $PMBuserid, $current_module, $msg;
 global $pmb_autorites_verif_js, $base_path;
 
-$ontology_tpl['form_body']="";
-if($what!="ontology"){
-$ontology_tpl['form_body'] = '
-<script type="text/javascript">
-	require(["dojo/ready", "apps/pmb/gridform/FormEdit"], function(ready, FormEdit){
-	     ready(function(){
-	     	new FormEdit();
-	     });
-	});
-</script>';
-}
-$ontology_tpl['form_body'].= '
-<script type="text/javascript" src="./javascript/ajax.js"></script>
+$ontology_tpl['form_body']= '
 <script type="text/javascript">
 	document.title="!!document_title!!";
 </script>';
 
 $ontology_tpl['form_body'].= '
-<script type="text/javascript" src="./javascript/ajax.js"></script>
-<form id="!!onto_form_id!!" name="!!onto_form_name!!" method="POST" action="!!onto_form_action!!" class="form-autorites" onSubmit="return false;">
+<form id="!!onto_form_id!!" name="!!onto_form_name!!" method="POST" action="!!onto_form_action!!" class="form-autorites" onSubmit="return false;" data-advanced-form="true">
 	<input type="hidden" name="item_uri" value="!!uri!!"/>
 	<input type="hidden" name="save_and_continue" id="save_and_continue" value="0"/>
 	<div class="row">	
@@ -38,10 +25,10 @@ $ontology_tpl['form_body'].= '
 		<label class="etiquette" for="authority_statut">'.$msg['authorities_statut_label'].'</label>
 		!!auth_statut_selector!!
 		';
-	if ($PMBuserid==1 && $pmb_form_authorities_editables==1 && $what!="ontology"){
+	if ($PMBuserid==1 && $pmb_form_authorities_editables==1){
 		$ontology_tpl['form_body'] .='<input type="button" class="bouton_small" value="'.$msg['authorities_edit_format'].'" id="bt_inedit"/>';
 	}
-	if ($pmb_form_authorities_editables==1 && $what!="ontology") {
+	if ($pmb_form_authorities_editables==1) {
 		$ontology_tpl['form_body'] .='<input type="button" class="bouton_small" value="'.$msg['authorities_origin_format'].'" id="bt_origin_format"/>';
 	}
 	$ontology_tpl['form_body'] .= '
@@ -75,7 +62,14 @@ $ontology_tpl['form_body'].= '
 
 
 $ontology_tpl['form_scripts'] = '
+<script type="text/javascript" src="./javascript/ajax.js"></script>
 <script type="text/javascript">
+	require(["dojo/ready",  "apps/pmb/form/FormController","apps/pmb/gridform/FormEdit"], function(ready, FormController, FormEdit){
+	     ready(function(){	
+            new FormController();
+	     	new FormEdit();
+	     });
+	});
 	!!onto_datasource_validation!!
     function submit_onto_form(save_and_continue) {		
 		if (check_onto_form()) {

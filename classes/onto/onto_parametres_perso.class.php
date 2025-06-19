@@ -2,17 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_parametres_perso.class.php,v 1.17.2.6 2021/09/03 08:14:42 qvarin Exp $
+// $Id: onto_parametres_perso.class.php,v 1.27 2023/02/22 10:10:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path;
 require_once($class_path."/parametres_perso.class.php");
 require_once($class_path."/encoding_normalize.class.php");
-require_once($class_path."/autoloader.class.php");
-
-$autoloader = new autoloader();
-$autoloader->add_register("rdf_entities_integration", true);
 
 class onto_parametres_perso extends parametres_perso {
 	
@@ -247,8 +243,7 @@ class onto_parametres_perso extends parametres_perso {
 		
 		switch ($options['FOR']) {
 			case 'list':
-				$query = "SELECT ". $this->prefix . "_custom_list_value as id, ". $this->prefix . "_custom_list_lib as libelle  FROM " . $this->prefix ."_custom_lists WHERE " . $this->prefix . "_custom_champ = " . $id . " ORDER BY ordre";
-
+				$query = "SELECT ". $this->prefix . "_custom_list_value as id, ". $this->prefix . "_custom_list_lib as libelle, ordre FROM " . $this->prefix ."_custom_lists WHERE " . $this->prefix . "_custom_champ = " . $id . " ORDER BY ordre";
 				$result = pmb_mysql_query($query);
 				if (pmb_mysql_num_rows($result)) {
 					while ($row = pmb_mysql_fetch_object($result)) {
@@ -259,6 +254,7 @@ class onto_parametres_perso extends parametres_perso {
 								<rdfs:label xml:lang='fr'>".htmlspecialchars(encoding_normalize::utf8_normalize($row->libelle), ENT_QUOTES, 'utf-8')."</rdfs:label>
 								<pmb:identifier>".htmlspecialchars(encoding_normalize::utf8_normalize($row->id), ENT_QUOTES, 'utf-8')."</pmb:identifier>
                                 <pmb:msg_code></pmb:msg_code>
+                                <pmb:order>".htmlspecialchars(encoding_normalize::utf8_normalize(isset($row->ordre) ? $row->ordre : 0), ENT_QUOTES, 'utf-8')."</pmb:order>
 							</rdf:Description>";
 					}
 				}
@@ -362,7 +358,11 @@ class onto_parametres_perso extends parametres_perso {
 	}
 	
 	public static function load_in_store($store, $force = false) {
-		global $thesaurus_ontology_filemtime;
+	    global $thesaurus_ontology_filemtime, $base_path;
+	    
+	    if (!file_exists(self::$filename)) {
+	        self::$filename = $base_path."/temp/ontologies_pmb_entities_ppersos.rdf";
+	    }
 		
 		$tab_file_rdf = unserialize($thesaurus_ontology_filemtime);
 		if (!isset($tab_file_rdf[self::$filename])) {
@@ -496,7 +496,8 @@ class onto_parametres_perso extends parametres_perso {
 	    }
 	}
 	
-	public function get_authority_type_from_query_auth ($choice) {
+	public function get_authority_type_from_query_auth($choice) {
+		$choice = intval($choice);
 	    switch ($choice){
 	        case 1:
 	            return 'author';

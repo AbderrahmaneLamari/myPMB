@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_docs_statut_ui.class.php,v 1.4 2021/04/19 07:10:06 dgoron Exp $
+// $Id: list_configuration_docs_statut_ui.class.php,v 1.4.6.1 2023/03/24 07:55:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -40,44 +40,50 @@ class list_configuration_docs_statut_ui extends list_configuration_docs_ui {
 		$this->set_setting_column('statut_visible_opac', 'datatype', 'boolean');
 	}
 	
-	protected function get_cell_content($object, $property) {
+	protected function _get_object_property_pret_flag($object) {
 		global $msg;
+		
+		if($object->pret_flag) {
+			return $msg[113];
+		} else {
+			return $msg[114];
+		}
+	}
 	
-		$content = '';
+	protected function _get_object_property_statut_allow_resa($object) {
+		global $msg;
+		
+		if($object->statut_allow_resa) {
+			return $msg['statut_allow_resa_yes'];
+		} else {
+			return $msg['statut_allow_resa_no'];
+		}
+	}
+	
+	protected function _get_object_property_transfert_flag($object) {
+		global $msg;
+		
+		if($object->transfert_flag) {
+			return $msg['statut_allow_transfert_yes'];
+		} else {
+			return $msg['statut_allow_transfert_no'];
+		}
+	}
+	
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch($property) {
 			case 'statut_libelle':
 				if ($object->statusdoc_owner) {
-					$content .= "<i>".$object->statut_libelle."</i>";
+					return array(
+							'style' => 'font-style:italic;'
+					);
 				} else {
-					$content .= "<strong>".$object->statut_libelle."</strong>";
+					return array(
+							'style' => 'font-weight:bold;'
+					);
 				}
-				break;
-			case 'pret_flag':
-				if($object->pret_flag) {
-					$content .= $msg[113];
-				} else {
-					$content .= $msg[114];
-				}
-				break;
-			case 'statut_allow_resa':
-				if($object->statut_allow_resa) {
-					$content .= $msg['statut_allow_resa_yes'];
-				} else {
-					$content .= $msg['statut_allow_resa_no'];
-				}
-				break;
-			case 'transfert_flag':
-				if($object->transfert_flag) {
-					$content .= $msg['statut_allow_transfert_yes'];
-				} else {
-					$content .= $msg['statut_allow_transfert_no'];
-				}
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
 		}
-		return $content;
+		return parent::get_default_attributes_format_cell($object, $property);
 	}
 	
 	public function get_display_header_list() {

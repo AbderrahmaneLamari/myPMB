@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc_file_indexation.class.php,v 1.3 2020/08/17 11:57:12 dgoron Exp $
+// $Id: misc_file_indexation.class.php,v 1.3.6.1 2023/07/26 06:24:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,8 +34,29 @@ class misc_file_indexation extends misc_file {
 			<th>".htmlentities($msg['misc_file_code'], ENT_QUOTES, $charset)."</th>
 			<th>".htmlentities($msg['misc_file_label'], ENT_QUOTES, $charset)."</th>
 			<th>".htmlentities($msg['misc_file_visible'], ENT_QUOTES, $charset)."</th>
+			<th>".htmlentities($msg['misc_file_pond'], ENT_QUOTES, $charset)."</th>
 		</tr>";
 		return $display;
+	}
+	
+	protected function get_display_pond($code, $label, $pond='') {
+// 		global $msg, $charset;
+		
+		$display = "<span id='subst_file_data_".$code."_pond_span'>";
+		if(isset($this->data[$code]['pond']) && $this->data[$code]['pond'] != $pond) {
+			$display .= "<strong>".$this->data[$code]['pond']."</strong>";
+// 			$display .= "<input type='hidden' name='subst_file_data[".$code."][pond]' id='subst_file_data_".$code."_pond' value='".intval($this->data[$code]['pond'])."' />";
+// 			$display .= " <img data-file-code='".$code."' data-file-label='".htmlentities($label, ENT_QUOTES, $charset)."' data-file-pond='".intval($this->data[$code]['pond'])."' data-file-action='edit_pond' ".(!empty($this->type) ? "data-file-type='".$this->type."'" : "")." src='".get_url_icon('b_edit.png')."' alt='".$msg['62']."' title='".$msg['62']."' style='cursor:pointer;'/>";
+			
+		} elseif($pond !== '') {
+			$display .= $pond;
+// 			$display .= " <img data-file-code='".$code."' data-file-label='".htmlentities($label, ENT_QUOTES, $charset)."' data-file-pond='".intval($pond)."' data-file-action='edit_pond' ".(!empty($this->type) ? "data-file-type='".$this->type."'" : "")." src='".get_url_icon('b_edit.png')."' alt='".$msg['62']."' title='".$msg['62']."' style='cursor:pointer;'/>";
+		}
+		
+		$display .= "</span>";
+		return $display;
+
+		return '';
 	}
 	
 	protected function get_display_content_list() {
@@ -51,6 +72,7 @@ class misc_file_indexation extends misc_file {
 				</td>
 				<td>".htmlentities($msg[$field['NAME']], ENT_QUOTES, $charset)."</td>
 				<td>".$this->get_visible_checkbox($field['ID'])."</td>
+				<td>".$this->get_display_pond($field['ID'], $msg[$field['NAME']], $field['POND'] ?? '')."</td>
 			</tr>";
 		}
 		return $display;
@@ -69,6 +91,19 @@ class misc_file_indexation extends misc_file {
 	
 	public function set_type($type) {
 		$this->type = substr($type, strrpos($type, '/')+1);
+	}
+	
+	public function set_properties_from_form() {
+		global $subst_file_data;
+		
+		parent::set_properties_from_form();
+		if(is_array($subst_file_data) && count($subst_file_data)) {
+			foreach ($subst_file_data as $code=>$element) {
+				if(isset($element['pond'])) {
+					$this->data[$code]['pond'] = $element['pond'];
+				}
+			}
+		}
 	}
 	
 	public function get_default_template() {
@@ -112,6 +147,9 @@ class misc_file_indexation extends misc_file {
 			$substitution = array();
 			foreach ($fields as $field) {
 				if(!isset($this->data[$field['ID']]['visible']) || $this->data[$field['ID']]['visible']) {
+					if(isset($this->data[$field['ID']]['pond'])) {
+						$field['POND'] = $this->data[$field['ID']]['pond'];
+					}
 					$substitution[] = $field;
 				}
 			}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_list.class.php,v 1.3 2018/01/08 14:52:37 tsamson Exp $
+// $Id: cms_module_common_datasource_records_list.class.php,v 1.5 2022/09/06 07:52:19 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,6 +12,7 @@ class cms_module_common_datasource_records_list extends cms_module_common_dataso
 		parent::__construct($id);
 		$this->limitable = true;
 		$this->sortable = true;
+		$this->paging = false;
 	}
 	
 	/*
@@ -26,7 +27,7 @@ class cms_module_common_datasource_records_list extends cms_module_common_dataso
 	}
 	
 	protected function sort_records($records) {
-		global $dbh;
+		$return = array();
 		if(!count($records)) return false;
 		foreach ($records as $key => $record) {
 			$records[$key] = $record * 1 ;
@@ -37,8 +38,7 @@ class cms_module_common_datasource_records_list extends cms_module_common_dataso
 		if ($this->parameters['nb_max_elements']*1) {
 			$query.= ' limit '.$this->parameters['nb_max_elements']*1;
 		}
-		$result = pmb_mysql_query($query,$dbh);
-		$return = array();
+		$result = pmb_mysql_query($query);
 		if (pmb_mysql_num_rows($result) > 0) {
 			$return["title"] = "Liste de notices";
 			while($row = pmb_mysql_fetch_object($result)){

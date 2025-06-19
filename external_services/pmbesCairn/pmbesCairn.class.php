@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesCairn.class.php,v 1.4 2019/07/05 13:37:51 btafforeau Exp $
+// $Id: pmbesCairn.class.php,v 1.4.8.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $base_path, $class_path;
 require_once($class_path."/external_services.class.php");
 require_once($class_path."/external_services_caches.class.php");
 require_once($class_path."/sessions_tokens.class.php");
@@ -13,12 +14,6 @@ require_once($base_path."/admin/connecteurs/in/cairn/cairn.class.php");
 require_once($class_path."/encoding_normalize.class.php");
 
 class pmbesCairn extends external_services_api_class{
-	public $error=false;		//Y-a-t-il eu une erreur
-	public $error_message="";	//Message correspondant à l'erreur
-	
-	public function form_general_config() {
-		return false;
-	}
 	
 	public function check_token($token) {
 		/**

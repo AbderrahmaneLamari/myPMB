@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_contributions_ui.class.php,v 1.12.2.2 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_contributions_ui.class.php,v 1.15 2022/07/07 14:49:19 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -234,13 +234,13 @@ class list_contributions_ui extends list_ui {
         $this->columns[] = array(
             'property' => '',
             'label' => "<div class='center'></div>",
-            'html' => "	<a href='./catalog.php?categ=contribution_area&action=push&sub=!!sub!!&id=!!uri_id!!&action=push&from_gestion=1' onclick='if(!confirm(pmbDojo.messages.getMessage(\"contribution\", \"onto_contribution_push_confirm\"))){return false;}'>
+            'html' => "	<a href='./catalog.php?categ=contribution_area&action=push&sub=!!sub!!&id=!!uri_id!!&form_id=!!form_id!!&action=push&from_gestion=1' onclick='if(!confirm(pmbDojo.messages.getMessage(\"contribution\", \"onto_contribution_push_confirm\"))){return false;}'>
 							<input type='button' value='$msg[contribution_area_validate]' class='bouton'/>
 						</a>
 						<a href='./catalog.php?categ=contribution_area&action=edit&sub=!!sub!!&area_id=!!area_id!!&form_id=!!form_id!!&form_uri=!!form_uri!!&id=!!uri_id!!&scenario=!!parent_scenario_uri!!&contributor=!!contributor_id!!'>
 							<input type='button' value='$msg[62]' class='bouton'/>
 						</a>
-						<a href='./catalog.php?categ=contribution_area&action=delete&sub=!!sub!!&id=!!uri_id!!&action=delete' onclick='if(!confirm(\"$msg[onto_contribution_delete_confirm]\")){return false;}'>
+						<a href='./catalog.php?categ=contribution_area&action=delete&sub=!!sub!!&id=!!uri_id!!&form_id=!!form_id!!&action=delete' onclick='if(!confirm(\"$msg[onto_contribution_delete_confirm]\")){return false;}'>
 							<input type='button' value='$msg[63]' class='bouton'/>
 						</a>",
             'exportable' => false

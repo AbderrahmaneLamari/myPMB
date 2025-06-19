@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_rent_accounts_ui.class.php,v 1.9.2.1 2021/09/18 09:18:31 dgoron Exp $
+// $Id: list_rent_accounts_ui.class.php,v 1.12.4.1 2023/03/24 07:55:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -188,63 +188,23 @@ class list_rent_accounts_ui extends list_rent_ui {
 		return $this->get_search_filter_simple_selection('', 'request_status', '', $options);
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		$filters[] = 'account_num_exercice = "'.$this->filters['exercice'].'"';
-		
-		if($this->filters['request_type']) {
-			$filters [] = 'account_request_type = "'.addslashes($this->filters['request_type']).'"';
-		}
-		if($this->filters['type']) {
-			$filters [] = 'account_type = "'.addslashes($this->filters['type']).'"';
-		}
-		if($this->filters['num_publisher']) {
-			$filters [] = 'account_num_publisher = "'.$this->filters['num_publisher'].'"';
-		}
-		if($this->filters['num_supplier']) {
-			$filters [] = 'account_num_supplier = "'.$this->filters['num_supplier'].'"';
-		}
-		if($this->filters['num_author']) {
-			$filters [] = 'account_num_author = "'.$this->filters['num_author'].'"';
-		}
-		if($this->filters['num_pricing_system']) {
-			$filters [] = 'account_num_pricing_system = "'.$this->filters['num_pricing_system'].'"';
-		}
-		if($this->filters['web']) {
-			$filters [] = 'account_web = "'.addslashes($this->filters['web']).'"';
-		}
-		if($this->filters['date_start']) {
-			$filters [] = 'account_date >= "'.$this->filters['date_start'].'"';
-		}
-		if($this->filters['date_end']) {
-			$filters [] = 'account_date <= "'.$this->filters['date_end'].' 23:59:59"';
-		}
-		if($this->filters['event_date_start']) {
-			$filters [] = 'account_event_date >= "'.$this->filters['event_date_start'].'"';
-		}
-		if($this->filters['event_date_end']) {
-			$filters [] = 'account_event_date <= "'.$this->filters['event_date_end'].' 23:59:59"';
-		}
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('exercice', 'account_num_exercice', 'integer');
+		$this->_add_query_filter_simple_restriction('request_type', 'account_request_type');
+		$this->_add_query_filter_simple_restriction('type', 'account_type');
+		$this->_add_query_filter_simple_restriction('num_publisher', 'account_num_publisher', 'integer');
+		$this->_add_query_filter_simple_restriction('num_supplier', 'account_num_supplier', 'integer');
+		$this->_add_query_filter_simple_restriction('num_author', 'account_num_author', 'integer');
+		$this->_add_query_filter_simple_restriction('num_pricing_system', 'account_num_pricing_system', 'integer');
+		$this->_add_query_filter_simple_restriction('web', 'account_web', 'integer');
+		$this->_add_query_filter_interval_restriction('date', 'account_date', 'datetime');
+		$this->_add_query_filter_interval_restriction('event_date', 'account_event_date', 'datetime');
 		if($this->filters['invoiced']==1) {
-			$filters [] = 'id_account not in(select account_invoice_num_account from rent_accounts_invoices)';
+			$this->query_filters [] = 'id_account not in(select account_invoice_num_account from rent_accounts_invoices)';
 		}elseif($this->filters['invoiced']==2) {
-			$filters [] = 'id_account in(select account_invoice_num_account from rent_accounts_invoices)';
+			$this->query_filters [] = 'id_account in(select account_invoice_num_account from rent_accounts_invoices)';
 		}
-		if($this->filters['request_status']) {
-			$filters [] = 'account_request_status = "'.$this->filters['request_status'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
+		$this->_add_query_filter_simple_restriction('request_status', 'account_request_status', 'integer');
 	}
 	
 	protected function _get_object_property_num_publisher($object) {
@@ -333,16 +293,14 @@ class list_rent_accounts_ui extends list_rent_ui {
 		return $this->get_display_query_human($humans);
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		global $id_bibli;
 		
 		$attributes = array();
 		if($object->is_editable()) {
 			$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=edit&id_bibli=".$id_bibli."&id=".$object->get_id()."\"";
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	protected function init_default_selection_actions() {

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_reservations_edition_treat_ui.class.php,v 1.11.2.2 2021/09/15 09:38:06 dgoron Exp $
+// $Id: list_reservations_edition_treat_ui.class.php,v 1.13 2021/09/15 09:37:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_menu.class.php,v 1.23 2019/07/18 13:40:01 btafforeau Exp $
+// $Id: cms_module_menu.class.php,v 1.23.8.1 2023/09/06 13:31:43 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,7 +34,7 @@ class cms_module_menu extends cms_module_common_module {
 			}
 		}
 			$form.="
-				<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->class_name)."&quoi=module&menu=new'/>Ajouter un menu</a> 
+				<a href='".$base_path."/cms.php?categ=manage&sub=".str_replace("cms_module_","",$this->class_name)."&quoi=module&menu=new'>".$this->format_text($this->msg['cms_module_menu_menu_add'])."</a> 
 			";
 		$form.="
 			</div>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: export_skos.php,v 1.5 2021/01/13 14:24:57 btafforeau Exp $
+// $Id: export_skos.php,v 1.5.6.1 2023/10/17 14:03:22 tsamson Exp $
 
 $base_path="..";
 $base_noheader = 1;
@@ -12,7 +12,7 @@ $base_nosession =1;
 
 require_once($base_path."/includes/init.inc.php");
 
-$numt=$_GET["thesaurus"];
+$numt = intval($_GET["thesaurus"]);
 $prefix=$_GET["prefix"]; //http://http://www.ressources-de-la-formation.fr
 $tname=$_GET["tname"]; //thesaurus_formation
 

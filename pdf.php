@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pdf.php,v 1.51.2.5 2021/12/10 09:43:47 dgoron Exp $
+// $Id: pdf.php,v 1.57 2022/09/27 06:16:37 dgoron Exp $
 
 // définition du minimum nécéssaire
 use Pmb\Animations\Controller\AnimationsController;
@@ -195,8 +195,14 @@ switch ($pdfdoc) {
 			if ($elt_no_flag && !$elt_flag)
 				$liste = $myCart->get_cart("NOFLAG");
 				
+			$barcodes = array();
+			if(!empty($liste)) {
+				foreach ($liste as $object_id) {
+					$barcodes[] = exemplaire::get_expl_cb_from_id($object_id);
+				}
+			}
 			$lettre_barcodes_PDF = lettre_barcodes_PDF::get_instance('barcodes');
-			$lettre_barcodes_PDF->set_barcodes($liste);
+			$lettre_barcodes_PDF->set_barcodes($barcodes);
 			$lettre_barcodes_PDF->doLettre();
 			$lettre_barcodes_PDF->getLettre();
 		}

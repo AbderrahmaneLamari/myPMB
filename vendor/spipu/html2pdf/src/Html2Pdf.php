@@ -75,6 +75,11 @@ class Html2Pdf
     protected $_encoding         = '';          // charset encoding
     protected $_unicode          = true;        // means that the input text is unicode (default = true)
 
+    /**
+     * @var bool
+     */
+    protected $_pdfa;
+
     protected $_testTdInOnepage  = true;        // test of TD that can not take more than one page
     protected $_testIsImage      = true;        // test if the images exist or not
     protected $_fallbackImage    = null;        // fallback image to use in img tags
@@ -156,9 +161,9 @@ class Html2Pdf
      * @var bool
      */
     protected $extensionsLoaded = false;
-
-    static protected $pmb_cache_images = array();
     
+    static protected $pmb_cache_images = array();
+
     /**
      * class constructor
      *
@@ -244,7 +249,7 @@ class Html2Pdf
         return array(
             'major'     => 5,
             'minor'     => 2,
-            'revision'  => 1
+            'revision'  => 7
         );
     }
 
@@ -1023,7 +1028,7 @@ class Html2Pdf
 
         // if subPart => return because align left
         if ($this->_subPart || $this->_isSubPart || $this->_isForOneLine) {
-            $this->pdf->setWordSpacing(0);
+            $this->pdf->setWordSpacing(0.);
             return null;
         }
 
@@ -1075,9 +1080,9 @@ class Html2Pdf
 
         // if justify => set the word spacing
         if ($this->parsingCss->value['text-align'] === 'justify' && $e>1) {
-            $this->pdf->setWordSpacing(($wMax-$w)/($e-1));
+            $this->pdf->setWordSpacing((float) ($wMax - $w) / (float) ($e - 1.));
         } else {
-            $this->pdf->setWordSpacing(0);
+            $this->pdf->setWordSpacing(0.);
         }
     }
 
@@ -1183,8 +1188,8 @@ class Html2Pdf
      */
     protected function _listeArab2Rom($nbArabic)
     {
-        $nbBaseTen  = array('I','X','C','M');
-        $nbBaseFive = array('V','L','D');
+        $nbBaseTen  = array('i','x','c','m');
+        $nbBaseFive = array('v','l','d');
         $nbRoman    = '';
 
         if ($nbArabic<1) {
@@ -1506,60 +1511,75 @@ class Html2Pdf
     protected function _drawImage($src, $subLi = false)
     {
         // get the size of the image
+        // WARNING : if URL, "allow_url_fopen" must turned to "on" in php.ini
         if(empty(static::$pmb_cache_images[$src])) {
-			// WARNING : if URL, "allow_url_fopen" must turned to "on" in php.ini
-			$infos=@getimagesize($src);
-			$path_parts = pathinfo($src);
-
-			if($infos == false) {
-				$stream_options = [
-					'http' => [
-						'method'  => 'GET',
-						'header' => [
-                            'User-Agent: MyPMB',
+            
+            // Attention si on a une image en base64, on retrouve le binaire dans la variable src
+            if (strpos($src,'data:') === 0) {
+                $src = base64_decode( preg_replace('#^data:image/[^;]+;base64,#', '', $src) );
+                $infos = @getimagesizefromstring($src);
+                $src = "@{$src}";
+            } else {
+                $path_parts = pathinfo($src);
+                $this->parsingCss->checkValidPath($src);
+                $infos = @getimagesize($src);
+                if($infos == false) {
+                    $stream_options = [
+                        'http' => [
+                            'method'  => 'GET',
+                            'header' => [
+                                'User-Agent: MyPMB',
+                            ],
                         ],
-                    ],
-                ];
-                $stream_context = stream_context_create($stream_options);
-                $x = file_get_contents($src, false, $stream_context);
-                $infos = getimagesizefromstring($x);
-			}
-			if ($path_parts['extension'] == 'svg') {
-				$infos = array(16, 16);
-			} elseif (!is_array($infos) || count($infos)<2) {
-				// if the image does not exist, or can not be loaded
-				if ($this->_testIsImage) {
-					$e = new ImageException('Unable to get the size of the image ['.$src.']');
-					$e->setImage($src);
-					throw $e;
+                    ];
+                    $stream_context = stream_context_create($stream_options);
+                    $x = file_get_contents($src, false, $stream_context);
+                    if($x) {
+                        $infos = getimagesizefromstring($x);
+                    }
                 }
-    
+            }
+            
+            // if the image does not exist, or can not be loaded
+            if (isset($path_parts) && $path_parts['extension'] == 'svg') {
+                $infos = array(16, 16);
+            } elseif (!is_array($infos) || count($infos)<2) {
+                if ($this->_testIsImage) {
+                    $e = new ImageException('Unable to get the size of the image ['.$src.']');
+                    $e->setImage($src);
+                    //throw $e;
+                    return false;
+                }
+                
                 // display a gray rectangle
                 $src = null;
                 $infos = array(16, 16);
-    
+                
                 // if we have a fallback Image, we use it
                 if ($this->_fallbackImage) {
                     $src = $this->_fallbackImage;
                     $infos = @getimagesize($src);
-    
+                    
                     if (count($infos)<2) {
                         $e = new ImageException('Unable to get the size of the fallback image ['.$src.']');
                         $e->setImage($src);
-                        throw $e;
+                        //throw $e;
+                        return false;
                     }
                 }
             }
+            
             static::$pmb_cache_images[$src] = $infos;
         } else {
             $infos = static::$pmb_cache_images[$src];
         }
+        
         // convert the size of the image in the unit of the PDF
         $imageWidth = $infos[0]/$this->pdf->getK();
         $imageHeight = $infos[1]/$this->pdf->getK();
-
+        
         $ratio = $imageWidth / $imageHeight;
-
+        
         // calculate the size from the css style
         if ($this->parsingCss->value['width'] && $this->parsingCss->value['height']) {
             $w = $this->parsingCss->value['width'];
@@ -1575,7 +1595,7 @@ class Html2Pdf
             $w = 72./96.*$imageWidth;
             $h = 72./96.*$imageHeight;
         }
-
+        
         if (isset($this->parsingCss->value['max-width']) && $this->parsingCss->value['max-width'] < $w) {
             $w = $this->parsingCss->value['max-width'];
             if (!$this->parsingCss->value['height']) {
@@ -1590,54 +1610,54 @@ class Html2Pdf
                 $w = $h * $ratio;
             }
         }
-
+        
         // are we in a float
         $float = $this->parsingCss->getFloat();
-
+        
         // if we are in a float, but if something else if on the line
         // => make the break line (false if we are in "_isForOneLine" mode)
         if ($float && $this->_maxH && !$this->_tag_open_BR(array())) {
             return false;
         }
-
+        
         // position of the image
         $x = $this->pdf->GetX();
         $y = $this->pdf->GetY();
-
+        
         // if the image can not be put on the current line => new line
         if (!$float && ($x + $w>$this->pdf->getW() - $this->pdf->getrMargin()) && $this->_maxH) {
             if ($this->_isForOneLine) {
                 return false;
             }
-
+            
             // set the new line
             $hnl = max($this->_maxH, $this->parsingCss->getLineHeight());
             $this->_setNewLine($hnl);
-
+            
             // get the new position
             $x = $this->pdf->GetX();
             $y = $this->pdf->GetY();
         }
-
+        
         // if the image can not be put on the current page
         if (($y + $h>$this->pdf->getH() - $this->pdf->getbMargin()) && !$this->_isInOverflow) {
             // new page
             $this->_setNewPage();
-
+            
             // get the new position
             $x = $this->pdf->GetX();
             $y = $this->pdf->GetY();
         }
-
+        
         // correction for display the image of a list
         $hT = 0.80*$this->parsingCss->value['font-size'];
         if ($subLi && $h<$hT) {
             $y+=($hT-$h);
         }
-
+        
         // add the margin top
         $yc = $y-$this->parsingCss->value['margin']['t'];
-
+        
         // get the width and the position of the parent
         $old = $this->parsingCss->getOldValues();
         if ($old['width']) {
@@ -1647,21 +1667,21 @@ class Html2Pdf
             $parentWidth = $this->pdf->getW() - $this->pdf->getlMargin() - $this->pdf->getrMargin();
             $parentX = $this->pdf->getlMargin();
         }
-
+        
         // if we are in a gloat => adapt the parent position and width
         if ($float) {
             list($lx, $rx) = $this->_getMargins($yc);
             $parentX = $lx;
             $parentWidth = $rx-$lx;
         }
-
+        
         // calculate the position of the image, if align to the right
         if ($parentWidth>$w && $float !== 'left') {
             if ($float === 'right' || $this->parsingCss->value['text-align'] === 'li_right') {
                 $x = $parentX + $parentWidth - $w-$this->parsingCss->value['margin']['r']-$this->parsingCss->value['margin']['l'];
             }
         }
-
+        
         // display the image
         if (!$this->_subPart && !$this->_isSubPart) {
             if ($src) {
@@ -1672,44 +1692,44 @@ class Html2Pdf
                 $this->pdf->Rect($x, $y, $w, $h, 'F');
             }
         }
-
+        
         // apply the margins
         $x-= $this->parsingCss->value['margin']['l'];
         $y-= $this->parsingCss->value['margin']['t'];
         $w+= $this->parsingCss->value['margin']['l'] + $this->parsingCss->value['margin']['r'];
         $h+= $this->parsingCss->value['margin']['t'] + $this->parsingCss->value['margin']['b'];
-
+        
         if ($float === 'left') {
             // save the current max
             $this->_maxX = max($this->_maxX, $x+$w);
             $this->_maxY = max($this->_maxY, $y+$h);
-
+            
             // add the image to the margins
             $this->_addMargins($float, $x, $y, $x+$w, $y+$h);
-
+            
             // get the new position
             list($lx, $rx) = $this->_getMargins($yc);
             $this->pdf->SetXY($lx, $yc);
         } elseif ($float === 'right') {
             // save the current max. We don't save the X because it is not the real max of the line
             $this->_maxY = max($this->_maxY, $y+$h);
-
+            
             // add the image to the margins
             $this->_addMargins($float, $x, $y, $x+$w, $y+$h);
-
+            
             // get the new position
             list($lx, $rx) = $this->_getMargins($yc);
             $this->pdf->SetXY($lx, $yc);
         } else {
             // set the new position at the end of the image
             $this->pdf->SetX($x+$w);
-
+            
             // save the current max
             $this->_maxX = max($this->_maxX, $x+$w);
             $this->_maxY = max($this->_maxY, $y+$h);
             $this->_maxH = max($this->_maxH, $h);
         }
-
+        
         return true;
     }
 
@@ -1775,16 +1795,16 @@ class Html2Pdf
             $inBL[1]-= $border['b']['width'];
         }
 
-        if ($inTL[0]<=0 || $inTL[1]<=0) {
+        if (!is_array($inTL) || $inTL[0]<=0 || $inTL[1]<=0) {
             $inTL = null;
         }
-        if ($inTR[0]<=0 || $inTR[1]<=0) {
+        if (!is_array($inTR) || $inTR[0]<=0 || $inTR[1]<=0) {
             $inTR = null;
         }
-        if ($inBR[0]<=0 || $inBR[1]<=0) {
+        if (!is_array($inBR) || $inBR[0]<=0 || $inBR[1]<=0) {
             $inBR = null;
         }
-        if ($inBL[0]<=0 || $inBL[1]<=0) {
+        if (!is_array($inBL) || $inBL[0]<=0 || $inBL[1]<=0) {
             $inBL = null;
         }
 
@@ -2687,7 +2707,13 @@ class Html2Pdf
                 if ($background['img']) {
                     // get the size of the image
                     // WARNING : if URL, "allow_url_fopen" must turned to "on" in php.ini
-                    $infos=@getimagesize($background['img']);
+                    if( strpos($background['img'],'data:') === 0 ) {
+                        $src = base64_decode( preg_replace('#^data:image/[^;]+;base64,#', '', $background['img']) );
+                        $infos = @getimagesizefromstring($src);
+                        $background['img'] = "@{$src}";
+                    }else{
+                        $infos = @getimagesize($background['img']);
+                    }
                     if (is_array($infos) && count($infos)>1) {
                         $background['img'] = [
                             'file'   => $background['img'],

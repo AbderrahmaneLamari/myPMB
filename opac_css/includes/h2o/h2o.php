@@ -10,6 +10,7 @@ require H2O_ROOT.'h2o/tags.php';
 require H2O_ROOT.'h2o/errors.php';
 require H2O_ROOT.'h2o/filters.php';
 require H2O_ROOT.'h2o/context.php';
+require H2O_ROOT.'h2o/parser.php';
 
 /**
  * Example:
@@ -30,7 +31,7 @@ class H2o {
     static public function getOptions($options = array()) {
     	global $base_path;
     	global $cms_active, $cms_cache_ttl;
-    	
+
         return array_merge(array(
             'loader'            =>       'file',
             'cache'             =>      'file',     // file | apc | memcache
@@ -248,12 +249,12 @@ class H2o {
     public function defaultContext() {
         return array('h2o' => new H2o_Info);
     }
-    
+
     static public function getFilenameWithGlobal($filename) {
         $varGlobal = '';
         $tempNeedle = '';
         $needles = ["{{ global.", "{{global."];
-        
+
         foreach ($needles as $needle){
             $haystack = $filename;
             $nb_occurence = substr_count($haystack, $needle);

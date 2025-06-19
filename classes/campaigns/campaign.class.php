@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: campaign.class.php,v 1.8.2.3 2022/01/19 11:46:43 dgoron Exp $
+// $Id: campaign.class.php,v 1.12.4.3 2023/11/14 17:05:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -108,7 +108,6 @@ class campaign {
 		
 		$form = $campaign_form_tpl;
 		$form = str_replace("!!button_delete!!",'',$form);
-		
 		$form = str_replace("!!id!!",$this->id,$form);
 		return $form;
 	}
@@ -176,13 +175,13 @@ class campaign {
 		}
 	}
 	
-	public function send_mail($id_empr, $to_nom="", $to_mail="", $obj="", $corps="", $from_name="", $from_mail="", $headers="", $copie_CC="", $copie_BCC="", $faire_nl2br=0, $pieces_jointes=array(), $reply_name="", $reply_mail="", $is_mailing=false) {
+	public function send_mail($id_empr, $to_nom="", $to_mail="", $obj="", $corps="", $from_name="", $from_mail="", $headers="", $copie_CC="", $copie_BCC="", $faire_nl2br=0, $pieces_jointes=array(), $reply_name="", $reply_mail="", $is_mailing=false, $type="") {
 		$campaign_recipients = $this->get_recipients();
 		$recipient_instance = $campaign_recipients->add($id_empr, $to_mail, $corps);
 		
 		$corps = campaign_proxy::proxyfication($recipient_instance, $corps);
 	
-		return mailpmb($to_nom, $to_mail, $obj, $corps, $from_name, $from_mail, $headers, $copie_CC, $copie_BCC, $faire_nl2br, $pieces_jointes, $reply_name, $reply_mail, $is_mailing);
+		return mailpmb($to_nom, $to_mail, $obj, $corps, $from_name, $from_mail, $headers, $copie_CC, $copie_BCC, $faire_nl2br, $pieces_jointes, $reply_name, $reply_mail, $is_mailing, $type, $this->get_id());
 	}
 	
 	/**

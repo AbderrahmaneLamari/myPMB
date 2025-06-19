@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ManageFastFilters.js,v 1.1.2.6 2021/12/10 16:12:54 dgoron Exp $
+// $Id: ManageFastFilters.js,v 1.5 2021/12/10 16:08:55 dgoron Exp $
 
 define([
         "dojo/_base/declare",

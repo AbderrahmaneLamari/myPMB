@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE XMLlist SYSTEM "../XMLlist.dtd">
+
+<!-- 
+****************************************************************************************
+© 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+****************************************************************************************
+$Id: champs_base.xml,v 1.1.2.2 2023/04/18 15:10:38 gneveu Exp $ -->
+
+<indexation>
+
+    <!-- Table d'origine (référence)-->
+    <reference>anim_animations</reference>
+    <!-- Clé primaire de la table de référence -->
+    <referencekey>id_animation</referencekey>
+
+    <field name="237" id="001" pond="130" >
+        <table>
+            <tablefield>name</tablefield>
+        </table>
+    </field>
+
+</indexation>

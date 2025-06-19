@@ -1,68 +1,68 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ContributionFormEdit.js,v 1.8.2.7 2021/08/11 13:18:13 qvarin Exp $
+// $Id: ContributionFormEdit.js,v 1.15.4.1 2023/10/31 13:47:46 qvarin Exp $
 
-define(	[
-    'dojo/_base/declare', 
-    'dojo/_base/lang', 
-    'apps/pmb/gridform/FormEdit',
-    'dojo/dom',
-    'dojo/dom-attr',
-    'dojo/query',
-    'dojo/dom-style',
-    'dojo/dom-construct',
+define([
+	'dojo/_base/declare',
+	'dojo/_base/lang',
+	'apps/pmb/gridform/FormEdit',
+	'dojo/dom',
+	'dojo/dom-attr',
+	'dojo/query',
+	'dojo/dom-style',
+	'dojo/dom-construct',
 	'apps/pmb/gridform/Zone',
-	'dojo/request/xhr', 
-], function(declare,lang, FormEdit, dom, domAttr, query, domStyle, domConstruct, Zone, xhr){
+	'dojo/request/xhr',
+], function (declare, lang, FormEdit, dom, domAttr, query, domStyle, domConstruct, Zone, xhr) {
 	return declare(FormEdit, {
 		initialized: null,
 		resetGrid: false,
 		gridForm: {},
-		constructor: function() { 
+		constructor: function () {
 			this.initialized = false;
 			domConstruct.destroy(this.btnEdit);
 		},
-		saveCallback: function(response){
-			if(response.status == true){
-				if (this.btnSave  && !this.resetGrid) {
-					var returnURL = dom.byId('return_url').value;
+		saveCallback: function (response) {
+			if (response.status) {
+				if (this.btnSave && !this.resetGrid) {
+					let returnURL = dom.byId('return_url').value;
 					if (returnURL) {
-						window.location = returnURL; 
+						window.location = returnURL;
 					}
 				}
-				
+
 				if (this.resetGrid) {
 					this.resetGrid = false;
 				}
-			}else{
+			} else {
 				alert(pmbDojo.messages.getMessage('grid', 'grid_js_move_saved_error'));
 			}
 		},
-		initializationCallback : function() {
+		initializationCallback: function () {
 			if (this.module == "catalog") {
 				this.state = 'inedit';
 			}
-			this.btnEditCallback();	
+			this.btnEditCallback();
 			this.initialized = true;
 		},
-		btnEditCallback : function(evt) {
+		btnEditCallback: function (evt) {
 			switch (this.state) {
 				case 'std':
 					this.state = 'inedit';
-					var disableButtonsForm = query('#form-contenu input[type=button]');
+					let disableButtonsForm = query('#form-contenu input[type=button]');
 					if (disableButtonsForm.length) {
-						for (var i = 0; i < disableButtonsForm.length; i++) {
+						for (let i; i < disableButtonsForm.length; i++) {
 							if (domAttr.get(disableButtonsForm[i], 'onclick')) {
 								domAttr.remove(disableButtonsForm[i], 'onclick');
 							}
 							domStyle.set(disableButtonsForm[i], 'color', '#aaa');
 						}
 					}
-					
-					var disableImgsForm = query('#form-contenu img[class=img_plus]');
+
+					let disableImgsForm = query('#form-contenu img[class=img_plus]');
 					if (disableImgsForm.length) {
-						for (var i = 0; i < disableImgsForm.length; i++) {
+						for (let i; i < disableImgsForm.length; i++) {
 							disableImgsForm[i].remove();
 						}
 					}
@@ -81,67 +81,67 @@ define(	[
 					break;
 			}
 		},
-		btnOriginFormatCallback: function(evt) {
+		btnOriginFormatCallback: function (evt) {
 			this.state = 'std';
 			this.resetGrid = true;
 			this.computedElements = new Array();
 			const promise = new Promise((resolve, reject) => {
 				resolve(this.inherited(arguments));
 			});
-			
+
 			promise.then(() => {
 				this.initialized = false;
 				this.initializationCallback();
 			});
 		},
-		removeJsDom: function(){
-			  var cleanElts = query('#zone-container > div');
-			  for(var i=0; i<this.originalFormat.length ; i++){
-				  domConstruct.place(dom.byId(this.originalFormat[i].id), dom.byId('zone-container'), 'last');
-				  dom.byId(this.originalFormat[i].id).className = this.originalFormat[i].class;
-			  }
+		removeJsDom: function () {
+			var cleanElts = query('#zone-container > div');
+			for (let i = 0; i < this.originalFormat.length; i++) {
+				domConstruct.place(dom.byId(this.originalFormat[i].id), dom.byId('zone-container'), 'last');
+				dom.byId(this.originalFormat[i].id).className = this.originalFormat[i].class;
+			}
 
-			  for(var i=0; i<cleanElts.length ; i++){
-			  	if(cleanElts[i].getAttribute('movable') == null){
-			  		domConstruct.destroy(cleanElts[i]);	
-			  	}
-			  }
-			  this.zones = new Array();
-			  if(this.btnEdit) this.signalEditFormat = on(this.btnEdit,'click', lang.hitch(this, this.btnEditCallback));
+			for (let i = 0; i < cleanElts.length; i++) {
+				if (cleanElts[i].getAttribute('movable') == null) {
+					domConstruct.destroy(cleanElts[i]);
+				}
+			}
+			this.zones = new Array();
+			if (this.btnEdit) this.signalEditFormat = on(this.btnEdit, 'click', lang.hitch(this, this.btnEditCallback));
 		},
-		
-		buildGrid: function(data) {
+
+		buildGrid: function (data) {
 			// Suppression des noeuds contenant l'editeur HTML
-			var text_areas_with_tinymce = this.removeTinyEditor();
-			
-			var activeElement = document.activeElement;
-			
+			let text_areas_with_tinymce = this.removeTinyEditor();
+
+			let activeElement = document.activeElement;
+
 			// On stocke le premier niveau des enfants de zone-container des div non movable (nettoye apres traitement)
-			var cleanElts = query('#zone-container > div:not([movable="yes"])', this.context);
-			
+			let cleanElts = query('#zone-container > div:not([movable="yes"])', this.context);
+
 			// Grille sauvegarder en base
-			if(typeof data != 'undefined' && data != ""){
+			if (typeof data != 'undefined' && data != "") {
 				let savedScheme = JSON.parse(data);
 				if (savedScheme) {
 					this.savedScheme = savedScheme;
 				}
 			}
-			
+
 			// grid final
-			var grid = new Array();
-			var indexDefaultGrid = null;
-			
+			let grid = new Array();
+			let indexDefaultGrid = null;
+
 			// Liste des champs du formulaire
 			this.gridForm = new Object();
-			
+
 			// Tableau des elements qu'on a déjà placés
-			var tmp = new Object();
-			
+			let alreadyPlaced = new Object();
+
 			// On extrait la liste des champs du formulaire de contribution
-			var currentElts = query('div[movable="yes"]', this.context);
-			for(var i=0 ; i < currentElts.length ; i++) {
+			let currentElts = query('div[movable="yes"]', this.context);
+			for (let i = 0; i < currentElts.length; i++) {
 				let node = query('div#' + currentElts[i].id, this.context);
-				if (node && node[0] && domAttr.has(node[0],  "data-pmb-propertyname")) {
+				if (node[0] && domAttr.has(node[0], "data-pmb-propertyname")) {
 					let propertyName = domAttr.get(node[0], "data-pmb-propertyname");
 					if (propertyName) {
 						this.gridForm[propertyName.toLowerCase()] = {
@@ -154,47 +154,43 @@ define(	[
 					}
 				}
 			}
-			
+
 			// On ajoute les champs sauvegarder dans notre grid
-			if (this.savedScheme) { 
-				for(var i=0; i < this.savedScheme.length; i++) {
+			if (this.savedScheme) {
+				for (var i = 0; i < this.savedScheme.length; i++) {
 					let zone = lang.clone(this.savedScheme[i]);
 					zone.elements = new Array();
-					
+
 					if (zone.nodeId == "el0") {
 						indexDefaultGrid = grid.length;
 					}
-					
-					for(var j=0; j < this.savedScheme[i].elements.length; j++) {
+
+					for (let j = 0; j < this.savedScheme[i].elements.length; j++) {
 						let element = this.savedScheme[i].elements[j];
-						
+
 						// On vérifi si le champs est toujours présent
-						if (element.propertyName) {
-							let gridFormData = this.gridForm[element.propertyName.toLowerCase()];
-							if (gridFormData) {
-								tmp[element.propertyName.toLowerCase()] = true;
-								
-								let field = {
-									"propertyName": element.propertyName,
-									"nodeId": gridFormData.nodeId,
-									"className": gridFormData.className,
-									"disabled": true
-								};							
-								
-								if (this.module == "catalog") {
-									field.visible = element.visible;
-									field.disabled = element.disabled;
-								}
-								
-								zone.elements.push(field);
-							}
+						if (!this.gridForm[element?.propertyName?.toLowerCase()]) {
+							continue;
 						}
+
+						let gridFormData = this.gridForm[element.propertyName.toLowerCase()];
+						alreadyPlaced[element.propertyName.toLowerCase()] = true;
+
+						let field = {
+							"propertyName": element.propertyName,
+							"nodeId": gridFormData.nodeId,
+							"className": element.className,
+							"disabled": element.disabled,
+							"visible": element.visible,
+						};
+
+						zone.elements.push(field);
 					}
-					
+
 					grid.push(zone);
 				}
 			}
-			
+
 			// Zone par défaut n'a pas été créer
 			if (indexDefaultGrid == null) {
 				indexDefaultGrid = grid.length;
@@ -207,94 +203,94 @@ define(	[
 					"elements": []
 				});
 			}
-			
+
 			// On ajoute dans la zone par défaut, les champs que l'on connait pas
-			for(let propertyName in this.gridForm) {
-				if (!tmp[propertyName.toLowerCase()]) {
+			for (let propertyName in this.gridForm) {
+				if (!alreadyPlaced[propertyName.toLowerCase()]) {
 					let field = {
 						"propertyName": this.gridForm[propertyName].propertyName,
 						"nodeId": this.gridForm[propertyName].nodeId,
 						"className": this.gridForm[propertyName].className,
 						"disabled": true
 					};
-					
+
 					if (this.module == "catalog") {
 						field.visible = true;
 						field.disabled = false;
 					}
-							
+
 					grid[indexDefaultGrid].elements.push(field);
 				}
 			}
 
 			this.getDefaultZones();
-			
+
 			// On places tout les éléments dans l'ordre
 			if (grid) {
-				
+
 				// Zone par défaut
-				if(!this.getZoneFromId('el0')) {
+				if (!this.getZoneFromId('el0')) {
 					this.addDefaultDOMZone('el0');
 				}
-				
+
 				// On créer toutes les autres zones
 				if (this.originalZones.length) {
-					for(var i=0 ; i < this.originalZones.length ; i++) {
+					for (let i = 0; i < this.originalZones.length; i++) {
 						if (!this.getZoneFromId(this.originalZones[i].id)) {
 							this.addDefaultDOMZone(this.originalZones[i].id);
 						}
 					}
 				}
-				
+
 				// On contruit la grid
-				for(var i=0; i < grid.length; i++) {
+				for (let i = 0; i < grid.length; i++) {
 					this.buildZone(grid[i], []);
 				}
 			}
-			
+
 			// Ajout des noeuds contenant l'editeur HTML
 			this.addTinyEditor(text_areas_with_tinymce);
-			
+
 			// Traitement terminé, on nettoye
 			this.cleanRecursiveElts(cleanElts, ' > div:not([movable="yes"])');
-			
+
 			activeElement.focus();
-			
+
 			if (!this.initialized) {
-				this.initializationCallback();	
+				this.initializationCallback();
 			}
 		},
-		parseDom: function() {
-			
+		parseDom: function () {
+
 			// On extrait la liste des champs du formulaire
-			var currentElts = query('div[movable="yes"]', this.context);
+			let currentElts = query('div[movable="yes"]', this.context);
 
 			// Tableau des noeuds deja place
-			var nodeIdPlaced = new Array();
-			
-			if(this.savedScheme) {
-				for(var i=0; i < this.savedScheme.length; i++){
+			let nodeIdPlaced = new Array();
+
+			if (this.savedScheme) {
+				for (let i = 0; i < this.savedScheme.length; i++) {
 					// On recupere les parametres de la zone
-					var params = lang.clone(this.savedScheme[i]);
+					let params = lang.clone(this.savedScheme[i]);
 					delete params.elements;
-					
+
 					// On recupere l'id de la zone
-					var nodeId = this.savedScheme[i].nodeId;
-					
+					let nodeId = this.savedScheme[i].nodeId;
+
 					// On creer la nouvelle zone
-					var newerZone = new Zone(params, nodeId, this, this.context);
-					
+					let newerZone = new Zone(params, nodeId, this, this.context);
+
 					newerZone.setVisible(params.visible);
-					if(params.visible) {
+					if (params.visible) {
 						newerZone.addConnectStyle();
 					}
-					
+
 					// On ajoute les champs a la zones
-					if(this.savedScheme[i].elements && this.savedScheme[i].elements.length > 0) {
-						var elements = this.savedScheme[i].elements;
-						for(var j=0 ; j < elements.length; j++) {
+					if (this.savedScheme[i].elements && this.savedScheme[i].elements.length > 0) {
+						let elements = this.savedScheme[i].elements;
+						for (let j = 0; j < elements.length; j++) {
 							// On recupere la div qui correspond au property name
-							
+
 							if (elements[j].propertyName) {
 								let gridFormData = this.gridForm[elements[j].propertyName.toLowerCase()];
 								if (gridFormData) {
@@ -313,52 +309,52 @@ define(	[
 					this.nbZones++;
 				}
 			}
-			
-			if(currentElts && currentElts.length > 0) {
-				
+
+			if (currentElts && currentElts.length > 0) {
+
 				// Zone par défaut
-				var objectZone = this.getZoneFromId('el0');
-				if(!objectZone) {
+				let objectZone = this.getZoneFromId('el0');
+				if (!objectZone) {
 					objectZone = this.addDefaultZone('el0');
 				}
-				
+
 				if (!objectZone) {
 					console.error('zone el0 not found');
 				} else {
-					for(var j=0; j < currentElts.length; j++) {
-						
+					for (let j = 0; j < currentElts.length; j++) {
+
 						if (nodeIdPlaced.indexOf(currentElts[j].id) !== -1) {
 							// Element deja place
 							continue;
 						}
-						
-						if(this.getZoneIdFromDOMElement(currentElts[j]) == 'el0') {
+
+						if (this.getZoneIdFromDOMElement(currentElts[j]) == 'el0') {
 							objectZone.addField(currentElts[j], true, false);
 							nodeIdPlaced.push(currentElts[j].id);
 						}
 					}
 				}
-				
-				for(var i=0; i < this.originalZones.length; i++) {
-						
-					var	objectZone = this.getZoneFromId(this.originalZones[i].id);
-					if(!objectZone) {
+
+				for (let i = 0; i < this.originalZones.length; i++) {
+
+					let objectZone = this.getZoneFromId(this.originalZones[i].id);
+					if (!objectZone) {
 						objectZone = this.addDefaultZone(this.originalZones[i].id);
 					}
-					
+
 					if (!objectZone) {
 						console.error(`zone ${this.originalZones[i].id} not found`)
 						continue;
 					}
-					
-					for(var j=0; j < currentElts.length; j++) {
-						
+
+					for (let j = 0; j < currentElts.length; j++) {
+
 						if (nodeIdPlaced.indexOf(currentElts[j].id) !== -1) {
 							// Element deja place
 							continue;
 						}
-					
-						if(this.getZoneIdFromDOMElement(currentElts[j]) == this.originalZones[i].id) {
+
+						if (this.getZoneIdFromDOMElement(currentElts[j]) == this.originalZones[i].id) {
 							if (!objectZone.getElementFromId(currentElts[j].id)) {
 								objectZone.addField(currentElts[j], true, false);
 								nodeIdPlaced.push(currentElts[j].id);
@@ -369,58 +365,57 @@ define(	[
 			}
 			this.callZoneRefresher();
 		},
-		getStruct: function(){
-			var JSONInformations = new Array();
-			if(this.zones.length) {
-				for(var i=0; i < this.zones.length ; i++) {
-					var zoneInformations = this.zones[i].getJSONInformations();
-					for(var j=0; j < this.zones[i].elements.length ; j++) {
+		getStruct: function () {
+			let JSONInformations = new Array();
+			if (this.zones.length) {
+				for (let i = 0; i < this.zones.length; i++) {
+					let zoneInformations = this.zones[i].getJSONInformations();
+					for (let j = 0; j < this.zones[i].elements.length; j++) {
 						let node = query('div#' + this.zones[i].elements[j].nodeId, this.context);
-						if (node && node[0] && domAttr.has(node[0],  "data-pmb-propertyname")) {
+						if (node && node[0] && domAttr.has(node[0], "data-pmb-propertyname")) {
 							zoneInformations.elements[j].propertyName = domAttr.get(node[0], 'data-pmb-propertyName');
 						}
 					}
 					JSONInformations.push(zoneInformations);
 				}
 			}
-			if(!this.type) {
-				var currentUrl = window.location;
+			if (!this.type) {
+				let currentUrl = window.location;
 				this.type = /categ=(\w+)&?/g.exec(currentUrl)[1];
-				if(this.type == 'authperso'){
-					var authPerso = /id_authperso=(\w+)&?/g.exec(currentUrl)[1];
-					this.type += '_'+authPerso;
+				if (this.type == 'authperso') {
+					let authPerso = /id_authperso=(\w+)&?/g.exec(currentUrl)[1];
+					this.type += '_' + authPerso;
 				}
 			}
-			var returnedInfos = {zones: JSONInformations, genericType: this.type};
-			return returnedInfos;
+			return { zones: JSONInformations, genericType: this.type };
 		},
-		launchXhrSave: function(datas) {
-			xhr("./ajax.php?module=modelling&categ=contribution_area&sub=form_grid&action=save",{
-					 handleAs: "json",
-					 method:'post',
-					 data:'datas='+JSON.stringify(datas)
+		launchXhrSave: function (datas) {
+			xhr("./ajax.php?module=modelling&categ=contribution_area&sub=form_grid&action=save", {
+				handleAs: "json",
+				method: 'post',
+				data: 'datas=' + JSON.stringify(datas)
 			}).then(lang.hitch(this, this.saveCallback));
 		},
-		getDatas: function() {
-			if(!this.type) {
-				var currentUrl = window.location;
+		getDatas: function () {
+			if (!this.type) {
+				let currentUrl = window.location;
 				this.type = /categ=(\w+)&?/g.exec(currentUrl)[1];
-				switch(this.type){
+				switch (this.type) {
 					case 'authperso':
-						var authPerso = /id_authperso=(\w+)&?/g.exec(currentUrl)[1];
-						this.type += '_'+authPerso;
+						let authPerso = /id_authperso=(\w+)&?/g.exec(currentUrl)[1];
+						this.type += '_' + authPerso;
 						break;
 					case 'contribution_area':
-						var formId = /form_id=(\w+)&?/g.exec(currentUrl)[1];
-						this.type += '_form_'+formId;
+						let formId = /form_id=(\w+)&?/g.exec(currentUrl)[1];
+						this.type += '_form_' + formId;
 						break;
 				}
 			}
-			var returnedInfos = {genericType: this.type, genericSign: this.getSign()};
-			xhr("./ajax.php?module=modelling&categ=contribution_area&sub=form_grid&action=get_datas",{
-					 handleAs: "json",
-					 method:'post',
-					 data:'datas='+JSON.stringify(returnedInfos)
+			let returnedInfos = { genericType: this.type, genericSign: this.getSign() };
+			xhr("./ajax.php?module=modelling&categ=contribution_area&sub=form_grid&action=get_datas", {
+				handleAs: "json",
+				method: 'post',
+				data: 'datas=' + JSON.stringify(returnedInfos)
 			}).then(lang.hitch(this, this.getDatasCallback));
 		},
 	});

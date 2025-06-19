@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: collection.class.php,v 1.34.8.1 2021/12/28 13:33:53 dgoron Exp $
+// $Id: collection.class.php,v 1.35 2021/12/28 13:30:46 dgoron Exp $
 
 // définition de la classe de gestion des collections
 // inclure :

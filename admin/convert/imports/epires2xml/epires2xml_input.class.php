@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: epires2xml_input.class.php,v 1.1 2018/07/25 06:19:18 dgoron Exp $
+// $Id: epires2xml_input.class.php,v 1.1.12.1 2023/03/22 09:19:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,7 +11,7 @@ require_once ($base_path."/admin/convert/convert_input.class.php");
 class epires2xml_input extends convert_input {
 	
 	public function _get_n_notices_($fi,$file_in,$input_params,$origine) {
-		global $base_path;
+		global $base_path,$charset;
 		//pmb_mysql_query("delete from import_marc");
 		
 		$first=true;
@@ -25,7 +25,18 @@ class epires2xml_input extends convert_input {
 			//Recherche de +++
 			$pos_deb=strpos($content,"+++");
 			while (($pos_deb===false)&&(!feof($fi))) {
-				$content.=fread($fi,4096);
+				$tmp_content=fread($fi,4096);
+				if($_SESSION["encodage_fic_source"]){//On a forcé l'encodage
+					if(($charset == "utf-8") && ($_SESSION["encodage_fic_source"] == "iso8859")){
+						$tmp_content=utf8_encode($tmp_content);
+					}elseif(($charset == "iso-8859-1" && ($_SESSION["encodage_fic_source"] == "utf8"))){
+						$tmp_content=utf8_decode($tmp_content);
+					}
+				}
+				$content.=$tmp_content;
+				$content=str_replace("!\r\n ","",$content);
+				$content=str_replace("!\r ","",$content);
+				$content=str_replace("!\n ","",$content);
 				$pos_deb=strpos($content,"+++");
 			}
 			//Début accroché

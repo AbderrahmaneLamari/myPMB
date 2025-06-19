@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: vig_num.php,v 1.23.8.1 2022/01/03 10:36:10 dgoron Exp $
+// $Id: vig_num.php,v 1.27 2022/04/12 08:10:25 tsamson Exp $
 
 $base_path=".";
 require_once($base_path."/includes/init.inc.php");
 
 global $class_path, $include_path, $gestion_acces_active, $gestion_acces_empr_notice, $gestion_acces_empr_docnum, $explnum_id;
-global $opac_show_links_invisible_docnums, $css, $context_dsi_id_bannette;
+global $opac_show_links_invisible_docnums, $css, $context_dsi_id_bannette, $pmb_docnum_img_folder_id;
 
 //fichiers nécessaires au bon fonctionnement de l'environnement
 require_once($base_path."/includes/common_includes.inc.php");
@@ -77,9 +77,21 @@ if ($context_dsi_id_bannette) {
 	$bannette = new bannette($context_dsi_id_bannette);
 	$statut_not_account = $bannette->statut_not_account;
 }
-
+global $pmb_docnum_img_folder_id;
 if($opac_show_links_invisible_docnums || (($rights & 16 || (is_null($dom_2) && $expl_num->explnum_visible_opac && (!$expl_num->explnum_visible_opac_abon || ($expl_num->explnum_visible_opac_abon && $_SESSION["user_code"])||($expl_num->explnum_visible_opac_abon && $statut_not_account))))
 	&& ($docnum_expl_num->explnum_thumbnail_visible_opac_override || $docnum_rights & 16 || (is_null($dom_3) && $docnum_expl_num->explnum_visible_opac && (!$docnum_expl_num->explnum_visible_opac_abon || ($docnum_expl_num->explnum_visible_opac_abon && $_SESSION["user_code"])))))){
+    if (!empty($pmb_docnum_img_folder_id)) {
+        $query = "select repertoire_path from upload_repertoire where repertoire_id ='$pmb_docnum_img_folder_id'";
+        $result = pmb_mysql_query($query);
+        if(pmb_mysql_num_rows($result)){
+            $row=pmb_mysql_fetch_object($result);
+            $filename_output=$row->repertoire_path."img_docnum_".$ligne->explnum_id;
+            if (file_exists($filename_output)) {
+                print file_get_contents($filename_output);
+                exit;
+            }
+        }
+    }
 	if ($ligne->explnum_vignette) {
 		print $ligne->explnum_vignette;
 		exit ;

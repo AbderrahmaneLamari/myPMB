@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_statut.class.php,v 1.3 2021/01/07 14:05:23 dgoron Exp $
+// $Id: notice_statut.class.php,v 1.4.4.1 2023/08/30 07:19:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -32,7 +32,7 @@ class notice_statut {
 			docs_statut($id) : constructeur
 	   --------------------------------------------------------------- */
 	public function __construct($id=0) {
-		$this->id = $id+0;
+		$this->id = intval($id);
 		$this->getData();
 	}
 
@@ -45,7 +45,7 @@ class notice_statut {
 		/* récupération des informations du statut */
 	
 		$requete = 'SELECT * FROM notice_statut WHERE id_notice_statut='.$this->id;
-		$result = @pmb_mysql_query($requete);
+		$result = pmb_mysql_query($requete);
 		if(!pmb_mysql_num_rows($result)) {
 			pmb_error::get_instance(static::class)->add_message("not_found", "not_found_object");
 			return;
@@ -66,13 +66,50 @@ class notice_statut {
 		$this->scan_request_opac_abon = $data->notice_scan_request_opac_abon;
 	}
 
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_gestion_libelle', 'noti_statut_libelle')
+		->add_input_node('text', $this->gestion_libelle);
+		$interface_content_form->add_element('form_visible_gestion', 'noti_statut_visu_gestion', 'flat')
+		->add_input_node('boolean', $this->visible_gestion);
+		$interface_content_form->add_inherited_element('display_colors', 'form_class_html', 'noti_statut_class_html')
+		->init_nodes([$this->class_html]);
+		
+		$interface_content_form->add_element('form_opac_libelle', 'noti_statut_libelle')
+		->add_input_node('text', $this->opac_libelle);
+		
+		$interface_content_form->add_element('form_visible_opac', 'noti_statut_visu_opac_form', 'flat')
+		->add_input_node('boolean', $this->visible_opac);
+		$interface_content_form->add_element('form_visu_abon', 'noti_statut_visible_opac_abon', 'flat')
+		->add_input_node('boolean', $this->visible_opac_abon);
+		$interface_content_form->add_element('form_visu_expl', 'noti_statut_visu_expl', 'flat')
+		->add_input_node('boolean', $this->expl_visible_opac);
+		$interface_content_form->add_element('form_expl_visu_abon', 'noti_statut_expl_visible_opac_abon', 'flat')
+		->add_input_node('boolean', $this->expl_visible_opac_abon);
+		$interface_content_form->add_element('form_explnum_visu', 'noti_statut_visu_explnum', 'flat')
+		->add_input_node('boolean', $this->explnum_visible_opac);
+		$interface_content_form->add_element('form_explnum_visu_abon', 'noti_statut_explnum_visible_opac_abon', 'flat')
+		->add_input_node('boolean', $this->explnum_visible_opac_abon);
+		$interface_content_form->add_element('form_scan_request_opac', 'noti_statut_scan_request_opac', 'flat')
+		->add_input_node('boolean', $this->scan_request_opac);
+		$interface_content_form->add_element('form_scan_request_opac_abon', 'noti_statut_scan_request_opac_abon', 'flat')
+		->add_input_node('boolean', $this->scan_request_opac_abon);
+		
+		$interface_content_form->add_zone('gestion', 'noti_statut_gestion', 
+				['form_gestion_libelle', 'form_visible_gestion', 'form_class_html']
+		);
+		$interface_content_form->add_zone('opac', 'noti_statut_opac', ['form_opac_libelle']);
+		$interface_content_form->add_zone('visibilite_generale', 'notice_statut_visibilite_generale', 
+				['form_visible_opac', 'form_visu_expl', 'form_explnum_visu', 'form_scan_request_opac']
+		)->set_class('colonne2');
+		$interface_content_form->add_zone('visibilite_restrict', 'notice_statut_visibilite_restrict', 
+				['form_visu_abon', 'form_expl_visu_abon', 'form_explnum_visu_abon', 'form_scan_request_opac_abon']
+		)->set_class('colonne_suite');
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_notice_statut_content_form;
-		global $charset;
-		
-		$content_form = $admin_notice_statut_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('statutform');
 		if(!$this->id){
@@ -80,52 +117,9 @@ class notice_statut {
 		}else{
 			$interface_form->set_label($msg['118']);
 		}
-		$content_form = str_replace('!!gestion_libelle!!', htmlentities($this->gestion_libelle,ENT_QUOTES, $charset), $content_form);
-		if ($this->visible_gestion) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_visible_gestion!!', $checkbox, $content_form);
-		
-		$content_form = str_replace('!!opac_libelle!!', htmlentities($this->opac_libelle,ENT_QUOTES, $charset), $content_form);
-		if ($this->visible_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_visible_opac!!', $checkbox, $content_form);
-		
-		if ($this->expl_visible_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_visu_expl!!', $checkbox, $content_form);
-		
-		if ($this->visible_opac_abon) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_visu_abon!!', $checkbox, $content_form);
-		
-		// $expl_visible_opac_abon=0, $explnum_visible_opac=1, $explnum_visible_opac_abon=0
-		if ($this->expl_visible_opac_abon) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_expl_visu_abon!!', $checkbox, $content_form);
-		
-		if ($this->explnum_visible_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_explnum_visu!!', $checkbox, $content_form);
-		
-		if ($this->explnum_visible_opac_abon) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_explnum_visu_abon!!', $checkbox, $content_form);
-		
-		if ($this->scan_request_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_scan_request_opac!!', $checkbox, $content_form);
-		
-		if ($this->scan_request_opac_abon) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_scan_request_opac_abon!!', $checkbox, $content_form);
-		
-		$couleur = array();
-		for ($i=1;$i<=20; $i++) {
-			if ($this->class_html=="statutnot".$i) $checked = "checked";
-			else $checked = "";
-			$couleur[$i]="<span for='statutnot".$i."' class='statutnot".$i."' style='margin: 7px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' />
-					<input id='statutnot".$i."' type=radio name='form_class_html' value='statutnot".$i."' $checked class='checkbox' /></span>";
-			if ($i==10) $couleur[10].="<br />";
-			elseif ($i!=20) $couleur[$i].="<b>|</b>";
-		}
-		
-		$couleurs=implode("",$couleur);
-		$content_form = str_replace('!!class_html!!', $couleurs, $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->gestion_libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('notice_statut')
 		->set_field_focus('form_gestion_libelle');
 		return $interface_form->get_display();
@@ -168,6 +162,7 @@ class notice_statut {
 	}
 
 	public static function delete($id) {
+		$id = intval($id);
 		if ($id && $id!=1 && $id!=2) {
 			$total = 0;
 			$total = pmb_mysql_result(pmb_mysql_query("select count(1) from notices where statut ='".$id."' "), 0, 0);

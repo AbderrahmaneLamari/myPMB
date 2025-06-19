@@ -47,19 +47,23 @@
 				</div>
 				<div id="el1Child" class="child" style="display: block;">
 					<div id="el1Child_0">
-						<div id="el1Child_0a" class="row uk-clearfix">
+						<input id="noEndDate" type="checkbox" v-model="animation.event.duringDay"/>
+						<label for="noEndDate" class='etiquette'>{{ pmb.getMessage("animation", "update_add_animation_during_day") }}</label>
+					</div>
+					<div id="el1Child_1">
+						<div id="el1Child_1a" class="row uk-clearfix">
 							<label class='etiquette' :title="pmb.getMessage('animation', 'is_required')">{{ pmb.getMessage('animation', 'update_add_animation_startDate') }} <sup>*</sup></label>
 						</div>
-						<div id="el1Child_0b" class="row uk-clearfix">
+						<div id="el1Child_1b" class="row uk-clearfix">
 							<input v-model="animation.event.startDate" type="date" @focus="changeEndDate()" @change="changeEndDate()"/>
 							<input v-model="animation.event.startHour" type="time"/>
 						</div>
 					</div>
-					<div id="el1Child_1">
-						<div id="el1Child_1a" class="row uk-clearfix">
+					<div id="el1Child_2" v-if="!animation.event.duringDay">
+						<div id="el1Child_2a" class="row uk-clearfix">
 							<label class='etiquette' :title="pmb.getMessage('animation', 'is_required')">{{ pmb.getMessage("animation", "update_add_animation_endDate") }} <sup>*</sup></label>
 						</div>
-						<div id="el1Child_1b" class="row uk-clearfix">
+						<div id="el1Child_2b" class="row uk-clearfix">
 							<input v-model="animation.event.endDate" type="date" :min="animation.event.startDate" @change="changeDateInterval()"/>
 							<input v-model="animation.event.endHour" type="time"/>
 						</div>
@@ -270,9 +274,16 @@
 							<label for="autoRegistration" class='etiquette'>{{ pmb.getMessage("animation", "anim_auto_registration") }}</label>
 						</div>
 					</div>
+					
+					<div id="el8Child_4">
+						<div id="el8Child_4a">
+						 	<input id="onlyContactRegistred" type="checkbox" v-model="animation.uniqueRegistration"/>
+							<label for="onlyContactRegistred" class='etiquette'>{{ pmb.getMessage("animation", "anim_only_contact_registred") }}</label>
+						</div>
+					</div>
 				</div>
 				
-				<!-- Types de communitcation -->
+				<!-- Types de communication -->
 				<div id="el9Parent" class="parent">
 					<h3>
 						<img id="el9Img" class="img_plus" name="imEx" :src='formdata.img.plus' onClick="expandBase('el9', true); return false;">
@@ -306,6 +317,67 @@
 					</div>
 				</template>
 		    </div>
+		    
+		    <!-- CALENDRIER -->
+				<div id="el11Parent" class="parent">
+					<h3>
+						<img id="el11Img" class="img_plus" name="imEx" :src='formdata.img.plus' onClick="expandBase('el11', true); return false;">
+						{{ pmb.getMessage('animation', 'update_add_animation_calendar') }}
+					</h3>
+				</div>
+				<div id="el11Child" class="child" style="display: none;">
+					<div id="el11Child_0">
+						<div id="el11Child_0a">
+							<label class='etiquette'>{{ pmb.getMessage("animation", "update_add_animation_calendar") }}</label>
+						</div>
+						<div id="el11Child_0b">
+							<select id="numCalendar" v-model="animation.numCalendar">
+								<option v-for="calendar in formdata.calendar" :value="calendar.id_calendar">{{calendar.name}}</option>
+							</select>
+						</div>
+					</div>
+				</div>
+
+		    <!-- Logo -->
+			<div id="el12Parent" class="parent">
+				<h3>
+					<img id="el12Img" class="img_plus" name="imEx" :src='formdata.img.plus' onClick="expandBase('el12', true); return false;">
+					{{ pmb.getMessage('animation', 'update_add_animation_logo') }}
+				</h3>
+			</div>
+			<div id="el12Child" class="child" style="display: none;">
+				<div id="el12Child_0">
+					<div id="el12Child_0a">
+						<label class='etiquette'>{{ pmb.getMessage("animation", "update_add_animation_logo_choice") }}</label>
+					</div>
+					<div id="el12Child_0b">
+						<label class='etiquette'>{{ pmb.getMessage("animation", "update_add_animation_logo_folder") }}</label>
+					</div>
+					<div id="el12Child_0c">
+						<select id="numUploadFolder" v-model="animation.logo.uploadFolder">
+							<option value="0" selected>{{ pmb.getMessage("animation", "update_add_animation_logo_choice") }}</option>
+							<option v-for="uploadFolder in formdata.uploadFolder" :value="uploadFolder.repertoire_id">{{uploadFolder.repertoire_nom}}</option>
+						</select>
+					</div>
+				</div>
+				<div id="el12Child_1">
+					<div id="el12Child_1a">
+						<label class='etiquette' v-if="'' != animation.logo.filename"  v-model="animation.logo.filename">{{ animation.logo.filename }}</label>
+					</div>
+					<div id="el12Child_1b">
+						<input type="file" id="logoFilename" name="logoFilename" @change="setLogoFilename($event)"/>
+					</div>
+				</div>
+				<div id="el12Child_2">
+					<div id="el12Child_2a">
+						<label class='etiquette'>{{ pmb.getMessage("animation", "update_add_animation_logo_alt") }}</label>
+					</div>
+					<div id="el12Child_2b">
+						<input id="logoAlt" name="logoAlt" type="text" class='saisie-40em' v-model="animation.logo.alt">
+					</div>
+				</div>
+			</div>
+				
 		    <component is="script" src="./javascript/ajax.js"></component>
 		    
 			<div class="row">
@@ -357,6 +429,39 @@
 			if (this.animation.globalQuota<this.animation.internetQuota){
 				this.internetQuotaTooHigh = true;
 			}
+			
+			if(this.animation.logo && "" != this.animation.logo){
+				this.animation.logo = JSON.parse(this.animation.logo);
+			}
+
+			if(this.formdata.prefColorUser && 0 == this.animation.id){
+				this.animation.numCalendar = this.formdata.prefColorUser;
+			}
+
+			this.animation.uniqueRegistration = parseInt(this.animation.uniqueRegistration);
+
+			if(0 != this.formdata.prefUniqueRegistrationUser && 0 == this.animation.id){
+				this.animation.uniqueRegistration = this.formdata.prefUniqueRegistrationUser;
+			}
+
+			if(0 != this.formdata.prefAutoRegistrationUser && 0 == this.animation.id){
+				this.animation.autoRegistration = this.formdata.prefAutoRegistrationUser;
+			}
+			
+			if(0 != this.formdata.prefWaitingListUser && 0 == this.animation.id){
+				this.animation.allowWaitingList = this.formdata.prefWaitingListUser;
+			}
+
+			if(this.formdata.prefCommunicationTypeUser && 0 != this.formdata.prefCommunicationTypeUser && 0 == this.animation.id){
+				for (const [key, mailingType] of Object.entries(this.formdata.mailingTypes)) {
+				    if (mailingType.id == this.formdata.prefCommunicationTypeUser){
+						this.animation.mailingType[0] = mailingType.id;
+						break;
+				    }
+				}
+				
+			}
+			
 			window.addEventListener("load", function(event) {
 				ajax_parse_dom();
 			});
@@ -368,16 +473,21 @@
 		
 		methods : {
 			save : function() {
-				if (this.animation.name == '') {
+				if (!this.animation.numType || this.animation.numType == 0) {
+					alert(this.pmb.getMessage('animation', 'animation_error_type'));
+					return false;
+				}
+				
+				if (!this.animation.name || this.animation.name == '') {
 					alert(this.pmb.getMessage('animation', 'animation_error_name'));
 					return false;
 				}
 				
-				if (this.animation.event.endDate == '' || this.animation.event.startDate == '') {
+				if (((!this.animation.event.endDate || this.animation.event.endDate == '') && !animation.event.duringDay) || !this.animation.event.startDate || this.animation.event.startDate == '') {
 					alert(this.pmb.getMessage('animation', 'animation_error_date'));
 					return false;
 				}
-				
+
 				if (this.animation.prices[0].name == '') {
 					alert(this.pmb.getMessage('animation', 'animation_error_priceType'));
 					return false;
@@ -385,6 +495,11 @@
 				
 				if (this.internetQuotaTooHigh == true) {
 					alert(this.pmb.getMessage('animation', 'animation_internet_quota_higher'));
+					return false;
+				} 
+
+				if ((0 != this.animation.logo.uploadFolder && "" == this.animation.logo.filename) || (0 == this.animation.logo.uploadFolder && this.animation.logo.filename.length)) {
+					alert(this.pmb.getMessage('animation', 'animation_check_logo_filename'));
 					return false;
 				}
 				
@@ -400,24 +515,45 @@
 					}
 				}
 
+				if(typeof tinyMCE !== "undefined"){
+					var inst, contents = new Object();
+					for (inst in tinyMCE.editors) {
+					    if (tinyMCE.editors[inst].getContent){
+					        contents[inst] = tinyMCE.editors[inst].getContent();
+					    }
+					}
+					let keys = Object.keys(contents); 
+					if(keys.length){
+						if(keys.includes("animation.comment")){
+							this.animation.comment = contents["animation.comment"];
+						}
+						if(keys.includes("animation.description")){
+							this.animation.description = contents["animation.description"];
+						}
+					}
+				}
+				
 				let url = "./ajax.php?module=animations&categ=animations&action=save";
-				var data = new FormData();
-				data.append('data', JSON.stringify(this.animation));
+				var formData = new FormData();
+				formData.append('data', JSON.stringify(this.animation));
+				
+				var file = document.getElementById("logoFilename") ? document.getElementById("logoFilename").files[0] : "";
+				formData.append('image', file); 
 				
 				fetch(url, {
 					method: 'POST',
-					body: data
+					body: formData
 				}).then(function(response) {
 					if (response.ok) {
 						response.text().then(function(id) {
-						    document.location = './animations.php?categ=animations&action=view&id=' + id;
+						  document.location = './animations.php?categ=animations&action=view&id=' + id;
 					    });
 					} else {
 						console.log(this.pmb.getMessage('animation', 'admin_animation_no_response'));
 					}
 				}).catch(function(error) {
 					console.log(this.pmb.getMessage('animation', 'admin_animation_error_fetch') + error.message);
-				});
+				}); 
 			},
 
 			cancel : function() {
@@ -569,7 +705,11 @@
 				}
 				
 				return flag;
-			}
+			},
+			
+			setLogoFilename : function(event) {
+				this.animation.logo.filename = event.target.files[0].name;
+			},
 		} 
 	}
 </script>

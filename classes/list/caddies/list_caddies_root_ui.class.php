@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_caddies_root_ui.class.php,v 1.12.2.3 2021/10/11 13:59:55 dgoron Exp $
+// $Id: list_caddies_root_ui.class.php,v 1.16.4.4 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -114,7 +114,7 @@ class list_caddies_root_ui extends list_ui {
 		parent::init_filters($filters);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'type', 1 => 'classement_label');
 	}
 	
@@ -175,24 +175,13 @@ class list_caddies_root_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-		
-		if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'name':
-					$order .= $sort_by.", comment";
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'name':
+	            return $sort_by.", comment";
+	    }
 	}
 	
 	/**
@@ -235,12 +224,12 @@ class list_caddies_root_ui extends list_ui {
 		if($this->item && $action!="save_cart" && $action!="del_cart") {
 			$content .= (!$this->nocheck?"<input type='checkbox' id='id_".$object->get_idcaddie()."' name='caddie[".$object->get_idcaddie()."]' value='".$object->get_idcaddie()."'>":"")."&nbsp;";
 			if(!$this->nocheck){
-				$content.=  "<a href='#' onclick='javascript:document.getElementById(\"id_".$object->get_idcaddie()."\").checked=true;document.forms[\"print_options\"].submit();' />";
+				$content.=  "<a href='#' onclick='javascript:document.getElementById(\"id_".$object->get_idcaddie()."\").checked=true;document.forms[\"print_options\"].submit();'>";
 			} else {
 				if ($this->lien_pointage) {
-					$content.=  "<a href='#' onclick='javascript:document.getElementById(\"idcaddie\").value=".$this->item.";document.getElementById(\"idcaddie_selected\").value=".$object->get_idcaddie().";document.forms[\"print_options\"].submit();' />";
+					$content.=  "<a href='#' onclick='javascript:document.getElementById(\"idcaddie\").value=".$this->item.";document.getElementById(\"idcaddie_selected\").value=".$object->get_idcaddie().";document.forms[\"print_options\"].submit();'>";
 				} else {
-					$content.=  "<a href='#' onclick='javascript:document.getElementById(\"idcaddie\").value=".$object->get_idcaddie().";document.forms[\"print_options\"].submit();' />";
+					$content.=  "<a href='#' onclick='javascript:document.getElementById(\"idcaddie\").value=".$object->get_idcaddie().";document.forms[\"print_options\"].submit();'>";
 				}
 			}
 		} else {
@@ -272,7 +261,7 @@ class list_caddies_root_ui extends list_ui {
 				</a>";
 			}
 			$link = $this->lien_origine."&action=".$this->action_click."&object_type=".$object->type."&idcaddie=".$object->get_idcaddie()."&item=".$this->item;
-			$content.= "<a href='$link' />";
+			$content.= "<a href='$link'>";
 		}
 		return $content;
 	}
@@ -330,7 +319,7 @@ class list_caddies_root_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		global $action;
 		
 		$class="list_ui_list_cell_content ".$this->objects_type."_list_cell_content".($property ? "_".$property : '')." ";
@@ -356,13 +345,10 @@ class list_caddies_root_ui extends list_ui {
 				$class .= 'classement5';
 				break;
 		}
-		$attributes = array(
+		return array(
 				'class' => $class,
 				
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	public function get_error_message_empty_list() {

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_class.class.php,v 1.12 2019/07/17 08:36:38 dgoron Exp $
+// $Id: onto_common_class.class.php,v 1.13 2022/11/25 14:59:27 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,6 +54,8 @@ class onto_common_class extends onto_common_root {
 	
 	public $pmb_name; 
 	
+	public $field;
+	
 	public function __construct($uri,$ontology) {
 		parent::__construct($uri,$ontology);
 		$this->get_properties();
@@ -101,6 +103,10 @@ class onto_common_class extends onto_common_root {
 	
 	public function set_pmb_name($pmb_name){
 		$this->pmb_name = $pmb_name;
+	}
+	
+	public function set_field($field){
+	    $this->field = $field;
 	}
 	
 	protected function fetch_label(){

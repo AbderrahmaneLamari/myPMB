@@ -4,11 +4,12 @@
 // | creator : Eric ROBERT                                                    |
 // | modified : ...                                                           |
 // +-------------------------------------------------+
-// $Id: func_other_rameau_first_level.inc.php,v 1.17 2021/02/09 09:44:39 dgoron Exp $
+// $Id: func_other_rameau_first_level.inc.php,v 1.18.4.1 2023/10/11 10:11:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 // enregistrement de la notices dans les catégories
+global $class_path, $include_path;
 require_once "$include_path/misc.inc.php" ;
 require_once($class_path."/thesaurus.class.php");
 require_once($class_path."/categories.class.php");
@@ -18,24 +19,7 @@ global $thes, $thesaurus_defaut;
 $thes = new thesaurus($thesaurus_defaut);
  
 function traite_categories_enreg($notice_retour,$categories,$thesaurus_traite=0) {
-
-	global $dbh;
-	
-	// si $thesaurus_traite fourni, on ne delete que les catégories de ce thesaurus, sinon on efface toutes
-	//  les indexations de la notice sans distinction de thesaurus
-	if (!$thesaurus_traite) $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' ";
-	else $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' and num_noeud in (select id_noeud from noeuds where num_thesaurus='$thesaurus_traite' and id_noeud=notices_categories.num_noeud) ";
-	$res_del = @pmb_mysql_query($rqt_del, $dbh);
-		
-	$rqt_ins = "insert into notices_categories (notcateg_notice, num_noeud, ordre_categorie) VALUES ";
-	
-	for($i=0 ; $i< sizeof($categories) ; $i++) {
-		$id_categ=$categories[$i]['categ_id'];
-		if ($id_categ) {
-			$rqt = $rqt_ins . " ('$notice_retour','$id_categ',$i) " ; 
-			$res_ins = @pmb_mysql_query($rqt, $dbh);
-		}
-	}
+	z3950_notice::traite_categories_enreg($notice_retour, $categories, $thesaurus_traite);
 }
 
 function traite_categories_for_form($tableau_600="",$tableau_601="",$tableau_602="",$tableau_605="",$tableau_606="",$tableau_607="",$tableau_608="",$tableau_608="") {
@@ -106,17 +90,5 @@ function traite_categories_from_form() {
 
 
 function create_categ_z3950($num_parent, $libelle, $index) {
-	
-	global $thes;
-	$n = new noeuds();
-	$n->num_thesaurus = $thes->id_thesaurus;
-	$n->num_parent = $num_parent;
-	$n->save();
-	
-	$c = new categories($n->id_noeud, 'fr_FR');
-	$c->libelle_categorie = $libelle;
-	$c->index_categorie = $index;
-	$c->save();
-	
-	return $n->id_noeud;
+    return z3950_notice::create_categ_z3950($num_parent, $libelle, $index);
 }	

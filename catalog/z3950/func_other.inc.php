@@ -4,42 +4,26 @@
 // | creator : Eric ROBERT                                                    |
 // | modified : ...                                                           |
 // +-------------------------------------------------+
-// $Id: func_other.inc.php,v 1.20 2019/08/01 13:16:34 btafforeau Exp $
+// $Id: func_other.inc.php,v 1.21.2.1 2023/10/11 10:11:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 // enregistrement de la notices dans les catégories
 function traite_categories_enreg($notice_retour,$categories,$thesaurus_traite=0) {
-	// si $thesaurus_traite fourni, on ne delete que les catégories de ce thesaurus, sinon on efface toutes
-	//  les indexations de la notice sans distinction de thesaurus
-    if (empty($thesaurus_traite)) {
-        $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' ";
-    } else {
-        $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' and num_noeud in (select id_noeud from noeuds where num_thesaurus='$thesaurus_traite' and id_noeud=notices_categories.num_noeud) ";
-    }
-	$res_del = @pmb_mysql_query($rqt_del);
-	$rqt_ins = "insert into notices_categories (notcateg_notice, num_noeud, ordre_categorie) VALUES ";
-	$nb_categories = count($categories);
-	for ($i = 0; $i < $nb_categories; $i++) {
-		$id_categ = $categories[$i]['categ_id'];
-		if (!empty($id_categ)) {
-			$rqt = $rqt_ins . " ('$notice_retour','$id_categ', $i) "; 
-			$res_ins = @pmb_mysql_query($rqt);
-		}
-	}
+	z3950_notice::traite_categories_enreg($notice_retour, $categories, $thesaurus_traite);
 }
 
 function traite_categories_for_form($tableau_600 = array(), $tableau_601 = array(), $tableau_602 = array(), $tableau_605 = array(), $tableau_606 = array(), $tableau_607 = array(), $tableau_608 = array()) {
 	global $charset, $msg, $pmb_keyword_sep, $rameau;
 	$rameau = "";
-	$info_606_a = $tableau_606["info_606_a"];
-	$info_606_j = $tableau_606["info_606_j"];
-	$info_606_x = $tableau_606["info_606_x"];
-	$info_606_y = $tableau_606["info_606_y"];
-	$info_606_z = $tableau_606["info_606_z"];
+	$info_606_a = (isset($tableau_606["info_606_a"]) ? $tableau_606["info_606_a"] : '');
+	$info_606_j = (isset($tableau_606["info_606_j"]) ? $tableau_606["info_606_j"] : '');
+	$info_606_x = (isset($tableau_606["info_606_x"]) ? $tableau_606["info_606_x"] : '');
+	$info_606_y = (isset($tableau_606["info_606_y"]) ? $tableau_606["info_606_y"] : '');
+	$info_606_z = (isset($tableau_606["info_606_z"]) ? $tableau_606["info_606_z"] : '');
 	
 	$champ_rameau = "";
-	$nb_infos_606_a = count($info_606_a);
+	$nb_infos_606_a = (is_array($info_606_a) ? count($info_606_a) : 0);
 	for ($a = 0; $a < $nb_infos_606_a; $a++) {
 		$libelle_final = "";
 		$libelle_j = "";
@@ -91,16 +75,7 @@ function traite_categories_for_form($tableau_600 = array(), $tableau_601 = array
 
 
 function traite_categories_from_form() {
-	global $max_categ;
-	$categories = array();
-	for ($i = 0; $i < $max_categ; $i++) {
-		$var_categ = "f_categ_id$i";
-		global ${$var_categ};
-		if (!empty(${$var_categ})) {
-			$categories[] = array('categ_id' => ${$var_categ});
-		}
-	}
-	return $categories;
+	return z3950_notice::traite_categories_from_form();
 }
 
 function traite_concepts_for_form($tableau_606 = array()) {

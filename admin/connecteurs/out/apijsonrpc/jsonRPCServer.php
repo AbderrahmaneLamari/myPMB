@@ -1,4 +1,9 @@
 <?php
+// +-------------------------------------------------+
+// © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// +-------------------------------------------------+
+// $Id: jsonRPCServer.php,v 1.13.6.2 2023/07/18 13:53:42 dbellamy Exp $
+
 /*
 					COPYRIGHT
 
@@ -113,6 +118,7 @@ class jsonRPCServer {
 			}
 			$request['params'] = $enabled_params;
 		} 
+		$request['params'] = is_null($request['params']) ? [] : $request['params'];
 		
 		unset($tokens);
 		unset($group);

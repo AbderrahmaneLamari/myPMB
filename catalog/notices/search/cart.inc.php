@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cart.inc.php,v 1.53 2019/08/01 13:16:36 btafforeau Exp $
+// $Id: cart.inc.php,v 1.57 2022/06/09 13:38:57 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -27,9 +27,7 @@ $cart_click_expl = "onClick=\"openPopUp('./print_cart.php?action=print_prepare&o
 switch ($action) {
 	case 'new_cart':
 		$myCart= new caddie();
-		$form_action = "./catalog.php?categ=search&mode=3&action=valid_new_cart&item=".$item;
-		$form_cancel = "./catalog.php?categ=search&mode=3&action=&item=".$item;
-		print $myCart->get_form($form_action, $form_cancel);
+		print $myCart->get_form("./catalog.php?categ=search&mode=3&item=".$item);
 		break;
 	case 'del_cart':
 		$myCart= new caddie($idcaddie);
@@ -38,10 +36,28 @@ switch ($action) {
 		break;
 	case 'del_item':
 		$myCart= new caddie($idcaddie);
+		if ($page=="") {
+			$_SESSION["CURRENT"]=count($_SESSION["session_history"]);
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["QUERY"]["NOLINK"]=true;
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["QUERY"]["HUMAN_QUERY"]=$myCart->name;
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["QUERY"]["HUMAN_TITLE"]=sprintf($msg["histo_cart"],$myCart->type);
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]=array();
+			$_POST["page"]=1;
+			$page=1;
+		}
+		if ($_SESSION["CURRENT"]!==false) {
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["URI"]="catalog.php?categ=search&mode=3&action=add_item&object_type=NOTI&idcaddie=".$idcaddie."&item=";
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["GET"]=$_GET;
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["POST"]=$_POST;
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["PAGE"]=$page;
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["HUMAN_QUERY"]=$msg["histo_cart_alone"]." : ".$myCart->name;
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["SEARCH_TYPE"]="cart";
+			$_SESSION["session_history"][$_SESSION["CURRENT"]]["NOTI"]["NOPRINT"]=true;
+		}
 		$myCart->del_item($item);
 		print "<div class=\"row\"><b>Panier&nbsp;: ".$myCart->name.' ('.$myCart->type.')</b></div>';
 		//aff_cart_notices($myCart->get_cart(), $myCart->type, $idcaddie);
-		$myCart->aff_cart_objects("./catalog.php?categ=search&mode=3&idcaddie=$idcaddie", false, 0, false);
+		$myCart->aff_cart_objects("./catalog.php?categ=search&mode=3&idcaddie=$idcaddie", false, true, false);
 		break;
 	case 'valid_new_cart':
 		$myCart = new caddie(0);
@@ -54,6 +70,9 @@ switch ($action) {
 			//Historique
 			$myCart = new caddie($idcaddie);
 			if ($page=="") {
+			    if (!isset($_SESSION["session_history"]) || !is_array($_SESSION["session_history"])) {
+			        $_SESSION["session_history"] = [];
+			    }
 				$_SESSION["CURRENT"]=count($_SESSION["session_history"]);
 				$_SESSION["session_history"][$_SESSION["CURRENT"]]["QUERY"]["NOLINK"]=true;
 				$_SESSION["session_history"][$_SESSION["CURRENT"]]["QUERY"]["HUMAN_QUERY"]=$myCart->name;
@@ -77,12 +96,11 @@ switch ($action) {
 			//aff_cart_notices($myCart->get_cart(), $myCart->type, $idcaddie);
 			$myCart->aff_cart_objects("./catalog.php?categ=search&mode=3&idcaddie=$idcaddie", false, true, false);
 		} else aff_paniers($idcaddie, "NOTI", "./catalog.php?categ=search&mode=3", "add_item", $msg["caddie_select_afficher"], "", 0, 1, 1, false, 1);
-	}
+}
 
 // affichage du contenu du caddie à partir de $liste qui contient les object_id
 function aff_cart_notices($liste, $caddie_type, $idcaddie=0) {
 	global $msg;
-	global $dbh;
 	global $begin_result_liste;
 	global $end_result_liste;
 	global $page, $nbr_lignes, $nb_per_page;
@@ -125,7 +143,7 @@ function aff_cart_notices($liste, $caddie_type, $idcaddie=0) {
 			// inclusion du javascript de gestion des listes dépliables
 			// début de liste
 			print $begin_result_liste;
-			foreach ($liste as $cle => $expl) {
+			foreach ($liste as $expl) {
 				if($stuff = get_expl_info($expl)) {
 					$stuff->lien_suppr_cart = "<a href='./catalog.php?categ=search&mode=3&action=del_item&object_type=EXPL&idcaddie=$idcaddie&item=$expl&page=$page_suppr&nbr_lignes=$nb_after_suppr&nb_per_page=$nb_per_page'><img src='".get_url_icon('basket_empty_20x20.gif')."' alt='basket' title='".$msg['caddie_icone_suppr_elt']."' /></a>";
 					$stuff = check_pret($stuff);
@@ -141,7 +159,7 @@ function aff_cart_notices($liste, $caddie_type, $idcaddie=0) {
 			// inclusion du javascript de gestion des listes dépliables
 			// début de liste
 			print $begin_result_liste;
-			foreach ($liste as $cle => $expl) {
+			foreach ($liste as $expl) {
 				if($bull_aff = show_bulletinage_info($expl)) {
 					$javascript_template ="
 						<div id=\"el!!id!!Parent\" class=\"notice-parent\">

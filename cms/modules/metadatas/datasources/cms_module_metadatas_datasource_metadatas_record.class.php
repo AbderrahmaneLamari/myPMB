@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_metadatas_datasource_metadatas_record.class.php,v 1.6 2018/06/15 13:22:49 dgoron Exp $
+// $Id: cms_module_metadatas_datasource_metadatas_record.class.php,v 1.6.12.2 2023/06/09 08:21:08 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 class cms_module_metadatas_datasource_metadatas_record extends cms_module_metadatas_datasource_metadatas_generic{
 	
@@ -81,10 +83,8 @@ class cms_module_metadatas_datasource_metadatas_record extends cms_module_metada
 				
 				$datas = array();
 				$notice_class = new notice($notice);
-				$url_vign = "";
-				if (($notice_class->code || $notice_class->thumbnail_url) && ($opac_show_book_pics=='1' && ($opac_book_pics_url || $notice_class->thumbnail_url))) {
-					$url_vign = getimage_url($notice_class->code, $notice_class->thumbnail_url);
-				}
+				$thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+				$url_vign = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $notice_class->id);
 				$datas = array(
 						'id' => $notice_class->id,
 						'title' => $notice_class->tit1,

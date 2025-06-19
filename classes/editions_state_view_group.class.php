@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: editions_state_view_group.class.php,v 1.4 2019/06/05 06:41:21 btafforeau Exp $
+// $Id: editions_state_view_group.class.php,v 1.4.10.2 2023/03/07 07:38:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/editions_state_view.class.php");
 
 class editions_state_view_group extends editions_state_view {
@@ -17,11 +18,10 @@ class editions_state_view_group extends editions_state_view {
 		//on gère les propriétés communes dans la classe parente
 		parent::__construct($datas,$id,$param);
 		$this->sqlite_db_open();
-		$this->set_param_group($param["group"]);
+		$this->set_param_group($param["group"] ?? array());
 	}
 	
 	private function sqlite_db_open(){
-		global $base_path;
 		if(!class_exists('SQLite3')){
 			$this->sqlite_error="SQLite 3 NOT supported";
 			return;

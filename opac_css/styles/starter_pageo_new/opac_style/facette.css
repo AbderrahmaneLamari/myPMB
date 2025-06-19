@@ -1,0 +1,433 @@
+/*--------------
+- OPAC: FACETTE -
+ --------------*/
+
+/* Définir la taille de la div main et de la div bandeau dans les pages avec des facettes */
+
+
+#main.pmb-page-w-bandeau {
+    margin: 40px 0 0;
+    max-width: calc(78% - 140px);
+    padding: 0 0 0 42px;
+}
+
+#main.pmb-page-w-bandeau #main_hors_footer {
+    max-width: calc(83% + 38px);
+}
+
+#bandeau.pmb-page-w-bandeau {
+    margin: 40px 0 0 140px;
+    max-width: 418px;
+    width: 22%;
+    display: block !important;
+}
+
+#bandeau.pmb-empty {
+    display: block !important;
+    padding: 0;
+    background: none;
+}
+
+@media screen and (max-width: 1220px) {
+    #bandeau.pmb-page-w-bandeau {
+        margin-left: 30px;
+    }
+
+    #main.pmb-page-w-bandeau {
+        max-width: calc(78% - 30px);
+    }
+}
+
+/* Définir la taille de la div main à 100% et la div bandeau à 0% (dans le cas où il n'y a que les facettes dans le bandeau)   */
+
+@media screen and (max-width:959px) {
+    #main.pmb-page-w-bandeau #main_hors_footer {
+        max-width: 100%;
+    }
+
+    #main.pmb-page-w-bandeau {
+        margin: 0 auto;
+        max-width: 960px;
+        width: 100%;
+        padding: 0 10px;
+    }
+
+    #bandeau.pmb-page-w-bandeau {
+        margin: 0;
+        max-width: 0px;
+        padding: 0;
+    }
+
+    .uk-offcanvas#facette {
+        max-width: 100%;
+    }
+}
+
+
+/* lvl1
+---------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------*/
+
+
+#lvl1 {
+    border-radius: 0px 0px;
+    border-bottom: none;
+}
+
+#lvl1>h3,
+#facette_wrapper>h3 {
+    margin-top: 0px;
+}
+
+#lvl1_list,
+#facette form {
+    /* padding-bottom: 50px; */
+    margin: 0 auto;
+    border-bottom: 15px solid transparent;
+    height: auto !important;
+    overflow: hidden;
+}
+
+#facette form {
+    padding-bottom: 12px;
+}
+
+#lvl1_list tbody tr {
+    width: 90%;
+    /* padding: 0px 5%; */
+    ;
+}
+
+#lvl1 {
+    border: 0px solid #006B8F;
+}
+
+#adresse,
+#lvl1 {
+    position: relative;
+    background-color: var(--bg-color-body);
+    color: var(--text-color-primary);
+}
+
+#facette a,
+#lvl1 a {
+    text-shadow: 0px 0px 0px;
+    text-decoration: none;
+}
+
+#facette table td:first-child {
+    vertical-align: baseline;
+}
+
+#facette table td a img {
+    margin-top: 5px
+}
+
+#facette .reinitialize-facettes-link {
+    padding: 5px 5px 5px 15px;
+}
+
+#facette a:hover,
+#lvl1 a:hover {
+    text-decoration: underline;
+}
+
+#facette h3,
+#lvl1 h3 {
+    margin: 0;
+}
+
+#facette h3 img {
+    display: none;
+}
+
+#facette h3:before,
+#lvl1 h3:before {
+    font-weight: normal;
+    font-style: normal;
+    /* content: '\f0c9'; */
+}
+
+#lvl1_list {
+    padding: 15px 20px;
+    display: block;
+    color: var(--text-color-primary);
+}
+
+#lvl1_list tbody {
+    margin: 0 auto;
+}
+
+#lvl1_list .current {
+    font: var(--font-link);
+    font-style: italic;
+    font-weight: 400;
+}
+
+#facette a:hover,
+#lvl1 a:hover,
+#lvl1_list .current:hover {
+    text-decoration: underline;
+    color: white;
+}
+
+
+/* Facettes
+---------------------------------------------------------------------------------------------*/
+#facette_wrapper>form {
+    display: none;
+}
+
+.facettes_multis:not(:empty) {
+    width: 348px;
+    background-color: var(--c-white);
+    box-shadow: var(--box-shadow);
+    padding: 32px 44px;
+    border-radius: var(--border-radius-small);
+}
+
+.facette_compare_listTitle {
+    gap: 12px;
+    display: flex;
+    font-weight: bold;
+    font-size: 1.8rem;
+    padding-bottom: 16px;
+}
+
+.facette_compare_listTitle::before {
+    content: url("../images/filter.png");
+}
+
+#facette br {
+    display: none;
+}
+
+#facette #active_facette {
+    max-width: 100%;
+    margin: 5px auto;
+}
+
+#facette #active_facette br {
+    display: block;
+}
+
+.bouton.bouton_filtrer_facette_haut.filter_button {
+    display: none;
+}
+
+#pmbopac #facette input[type="button"] {
+    border: 2px solid #FFFFFF;
+    border-radius: 6px;
+}
+
+#pmbopac #facette input[value="Filtrer"] {
+    font: var(--font-link);
+    font-size: 1.8rem;
+    padding: 11px 24px 10px 24px;
+    border-radius: var(--border-radius);
+    background-color: var(--c-primary);
+    border: 1px solid var(--c-primary);
+    color: var(--c-white);
+    transition: var(--transition);
+    text-align: center;
+}
+
+table[id^='facette_list'] {
+    width: 100%;
+    margin: 0 auto;
+}
+
+table[id^='facette_list'] tr {
+    margin: 5px 0;
+}
+
+#facette_wrapper table th {
+    text-align: left;
+    border-radius: 0px;
+    margin-bottom: 2px;
+}
+
+#facette_wrapper .facette_libelle {
+    padding-left: 5px;
+}
+
+#facette_wrapper {
+    margin-bottom: 20px;
+    background: var(--c-white);
+    padding: 5;
+}
+
+#facette .facette_expande thead th,
+#facette .facette_collapsed thead th {
+    color: var(--c-black);
+    font-weight: 600;
+    font-size: 1.8rem;
+    padding: 12px 0 6px;
+}
+
+input.bouton.bouton_filtrer_facette_bas.filter_button {
+    margin-top: 15px;
+}
+
+#facette .facette_tr,
+#facette .facette_tr_see_more {
+    margin: 0;
+    padding: 3px 0;
+}
+
+#facette .facet-link span {
+    color: var(--c-black);
+    line-height: 1.6rem;
+}
+
+#facette .facette_plus_link,
+#facette .facette_moins_link {
+    color: var(--c-thirdly);
+    font-size: 1.6rem;
+    padding-top: 6px;
+}
+
+/* Compare
+---------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------*/
+
+#compare_wrapper {
+    margin-top: 15px;
+}
+
+#facette_compare,
+#facette_groupby {
+    max-width: 90%;
+    margin: 10px auto;
+}
+
+h3.facette_compare_MainTitle a {
+    text-decoration: none;
+}
+
+#facette_wrapper>form>h3>table>tbody>tr>td>a>img,
+#facette_compare span.facette_compare img {
+    width: 0px;
+}
+
+#facette_wrapper>form>h3>table>tbody>tr>td>a:before,
+.facette_compare_raz a:before,
+#facette_compare span.facette_compare:before {
+    content: "\f057";
+    color: #4D4D4D;
+    text-decoration: none;
+}
+
+#facette_compare span.facette_compare:before {
+    color: #4D4D4D;
+    text-align: center;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+#facette_wrapper>form>h3>table>tbody>tr>td>a:hover:before,
+#facette_compare span.facette_compare:hover:before {
+    text-decoration: none;
+    text-shadow: 0px 0px 0px;
+}
+
+#facette_wrapper th.groupby_button:after {
+    content: "\f0c5";
+    text-shadow: 0px 0px 0px;
+    color: #fff;
+    /* background-color: #787878; */
+    padding: 4px 8px;
+    text-align: right;
+    margin: 0;
+    width: auto;
+    border-radius: 4px;
+    line-height: 17px;
+    height: auto;
+    cursor: pointer;
+    float: right;
+}
+
+#facette_wrapper th.groupby_button img {
+    width: 0;
+}
+
+#facette_compare>tbody>tr {
+    border-bottom: dotted 1px rgba(219, 219, 219, 1);
+    line-height: 24px;
+}
+
+#facette_compare>tbody>tr:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+#facette_compare>tbody>tr>td>p {
+    padding: 5px 5px 5px 5px;
+}
+
+#compare_wrapper li .img_basket {
+    background-color: #F2F2F2;
+    background-size: 70%;
+    background-position: 50% 48%;
+    border-radius: 4px;
+    padding: 0px;
+    margin-right: 5px;
+    display: block;
+    /* float: none; */
+    ;
+}
+
+#compare_wrapper li a+a {
+    margin-left: 30px;
+    display: block;
+    color: #343434;
+}
+
+#compare_wrapper li .img_basket {
+    background-color: transparent;
+}
+
+tr[id^="compare_hidden"]>td:nth-child(even) {
+    background-color: rgb(245, 245, 245);
+}
+
+#facette_wrapper tr>th:after {
+    content: none;
+}
+
+#facette .facette_compare_SubTitle:before,
+#facette .facette_compare_MainTitle:before {
+    content: none;
+}
+
+.facette_compare_SubTitle img {
+    /* display:none; */
+    float: right;
+    margin-top: 6px;
+}
+
+
+@media (max-width: 960px) {
+
+    .facettes_multis:not(:empty) {
+        width: 100%;
+        background-color: var(--c-white);
+        padding: 32px 44px;
+        border-radius: none;
+        width: auto;
+        box-shadow: none;
+        padding: 12px;
+        position: relative;
+        top: 62px;
+        z-index: 999;
+    }
+
+    .facette_compare_listTitle {
+        color: var(--c-black) !important;
+    }
+
+    #pmbopac #facette input[value="Filtrer"] {
+        margin-bottom: 32px;
+    }
+}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: resa_planning_controller.class.php,v 1.1.2.2 2021/10/21 12:05:01 dgoron Exp $
+// $Id: resa_planning_controller.class.php,v 1.1 2021/10/21 12:03:07 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

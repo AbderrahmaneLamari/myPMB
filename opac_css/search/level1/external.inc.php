@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: external.inc.php,v 1.25 2019/07/31 13:49:00 ngantier Exp $
+// $Id: external.inc.php,v 1.26 2022/10/28 08:18:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $class_path, $msg, $charset;
 global $search;
 global $es;
 global $pmb_logs_activate, $ex_env, $user_query;

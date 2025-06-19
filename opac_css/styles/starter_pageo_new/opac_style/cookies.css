@@ -1,0 +1,36 @@
+/*--------------
+- OPAC: COOKIES -
+ --------------*/
+
+ #script_analytics_content {
+    text-align: center;
+    padding: 10px;
+    font-size: 16px;
+    background-color: rgba(0, 0, 0, 0.74);
+    position: fixed;
+    bottom: 0;
+    z-index: 5000;
+    width: 100%;
+    color: white!important;
+    font-weight: 600;
+}
+
+#script_analytics_content button {
+    cursor: pointer;
+    padding: 5px;
+    text-decoration: none !important;
+    color: #fff;
+    border: none;
+}
+
+#script_analytics_content #accept-button {
+    background: #0c6f0c;
+}
+
+#opposite-button {
+    background: #f02a07d6;
+}
+
+#script_analytics_content button+button {
+    margin-left: 10px;
+}

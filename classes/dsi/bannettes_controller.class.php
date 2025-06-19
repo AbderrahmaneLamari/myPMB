@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannettes_controller.class.php,v 1.11.2.1 2021/11/16 07:56:29 dgoron Exp $
+// $Id: bannettes_controller.class.php,v 1.12.4.2 2023/09/12 12:30:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -30,7 +30,9 @@ class bannettes_controller extends lists_controller {
 				
 				if ($pmb_javascript_office_editor) {
 					print $pmb_javascript_office_editor ;
-					print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+					print "<script type='text/javascript'>
+                        pmb_include('$base_path/javascript/tinyMCE_interface.js');
+                    </script>";
 				}
 				break;
 			case 'add':
@@ -38,7 +40,9 @@ class bannettes_controller extends lists_controller {
 				print $model_instance->show_form();
 				if ($pmb_javascript_office_editor) {
 					print $pmb_javascript_office_editor ;
-					print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+					print "<script type='text/javascript'>
+                        pmb_include('$base_path/javascript/tinyMCE_interface.js');
+                    </script>";
 				}
 				break;
 			case 'delete':
@@ -82,6 +86,7 @@ class bannettes_controller extends lists_controller {
 							where empr_categ in (".implode(',',$new_categorie_lecteurs).")";
 							$res_lec=pmb_mysql_query($req_lec) ;
 							while ($lec=pmb_mysql_fetch_object($res_lec)) {
+							    pmb_mysql_query("delete from bannette_abon where num_empr='".$lec->id_empr."' and num_bannette='$id'") ;
 								pmb_mysql_query("insert into bannette_abon (num_bannette, num_empr) values('$id', '$lec->id_empr')") ;
 							}
 						}
@@ -90,6 +95,7 @@ class bannettes_controller extends lists_controller {
 	    					where groupe_id in (" . implode(',', $new_groupe_lecteurs) . ")";
 							$res_lec=pmb_mysql_query($req_lec) ;
 							while ($lec=pmb_mysql_fetch_object($res_lec)) {
+							    pmb_mysql_query("delete from bannette_abon where num_empr='".$lec->id_empr."' and num_bannette='$id'") ;
 								pmb_mysql_query("insert into bannette_abon (num_bannette, num_empr) values('$id', '$lec->id_empr')") ;
 							}
 						}
@@ -111,7 +117,9 @@ class bannettes_controller extends lists_controller {
 				print pmb_bidi($model_instance->show_form());
 				if ($pmb_javascript_office_editor) {
 					print $pmb_javascript_office_editor ;
-					print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+					print "<script type='text/javascript'>
+                        pmb_include('$base_path/javascript/tinyMCE_interface.js');
+                    </script>";
 				}
 				break;
 			case 'search':

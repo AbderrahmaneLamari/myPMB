@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_visits_statistics_ui.class.php,v 1.3.2.2 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_visits_statistics_ui.class.php,v 1.7.4.1 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -78,32 +78,19 @@ class list_visits_statistics_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-		
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'id':
-					$order .= 'visits_statistics_id';
-					break;
-				case 'type' :
-				case 'location' :
-				case 'date':
-					$order .= 'visits_statistics_'.$sort_by;
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}	
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'id':
+	            return 'visits_statistics_id';
+	        case 'type' :
+	        case 'location' :
+	        case 'date':
+	            return 'visits_statistics_'.$sort_by;
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -153,34 +140,13 @@ class list_visits_statistics_ui extends list_ui {
 		return $this->get_search_filter_interval_date('date');
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if(is_array($this->filters['types']) && count($this->filters['types'])) {
-			$filters [] = 'visits_statistics_type IN ("'.implode('","', $this->filters['types']).'")';
-		}
-		if(is_array($this->filters['locations']) && count($this->filters['locations'])) {
-			$filters [] = 'visits_statistics_location IN ("'.implode('","', addslashes_array($this->filters['locations'])).'")';
-		}
-		if($this->filters['date_start']) {
-			$filters [] = 'visits_statistics_date >= "'.$this->filters['date_start'].'"';
-		}
-		if($this->filters['date_end']) {
-			$filters [] = 'visits_statistics_date <= "'.$this->filters['date_end'].' 23:59:59"';
-		}
+	protected function _add_query_filters() {
+		$this->_add_query_filter_multiple_restriction('types', 'visits_statistics_type');
+		$this->_add_query_filter_multiple_restriction('locations', 'visits_statistics_location');
+		$this->_add_query_filter_interval_restriction('date', 'visits_statistics_date', 'datetime');
 		if($this->filters['ids']) {
-			$filters [] = 'visits_statistics_id IN ('.$this->filters['ids'].')';
+			$this->query_filters [] = 'visits_statistics_id IN ('.$this->filters['ids'].')';
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	protected function _get_object_property_type($object) {

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: barcodes_sheet.class.php,v 1.1.2.4 2021/09/21 11:33:59 dgoron Exp $
+// $Id: barcodes_sheet.class.php,v 1.3.4.2 2023/06/15 14:15:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -226,9 +226,10 @@ class barcodes_sheet {
 	protected function get_display_line_margin_parameter($name) {
 		global $msg, $charset;
 		
+		$position = strtolower(str_replace(array('CBG_', 'INNER_', '_MARGIN'), '', $name));
 		$display = "
 		<div class='row'>
-			<input class='saisie-20em' id='".$name."' type='text' class='text' name='".$name."' value=\"".htmlentities($this->{$name}, ENT_QUOTES, $charset)."\" /> $msg[edit_cbgen_mep_left]
+			<input class='saisie-20em' id='".$name."' type='text' class='text' name='".$name."' value=\"".htmlentities($this->{$name}, ENT_QUOTES, $charset)."\" /> ".$msg['edit_cbgen_mep_'.$position]."
 		</div>
 		";
 		return $display;
@@ -369,6 +370,10 @@ class barcodes_sheet {
 		global $CBG_INNER_RIGHT_MARGIN;
 		global $CBG_INNER_TOP_MARGIN;
 		global $CBG_INNER_BOTTOM_MARGIN;
+		global $CBG_TEXT_HEIGHT;
+		global $CBG_TEXT_FONT_SIZE;
+		global $CBG_CB_TEXT_SIZE;
+		global $CBG_CB_RES;
 		
 		$this->label = stripslashes($type_cb_libelle);
 		$this->page_orientation = $ORIENTATION;
@@ -382,6 +387,10 @@ class barcodes_sheet {
 		$this->CBG_INNER_RIGHT_MARGIN = stripslashes($CBG_INNER_RIGHT_MARGIN);
 		$this->CBG_INNER_TOP_MARGIN = stripslashes($CBG_INNER_TOP_MARGIN);
 		$this->CBG_INNER_BOTTOM_MARGIN = stripslashes($CBG_INNER_BOTTOM_MARGIN);
+		$this->CBG_TEXT_HEIGHT = stripslashes($CBG_TEXT_HEIGHT);
+		$this->CBG_TEXT_FONT_SIZE = stripslashes($CBG_TEXT_FONT_SIZE);
+		$this->CBG_CB_TEXT_SIZE = stripslashes($CBG_CB_TEXT_SIZE);
+		$this->CBG_CB_RES = stripslashes($CBG_CB_RES);
 		
 		$this->set_page_sizes();
 	}
@@ -402,7 +411,11 @@ class barcodes_sheet {
 			'CBG_INNER_LEFT_MARGIN' => $this->CBG_INNER_LEFT_MARGIN,
 			'CBG_INNER_RIGHT_MARGIN' => $this->CBG_INNER_RIGHT_MARGIN,
 			'CBG_INNER_TOP_MARGIN' => $this->CBG_INNER_TOP_MARGIN,
-			'CBG_INNER_BOTTOM_MARGIN' => $this->CBG_INNER_BOTTOM_MARGIN
+			'CBG_INNER_BOTTOM_MARGIN' => $this->CBG_INNER_BOTTOM_MARGIN,
+			'CBG_TEXT_HEIGHT' => $this->CBG_TEXT_HEIGHT,
+			'CBG_TEXT_FONT_SIZE' => $this->CBG_TEXT_FONT_SIZE,
+			'CBG_CB_TEXT_SIZE' => $this->CBG_CB_TEXT_SIZE,
+			'CBG_CB_RES' => $this->CBG_CB_RES
 		);
 	}
 	

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ? 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: expl.tpl.php,v 1.98.2.1 2022/01/17 16:27:14 qvarin Exp $
+// $Id: expl.tpl.php,v 1.99.4.4 2023/12/18 14:27:10 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -491,7 +491,9 @@ $expl_pointage_base = "
 <input type='hidden' name='action' value='pointage' />
 <script type='text/javascript'>
 	document.forms['pointage_expl'].elements['noex'].focus();
-	if(document.getElementById('book_location_id')) {
+	if(document.getElementById('book_section_id') && document.getElementById('book_location_id')) {
+        var pointage_expl_is_visible = is_visible_section_from_location(document.getElementById('book_section_id'), document.getElementById('book_location_id').value);
+		refresh_sections_from_location(document.getElementById('book_section_id'), document.getElementById('book_location_id').value, pointage_expl_is_visible);
 		var pointage_expl_current_location = document.getElementById('book_location_id').value;
 	}
 </script>
@@ -873,10 +875,25 @@ if ($pmb_rfid_activate==1  ) {
 		</form>
 		<script type='text/javascript'>
 			document.forms['saisie_cb_ex'].elements['form_cb_expl'].focus();
-		</script>
-		";
 
-
+            // Affichage de loader lors du submit du formulaire (#148428)
+            document.addEventListener('DOMContentLoaded', () => {
+                const form = document.getElementsByName('saisie_cb_ex')[0];
+                if(form) {
+                    form.addEventListener('submit', () => {
+    					if(form.form_cb_expl.value.replace(/^\s+$/g,'').length != 0) {
+                            pmb_show_loader('saisie_cb_ex');
+                            //form.form_cb_expl.disabled = true;
+                            form.setAttribute('onsubmit', '');
+                            const submit = form.querySelector('[type=submit]');
+                            if(submit) {
+                                submit.disabled = true;
+                            }
+                        }
+                    });
+                }
+            });
+		</script>";
 
 //	$expl_pret :form d'affichage exemplaire pr?t?
 $expl_pret ="

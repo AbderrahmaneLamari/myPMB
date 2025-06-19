@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: RegistredPersonModel.php,v 1.28.2.1 2022/01/18 09:12:46 qvarin Exp $
+// $Id: RegistredPersonModel.php,v 1.32.2.1 2023/08/03 09:49:08 gneveu Exp $
 namespace Pmb\Animations\Models;
 
 use Pmb\Common\Models\Model;
@@ -11,6 +11,7 @@ use Pmb\Common\Models\CustomFieldModel;
 use Pmb\Animations\Orm\PriceOrm;
 use Pmb\Animations\Orm\PriceTypeCustomFieldValueOrm;
 use Pmb\Common\Models\EmprModel;
+use Pmb\Common\Helper\GlobalContext;
 
 class RegistredPersonModel extends Model
 {
@@ -51,7 +52,7 @@ class RegistredPersonModel extends Model
         }
 
         $registredPerson = new RegistredPersonOrm(0);
-        $registredPerson->num_empr = $data->numEmpr;
+        $registredPerson->num_empr = $data->numEmpr ?? 0;
         $registredPerson->num_price = $data->numPrice;
         $registredPerson->person_name = $data->name;
         $registredPerson->num_registration = $data->numRegistration;
@@ -126,7 +127,7 @@ class RegistredPersonModel extends Model
             $person->price->fetchPriceType();
             $person->fetchCustomFields();
             $person->name = $person->personName;
-            $person->barcode = $empr->emprCb;
+            $person->barcode = $empr->emprCb ?? "";
             $intances[] = $person;
         }
         return $intances;
@@ -135,11 +136,12 @@ class RegistredPersonModel extends Model
     public function fetchCustomFields()
     {
         $personCustomFieldList = PriceTypeCustomFieldValueOrm::find('anim_price_type_custom_origine', $this->idPerson);
-        $customFieldList = $this->price->priceType->fetchCustomFields();
 
-        if (empty($customFieldList)) {
-            $customFieldList = array();
+        $customFieldList = array();
+        if (isset($this->price->priceType)) {
+            $customFieldList = $this->price->priceType->fetchCustomFields();
         }
+
         $this->personCustomsFields = array();
         $length = count($customFieldList);
         for ($i = 0; $i < $length; $i ++) {
@@ -162,59 +164,69 @@ class RegistredPersonModel extends Model
         return self::toArray($registredPersons);
     }
 
-    public static function getListRegistredPersons($emprId, $idAnimation)
+    public static function getListRegistredPersons($idRegistration)
     {
-        // On récupère l'id de registration
-        $id_registration = RegistrationModel::getIdRegistrationFromEmprAndAnimation($emprId, $idAnimation);
         // On récupere la liste d'inscrit
-        $registredPersons = self::getListPersonFromRegistration($id_registration);
+        $registredPersons = self::getListPersonFromRegistration($idRegistration);
 
         // On met en forme la reponse
-        $first = true;
         $listRegistredPersons = "";
         foreach ($registredPersons as $person) {
 
-            $listRegistredPersons .= ! $first ? "<br>" : "";
-            $listRegistredPersons .= '- ' . $person->name . ' ';
+            switch ($person->fetchRegistration()->numRegistrationStatus) {
+                case RegistrationModel::WAITING_LIST:
+                    $listRegistredPersons .= sprintf(GlobalContext::msg("animation_mail_registration_waiting"), $person->name);
+                    break;
 
-            $first = false;
+                case RegistrationModel::PENDING_VALIDATION:
+                    $listRegistredPersons .= sprintf(GlobalContext::msg("animation_mail_registration_pending_validation"), $person->name);
+                    break;
+
+                case RegistrationModel::VALIDATED:
+                    $listRegistredPersons .= sprintf(GlobalContext::msg("animation_mail_registration_validate"), $person->name);
+                    break;
+
+                default:
+                    throw new \Exception("Unknown RegistrationModel::numRegistrationStatus");
+                    break;
+            }
         }
         return $listRegistredPersons;
     }
-    
-    public function getUnsubscribeLink() 
+
+    public function getUnsubscribeLink()
     {
         global $opac_url_base;
-        
-        if (!empty($this->unsubscribeLink)) {
+
+        if (! empty($this->unsubscribeLink)) {
             return $this->unsubscribeLink;
         }
 
         if (empty($this->registration)) {
             $this->fetchRegistration();
         }
-        
-        $this->unsubscribeLink = $opac_url_base."index.php?lvl=registration&action=delete&id_registration=".intval($this->registration->idRegistration);
-        $this->unsubscribeLink .= "&id_person=".intval($this->idPerson);
+
+        $this->unsubscribeLink = $opac_url_base . "index.php?lvl=registration&action=delete&id_registration=" . intval($this->registration->idRegistration);
+        $this->unsubscribeLink .= "&id_person=" . intval($this->idPerson);
         if (empty($this->registration->hash)) {
             $this->registration->generateHash();
         }
-        $this->unsubscribeLink .= "&hash=".$this->registration->hash;
-        
+        $this->unsubscribeLink .= "&hash=" . $this->registration->hash;
+
         return $this->unsubscribeLink;
     }
-    
+
     public static function getRegistredPersonByEmprAndRegistration($emprId, $registrationId)
     {
         $registredPerson = RegistredPersonOrm::finds([
             "num_empr" => $emprId,
             "num_registration" => $registrationId
         ]);
-        
-        if (!empty($registredPerson[0])) {
+
+        if (! empty($registredPerson[0])) {
             return new RegistredPersonModel($registredPerson[0]->id_person);
         }
-        
+
         return new RegistredPersonModel(0);
     }
 }

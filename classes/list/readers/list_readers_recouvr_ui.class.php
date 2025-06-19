@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_readers_recouvr_ui.class.php,v 1.10 2021/04/16 14:47:30 dgoron Exp $
+// $Id: list_readers_recouvr_ui.class.php,v 1.11.4.1 2023/03/24 07:55:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -58,32 +58,27 @@ class list_readers_recouvr_ui extends list_readers_ui {
 		$this->set_setting_column('somme_totale', 'align', 'right');
 	}
 	
-	/**
-	 * Affichage d'une colonne
-	 * @param object $object
-	 * @param string $property
-	 */
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "document.location=\"".$this->get_controller_url_base()."&act=recouvr_reader&id_empr=".$object->id_empr."\";"
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+	}
+	
+	protected function _get_object_property_cb($object) {
+		return $object->empr_cb;
+	}
+	
+	protected function _get_object_property_empr_name($object) {
+		return $object->empr_nom." ".$object->empr_prenom;
+	}
+	
+	protected function _get_object_property_location($object) {
+		return $object->location_libelle;
 	}
 	
 	protected function get_cell_content($object, $property) {
 		$content = '';
 		switch($property) {
-			case 'cb':
-				$content .= $object->empr_cb;
-				break;
-			case 'empr_name':
-				$content .= $object->empr_nom." ".$object->empr_prenom;
-				break;
-			case 'location':
-				$content .= $object->location_libelle;
-				break;
 			case 'somme_totale':
 				$content .= comptes::format_simple($object->somme);
 				break;

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_cataloging_scheme.class.php,v 1.4.8.1 2022/01/21 08:46:17 dgoron Exp $
+// $Id: frbr_cataloging_scheme.class.php,v 1.5 2022/01/21 08:37:14 dgoron Exp $
 if (stristr($_SERVER ['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path;

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: iimport_expl.php,v 1.84.4.1 2021/11/09 14:01:05 dgoron Exp $
+// $Id: iimport_expl.php,v 1.85 2021/11/09 13:58:59 dgoron Exp $
 
 global $base_auth, $base_title, $include_path, $class_path, $pmb_indexation_lang, $file_submit, $isbn_mandatory;
 

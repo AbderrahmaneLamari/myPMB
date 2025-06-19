@@ -3,7 +3,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: map_locations_controler.class.php,v 1.3.2.1 2021/12/24 08:40:07 dgoron Exp $
+// $Id: map_locations_controler.class.php,v 1.4 2021/12/24 08:34:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
     die("no access");

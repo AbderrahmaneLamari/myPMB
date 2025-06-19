@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: consolidation_manifest.xml,v 1.8.2.1 2021/09/29 09:13:17 dgoron Exp $ -->
+$Id: consolidation_manifest.xml,v 1.9 2021/09/29 09:07:38 dgoron Exp $ -->
 <manifest>
 	<name>Consolidation</name>
 	<description>msg:Notice_tpl_functions_description</description>

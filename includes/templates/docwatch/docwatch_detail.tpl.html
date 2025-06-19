@@ -1,0 +1,15 @@
+<!-- $Id: docwatch_detail.tpl.html,v 1.1.2.2 2023/03/29 14:46:09 qvarin Exp $ -->
+<div>
+    <a href='{{ itemwatch.url }}' title='Source' target='_blank'>
+        <h3>
+            {% if itemwatch.interesting %}
+                <img src="{{ img.star.png }}">
+            {% else %}
+                <img src="{{ img.star_unlight.png }}">
+            {% endif %}
+            {{ itemwatch.title }}
+        </h3>
+    </a>
+    <blockquote>{{ itemwatch.publication_date }} / {{itemwatch.source.title}}</blockquote>
+    <blockquote>{{ itemwatch.summary }}</blockquote>
+</div>

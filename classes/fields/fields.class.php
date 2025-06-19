@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: fields.class.php,v 1.2 2020/03/06 15:50:34 tsamson Exp $
+// $Id: fields.class.php,v 1.4.4.1 2023/08/31 12:56:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/onto/onto_index.class.php');
 require_once($class_path.'/skos/skos_datastore.class.php');
 require_once($class_path.'/skos/skos_onto.class.php');
@@ -23,8 +24,15 @@ class fields {
 	
 	protected $details;
 	protected static $pp;
+	public $type;
+	public $xml_indexation;
+
+	public $current_engine;
 
 	public function __construct($type='', $xml_indexation="", $details = []) {
+	    global $default_tmp_storage_engine;
+
+	    $this->current_engine = $default_tmp_storage_engine;
     	$this->type = $type;
 		$this->xml_indexation=$xml_indexation;
 		$this->details = $details;
@@ -73,18 +81,20 @@ class fields {
 
 			self::$fields[$type] = _parser_text_no_function_($xml,"INDEXATION",$file);
 			$tmp_fields = array();
-			foreach (self::$fields[$type]["FIELD"] as $i=>$field) {
+			foreach (self::$fields[$type]["FIELD"] as $field) {
+				$field['ID'] = intval($field['ID']);
 				if(self::$fields[$type]['REFERENCE'][0]["value"] == "authperso_authorities") {
 					$field['ID'] = str_replace('!!id_authperso!!', $this->get_id_authperso(), $field['ID']);
 				}
-				$tmp_fields[$field['ID']+0] = $field;
+				$tmp_fields[$field['ID']] = $field;
 				if(isset($field['TABLE'][0]['TABLEFIELD']) && count($field['TABLE'][0]['TABLEFIELD']) > 1) {
-					$tmp_fields[$field['ID']+0]['TABLE'][0]['TABLEFIELD'] = array();
+					$tmp_fields[$field['ID']]['TABLE'][0]['TABLEFIELD'] = array();
 					foreach ($field['TABLE'][0]['TABLEFIELD'] as $tablefield) {
+						$tablefield["ID"] = intval($tablefield["ID"]);
 						if(self::$fields[$type]['REFERENCE'][0]["value"] == "authperso_authorities") {
 						    $tablefield["ID"] = str_replace('!!id_authperso!!', $this->get_id_authperso(), $tablefield["ID"]);
 						}
-						$tmp_fields[$field['ID']+0]['TABLE'][0]['TABLEFIELD'][$tablefield["ID"]+0] = $tablefield;
+						$tmp_fields[$field['ID']]['TABLE'][0]['TABLEFIELD'][$tablefield["ID"]] = $tablefield;
 					}
 				}
 				if(isset($field['DATATYPE'])) {
@@ -110,7 +120,8 @@ class fields {
 		global $msg;
 
 		$array_grouped = array();
-		foreach (self::$fields[$this->type]['FIELD'] as $i => $field) {
+		foreach (self::$fields[$this->type]['FIELD'] as $field) {
+			$field['ID'] = intval($field['ID']);
 		    if(!empty($msg[$field['NAME']]) && $tmp = $msg[$field['NAME']]){
 				$lib = $tmp;
 			}else{
@@ -127,27 +138,28 @@ class fields {
 						asort($array_dyn_tmp);
 					}
 					foreach ($array_dyn_tmp as $inc=>$lib) {
-						$array_grouped[$field['NAME']][$field["TABLE"][0]["value"]."_".($field['ID']+0)."_".$inc] = $lib;
+						$array_grouped[$field['NAME']][$field["TABLE"][0]["value"]."_".$field['ID']."_".$inc] = $lib;
 					}
 					break;
 				case 'skos' :
-				    $array_grouped[$field['DATATYPELABEL']]["f_".($field['ID']+0)."_1"] = $lib;
+				    $array_grouped[$field['DATATYPELABEL']]["f_".$field['ID']."_1"] = $lib;
 				    break;
 
 				default:
 					if(isset($field['TABLE'][0]['TABLEFIELD']) && count($field['TABLE'][0]['TABLEFIELD']) > 1) {
 						foreach ($field['TABLE'][0]['TABLEFIELD'] as $tablefield) {
+							$tablefield["ID"] = intval($tablefield["ID"]);
 							if(isset($tablefield['NAME'])) {
 							    if(isset($msg[$tablefield['NAME']]) && $tmp= $msg[$tablefield['NAME']]){
 									$lib = $tmp;
 								}else{
 									$lib = $tablefield['NAME'];
 								}
-								$array_grouped[$field['NAME']]["f_".($field['ID']+0)."_".($tablefield['ID']+0)] =  $lib;
+								$array_grouped[$field['NAME']]["f_".$field['ID']."_".$tablefield['ID']] =  $lib;
 							}
 						}
 					} else {
-						$array_grouped['default']["f_".($field['ID']+0)."_0"] = $lib;
+						$array_grouped['default']["f_".$field['ID']."_0"] = $lib;
 					}
 					break;
 			}
@@ -212,6 +224,21 @@ class fields {
 		if($with_pert) {
 			$query="alter table ".$table_name." add pert decimal(16,1) default 1";
 			@pmb_mysql_query($query);
+		}
+	}
+	
+	protected function upgrade_columns_temporary_table($table_name, $field_keyName, $with_pert=false) {
+		if (!pmb_mysql_num_rows(pmb_mysql_query("show columns from ".$table_name." like 'idiot'"))) {
+			$query="alter table ".$table_name." add idiot int(1)";
+			pmb_mysql_query($query);
+		}
+		$query="alter table ".$table_name." add unique($field_keyName)";
+		pmb_mysql_query($query);
+		if($with_pert) {
+			if (!pmb_mysql_num_rows(pmb_mysql_query("show columns from ".$table_name." like 'pert'"))) {
+				$query="alter table ".$table_name." add pert decimal(16,1) default 1";
+				pmb_mysql_query($query);
+			}
 		}
 	}
 	

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_index.class.php,v 1.2 2019/09/20 09:42:04 arenou Exp $
+// $Id: onto_common_index.class.php,v 1.2.6.1 2023/10/27 13:57:48 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,15 +22,15 @@ class onto_common_index extends indexation {
 	 * @access public
 	 */
 	public $handler;
-	
+
 	/**
 	 * properties
 	 *
 	 * @var Array()
 	 * @access protected
 	 */
-	protected $properties;	
-	
+	protected $properties;
+
 	/**
 	 * infos
 	 *
@@ -38,7 +38,7 @@ class onto_common_index extends indexation {
 	 * @access public
 	 */
 	public $infos;
-	
+
 	/**
 	 * sparql_result
 	 *
@@ -46,39 +46,47 @@ class onto_common_index extends indexation {
 	 * @access protected
 	 */
 	protected static $sphinx_indexer;
-	
+
 	/**
 	 * en nettoyage de base ou non
 	 * @var bool
 	 */
 	protected $netbase = false;
-	
+
 	protected $sparql_result;
-	
+
 	protected $lang_codes = array(
-			'fr' => 'fr_FR',
-			'en' => 'en_UK'
+		'fr' => 'fr_FR',
+		'en' => 'en_UK',
+		'nl' => 'nl_NL',
+		'ar' => 'ar',
+		'ca' => 'ca_ES',
+		'es' => 'es_ES',
+		'hu' => 'hu_HU',
+		'it' => 'it_IT',
+		'pt' => 'pt_PT',
+		'ro' => 'ro_RO'
 	);
 
 	public function __construct(){
-		
+
 	}
-	
+
 	public function load_handler($ontology_filepath, $onto_store_type, $onto_store_config, $data_store_type, $data_store_config, $tab_namespaces, $default_display_label){
 		$this->handler = new onto_handler($ontology_filepath, $onto_store_type, $onto_store_config, $data_store_type, $data_store_config, $tab_namespaces, $default_display_label);
 	}
-	
+
 	public function set_handler($handler){
 		$this->handler = $handler;
 	}
-	
+
 	public function init(){
 		$this->handler->get_ontology();
 		$this->table_prefix = $this->handler->get_onto_name();
 		$this->reference_key = "id_item";
 		$this->analyse_indexation();
 	}
-	
+
 	protected function analyse_indexation(){
 	    if(empty($this->infos) || count($this->infos) == 0){
 	        $cache = cache_factory::getCache();
@@ -94,10 +102,10 @@ class onto_common_index extends indexation {
 	                    $this->tab_code_champ = $tab_code_champ;
 	                    return;
 	                }
-	                
+
 	            }
 	        }
-    		
+
     		$unions =array();
     		if (is_array($this->classes)) {
         		foreach($this->classes as $class){
@@ -106,7 +114,7 @@ class onto_common_index extends indexation {
         				<".$class->uri."> <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?subclass .
         				?subclass rdf:type pmb:indexation .
         				?subclass owl:onProperty ?property .
-        				optional {		
+        				optional {
         					?subclass pmb:use ?use .
         				}
         				?subclass pmb:pound ?pound .
@@ -124,15 +132,15 @@ class onto_common_index extends indexation {
         						$element = array($result->property => $result->use);
         					}else{
         						$element = $result->property;
-        						
+
         					}
         					$this->infos[$class->uri][$result->pound][]= $element;
-        					
+
         					$this->tab_code_champ[$result->field][$this->classes[$class->uri]->pmb_name."_".$this->properties[$result->property]->pmb_name] = array(
         						'champ' => $result->field,
         						'ss_champ' => $result->subfield,
         						'pond' => $result->pound,
-        						'no_words' => false					
+        						'no_words' => false
         					);
         				}
         				if(isset($result->union) && $result->union && !in_array($result->union,$unions[$class->uri])){
@@ -145,20 +153,20 @@ class onto_common_index extends indexation {
     			foreach($bnodes as $bnode){
     				$this->recurse_analyse_indexation($class_uri,$bnode);
     			}
-    		} 
+    		}
     		if(is_object($cache)){
     		    $cache->setInCache('onto_'.$ontology->name.'_index_tab_code_champ',$this->tab_code_champ);
     		    $cache->setInCache('onto_'.$ontology->name.'_index_infos',$this->infos);
     		}
 	    }
 	}
-	
+
 	protected function recurse_analyse_indexation($class,$bnode){
 		$bnodes  =array();
 		$query = "select * {
 			<".$bnode."> rdf:type pmb:indexation  .
 			<".$bnode."> owl:onProperty ?property .
-			optional {		
+			optional {
 				<".$bnode."> pmb:useProperty ?use .
 			}
 			<".$bnode."> pmb:pound ?pound .
@@ -193,14 +201,14 @@ class onto_common_index extends indexation {
 			$this->recurse_analyse_indexation($class,$bnode);
 		}
 	}
-	
+
 	public function get_sparql_result($object_uri){
 		$assertions = array();
 		$query = "select * where {
 			<".$object_uri."> rdf:type ?type
  		}";
 		$this->sparql_result = array();
-		
+
 		$this->handler->data_query($query);
 		if($this->handler->data_num_rows()){
 			$result = $this->handler->data_result();
@@ -232,7 +240,7 @@ class onto_common_index extends indexation {
 				}
 			}
 		}
-		
+
 		if(count($assertions)){
 			$query = "select * where {".implode(" . ",$assertions)."}";
 			if($this->handler->data_query($query)){
@@ -257,7 +265,7 @@ class onto_common_index extends indexation {
 										}
 										if(!in_array($row->{$var_name},$this->sparql_result[$var_name][$lang])){
 											$this->sparql_result[$var_name][$lang][] = $row->{$var_name};
-										}										
+										}
 									}
 								}else if (is_array($property_uri)){
 									foreach($property_uri as $property => $sub_property){
@@ -284,7 +292,7 @@ class onto_common_index extends indexation {
 												    $this->sparql_result[$var_name][$row->{$var_name}][$lang][] = $result[0]->sub_property;
 												}
 											}
-										}							
+										}
 									}
 								}
 							}
@@ -294,25 +302,25 @@ class onto_common_index extends indexation {
 			}
 		}
 	}
-		
+
 	public function maj($object_id,$object_uri="",$datatype="all"){
 		global $sphinx_active;
-		
+
 		if($object_id == 0 && $object_uri != ""){
 			$object_id = onto_common_uri::get_id($object_uri);
 		}
 		if($object_id != 0 && !$object_uri){
 			$object_uri = onto_common_uri::get_uri($object_id);
 		}
-		
+
 		if(!count($this->tab_code_champ)){
 			$this->init();
 		}
-		
+
 		$tab_words_insert = $tab_fields_insert = array();
-		
+
 		$this->get_sparql_result($object_uri);
-		
+
 		if(!$this->deleted_index) {
 			$this->delete_index($object_id,$datatype);
 		}
@@ -327,7 +335,7 @@ class onto_common_index extends indexation {
 								$language = $key;
 								//fields (contenu brut)
 								$tab_fields_insert[] = "('".$object_id."','".$infos['champ']."','".$infos['ss_champ']."','".$field_order."','".addslashes($value)."','".$language."','".$infos['pond']."','')";
-								
+
 								//words (contenu éclaté)
 								$tab_tmp=explode(' ',strip_empty_words($value));
 								$word_position = 1;
@@ -339,11 +347,11 @@ class onto_common_index extends indexation {
 							}else {
 								$language = $key2;
 								$autority_num = onto_common_uri::get_id($key);
-								
-								foreach($value as $val){	
+
+								foreach($value as $val){
 									//fields (contenu brut)
 									$tab_fields_insert[] = "('".$object_id."','".$infos['champ']."','".$infos['ss_champ']."','".$field_order."','".addslashes($val)."','".$language."','".$infos['pond']."','".$autority_num."')";
-								
+
 									//words (contenu éclaté)
 									$tab_tmp=explode(' ',strip_empty_words($val));
 									$word_position = 1;
@@ -362,7 +370,7 @@ class onto_common_index extends indexation {
 				}
 			}
 		}
-		
+
 		// Champs persos
 		$p_perso=$this->get_parametres_perso_class('skos');
 		$data=$p_perso->get_fields_recherche_mot_array($object_id);
@@ -380,7 +388,7 @@ class onto_common_index extends indexation {
 				$val = strip_empty_words($val);
 				if($val != ''){
 					$tab_tmp=explode(' ',$val);
-		
+
 					$tab_fields_insert[] = $this->get_tab_field_insert($object_id, $infos, $j, $val);
 					$j++;
 					foreach($tab_tmp as $mot) {
@@ -415,7 +423,7 @@ class onto_common_index extends indexation {
 		}
 		return true;
 	}
-	
+
 	public function set_netbase($netbase) {
 	    $this->netbase = $netbase;
 	}

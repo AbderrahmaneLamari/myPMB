@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_graph.class.php,v 1.7.2.1 2021/12/21 10:02:54 qvarin Exp $
+// $Id: frbr_entity_graph.class.php,v 1.9 2022/04/13 12:29:07 qvarin Exp $
 if (stristr ( $_SERVER ['REQUEST_URI'], ".class.php" ))
 	die ( "no access" );
 	
@@ -124,6 +124,9 @@ class frbr_entity_graph extends entity_graph {
 			case 'records' :
 			    self::add_records_nodes($data, $id, $name, $parent_id, $parent_type);
 				break;
+			case 'expl' :
+			    self::add_expl_nodes($data, $id, $name, $parent_id, $parent_type);
+				break;
 			default:
 			    self::add_authorities_nodes($data, $id, $name, $type, $parent_id, $parent_type);
 				break;
@@ -137,12 +140,20 @@ class frbr_entity_graph extends entity_graph {
 	protected static function add_additionnal_nodes_cadres($additional_nodes, $parent_id, $parent_type) {
 	    global $msg, $opac_entity_graph_limit;
 	    
-	    if ($parent_type == "records") {
-	        $entity = "records";
-	        $prefix_parent = "records_";
-	    } else {
-	        $entity = "authorities";
-	        $prefix_parent = "authorities_";
+	    
+	    switch ($parent_type) {
+	        case 'records' :
+    	        $entity = "records";
+    	        $prefix_parent = "records_";
+	            break;
+	        case 'expl' :
+    	        $entity = "expls";
+    	        $prefix_parent = "expls_";
+	            break;
+	        default:
+    	        $entity = "authorities";
+    	        $prefix_parent = "authorities_";
+	            break;
 	    }
 	    
 	    $node_id = "additionnals_" . $prefix_parent . $parent_id;
@@ -405,7 +416,6 @@ class frbr_entity_graph extends entity_graph {
 						foreach ($data['elements'] as $id ) {
 							//$authority = new authority ( 0, $id, authority::get_const_type_object ( $entities_pmb_type ) );
 							$authority = authorities_collection::get_authority('authority', 0, ['num_object' => $id, 'type_object' => authority::get_const_type_object ( $entities_pmb_type )]);
-							//var_dump($authority);
 							// Si le noeud principal est une oeuvre (un titre uniforme) et que l'objet que l'on
 							// traite est une autorité perso, alors c'est un événement
 							$color = self::get_color_from_type ( $entities_pmb_type );
@@ -490,6 +500,108 @@ class frbr_entity_graph extends entity_graph {
 					}
 				}
 			}
+			if ($entities_type == "expl") {
+				foreach ($entities_array[$entities_type] as $key => $data) {
+				    
+				    if (!is_countable($data['elements']) || empty($data['elements'])) {
+				        // On a aucun exemplaire a afficher
+				        continue;
+				    }
+				    
+				    $color = self::get_color_from_type($entities_type);
+				    if (empty($color)) {
+				        $color = !empty($data['color']) ? $data['color'] : self::get_degradate($parent_node['color']);
+				    }
+				    
+				    $node_id = "{$this->root_node_id}_{$entities_type}_{$key}_{$data['id']}";
+				    if (empty($this->entities_graphed['nodes'][$node_id])) {
+				        $this->entities_graphed['nodes'][$node_id] = array(
+				            'id' => $node_id,
+				            'type' => self::NODE_SUBROOT_TYPE,
+				            'radius' => self::NODE_SUBROOT_RADUIS,
+				            'name' => $data ['label'],
+				            'url' => $data ['url'],
+				            'color' => $color
+				        );
+				    }
+				    
+                    $this->entities_graphed['links'][] = array(
+                        'source' => $parent_node['id'],
+                        'target' => $node_id,
+                        'color' => $parent_node['color']
+                    );
+				    
+                    $index = count($data['elements']);
+                    for ($i = 0; $i < $index; $i++) {
+                        $id = intval($data['elements'][$i]);
+                        $expl_node_id = "{$entities_type}_{$id}";
+                        
+                        if (empty($this->entities_graphed['nodes'][$expl_node_id])) {
+                            
+                            $url = "";
+                            $ajaxParams = array('id' => 0, 'type' => '');
+                            $record_id = exemplaire::get_expl_notice_from_id($id);
+                            if (empty($record_id)) {
+                                $issue_id = exemplaire::get_expl_bulletin_from_id($id);
+                                $url = bulletinage::get_permalink($issue_id);
+                            } else {
+                                $url = notice::get_permalink($record_id) . '&quoi=common_entity_graph';
+                            }
+                            
+                            $this->entities_graphed['nodes'][$expl_node_id] = array(
+                                'id' => $expl_node_id,
+                                'type' => "{$entities_type}_{$key}",
+                                'radius' => 10,
+                                'name' => exemplaire::get_expl_isbd($id),
+                                'url' => $url,
+                                'img' => "",
+                                'color' => self::get_color_from_type($entities_type),
+                                'ajaxParams' => $ajaxParams
+                            );
+                            $this->nb_nodes_graphed++;
+                        }
+                        
+                        $this->entities_graphed['links'][] = array(
+                            'source' => $node_id,
+                            'target' => $expl_node_id,
+                            'color' => self::get_color_from_type($entities_type)
+                        );
+                    }
+				}
+			}
 		}
+	}
+	
+	protected static function add_expl_nodes($data, $id, $name, $parent_id = '', $parent_type = '') {
+	    $node = array(
+	        'id' => 'expls_' . $id,
+	        'type' => self::NODE_SUBROOT_TYPE,
+	        'radius' => self::NODE_SUBROOT_RADUIS,
+	        'color' => entity_graph::get_color_from_type('expl'),
+	        'label' => $name,
+	        'url' => ''
+	    );
+	    
+	    $cadre_id = explode ( '_', $id);
+	    $cadre_id = $cadre_id[0];
+	    
+	    if ($parent_id) {
+    	    
+	        if ($parent_type == "records") {
+    	        $prefix_parent = "records_";
+    	    } else {
+    	        $prefix_parent = "authorities_";
+    	    }
+    	    
+	        self::$cadres_data['expls_' . $id]['parent_node'] = array(
+	            'id' => $prefix_parent.$parent_id,
+	            'color' => entity_graph::get_color_from_type($parent_type)
+	        );
+	        self::$cadres_data['expl_' . $id]['node']['expls_' . $cadre_id] = $node;
+	        self::$cadres_data['expl_' . $id]['node']['expls_' . $cadre_id]['elements'] = $data;
+	    } else {
+	        self::$cadres_data['expl_' . $id]['expls_' . $cadre_id] = $node;
+	        self::$cadres_data['expl_' . $id]['expls_' . $cadre_id]['elements'] = $data;
+	    }
 	}
 }

@@ -12,7 +12,7 @@
 <title>Transfert fichier en utf-8</title>
 </head>
 <body bgcolor="#FFFFFF" text="#000000" link="#FF9966" vlink="#FF9966" alink="#FFCC99">
-<?php 
+<?php
 
 $ListeFicTransfert = 'listefictrans.txt';
 $FormatFicOrig = 'windows-1252';
@@ -29,7 +29,7 @@ else
 		$NomFicDest = trim($liste[1]);
 
 		echo $NomFicDest."<br />";
-		echo $NomFicOrig."<br />"; 
+		echo $NomFicOrig."<br />";
 
 		if (!file_exists($NomFicOrig)) {
 			print ("Fichier inexistant $NomFicOrig<br />");
@@ -42,23 +42,23 @@ else
 			print ("Ouverture fichier de destination $NomFicDest - Pointeur $pointeurDest<br />");
 			$pointeurOrig = fopen($NomFicOrig, "r");
 			print ("Ouverture fichier d'origine $NomFicOrig - Pointeur $pointeurOrig<br />");
-		
+
 			while(!feof($pointeurOrig)) {
 				$lignepar = fgets($pointeurOrig, 4096);
 				$lignetrad = iconv($FormatFicOrig, "UTF-8", $lignepar);
 				$lignetrad = preg_replace('/iso-8859-1/', 'utf-8', $lignetrad);
 				$lignetrad = preg_replace('/ISO-8859-1/', 'utf-8', $lignetrad);
-		
-				fputs($pointeurDest, $lignetrad);	
+
+				fputs($pointeurDest, $lignetrad);
 			}
 			fclose($pointeurDest);
 			fclose($pointeurOrig);
 			echo "ficher $liste[0] fini <br />";
 		}
    }
+   fclose($pointeurliste);
    echo "c'est fini";
-   		
+
 ?>
 </body>
 </html>
-  

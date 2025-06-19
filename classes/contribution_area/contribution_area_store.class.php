@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area_store.class.php,v 1.7.2.4 2021/09/03 08:14:43 qvarin Exp $
+// $Id: contribution_area_store.class.php,v 1.13 2022/07/07 14:49:19 qvarin Exp $
 if (stristr($_SERVER ['REQUEST_URI'], ".class.php"))
 	die("no access");
 
@@ -158,6 +158,11 @@ class contribution_area_store {
 	 * @return onto_store_arc2
 	 */
 	public static function get_formstore ($form_id, $params = array()) {
+		
+		if (empty($form_id)) {
+			throw new \Exception("form_id is empty");
+		}
+		
 	    $store_config = array(
 	        /* db */
 	        'db_name' => DATA_BASE,
@@ -290,6 +295,9 @@ class contribution_area_store {
 					case 'http://www.pmbservices.fr/ontology#response' :
 						$infos['response'] = $results[$i]->o;
 						break;
+					case 'http://www.pmbservices.fr/ontology#orderResponse' :
+					    $infos['orderResponse'] = $results[$i]->o;
+					    break;
 					case 'http://www.pmbservices.fr/ontology#equation' :
 						$infos['equation'] = $results[$i]->o;
 						break;

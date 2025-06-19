@@ -2,9 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_bdp37_pln.inc.php,v 1.22.4.1 2021/06/30 12:01:42 dgoron Exp $
+// $Id: func_bdp37_pln.inc.php,v 1.24 2022/03/14 12:46:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $msg, $current_module;
+global $tpl_beforeupload_expl, $tpl_beforeupload_notices;
 
 $tpl_beforeupload_expl = "
                 <form class='form-$current_module' ENCTYPE=\"multipart/form-data\" METHOD=\"post\" ACTION=\"iimport_expl.php\">
@@ -53,7 +56,6 @@ function recup_noticeunimarc_suite($notice) {
 	} // fin recup_noticeunimarc_suite = fin récupération des variables propres BDP : rien de plus
 	
 function import_new_notice_suite() {
-	global $dbh ;
 	global $notice_id ;
 	
 	global $index_sujets ;
@@ -66,12 +68,11 @@ function import_new_notice_suite() {
 	
 	$mots_cles ? $index_matieres = strip_empty_words($mots_cles) : $index_matieres = '';
 	$rqt_maj = "update notices set index_l='".addslashes($mots_cles)."', index_matieres=' ".addslashes($index_matieres)." ' where notice_id='$notice_id' " ;
-	$res_ajout = pmb_mysql_query($rqt_maj, $dbh);
+	pmb_mysql_query($rqt_maj);
 } // fin import_new_notice_suite
 			
 // TRAITEMENT DES EXEMPLAIRES ICI
 function traite_exemplaires () {
-	global $msg, $dbh ;
 	global $nb_expl_ignores ;
 	global $prix, $notice_id, $info_996, $info_995 ;
 	

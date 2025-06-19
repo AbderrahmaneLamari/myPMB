@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: alter_v4.inc.php,v 1.571.2.1 2021/12/23 08:07:31 dgoron Exp $
+// $Id: alter_v4.inc.php,v 1.572.4.1 2023/08/31 12:56:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -2558,7 +2558,7 @@ switch ($action) {
 			num_notice bigint(20) unsigned NOT NULL default 0,
 			linked_notice bigint(20) unsigned NOT NULL default 0,
 			relation_type char(1) not null default '',
-			rank int(11) not null default 0,
+			ranking int(11) not null default 0,
 			PRIMARY KEY  (num_notice,linked_notice),
 			KEY linked_notice (linked_notice),
 			KEY relation_type (relation_type) )"; 
@@ -2717,43 +2717,6 @@ switch ($action) {
 		$rqt = "alter table bulletins add num_notice integer unsigned not null default 0";
 		echo traite_rqt($rqt, "alter table bulletins add num_notice ");
 		
-		//Recherche des bulletins
-		/*$requete="select bulletin_id,bulletin_numero,bulletin_notice,mention_date,date_date,bulletin_titre,index_titre,bulletin_cb from bulletins where num_notice=0";
-		$resultat=pmb_mysql_query($requete);
-		
-		while ($r=pmb_mysql_fetch_object($resultat)) {
-			//Recherche de la notice mère
-			$requete="select * from notices where notice_id=".$r->bulletin_notice;
-			$res_perio=pmb_mysql_query($requete);
-			$r_p=pmb_mysql_fetch_object($res_perio);
-			//Création de la notice 
-			
-			if ($r->bulletin_titre) 
-				$titre=$r->bulletin_titre; 
-			else {
-				$titre=$r_p->tit1." - ".$r->bulletin_numero." ".(trim($r->mention_date)?trim($r->mention_date):formatdate($r->date_date));
-				print $r->date_date." ".formatdate($r->date_date)."\n";
-			}
-			$requete="insert into notices (typdoc,tit1,index_wew,index_sew,niveau_biblio,niveau_hierar) values('".$r_p->typdoc."',
-			'".addslashes($titre)."','".addslashes($titre)."',
-			' ".addslashes(strip_empty_words($titre))." ','b',2)";
-			pmb_mysql_query($requete);
-			$id_bull=pmb_mysql_insert_id();
-			$requete="update bulletins set num_notice=".$id_bull." where bulletin_id=".$r->bulletin_id;
-			pmb_mysql_query($requete);  
-			//Mise à jour des liens bulletin -> notice mère
-			$requete="insert into notices_relations (num_notice,linked_notice,relation_type,rank) values($id_bull,$r_p->notice_id,'b',1)";
-			pmb_mysql_query($requete);
-			//Recherche des articles
-			$requete="select analysis_notice from analysis where analysis_bulletin=".$r->bulletin_id;
-			$resultat_analysis=pmb_mysql_query($requete);
-			$n=1;
-			while ($r_a=pmb_mysql_fetch_object($resultat_analysis)) {
-				$requete="insert into notices_relations (num_notice,linked_notice,relation_type,rank) values(".$r_a->analysis_notice.",$id_bull,'a',$n)";
-				pmb_mysql_query($requete);
-				$n++;
-			}
-		}*/
 		$rqt = "ALTER TABLE notices DROP relation_type ";
 		echo traite_rqt($rqt,"ALTER notices DROP relation_type") ;
 		$rqt = "ALTER TABLE notices DROP notice_parent ";

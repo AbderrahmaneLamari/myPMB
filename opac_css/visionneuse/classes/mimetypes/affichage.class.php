@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: affichage.class.php,v 1.13 2019/07/10 06:44:08 btafforeau Exp $
+// $Id: affichage.class.php,v 1.15 2022/10/10 12:01:11 tsamson Exp $
 
 class affichage {
 	public $doc;				//le document numérique à afficher
@@ -18,12 +18,15 @@ class affichage {
     }
     
     public function fetchDisplay(){
-    	global $visionneuse_path,$base_path;
      	//le titre
     	$this->toDisplay["titre"] = $this->doc->titre;
     	//le pdf
     	//$this->toDisplay["doc"] = "<iframe src='".$visionneuse_path."/pdf.php?id=".$this->doc->id."' width='".$this->params["maxX"]."' height='".$this->params["maxY"]."'></iframe>";
-    	$this->toDisplay["doc"] = "<iframe name='docnum' id='docnum' src='".$this->driver->getDocumentUrl($this->doc->id)."' width='".$this->driver->getParam("maxX")."' height='".$this->driver->getParam("maxY")."'></iframe>";
+    	$url_doc = $this->driver->getDocumentUrl($this->doc->id);
+    	if (strpos($this->doc->path, "http") === 0) {
+    	    $url_doc = $this->doc->path;
+    	}
+    	$this->toDisplay["doc"] = "<iframe name='docnum' id='docnum' src='".$url_doc."' width='".$this->driver->getParam("maxX")."' height='".$this->driver->getParam("maxY")."'></iframe>";
 		$this->toDisplay["doc"] .= 	"
 		<script type='text/javascript'>
 			window.onload = checkSize;

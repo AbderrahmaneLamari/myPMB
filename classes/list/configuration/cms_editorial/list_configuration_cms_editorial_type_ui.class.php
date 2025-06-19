@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_cms_editorial_type_ui.class.php,v 1.2 2021/05/06 13:01:45 dgoron Exp $
+// $Id: list_configuration_cms_editorial_type_ui.class.php,v 1.4.4.2 2023/09/28 10:41:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -32,19 +32,10 @@ class list_configuration_cms_editorial_type_ui extends list_configuration_cms_ed
 	    $this->add_applied_sort('label');
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+	protected function _add_query_filters() {
 		if($this->filters['element']) {
-			$filters[] = '(editorial_type_element = "'.$this->filters['element'].'_generic" OR editorial_type_element = "'.$this->filters['element'].'")';
+			$this->query_filters [] = '(editorial_type_element = "'.$this->filters['element'].'_generic" OR editorial_type_element = "'.$this->filters['element'].'")';
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	protected function get_main_fields_from_sub() {
@@ -70,13 +61,13 @@ class list_configuration_cms_editorial_type_ui extends list_configuration_cms_ed
 		return parent::get_display_content_object_list($object, $indice);
 	}
 	
-	protected function _compare_objects($a, $b) {
+	protected function _compare_objects($a, $b, $index=0) {
 		if(strpos($a->get_element(), "generic") !== false){
 			return -1;
 		} elseif(strpos($b->get_element(), "generic") !== false){
 			return 1;
 		} else {
-			return parent::_compare_objects($a, $b);
+			return parent::_compare_objects($a, $b, $index);
 		}
 	}
 	
@@ -87,14 +78,15 @@ class list_configuration_cms_editorial_type_ui extends list_configuration_cms_ed
 		$content = '';
 		switch($property) {
 			case 'label':
+				$label = htmlentities($object->get_label(), ENT_QUOTES, $charset);
 				if(strpos($object->get_element(), "generic") === false){
-					$content .= $object->get_label();
+					$content .= $label;
 				} else {
-					$content .= "<b>".$object->get_label()."</b>";
+					$content .= "<b>{$label}</b>";
 				}
 				break;
 			case 'comment':
-				$content .= nl2br($object->get_comment());
+				$content .= nl2br(htmlentities($object->get_comment(), ENT_QUOTES, $charset));
 				break;
 			case 'type_fields':
 				foreach($object->fields as $field){
@@ -109,20 +101,15 @@ class list_configuration_cms_editorial_type_ui extends list_configuration_cms_ed
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch ($property) {
 			case 'type_fields':
-				$attributes = array();
-				break;
+				return array();
 			default:
-				$attributes = array(
+				return array(
 						'onclick' => "document.location=\"".$this->get_edition_link($object)."\""
 				);
-				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_edition_link($object) {

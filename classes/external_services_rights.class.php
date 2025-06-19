@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: external_services_rights.class.php,v 1.4 2017/05/19 10:06:11 dgoron Exp $
+// $Id: external_services_rights.class.php,v 1.5 2023/02/16 16:02:12 tsamson Exp $
 
 //Gestion des droits des services externes
 
@@ -55,7 +55,7 @@ class external_services_rights extends es_base {
 	}
 	
 	public function user_rights($user) {
-		return $this->users[$user]->rights;
+		return $this->users[$user]->rights ?? "";
 	}
 	
 	//Récupère les droits d'une méthode
@@ -98,11 +98,15 @@ class external_services_rights extends es_base {
 				}
 			}
 			if (!$has_rights) $group_rights=$this->all_rights;
-			if ((!$method)&&(!($group_rights&$this->user_rights($user)))) return false;
+			if ((!$method) && (!($group_rights & intval($this->user_rights($user))))) {
+			    return false;
+			}
 			if ($this->es->method_exists($group,$method)) {
 				$method_rights=$this->es->catalog->groups[$group]->methods[$method]->rights;
 				if (!$method_rights) $method_rights=$this->all_rights;
-				if (($method)&&(!($method_rights&$this->user_rights($user)))) return false;
+				if (($method) && (!($method_rights & intval($this->user_rights($user))))) {
+				    return false;
+				}
 			} else {
 				if ($method) {
 					$this->set_error(ES_RIGHTS_UNKNOWN_GROUP_OR_METHOD,$msg["es_rights_error_unknown_group"]);
@@ -187,9 +191,11 @@ class external_services_rights extends es_base {
 				//Pour chaque user, vérification des droits !
 				for ($i=0; $i<count($es_r->users); $i++) {
 					if (($es_r->users[$i]!=$es_r->anonymous_user)&&(!$this->has_basic_rights($es_r->users[$i],$es_r->group,$es_r->method))) {
-						if ($es_r->method)
-							$this->set_error(ES_RIGHTS_USER_BAD_PMB_RIGHTS_FOR_METHOD,sprintf($msg["es_rights_user_unsifficent_rights"],$this->users[$es_r->users[$i]]->username,$es_r->method,$es_r->group));
-						else $this->set_error(ES_RIGHTS_USER_BAD_PMB_RIGHTS_FOR_GROUP,sprintf($msg["es_rights_user_unsifficent_rights_group"],$this->users[$es_r->users[$i]]->username,$es_r->group));
+					    if ($es_r->method) {
+					        $this->set_error(ES_RIGHTS_USER_BAD_PMB_RIGHTS_FOR_METHOD,sprintf($msg["es_rights_user_unsifficent_rights"],$this->users[$es_r->users[$i]]->username ?? "",$es_r->method,$es_r->group));
+					    } else {
+					        $this->set_error(ES_RIGHTS_USER_BAD_PMB_RIGHTS_FOR_GROUP,sprintf($msg["es_rights_user_unsifficent_rights_group"],$this->users[$es_r->users[$i]]->username ?? "",$es_r->group));
+					    }
 						return false; 
 					}
 				}

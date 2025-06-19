@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_acquisition_lgstat_ui.class.php,v 1.1 2021/01/15 13:26:34 dgoron Exp $
+// $Id: list_configuration_acquisition_lgstat_ui.class.php,v 1.1.8.2 2023/03/24 09:27:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -29,30 +29,26 @@ class list_configuration_acquisition_lgstat_ui extends list_configuration_acquis
 		);
 	}
 	
-	protected function get_cell_content($object, $property) {
+	protected function _get_object_property_relance($object) {
 		global $msg;
 		
-		$content = '';
+		if($object->relance == 1) {
+			return $msg[40];
+		} else {
+			return $msg[39];
+		}
+	}
+	
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch($property) {
 			case 'libelle':
 				if($object->id_statut == 1) {
-					$content .= "<strong>".$object->{$property}."</strong>";
-				} else {
-					$content .= $object->{$property};
+					return array(
+							'style' => 'font-weight:bold;'
+					);
 				}
-				break;
-			case 'relance':
-				if($object->relance == 1) {
-					$content .= $msg[40];
-				} else {
-					$content .= $msg[39];
-				}
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
 		}
-		return $content;
+		return array();
 	}
 	
 	protected function get_edition_link($object) {

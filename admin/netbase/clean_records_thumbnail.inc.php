@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: clean_records_thumbnail.inc.php,v 1.2.2.1 2021/12/13 15:31:05 dgoron Exp $
+// $Id: clean_records_thumbnail.inc.php,v 1.3.4.1 2023/06/15 11:57:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -28,4 +28,4 @@ $spec = $spec - CLEAN_RECORDS_THUMBNAIL;
 // mise à jour de l'affichage de la jauge
 print netbase::get_display_final_progress();
 
-print netbase::get_process_state_form($v_state, $spec, '', '2');
+print netbase::get_process_state_form($v_state, $spec);

@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: validation.inc.php,v 1.16.2.1 2021/07/30 14:48:34 dgoron Exp $
+// $Id: validation.inc.php,v 1.18 2022/10/04 09:20:22 dgoron Exp $
 
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $sub, $action, $msg, $database_window_title;
-global $deflt_docs_location, $nb_per_page;
+global $nb_per_page;
 global $site_destination, $liste_transfert, $form_cb_expl, $motif_refus;
 global $transferts_validation_acceptation_erreur, $transferts_validation_acceptation_OK;
 
@@ -65,7 +65,7 @@ if ($action == "") {
 		}
 	} 
 
-	$list_transferts_validation_ui = new list_transferts_validation_ui(array('etat_transfert' => 0, 'etat_demande' => 0, 'site_origine' => $deflt_docs_location));
+	$list_transferts_validation_ui = new list_transferts_validation_ui(array('etat_transfert' => 0, 'etat_demande' => 0));
 	print $list_transferts_validation_ui->get_display_list();
 }
 

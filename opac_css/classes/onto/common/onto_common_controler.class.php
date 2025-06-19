@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_controler.class.php,v 1.11.2.1 2021/09/03 08:14:43 qvarin Exp $
+// $Id: onto_common_controler.class.php,v 1.13 2022/12/05 14:00:37 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -24,6 +24,8 @@ class onto_common_controler {
 	
 	/** variables d'aiguillage **/
 	protected $params;
+	
+	protected $nb_results;
 	
 	public function __construct($handler,$params){
 		$this->handler=$handler;
@@ -76,6 +78,10 @@ class onto_common_controler {
 			case "update": //Cas ajouté pour être en conformité avec le cas des selecteurs autorité (voir ./selectors/classes/selector_ontology.class.php)
 				return $this->proceed_save(false);
 				break;
+			// AR - 08/11/2022 : Page de consultation d'une entité
+			case "see" :
+			    return $this->proceed_see();
+			    break;
 			case "list" :
 			default :
 				print $this->get_menu();
@@ -242,7 +248,7 @@ class onto_common_controler {
 	
 		$page = $params->page-1;
 		$displayLabel = $this->handler->get_display_label($class_uri);
-		$nb_elements = $this->handler->get_nb_elements($class_uri);
+		$this->nb_results = $this->handler->get_nb_elements($class_uri);
 		$query = "select * where {
 			?elem rdf:type <".$class_uri."> .
 			?elem <".$displayLabel."> ?label
@@ -257,7 +263,7 @@ class onto_common_controler {
 		$this->handler->data_query($query);
 		$results = $this->handler->data_result();
 		$list = array(
-				'nb_total_elements' => 	$nb_elements,
+				'nb_total_elements' => 	$this->nb_results,
 				'nb_onto_element_per_page' => $params->nb_per_page,
 				'page' => $page
 		);
@@ -646,5 +652,11 @@ class onto_common_controler {
 				"xsd"	=> "http://www.w3.org/2001/XMLSchema#",
 				"pmb"	=> "http://www.pmbservices.fr/ontology#"
 		);
+	}
+	
+	protected function proceed_see()
+	{
+	    $instance = onto_common_page::get_instance($this->item,$this->handler,$this->params);
+	    $instance->render();
 	}
 }

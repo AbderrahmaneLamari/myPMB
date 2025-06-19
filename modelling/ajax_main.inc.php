@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.5 2020/03/16 10:28:02 tsamson Exp $
+// $Id: ajax_main.inc.php,v 1.6 2022/11/22 10:13:15 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -39,6 +39,24 @@ switch($categ):
 	    
 	    $sc=new search(true, $search_xml_file, $search_xml_file_full_path);
 	    $sc->proceed_ajax();
+	    break;
+	case 'check_pmbname' :
+	    $ontology_id = intval($ontology_id);
+	    if($ontology_id>0){
+	       $ontology = new ontology($ontology_id);
+	       $query = 'select ?pmbname where { 
+                ?s pmb:name ?pmbname .
+                filter (regex(?pmbname, "^'.$pmbname.'$"))
+            }';
+	       $result = $ontology->exec_onto_query($query);
+	       if(is_array($result) && count($result)){
+	           print encoding_normalize::json_encode(['state'=>'ko']);
+	       }else{
+	           print encoding_normalize::json_encode(['state'=>'ok']);
+	       }
+	    }else{
+	        print encoding_normalize::json_encode(['state'=>'ko']);
+	    }
 	    break;
 	default:
 		break;		

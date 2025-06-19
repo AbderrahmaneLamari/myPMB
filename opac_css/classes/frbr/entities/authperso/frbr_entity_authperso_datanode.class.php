@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_authperso_datanode.class.php,v 1.3.4.3 2022/01/21 14:42:39 rtigero Exp $
+// $Id: frbr_entity_authperso_datanode.class.php,v 1.6 2022/01/25 14:20:06 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: elements_list_tab.class.php,v 1.6.8.1 2021/11/05 10:54:14 qvarin Exp $
+// $Id: elements_list_tab.class.php,v 1.8 2022/02/21 08:12:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -138,7 +138,7 @@ class elements_list_tab {
 	 * @param int $nb_results Nombre de résultats à affecter
 	 */
 	public function set_nb_results($nb_results){
-		$this->nb_results = $nb_results*1;
+		$this->nb_results = intval($nb_results);
 	}
 	
 	/**
@@ -252,7 +252,7 @@ class elements_list_tab {
 	 * @param int $nb_filtered_results Nombre de résultats après passage des filtres
 	 */
 	public function set_nb_filtered_results($nb_filtered_results) {
-		$this->nb_filtered_results = $nb_filtered_results*1;
+		$this->nb_filtered_results = intval($nb_filtered_results);
 	}
 	
 	/**
@@ -268,7 +268,7 @@ class elements_list_tab {
 	 * @param int $nb_filtered_results Nombre de résultats après passage des filtres
 	 */
 	public function set_nb_prefiltered_results($nb_prefiltered_results) {
-		$this->nb_prefiltered_results = $nb_prefiltered_results*1;
+		$this->nb_prefiltered_results = intval($nb_prefiltered_results);
 	}
 	
 	/**

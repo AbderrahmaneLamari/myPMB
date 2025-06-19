@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: module_pdf.class.php,v 1.1.2.3 2021/12/10 09:43:47 dgoron Exp $
+// $Id: module_pdf.class.php,v 1.2 2021/12/10 09:36:12 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

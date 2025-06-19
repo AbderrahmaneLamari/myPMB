@@ -7,7 +7,7 @@
 			:selected="selectedOp" >
 		</operators>
 		<select :value="searchValue" :name="name">
-			<option v-for="(item, id) in criteria.INPUT_OPTIONS.VALUES" :value="id">{{item}}</option>
+			<option v-for="(item, order) in criteria.INPUT_OPTIONS.VALUES" :key="order" :value="item.id">{{item.value}}</option>
 		</select>
 		<fieldvars v-if="showfieldvars" :fields="criteria.VAR" :field="criteria_id" :index="index"></fieldvars>	
 	</div>

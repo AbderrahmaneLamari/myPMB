@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: fr_FR.xml,v 1.32 2021/03/30 13:15:37 qvarin Exp $ -->
+<!-- $Id: fr_FR.xml,v 1.33 2022/07/19 08:59:28 qvarin Exp $ -->
 <XMLlist>
 <!-- Types de page  -->
 <entry code="1">Recherche</entry>
@@ -154,8 +154,9 @@
 <entry code="2904">Affichage d'un article dans un résultat de recherche</entry>
 <entry code="3001">Url externe</entry>
 <entry code="3002">Page statique interne</entry>
-<entry code="3401">Recherche univers</entry>
-<entry code="3501">Recherche segment</entry>
+<entry code="3201">Etat de collection</entry>
+<entry code="3301">Recherche univers</entry>
+<entry code="3401">Recherche segment</entry>
 <entry code="3601">Prêts numérique en cours</entry>
 <entry code="3602">Mes périphériques de lecture</entry>
 <entry code="3603">Paramètres</entry>

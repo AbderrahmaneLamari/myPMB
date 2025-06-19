@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: extended_search_dnd.tpl.php,v 1.10 2020/12/24 14:26:43 qvarin Exp $
+// $Id: extended_search_dnd.tpl.php,v 1.11 2022/12/06 17:53:47 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -33,7 +33,7 @@ div.form-contenu table.table-no-border {
 
 $extended_search_dnd_script = '<script type="text/javascript">
 	require(["apps/search/!!search_controller_class!!", "dojo/dom", "dojo/dom-style", "dijit/registry", "dojo/ready", "dojo/domReady!"], function(SearchController, dom, domStyle, registry, ready){
-        var searchController = new SearchController("!!unique_identifier!!_extended_search_dnd_container", "!!search_controller_module!!");
+        var searchController = new SearchController("!!unique_identifier!!_extended_search_dnd_container", "!!search_controller_module!!"!!search_ontology_id!!);
 		ready(function(){
 			var mh= Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
 			var off=0;

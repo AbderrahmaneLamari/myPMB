@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.30.2.1 2021/07/27 13:23:56 dgoron Exp $
+// $Id: ajax_main.inc.php,v 1.33 2022/04/29 15:17:09 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -100,6 +100,12 @@ switch($categ):
 				break;
 		}
 		break;
+	case 'ark':
+	    include("./admin/ark/ajax_main.inc.php");
+	    break;
+	case 'digital_signature':
+	    include("./admin/digital_signature/ajax_main.inc.php");
+	    break;
 	default:
 		switch($sub) {
 			case 'perso':

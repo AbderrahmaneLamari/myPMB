@@ -2,9 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: storage.inc.php,v 1.1 2015/04/14 10:08:43 dgoron Exp $
+// $Id: storage.inc.php,v 1.2 2023/01/09 10:37:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $class_path, $sub;
+global $opac_notice_affichage_class, $pmb_logs_activate;
+global $id, $datetime, $token;
+global $records;
 
 require_once("$class_path/notice_affichage.class.php");
 require_once("$class_path/notice_affichage.ext.class.php");
@@ -13,6 +18,7 @@ if($opac_notice_affichage_class == "") $opac_notice_affichage_class = "notice_af
 
 switch($sub){
 	case 'save':
+		$id = intval($id);
 		if ($id && $datetime && $token) {
 			if ($opac_notice_affichage_class::check_token($id, $datetime, $token)) {
 				add_value_session('tab_result_read',$id);

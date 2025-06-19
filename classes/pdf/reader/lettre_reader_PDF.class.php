@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lettre_reader_PDF.class.php,v 1.11.2.1 2021/06/30 07:45:10 dgoron Exp $
+// $Id: lettre_reader_PDF.class.php,v 1.18 2023/01/31 09:52:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,6 +10,8 @@ global $class_path;
 require_once($class_path."/pdf/lettre_PDF.class.php");
 
 class lettre_reader_PDF extends lettre_PDF {
+	
+	protected $expl_info = array();
 	
 	protected function _init_PDF() {
 		if(!empty($this->get_parameter_value('format_page'))) {
@@ -21,6 +23,14 @@ class lettre_reader_PDF extends lettre_PDF {
 	
 	protected static function get_parameter_prefix() {
 		return '';
+	}
+	
+	protected function is_exist_parameter($parameter_name) {
+		global ${$parameter_name};
+		if(isset(${$parameter_name})) {
+			return true;
+		}
+		return false;
 	}
 	
 	protected function get_evaluated_parameter($parameter_name) {
@@ -37,13 +47,13 @@ class lettre_reader_PDF extends lettre_PDF {
 	    if($parameter_value) {
 	        return $parameter_value;
 	    } else {
-	        $parameter_name = static::get_parameter_prefix().'_'.$name;
+	        $parameter_name = static::get_parameter_name($name);
 	        return $this->get_evaluated_parameter($parameter_name);
 	    }
 	}
 	
 	protected function _init_parameter_value($name, $value) {
-	    $parameter_name = static::get_parameter_prefix().'_'.$name;
+		$parameter_name = static::get_parameter_name($name);
 		global $$parameter_name;
 		if(empty(${$parameter_name})) {
 			${$parameter_name} = $value;
@@ -78,7 +88,7 @@ class lettre_reader_PDF extends lettre_PDF {
 	protected function get_query_expl_info($cb_doc) {
 		global $msg;
 		
-		$query = "SELECT notices_m.notice_id as m_id, notices_s.notice_id as s_id, expl_cb, expl_cote, pret_date, pret_retour, tdoc_libelle, section_libelle, location_libelle, trim(concat(ifnull(notices_m.tit1,''),ifnull(notices_s.tit1,''),' ',ifnull(bulletin_numero,''), if (mention_date, concat(' (',mention_date,')') ,''))) as tit, ";
+		$query = "SELECT notices_m.notice_id as m_id, notices_s.notice_id as s_id, expl_cb, expl_cote, expl_prix, pret_date, pret_retour, tdoc_libelle, section_libelle, location_libelle, trim(concat(ifnull(notices_m.tit1,''),ifnull(notices_s.tit1,''),' ',ifnull(bulletin_numero,''), if (mention_date, concat(' (',mention_date,')') ,''))) as tit, ";
 		$query.= " date_format(pret_date, '".$msg["format_date"]."') as aff_pret_date, ";
 		$query.= " date_format(pret_retour, '".$msg["format_date"]."') as aff_pret_retour, ";
 		$query.= " IF(pret_retour>sysdate(),0,1) as retard, notices_m.tparent_id, notices_m.tnvol " ;
@@ -88,52 +98,36 @@ class lettre_reader_PDF extends lettre_PDF {
 	}
 	
 	protected function get_expl_info($cb_doc) {
-		$query = $this->get_query_expl_info($cb_doc);
-		$result = pmb_mysql_query($query);
-		$expl = pmb_mysql_fetch_object($result);
-		
-		// récupération du titre de série
-		if ($expl->tparent_id && $expl->m_id) {
-			$parent = new serie($expl->tparent_id);
-			$tit_serie = $parent->name;
-			if($expl->tnvol) {
-				$tit_serie .= ', '.$expl->tnvol;
+		if(empty($this->expl_info[$cb_doc])) {
+			$query = $this->get_query_expl_info($cb_doc);
+			$result = pmb_mysql_query($query);
+			$expl = pmb_mysql_fetch_object($result);
+			
+			// récupération du titre de série
+			if ($expl->tparent_id && $expl->m_id) {
+				$parent = new serie($expl->tparent_id);
+				$tit_serie = $parent->name;
+				if($expl->tnvol) {
+					$tit_serie .= ', '.$expl->tnvol;
+				}
+				$expl->tit = $tit_serie.'. '.$expl->tit;
 			}
-			$expl->tit = $tit_serie.'. '.$expl->tit;
+			$this->expl_info[$cb_doc] = $expl;
 		}
-		return $expl;
+		return $this->expl_info[$cb_doc];
 	}
 	
-	protected function display_expl_info($cb_doc, $x=0, $y=0, $short=0, $longmax=99999) {
-		global $msg ;
+	protected function display_expl_info_notice_description($cb_doc, $short=0, $longmax=99999) {
 		global $pmb_pdf_font;
-	
-		$this->_adjust_position('expl_info', array($x));
-		//Position y calculée avant l'appel
-		$this->y_expl_info = $y;
 		
 		$expl = $this->get_expl_info($cb_doc);
 		$responsabilites = get_notice_authors(($expl->m_id+$expl->s_id)) ;
 		$header_aut= gen_authors_header($responsabilites);
 		$header_aut ? $auteur=" / ".$header_aut : $auteur="";
-		
 		if ($short==1) {
-			$this->PDF->SetXY ($this->x_expl_info,$this->y_expl_info);
 			$this->PDF->setFont($pmb_pdf_font, 'B', 10);
 			$this->PDF->multiCell(190, 8, substr($expl->tit.$auteur,0,$longmax) , 0, 'L', 0);
-	
-			$this->PDF->SetXY ($this->x_expl_info+10,$this->y_expl_info+4);
-			$this->PDF->setFont($pmb_pdf_font, '', 9);
-			$this->PDF->multiCell(140, 8, $msg['fpdf_date_pret']." ".$expl->aff_pret_date, 0, 'L', 0);
-			$this->PDF->SetXY ($this->x_expl_info+70,$this->y_expl_info+4);
-			$this->PDF->setFont($pmb_pdf_font, 'B', 9);
-			$this->PDF->multiCell(70, 8, $msg['fpdf_retour_prevu']." ".$expl->aff_pret_retour, 0, 'L', 0);
-			$this->PDF->SetXY ($this->x_expl_info+10,$this->y_expl_info+8);
-			$this->PDF->setFont($pmb_pdf_font, 'I', 8);
-			$this->PDF->multiCell(190, 8, strip_tags($expl->location_libelle.": ".$expl->section_libelle.": ".$expl->expl_cote." (".$expl->expl_cb.")"), 0, 'L', 0);
 		} else {
-	
-			$this->PDF->SetXY ($this->x_expl_info,$this->y_expl_info);
 			$this->PDF->setFont($pmb_pdf_font, 'BU', 14);
 			$nb = $this->PDF->NbLines(190,substr($expl->tit." (".$expl->tdoc_libelle.")",0,$longmax));
 			if ($nb > 1) {
@@ -146,18 +140,52 @@ class lettre_reader_PDF extends lettre_PDF {
 				}
 			}
 			$this->PDF->multiCell(190, 8, substr($expl->tit." (".$expl->tdoc_libelle.")",0,$longmax), 0, 'L', 0);
+		}
+	}
 	
+	protected function display_expl_info_dates($cb_doc, $short=0) {
+		global $msg, $pmb_pdf_font;
+		
+		$expl = $this->get_expl_info($cb_doc);
+		if ($short==1) {
+			$this->PDF->SetXY ($this->x_expl_info+10,$this->y_expl_info+4);
+			$this->PDF->setFont($pmb_pdf_font, '', 9);
+			$this->PDF->multiCell(140, 8, $msg['fpdf_date_pret']." ".$expl->aff_pret_date, 0, 'L', 0);
+			$this->PDF->SetXY ($this->x_expl_info+70,$this->y_expl_info+4);
+			$this->PDF->setFont($pmb_pdf_font, 'B', 9);
+			$this->PDF->multiCell(70, 8, $msg['fpdf_retour_prevu']." ".$expl->aff_pret_retour, 0, 'L', 0);
+		} else {
 			$this->PDF->SetXY ($this->x_expl_info+10,$this->y_expl_info+6);
 			$this->PDF->setFont($pmb_pdf_font, '', 10);
 			$this->PDF->multiCell(190-30, 8, $msg['fpdf_date_pret']." ".$expl->aff_pret_date, 0, 'L', 0);
 			$this->PDF->SetXY ($this->x_expl_info+70,$this->y_expl_info+6);
 			$this->PDF->setFont($pmb_pdf_font, 'B', 10);
 			$this->PDF->multiCell((190 - 70), 8, $msg['fpdf_retour_prevu']." ".$expl->aff_pret_retour, 0, 'L', 0);
-	
-			$this->PDF->SetXY ($this->x_expl_info+10,$this->y_expl_info+10);
-			$this->PDF->setFont($pmb_pdf_font, 'I', 8);
-			$this->PDF->multiCell(190, 8, strip_tags($expl->location_libelle.": ".$expl->section_libelle.": ".$expl->expl_cote." (".$expl->expl_cb.")"), 0, 'L', 0);
 		}
+	}
+	
+	protected function display_expl_info_description($cb_doc, $short=0) {
+		global $pmb_pdf_font;
+		
+		$expl = $this->get_expl_info($cb_doc);
+		if ($short==1) {
+			$this->PDF->SetXY ($this->x_expl_info+10,$this->y_expl_info+8);
+		} else {
+			$this->PDF->SetXY ($this->x_expl_info+10,$this->y_expl_info+10);
+		}
+		$this->PDF->setFont($pmb_pdf_font, 'I', 8);
+		$this->PDF->multiCell(190, 8, strip_tags($expl->location_libelle.": ".parseHTML($expl->section_libelle).": ".$expl->expl_cote." (".$expl->expl_cb.")"), 0, 'L', 0);
+	}
+	
+	protected function display_expl_info($cb_doc, $x=0, $y=0, $short=0, $longmax=99999) {
+		$this->_adjust_position('expl_info', array($x));
+		//Position y calculée avant l'appel
+		$this->y_expl_info = $y;
+		
+		$this->PDF->SetXY ($this->x_expl_info,$this->y_expl_info);
+		$this->display_expl_info_notice_description($cb_doc, $short, $longmax);
+		$this->display_expl_info_dates($cb_doc, $short);
+		$this->display_expl_info_description($cb_doc, $short);
 	}
 	
 	protected function get_query_not_bull_info_resa($notice, $bulletin) {
@@ -264,6 +292,38 @@ class lettre_reader_PDF extends lettre_PDF {
 	    return $query;
 	}
 	
+	protected function display_lecteur_adresse_nomgroupe($id_empr) {
+		$requete = $this->get_query_group_info($id_empr);
+		$lib_all_groupes=pmb_sql_value($requete);
+		if($lib_all_groupes) {
+			$this->PDF->multiCell(100, 6, $lib_all_groupes, 0, 'L', true);
+		}
+	}
+	
+	protected function display_lecteur_adresse_name($empr) {
+		$this->PDF->multiCell(100, 6, $empr->empr_prenom." ".$empr->empr_nom, 0, 'L', true);
+	}
+	
+	protected function display_lecteur_adresse_coords($empr) {
+		$lines = array();
+		if ($empr->empr_adr1 != "") {
+			$lines['adr1'] = $empr->empr_adr1;
+		}
+		if ($empr->empr_adr2 != "") {
+			$lines['adr2'] = $empr->empr_adr2;
+		}
+		if (($empr->empr_cp != "") || ($empr->empr_ville != "")) {
+			$lines['cp_ville'] = $empr->empr_cp." ".$empr->empr_ville;
+		}
+		if ($empr->empr_pays != "") {
+			$lines['pays'] = $empr->empr_pays;
+		}
+		if(!empty($lines)) {
+			//adresse
+			$this->PDF->multiCell(100, 6, implode("\n", $lines), 0, 'L', true);
+		}
+	}
+			
 	protected function display_lecteur_adresse($id_empr, $x=0, $y=0, $no_cb=false, $show_nomgroupe=false, $use_param_bloc_adresse=false) {
 		global $msg;
 		global $pmb_pdf_font;
@@ -271,22 +331,22 @@ class lettre_reader_PDF extends lettre_PDF {
 		
 		$this->_adjust_position('lecteur_adresse', array($x, $y));
 		
+		$x_code = 0;
+		$y_code = 0;
 		//Vérifions si l'on demande un positionnement absolu
 		if ($use_param_bloc_adresse) {
 			global $pmb_lettres_bloc_adresse_position_absolue;
 			$absolue_config = explode(" ", $pmb_lettres_bloc_adresse_position_absolue);
 			if ((count($absolue_config) == 3) && ($absolue_config[0] != 0)) {
-				$this->x_lecteur_adresse = $absolue_config[1]+0;
-				$this->y_lecteur_adresse = $absolue_config[2]+0;
+				$this->x_lecteur_adresse = intval($absolue_config[1]);
+				$this->y_lecteur_adresse = intval($absolue_config[2]);
 			}
 	
 			global $pmb_lettres_code_mail_position_absolue;
 			$absolue_config_code = explode(" ", $pmb_lettres_code_mail_position_absolue);
-			$x_code = 0;
-			$y_code = 0;
 			if ((count($absolue_config_code) == 3) && ($absolue_config_code[0] != 0)) {
-				$x_code = $absolue_config_code[1]+0;
-				$y_code = $absolue_config_code[2]+0;
+				$x_code = intval($absolue_config_code[1]);
+				$y_code = intval($absolue_config_code[2]);
 			}
 		}
 		$concerne="";
@@ -321,41 +381,18 @@ class lettre_reader_PDF extends lettre_PDF {
 		$res = pmb_mysql_query($requete);
 		$empr = pmb_mysql_fetch_object($res);
 	
-		$requete = $this->get_query_group_info($id_empr);
-		$lib_all_groupes=pmb_sql_value($requete);
-		if ($lib_all_groupes) $lib_all_groupes=$lib_all_groupes."\n";
-	
 		$this->PDF->SetXY ($this->x_lecteur_adresse,$this->y_lecteur_adresse);
-		$adr = $empr->empr_prenom." ".$empr->empr_nom;
 		$this->PDF->setFont($pmb_pdf_font, '', 12);
-		if ($empr->empr_adr1 != "") $adr = $adr."\n";
-		if ($empr->empr_adr2 != "") $empr->empr_adr1 = $empr->empr_adr1."\n" ;
-		if (($empr->empr_cp != "") || ($empr->empr_ville != "")) $empr->empr_adr2 = $empr->empr_adr2."\n" ;
-		$adr.= $empr->empr_adr1.$empr->empr_adr2.$empr->empr_cp." ".$empr->empr_ville ;
-	
-		if ($empr->empr_pays != "") $adr.="\n".$empr->empr_pays ;
-		if ($empr->empr_tel1 != "") {
-			$tel = "\n".$msg['fpdf_tel']." ".$empr->empr_tel1;
-		} elseif ($empr->empr_tel2 != "") {
-			$adr.="\n" ;
-			$tel = $msg['fpdf_tel2']." ".$empr->empr_tel2;
-		} else {
-			$tel = "" ;
-		}
-		if ($empr->empr_mail != "") {
-			$tel = $tel."\n" ;
-			$mail = $msg['fpdf_email']." ".$empr->empr_mail;
-		} else {
-			$mail = "" ;
-		}
 	
 		$this->PDF->SetDrawColor(255,255,255);
 		$this->PDF->SetFillColor(255,255,255);
-		if($show_nomgroupe==false) {
-			$this->PDF->multiCell(100, 6, $adr, 0, 'L', true);
-		} else {
-			$this->PDF->multiCell(100, 6, $lib_all_groupes.$adr, 0, 'L', true);
+		if($show_nomgroupe!=false) {
+			$this->display_lecteur_adresse_nomgroupe($id_empr);
+			$this->PDF->SetXY ($this->x_lecteur_adresse,$this->PDF->GetY());
 		}
+		$this->display_lecteur_adresse_name($empr);
+		$this->PDF->SetXY ($this->x_lecteur_adresse,$this->PDF->GetY());
+		$this->display_lecteur_adresse_coords($empr);
 		if ($no_cb==false || $concerne !="") {
 			$no_cb_empr = $empr->empr_cb." ".$empr->empr_mail."\n";
 			$this->PDF->SetXY (($x_code ? $x_code : $this->x_lecteur_adresse),($y_code ? $this->PDF->GetY()+$y_code :$this->PDF->GetY()));
@@ -388,6 +425,32 @@ class lettre_reader_PDF extends lettre_PDF {
 		}
 	}
 	
+	protected function display_lecteur_info_name($empr, $droite=0) {
+		
+		if ($droite) $this->PDF->multiCell(100, 8, $empr->empr_prenom." ".$empr->empr_nom, 0, 'R', 0);
+		else $this->PDF->multiCell(100, 8, $empr->empr_prenom." ".$empr->empr_nom, 0, 'L', 0);
+	}
+	
+	protected function display_lecteur_info_coords($empr) {
+		$lines = array();
+		if ($empr->empr_adr1 != "") {
+			$lines['adr1'] = $empr->empr_adr1;
+		}
+		if ($empr->empr_adr2 != "") {
+			$lines['adr2'] = $empr->empr_adr2;
+		}
+		if (($empr->empr_cp != "") || ($empr->empr_ville != "")) {
+			$lines['cp_ville'] = $empr->empr_cp." ".$empr->empr_ville;
+		}
+		if ($empr->empr_pays != "") {
+			$lines['pays'] = $empr->empr_pays;
+		}
+		if(!empty($lines)) {
+			$this->PDF->multiCell(100, 8, implode("\n", $lines), 0, 'L', 0);
+		}
+		
+	}
+	
 	protected function display_lecteur_info($id_empr, $x=0, $y=0, $short=0, $droite=0,$use_param_bloc_adresse=false) {
 		global $msg;
 		global $pmb_afficher_numero_lecteur_lettres;
@@ -399,8 +462,8 @@ class lettre_reader_PDF extends lettre_PDF {
 			global $pmb_lettres_bloc_adresse_position_absolue;
 			$absolue_config = explode(" ", $pmb_lettres_bloc_adresse_position_absolue);
 			if ((count($absolue_config) == 3) && ($absolue_config[0] != 0)) {
-				$this->x_lecteur_info = $absolue_config[1]+0;
-				$this->y_lecteur_info = $absolue_config[2]+0;
+				$this->x_lecteur_info = intval($absolue_config[1]);
+				$this->y_lecteur_info = intval($absolue_config[2]);
 			}
 		}
 	
@@ -414,15 +477,14 @@ class lettre_reader_PDF extends lettre_PDF {
 	
 		$this->PDF->SetXY ($this->x_lecteur_info,$this->y_lecteur_info);
 		$this->PDF->setFont($this->font, 'B', $this->fs_lecteur_info);
-		if ($droite) $this->PDF->multiCell(100, 8, $empr->empr_prenom." ".$empr->empr_nom, 0, 'R', 0);
-		else $this->PDF->multiCell(100, 8, $empr->empr_prenom." ".$empr->empr_nom, 0, 'L', 0);
+		$this->display_lecteur_info_name($empr, $droite);
 	
 		if ($short==1) return ;
 	
-		if ($empr->empr_adr2 != "") $empr->empr_adr1 = $empr->empr_adr1."\n" ;
-		if (($empr->empr_cp != "") || ($empr->empr_ville != "")) $empr->empr_adr2 = $empr->empr_adr2."\n" ;
-		$adr = $empr->empr_adr1.$empr->empr_adr2.$empr->empr_cp." ".$empr->empr_ville ;
-		if ($empr->empr_pays != "") $adr = $adr."\n".$empr->empr_pays ;
+		$this->PDF->SetXY ($this->x_lecteur_info,$this->y_lecteur_info+8);
+		$this->PDF->setFont($this->font, '', $this->fs_lecteur_info);
+		$this->display_lecteur_info_coords($empr);
+		
 		$tel = "";
 		if ($empr->empr_tel1 != "") {
 			$tel = $msg['fpdf_tel']." ".$empr->empr_tel1." " ;
@@ -437,10 +499,6 @@ class lettre_reader_PDF extends lettre_PDF {
 			$mail = "";
 		}
 	
-		$this->PDF->SetXY ($this->x_lecteur_info,$this->y_lecteur_info+8);
-		$this->PDF->setFont($this->font, '', $this->fs_lecteur_info);
-		$this->PDF->multiCell(100, 8, $adr, 0, 'L', 0);
-	
 		$this->PDF->SetXY ($this->x_lecteur_info,$this->y_lecteur_info+32);
 		$this->PDF->setFont($this->font, '', $this->fs_lecteur_info);
 		$this->PDF->multiCell(100, 7, "\n".$tel.$mail.$lib_all_groupes, 0, 'L', 0);
@@ -450,10 +508,48 @@ class lettre_reader_PDF extends lettre_PDF {
 		$this->PDF->multiCell(100, 7, ($pmb_afficher_numero_lecteur_lettres ? $msg['fpdf_carte']." ".$empr->empr_cb : "")."\n".$msg['fpdf_adherent']." ".$empr->aff_empr_date_adhesion." ".$msg['fpdf_adherent_au']." ".$empr->aff_empr_date_expiration.".", 0, 'L', 0);
 	}
 	
+	protected function get_lines_text_biblio_info() {
+		global $msg;
+		global $biblio_adr1, $biblio_adr2, $biblio_cp, $biblio_town, $biblio_state, $biblio_country, $biblio_phone, $biblio_email, $biblio_website;
+		
+		$lines = array();
+		if($biblio_adr1) {
+			$lines['adr1'] = trim($biblio_adr1);
+		}
+		if ($biblio_adr2 != "") {
+			$lines['adr2'] = trim($biblio_adr2);
+		}
+		if (($biblio_cp != "") || ($biblio_town != "")) {
+			$lines['cp_town'] = trim($biblio_cp." ".$biblio_town);
+		}
+		if (($biblio_state != "") || ($biblio_country != "")) {
+			$lines['state_country'] = trim($biblio_state." ".$biblio_country);
+		}
+		if ($biblio_phone != "") {
+			$lines['phone'] = $msg['lettre_titre_tel'].$biblio_phone;
+		}
+		if ($biblio_email != "") {
+			$lines['email'] = $msg['lettre_biblio_info_email'].$biblio_email;
+		}
+		if ($biblio_website != "") {
+			$lines['website'] = $msg['lettre_biblio_info_website'].$biblio_website;
+		}
+		return $lines;
+	}
+	
+	protected function get_display_text_biblio_info() {
+		$lines = $this->get_lines_text_biblio_info();
+		$txt_biblio_info = "";
+		if(!empty($lines)) {
+			$txt_biblio_info = implode("\n", $lines);
+		}
+		return $txt_biblio_info;
+	}
+	
 	protected function display_biblio_info($x=0, $y=0, $short=0) {
-		global $msg,$base_path;
+		global $base_path;
 		global $pmb_hide_biblioinfo_letter;
-		global $biblio_name, $biblio_logo, $biblio_adr1, $biblio_adr2, $biblio_cp, $biblio_town, $biblio_state, $biblio_country, $biblio_phone, $biblio_email, $biblio_website ;
+		global $biblio_name, $biblio_logo;
 		global $txt_biblio_info ;
 		global $pmb_pdf_font;
 	
@@ -468,44 +564,7 @@ class lettre_reader_PDF extends lettre_PDF {
 		} else {
 			// afin de ne générer qu'une fois l'adr et compagnie
 			if (!$txt_biblio_info) {
-				
-				$txt_biblio_info = trim($biblio_adr1);
-				if ($biblio_adr2 != "") {
-					if(trim($txt_biblio_info)){
-						$txt_biblio_info .= "\n";
-					}
-					$txt_biblio_info .= $biblio_adr2;
-				}
-				if (($biblio_cp != "") || ($biblio_town != "")) {
-					if(trim($txt_biblio_info)){
-						$txt_biblio_info .= "\n";
-					}
-					$txt_biblio_info .= trim($biblio_cp." ".$biblio_town);
-				}
-				if (($biblio_state != "") || ($biblio_country != "")) {
-					if(trim($txt_biblio_info)){
-						$txt_biblio_info .= "\n";
-					}
-					$txt_biblio_info .= trim($biblio_state." ".$biblio_country);
-				}
-				if ($biblio_phone != "") {
-					if(trim($txt_biblio_info)){
-						$txt_biblio_info .= "\n";
-					}
-					$txt_biblio_info .= $msg['lettre_titre_tel'].$biblio_phone;
-				}
-				if ($biblio_email != "") {
-					if(trim($txt_biblio_info)){
-						$txt_biblio_info .= "\n";
-					}
-					$txt_biblio_info .= $msg['lettre_biblio_info_email'].$biblio_email;
-				}
-				if ($biblio_website != "") {
-					if(trim($txt_biblio_info)){
-						$txt_biblio_info .= "\n";
-					}
-					$txt_biblio_info .= $msg['lettre_biblio_info_website'].$biblio_website;
-				}
+				$txt_biblio_info = $this->get_display_text_biblio_info();
 			}
 	
 			if ($biblio_logo) {
@@ -520,6 +579,18 @@ class lettre_reader_PDF extends lettre_PDF {
 			$this->PDF->SetXY ($this->x_biblio_info+60,$this->y_biblio_info);
 			$this->PDF->setFont($pmb_pdf_font, 'B', 16);
 			$this->PDF->multiCell(120, 8, $biblio_name, 0, 'C', 0);
+		}
+	}
+	
+	protected function display_objet($x=0, $y=0) {
+		global $msg;
+		
+		$this->_adjust_position('objet', array($x,$y));
+		$text_objet = $this->get_parameter_value('objet');
+		if(!empty($text_objet)) {
+			$this->PDF->SetXY ($this->x_objet,$this->y_objet);
+			$this->PDF->setFont($this->font, 'B', $this->fs_objet);
+			$this->PDF->multiCell($this->w, 8, $msg['fpdf_objet']." ".$text_objet, 0, 'L', 0);
 		}
 	}
 	
@@ -538,5 +609,14 @@ class lettre_reader_PDF extends lettre_PDF {
 		$this->PDF->SetXY ($this->x_madame_monsieur,$this->y_madame_monsieur);
 		$this->PDF->setFont($this->font, '', $this->fs_madame_monsieur);
 		$this->PDF->multiCell($this->w, 8, $text_madame_monsieur, 0, 'L', 0);
+	}
+	
+	protected function display_after_sign($x=0, $y=0) {
+		$this->_adjust_position('after_sign', array($x,$y));
+		$text_after_sign = $this->get_parameter_value('after_sign');
+		if(!empty($text_after_sign)) {
+			$this->PDF->setFont($this->font, '', $this->fs_after_sign);
+			$this->PDF->multiCell($this->w, 5, $text_after_sign, 0, 'L', 0);
+		}
 	}
 }

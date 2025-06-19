@@ -46,6 +46,7 @@ class H2o_File_Loader extends H2o_Loader {
 
         if (is_file($filename)) {
             $source = file_get_contents($filename);
+            $source = encoding_normalize::convert_encoding($source);
             return $this->runtime->parse($source);
         } else {
             throw new TemplateNotFound($filename);

@@ -4,7 +4,7 @@
 // © 2006 mental works / www.mental-works.com contact@mental-works.com
 // 	repris et corrigé par PMB Services 
 // +-------------------------------------------------+
-// $Id: tags.class.php,v 1.20.2.1 2022/01/12 07:57:53 dgoron Exp $
+// $Id: tags.class.php,v 1.21 2022/01/12 07:49:29 dgoron Exp $
 
 // définition de la classe d'affichage des 'tags'
 

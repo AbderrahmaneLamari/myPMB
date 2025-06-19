@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: report.tpl.php,v 1.1 2021/05/03 10:13:12 dbellamy Exp $
+// $Id: report.tpl.php,v 1.1.6.1 2023/04/07 13:53:58 dbellamy Exp $
 
 if(preg_match('/install_inc\.php/', $_SERVER['REQUEST_URI'])) {
 	include('../../includes/forbidden.inc.php'); 
@@ -134,10 +134,19 @@ $report_tpl['page'] = $report_tpl['header'] . "
 						<td class='first'>{$install_msg['report_select_db']}</td>
 						<td><!-- report_select_db --></td>
 					</tr>
+
+                    <!-- tpl_alter_db_charset -->
+
 					<tr> 
 						<td class='first'>{$install_msg['report_create_connexion_files']}</td>
 						<td><!-- report_create_connexion_files --></td>
 					</tr>
+
+                    <tr>
+						<td class='first'>{$install_msg['report_alter_mysql_variables']}</td>
+						<td><!-- report_alter_mysql_variables --></td>
+					</tr>
+
 					<tr> 
 						<td class='first'>{$install_msg['report_drop_temp_files']}</td>
 						<td><!-- report_drop_temp_files --></td>
@@ -219,6 +228,13 @@ $report_tpl['mysql_pmb_user_connect'] = "
 <tr>
 	<td class='first'>{$install_msg['report_mysql_pmb_user_connect']}</td>
 	<td><!-- report_mysql_pmb_user_connect --></td>
+</tr>
+";
+
+$report_tpl['alter_db_charset'] = "
+<tr>
+	<td class='first'>{$install_msg['report_alter_db_charset']}</td>
+	<td><!-- report_alter_db_charset --></td>
 </tr>
 ";
 

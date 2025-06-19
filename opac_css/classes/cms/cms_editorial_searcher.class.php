@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_editorial_searcher.class.php,v 1.15 2019/08/29 10:05:39 btafforeau Exp $
+// $Id: cms_editorial_searcher.class.php,v 1.15.8.2 2023/04/21 12:41:18 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

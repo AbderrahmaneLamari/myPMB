@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_update.inc.php,v 1.68.2.4 2022/01/25 08:14:19 gneveu Exp $
+// $Id: empr_update.inc.php,v 1.76.2.1 2023/06/13 08:46:24 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -24,7 +24,7 @@ if ($forcage == 1) {
 	foreach($tab->GET as $key => $val){
 		add_sl($val);
 		$GLOBALS[$key] = $val;
-	}	
+	}
 	foreach($tab->POST as $key => $val){
 		add_sl($val);
 		$GLOBALS[$key] = $val;
@@ -37,7 +37,7 @@ require_once "$class_path/opac_view.class.php";
 
 function rec_abonnement($id,$type_abt,$empr_categ,$rec_caution=true) {
 	global $pmb_gestion_financiere,$pmb_gestion_abonnement;
-	
+
 	if ($pmb_gestion_financiere) {
 		$caution = 0;
 		//Récupération du tarif
@@ -83,12 +83,12 @@ function rec_groupe_empr($id, $groups) {
 	}
 }
 
-// inscription automatique du lecteur dans la DSI de sa catégorie 
+// inscription automatique du lecteur dans la DSI de sa catégorie
 function ins_lect_categ_dsi($id_empr=0, $categorie_lecteurs=0, $anc_categorie_lecteurs=0) {
 	global $dsi_insc_categ ;
-	
+
 	if (!$dsi_insc_categ || !$id_empr || !$categorie_lecteurs) return ;
-	
+
 	// suppression de l'inscription dans les bannettes de son ancienne catégorie
 	if ($anc_categorie_lecteurs) {
 		$req_ban = "select empr_categ_num_bannette as id_bannette from bannette_empr_categs where empr_categ_num_categ='$anc_categorie_lecteurs'" ;
@@ -97,8 +97,8 @@ function ins_lect_categ_dsi($id_empr=0, $categorie_lecteurs=0, $anc_categorie_le
 			pmb_mysql_query("delete from bannette_abon where num_bannette='$ban->id_bannette' and num_empr='$id_empr' ") ;
 		}
 	}
-	
-	// inscription du lecteur dans la DSI de sa nouvelle catégorie 
+
+	// inscription du lecteur dans la DSI de sa nouvelle catégorie
 	$req_ban = "select empr_categ_num_bannette as id_bannette from bannette_empr_categs where empr_categ_num_categ='$categorie_lecteurs'" ;
 	$res_ban=pmb_mysql_query($req_ban) ;
     while ($ban=pmb_mysql_fetch_object($res_ban)) {
@@ -132,11 +132,11 @@ if ($form_mail != "") {
 		}
 }
 
-// vérification du login: seulement si auth = MYSQL => $form_ldap='' 
+// vérification du login: seulement si auth = MYSQL => $form_ldap=''
 // si auth = LDAP => $form_ldap='on' (check-box)
 // le format du login ldap n'est pas contrôlé
 
-if (!$form_ldap) {  
+if (!$form_ldap) {
 	$form_empr_login = convert_diacrit(pmb_strtolower($form_empr_login)) ;
 	$form_empr_login = pmb_alphabetic('^a-z0-9\.\_\-\@', '', $form_empr_login);
 	if ($form_empr_login != "") {
@@ -172,7 +172,7 @@ if (!$form_ldap) {
 			} else $pb = 0 ;
 		}
 	}
-} 
+}
 
 //Vérification des champs personnalisés
 //Ici on récupère les valeurs des champs personnalisés
@@ -180,13 +180,17 @@ $p_perso=new parametres_perso("empr");
 $nberrors+=$p_perso->check_submited_fields();
 $error_message.=$p_perso->error_message;
 
-//Verification des regles de mots de passe si nouveau lecteur ou nouveau mot de passe pour lecteur existant
-if( !$id || ($id && ( '' !== $form_empr_password ) ) ) {
+// Verification des regles de mots de passe
+// On verifie le mot de passe si :
+// - creation et pas d'authentification externe
+// - modification et saisie mot de passe
+if( (!$id && !password::check_external_authentication())
+    || ($id && ''!==$form_empr_password) ) {
 	$check_password_rules = emprunteur::check_password_rules((int) $id, $form_empr_password, [], $lang);
 	if( !$check_password_rules['result'] ) {
 		$nberrors++;
 		$error_message.= '<p>'.$msg['circ_empr_password_rules_error'].'</p>';
-	}
+    }
 }
 
 // vérification des doublons : si param et $id_empr vide (création uniquement)
@@ -195,7 +199,7 @@ if ($empr_lecteur_controle_doublons != 0 && !$id && !$forcage) {
 	$param_verif_doublons = explode(",",$empr_lecteur_controle_doublons);
 	$requete = "SELECT empr_cb FROM empr WHERE 1 ";
 	foreach($param_verif_doublons as $num  => $field) {
-		
+
 		if ($num==0) { // C'est la commande
 			$cmd_doublons=$field;
 			switch($field){
@@ -204,15 +208,15 @@ if ($empr_lecteur_controle_doublons != 0 && !$id && !$forcage) {
 					break;
 				case "2":
 					$requete = "SELECT empr_cb FROM empr LEFT JOIN empr_custom_values ON empr_custom_origine = id_empr WHERE 1 ";
-					break; 
+					break;
 				case "3":
 					$requete = "SELECT empr_cb FROM empr LEFT JOIN empr_custom_values ON empr_custom_origine = id_empr LEFT JOIN empr_groupe ON empr_id = id_empr WHERE 1  ";
 					$groups=$_POST["form_groups"];
 					$requete.= " AND groupe_id= '".$groups[0]['id']."' ";
-					break; 
-				default:					    
 					break;
-			}	
+				default:
+					break;
+			}
 		} else {
 			// Ce sont les parametres: nom de champ dans empr_cb ou champs perso
 			$requete.= " AND";
@@ -231,14 +235,14 @@ if ($empr_lecteur_controle_doublons != 0 && !$id && !$forcage) {
 				case "empr_prof":$requete.= " $field= '$form_prof' ";break;
 				case "empr_year":$requete.= " $field= '$form_year' ";break;
 				case "empr_categ":$requete.= " $field= '$form_categ' ";break;
-				case "empr_codestat":$requete.= " $field= '$form_codestat' ";break;			
+				case "empr_codestat":$requete.= " $field= '$form_codestat' ";break;
 				case "empr_sexe":$requete.= " $field= '$form_sexe' ";break;
 				case "empr_login":$requete.= " $field= '$form_empr_login' ";break;
 				case "empr_msg":$requete.= " $field= '$form_empr_msg' ";break;
-				case "empr_lang":$requete.= " $field= '$form_empr_lang' ";break;					
+				case "empr_lang":$requete.= " $field= '$form_empr_lang' ";break;
 				default:
-					// Champ perso 
-					$perso = "SELECT idchamp ,datatype FROM empr_custom WHERE name = '$field'";						
+					// Champ perso
+					$perso = "SELECT idchamp ,datatype FROM empr_custom WHERE name = '$field'";
 					$res = pmb_mysql_query($perso);
 					$row=pmb_mysql_fetch_row($res);
 					if($row){
@@ -250,14 +254,14 @@ if ($empr_lecteur_controle_doublons != 0 && !$id && !$forcage) {
 						}
 					} else $requete.= " 1 ";
 				break;
-			}	
-		}			
+			}
+		}
 	}
 	$res = pmb_mysql_query($requete) or die ("ERROR with SQL proc to check borrowers<br />".$requete ." <br />".pmb_mysql_error());
 	if(($result=pmb_mysql_num_rows($res))){
 		//$error_message .= "<p>".$msg["Doublons_fiche_emprunteur"]."</p>";
 		$error_message .= "<p>ERREUR DOUBLON LECTEUR</p>";
-		$nberrors++;			
+		$nberrors++;
 	}
 }
 $f_cb = str_replace(array('\"', "\'"), '', $f_cb);
@@ -290,7 +294,7 @@ if ($nberrors > 0) {
 					<input type='button' name='ok' class='bouton' value=' $msg[76] ' onClick='history.go(-1);'>
 					<input type='submit' class='bouton' name='bt_forcage' value=' ".htmlentities($msg["gen_signature_forcage"], ENT_QUOTES,$charset)." '>
 				</form>
-				
+
 			</div>
 			";
 		$requete.=" GROUP BY empr_cb";
@@ -304,8 +308,8 @@ if ($nberrors > 0) {
 			$empr = new emprunteur($id_empr,"",FALSE,3);
 			$empr->fiche_consultation = str_replace('!!image_suppr_caddie_empr!!'    , $lien_suppr_cart    , $empr->fiche_consultation);
 			$empr->fiche_consultation = str_replace('!!lien_vers_empr!!'    , $link    , $empr->fiche_consultation);
-			
-			print $empr->fiche_consultation; 
+
+			print $empr->fiche_consultation;
 		}
 		exit ;
 	}else{
@@ -315,7 +319,7 @@ if ($nberrors > 0) {
 		//error_message("$msg[751] : $nberrors", $error_message."<p>".$msg[760]."</p>");
 	}
 } else if (!$id) {
-		
+
 		// création empr
 		$requete = "SELECT empr_cb FROM empr WHERE empr_cb='$f_cb' LIMIT 1 ";
 		$res = pmb_mysql_query($requete);
@@ -339,7 +343,7 @@ if ($nberrors > 0) {
 			$requete .= "empr_categ='$form_categ', ";
 			$requete .= "empr_statut='$form_statut', ";
 			$requete .= "empr_lang='$form_empr_lang', ";
-			
+
 			if ($form_adhesion=="") $requete .= "empr_date_adhesion=CURRENT_DATE(), "; else $requete .= "empr_date_adhesion='$form_adhesion', ";
 			if (($form_expiration=="") or ($form_expiration==$form_adhesion)) {
 				/* AJOUTER ICI LE CALCUL EN FONCTION DE LA CATEGORIE */
@@ -387,15 +391,16 @@ if ($nberrors > 0) {
 
 			if ($form_empr_password!="") $requete .= "empr_password='$form_empr_password' ";
 				else $requete .= "empr_password='$form_year' ";
-			
+
 			$res = pmb_mysql_query($requete);
 
 			if($res) {
-				// on récupère l'id du de l'emprunteur
+				// on récupère l'id de l'emprunteur
 				$id = pmb_mysql_insert_id();
 				if ($form_empr_password!="") {
+				    $old_hash = !empty($form_empr_password_mail) ? true : false;
 					emprunteur::update_digest($form_empr_login,$form_empr_password);
-					emprunteur::hash_password($form_empr_login,$form_empr_password, !empty($form_empr_password_mail));
+					emprunteur::hash_password($form_empr_login,$form_empr_password, $old_hash);
 				} else {
 					emprunteur::update_digest($form_empr_login,$form_year);
 					emprunteur::hash_password($form_empr_login,$form_year);
@@ -405,7 +410,7 @@ if ($nberrors > 0) {
 				ins_lect_categ_dsi($id, $form_categ, 0) ;
 				if (($pmb_gestion_financiere)&&($pmb_gestion_abonnement))
 					rec_abonnement($id,$type_abt,$form_categ);
-				
+
 				$empr = new emprunteur($id, '', FALSE, 1);
 				print pmb_bidi($empr->fiche);
 			} else {
@@ -501,13 +506,14 @@ if ($nberrors > 0) {
 			$requete .= "empr_msg='$form_empr_msg', ";
 			$requete .= "empr_login='$form_empr_login' ";
 			$requete .= " WHERE id_empr='$id' ";
-			
+
 			$res = pmb_mysql_query($requete);
-	
+
 			if(!pmb_mysql_errno()) {
 				if ($form_empr_password!="") {
+				    $old_hash = !empty($form_empr_password_mail) ? true : false;
 					emprunteur::update_digest($form_empr_login,$form_empr_password);
-					emprunteur::hash_password($form_empr_login,$form_empr_password, !empty($form_empr_password_mail));
+					emprunteur::hash_password($form_empr_login,$form_empr_password, $old_hash);
 				}
 				$p_perso->rec_fields_perso($id);
 				rec_groupe_empr($id, $form_groups) ;
@@ -516,17 +522,17 @@ if ($nberrors > 0) {
 				if ($debit && $is_subscription_extended) {
 					if ($debit==2) $rec_caution=true; else $rec_caution=false;
 					rec_abonnement($id,$type_abt,$form_categ,$rec_caution);
-				}		
-				if($pmb_opac_view_activate ){			
-					$opac_view = new opac_view(0,$id);	
+				}
+				if($pmb_opac_view_activate ){
+					$opac_view = new opac_view(0,$id);
 					$opac_view->update_sel_list();
 				}
-				
+
 				//surcharge des droits d'accès emprunteurs - notices
 				if(($gestion_acces_active == '1') && isset($override_rights)) {
 					require_once($class_path.'/acces.class.php');
 					$ac = new acces();
-					
+
 					$acces_list = array(
 					    2 => $gestion_acces_empr_notice,
 					    3 => $gestion_acces_empr_docnum,
@@ -536,7 +542,7 @@ if ($nberrors > 0) {
 					    7 => $gestion_acces_empr_cms_section,
 					    8 => $gestion_acces_empr_cms_article,
 					);
-					
+
 					foreach ($acces_list as $acces_list_index => $acces_list_active) {
 						if (($acces_list_active == '1') && !empty($override_rights[$acces_list_index])) {
 							$dom = $ac->setDomain($acces_list_index);
@@ -544,7 +550,7 @@ if ($nberrors > 0) {
 						}
 					}
 				}
-				
+
 				$empr = new emprunteur($id, '', FALSE, 1);
 				print pmb_bidi($empr->fiche);
 			} else {

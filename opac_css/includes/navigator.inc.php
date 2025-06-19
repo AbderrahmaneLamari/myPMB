@@ -3,14 +3,19 @@
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
 
-// $Id: navigator.inc.php,v 1.54 2021/02/12 08:54:36 dgoron Exp $
+// $Id: navigator.inc.php,v 1.54.6.1 2023/08/04 12:44:20 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-/*DB commenté car n'affiche rien lors de l'appel à etageres_see si showet non défini
-if ($lvl=="etagere_see") 
-	$navig.="<td><a href=\"index.php?lvl=etageres_see\" class='etageres_see'><span>".$msg["etageres_see"]."</span></a></td>\n";
-*/
+global $msg, $charset;
+global $autolevel1, $get_last_query, $facette_test, $map_emprises_query, $mode;
+global $opac_autolevel2, $user_query;
+global $opac_show_categ_browser, $opac_show_dernieresnotices, $opac_show_etageresaccueil, $opac_show_marguerite_browser, $opac_show_100cases_browser;
+global $search_type, $from_permalink;
+global $opac_show_onglet_help, $opac_navig_empr, $opac_show_onglet_empr;
+global $opac_indexation_docnum_allfields, $opac_cart_only_for_subscriber, $opac_cart_allow;
+global $es, $join;
+
 
 //Création de la recherche équivalente à tous les champs si on est en autolevel
 //Si le niveau 1 est shunté
@@ -68,11 +73,15 @@ if (($opac_autolevel2)&&($autolevel1)&&(!$get_last_query)&&($user_query)) {
 	}
 }elseif($lvl=='more_results' && $search_type=='extended_search' && $mode=='extended' && !$facette_test && ($opac_autolevel2 || $from_permalink)){
 	//from_permalink va permettre de stocker la recherche en session même si autolevel2 = 0
+    if(empty($es) || !is_object($es)) {
+        $es = new search();
+    }
 	$es->reduct_search();
 	rec_history();
 	$_SESSION["new_last_query"]=$_SESSION["nb_queries"];
 }elseif($lvl=='more_results' && $search_type=='extended_search_authorities' && $mode=='extended_authorities') {
-    if(is_object($es) && get_class($es) != "search_authorities"){
+
+    if( !is_object($es) || get_class($es) != "search_authorities" ){
         $es = new search_authorities("search_fields_authorities");
     }
     $es->reduct_search();

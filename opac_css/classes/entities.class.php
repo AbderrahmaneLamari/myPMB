@@ -2,16 +2,18 @@
 // +-------------------------------------------------+
 // � 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities.class.php,v 1.7.2.4 2021/11/10 10:33:44 qvarin Exp $
+// $Id: entities.class.php,v 1.15.2.6 2023/12/27 13:52:40 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path;
 require_once "$class_path/authority.class.php";
 require_once "$class_path/record_display.class.php";
+require_once "$class_path/serials.class.php";
 
 class entities {
     public static $entities;
+    public static $isbd = [];
     
     public static function get_entities() {
     	return array(
@@ -29,7 +31,9 @@ class entities {
     			TYPE_AUTHPERSO,
     			TYPE_CMS_SECTION,
     			TYPE_CMS_ARTICLE,
-    			TYPE_CONCEPT
+    			TYPE_CMS_EDITORIAL,
+    			TYPE_CONCEPT,
+    			TYPE_ANIMATION
     	);
     }
     
@@ -37,7 +41,7 @@ class entities {
 	    global $msg;
 	    
 	    $entities = array(    
-	    		TYPE_NOTICE => $msg['288'],
+	    		TYPE_NOTICE => $msg['notice'],
 	    		TYPE_AUTHOR => $msg['isbd_author'],
 	    		TYPE_CATEGORY => $msg['isbd_categories'],
 	    		TYPE_PUBLISHER => $msg['isbd_editeur'],
@@ -49,9 +53,11 @@ class entities {
 	    		TYPE_EXPL => $msg['376'],
 	    		TYPE_EXPLNUM => $msg['search_explnum'],
 	    		TYPE_AUTHPERSO => $msg['search_by_authperso_title'],
-	    		TYPE_CMS_SECTION => $msg['cms_menu_editorial_section'],
-	    		TYPE_CMS_ARTICLE => $msg['cms_menu_editorial_article'],
-	    		TYPE_CONCEPT => $msg['search_concept_title']
+	    		TYPE_CMS_SECTION => $msg['onto_common_cms_section'],
+	    		TYPE_CMS_ARTICLE => $msg['onto_common_cms_article'],
+	    		TYPE_CONCEPT => $msg['search_concept_title'],
+                TYPE_ANIMATION => $msg['selvars_animation_name'],
+                TYPE_CMS_EDITORIAL => $msg['cms_menu_editorial'],
 	    );
 	    return $entities;
 	}
@@ -96,7 +102,20 @@ class entities {
 				return 'authperso';
 			case TYPE_EXTERNAL :
 				return 'external';
+			case TYPE_ONTOLOGY:
+			    return 'ontologies';
+			case TYPE_ANIMATION:
+			    return 'animations';
+			case TYPE_CMS_ARTICLE:
+			    return 'articles';
+			case TYPE_CMS_SECTION:
+			    return 'sections';
+			case TYPE_CMS_EDITORIAL:
+			    return 'cms_editorial';
 			default:
+			    if ($type > 10000) {
+			        return 'ontologies';
+			    }
 			    if ($type > 1000) {
 			        return 'authperso';
 			    }
@@ -167,8 +186,11 @@ class entities {
 	        case TYPE_CONCEPT:
 	            return AUT_TABLE_CONCEPT;
 	        case TYPE_AUTHPERSO :
-	        default: 
 	            return AUT_TABLE_AUTHPERSO;
+	        case TYPE_AUTHORITY :
+	            return AUT_TABLE_AUTHORITY;
+	        default:
+	            return 0;
 	    }
 	}
 	    
@@ -294,6 +316,11 @@ class entities {
             case 'notices' :
             case 'notice' :
                 return 'records';
+            case 'bull' :
+                return 'bulletins';
+            case 'animations' :
+            case 'animation' :
+                return 'animations';
             default :
                 if(strpos($type,'authperso') !== false){
                     return $type;
@@ -307,7 +334,11 @@ class entities {
             case "notice" ;
             case "record" :
                 return notice::get_notice_title($id);
+            case "bulletin" :
+                $notice_id = bulletinage::get_notice_id_from_id($id);
+                return notice::get_notice_title($notice_id);
             case "authority" :
+            case "authorities" :
             default:
                 $authority = authorities_collection::get_authority($type, $id);
                 return $authority->get_isbd();
@@ -455,6 +486,21 @@ class entities {
             case 'notice_display':
                 $entity_type = TYPE_NOTICE;
                 break;
+            case 'animation':
+            case 'animations':
+                $entity_type = TYPE_ANIMATION;
+                break;
+            case 'articles':
+            case 'article':
+                $entity_type = TYPE_CMS_ARTICLE;
+                break;
+            case 'sections':
+            case 'section':
+                $entity_type = TYPE_CMS_SECTION;
+                break;
+            case 'cms_editorial':
+                $entity_type = TYPE_CMS_EDITORIAL;
+                break;
             case 'authperso_see':
             default:
                 if(strpos($lvl,'authperso') !== false) {
@@ -498,6 +544,10 @@ class entities {
                 return 'section';
             case TYPE_CMS_ARTICLE:
                 return 'article';
+            case TYPE_CMS_EDITORIAL:
+                return 'cms_editorial';
+            case TYPE_ANIMATION:
+                return 'animation';
             default:
                 return '';
         }
@@ -532,5 +582,67 @@ class entities {
                 break;
         }
         return "";
+    }
+    
+    /**
+     * Liste les methodes, utile pour les web
+     * @return []
+     */
+    public static function get_methods_infos($object) {
+        $methods_tab = [];
+        if (is_object($object)) {
+            $rc = new ReflectionClass($object);
+            $methods = $rc->getMethods(ReflectionMethod::IS_PUBLIC);
+            $excluded_methods = [
+                "__construct",
+                "get_instance",
+                "__get",
+                "__set",
+                "__call",
+            ];
+            foreach ($methods as $method) {
+                if (!in_array($method->getName(), $excluded_methods)) {
+                    $doc = $method->getDocComment();
+                    $doc = substr($doc, 0, strpos($doc, "@"));
+                    $doc = str_replace(["/", "*"], "", $doc);
+                    $methods_tab[] = [$method->getName(), trim($doc)];
+                }
+            }
+            sort($methods_tab);
+        }
+        return $methods_tab;
+    }
+    
+    /**
+     * Liste les proprietes, utile pour les web
+     * @return []
+     */
+    public static function get_properties_infos($object) {
+        $properties_tab = [];
+        if (is_object($object)) {
+            $rc = new ReflectionClass($object);
+            $properties = $rc->getProperties();
+            $excluded_properties = [];
+            foreach ($properties as $property) {
+                if (!in_array($property->getName(), $excluded_properties)) {
+                    $doc = $property->getDocComment();
+                    $doc = substr($doc, 0, strpos($doc, "@"));
+                    $doc = str_replace(["/", "*"], "", $doc);
+                    $properties_tab[] = [$property->getName(), trim($doc)];
+                }
+            }
+            sort($properties_tab);
+        }
+        return $properties_tab;
+    }
+    
+    public static function get_isbd($id, $type) {
+    	$id = intval($id);
+    	$type = intval($type);
+    	if(empty(static::$isbd[$type][$id])) {
+    		$entity = new entity($id, $type);
+    		static::$isbd[$type][$id] = $entity->get_isbd();
+    	}
+    	return static::$isbd[$type][$id];
     }
 }

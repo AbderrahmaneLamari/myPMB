@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: collstate.class.php,v 1.32.2.2 2022/01/19 11:46:44 dgoron Exp $
+// $Id: collstate.class.php,v 1.36 2022/02/23 11:18:44 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -40,6 +40,7 @@ class collstate {
 	public $statut_class_html = '';
 	public $surloc_libelle = '';
 	public $bulletins = array();
+	public $explr_acces_autorise = '';
 
 	// constructeur
 	public function __construct($id=0,$serial_id=0,$bulletin_id=0) {
@@ -85,40 +86,46 @@ class collstate {
 		$this->emplacement_libelle=$myempl->archempla_libelle;
 	
 		$myQuery = pmb_mysql_query("SELECT * FROM arch_type WHERE archtype_id='".$this->type."' LIMIT 1");
-		$mytype= pmb_mysql_fetch_object($myQuery);
-		$this->type_libelle=$mytype->archtype_libelle;
+		if(pmb_mysql_num_rows($myQuery)) {
+			$mytype= pmb_mysql_fetch_object($myQuery);
+			$this->type_libelle=$mytype->archtype_libelle;
+		}
 	
 		// Lecture des statuts
 		$myQuery = pmb_mysql_query("SELECT * FROM arch_statut WHERE archstatut_id='".$this->statut."' LIMIT 1");
-		$mystatut= pmb_mysql_fetch_object($myQuery);
-		$this->statut_gestion_libelle=$mystatut->archstatut_gestion_libelle;
-		$this->statut_opac_libelle=$mystatut->archstatut_opac_libelle;
-		$this->statut_visible_opac=$mystatut->archstatut_visible_opac;
-		$this->statut_visible_opac_abon=$mystatut->archstatut_visible_opac_abon;
-		$this->statut_visible_gestion=$mystatut->archstatut_visible_gestion;
-		$this->statut_class_html=$mystatut->archstatut_class_html;
+		if(pmb_mysql_num_rows($myQuery)) {
+			$mystatut= pmb_mysql_fetch_object($myQuery);
+			$this->statut_gestion_libelle=$mystatut->archstatut_gestion_libelle;
+			$this->statut_opac_libelle=$mystatut->archstatut_opac_libelle;
+			$this->statut_visible_opac=$mystatut->archstatut_visible_opac;
+			$this->statut_visible_opac_abon=$mystatut->archstatut_visible_opac_abon;
+			$this->statut_visible_gestion=$mystatut->archstatut_visible_gestion;
+			$this->statut_class_html=$mystatut->archstatut_class_html;
+		}
 		
 		$myQuery = pmb_mysql_query("select location_libelle, surloc_num from docs_location where idlocation='".$this->location_id."' LIMIT 1");
-		$mylocation= pmb_mysql_fetch_object($myQuery);
-		$this->location_libelle=$mylocation->location_libelle;
+		if(pmb_mysql_num_rows($myQuery)) {
+			$mylocation= pmb_mysql_fetch_object($myQuery);
+			$this->location_libelle=$mylocation->location_libelle;
 	
-		if ($pmb_droits_explr_localises) {
-			$tab_invis=explode(",",$explr_invisible);
-			$tab_unmod=explode(",",$explr_visible_unmod);
-	
-			$as_invis = array_search($this->location_id,$tab_invis);
-			$as_unmod = array_search($this->location_id,$tab_unmod);
-			if ($as_invis!== FALSE && $as_invis!== NULL) $this->explr_acces_autorise="INVIS" ;
-			elseif ($as_unmod!== FALSE && $as_unmod!== NULL) $this->explr_acces_autorise="UNMOD" ;
-			else $this->explr_acces_autorise="MODIF" ;
-		} else $this->explr_acces_autorise="MODIF" ;
+			if ($pmb_droits_explr_localises) {
+				$tab_invis=explode(",",$explr_invisible);
+				$tab_unmod=explode(",",$explr_visible_unmod);
 		
-		if ($pmb_sur_location_activate && $mylocation->surloc_num) {
-			$this->surloc_id = $mylocation->surloc_num;
-			$myQuery = pmb_mysql_query("select surloc_libelle from sur_location where surloc_id='".$this->surloc_id."' LIMIT 1");	
-			if (pmb_mysql_num_rows($myQuery)) {
-				$mysurloc = pmb_mysql_fetch_object($myQuery);
-				$this->surloc_libelle=$mysurloc->surloc_libelle;
+				$as_invis = array_search($this->location_id,$tab_invis);
+				$as_unmod = array_search($this->location_id,$tab_unmod);
+				if ($as_invis!== FALSE && $as_invis!== NULL) $this->explr_acces_autorise="INVIS" ;
+				elseif ($as_unmod!== FALSE && $as_unmod!== NULL) $this->explr_acces_autorise="UNMOD" ;
+				else $this->explr_acces_autorise="MODIF" ;
+			} else $this->explr_acces_autorise="MODIF" ;
+			
+			if ($pmb_sur_location_activate && $mylocation->surloc_num) {
+				$this->surloc_id = $mylocation->surloc_num;
+				$myQuery = pmb_mysql_query("select surloc_libelle from sur_location where surloc_id='".$this->surloc_id."' LIMIT 1");	
+				if (pmb_mysql_num_rows($myQuery)) {
+					$mysurloc = pmb_mysql_fetch_object($myQuery);
+					$this->surloc_libelle=$mysurloc->surloc_libelle;
+				}
 			}
 		}
 		
@@ -154,175 +161,6 @@ class collstate {
 			if ($bool==true) return($affichage);
 		}
 		return "";
-	}
-	
-	//Récupérer de l'affichage complet
-	public function get_display_list($base_url,$filtre,$debut=0,$page=0, $type=0,$form=1,$no_pagination=false) {
-		global $msg,$charset,$nb_per_page_a_search,$tpl_collstate_liste,$tpl_collstate_liste_line,$tpl_collstate_liste_form, $tpl_collstate_surloc_liste, $tpl_collstate_surloc_liste_line;
-		global $explr_invisible,$pmb_droits_explr_localises,$pmb_etat_collections_localise;
-		global $pmb_sur_location_activate;
-		global $pmb_collstate_data,$class_path,$collstate_list_header,$collstate_list_footer;
-		global $pmb_collstate_advanced, $tpl_collstate_bulletins_list_th, $tpl_collstate_bulletins_list_td;
-	
-		if(is_object($filtre)) {
-			$location=$filtre->location;
-		} else {
-			$location="";
-		}
-		if (!$pmb_etat_collections_localise) {
-			 $location="";
-		}
-		if (($pmb_droits_explr_localises)&&($explr_invisible)) $restrict_location=" location_id not in (".$explr_invisible.") and ";
-		else  $restrict_location="";
-	
-		$query = "SELECT count( collstate_id) FROM collections_state ";
-		if($this->bulletin_id) {
-			$query .= "JOIN collstate_bulletins ON collstate_bulletins_num_collstate = collstate_id ";
-		}
-		$query .= "WHERE $restrict_location ".($location?"(location_id='$location') and ":"")." ";
-		if($this->bulletin_id) {
-			$query .= "collstate_bulletins_num_bulletin='".$this->bulletin_id."' ";
-		} else {
-			$query .= "id_serial='".$this->serial_id."' ";
-		}
-		$result = pmb_mysql_query($query);
-		$this->nbr = pmb_mysql_result($result,0,0);
-		if($this->nbr) {
-			$query = "SELECT  collstate_id , location_id FROM collections_state ";
-			if($this->bulletin_id) {
-				$query .= "JOIN collstate_bulletins ON collstate_bulletins_num_collstate = collstate_id ";
-			}
-			$query .= "LEFT JOIN docs_location ON location_id=idlocation ";
-			if ($pmb_sur_location_activate) {
-				$query .= "LEFT JOIN sur_location on docs_location.surloc_num=sur_location.surloc_id ";
-			}
-			$query .= " LEFT JOIN arch_emplacement ON collstate_emplacement=archempla_id WHERE ".$restrict_location." ".($location?"(location_id='$location') and ":"");
-			if($this->bulletin_id) {
-				$query .= "collstate_bulletins_num_bulletin='".$this->bulletin_id."' ";
-			} else {
-				$query .= "id_serial='".$this->serial_id."' ";
-			}
-			$query .= "ORDER BY ";
-			if ($pmb_sur_location_activate) {
-				$query .= "surloc_libelle, ";
-			}
-			if($pmb_etat_collections_localise) {
-				$query .= "location_libelle, ";
-			}
-			$query .= "archempla_libelle, collstate_cote ";
-			if(!$no_pagination) {
-				$query .= "LIMIT $debut,$nb_per_page_a_search ";
-			}
-			$myQuery = pmb_mysql_query($query);
-			
-			if ($pmb_sur_location_activate) {
-				$tpl_collstate_liste[$type] = str_replace('<!-- surloc -->',$tpl_collstate_surloc_liste,$tpl_collstate_liste[$type]);
-				$tpl_collstate_liste_line[$type] = str_replace('<!-- surloc -->',$tpl_collstate_surloc_liste_line,$tpl_collstate_liste_line[$type]);
-			}
-			
-			if($pmb_collstate_data) {
-				if (strstr($pmb_collstate_data, "#")) {
-					require_once($class_path."/parametres_perso.class.php");
-					$cp=new parametres_perso("collstate");
-				}
-				$colonnesarray=explode(",",$pmb_collstate_data);
-				$collstate_list_header_deb="<tr>";
-				
-				for ($i=0; $i<count($colonnesarray); $i++) {
-					if (substr($colonnesarray[$i],0,1)=="#") {
-						//champs personnalisés
-						$id=substr($colonnesarray[$i],1);
-						if (!$cp->no_special_fields) {
-							$collstate_list_header_deb.="<th class='collstate_header_".$colonnesarray[$i]."'>".htmlentities($cp->t_fields[$id]["TITRE"],ENT_QUOTES, $charset)."</th>";
-						}
-					}else{
-						eval ("\$colencours=\$msg['collstate_header_".$colonnesarray[$i]."'];");
-						$collstate_list_header_deb.="<th class='collstate_header_".$colonnesarray[$i]."'>".htmlentities($colencours,ENT_QUOTES, $charset)."</th>";
-					}
-				}
-				$collstate_list_header_deb.= "!!collstate_bulletins_list_th!!";
-				$collstate_list_header_deb.= "</tr>";
-			}
-			$parity=1;
-			$liste = '';
-			while(($coll = pmb_mysql_fetch_object($myQuery))) {
-				$my_collstate=new collstate($coll->collstate_id);
-				if ($parity++ % 2) $pair_impair = "even"; else $pair_impair = "odd";
-				// Si modifiable, ajout du lien vers le formulaire
-				if($my_collstate->explr_acces_autorise=="MODIF") {
-					$tr_javascript="  onmousedown=\"document.location='./catalog.php?categ=serials&sub=collstate_form&id=".$coll->collstate_id."&serial_id=".$this->serial_id."&bulletin_id=".$this->bulletin_id."';\" ";
-				} else {
-					$tr_javascript="";
-				}
-				$tr_surbrillance = "onmouseover=\"this.className='surbrillance'\" onmouseout=\"this.className='".$pair_impair."'\" ";
-				if($pmb_collstate_data) {
-					$liste.="<tr class='".$pair_impair."' style='cursor: pointer' ".$tr_surbrillance." >";
-					$colencours = '';
-					for ($i=0; $i<count($colonnesarray); $i++) {
-						if (substr($colonnesarray[$i],0,1)=="#") {
-							//champs personnalisés
-							$id=substr($colonnesarray[$i],1);
-							$cp->get_values($coll->collstate_id);
-							if (!$cp->no_special_fields) {
-								$temp=$cp->get_formatted_output((isset($cp->values[$id]) ? $cp->values[$id] : array()), $id);
-								if (!$temp) $temp=" ";
-								$liste.="<td class='".$colonnesarray[$i]."' ".$tr_javascript." data-column-name='".htmlentities($cp->t_fields[$id]["TITRE"],ENT_QUOTES, $charset)."'>".htmlentities($temp,ENT_QUOTES, $charset)."</td>";
-							}
-						}else{
-							eval ("\$thcolencours=\$msg['collstate_header_".$colonnesarray[$i]."'];");
-							eval ("\$colencours=\$my_collstate->".$colonnesarray[$i].";");
-							$liste.="<td class='".$colonnesarray[$i]."' ".$tr_javascript." data-column-name='".htmlentities($thcolencours,ENT_QUOTES, $charset)."'>".htmlentities($colencours,ENT_QUOTES, $charset)."</td>";
-						}
-					}
-					if ($pmb_collstate_advanced) {
-						$bulletins_list_onclick = str_replace('!!collstate_bulletins_list_onclick!!', 'document.location="./catalog.php?categ=serials&sub=collstate_bulletins_list&id='.$coll->collstate_id.'&serial_id='.$this->serial_id.'&bulletin_id='.$this->bulletin_id.'";', $tpl_collstate_bulletins_list_td);
-						$liste.= $bulletins_list_onclick;
-					}
-					$liste.= "</tr>";
-				} else {
-					$line = str_replace('!!tr_javascript!!',$tr_javascript , $tpl_collstate_liste_line[$type]);
-					$line = str_replace('!!tr_surbrillance!!',$tr_surbrillance , $line);
-					$line = str_replace('!!pair_impair!!',$pair_impair , $line);
-					if ($pmb_sur_location_activate) {
-						$line = str_replace('!!surloc!!', $my_collstate->surloc_libelle, $line);
-					}
-					$line = str_replace('!!localisation!!', $my_collstate->location_libelle, $line);
-					$line = str_replace('!!cote!!', $my_collstate->cote, $line);
-					$line = str_replace('!!type_libelle!!', $my_collstate->type_libelle, $line);
-					$line = str_replace('!!emplacement_libelle!!', $my_collstate->emplacement_libelle, $line);
-					$line = str_replace('!!statut_libelle!!', "<span class='".$my_collstate->statut_class_html."'  style='margin-right: 3px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' /></span>".$my_collstate->statut_gestion_libelle, $line);
-					$line = str_replace('!!origine!!', $my_collstate->origine, $line);
-					$line = str_replace('!!state_collections!!',str_replace("\n","<br />",$my_collstate->state_collections), $line);
-					$line = str_replace('!!archive!!',$my_collstate->archive, $line);
-					$line = str_replace('!!lacune!!', str_replace("\n","<br />",$my_collstate->lacune), $line);
-					if ($pmb_collstate_advanced) {
-						$bulletins_list_onclick = str_replace('!!collstate_bulletins_list_onclick!!', 'document.location="./catalog.php?categ=serials&sub=collstate_bulletins_list&id='.$coll->collstate_id.'&serial_id='.$this->serial_id.'&bulletin_id='.$this->bulletin_id.'";', $tpl_collstate_bulletins_list_td);
-						$line = str_replace('!!collstate_bulletins_list_td!!', $bulletins_list_onclick, $line);
-					} else {
-						$line = str_replace('!!collstate_bulletins_list_td!!', '', $line);
-					}
-					$liste.=$line;
-				}
-			}
-			if($pmb_collstate_data) {
-				$liste = $collstate_list_header.$collstate_list_header_deb.$liste.$collstate_list_footer;
-			} else {
-				$liste = str_replace('!!collstate_liste!!',$liste , $tpl_collstate_liste[$type]);
-			}
-			if ($pmb_collstate_advanced) {
-				$liste = str_replace('!!collstate_bulletins_list_th!!', $tpl_collstate_bulletins_list_th, $liste);
-			} else {
-				$liste = str_replace('!!collstate_bulletins_list_th!!', '', $liste);
-			}
-		} else {
-			$liste= $msg["collstate_no_collstate"];
-		}
-	
-		if($form)$liste = str_replace('!!collstate_table!!',$liste , $tpl_collstate_liste_form);
-		$liste = str_replace('!!base_url!!', $base_url, $liste);
-		$this->liste = str_replace('!!location!!', $location, $liste);
-		// barre de navigation par page
-		$this->pagination = aff_pagination ($base_url."&location=$location", $this->nbr, $nb_per_page_a_search, $page, 10, false, true) ;
 	}
 	
 	// fonction de mise à jour ou de création d'état de collection
@@ -385,7 +223,7 @@ class collstate {
 		
 		$value->id_serial=stripslashes($serial_id);
 		if(!$location_id) $location_id=$deflt_docs_location;
-		$value->location_id=stripslashes($location_id+0);
+		$value->location_id=intval($location_id);
 		$value->state_collections=stripslashes($state_collections);
 		$value->collstate_emplacement=stripslashes($archempla_id);
 		$value->collstate_type=stripslashes($archtype_id);
@@ -606,7 +444,6 @@ class collstate {
 		global $tpl_collstate_bulletins_list_page, $tpl_collstate_bulletins_list_line;
 		global $nb_per_page_a_search, $page, $msg;		
 		global $aff_bulletins_restrict_numero, $aff_bulletins_restrict_date, $aff_bulletins_restrict_periode;
-		global $pmb_collstate_advanced;
 		
 		if (!$page) $page=1;
 		$debut = ($page-1)*$nb_per_page_a_search;

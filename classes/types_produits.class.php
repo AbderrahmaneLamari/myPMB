@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: types_produits.class.php,v 1.18 2021/01/18 12:58:01 dgoron Exp $
+// $Id: types_produits.class.php,v 1.18.6.1 2023/06/28 07:57:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -38,13 +38,24 @@ class types_produits{
 		$this->num_tva_achat = $obj->num_tva_achat;
 	}
 	
-	public function get_form() {
-		global $msg, $charset;
-		global $type_content_form;
+	public function get_content_form() {
 		global $acquisition_gestion_tva;
 		
-		$content_form = $type_content_form;
-		$content_form = str_replace('!!id!!', $this->id_produit, $content_form);
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle);
+		$interface_content_form->add_element('cp_compta', 'acquisition_num_cp_compta')
+		->add_input_node('integer', $this->num_cp_compta)
+		->set_class('saisie-20em');
+		if ($acquisition_gestion_tva) {
+			$interface_content_form->add_element('tva_achat', 'acquisition_num_tva_achat')
+			->add_query_node('select', tva_achats::listTva(), $this->num_tva_achat);
+		}
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
 		$interface_form = new interface_admin_form('typeform');
 		if(!$this->id_produit){
@@ -52,26 +63,9 @@ class types_produits{
 		}else{
 			$interface_form->set_label($msg['acquisition_modif_type']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!cp_compta!!', htmlentities($this->num_cp_compta, ENT_QUOTES, $charset), $content_form);
-		if ($acquisition_gestion_tva) {
-			$form_tva = "<select id='tva_achat' name ='tva_achat' >";
-			$q = tva_achats::listTva();
-			$res = pmb_mysql_query($q);
-			while ($row=pmb_mysql_fetch_object($res)) {
-				$form_tva.="<option value='".$row->id_tva."' ";
-				if ($this->id_produit) {
-					if ($this->num_tva_achat == $row->id_tva) $form_tva.="selected ";
-				}
-				$form_tva.=">".$row->libelle." - ".$row->taux_tva." %</option>";
-			}
-			$form_tva.="</select>";
-			$content_form = str_replace('!!tva_achat!!', $form_tva, $content_form);
-		}
-		
 		$interface_form->set_object_id($this->id_produit)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('types_produits')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();

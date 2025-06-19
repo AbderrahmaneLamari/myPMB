@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: etagere_caddies.class.php,v 1.4.2.2 2021/12/16 09:49:54 dgoron Exp $
+// $Id: etagere_caddies.class.php,v 1.7 2022/02/11 10:19:11 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -134,6 +134,10 @@ class etagere_caddies {
 		}
 		
 		return $ret;
+	}
+	
+	public function get_caddies() {
+		return $this->caddies;
 	}
 	
 	public function get_filter($idcaddie, $name) {

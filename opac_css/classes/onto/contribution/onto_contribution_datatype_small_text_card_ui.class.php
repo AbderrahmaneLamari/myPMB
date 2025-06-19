@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_small_text_card_ui.class.php,v 1.1.2.2 2021/10/20 09:06:10 qvarin Exp $
+// $Id: onto_contribution_datatype_small_text_card_ui.class.php,v 1.1 2021/10/20 09:03:56 qvarin Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 /**

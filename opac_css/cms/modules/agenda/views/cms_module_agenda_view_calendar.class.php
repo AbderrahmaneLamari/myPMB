@@ -2,19 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_agenda_view_calendar.class.php,v 1.26 2021/04/26 13:57:07 dgoron Exp $
+// $Id: cms_module_agenda_view_calendar.class.php,v 1.27 2022/02/18 08:53:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class cms_module_agenda_view_calendar extends cms_module_common_view{
-	
 	
 	public function __construct($id=0){
 		$this->use_dojo=true;
 		parent::__construct($id);
 	}
 
-	
 	public function get_form(){
 		$form="
 		<div class='row'>
@@ -45,12 +43,11 @@ class cms_module_agenda_view_calendar extends cms_module_common_view{
 		return $form;
 	}
 	
-	
 	public function save_form(){
 		global $cms_module_agenda_view_calendar_nb_displayed_events_under;
 		$this->save_constructor_link_form("event");
 		$this->save_constructor_link_form("eventslist");
-		$this->parameters['nb_displayed_events_under'] = $cms_module_agenda_view_calendar_nb_displayed_events_under+0;
+		$this->parameters['nb_displayed_events_under'] = (int) $cms_module_agenda_view_calendar_nb_displayed_events_under;
 		return parent::save_form();
 	}
 	
@@ -73,7 +70,6 @@ class cms_module_agenda_view_calendar extends cms_module_common_view{
 		}
 		return $headers;
 	}
-	
 	
 	public function render($datas){
 		$html_to_display = "<div id='cms_module_calendar_".$this->id."'></div>";
@@ -171,7 +167,6 @@ class cms_module_agenda_view_calendar extends cms_module_common_view{
 		";
 		return $html_to_display;
 	}
-	
 	
 	public function execute_ajax(){
 		

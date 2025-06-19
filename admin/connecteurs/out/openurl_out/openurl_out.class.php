@@ -2,12 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: openurl_out.class.php,v 1.5 2019/09/05 10:16:35 btafforeau Exp $
+// $Id: openurl_out.class.php,v 1.6 2022/05/05 06:44:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path;
-global $include_path;
 require_once($class_path."/connecteurs_out.class.php");
 require_once($class_path."/openurl/transport/openurl_transport.class.php");
 

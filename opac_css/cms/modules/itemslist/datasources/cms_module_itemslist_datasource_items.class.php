@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_itemslist_datasource_items.class.php,v 1.5.10.2 2022/01/20 10:05:46 dgoron Exp $
+// $Id: cms_module_itemslist_datasource_items.class.php,v 1.9 2022/05/03 10:51:00 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -52,26 +52,28 @@ class cms_module_itemslist_datasource_items extends cms_module_common_datasource
 			}
 			
 			if(count($return)){
-				$itemslist = array();
+				$items_ids = array();
 				$query = "select id_item from docwatch_items where id_item in ('".implode("','",$return)."')";
 				if ($this->parameters["sort_by"] != "") {
 					$query .= " order by ".addslashes($this->parameters["sort_by"]);
 					if ($this->parameters["sort_order"] != "") $query .= " ".addslashes($this->parameters["sort_order"]);
 				}
-				if ($this->parameters['nb_max_elements']) {
-					$query.= ' limit '.$this->parameters['nb_max_elements'];
-				}
 				$result = pmb_mysql_query($query);
 				if ($result) {
 					if (pmb_mysql_num_rows($result)) {
 						while($row=pmb_mysql_fetch_object($result)){
-							$docwatch_item = new docwatch_item($row->id_item);
-							$itemslist[] = $docwatch_item->get_normalized_item();
+							$items_ids[] = $row->id_item;
 						}
 					}
 				}
-				//$itemslist = $this->filter_datas('items', $itemslist);
-				if ($this->parameters["nb_max_elements"] > 0) $itemslist = array_slice($itemslist, 0, $this->parameters["nb_max_elements"]);
+				$items_ids = $this->filter_datas('items', $items_ids);
+				if ($this->parameters["nb_max_elements"] > 0) $items_ids = array_slice($items_ids, 0, $this->parameters["nb_max_elements"]);
+
+				$itemslist = array();
+				foreach ($items_ids as $item_id) {
+					$docwatch_item = new docwatch_item($item_id);
+					$itemslist[] = $docwatch_item->get_normalized_item();
+				}
 				return array('items' => $itemslist);
 			}
 		}

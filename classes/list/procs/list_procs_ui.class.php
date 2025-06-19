@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_procs_ui.class.php,v 1.8.2.2 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_procs_ui.class.php,v 1.12.4.5 2023/12/12 14:26:07 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,24 +22,13 @@ class list_procs_ui extends list_ui {
 		}
 	}
 	
-	protected function _get_query_order() {
-	    if ($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'libproc_classement':
-					$order .= 'libproc_classement,name';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'libproc_classement':
+	            return 'libproc_classement,name';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	protected function init_default_settings() {
@@ -47,6 +36,7 @@ class list_procs_ui extends list_ui {
 		$this->set_setting_display('search_form', 'visible', false);
 		$this->set_setting_display('search_form', 'export_icons', false);
 		$this->set_setting_display('query', 'human', false);
+		$this->set_setting_display('pager', 'visible', false);
 		$this->set_setting_column('default', 'align', 'left');
 		$this->settings['objects']['default']['display_mode'] = 'expandable_table';
 		$this->settings['grouped_objects']['level_1']['display_mode'] = 'expandable_table';
@@ -64,10 +54,6 @@ class list_procs_ui extends list_ui {
 		$this->pager['all_on_page'] = true;
 	}
 	
-	protected function pager() {
-		return "";
-	}
-	
 	/**
 	 * Initialisation du tri par défaut appliqué
 	 */
@@ -76,7 +62,7 @@ class list_procs_ui extends list_ui {
 	    $this->add_applied_sort('name');
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'libproc_classement');
 	}
 	
@@ -125,9 +111,7 @@ class list_procs_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_name() {
-		global $msg;
-		
-		return "<input class='saisie-80em' id='".$this->objects_type."_name' type='text' name='".$this->objects_type."_name' value=\"".$this->filters['name']."\" title='$msg[3001]' />";
+		return $this->get_search_filter_simple_text('name');
 	}
 	
 	protected function get_search_filter_autorisations() {
@@ -161,23 +145,21 @@ class list_procs_ui extends list_ui {
 	protected function add_column_execute() {
 		global $msg;
 		
-		$this->columns[] = array(
-				'property' => 'execute',
-				'label' => '',
-				'html' => "<input class='bouton' type='button' value=' $msg[708] ' onClick=\"document.location='".static::get_controller_url_base()."&action=execute&id=!!id!!'\" />",
-				'exportable' => false
+		$html_properties = array(
+				'value' => $msg['708'],
+				'link' => static::get_controller_url_base().'&action=execute&id=!!id!!'
 		);
+		$this->add_column_simple_action('execute', '', $html_properties);
 	}
 	
 	protected function add_column_export() {
 		global $msg;
 		
-		$this->columns[] = array(
-				'property' => 'export',
-				'label' => '',
-				'html' => "<input class='bouton' type='button' value=\"".$msg['procs_bt_export']."\" onClick=\"document.location='./export.php?quoi=procs&sub=actionsperso&id=!!id!!'\" />",
-				'exportable' => false
+		$html_properties = array(
+				'value' => $msg['procs_bt_export'],
+				'link' => './export.php?quoi=procs&sub=actionsperso&id=!!id!!'
 		);
+		$this->add_column_simple_action('export', '', $html_properties);
 	}
 	
 	protected function get_button_add() {
@@ -206,29 +188,17 @@ class list_procs_ui extends list_ui {
 		return $msg['proc_clas_aucun'];
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+	protected function _add_query_filters() {
 		if(!empty($this->filters['name'])) {
-			$filters [] = "name LIKE '%".$this->filters['name']."%'";
+			$this->query_filters [] = "name LIKE '%".$this->filters['name']."%'";
 		}
 		if(!empty($this->filters['autorisations'])) {
 			$filters_autorisations = array();
 			foreach ($this->filters['autorisations'] as $autorisation) {
 				$filters_autorisations [] = "(autorisations='".$autorisation."' or autorisations like '".$autorisation." %' or autorisations like '% ".$autorisation." %' or autorisations like '% ".$autorisation."')";
 			}
-			$filters [] = implode(' or ', $filters_autorisations);
+			$this->query_filters [] = implode(' or ', $filters_autorisations);
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	protected function get_cell_content($object, $property) {
@@ -241,6 +211,7 @@ class list_procs_ui extends list_ui {
 					<small>".$object->comment."&nbsp;</small>";
 				break;
 			case 'configuration':
+				$query_parameters = array();
 				if (preg_match_all("|!!(.*)!!|U",$object->requete,$query_parameters)) {
 					$content .= "<a href='".static::get_controller_url_base()."&action=configure&id_query=".$object->idproc."'>".$msg["procs_options_config_param"]."</a>";
 				}
@@ -252,20 +223,15 @@ class list_procs_ui extends list_ui {
 		return $content;
 	}
 
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch ($property) {
 			case 'name':
-				$attributes = array(
-					'onclick' => "document.location=\"".static::get_controller_url_base()."&action=modif&id=".$object->idproc."\""
+				return array(
+						'onclick' => "document.location=\"".static::get_controller_url_base()."&action=modif&id=".$object->idproc."\""
 				);
-				break;
 			default:
-				$attributes = array();
-				break;
+				return array();
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function gen_plus($id, $titre, $contenu, $maximise=0) {

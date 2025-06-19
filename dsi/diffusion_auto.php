@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: diffusion_auto.php,v 1.5.16.1 2022/01/14 14:55:11 dgoron Exp $
+// $Id: diffusion_auto.php,v 1.6 2022/01/14 14:54:00 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

@@ -2,13 +2,10 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_controler.class.php,v 1.14.2.4 2021/08/25 09:22:35 qvarin Exp $
+// $Id: onto_contribution_controler.class.php,v 1.19 2022/04/15 12:16:07 dbellamy Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
 	die("no access");
 
-require_once ($class_path . "/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("rdf_entities_integration", true);
 class onto_contribution_controler extends onto_common_controler {
 	
 	// protected function proceed_edit(){

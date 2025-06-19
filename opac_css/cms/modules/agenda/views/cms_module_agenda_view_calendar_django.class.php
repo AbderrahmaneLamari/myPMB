@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_agenda_view_calendar_django.class.php,v 1.18 2021/04/26 13:57:07 dgoron Exp $
+// $Id: cms_module_agenda_view_calendar_django.class.php,v 1.18.6.1 2023/12/07 15:07:35 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,10 +34,10 @@ le {{event.event_start.format_value}}
  {% endif %}
 {% endif%} : {{event.title}}
 </h3>
-<blockquote>
+<div>
 <img src='{{event.logo.large}}' alt=''/>
 <p>{{event.resume}}<br/><a href='{{event.link}}'>plus d'infos...<a/></p>
-</blockquote>
+</div>
 {% endfor %}
 </div>";
 	}
@@ -96,7 +96,7 @@ le {{event.event_start.format_value}}
 			require(['dijit/Calendar']);
 		</script>";
 		// AR - 09/02/21 : L'appel au JS ne sert à rien, il est vide, c'est un mécanisme prévu mais non utilisé
-		//$headers[] = "<script type='text/javascript' src='".$this->get_ajax_link(array('do' => "get_js"), 'js')."'/>";
+		//$headers[] = "<script src='".$this->get_ajax_link(array('do' => "get_js"), 'js')."'/>";
 		$css_file = $this->get_css_file();
 		if($css_file) {
 			$headers[] = "<link rel='stylesheet' type='text/css' href='".$css_file."'/>";
@@ -149,7 +149,7 @@ le {{event.event_start.format_value}}
 			</style>
 		";
 		
-		$json_events = encoding_normalize::json_encode($this->utf8_normalize($events));
+		$json_events = encoding_normalize::json_encode(encoding_normalize::utf8_normalize($events));
 		if (empty($json_events)) {
 		    $json_events =  array();
 		}
@@ -165,7 +165,7 @@ le {{event.event_start.format_value}}
 		}
 		
 		$html_to_display.="
-		<script type='text/javascript'>
+		<script>
             require([
                 'apps/pmb/cms/CmsCalendar',
                 'dojo/ready',

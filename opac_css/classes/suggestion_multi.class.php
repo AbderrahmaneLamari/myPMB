@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestion_multi.class.php,v 1.23.2.1 2021/12/16 06:54:30 dgoron Exp $
+// $Id: suggestion_multi.class.php,v 1.25 2022/02/04 11:08:57 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -176,6 +176,7 @@ class suggestion_multi{
 							code='".${$code}."',
 							prix='".${$prix}."',
 							commentaires='".${$com}."',
+							index_suggestion = ' ".strip_empty_words(${$tit})." ".strip_empty_words(${$edi})." ".strip_empty_words(${$aut})." ".${$code}." ".strip_empty_words(${$com})." ',
 							url_suggestion='".${$url}."',
 							nb='".${$qte}."',
 							sugg_source='".${$src}."',

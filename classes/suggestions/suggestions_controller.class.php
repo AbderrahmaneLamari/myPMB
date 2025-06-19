@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestions_controller.class.php,v 1.1.2.2 2021/08/02 12:07:12 dgoron Exp $
+// $Id: suggestions_controller.class.php,v 1.1.8.1 2023/09/28 09:07:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class suggestions_controller extends lists_controller {
 	
-	protected static $model_class_name = 'suggestion';
+	protected static $model_class_name = 'suggestions';
 	
 	protected static $list_ui_class_name = 'list_suggestions_ui';
 	

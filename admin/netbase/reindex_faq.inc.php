@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: reindex_faq.inc.php,v 1.8.8.2 2021/12/15 08:53:05 dgoron Exp $
+// $Id: reindex_faq.inc.php,v 1.11 2022/10/13 09:45:38 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -37,7 +37,7 @@ print "<br /><br /><h2 class='center'>".htmlentities($msg["nettoyage_reindex_faq
 $query = pmb_mysql_query("select id_faq_question from faq_questions order by id_faq_question LIMIT $start, $lot");
 if(pmb_mysql_num_rows($query)) {
 	print netbase::get_display_progress($start, $count);
-	$indexation = new indexation($include_path."/indexation/faq/question.xml", "faq_questions");
+	$indexation = indexations_collection::get_indexation(AUT_TABLE_FAQ);
 	$indexation->set_deleted_index(true);
 	while($row = pmb_mysql_fetch_assoc($query)) {		
 		// permet de charger la bonne langue, mot vide...

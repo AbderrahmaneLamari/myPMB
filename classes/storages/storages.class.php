@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: storages.class.php,v 1.6.2.1 2022/01/19 13:37:17 dgoron Exp $
+// $Id: storages.class.php,v 1.8 2023/01/04 15:35:44 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -45,9 +45,13 @@ class storages {
 				print $this->get_form($id);
 				break;
 			case "delete" :
-				static::delete($id);
-				$this->fetch_datas();
-				print list_configuration_explnum_storages_ui::get_instance()->get_display_list();
+			    $deleted = static::delete($id);
+				if($deleted) {
+    				$this->fetch_datas();
+    				print list_configuration_explnum_storages_ui::get_instance()->get_display_list();
+				} else {
+    			    pmb_error::get_instance(get_class($this))->display(1, $this->get_url_base());
+				}
 				break;
 			case "save" :
 				$this->save_form();
@@ -277,14 +281,31 @@ class storages {
 	}
 	
 	public static function delete($id){
-		$id =intval($id);
-		if($id) {
-			pmb_mysql_query("delete from storages where id_storage='".$id."'");
+		$id = intval($id);
+		if ($id) {
+		    $total = pmb_mysql_num_rows(pmb_mysql_query("SELECT 1 FROM cms_collections WHERE collection_num_storage =".$id));
+		    if ($total) {
+		        pmb_error::get_instance(static::class)->add_message('storage_method_label', 'storage_used_in_cms_collections');
+		        return false;
+		    }
+		    $total = pmb_mysql_num_rows(pmb_mysql_query("SELECT 1 FROM cms_documents WHERE document_num_storage =".$id));
+		    if ($total) {
+		        pmb_error::get_instance(static::class)->add_message('storage_method_label', 'storage_used_in_cms_documents');
+		        return false;
+		    }
+		    pmb_mysql_query("DELETE FROM storages WHERE id_storage='".$id."'");
+	        return true;
 		}
+		return true;
 	}
 	
 	public function get_params_form($class_name,$id){
 		$storage = new storage($id);
 		return $storage->get_form($class_name);
+	}
+	
+	public function get_url_base() {
+	    global $base_path, $current_module, $categ, $sub;
+	    return  $base_path.'/'.$current_module.'.php?categ='.$categ.(!empty($sub) ? '&sub='.$sub : '');
 	}
 }

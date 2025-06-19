@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_demandes_ui.class.php,v 1.13.2.3 2021/09/21 16:43:41 dgoron Exp $
+// $Id: list_demandes_ui.class.php,v 1.19.4.4 2023/12/28 09:53:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -180,18 +180,19 @@ class list_demandes_ui extends list_ui {
 		parent::init_default_settings();
 		$this->set_setting_display('search_form', 'unfolded_filters', true);
 		$this->set_setting_display('search_form', 'export_icons', false);
+		$this->set_setting_column('progression', 'align', 'left');
 		$this->set_setting_column('date_demande', 'datatype', 'date');
 		$this->set_setting_column('date_prevue', 'datatype', 'date');
 		$this->set_setting_column('deadline_demande', 'datatype', 'date');
 	}
 	
 	public function get_display_list() {
-		global $msg;
+	    global $javascript_path, $msg;
 		
 		$display = parent::get_display_list();
 		$display .= "
-			<script src='./javascript/dynamic_element.js' type='text/javascript'></script>
-			<script src='./javascript/demandes_form.js' type='text/javascript'></script>
+			<script src='".$javascript_path."/dynamic_element.js' type='text/javascript'></script>
+			<script src='".$javascript_path."/demandes_form.js' type='text/javascript'></script>
 			<script type='text/javascript'>
 				var msg_demandes_note_confirm_demande_end='".addslashes($msg['demandes_note_confirm_demande_end'])."'; 
 				var msg_demandes_actions_nocheck='".addslashes($msg['demandes_actions_nocheck'])."'; 
@@ -213,44 +214,45 @@ class list_demandes_ui extends list_ui {
 		return htmlentities($msg["demandes_liste_vide"], ENT_QUOTES, $charset);
 	}
 	
-	protected function get_selection_actions() {
-		global $msg;
-		
-		
-		//TODO : Revoir les actions
-		
-		
-		if(!isset($this->selection_actions)) {
-			$this->selection_actions = array();
-			//afficher la liste des boutons de changement d'état
-			if($this->filters['state']){
-				$states = $this->get_demandes()->workflow->getStateList($this->filters['state']);
-				for($i=0;$i<count($states);$i++){
-					$state_link = array(
-							'href' => static::get_controller_url_base()."&act=change_state&state=".$states[$i]['id'],
-					);
-					$this->selection_actions[] = $this->get_selection_action('state_'.$states[$i]['id'], $states[$i]['comment'], '', $state_link);
-				}
-				
-			}
-			if($this->filters['affectation'] == -1){
-				$affectation_link = array(
-						'href' => static::get_controller_url_base()."&act=affecter",
-				);
-// 				$affectation_btn = "<input type='submit' class='bouton' name='affect_btn' id='affect_btn' onclick='this.form.act.value=\"affecter\";return verifChk();' value='".htmlentities($msg['demandes_attribution_checked'],ENT_QUOTES,$charset)."' />&nbsp;".$this->getUsersSelector();
-				$this->selection_actions[] = $this->get_selection_action('affectation', $msg['demandes_attribution_checked'], '', $affectation_link);
-			}
-			
-			/* Ajouté dans other_actions pour le décalage à droite
-			 * 
-			 * $delete_link = array(
-					'href' => static::get_controller_url_base()."&act=suppr_noti",
-					'confirm' => $msg['demandes_confirm_suppr']
-			);
-			$this->selection_actions[] = $this->get_selection_action('delete', $msg['63'], 'interdit.gif', $delete_link);
-			*/
-		}
-		return $this->selection_actions;
+	protected function init_default_selection_actions() {
+	    global $msg, $idetat, $iduser;
+	    
+	    parent::init_default_selection_actions();
+	    //A-t-on choisi une valeur en provenance du formulaire
+	    if(isset($idetat)) {
+	        $this->filters['state'] = intval($idetat);
+	    }
+	    //afficher la liste des boutons de changement d'état
+	    if($this->filters['state']){
+	        $states = $this->get_demandes()->workflow->getStateList($this->filters['state']);
+	        for($i=0;$i<count($states);$i++){
+	            $state_link = array(
+	                'href' => static::get_controller_url_base()."&act=change_state&state=".$states[$i]['id'],
+	            );
+	            $this->selection_actions[] = $this->get_selection_action('state_'.$states[$i]['id'], $states[$i]['comment'], '', $state_link);
+	        }
+	        
+	    }
+	    // A-t-on choisi une valeur en provenance du formulaire
+	    if(isset($iduser)) {
+	        $this->filters['affectation'] = intval($iduser);
+	    }
+	    if($this->filters['affectation'] == -1){
+	        $affectation_link = array(
+	            'href' => static::get_controller_url_base()."&act=affecter",
+	        );
+	        // 				$affectation_btn = "<input type='submit' class='bouton' name='affect_btn' id='affect_btn' onclick='this.form.act.value=\"affecter\";return verifChk();' value='".htmlentities($msg['demandes_attribution_checked'],ENT_QUOTES,$charset)."' />&nbsp;".$this->getUsersSelector();
+	        $this->selection_actions[] = $this->get_selection_action('affectation', $msg['demandes_attribution_checked'], '', $affectation_link);
+	    }
+	    
+	    /* Ajouté dans other_actions pour le décalage à droite
+	     *
+	     * $delete_link = array(
+	     'href' => static::get_controller_url_base()."&act=suppr_noti",
+	     'confirm' => $msg['demandes_confirm_suppr']
+	     );
+	     $this->selection_actions[] = $this->get_selection_action('delete', $msg['63'], 'interdit.gif', $delete_link);
+	     */
 	}
 	
 	protected function get_display_selection_action($action) {
@@ -317,52 +319,19 @@ class list_demandes_ui extends list_ui {
 		return "chk";
 	}
 	
-	protected function add_event_on_selection_action($action=array()) {
-		$display = "
-			on(dom.byId('".$this->objects_type."_selection_action_".$action['name']."_link'), 'click', function() {
-				var selection = new Array();
-				query('.".$this->objects_type."_selection:checked').forEach(function(node) {
-					selection.push(node.value);
-				});
-				if(selection.length) {
-					var confirm_msg = '".(isset($action['link']['confirm']) ? addslashes($action['link']['confirm']) : '')."';
-					if(!confirm_msg || confirm(confirm_msg)) {
-						".(isset($action['link']['href']) && $action['link']['href'] ? "
-							var selected_objects_form = domConstruct.create('form', {
-								action : '".$action['link']['href']."',
-								name : '".$this->objects_type."_selected_objects_form',
-								id : '".$this->objects_type."_selected_objects_form',
-								method : 'POST'
-							});
-							selection.forEach(function(selected_option) {
-								var selected_objects_hidden = domConstruct.create('input', {
-									type : 'hidden',
-									name : '".$this->get_name_selected_objects()."[]',
-									value : selected_option
-								});
-								domConstruct.place(selected_objects_hidden, selected_objects_form);
-							});
-							domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
-							
-							var affectation_iduser_hidden = domConstruct.create('input', {
-								type : 'hidden',
-								name : 'iduser',
-								value : dom.byId('iduser').value
-							});
-							domConstruct.place(affectation_iduser_hidden, selected_objects_form);
-
-							dom.byId('".$this->objects_type."_selected_objects_form').submit();
-							"
-								: "")."
-						".(isset($action['link']['openPopUp']) && $action['link']['openPopUp'] ? "openPopUp('".$action['link']['openPopUp']."&selected_objects='+selection.join(','), '".$action['link']['openPopUpTitle']."'); return false;" : "")."
-						".(isset($action['link']['onClick']) && $action['link']['onClick'] ? $action['link']['onClick']."(selection); return false;" : "")."
-					}
-				} else {
-					alert('".addslashes($this->get_error_message_empty_selection($action))."');
-				}
+	protected function get_inheritance_nodes_selected_objects_form($action=array()) {
+		return "
+            var iduser = 0;
+            if(dom.byId('iduser')) {
+                iduser = dom.byId('iduser').value;
+            }
+			var affectation_iduser_hidden = domConstruct.create('input', {
+				type : 'hidden',
+				name : 'iduser',
+				value : iduser
 			});
+			domConstruct.place(affectation_iduser_hidden, selected_objects_form);
 		";
-		return $display;
 	}
 	
 	protected function get_message_for_selection() {
@@ -387,38 +356,67 @@ class list_demandes_ui extends list_ui {
 		
 		if(isset($user_input)) {
 			$this->filters['user_input'] = stripslashes($user_input);
+		} else {
+		    $this->set_filter_from_form('user_input');
 		}
 		if(isset($idetat)) {
 			$this->filters['state'] = intval($idetat);
+		} else {
+// 		    $this->set_filter_from_form('state', 'integer');
 		}
 		if(isset($idempr)) {
 			$this->filters['demandeur'] = intval($idempr);
 		}
-		if(isset($date_debut)) {
-			$this->filters['date_start'] = $date_debut;
-		}
-		if(isset($date_fin)) {
-			$this->filters['date_end'] = $date_fin;
+		if(isset($date_debut) || isset($date_fin)) {
+    		if(isset($date_debut)) {
+    			$this->filters['date_start'] = $date_debut;
+    		}
+    		if(isset($date_fin)) {
+    			$this->filters['date_end'] = $date_fin;
+    		}
+		} else {
+		    $this->set_filter_from_form('date_start');
+		    $this->set_filter_from_form('date_end');
 		}
 		if(isset($iduser)) {
 			$this->filters['affectation'] = intval($iduser);
 		}
 		if(isset($id_type)) {
 			$this->filters['type'] = intval($id_type);
+		} else {
+		    $this->set_filter_from_form('type', 'integer');
 		}
 		if(isset($id_theme)) {
 			$this->filters['theme'] = intval($id_theme);
+		} else {
+		    $this->set_filter_from_form('theme', 'integer');
 		}
 		if(isset($dmde_loc)) {
 			$this->filters['location'] = intval($dmde_loc);
+		} else {
+		    $this->set_filter_from_form('location', 'integer');
 		}
 		parent::set_filters_from_form();
 	}
 	
+	protected function get_selection_query($type) {
+	    $query = '';
+	    switch ($type) {
+	        case 'theme':
+	            $query = 'select id_theme as id, libelle_theme as label from demandes_theme order by label';
+	            break;
+	        case 'type':
+	            $query = 'select id_type as id, libelle_type as label from demandes_type order by label';
+	            break;
+	        case 'location':
+	            $query = 'select idlocation as id, location_libelle as label from docs_location order by label';
+	            break;
+	    }
+	    return $query;
+	}
+	
 	protected function get_search_filter_user_input() {
-		global $charset;
-		
-		return "<input type='text' class='saisie-30em' name='user_input' id='user_input' value='".htmlentities($this->filters['user_input'], ENT_QUOTES, $charset)."'/>";
+		return $this->get_search_filter_simple_text('user_input');
 	}
 	
 	protected function get_search_filter_demandeur() {
@@ -438,12 +436,7 @@ class list_demandes_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_date() {
-		global $msg;
-		
-		//Formulaire des filtres
-		$date_deb="<input type='date' id='date_debut' name='date_debut' value='".$this->filters['date_start']."' />";
-		$date_but="<input type='date' id='date_fin' name='date_fin' value='".$this->filters['date_end']."' />";
-		return sprintf($msg['demandes_filtre_periode_lib'],$date_deb,$date_but);
+		return $this->get_search_filter_interval_date('date');
 	}
 	
 	protected function get_search_filter_affectation() {
@@ -451,27 +444,19 @@ class list_demandes_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_theme() {
-		$themes = new demandes_themes('demandes_theme','id_theme','libelle_theme',$this->filters['theme']);
-		return $themes->getListSelector($this->filters['theme'],'',true);
+	    global $msg;
+	    return $this->get_search_filter_simple_selection($this->get_selection_query('theme'), 'theme', $msg['list_simple_all']);
 	}
 	
 	protected function get_search_filter_type() {
-		$types = new demandes_types('demandes_type','id_type','libelle_type',$this->filters['type']);
-		return $types->getListSelector($this->filters['type'],'',true);
+        global $msg;
+	    return $this->get_search_filter_simple_selection($this->get_selection_query('type'), 'type', $msg['list_simple_all']);
 	}
 	
 	protected function get_search_filter_location() {
-		global $msg, $charset;
+		global $msg;
 		
-		$req_loc = "select idlocation, location_libelle from docs_location";
-		$res_loc = pmb_mysql_query($req_loc);
-		$sel_loc = "<select id='dmde_loc' name='dmde_loc' onchange='this.form.act.value=\"search\";submit()' >";
-		$sel_loc .= "<option value='0' ".(!$this->filters['location'] ? 'selected' : '').">".htmlentities($msg['demandes_localisation_all'],ENT_QUOTES,$charset)."</option>";
-		while($loc = pmb_mysql_fetch_object($res_loc)){
-			$sel_loc .= "<option value='".$loc->idlocation."' ".(($this->filters['location']==$loc->idlocation) ? 'selected' : '').">".htmlentities($loc->location_libelle,ENT_QUOTES,$charset)."</option>";
-		}
-		$sel_loc.= "</select>";
-		return $sel_loc;
+		return $this->get_search_filter_simple_selection($this->get_selection_query('location'), 'location', $msg['demandes_localisation_all']);
 	}
 	
 	/**
@@ -494,59 +479,31 @@ class list_demandes_ui extends list_ui {
 	    return $filter_join_query;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+	protected function _add_query_filters() {
 		if($this->filters['user_input']) {
 			$user_input = str_replace('*','%',$this->filters['user_input']);
-			$filters [] = "titre_demande like '%".$user_input."%'";
+			$this->query_filters [] = "titre_demande like '%".addslashes($user_input)."%'";
 		}
-		if($this->filters['demandeur']) {
-			$filters [] = 'num_demandeur = "'.$this->filters['demandeur'].'"';
-		}
-		if($this->filters['state']) {
-			$filters [] = 'etat_demande = "'.$this->filters['state'].'"';
-		}
+		$this->_add_query_filter_simple_restriction('demandeur', 'num_demandeur', 'integer');
+		$this->_add_query_filter_simple_restriction('state', 'etat_demande');
 		//Filtre date
 		if($this->filters['date_start']<$this->filters['date_end']){
-			$filters [] = "(date_demande >= '".$this->filters['date_start']."' and deadline_demande <= '".$this->filters['date_end']."' )";
+			$this->query_filters [] = "(date_demande >= '".$this->filters['date_start']."' and deadline_demande <= '".$this->filters['date_end']."' )";
 		}
-		if($this->filters['theme']) {
-			$filters [] = 'theme_demande = "'.$this->filters['theme'].'"';
-		}
-		if($this->filters['type']) {
-			$filters [] = 'type_demande = "'.$this->filters['type'].'"';
-		}
-		if($this->filters['location']) {
-			$filters [] = 'empr_location = "'.$this->filters['location'].'"';
-		}
-		if($this->filters['type_action']) {
-			$filters [] = 'type_action = "'.$this->filters['type_action'].'"';
-		}
-		if(!empty($this->filters['statut_action'])) {
-			$filters [] = 'statut_action IN ('.implode(',', $this->filters['statut_action']).')';
-		}
+		
+		$this->_add_query_filter_simple_restriction('theme', 'theme_demande');
+		$this->_add_query_filter_simple_restriction('type', 'type_demande');
+		$this->_add_query_filter_simple_restriction('location', 'empr_location', 'integer');
+		$this->_add_query_filter_simple_restriction('type_action', 'type_action');
+		$this->_add_query_filter_multiple_restriction('statut_action', 'statut_action');
 		if($this->filters['affectation']) {
 			if($this->filters['affectation'] == -1){
-				$filters [] = 'num_user IS NULL';
+				$this->query_filters [] = 'num_user IS NULL';
 			} else {
-				$filters [] = 'num_user = "'.$this->filters['affectation'].'"';
+				$this->query_filters [] = 'num_user = "'.$this->filters['affectation'].'"';
 			}
 		}
-		if($this->filters['id_demande']) {
-			$filters [] = 'id_demande = "'.$this->filters['id_demande'].'"';
-		}
-		if(count($filters)) {
-		    $filter_query .= $this->_get_query_join_filters();
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
+		$this->_add_query_filter_simple_restriction('id_demande', 'id_demande', 'integer');
 	}
 	
 	protected function _get_object_property_theme_demande($object) {
@@ -565,6 +522,21 @@ class list_demandes_ui extends list_ui {
 		return emprunteur::get_name($object->num_demandeur, 1);
 	}
 	
+	protected function _get_object_property_attribution($object) {
+	    $attribution = '';
+	    if (!empty($object->users)) {
+	        foreach ($object->users as $user) {
+	            if ($user['statut'] == 1) {
+	                if (!empty($attribution)) {
+	                    $attribution .= "/ ";
+	                }
+	                $attribution .= $user['nom'];
+	            }
+	        }
+	    }
+	    return $attribution;
+	}
+	
 	protected function get_cell_content($object, $property) {
 		global $msg, $charset;
 		
@@ -580,20 +552,6 @@ class list_demandes_ui extends list_ui {
 					$content .= "<img hspace=\"3\" border=\"0\" title=\"\" onclick=\"document.location='".$object->get_gestion_link()."'\" id=\"dmde".$object->id_demande."Img1\" class=\"img_plus\" src='".get_url_icon('notification_empty.png')."' >
 								<img hspace=\"3\" border=\"0\" title=\"" . $msg['demandes_new']. "\" onclick=\"document.location='".$object->get_gestion_link()."'\" id=\"dmde".$object->id_demande."Img2\" class=\"img_plus\" src='".get_url_icon('notification_new.png')."' style='display:none'>";
 				}
-				break;
-			case 'attribution':
-				$nom_user = '';
-				if (!empty($object->users)) {
-					foreach ($object->users as $user) {
-						if ($user['statut'] == 1) {
-							if (!empty($nom_user)) {
-								$nom_user .= "/ ";
-							}
-							$nom_user .= $user['nom'];
-						}
-					}
-				}
-				$content .= $nom_user;
 				break;
 			case 'progression':
 				$content .= "
@@ -613,13 +571,10 @@ class list_demandes_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "window.location=\"".$object->get_gestion_link()."\""
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_display_content_object_list($object, $indice) {
@@ -685,6 +640,10 @@ class list_demandes_ui extends list_ui {
 		global $msg, $charset;
 		
 		return "<input class='bouton' type='button' name='new_dmd' id='new_dmd' value='".htmlentities($msg['demandes_new'], ENT_QUOTES, $charset)."' onClick=\"document.location='".static::get_controller_url_base()."&act=new';\" />";
+	}
+	
+	protected function at_least_one_action() {
+	    return true;
 	}
 	
 	public static function get_ajax_controller_url_base() {

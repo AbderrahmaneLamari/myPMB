@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_authorities_categories.class.php,v 1.8.8.1 2021/12/27 08:20:53 dgoron Exp $
+// $Id: searcher_authorities_categories.class.php,v 1.10 2022/03/17 12:15:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,12 +22,27 @@ class searcher_authorities_categories extends searcher_autorities {
 		return parent::_get_search_type()."_categories";
 	}
 	
+	/**
+	 * Jointure externes SQL pour les besoins des filtres
+	 */
+	protected function _get_query_join_filters() {
+		$filter_join_query = '';
+		if(!empty($this->context_parameters['in_selector'])) {
+			$filter_join_query .= " JOIN thesaurus ON thesaurus.id_thesaurus = noeuds.num_thesaurus";
+			$filter_join_query .= " LEFT JOIN categories AS catdef ON ".$this->object_table.".id_noeud=catdef.num_noeud and thesaurus.langue_defaut = catdef.langue";
+		}
+		return $filter_join_query;
+	}
+	
 	protected function _get_authorities_filters(){
 		global $id_thes;
 		
 		$filters = parent::_get_authorities_filters();
 		if ($id_thes && ($id_thes != '-1')) {
 			$filters[] = $this->object_table.'.num_thesaurus = "'.$id_thes.'"';
+		}
+		if(!empty($this->context_parameters['in_selector'])) {
+			$filters[] = 'catdef.libelle_categorie NOT LIKE "~%"';
 		}
 		return $filters;
 	}

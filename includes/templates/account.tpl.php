@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: account.tpl.php,v 1.28 2021/04/28 07:43:20 dgoron Exp $
+// $Id: account.tpl.php,v 1.28.6.1 2024/01/05 11:19:04 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -84,7 +84,7 @@ $account_form ="
 <div class='row'>
 	<div class='colonne3'>
 		<div class='row'>
-			<label for='' class='etiquette'>$msg[user_langue]</label>
+			<label for='user_lang' class='etiquette'>$msg[user_langue]</label>
 		</div>
 		<div class='row'>
 			!!combo_user_lang!!
@@ -93,7 +93,7 @@ $account_form ="
 	<div class='colonne_suite'>
 	<!--	Style/thème	-->
 		<div class='row'>
-			<label class='etiquette' for=''>$msg[935]</label>
+			<label class='etiquette' for='form_style'>$msg[935]</label>
 		</div>
 		<div class='row'>
 			!!combo_user_style!!
@@ -105,7 +105,7 @@ $account_form ="
 <!-- email -->
 <div class='row'>
 	<div class='colonne3'>
-		<label class='etiquette'>".$msg['email']." &nbsp;</label><br />
+		<label class='etiquette' for='form_user_email'>".$msg['email']." &nbsp;</label><br />
 		<input type='text' class='saisie-20em' id='form_user_email' name='form_user_email' value='!!user_email!!' autocomplete='off' />
 	</div>
     <hr />
@@ -114,7 +114,7 @@ $account_form ="
 <div class='row'>
 	<div class='colonne4'>
 		<div class='row'>
-			<label class='etiquette' for='form_nb_per_page_search'>$msg[nb_enreg_par_page]</label>
+			<label class='etiquette'>$msg[nb_enreg_par_page]</label>
 		</div>
 	</div>
 	<div class='colonne4'>
@@ -123,13 +123,13 @@ $account_form ="
 			<label class='etiquette' for='form_nb_per_page_search'>$msg[900]</label>
 		</div>
 		<div class='row'>
-			<input type='text' class='saisie-5em' name='form_nb_per_page_search' value='!!nb_per_page_search!!' size='4' />
+			<input type='text' class='saisie-5em' id='form_nb_per_page_search' name='form_nb_per_page_search' value='!!nb_per_page_search!!' size='4' />
 		</div>
 	</div>	
 	<div class='colonne4'>
 		<!--	Nombre d'enregistrements par page en sélection d'autorités	-->
 		<div class='row'>
-			<label class='etiquette'>${msg[901]}</label>
+			<label class='etiquette' for='form_nb_per_page_select'>${msg[901]}</label>
 		</div>
 		<div class='row'>
 			<input class='saisie-5em' type='text' id='form_nb_per_page_select' name='form_nb_per_page_select' value='!!nb_per_page_select!!' size='4' />
@@ -170,8 +170,8 @@ $account_form ="
 $user_acquisition_adr_form = "
 <div class='row'>
 	<div class='child'>
-		<div class='colonne2'>".htmlentities($msg['acquisition_adr_liv'], ENT_QUOTES, $charset)."</div>
-		<div class='colonne2'>".htmlentities($msg['acquisition_adr_fac'], ENT_QUOTES, $charset)."</div>
+		<div class='colonne2'><label for='adr_liv[!!id_bibli!!]' style='all:unset'>".htmlentities($msg['acquisition_adr_liv'], ENT_QUOTES, $charset)."</label></div>
+		<div class='colonne2'><label for='adr_fac[!!id_bibli!!]' style='all:unset'>".htmlentities($msg['acquisition_adr_fac'], ENT_QUOTES, $charset)."</label></div>
 	</div>
 </div>
 <div class='row'>

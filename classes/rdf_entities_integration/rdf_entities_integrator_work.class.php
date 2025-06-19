@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_integrator_work.class.php,v 1.16 2021/02/02 11:41:38 gneveu Exp $
+// $Id: rdf_entities_integrator_work.class.php,v 1.18 2022/03/22 08:43:16 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -62,7 +62,7 @@ class rdf_entities_integrator_work extends rdf_entities_integrator_authority {
 						'reference_field_name' => 'oeuvre_link_from',
 						'external_field_name' => 'oeuvre_link_to',
 						'other_fields' => array(
-								'oeuvre_link_expression' => '1',
+								'oeuvre_link_expression' => '0',
 								'oeuvre_link_other_link' => '0'
 						)
 				),
@@ -123,6 +123,10 @@ class rdf_entities_integrator_work extends rdf_entities_integrator_authority {
 		        "arguments" => array()
 		    ),
 		    'http://www.pmbservices.fr/ontology#has_expression' => array(
+		        "method" => array($this,"insert_linked_work"),
+		        "arguments" => array()
+		    ),
+		    'http://www.pmbservices.fr/ontology#has_other_link' => array(
 		        "method" => array($this,"insert_linked_work"),
 		        "arguments" => array()
 		    ),
@@ -271,12 +275,14 @@ class rdf_entities_integrator_work extends rdf_entities_integrator_authority {
 	}
 	
 	public function insert_linked_work($values) {
-	    
 	    foreach ($values as $value) {
 	        
 	        $relation_type_work = $this->store->get_property($value["value"], "pmb:relation_type_work");
 	        $work_uri = $this->store->get_property($value["value"], "pmb:has_work");
 	        $work = $this->integrate_entity($work_uri[0]['value'], true);
+	        if(empty($work['id'])){
+	            continue;
+	        }
 	        $this->entity_data['children'][] = $work;
 	        $oeuvre_link_type = $relation_type_work[0]['value'];
 	        
@@ -287,7 +293,7 @@ class rdf_entities_integrator_work extends rdf_entities_integrator_authority {
 	        
 	        $result = pmb_mysql_query($query_select);
 	        if (pmb_mysql_num_rows($result) > 0) {
-	            return;
+	            continue;
 	        }
 	        
 	        $oeuvre_link = marc_list_collection::get_instance('oeuvre_link');
@@ -300,24 +306,34 @@ class rdf_entities_integrator_work extends rdf_entities_integrator_authority {
 	        
 	        $oeuvre_link_order = ( intval($max_order) + 1);
 	        	        
-	        $query_insert = "INSERT INTO tu_oeuvres_links (oeuvre_link_from, oeuvre_link_to, oeuvre_link_type, oeuvre_link_expression, oeuvre_link_other_link, oeuvre_link_order)";
-	        $query_insert .= " VALUES ('".$this->entity_id."', '".$work['id']."', '".$oeuvre_link_type."', '".$oeuvre_link_expression."', '".$oeuvre_link_other_link."', '".$oeuvre_link_order."')";
-	        pmb_mysql_query($query_insert);
 	        
 	        if (!empty($oeuvre_link->attributes[$oeuvre_link_type])) {
-	            
+               
     	        $oeuvre_link_attributes = $oeuvre_link->attributes[$oeuvre_link_type];
-    	        if ($oeuvre_link_attributes['GROUP'] == "other_link") {
-    	            $oeuvre_link_other_link = 1;
-        	        $oeuvre_link_expression = 0;
-    	        }else {
-    	            $oeuvre_link_other_link = 0;
-        	        $oeuvre_link_expression = 1;
+    	        switch($oeuvre_link_attributes['GROUP']){
+    	            case "other_link":
+    	                $oeuvre_link_other_link = 1;
+    	                $oeuvre_link_expression = 0;
+    	                $reverse_oeuvre_link_expression = 0;
+    	                break;
+                    case "expression_of":
+                        $oeuvre_link_other_link = 0;
+                        $oeuvre_link_expression = 0;
+                        $reverse_oeuvre_link_expression = 1;
+                        break;
+                    case "have_expression":
+                        $oeuvre_link_other_link = 0;
+                        $oeuvre_link_expression = 1;
+                        $reverse_oeuvre_link_expression = 0;
+                        break;
     	        }
+    	        $query_insert = "INSERT INTO tu_oeuvres_links (oeuvre_link_from, oeuvre_link_to, oeuvre_link_type, oeuvre_link_expression, oeuvre_link_other_link, oeuvre_link_order)";
+    	        $query_insert .= " VALUES ('".$this->entity_id."', '".$work['id']."', '".$oeuvre_link_type."', '".$reverse_oeuvre_link_expression."', '".$oeuvre_link_other_link."', '".$oeuvre_link_order."')";
+    	        
+    	        pmb_mysql_query($query_insert);
+    	        
+    	        $this->cataloging_insert_reversed_link_work($oeuvre_link_expression, $oeuvre_link_other_link, $work['id'], $this->entity_id, $oeuvre_link_type);
 	        }
-	        
-	        $this->cataloging_insert_reversed_link_work($oeuvre_link_expression, $oeuvre_link_other_link, $work['id'], $this->entity_id, $oeuvre_link_type);
-	        
 	    }
 	}
 }

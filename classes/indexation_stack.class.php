@@ -1,11 +1,12 @@
 <?php
 // +-------------------------------------------------+
-// © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: indexation_stack.class.php,v 1.13.2.1 2021/12/02 16:14:35 gneveu Exp $
+// $Id: indexation_stack.class.php,v 1.17.2.6 2023/11/08 13:43:06 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/notice.class.php');
 require_once($class_path.'/indexation_record.class.php');
 require_once($class_path.'/indexations_collection.class.php');
@@ -18,9 +19,9 @@ require_once($class_path.'/onto/skos/onto_skos_autoposting.class.php');
 class indexation_stack {
 	
 	protected static $indexation_record;
-	protected static $onto_index;
+	protected static $onto_index= [];
 	protected static $self;
-	protected static $values = array();
+	protected static $values = [];
 	protected static $parent_entity;
 	
 	protected static $prefixes_type = [
@@ -41,34 +42,52 @@ class indexation_stack {
 	    TYPE_CONCEPT => "skos",
 	];
 	
-	public static function push($entity_id, $entity_type, $datatype = 'all') {
-		global $base_path, $pmb_indexation_needed;
-		if (!isset(self::$self)) {
-			self::$self = new indexation_stack();
+	protected static $context = '';
+	
+	protected static $exclude_datatypes = [
+	];
+	
+	protected static function is_indexation_needed() {
+		global $pmb_indexation_needed;
+		return $pmb_indexation_needed;
+	}
+	
+	public static function push($entity_id, $entity_type, $datatype = 'all',$informations = '') {
+		//on bloque les insertions annexes dans la pile depuis le planificateur
+		if(static::$context == 'scheduler' && static::class == 'indexation_stack') {
+			return;
 		}
-		if (array_key_exists($entity_type.'_'.$entity_id.'_'.$datatype, self::$values) || array_key_exists($entity_type.'_'.$entity_id.'_all', self::$values)) {
+		if(!empty(static::$exclude_datatypes) && in_array($datatype, static::$exclude_datatypes)) {
+			return;
+		}
+		if (!isset(static::$self)) {
+			static::$self = new indexation_stack();
+		}
+		if (array_key_exists($entity_type.'_'.$entity_id.'_'.$datatype, static::$values) || array_key_exists($entity_type.'_'.$entity_id.'_all', static::$values)) {
 			return;
 		}
 	
-		if(!$pmb_indexation_needed){
-			self::indexation_needed(1);
+		if(!static::is_indexation_needed()){
+			static::indexation_needed(1);
 		}
 	
-		if (empty(self::$values)) {
-			self::$parent_entity = array(
+		if (empty(static::$values)) {
+			static::$parent_entity = array(
 					'id' => $entity_id,
 					'type' => $entity_type
 			);
 		}
-		self::$values[$entity_type.'_'.$entity_id.'_'.$datatype] = array(
+		$dateTime = new \DateTime();
+		static::$values[$entity_type.'_'.$entity_id.'_'.$datatype] = array(
 				'entity_id' => $entity_id,
 				'entity_type' => $entity_type,
 				'datatype' => $datatype,
-				'timestamp' => microtime(true)*1000
+                'timestamp' => $dateTime->getTimestamp(),
+		        'informations' => $informations
 		);
 		
-		if (self::$prefixes_type[$entity_type]) {
-		    self::add_reciproc_entities(self::$prefixes_type[$entity_type], $entity_id);
+		if (static::$prefixes_type[$entity_type]) {
+		    static::add_reciproc_entities(static::$prefixes_type[$entity_type], $entity_id);
 		}
 		
 	}
@@ -83,7 +102,7 @@ class indexation_stack {
 		// si on a un token dans la base, et qu'on arrive sans ! On essaye de voir si ca n'a pas planter !
 		if (0 == $token && $pmb_indexation_in_progress != 0) {
 		    // ON récupère la prochaine entrée à ce faire réindexer
-	        $result = pmb_mysql_query("select  * from indexation_stack order by indexation_stack_timestamp, indexation_stack_entity_id, indexation_stack_entity_type, indexation_stack_datatype limit 1");
+	        $result = pmb_mysql_query("select  * from indexation_stack order by indexation_stack_timestamp, indexation_stack_entity_id, indexation_stack_entity_type, indexation_stack_datatype, indexation_stack_informations limit 1");
 	        if(pmb_mysql_num_rows($result) > 0){
 	            $row = pmb_mysql_fetch_assoc($result);
 	            // Si c'est la même que la dernière qu'on a indexé, il y a un souci, un flush le token pour en relancer une nouvelle
@@ -112,7 +131,7 @@ class indexation_stack {
  	                   
  	                }
  	                //Ca fait au moins 10 min que rien n'a bougé, on relance la machine
- 	                self::indexation_in_progress($token);
+ 	                static::indexation_in_progress($token);
 	            }
 	        }
 		}
@@ -133,36 +152,39 @@ class indexation_stack {
 		// Si on arrive, soit on a besoin de réindexer et le token en base  est zéro, soit on a le bon token
 		if($token == 0){
 		    $token = md5(microtime(true).'_toindex_'.random_bytes(12));
-		    self::indexation_in_progress($token);
+		    static::indexation_in_progress($token);
 		}
 			
 		$limit = 100;
 		
-		$query = "select * from indexation_stack order by indexation_stack_timestamp, indexation_stack_entity_id, indexation_stack_entity_type, indexation_stack_datatype limit ".$limit;
+		$query = "SELECT * 
+			FROM indexation_stack 
+			WHERE indexation_stack_datatype != 'scheduler'
+			ORDER BY indexation_stack_timestamp, indexation_stack_datatype limit ".$limit;
 		$result = pmb_mysql_query($query);
 		$nb_results = pmb_mysql_num_rows($result);
 		if ($nb_results < $limit) {
-			self::indexation_needed(0);
+			static::indexation_needed(0);
 		}
 		
 		if($nb_results){
 			while($row = pmb_mysql_fetch_assoc($result)){
-			    self::indexation_last_entity($row);
-				self::index_entity($row['indexation_stack_entity_id'], $row['indexation_stack_entity_type'], $row['indexation_stack_datatype']);	
+				static::index_entity($row['indexation_stack_entity_id'], $row['indexation_stack_entity_type'], $row['indexation_stack_datatype'], $row['indexation_stack_informations']);	
 			}
+			static::indexation_last_entity($row);
 		}
 		if ($nb_results < $limit) {
-		    self::indexation_in_progress(0);
+		    static::indexation_in_progress(0);
 		    return;
 		}
-		self::init_indexation($token);
+		static::init_indexation($token);
 	}
 	
-	public static function index_entity($entity_id, $entity_type, $datatype){
+	public static function index_entity($entity_id, $entity_type, $datatype,$informations){
 		switch($entity_type){
 			case TYPE_NOTICE:
 			    $info = notice::indexation_prepare($entity_id);
-				if($datatype == 'all'){
+			    if($datatype == 'all' || $datatype == 'scheduler'){
 					notice::majNotices($entity_id);
 				}
 				notice::majNoticesGlobalIndex($entity_id);
@@ -219,31 +241,44 @@ class indexation_stack {
 				//TODO
 				break;
 			case TYPE_CONCEPT:
-				if(!isset(static::$onto_index)){
-					static::$onto_index = new onto_skos_index();
-					static::$onto_index->load_handler('', skos_onto::get_store(), array(), skos_datastore::get_store(), array(), array(), 'http://www.w3.org/2004/02/skos/core#prefLabel');
+			    if(!isset(static::$onto_index['skos'])){
+					static::$onto_index['skos'] = new onto_skos_index();
+					static::$onto_index['skos']->load_handler('', skos_onto::get_store(), array(), skos_datastore::get_store(), array(), array(), 'http://www.w3.org/2004/02/skos/core#prefLabel');
 				}
-				static::$onto_index->maj($entity_id, '', $datatype);
+				static::$onto_index['skos']->maj($entity_id, '', $datatype);
 				break;
+			case TYPE_ONTOLOGY :
+			    if($informations == ""){
+			        // On n'en fera rien...
+			        break;
+			    } 
+			    if(!isset(static::$onto_index[$informations])){
+                    static::$onto_index[$informations] = onto_index::get_instance($informations);
+                    $ontology = ontologies::get_ontology_by_pmbname($informations);
+                    static::$onto_index[$informations]->set_handler($ontology->get_handler());
+			    }
+			    static::$onto_index[$informations]->maj($entity_id, '', $datatype);
+			    break;
 		}
 		$query = "delete from indexation_stack where indexation_stack_entity_type = '".$entity_type."'
-				and indexation_stack_entity_id = '".$entity_id."' and indexation_stack_datatype = '".$datatype."' ";
+				and indexation_stack_entity_id = '".$entity_id."' and indexation_stack_datatype = '".addslashes($datatype)."'";
 		pmb_mysql_query($query);
+		unset(static::$values[$entity_type.'_'.$entity_id.'_'.$datatype]);
 	}
 	
 	public function __destruct() {
 		global $dbh;
 		
-		if (!empty(self::$values)) {
+		if (!empty(static::$values)) {
 			$dbh = connection_mysql();
 			$values = '';
-			foreach (self::$values as $value) {
+			foreach (static::$values as $value) {
 				if ($values) {
 					$values.= ',';
 				}
-				$values.= '("'.$value['entity_id'].'", "'.$value['entity_type'].'", "'.$value['datatype'].'", "'.$value['timestamp'].'", "'.self::$parent_entity['id'].'", "'.self::$parent_entity['type'].'")';
+				$values.= '("'.$value['entity_id'].'", "'.$value['entity_type'].'", "'.$value['datatype'].'", "'.$value['timestamp'].'", "'.static::$parent_entity['id'].'", "'.static::$parent_entity['type'].'","'.$value['informations'].'")';
 			}
-			$query = 'insert into indexation_stack (indexation_stack_entity_id, indexation_stack_entity_type, indexation_stack_datatype, indexation_stack_timestamp, indexation_stack_parent_id, indexation_stack_parent_type)
+			$query = 'insert ignore into indexation_stack (indexation_stack_entity_id, indexation_stack_entity_type, indexation_stack_datatype, indexation_stack_timestamp, indexation_stack_parent_id, indexation_stack_parent_type, indexation_stack_informations)
 				values '.$values;
 			pmb_mysql_query($query);
 		}
@@ -251,11 +286,14 @@ class indexation_stack {
 	
 	public static function get_indexation_state(){
 		global $pmb_indexation_in_progress;
-		self::init_indexation();
+		static::init_indexation();
 		if (!$pmb_indexation_in_progress) {
 			return array();
 		}
-		$query = 'SELECT count(indexation_stack_entity_id) as nb_entity, indexation_stack_entity_type as entity_type, indexation_stack_parent_id as parent_id, indexation_stack_parent_type as parent_type from indexation_stack group by indexation_stack_parent_type, indexation_stack_parent_id, indexation_stack_entity_type order by indexation_stack_timestamp';
+		$query = 'SELECT count(indexation_stack_entity_id) as nb_entity, indexation_stack_entity_type as entity_type, indexation_stack_parent_id as parent_id, indexation_stack_parent_type as parent_type 
+			FROM indexation_stack 
+			GROUP BY indexation_stack_parent_type, indexation_stack_parent_id, indexation_stack_entity_type 
+			ORDER BY indexation_stack_timestamp';
 		$result = pmb_mysql_query($query);
 		$data = array();
 		if(pmb_mysql_num_rows($result)){
@@ -263,12 +301,12 @@ class indexation_stack {
 				
 				if(!isset($data[$row['parent_type'].'_'.$row['parent_id']])){
 					$data[$row['parent_type'].'_'.$row['parent_id']] = array(
-						'label' => self::get_entity_isbd($row['parent_type'], $row['parent_id']),
+						'label' => static::get_entity_isbd($row['parent_type'], $row['parent_id']),
 						'children' => array()
 					);					
 				}
 				$data[$row['parent_type'].'_'.$row['parent_id']]['children'][] = array(
-					'entity_label' => self::get_label_from_type($row['entity_type']),
+					'entity_label' => static::get_label_from_type($row['entity_type']),
 					'nb' => $row['nb_entity'],
 				);
 			}
@@ -276,7 +314,7 @@ class indexation_stack {
 		return $data;
 	}
 	
-	protected static function get_entity_isbd($entity_type, $entity_id) {
+	public static function get_entity_isbd($entity_type, $entity_id) {
 		global $msg;
 		$label = '';
 		switch ($entity_type) {
@@ -421,8 +459,8 @@ class indexation_stack {
 	    if (pmb_mysql_num_rows($result)) {
 	        while($row = pmb_mysql_fetch_array($result)){
 	            $option = _parser_text_no_function_("<?xml version='1.0' encoding='".$charset."'?>\n".$row['options'], "OPTIONS");
-	            if ($option["RECIPROC"][0]["value"] == "yes") {
-	                $entity_type = self::get_type_from_datatype($option["DATA_TYPE"][0]["value"]);
+	            if (!empty($option["RECIPROC"][0]["value"]) && $option["RECIPROC"][0]["value"] == "yes") {
+	                $entity_type = static::get_type_from_datatype($option["DATA_TYPE"][0]["value"]);
 	                $query_custom = "
                         SELECT " . $prefix . "_custom_" . $row['datatype'] . " FROM " . $prefix . "_custom_values 
                         WHERE " . $prefix . "_custom_champ = " . $row['idchamp'] . " 
@@ -431,11 +469,12 @@ class indexation_stack {
 	                if (pmb_mysql_num_rows($result_custom)) {
 	                    while($row_custom = pmb_mysql_fetch_array($result_custom)){
 	                        if (intval($row_custom[$prefix . "_custom_" . $row['datatype']])) {
-    	                        self::$values[$entity_type.'_'.$row_custom[$prefix . "_custom_" . $row['datatype']].'_all'] = array(
+	                            $dateTime = new \DateTime();
+    	                        static::$values[$entity_type.'_'.$row_custom[$prefix . "_custom_" . $row['datatype']].'_all'] = array(
     	                            'entity_id' => $row_custom[$prefix . "_custom_" . $row['datatype']],
     	                            'entity_type' => $entity_type,
     	                            'datatype' => "reciproc_pperso",
-    	                            'timestamp' => microtime(true)*1000
+    	                            'timestamp' => $dateTime->getTimestamp()
     	                        );
 	                        }
 	                    }
@@ -451,5 +490,19 @@ class indexation_stack {
 	        return TYPE_AUTHPERSO;
 	    }
 	    return $type;
+	}
+	
+	public static function set_context($context) {
+		static::$context = $context;
+	}
+	
+	public static function set_exclude_datatypes($exclude_datatypes) {
+		static::$exclude_datatypes = $exclude_datatypes;
+	}
+	
+	public static function add_exclude_datatype($exclude_datatype) {
+		if(!in_array($exclude_datatype, static::$exclude_datatypes)) {
+			static::$exclude_datatypes[] = $exclude_datatype;
+		}
 	}
 }

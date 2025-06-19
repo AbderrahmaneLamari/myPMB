@@ -1,0 +1,9 @@
+#pmb_plan .pmb_menu_item {
+    font: var(--font-subtitle)!important;
+    margin-top: 12px!important;
+}
+
+#pmb_plan .pmb_menu_child_item {
+    margin-top: 0!important;
+    font-size: 2rem!important;
+  }

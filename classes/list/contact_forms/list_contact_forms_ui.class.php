@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_contact_forms_ui.class.php,v 1.9.2.1 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_contact_forms_ui.class.php,v 1.11.4.1 2023/03/24 07:55:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -83,21 +83,6 @@ class list_contact_forms_ui extends list_ui {
 		$this->set_setting_display('query', 'human', false);
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
-	}
-	
 	protected function get_cell_content($object, $property) {
 		global $msg, $charset;
 		
@@ -119,23 +104,17 @@ class list_contact_forms_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch ($property) {
 			case 'parameters':
 			case 'recipients':
 			case 'objects':
-				$attributes = array(
-				);
-				break;
+				return array();
 			default:
-				$attributes = array(
-					'onclick' => "document.location=\"".static::get_controller_url_base()."&action=edit&id=".$object->get_id()."\""
+				return array(
+						'onclick' => "document.location=\"".static::get_controller_url_base()."&action=edit&id=".$object->get_id()."\""
 				);
-				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_button_add() {

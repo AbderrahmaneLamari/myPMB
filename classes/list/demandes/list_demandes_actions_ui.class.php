@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_demandes_actions_ui.class.php,v 1.6.2.1 2021/08/12 13:36:41 dgoron Exp $
+// $Id: list_demandes_actions_ui.class.php,v 1.8.4.1 2023/03/24 07:55:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,7 +54,7 @@ class list_demandes_actions_ui extends list_demandes_ui {
 	    $this->add_applied_sort('id_action');
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'titre_demande');
 	}
 	
@@ -239,11 +239,9 @@ class list_demandes_actions_ui extends list_demandes_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		$attributes['onclick'] = "window.location=\"./demandes.php?categ=action&act=see&idaction=".$object->id_action."#fin\"";
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 }

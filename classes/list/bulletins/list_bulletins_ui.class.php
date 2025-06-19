@@ -2,19 +2,17 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_bulletins_ui.class.php,v 1.1.2.8 2022/01/20 15:28:21 dgoron Exp $
+// $Id: list_bulletins_ui.class.php,v 1.16.4.3 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class list_bulletins_ui extends list_ui {
 		
-	protected function _get_query_base() {
-		$query = 'SELECT bulletin_id FROM bulletins';
-		return $query;
-	}
+	protected $bulletins_data;
 	
-	protected function get_object_instance($row) {
-		return new bulletinage($row->bulletin_id,0,'',$this->filters['docs_location_id'],false);
+	protected function _get_query_base() {
+		$query = 'SELECT bulletin_id as id, bulletins.* FROM bulletins';
+		return $query;
 	}
 	
 	protected function is_visible_object($row) {
@@ -38,7 +36,9 @@ class list_bulletins_ui extends list_ui {
 	
 	protected function fetch_data() {
 		parent::fetch_data();
-		$this->pager['nb_results'] = count($this->objects);
+		if($this->filters['docs_location_id']) {
+			$this->pager['nb_results'] = count($this->objects);
+		}
 	}
 	
 	/**
@@ -205,49 +205,103 @@ class list_bulletins_ui extends list_ui {
 		$this->add_selection_action('caddie', $msg['400'], 'basket_small_20x20.gif', $link);
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['serial_id']) {
-			$filters [] = 'bulletin_notice = "'.$this->filters['serial_id'].'"';
-		}
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('serial_id', 'bulletin_notice', 'integer');
 		if($this->filters['bulletin_numero']) {
-			$filters [] = 'bulletin_numero like "%'.str_replace('*','%', $this->filters['bulletin_numero']).'%"';
+			$this->query_filters [] = 'bulletin_numero like "%'.str_replace('*','%', $this->filters['bulletin_numero']).'%"';
 		}
-		if($this->filters['date_date_start']) {
-			$filters [] = 'date_date >= "'.$this->filters['date_date_start'].'"';
-		}
-		if($this->filters['date_date_end']) {
-			$filters [] = 'date_date < "'.$this->filters['date_date_end'].'"';
-		}
+		$this->_add_query_filter_interval_restriction('date_date', 'date_date', 'date');
 		if($this->filters['mention_date']) {
-			$filters [] = 'mention_date like "%'.str_replace('*','%', $this->filters['mention_date']).'%"';
+			$this->query_filters [] = 'mention_date like "%'.str_replace('*','%', $this->filters['mention_date']).'%"';
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
+		if($this->filters['ids']) {
+			$this->query_filters [] = 'bulletin_id IN ('.$this->filters['ids'].')';
 		}
-		return $filter_query;
+	}
+	
+	/**
+	 * Fonction de callback
+	 * @param object $a
+	 * @param object $b
+	 * @param number $index
+	 * @return number
+	 */
+	protected function _compare_objects($a, $b, $index=0) {
+		if($this->applied_sort[$index]['by']) {
+			$sort_by = $this->applied_sort[$index]['by'];
+			switch($sort_by) {
+				case 'bulletin_numero':
+					$matches_a = array();
+					$matches_b = array();
+					$bulletin_numero_a = 0;
+					preg_match_all('!\d+!', $a->bulletin_numero, $matches_a);
+					if(!empty($matches_a[0][0])) {
+						$bulletin_numero_a = $matches_a[0][0];
+						if(!empty($matches_a[0][1])) {
+							$bulletin_numero_a .= ".".$matches_a[0][1];
+						}
+						if(!empty($matches_a[0][2])) {
+							$bulletin_numero_a .= $matches_a[0][2];
+						}
+					}
+					
+					$bulletin_numero_b = 0;
+					preg_match_all('!\d+!', $b->bulletin_numero, $matches_b);
+					if(!empty($matches_b[0][0])) {
+						$bulletin_numero_b = $matches_b[0][0];
+						if(!empty($matches_b[0][1])) {
+							$bulletin_numero_b .= ".".$matches_b[0][1];
+						}
+						if(!empty($matches_b[0][2])) {
+							$bulletin_numero_b .= $matches_b[0][2];
+						}
+					}
+					return $this->floatcmp($bulletin_numero_a, $bulletin_numero_b);
+					break;
+				case 'date_date':
+					return strcmp($a->date_date, $b->date_date);
+				default :
+					return parent::_compare_objects($a, $b, $index);
+			}
+		}
+	}
+	
+	protected function _get_object_property_nb_analysis($object) {
+		if(!isset($this->bulletins_data[$object->bulletin_id]['nb_analysis'])) {
+			$query = "SELECT count(1) from analysis where analysis_bulletin='".$object->bulletin_id."' ";
+			$result = pmb_mysql_query($query);
+			$this->bulletins_data[$object->bulletin_id]['nb_analysis'] = pmb_mysql_result($result, 0, 0);
+		}
+		return $this->bulletins_data[$object->bulletin_id]['nb_analysis'];
 	}
 	
 	protected function _get_object_property_nb_expl($object) {
-		if (!empty($object->expl) && is_array($object->expl)) {
-			return count($object->expl);
+		global $pmb_droits_explr_localises, $explr_invisible;
+		
+		if(!isset($this->bulletins_data[$object->bulletin_id]['nbexpl'])) {
+			// visibilité des exemplaires:
+			if ($pmb_droits_explr_localises && $explr_invisible) $where_expl_localises = " and expl_location not in ($explr_invisible)";
+			else $where_expl_localises = "";
+			if ($this->filters['docs_location_id'] > 0) $where_localisation =" and expl_location=".$this->filters['docs_location_id']." ";
+			else $where_localisation = "";
+			
+			$query = "SELECT count(1) 
+				FROM exemplaires, docs_location
+				WHERE exemplaires.expl_bulletin=".$object->bulletin_id."$where_expl_localises $where_localisation
+				AND docs_location.idlocation=exemplaires.expl_location";
+			$result = pmb_mysql_query($query);
+			$this->bulletins_data[$object->bulletin_id]['nbexpl'] = pmb_mysql_result($result, 0, 0);
 		}
-		return '';
+		return $this->bulletins_data[$object->bulletin_id]['nbexpl'];
 	}
 	
 	protected function _get_object_property_nb_explnum($object) {
-		if($object->nbexplnum) {
-			return $object->nbexplnum;
+		if(!isset($this->bulletins_data[$object->bulletin_id]['nbexplnum'])) {
+			$query = "SELECT count(1) FROM explnum WHERE explnum_bulletin='".$object->bulletin_id."' ";
+			$result = pmb_mysql_query($query);
+			$this->bulletins_data[$object->bulletin_id]['nbexplnum'] = pmb_mysql_result($result, 0, 0);
 		}
-		return '';
+		return $this->bulletins_data[$object->bulletin_id]['nbexplnum'];
 	}
 	
 	protected function get_collstates($object) {
@@ -272,8 +326,9 @@ class list_bulletins_ui extends list_ui {
 		$content = '';
 		switch($property) {
 			case 'nb_analysis':
-				if ($object->nb_analysis) {
-					$content .= $object->nb_analysis."&nbsp;<img src='".get_url_icon('basket_small_20x20.gif')."' class='align_middle' alt='basket' title='".$msg[400]."' onClick=\"openPopUp('./cart.php?object_type=BULL&item=".$object->bulletin_id."&what=DEP', 'cart')\" style='cursor:pointer;'>";
+				$nb_analysis = $this->_get_object_property_nb_analysis($object);
+				if ($nb_analysis) {
+					$content .= $nb_analysis."&nbsp;<img src='".get_url_icon('basket_small_20x20.gif')."' class='align_middle' alt='basket' title='".$msg[400]."' onClick=\"openPopUp('./cart.php?object_type=BULL&item=".$object->bulletin_id."&what=DEP', 'cart')\" style='cursor:pointer;'>";
 				}
 				break;
 			case 'collstates':
@@ -292,18 +347,16 @@ class list_bulletins_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		switch($property) {
 			case 'nb_analysis':
 				break;
 			default:
-				$attributes['onclick'] = "window.location=\"".bulletinage::get_permalink($object->bulletin_id)."\"";
+				$attributes['href'] = bulletinage::get_permalink($object->bulletin_id);
 				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	protected function get_display_cell_html_value($object, $value) {
@@ -313,6 +366,10 @@ class list_bulletins_ui extends list_ui {
 	}
 	
 	protected function get_name_selected_objects() {
+		return "checkbox_bulletin";
+	}
+	
+	protected static function get_name_selected_objects_from_form() {
 		return "checkbox_bulletin";
 	}
 	

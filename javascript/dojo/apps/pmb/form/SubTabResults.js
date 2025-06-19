@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SubTabResults.js,v 1.8 2021/02/02 09:48:19 btafforeau Exp $
+// $Id: SubTabResults.js,v 1.8.6.2 2023/12/27 13:52:40 tsamson Exp $
 
 
 define([
@@ -126,11 +126,13 @@ define([
 					//Link remapping
 					var results = query('a[onclick][data-element-id]');
 					results.forEach(lang.hitch(this, function(a){
-						on(a, 'click', lang.hitch(this, function(a){
+						on(a, 'click', lang.hitch(this, function(a, e){
+							e.preventDefault();
+							e.stopPropagation();
 							topic.publish('SubTabResults', 'eltClicked', 
 								{
 									id: domAttr.get(a, 'data-element-id'), 
-									type: this.parameters.queryParameters.what,
+									type: domAttr.get(a, 'data-element-type'),
 								}
 							);	
 						}, a));

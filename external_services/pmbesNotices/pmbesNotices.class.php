@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesNotices.class.php,v 1.32.2.1 2021/07/30 08:11:53 dgoron Exp $
+// $Id: pmbesNotices.class.php,v 1.33.4.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -18,18 +18,6 @@ require_once $class_path."/notice_relations_collection.class.php";
 require_once $class_path."/acces.class.php";
 
 class pmbesNotices extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	public function fetchNoticeList($noticelist, $recordFormat, $recordCharset, $includeLinks, $includeItems, $cleanHTML=false) {
 		//Je filtre les notices en fonction des droits

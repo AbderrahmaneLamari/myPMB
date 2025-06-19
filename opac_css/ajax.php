@@ -2,14 +2,20 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax.php,v 1.28 2021/04/12 10:38:43 btafforeau Exp $
+// $Id: ajax.php,v 1.30.4.2 2023/08/30 15:04:14 dgoron Exp $
 
 $base_path = ".";
 $base_noheader = 1;
 $base_nobody = 1;
+$base_is_http_request=1;
 
 //Il me faut le charset pour la suite
 require_once($base_path."/includes/init.inc.php");
+
+global $include_path, $charset, $module, $plugin, $sub;
+global $pmb_indexation_lang;
+global $opac_opac_view_activate, $opac_view, $pmb_opac_view_class;
+
 require_once($base_path."/includes/error_report.inc.php") ;
 require_once($base_path.'/includes/opac_config.inc.php');
 // récupération paramètres MySQL et connection á la base
@@ -82,6 +88,8 @@ switch($module) {
 	case 'cms':
 	case 'dsi':
 	case 'animations':
+	case 'digital_signature':
+	case 'empr':
 		include($main_file);
 	break;
 	case 'empr_extended':
@@ -89,11 +97,6 @@ switch($module) {
 	break;
 	case "selectors":
 	    // classes pour la gestion des sélecteurs
-	    if(!isset($autoloader) || !is_object($autoloader)){
-	        require_once($class_path."/autoloader.class.php");
-	        $autoloader = new autoloader();
-	    }
-	    $autoloader->add_register("selectors_class",true);
 	    
 	    require_once($base_path.'/selectors/classes/selector_controller.class.php');
 	    if(!isset($user_input)) $user_input = '';

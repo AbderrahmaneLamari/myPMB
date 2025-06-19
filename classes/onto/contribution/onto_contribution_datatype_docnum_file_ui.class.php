@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_docnum_file_ui.class.php,v 1.1.10.2 2021/07/27 07:13:26 rtigero Exp $
+// $Id: onto_contribution_datatype_docnum_file_ui.class.php,v 1.3 2021/07/27 07:23:52 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

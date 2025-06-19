@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: aut_pass1.inc.php,v 1.19.8.1 2021/12/13 15:31:04 dgoron Exp $
+// $Id: aut_pass1.inc.php,v 1.21 2022/02/28 13:44:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -20,14 +20,17 @@ print "<br /><br /><h2 class='center'>".htmlentities($msg["nettoyage_suppr_auteu
 
 $res = pmb_mysql_query("SELECT author_id from authors left join responsability on responsability_author=author_id where responsability_author is null and author_see=0 ");
 $affected=0;
-if($affected = pmb_mysql_num_rows($res)){
+if(pmb_mysql_num_rows($res)){
 	while ($ligne=pmb_mysql_fetch_object($res)) {
 		$auteur=new auteur($ligne->author_id);
-		$auteur->delete();
+		$deleted = $auteur->delete();
+		if(!$deleted) {
+			$affected++;
+		}
 	}
 }
 
-//Nettoyage des informations d'autorités pour les sous collections
+//Nettoyage des informations d'autorités pour les auteurs
 auteur::delete_autority_sources();
 
 // mise à jour de l'affichage de la jauge

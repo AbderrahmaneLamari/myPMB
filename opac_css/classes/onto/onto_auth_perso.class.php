@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_auth_perso.class.php,v 1.7.2.3 2021/08/12 07:50:17 qvarin Exp $
+// $Id: onto_auth_perso.class.php,v 1.10 2021/08/12 08:17:05 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -39,13 +39,13 @@ class onto_auth_perso extends onto_parametres_perso {
 							<rdfs:range rdf:resource='" . $this->uri_range . "'/>
 							<pmb:datatype rdf:resource='" . $this->uri_datatype . "'/>";
 								$onto.= $this->optional_properties;
-								
+					
 					$type = $t_field["TYPE"] ?? ($t_field["type"] ?? "");
 					if (strpos($type, 'i18n') !== false) {
 					    $onto .= "
 							<pmb:multilingue>1</pmb:multilingue>";
 					}
-					
+								
 					$onto.= "
 							<pmb:is_cp>1</pmb:is_cp>
 							<pmb:name>" . $this->uri_description . "</pmb:name>";
@@ -139,6 +139,6 @@ class onto_auth_perso extends onto_parametres_perso {
         	    <pmb:name>has_responsability_authperso</pmb:name>
         	    <pmb:flag>author</pmb:flag>
             </rdf:Description>";
-         return $onto;
+	    return $onto;
 	}
 }

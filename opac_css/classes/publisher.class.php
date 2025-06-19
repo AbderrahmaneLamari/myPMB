@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: publisher.class.php,v 1.46.6.1 2021/12/24 13:23:41 dgoron Exp $
+// $Id: publisher.class.php,v 1.49 2022/09/22 13:47:46 arenou Exp $
 
 // définition de la classe de gestion des 'editeurs'
 
@@ -46,7 +46,7 @@ class publisher {
 	// ---------------------------------------------------------------
 
 	public function __construct($id) {
-		$this->id = $id+0;
+		$this->id = intval($id);
 		$this->getData();
 	}
 
@@ -185,17 +185,9 @@ class publisher {
 	}
 	
 	public function get_isbd() {
-		global $include_path, $opac_authorities_templates_folder;
-		
-		if(!$this->isbd_tpl && $opac_authorities_templates_folder){
-			if(!$opac_authorities_templates_folder){
-				$opac_authorities_templates_folder = 'common';
-			}
-			$template_path =  $include_path.'/templates/authorities/common/isbd/publisher.html';
-			if(file_exists($include_path.'/templates/authorities/'.$opac_authorities_templates_folder."/isbd/publisher_subst.html")){
-				$template_path =  $include_path.'/templates/authorities/'.$opac_authorities_templates_folder."/isbd/publisher_subst.html";
-			}
-			
+		if(!$this->isbd_tpl ){
+			$authority = $this->get_authority();
+			$template_path =  $authority->find_template("isbd");				
 			if(file_exists($template_path)){
 				$h2o = H2o_collection::get_instance($template_path);
 				$this->isbd_tpl = str_replace(array("\n", "\t", "\r"), '', strip_tags($h2o->render(array('publisher' => $this->get_authority()))));

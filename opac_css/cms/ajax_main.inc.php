@@ -2,28 +2,38 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.7 2021/02/09 13:43:57 dgoron Exp $
+// $Id: ajax_main.inc.php,v 1.10 2022/11/14 10:30:47 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("cms_modules",true);
-
 switch($categ){
 	case "document" :
+		//Mise en cache des images
+		//on ajoute des entêtes qui autorisent le navigateur à faire du cache...
+		$headers = getallheaders();
+		//une journée
+		$offset = 60 * 60 * 24 ;
+		if (isset($headers['If-Modified-Since']) && (strtotime($headers['If-Modified-Since']) <= time())) {
+			header('Last-Modified: '.$headers['If-Modified-Since'], true, 304);
+			return;
+		}else{
+			header('Expired: '.gmdate("D, d M Y H:i:s", time() + $offset).' GMT', true);
+			header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT', true, 200);
+		}
 		$doc = new cms_document($id);
 		switch($action){
 			case "thumbnail" :
 				$doc->render_thumbnail();
 				break;	
 			case "render" :
+				global $mode;
+				
 				if($doc->get_num_storage()) {
 					if($pmb_logs_activate) {
 						generate_log();
 					}
 					session_write_close();
-					$doc->render_doc();
+					$doc->render_doc($mode);
 				}
 				break;
 		}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_universe.class.php,v 1.22.2.12 2021/12/20 09:46:52 tsamson Exp $
+// $Id: search_universe.class.php,v 1.42.4.5 2023/12/04 12:50:39 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -31,9 +31,13 @@ class search_universe {
 	
 	protected $rmc_enabled;
 	
+	protected $universe_settings;
+	
 	protected static $universes_labels;
 	
 	public static $current_universe_id = 0;
+	
+	public static $segments_dynamic_params = [];
 	
 	/**
 	 * pour faire transiter la recherche initiale et eviter toutes les globales
@@ -72,6 +76,7 @@ class search_universe {
     				$this->default_segment = $row["search_universe_default_segment"];
 				}
 				$this->rmc_enabled = $row["search_universe_rmc_enabled"];
+				$this->universe_settings = encoding_normalize::json_decode($row["search_universe_settings"]);
 			}
 		}
 	}
@@ -81,7 +86,7 @@ class search_universe {
 	}
 	
 	public function get_translated_label() {
-		return translation::get_text($this->id, 'search_universes', 'search_universe_label',  $this->label);
+		return translation::get_translated_text($this->id, 'search_universes', 'universe_label',  $this->label);
 	}
 	
 	public function get_description() {
@@ -89,7 +94,7 @@ class search_universe {
 	}
 	
 	public function get_translated_description() {
-		return translation::get_text($this->id, 'search_universes', 'search_universe_description',  $this->description);
+		return translation::get_translated_text($this->id, 'search_universes', 'universe_description',  $this->description);
 	}
 		
 	public function get_template_directory() {
@@ -105,6 +110,7 @@ class search_universe {
 		global $charset;
 		global $search_universe_form;
 		global $search_universe_segment_list;
+		global $search_universe_type;
 		
 		$default_segment = $this->get_default_segment();
 		$segment_list = $this->get_segments();
@@ -114,9 +120,13 @@ class search_universe {
 		
 		$html = $search_universe_form;
 		$html = str_replace('!!search_universe_tabs!!', $this->get_display_search_view(), $html);
-		$html = str_replace('!!universe_label!!', htmlentities($this->label, ENT_QUOTES, $charset), $html);
-		$html = str_replace('!!universe_description!!', htmlentities($this->description, ENT_QUOTES, $charset), $html);
-		$html = str_replace('!!universe_segment_list!!', $search_universe_segment_list, $html);
+		$html = str_replace('!!universe_label!!', htmlentities($this->get_translated_label(), ENT_QUOTES, $charset), $html);
+		$html = str_replace('!!universe_description!!', htmlentities($this->get_translated_description(), ENT_QUOTES, $charset), $html);
+		if("perio_a2z" == $search_universe_type && $this->has_perio_enabled()){
+		    $html = str_replace('!!universe_segment_list!!', "", $html);
+		} else {
+		    $html = str_replace('!!universe_segment_list!!', $search_universe_segment_list, $html);
+		}
 		
 		$last_query = "";
 		if (static::$start_search["launch_search"]) {
@@ -158,8 +168,8 @@ class search_universe {
 	    if ($default_segment != 0) {
 	        $url_default_segment = $base_path."/index.php?lvl=search_segment&action=segment_results&id=" . $default_segment;
 	    }
-	    $url .= static::get_parameters();
-	    $url_default_segment .= static::get_parameters();
+	    $url .= static::get_segments_dynamic_params();
+	    $url_default_segment .= static::get_segments_dynamic_params();
 	    
 	    search_universes_search_view::set_object_id($this->id);
 	    search_universes_search_view::set_universe($this);
@@ -174,11 +184,13 @@ class search_universe {
 		global $search_universe_segment_list;
 		global $msg;
 		
-		$this->get_segments();		
-		if (count($this->segments) <= 1) {
-		    return "";
-		}
+		$this->get_segments();	
+		
 		$segment_list = "<h4 class='new_search_segment_title'><span class='fa fa-search'></span> ". $msg["search_segment_new_search"] ." \"". stripslashes($this->get_universe_query())."\"</h4>";
+
+		if (count($this->segments) <= 1) {
+			return $segment_list;
+		}
 		$segment_list .= $search_universe_segment_list;
 		$segment_list = str_replace('!!universe_segments_form!!', $this->get_segments_form($segment_id), $segment_list);
 		$segment_list = str_replace('!!universe_id!!', $this->get_id(), $segment_list);
@@ -219,7 +231,10 @@ class search_universe {
 		pmb_mysql_query($query.$query_clause);
 		if(!$this->id){
 			$this->id = pmb_mysql_insert_id();			
-		}		
+		}
+		$translation = new translation($this->id, "search_universes");
+		$translation->update("universe_label");
+		$translation->update("universe_description");
 	}
 	
 	public static function delete($id) {
@@ -237,9 +252,12 @@ class search_universe {
 			$result = pmb_mysql_query($query);
 			if (pmb_mysql_num_rows($result)) {
 				while($row = pmb_mysql_fetch_assoc($result)) {
-					$this->segments[] = search_segment::get_instance($row['id_search_segment']);
+					$segment = search_segment::get_instance($row['id_search_segment']);
+					static::$segments_dynamic_params = array_merge(static::$segments_dynamic_params, $segment->get_set()->get_dynamic_params());
+					$this->segments[] = $segment;
 				}
 			}
+			static::$segments_dynamic_params = array_unique(static::$segments_dynamic_params);
 		}
 		return $this->segments;		
 	}
@@ -268,16 +286,20 @@ class search_universe {
 		
 		if (is_array($segments) && count($segments)) {
 			foreach ($segments as $segment) {
-				$segment_form = str_replace("!!segment_label!!", htmlentities(stripslashes($segment->get_label()), ENT_QUOTES, $charset), $search_universe_segments_form_row); 
-				$segment_form = str_replace("!!segment_description!!", htmlentities($segment->get_description(), ENT_QUOTES, $charset), $segment_form);
+			    $segment_form = str_replace("!!segment_label!!", htmlentities(stripslashes($segment->get_translated_label()), ENT_QUOTES, $charset), $search_universe_segments_form_row); 
+			    $segment_form = str_replace("!!segment_description!!", htmlentities($segment->get_translated_description(), ENT_QUOTES, $charset), $segment_form);
 				if($segment->get_logo()){
 					$segment_form = str_replace("!!segment_logo!!", $search_universe_segment_logo, $segment_form);
 					$segment_form = str_replace("!!segment_logo!!", $segment->get_logo(), $segment_form);
 				}
 				$segment_form = str_replace("!!segment_logo!!", '', $segment_form);
-				
 				$segment_form = str_replace("!!segment_id!!", $segment->get_id(), $segment_form);
 				
+				$segment_url = "./index.php?lvl=search_segment&action=segment_results&id=" . $segment->get_id();
+				$segment_url .= search_universe::get_segments_dynamic_params();
+				
+				$segment_form = str_replace("!!segment_dynamic_field!!", $segment->use_dynamic_field(), $segment_form);
+				$segment_form = str_replace("!!segment_url!!", $segment_url, $segment_form);
 				$segement_selected = "";
 				$button_dialog_universe_associated = "";
 				if ($segment_id == $segment->get_id()) {
@@ -338,7 +360,7 @@ class search_universe {
 	}
 	
 	public static function get_label_from_id($universe_id) {
-	    $universe_id *=1;
+	    $universe_id = intval($universe_id);
 	    if ($universe_id) {
     	    if (isset(static::$universes_labels[$universe_id])) {
     	        return static::$universes_labels[$universe_id];
@@ -353,7 +375,7 @@ class search_universe {
     	    $result = pmb_mysql_query($query);
     	    if ($result) {
     	        $row = pmb_mysql_fetch_assoc($result);
-    	        static::$universes_labels[$universe_id] = $row["search_universe_label"];
+    	        static::$universes_labels[$universe_id] = translation::get_translated_text($universe_id, 'search_universes', 'universe_label',  $row["search_universe_label"]);
     	        return static::$universes_labels[$universe_id];
     	    }
 	    }
@@ -366,8 +388,10 @@ class search_universe {
 	
 	
 	public function get_universe_query() {
-	    switch (self::$start_search["type"]) {
-	        case "extended":
+	    switch (true) {
+	        case (!empty(self::$start_search["shared_query"])):
+	            return self::$start_search["shared_query"];
+	        case (self::$start_search["type"] == "extended"):
                 return self::$start_search["human_query"] ?? self::$start_search["query"];
 	        default :
 	            return self::$start_search["query"];
@@ -382,11 +406,25 @@ class search_universe {
 	    if (!empty($_GET)) {
 	        foreach ($_GET as $key => $value) {
 	            if (!in_array($key, ["lvl", "id", "action", "module", "categ", "sub", "new_search", "user_rmc", "user_query", "segment_json_search"])) {
-	                $get_parameters .= "&$key=$value";
+	                $get_parameters .= "&$key=".rawurlencode($value);
 	            }
 	        }
 	    }
 	    return $get_parameters;
+	}
+	
+	/*
+	 * pour recuperer les parametes GET
+	 */
+	public static function get_segments_dynamic_params() {
+	    $segments_params = "";
+	    foreach (static::$segments_dynamic_params as $key => $value) {
+            global ${$key};
+            if (isset(${$key})) {
+                $segments_params .= "&$key=${$key}";
+            }
+	    }
+	    return $segments_params;
 	}
 	
 	/**
@@ -458,11 +496,28 @@ class search_universe {
 	
 	public static function is_segments_in_current_universe(array $segments_tab) {
 	    $ids = array_keys($segments_tab);
-	    $query = "SELECT id_search_segment FROM search_segments WHERE id_search_segment IN (".implode(",", $ids).") AND search_segment_num_universe = ".static::$current_universe_id;
-	    $result = pmb_mysql_query($query);
-	    if (pmb_mysql_num_rows($result)) {
+	    if(!empty($ids)) {
+		    $query = "SELECT id_search_segment FROM search_segments WHERE id_search_segment IN (".implode(",", $ids).") AND search_segment_num_universe = ".static::$current_universe_id;
+		    $result = pmb_mysql_query($query);
+		    if (pmb_mysql_num_rows($result)) {
+		        return true;
+		    }
+	    }
+	    return false;
+	}
+	
+	public function has_perio_enabled() {
+	    if(!empty($this->universe_settings) && !empty($this->universe_settings->perio_enabled)){
 	        return true;
 	    }
 	    return false;
+	}
+	
+	public function is_autocomplete() {
+	    if(!empty($this->universe_settings) && !empty($this->universe_settings->autocomplete)){
+	        return true;
+	    }
+	    return false;
+	    
 	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.1.12.1 2021/12/09 09:04:06 dgoron Exp $
+// $Id: ajax_main.inc.php,v 1.2 2021/12/09 09:00:59 dgoron Exp $
 
 global $class_path, $include_path, $sub, $msg, $old_cb, $new_cb;
 

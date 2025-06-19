@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area_status.class.php,v 1.3.8.1 2022/01/07 11:41:08 dgoron Exp $
+// $Id: contribution_area_status.class.php,v 1.4.4.1 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -33,7 +33,7 @@ class contribution_area_status{
 			}
 			print "
 			<tr  class='$pair_impair' style='cursor: pointer' onmouseover=\"this.className='surbrillance'\" onmouseout=\"this.className='$pair_impair'\">
-				<td onclick='document.location=\"./admin.php?categ=contribution_area&sub=status&action=edit&id=".$id."\"'><span class='".$statut['class_html']."' style='margin-right:3px;'><img width='10' height='10' src='".get_url_icon('spacer.gif')."' alt=''/></span>".htmlentities($statut['label'], ENT_QUOTES, $charset)."</td>
+				<td onclick='document.location=\"./admin.php?categ=contribution_area&sub=status&action=edit&id=".intval($id)."\"'><span class='".$statut['class_html']."' style='margin-right:3px;'><img width='10' height='10' src='".get_url_icon('spacer.gif')."' alt=''/></span>".htmlentities($statut['label'], ENT_QUOTES, $charset)."</td>
 			</tr>";
 			$i++;
 		}

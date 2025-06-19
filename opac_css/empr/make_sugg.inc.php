@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: make_sugg.inc.php,v 1.24.2.1 2021/09/28 08:58:01 dgoron Exp $
+// $Id: make_sugg.inc.php,v 1.25 2021/09/28 08:57:06 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

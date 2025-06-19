@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contact_form.class.php,v 1.2 2020/08/12 01:06:43 dgoron Exp $
+// $Id: contact_form.class.php,v 1.2.6.2 2023/10/10 07:50:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($class_path."/contact_forms/contact_form_parameters.class.php");
 require_once($class_path."/contact_forms/contact_form_objects.class.php");
 require_once($class_path."/contact_forms/contact_form_object.class.php");
@@ -138,11 +139,17 @@ class contact_form {
 		return $display_fields;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('contact_form_label', 'admin_opac_contact_form_label')
+		->add_input_node('text', $this->label);
+		$interface_content_form->add_element('contact_form_desc', 'admin_opac_contact_form_desc')
+		->add_textarea_node($this->desc);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $contact_form_content_form, $msg, $charset;
-		
-		$content_form = $contact_form_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_form('contact_form_form');
 		if(!$this->id){
@@ -150,12 +157,9 @@ class contact_form {
 		}else{
 			$interface_form->set_label($msg['admin_opac_contact_form_edit']);
 		}
-		$content_form = str_replace('!!label!!', htmlentities($this->label, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!desc!!', htmlentities($this->desc, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->label." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('contact_forms')
 		->set_field_focus('contact_form_label');
 		return $interface_form->get_display();
@@ -244,47 +248,21 @@ class contact_form {
 	 * Envoi de mail
 	 */
 	public function send_mail() {
-		global $msg, $charset;
+		global $msg;
 		
-		$contact_form_recipients = new contact_form_recipients($this->id, $this->parameters['recipients_mode']);
-		$recipients = $contact_form_recipients->get_recipients();
-		$recipient_info = $recipients[$this->parameters['recipients_mode']][$this->form_fields->contact_form_recipients];
-		$transmitter_info = array();
-		if(!empty($this->form_fields->contact_form_parameter_name)) {
-			$transmitter_info['name'] = $this->form_fields->contact_form_parameter_name." ".$this->form_fields->contact_form_parameter_firstname;
-		} else {
-			$transmitter_info['name'] = $this->form_fields->contact_form_parameter_email;
-		}
-		$transmitter_info['email'] = $this->form_fields->contact_form_parameter_email;
-		if(!is_valid_mail($transmitter_info['email'])){
+		$mail_opac_contact_form = new mail_opac_contact_form();
+		$mail_opac_contact_form->set_contact_form($this);
+		if(!is_valid_mail($this->form_fields->contact_form_parameter_email)){
 		    $this->messages[] = $msg['contact_form_error_email_adress'];
 		}
-		if($this->form_fields->contact_form_objects) {
-		    $contact_form_object = new contact_form_object($this->form_fields->contact_form_objects);
-		    $object_label = $contact_form_object->get_translated_label();
-		} else {
-		    $object_label = $this->form_fields->contact_form_object_free_entry;
-		}
-		$attachments = array();
-		if(!empty($this->form_fields->contact_form_parameter_attachments)) {
-		    foreach ($this->form_fields->contact_form_parameter_attachments as $parameter_attachment) {
-		        if(empty($parameter_attachment->has_error)) {
-		            $attachments[] = array(
-		                'contenu' => file_get_contents($parameter_attachment->location),
-		                'nomfichier' => $parameter_attachment->name
-		            );
-		        }
-		    }
-		}
-		$content = h2o($this->parameters['email_content'])->render(array('contact_form' => $this->form_fields));
-		$headers  = "MIME-Version: 1.0\n";
-		$headers .= "Content-type: text/html; charset=".$charset."\n";
-		$this->sended = mailpmb($recipient_info['name'], $recipient_info['email'], $object_label, $content, $recipient_info['name'], $recipient_info['email'], $headers, $recipient_info['copy_email'],"",0,$attachments,$transmitter_info['name'], $transmitter_info['email']);
+		$this->sended = $mail_opac_contact_form->send_mail();
 		if($this->sended) {
 			$this->messages[] = $msg['contact_form_send_success_msg'];
 			if($this->parameters['confirm_email']) {
-			    $sended_copy = mailpmb($transmitter_info['name'], $transmitter_info['email'], $object_label." ".$msg['contact_form_send_copy_suffix'], $content, $recipient_info['name'], ($recipient_info['transmitter_email'] ? $recipient_info['transmitter_email'] : $recipient_info['email']), $headers, "", "", 0, $attachments);
-				if($sended_copy) {
+			    $mail_opac_contact_form_confirm = new mail_opac_contact_form_confirm();
+			    $mail_opac_contact_form_confirm->set_contact_form($this);
+			    $sended_copy = $mail_opac_contact_form_confirm->send_mail();
+			    if($sended_copy) {
 					$this->messages[] = $msg['contact_form_send_copy_success_msg'];
 				} else {
 					$this->messages[] = $msg['contact_form_send_copy_error_msg'];

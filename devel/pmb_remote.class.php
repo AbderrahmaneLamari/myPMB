@@ -37,7 +37,7 @@ class pmb_remote {
 	 * @param string $database Base de donnée utilisée
 	 * @param string $ssl_path path des clés numérique avec / à la fin. Exemple: "/home/xxxxxx/.ssl/"
 	 */
-    public function pmb_remote($pmb_url,$port,$proxy,$user,$password,$database,$ssl_path="") {
+    public function __construct($pmb_url,$port,$proxy,$user,$password,$database,$ssl_path="") {
 		$this->http_url=$pmb_url;
 		$this->http_url_login=$pmb_url."main.php";
 		$this->http_port=$port;

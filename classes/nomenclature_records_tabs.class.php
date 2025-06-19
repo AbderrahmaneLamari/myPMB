@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_records_tabs.class.php,v 1.9.8.1 2022/01/03 15:49:26 dgoron Exp $
+// $Id: nomenclature_records_tabs.class.php,v 1.10 2022/01/03 15:46:57 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

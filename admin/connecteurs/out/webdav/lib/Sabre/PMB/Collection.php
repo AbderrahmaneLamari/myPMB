@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Collection.php,v 1.48.2.1 2021/10/08 13:01:35 dgoron Exp $
+// $Id: Collection.php,v 1.49 2021/10/08 13:00:42 dgoron Exp $
 namespace Sabre\PMB;
 
 use Sabre\DAV;

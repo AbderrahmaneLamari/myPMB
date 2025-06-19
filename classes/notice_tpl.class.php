@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_tpl.class.php,v 1.21 2021/03/16 10:08:35 dgoron Exp $
+// $Id: notice_tpl.class.php,v 1.22.4.1 2023/07/21 12:59:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -21,6 +21,10 @@ class notice_tpl {
 	public $code ; // Code du template
 	public $show_opac;
 	public $id_test;
+	public $location_label;
+	public $type_doc_label;
+	public $type_notice;
+	
 	// ---------------------------------------------------------------
 	//		constructeur
 	// ---------------------------------------------------------------
@@ -126,24 +130,9 @@ class notice_tpl {
 		return $is_truncated_form;
 	}
 	
-	// ---------------------------------------------------------------
-	//		show_form : affichage du formulaire de saisie
-	// ---------------------------------------------------------------
-	public function get_form() {
-	
-		global $msg;
-		global $notice_tpl_content_form, $notice_tpl_show_loc_btn;
-		global $charset;
-
-		$content_form = $notice_tpl_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+	public function get_content_form() {
+		global $charset, $notice_tpl_show_loc_btn;
 		
-		$interface_form = new interface_form('notice_tpl_form');
-		if(!$this->id){
-			$interface_form->set_label($msg['notice_tpl_ajouter']);
-		}else{
-			$interface_form->set_label($msg['notice_tpl_modifier']);
-		}
 		//on n'affiche les localisations que si un template existe dans une des locs
 		$is_truncated_form = $this->get_is_truncated_form();
 		$form_code = '';
@@ -156,21 +145,50 @@ class notice_tpl {
 				$form_code.=gen_plus("plus_location".$id_location,$this->location_label[$id_location],$form_typenotice_all);
 			}
 		}
-		$content_form = str_replace("!!name!!",		htmlentities($this->name,ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace("!!comment!!",	htmlentities($this->comment,ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace("!!id_test!!",	htmlentities($this->id_test,ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace("!!show_opac!!",($this->show_opac ? " checked='checked' " : ""), $content_form);
-		$content_form = str_replace("!!code_part!!", $form_code, $content_form);
-		if ($is_truncated_form) {
-			$content_form = str_replace("!!show_loc!!", $notice_tpl_show_loc_btn, $content_form);
-		} else {
-			$content_form = str_replace("!!show_loc!!", "", $content_form);
-		}
+		$form_code .= "
+		<div class='row' id='show_loc_div'>
+			".($is_truncated_form ? $notice_tpl_show_loc_btn : '')."
+		</div>";
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('name', 'notice_tpl_name')
+		->add_input_node('text', $this->name)
+		->set_class('saisie-80em')
+		->set_attributes(array('data-pmb-deb-rech' => '1'));
+		$interface_content_form->add_element('comment', 'notice_tpl_description')
+		->add_textarea_node($this->comment, 62, 4)
+		->set_attributes(array('wrap' => 'virtual'));
+		$interface_content_form->add_element('code', 'notice_tpl_code')
+		->add_html_node($form_code);
+		/*	id notice pour test	*/
+		$interface_content_form->add_element('id_test', 'notice_tpl_id_test')
+		->add_input_node('integer', $this->id_test);
+		$interface_content_form->add_element('show_opac')
+		->add_input_node('boolean', $this->show_opac)
+		->set_label_code('notice_tpl_show_opac');
 		
+		$display = "
+		<script type='text/javascript' src='./javascript/tabform.js'></script>
+		<script src='./javascript/ace/ace.js' type='text/javascript' charset='".$charset."'></script>";
+		$display .= $interface_content_form->get_display();
+		return $display;
+	}
+	// ---------------------------------------------------------------
+	//		show_form : affichage du formulaire de saisie
+	// ---------------------------------------------------------------
+	public function get_form() {
+	
+		global $msg;
+
+		$interface_form = new interface_form('notice_tpl_form');
+		if(!$this->id){
+			$interface_form->set_label($msg['notice_tpl_ajouter']);
+		}else{
+			$interface_form->set_label($msg['notice_tpl_modifier']);
+		}
 		$interface_form->set_object_id($this->id)
 		->set_duplicable(true)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('notice_tpl')
 		->set_field_focus('name');
 		return $interface_form->get_display();
@@ -613,6 +631,18 @@ class notice_tpl {
 			}
 		}
 		return $tpl;
+	}
+	
+	public static function get_directories() {
+		$result = array();
+		$dirs = array_filter(glob('./opac_css/includes/templates/record/*'), 'is_dir');
+		
+		foreach($dirs as $dir){
+			if(basename($dir) != "CVS"){
+				$result[] = basename($dir);
+			}
+		}
+		return $result;
 	}
 
 } // fin class 

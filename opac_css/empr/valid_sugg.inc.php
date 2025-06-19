@@ -2,24 +2,21 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: valid_sugg.inc.php,v 1.23.2.1 2021/09/28 08:58:01 dgoron Exp $
+// $Id: valid_sugg.inc.php,v 1.25 2022/05/04 09:27:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $base_path, $include_path, $msg, $charset;
-global $id_sug, $tit, $edi, $aut, $code, $prix, $nb, $url_sug, $comment, $date_publi, $sug_src, $mail;
+global $id_sug, $tit, $edi, $aut, $code, $nb, $mail;
 global $opac_sugg_categ, $num_categ, $opac_sugg_categ_default, $sugg_location_id;
 
 // classes de gestion des suggestions
 require_once($base_path.'/classes/suggestions.class.php');
 require_once($base_path.'/classes/suggestions_origine.class.php');
-require_once($base_path.'/classes/suggestions_map.class.php');
 require_once($base_path.'/classes/suggestions_categ.class.php');
 require_once($include_path.'/explnum.inc.php');
 require_once($base_path.'/classes/explnum_doc.class.php');
 require_once($base_path.'/classes/suggestion_source.class.php');
-
-$sug_map = new suggestions_map();
 
 $sug_form = "<h3>".htmlentities($msg["empr_make_sugg"], ENT_QUOTES, $charset)."</h3>\n";
 
@@ -37,19 +34,7 @@ if (($tit != "") && ($aut != "" || $edi != "" || $code != "" || $_FILES['piece_j
 	//On évite de saisir 2 fois la même suggestion
 	if ($id_sug || !suggestions::exists($userid, $tit, $aut, $edi, $code)) {
 		$su = new suggestions($id_sug);
-		$su->titre = stripslashes($tit);
-		$su->editeur = stripslashes($edi);
-		$su->auteur = stripslashes($aut);
-		$su->code = stripslashes($code);
-		$prix = str_replace(',','.',$prix);
-		if (is_numeric($prix)) $su->prix = $prix;
-		$su->nb = ((int)$nb?(int)$nb:"1");
-		$su->statut = $sug_map->getFirstStateId();
-		$su->url_suggestion = stripslashes($url_sug);
-		$su->commentaires = stripslashes($comment);
-		$su->date_creation = today();
-		$su->date_publi = stripslashes($date_publi);
-		$su->sugg_src = $sug_src; 
+		$su->set_properties_from_form();
 
 		// chargement de la PJ
 		if($_FILES['piece_jointe_sug']['name']){			

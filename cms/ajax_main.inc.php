@@ -2,12 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.34 2021/04/07 13:54:46 dgoron Exp $
+// $Id: ajax_main.inc.php,v 1.37.4.1 2023/11/28 15:16:39 qvarin Exp $
+
+use Pmb\CMS\Models\PortalModel;
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $base_path, $categ, $sub, $action, $charset;
-global $id, $force_delete, $object_type;
+global $id, $force_delete, $object_type, $msg;
 global $id_page, $cms_build_pages_ajax_tpl, $cms_build_pages_tpl_item;
 global $new_children, $num_parent, $num_section, $num_page, $classement, $type, $plugin;
 
@@ -152,14 +154,27 @@ switch($categ){
 			switch($sub){
 				case "save":			
 					$cms_page=new cms_page($id);
-					$cms_page->get_from_form();			
-					$cms_page->save();			
-					$cms_pages=new cms_pages();		
-					ajax_http_send_response($cms_pages->get_list($cms_build_pages_ajax_tpl,$cms_build_pages_tpl_item));
+					$cms_page->get_from_form();	
+					$cms_page->save();		
+					$cms_pages=new cms_pages();
+					if($cms_active == 2) {
+					    if(!$cms_page->id) {
+    					    ajax_http_send_response(json_encode(["error" => true]));
+					    } else {
+					       ajax_http_send_response($cms_page->id);
+					    }
+					    
+					}else {
+    					ajax_http_send_response($cms_pages->get_list($cms_build_pages_ajax_tpl,$cms_build_pages_tpl_item));
+					}
 					break;
-				case "edit":				
-					$cms_page=new cms_page($id);
-					ajax_http_send_response ($cms_page->get_form(1));		
+				case "edit":	
+				    $cms_page = new cms_page($id);
+				    if($cms_active == 2) {
+				        ajax_http_send_response(json_encode(['id' => $cms_page->id, 'name' => $cms_page->name, 'description' => $cms_page->description, 'vars' => $cms_page->vars]));
+				    } else {
+    					ajax_http_send_response($cms_page->get_form(1));		
+				    }
 					break;
 				case "page_save_classement" :
 					$cms= new cms_page();
@@ -170,8 +185,12 @@ switch($categ){
 				case "del":			
 					$cms_page=new cms_page($id);	
 					$cms_page->delete();			
-					$cms_pages=new cms_pages();		
-					ajax_http_send_response($cms_pages->get_list($cms_build_pages_ajax_tpl,$cms_build_pages_tpl_item));
+					$cms_pages=new cms_pages();	
+					if($cms_active == 2) {
+					    ajax_http_send_response($cms_page->id);
+					}else {
+    					ajax_http_send_response($cms_pages->get_list($cms_build_pages_ajax_tpl,$cms_build_pages_tpl_item));
+					}
 					break;
 				default:
 					switch($action) {
@@ -227,7 +246,8 @@ switch($categ){
 						foreach ($cms_toolkits as $name=>$toolkit) {
 							$cms_toolkit = new cms_toolkit($name);
 							$cms_toolkit->set_active($toolkit['active']);
-							$cms_toolkit->set_data((array) $toolkit['data']);
+							$data = $toolkit['data'] ?? [];
+							$cms_toolkit->set_data((array) $data);
 							$cms_toolkit->save();
 						}
 					}
@@ -237,10 +257,6 @@ switch($categ){
 		}
 		break;
 	case "frbr_pages" :
-		if(!isset($autoloader)) {
-			$autoloader = new autoloader();
-		}
-		$autoloader->add_register("frbr_entities",true);
 		if (SESSrights & CMS_BUILD_AUTH) {			
 			switch($sub){
 				case "get_form":
@@ -273,4 +289,25 @@ switch($categ){
 		require_once($class_path."/grid.class.php");
 		grid::proceed($datas);
 		break;
-}	
+	case 'migrate_portal' :
+		try {
+			$portal = PortalModel::getPortal();
+			$portal->migration();
+
+			parameter::update("cms", "active", 2);
+
+			ajax_http_send_response([
+				"error" => false,
+				"message" => $msg['cms_migrate_portal_ok']
+			]);
+		} catch(\Exception $e) {
+			parameter::update("cms", "active", 1);
+
+			ajax_http_send_response([
+				"error" => true,
+				"message" => $msg['cms_migrate_portal_ko'],
+				"details" => $e->getMessage()
+			]);
+		}
+		break;
+}

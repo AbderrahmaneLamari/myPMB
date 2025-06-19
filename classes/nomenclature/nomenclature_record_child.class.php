@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_record_child.class.php,v 1.29.8.2 2022/01/21 08:46:17 dgoron Exp $
+// $Id: nomenclature_record_child.class.php,v 1.34.4.2 2023/08/31 12:56:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -166,23 +166,23 @@ class nomenclature_record_child {
 	}	
 	
 	public function set_num_formation($num_formation){
-		$this->num_formation=$num_formation;
-		$this->formation = new nomenclature_formation($num_formation);
+		$this->num_formation = intval($num_formation);
+		$this->formation = nomenclature_formation::get_instance($this->num_formation);
 	}
 	
 	public function set_num_type($num_type){
-		$this->num_type=$num_type;
-		$this->type = new nomenclature_type($num_type);
+		$this->num_type = intval($num_type);
+		$this->type = nomenclature_type::get_instance($this->num_type);
 	}
 	
 	public function set_num_musicstand($num_musicstand){
-		$this->num_musicstand=$num_musicstand;
-		$this->musicstand = new nomenclature_musicstand($num_musicstand);
+		$this->num_musicstand = intval($num_musicstand);
+		$this->musicstand = nomenclature_musicstand::get_instance($this->num_musicstand);
 	}
 	
 	public function set_num_instrument($num_instrument){
-		$this->num_instrument=$num_instrument;
-		$this->instrument = new nomenclature_instrument($num_instrument);
+		$this->num_instrument = intval($num_instrument);
+		$this->instrument = nomenclature_instrument::get_instance($this->num_instrument);
 	}
 	
 	public function set_effective($effective){
@@ -198,14 +198,18 @@ class nomenclature_record_child {
 	}
 	
 	public function set_num_voice($num_voice){
-		$this->num_voice=$num_voice;
-		if($num_voice)$this->nature=1; else $this->nature=0;
-		$this->voice = new nomenclature_voice($num_voice);
+		$this->num_voice = intval($num_voice);
+		if($this->num_voice) {
+			$this->nature=1;
+		} else {
+			$this->nature=0;
+		}
+		$this->voice = nomenclature_voice::get_instance($this->num_voice);
 	}
 	
 	public function set_num_workshop($num_workshop){
-		$this->num_workshop=$num_workshop;
-		$this->workshop = new nomenclature_workshop($num_workshop);
+		$this->num_workshop = intval($num_workshop);
+		$this->workshop = nomenclature_workshop::get_instance($this->num_workshop);
 	}
 	
 	public function save_form(){
@@ -250,7 +254,7 @@ class nomenclature_record_child {
 		child_record_num_nomenclature='".$data["num_nomenclature"]."'
 		";
 		
-		$req="INSERT INTO nomenclature_children_records SET $fields ";
+		$req="REPLACE INTO nomenclature_children_records SET $fields ";
 		pmb_mysql_query($req);
 		$this->fetch_datas();
 		return $this->id;
@@ -277,7 +281,7 @@ class nomenclature_record_child {
 				and children.child_record_num_instrument = "'.($data['num_instrument']*1).'"
 				and children.child_record_num_voice = "'.($data['num_voice']*1).'"
 				and children.child_record_other = "'.(isset($data['other']) ? $data['other'] : '').'"
-				and children.child_record_effective = "'.($data['effective']*1).'"
+				and children.child_record_effective = "'.($data['effective'] == "~" ? $data['effective'] : intval($data['effective'])).'"
 				and children.child_record_order = "'.($data['order']*1).'"
 				and children.child_record_num_nomenclature = "'.($data['num_nomenclature']*1).'"
 				and children.child_record_num_workshop = "'.($data['num_workshop']*1).'"		
@@ -314,8 +318,8 @@ class nomenclature_record_child {
 
 		if(!$this->id) return 0;
 		
-		if(!$data["rank"]) $data["rank"]=1;
-		$inserted = notice_relations::insert($this->id, $id_parent, $pmb_nomenclature_record_children_link, $data["rank"]);
+		if(!$data["ranking"]) $data["ranking"]=1;
+		$inserted = notice_relations::insert($this->id, $id_parent, $pmb_nomenclature_record_children_link, $data["ranking"]);
 			
 		notice::calc_access_rights($this->id);
 		
@@ -440,6 +444,7 @@ class nomenclature_record_child {
 	
 	public function delete_record_child(){
 		notice::del_notice($this->id);
+		$this->delete();
 	}
 } // end of nomenclature_record_child
 

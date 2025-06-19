@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: avis.tpl.php,v 1.18 2021/02/09 07:25:05 dgoron Exp $
+// $Id: avis.tpl.php,v 1.18.6.1 2023/09/04 14:27:41 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "tpl.php")) die("no access");
 
@@ -13,9 +13,9 @@ if(!isset($id)) $id = 0;
 if ($pmb_javascript_office_editor) {
 $avis_tpl_form1_script="
 	$pmb_javascript_office_editor
-	<script type='text/javascript' src='./javascript/tinyMCE_interface.js'></script>
-	<script type='text/javascript' src='./javascript/bbcode.js'></script>
 	<script type='text/javascript'>
+        pmb_include('./javascript/tinyMCE_interface.js');
+        pmb_include('./javascript/bbcode.js');
 	<!--
 		function show_add_avis(notice_id) {
 			var div_add_avis=document.getElementById('add_avis_'+notice_id);
@@ -33,8 +33,8 @@ $avis_tpl_form1_script="
 ";
 } else
 $avis_tpl_form1_script="
-	<script type='text/javascript' src='./javascript/bbcode.js'></script>
 	<script type='text/javascript'>
+        pmb_include('./javascript/bbcode.js');
 	<!--
 		function show_add_avis(notice_id) {
 			var div_add_avis=document.getElementById('add_avis_'+notice_id);

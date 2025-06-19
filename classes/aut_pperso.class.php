@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: aut_pperso.class.php,v 1.25.2.2 2021/12/23 14:33:22 qvarin Exp $
+// $Id: aut_pperso.class.php,v 1.28.4.1 2023/08/31 12:56:45 qvarin Exp $
 
 use Pmb\Animations\Models\AnimationModel;
 
@@ -14,11 +14,21 @@ require_once($class_path."/parametres_perso.class.php");
 require_once($class_path."/author.class.php");
 
 class aut_pperso {
-	public $aut=""; // prefixe de l'autorité	
-	public $id=0; // id de l'autorité
-	public $error_message="";
 	
+	public $aut = ""; // prefixe de l'autorité	
+	
+	public $id = 0; // id de l'autorité
+	
+	public $error_message = "";
+	public $p_perso = null;
+
 	public static $custom_fields_using_datatype_by_prefix = array();
+	
+	public static $fields_recherche_mot = array();
+
+	public static $fields_recherche = array();
+
+	public static $fields_recherche_mot_array = array();
 	
 	public function __construct($aut,$id=0) {
 		$this->aut = $aut;
@@ -75,17 +85,38 @@ class aut_pperso {
 	
 	// retourne la liste des valeurs des champs perso cherchable d'une autorité
 	public function get_fields_recherche($id){
-		return $this->p_perso->get_fields_recherche($id);
+		if (!isset(static::$fields_recherche[$id])) {
+			if(isset(static::$fields_recherche) && count(static::$fields_recherche) > 500) {
+				// Parade pour éviter le dépassement de mémoire
+				static::$fields_recherche = array();
+			}
+			static::$fields_recherche[$id] = $this->p_perso->get_fields_recherche($id);
+		}
+		return static::$fields_recherche[$id];
 	}
 	
 	// retourne la liste des valeurs des champs perso cherchable d'une autorité sous forme d'un tableau par champ perso
-	public function get_fields_recherche_mot($id){
-		return $this->p_perso->get_fields_recherche_mot($id);
+	public function get_fields_recherche_mot($id) {
+		if (!isset(static::$fields_recherche_mot[$id])) {
+			if(isset(static::$fields_recherche_mot) && count(static::$fields_recherche_mot) > 500) {
+				// Parade pour éviter le dépassement de mémoire
+				static::$fields_recherche_mot = array();
+			}
+			static::$fields_recherche_mot[$id] = $this->p_perso->get_fields_recherche_mot($id);
+		}
+		return static::$fields_recherche_mot[$id];
 	}		
 	
 	// retourne la liste des valeurs des champs perso cherchable d'une autorité sous forme d'un tableau par champ perso
 	public function get_fields_recherche_mot_array($id){
-		return $this->p_perso->get_fields_recherche_mot_array($id);
+		if (!isset(static::$fields_recherche_mot_array[$id])) {
+			if(isset(static::$fields_recherche_mot_array) && count(static::$fields_recherche_mot_array) > 500) {
+				// Parade pour éviter le dépassement de mémoire
+				static::$fields_recherche_mot_array = array();
+			}
+			static::$fields_recherche_mot_array[$id] = $this->p_perso->get_fields_recherche_mot_array($id);
+		}
+		return static::$fields_recherche_mot_array[$id];
 	}
 	
 	protected static function get_data_type($aut_tab, $id) {
@@ -247,10 +278,11 @@ class aut_pperso {
 				}
 			}
 		}
-		return;
 	}
 
 	public static function get_used($aut_tab, $id, $tmp_used_in_pperso_authorities) {
+	    global $default_tmp_storage_engine;
+
 		if(!$aut_tab || !$id) return;
 		
 		$data_type = self::get_data_type($aut_tab, $id);
@@ -260,7 +292,7 @@ class aut_pperso {
 		$notice_queries = array();	
 		$cms_editorial_queries = array();
 		
-		$query = 'CREATE TEMPORARY TABLE '.$tmp_used_in_pperso_authorities.' (type_object int, id int ) ENGINE=MyISAM ';
+		$query = 'CREATE TEMPORARY TABLE '.$tmp_used_in_pperso_authorities.' (type_object int, id int ) ENGINE='. $default_tmp_storage_engine .' ';
 		pmb_mysql_query($query);
 		
 		static::get_custom_fields_using_datatype_by_prefix($data_type);
@@ -278,11 +310,9 @@ class aut_pperso {
 		        $colunm_with_origine = $prefix . '_custom_origine';
 		        
 		        $clause_where = $colunm_with_value . "='" . $id . "'";
-		        if ($colunm_with_value == $prefix . '_custom_small_text') {
-		            if($aut_tab == AUT_TABLE_CONCEPT) {
-		                // Pour les concepts, on peut avoir des URI
-		                $clause_where = "($colunm_with_value = '$id' or $colunm_with_value = '" . onto_common_uri::get_uri($id) . "')";
-		            }
+		        if ($colunm_with_value == $prefix . '_custom_small_text' && $aut_tab == AUT_TABLE_CONCEPT) {
+	                // Pour les concepts, on peut avoir des URI
+	                $clause_where = "($colunm_with_value = '$id' or $colunm_with_value = '" . onto_common_uri::get_uri($id) . "')";
 		        }
 		        
 		        $query = "SELECT $colunm_with_origine FROM " . $prefix . "_custom_values";
@@ -374,7 +404,11 @@ class aut_pperso {
 
 	public static function get_custom_fields_using_datatype_by_prefix($data_type) 
 	{
-	    if (!isset(static::$custom_fields_using_datatype_by_prefix[$data_type])) {	        
+		if (!isset(static::$custom_fields_using_datatype_by_prefix[$data_type])) {
+			if(isset(static::$custom_fields_using_datatype_by_prefix) && count(static::$custom_fields_using_datatype_by_prefix) > 500) {
+				// Parade pour éviter le dépassement de mémoire
+				static::$custom_fields_using_datatype_by_prefix = array();
+			}
     	    static::$custom_fields_using_datatype_by_prefix[$data_type] = [];
     	    
     	    foreach(self::get_all_table_prefix() as $prefix) {
@@ -388,6 +422,7 @@ class aut_pperso {
         	        while ($row = pmb_mysql_fetch_assoc($result)) {
         	            static::$custom_fields_using_datatype_by_prefix[$data_type][$prefix][] = $row;
         	        }
+        	        pmb_mysql_free_result($result);
         	    }
     	    }
 	    }

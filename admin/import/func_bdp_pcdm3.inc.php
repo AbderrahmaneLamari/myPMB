@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_bdp_pcdm3.inc.php,v 1.7.4.2 2021/11/09 14:01:05 dgoron Exp $
+// $Id: func_bdp_pcdm3.inc.php,v 1.9 2021/11/09 13:58:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: download_docnum.inc.php,v 1.6.6.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: download_docnum.inc.php,v 1.7.4.1 2023/10/24 10:10:51 gneveu Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $sub, $select_noti;
@@ -26,6 +26,7 @@ function doc_num_gen_list($id_notices){
 	
 	$explnum_list=array();
 	foreach($id_notices as $notice_id){
+	    $notice_id = intval($notice_id);
 		$query = "SELECT explnum_id from explnum where explnum_notice=$notice_id ";
 		$query .= " union ";
 		$query .= " select explnum_id from explnum ,bulletins where explnum_bulletin=bulletin_id and num_notice=$notice_id ";

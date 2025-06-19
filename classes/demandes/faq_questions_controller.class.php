@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: faq_questions_controller.class.php,v 1.3 2020/12/03 15:56:23 dgoron Exp $
+// $Id: faq_questions_controller.class.php,v 1.3.6.1 2023/11/17 14:32:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -18,7 +18,7 @@ class faq_questions_controller extends lists_controller {
 	
 	public static function proceed($id=0) {
 		global $action, $msg;
-		global $num_demande, $faq_question_id;
+		global $num_demande;
 		
 		switch($action){
 			case "new":
@@ -30,7 +30,7 @@ class faq_questions_controller extends lists_controller {
 				print $model_instance->get_form();
 				break;
 			case "save" :
-				$model_instance = static::get_model_instance($faq_question_id);
+				$model_instance = static::get_model_instance($id);
 				$result = $model_instance->get_value_from_form();
 				if($result){
 					$result =$model_instance->save();

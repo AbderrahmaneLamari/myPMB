@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_authors_controller.class.php,v 1.16 2018/10/29 12:47:25 dgoron Exp $
+// $Id: entities_authors_controller.class.php,v 1.17 2022/12/21 09:00:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -123,9 +123,21 @@ class entities_authors_controller extends entities_authorities_controller {
 	}
 	
 	protected function get_display_columns() {
+	    global $msg;
 	    
 		$object_instance = $this->authority->get_object_instance(array('recursif' => 1));
-		$display = $this->get_display_label_column($this->authority->get_isbd(), $object_instance->info_bulle);		
+		$author_entry=$this->authority->get_isbd();
+		if(empty($this->authority->get_isbd_template())) {
+			if($object_instance->see) {
+				// auteur avec renvoi
+				// récupération des données de l'auteur cible
+				$see = authorities_collection::get_authority(AUT_TABLE_AUTHORS, $object_instance->see, array('recursif' => 1));
+				$author_voir=$see->get_isbd();
+				$author_voir = "<a href='".$object_instance->get_gestion_link()."'>".$author_voir."</a>";
+				$author_entry .= ".&nbsp;-&nbsp;<u>$msg[210]</u>&nbsp;:&nbsp;".$author_voir;
+			}
+		}
+		$display = $this->get_display_label_column($author_entry, $object_instance->info_bulle);		
 		//Numéros d'autorite
 		if($this->num_auth_present){
 			$display .= "<td>".searcher_authorities_authors::get_display_authorities_sources($this->authority->get_num_object(), 'author')."</td>";

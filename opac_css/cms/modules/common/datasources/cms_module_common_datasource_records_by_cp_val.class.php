@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_by_cp_val.class.php,v 1.8 2018/04/24 15:46:30 dgoron Exp $
+// $Id: cms_module_common_datasource_records_by_cp_val.class.php,v 1.9 2022/09/06 07:52:19 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,7 +11,9 @@ class cms_module_common_datasource_records_by_cp_val extends cms_module_common_d
 	public function __construct($id=0){
 		parent::__construct($id);
 		$this->limitable = true;
+		$this->paging = true;
 	}
+	
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
 	 */
@@ -70,9 +72,14 @@ class cms_module_common_datasource_records_by_cp_val extends cms_module_common_d
 			$searcher->unserialize_search($current_search);
 			$records = $this->filter_datas("notices",$records);
 			$return = $this->sort_records($records);
-			if($this->parameters['nb_max_elements'] > 0){
-				$return['records'] = array_slice($return['records'], 0, $this->parameters['nb_max_elements']);
+
+			if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+			    $return["paging"] = $this->inject_paginator($return['records']);
+			    $return['records'] = $this->cut_paging_list($return['records'], $return["paging"]);
+			}else if($this->parameters['nb_max_elements'] > 0){
+			    $return['records'] = array_slice($return['records'], 0, $this->parameters['nb_max_elements']);
 			}
+			
 			return $return;
 		}
 		return false;

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_relations.tpl.php,v 1.13 2020/11/04 11:01:59 dgoron Exp $
+// $Id: notice_relations.tpl.php,v 1.13.6.1 2023/08/31 12:56:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -52,9 +52,9 @@ $notice_relations_links_tpl = "
         name=this.getAttribute('id').substring(4);
         name_id = name.substr(0,5)+'_id_'+name.substr(6);
         openPopUp('./select.php?what=notice&caller=notice&param1='+name_id+'&param2='+name+'&no_display=!!notice_id_no_replace!!', 'selector');
-        name_rank = name.substr(0,5)+'_rank_'+name.substr(6);
-        if(document.getElementById(name_rank)) {
-			document.getElementById(name_rank).value=0;
+        name_ranking = name.substr(0,5)+'_ranking_'+name.substr(6);
+        if(document.getElementById(name_ranking)) {
+			document.getElementById(name_ranking).value=0;
 		}
     }
 

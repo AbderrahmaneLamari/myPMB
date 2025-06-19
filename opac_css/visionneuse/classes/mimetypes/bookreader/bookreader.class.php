@@ -2,8 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bookreader.class.php,v 1.31 2020/07/23 08:44:38 dgoron Exp $
+// $Id: bookreader.class.php,v 1.34 2022/05/11 12:36:20 dgoron Exp $
 
+global $visionneuse_path;
 require_once($visionneuse_path."/classes/mimetypes/affichage.class.php");
 //require_once($visionneuse_path."/classes/mimetypes/converter_factory.class.php");
 // require_once($visionneuse_path."/../classes/docbnf.class.php");
@@ -50,28 +51,29 @@ class bookreader extends affichage{
     			$this->driver->copyCurrentDocInCache();
     		}
     	}
-    	
-    	switch($this->doc->mimetype){
-    		case "application/pdf" : 
-    		case "application/x-pdf" : 
-    			$this->mimeTypeClass = new bookreaderPDF($this->doc, $this->parameters);
-    			break;
-    		case "application/bnf" :
-    		case "application/bnf+zip" :
-    			$this->mimeTypeClass = new bookreaderBNF($this->doc);
-    			break;
-    		case "application/epub+zip" :
-    		case "application/octet-stream" :
-    			$this->mimeTypeClass = new bookreaderEPUB($this->doc, $this->parameters);
-    			break;
-     		case "application/zip" :
-     			$this->mimeTypeClass = new bookreaderZIP($this->doc, $this->parameters);
-     			break;
+    	if(!empty($this->doc->mimetype)) {
+	    	switch($this->doc->mimetype){
+	    		case "application/pdf" : 
+	    		case "application/x-pdf" : 
+	    			$this->mimeTypeClass = new bookreaderPDF($this->doc, $this->parameters);
+	    			break;
+	    		case "application/bnf" :
+	    		case "application/bnf+zip" :
+	    			$this->mimeTypeClass = new bookreaderBNF($this->doc);
+	    			break;
+	    		case "application/epub+zip" :
+	    		case "application/octet-stream" :
+	    			$this->mimeTypeClass = new bookreaderEPUB($this->doc, $this->parameters);
+	    			break;
+	     		case "application/zip" :
+	     			$this->mimeTypeClass = new bookreaderZIP($this->doc, $this->parameters);
+	     			break;
+	    	}
     	}
     }
     
     public function fetchDisplay(){
-    	global $visionneuse_path,$base_path;
+    	global $visionneuse_path;
      	//le titre
     	$this->toDisplay["titre"] = $this->doc->titre;
     	//la visionneuse pdf
@@ -103,7 +105,7 @@ class bookreader extends affichage{
     }
     
     public function render(){
-    	global $visionneuse_path, $charset;
+    	global $visionneuse_path, $charset, $lang;
     	
     	$subst_style="";
     	if(file_exists($visionneuse_path."/classes/mimetypes/bookreader/BookReader/BookReader_subst.css")){
@@ -124,9 +126,13 @@ class bookreader extends affichage{
 		<script type='text/javascript' src='$visionneuse_path/classes/mimetypes/bookreader/BookReader/dragscrollable.js'></script>
 		<script type='text/javascript' src='$visionneuse_path/classes/mimetypes/bookreader/BookReader/jquery.colorbox-min.js'></script>
 		<script type='text/javascript' src='$visionneuse_path/classes/mimetypes/bookreader/BookReader/jquery.ui.ipad.js'></script>
-		<script type='text/javascript' src='$visionneuse_path/classes/mimetypes/bookreader/BookReader/jquery.bt.min.js'></script>	
-		<script type='text/javascript' src='$visionneuse_path/classes/mimetypes/bookreader/BookReader/BookReader.js?v=3.0.9'></script>	
-    	<script type='text/javascript'>
+		<script type='text/javascript' src='$visionneuse_path/classes/mimetypes/bookreader/BookReader/jquery.bt.min.js'></script>";
+	    if(file_exists($visionneuse_path.'/classes/mimetypes/bookreader/BookReader/BookReader_'.$lang.'.js')) {
+	    	print "<script type='text/javascript' src='$visionneuse_path/classes/mimetypes/bookreader/BookReader/BookReader_".$lang.".js?v=3.0.9'></script>";
+	    } else {
+	    	print "<script type='text/javascript' src='$visionneuse_path/classes/mimetypes/bookreader/BookReader/BookReader.js?v=3.0.9'></script>";
+	    }
+    	print "<script type='text/javascript'>
     		$(document).ready(function() {
 	    		br = new BookReader();
 
@@ -326,6 +332,7 @@ class bookreader extends affichage{
     }
     
     public function getCSS(){
+    	header("Content-Type: text/css");
     	$width = 0;
     	if($this->parameters['logo_url']){
     		$img = imagecreatefromstring(file_get_contents($this->parameters['logo_url']));
@@ -344,7 +351,11 @@ class bookreader extends affichage{
     }
     
     public function getTabParam(){
-
+    	if(!isset($this->parameters['pdf_creator'])) $this->parameters['pdf_creator'] = '';
+    	if(!isset($this->parameters['pdf_footer_name'])) $this->parameters['pdf_footer_name'] = '';
+    	if(!isset($this->parameters['pdf_footer_link'])) $this->parameters['pdf_footer_link'] = '';
+    	if(!isset($this->parameters['logo_url'])) $this->parameters['logo_url'] = '';
+    	if(!isset($this->parameters['resolution_image'])) $this->parameters['resolution_image'] = '';
     	$this->tabParam = array(
     		"pdf_allowed"=>array("type"=>"checkbox","name"=>"pdf_allowed","value"=>1,"desc"=>"Autoriser l'export au format PDF"),
     		"pdf_creator"=>array("type"=>"text","name"=>"pdf_creator","value"=>$this->parameters['pdf_creator'],"desc"=>"Auteur du PDF"),

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: perio_a2z.tpl.php,v 1.52 2020/04/20 14:45:47 dgoron Exp $
+// $Id: perio_a2z.tpl.php,v 1.53.2.1 2023/11/03 11:10:58 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "tpl.php")) die("no access");
 

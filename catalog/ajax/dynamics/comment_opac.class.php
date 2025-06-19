@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: comment_opac.class.php,v 1.3.10.1 2022/01/04 08:48:17 dgoron Exp $
+// $Id: comment_opac.class.php,v 1.4 2022/01/04 08:41:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

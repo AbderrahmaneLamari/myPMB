@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.20.2.1 2021/07/20 12:30:59 dgoron Exp $
+// $Id: main.inc.php,v 1.22 2022/03/08 13:45:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -35,8 +35,8 @@ switch ($quelle) {
 	case 'impr_cote':
 		include ("./catalog/caddie/action/impr_cote.inc.php");
 		break;
-	case 'expdocnum':
-		include ("./catalog/caddie/action/expdocnum.inc.php");
+	case 'docnum':
+		caddie_controller::proceed_docnum($idcaddie);
 		break;
 	case 'reindex':
 		caddie_controller::proceed_reindex($idcaddie);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interface_entity_bulletinage_form.class.php,v 1.2.2.1 2021/07/09 14:14:19 dgoron Exp $
+// $Id: interface_entity_bulletinage_form.class.php,v 1.3.4.1 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -39,7 +39,7 @@ class interface_entity_bulletinage_form extends interface_entity_record_form {
 	}
 	
 	protected function get_cancel_action() {
-		return $this->get_url_base()."&action=view&bul_id=".$this->object_id;
+		return $this->get_url_base()."&action=view&bul_id=" . intval($this->object_id);
 	}
 	
 	protected function get_submit_action() {

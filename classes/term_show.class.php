@@ -2,12 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: term_show.class.php,v 1.34 2021/05/25 12:22:03 dgoron Exp $
+// $Id: term_show.class.php,v 1.34.6.1 2023/09/06 09:18:38 dgoron Exp $
 //
 // Gestion de l'affichage d'un notice d'un terme du thésaurus
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/category.class.php");
 require_once($class_path."/thesaurus.class.php");
 require_once("$class_path/marc_table.class.php");
@@ -56,7 +57,7 @@ class term_show {
 			//Si la catégorie ne commence pas par "~", on affiche le libelle avec un lien pour la recherche sur le terme, sinon on affiche ~
 			if (($r->path_table[$i]['libelle'][0]!='~')||($this->keep_tilde)) {
 			    if ($this->iframe_mode) {
-    				$re .= "<a href='#' data-name='term_show'>" . htmlentities($r->path_table[$i]['libelle'], ENT_QUOTES, $charset) . "</a>";
+    				$re .= "<a href='#' data-name='term_show' data-term-label='".htmlentities($r->path_table[$i]['libelle'], ENT_QUOTES, $charset)."' data-term-thes='".$r->thes->id_thesaurus."'>" . htmlentities($r->path_table[$i]['libelle'], ENT_QUOTES, $charset) . "</a>";
 			    } else {
 			        $args = 'term='.rawurlencode($r->path_table[$i]['libelle']).'&id_thes='.$r->thes->id_thesaurus.'&'.$this->base_query;
 			        $re.="<a href=\"".$this->url_for_term_show.'?'.$args."\" data-evt-args=\"".$args."\" target=\"term_show\">".htmlentities($r->path_table[$i]['libelle'],ENT_QUOTES,$charset).'</a>';
@@ -69,7 +70,7 @@ class term_show {
 		//Si le libellé de la catégorie ne commence pas par "~", on affiche le libellé avec un lien sinon ~
 		if ((substr($r->libelle, 0, 1) != '~') || ($this->keep_tilde)) {
 		    if ($this->iframe_mode) {
-    			$re .= "<a href='#' data-name='term_show'>" . htmlentities($r->libelle, ENT_QUOTES, $charset) . "</a>";
+		        $re .= "<a href='#' data-name='term_show' data-term-label='".htmlentities($r->libelle, ENT_QUOTES, $charset)."' data-term-thes='".$r->thes->id_thesaurus."'>" . htmlentities($r->libelle, ENT_QUOTES, $charset) . "</a>";
 		    } else {
 		        $args = 'term='.rawurlencode($r->libelle).'&id_thes='.$r->thes->id_thesaurus.'&'.$this->base_query;
 		        $re.="<a href=\"".$this->url_for_term_show.'?'.$args."\" data-evt-args=\"".$args."\" target=\"term_show\">".htmlentities($r->libelle,ENT_QUOTES,$charset).'</a>';
@@ -103,7 +104,7 @@ class term_show {
 				$re=htmlentities($r->libelle,ENT_QUOTES,$charset);
 			}else{
 			    if ($this->iframe_mode) {
-    				$re = "<a href='' data-name='term_show'>" . htmlentities($r->libelle, ENT_QUOTES, $charset) . "</a>";
+    				$re = "<a href='' data-name='term_show' data-term-label='".htmlentities($r->libelle, ENT_QUOTES, $charset)."' data-term-thes='".$r->thes->id_thesaurus."'>" . htmlentities($r->libelle, ENT_QUOTES, $charset) . "</a>";
 			    } else {
 			        $args = 'term='.rawurlencode($r->libelle).'&id_thes='.$r->thes->id_thesaurus.'&'.$this->base_query;
 			        $re = "<a href=\"".$this->url_for_term_show.'?'.$args."\" data-evt-args=\"".$args."\" target=\"term_show\">".htmlentities($r->libelle,ENT_QUOTES,$charset).'</a>';
@@ -126,11 +127,9 @@ class term_show {
 	}
 
 	public function show_tree($categ_id,$prefixe,$level,$max_level) {
-		
 		global $charset;
 		global $msg;
 		global $lang;
-		global $dbh;
 		$pl=$this->parent_link;
 		global ${$pl};
 		
@@ -145,7 +144,7 @@ class term_show {
 					$visible=$pl($r2->categ_id,$r2->categ_see);
 					if ($visible["VISIBLE"]) {
 					    if ($this->iframe_mode) {
-    						$res .= $visible['LINK'] ."&nbsp;$prefixe - <a href='#' data-name='term_show'>" . htmlentities($r2->categ_libelle, ENT_QUOTES, $charset) . "</a>";
+					        $res .= $visible['LINK'] ."&nbsp;$prefixe - <a href='#' data-name='term_show' data-term-label='".htmlentities($r2->categ_libelle, ENT_QUOTES, $charset)."' data-term-thes='".$this->id_thes."'>" . htmlentities($r2->categ_libelle, ENT_QUOTES, $charset) . "</a>";
 					    } else {
 					        $args = 'term='.rawurlencode($r2->categ_libelle).'&id_thes='.$this->id_thes.'&'.$this->base_query;
 					        $res .= $visible['LINK'] .'&nbsp;'.$prefixe." - <a href=\"".$this->url_for_term_show.'?'.$args."\" data-evt-args=\"".$args."\" target=\"term_show\">".htmlentities($r2->categ_libelle,ENT_QUOTES,$charset).'</a>';
@@ -158,7 +157,7 @@ class term_show {
 						$res.='<br />';
 					}
 					if ($this->iframe_mode) {
-					    $prefix = $prefixe." - <a href='#' data-name='term_show'>".htmlentities($r2->categ_libelle,ENT_QUOTES,$charset).'</a>';
+					    $prefix = $prefixe." - <a href='#' data-name='term_show' data-term-label='".htmlentities($r2->categ_libelle, ENT_QUOTES, $charset)."' data-term-thes='".$this->id_thes."'>".htmlentities($r2->categ_libelle,ENT_QUOTES,$charset).'</a>';
 					} else {
 					    $prefix = $prefixe." - <a href=\"".$this->url_for_term_show.'?term='.rawurlencode($r2->categ_libelle).'&id_thes='.$this->id_thes.'&'.$this->base_query."\">".htmlentities($r2->categ_libelle,ENT_QUOTES,$charset).'</a>';
 					}
@@ -179,13 +178,12 @@ class term_show {
 
 
 	public function show_notice() {
-		
 		global $history,$history_thes;
 		global $charset;
 		global $msg;
-		global $dbh;
 		global $lang;
 		global $thesaurus_mode_pmb;
+		
 		$pl=$this->parent_link;
 		global ${$pl};
 
@@ -202,7 +200,7 @@ class term_show {
 		//Récupération des catégories ayant le même libellé
 		$resultat_1=$this->do_query(1);
 		
-		if($thesaurus_mode_pmb == 0){
+		if($thesaurus_mode_pmb == 0 || empty($this->thes->libelle_thesaurus)){
 			$res.='<b>'.htmlentities($this->term,ENT_QUOTES,$charset).'</b><blockquote>';
 		}else{
 			$res.='<b>'.htmlentities("[".$this->thes->libelle_thesaurus."] ".$this->term,ENT_QUOTES,$charset).'</b><blockquote>';
@@ -272,7 +270,7 @@ class term_show {
 							if (!$first) $res1.=", "; else $first=0;
 							$args = 'term='.rawurlencode($r_ta->categ_libelle).'&id_thes='.$this->id_thes.'&'.$this->base_query;
 							if ($this->iframe_mode) {
-    							$res1 .= $visible["LINK"] . "&nbsp;<a href='' data-name='term_show'>" . htmlentities($r_ta->categ_libelle, ENT_QUOTES, $charset)."</a>";
+							    $res1 .= $visible["LINK"] . "&nbsp;<a href='' data-name='term_show' data-term-label='".htmlentities($r_ta->categ_libelle, ENT_QUOTES, $charset)."' data-term-thes='".$this->id_thes."'>" . htmlentities($r_ta->categ_libelle, ENT_QUOTES, $charset)."</a>";
 							} else {
 							    $res1 .= $visible["LINK"] . "&nbsp;<a href=\"".$this->url_for_term_show.'?'.$args."\" data-evt-args=\"".$args."\" target=\"term_show\">".htmlentities($r_ta->categ_libelle,ENT_QUOTES,$charset).'</a>';
 							}
@@ -354,7 +352,9 @@ class term_show {
 		}
 		
 		if($mode == 1){
-			$where.="AND noeuds.num_thesaurus = '".$this->id_thes."' ";
+		    if($this->id_thes != -1) {
+		        $where.="AND noeuds.num_thesaurus = '".$this->id_thes."' ";
+		    }
 			if($simple){
 				$where.="AND catdef.libelle_categorie = '".addslashes($this->term)."' ";
 			}else{

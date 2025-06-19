@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: indexation_authperso.class.php,v 1.9.2.1 2021/11/16 08:12:50 gneveu Exp $
+// $Id: indexation_authperso.class.php,v 1.10.4.1 2023/04/06 15:23:49 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -24,6 +24,13 @@ class indexation_authperso extends indexation_authority {
 		if(is_array(static::$xml_indexation[$this->type]) && count(static::$xml_indexation[$this->type])){
 			foreach (static::$xml_indexation[$this->type]['FIELD'] as $i=>$field){
 				static::$xml_indexation[$this->type]['FIELD'][$i]['ID'] = str_replace('!!id_authperso!!', $this->id_authperso, $field['ID']);
+				if(isset($field['CALLABLE']) && is_array($field['CALLABLE'])){
+				    foreach ($field['CALLABLE'] as $j=>$callable){
+				        if(!empty($callable['PARAMETERS'])){
+				            static::$xml_indexation[$this->type]['FIELD'][$i]['CALLABLE'][$j]['PARAMETERS'] = str_replace('!!id_authperso!!', $this->id_authperso, $callable['PARAMETERS']);
+				        }
+					}
+				}
 				if(isset($field['TABLE']) && is_array($field['TABLE'])){
 					foreach ($field['TABLE'] as $j=>$table){
 						if(isset($table['LINK']) && is_array($table['LINK'])){

@@ -2,14 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: config.inc.php,v 1.242.2.40 2022/01/25 09:18:29 touraine37 Exp $
+// $Id: config.inc.php,v 1.246.2.30 2024/01/10 06:02:48 touraine37 Exp $
 
 // fichier de configuration générale
 
-$pmb_version = "</b>7.4.1</b>";
-$pmb_version_brut = "7.4.1";
-$pmb_version_database_as_it_should_be = "v5.35";
-$pmb_subversion_database_as_it_shouldbe = "36";
+$pmb_version = "</b>7.5.4</b>";
+$pmb_version_brut = "7.5.4";
+$pmb_version_database_as_it_should_be = "v6.00";
+$pmb_subversion_database_as_it_shouldbe = "25";
 
 $pmb_version_web = "" ;
 
@@ -79,6 +79,10 @@ $CACHE_ENGINE = 'apcu';//Type de moteur de cache php utilisé
 $CACHE_MAXTIME = 86400;//Duree de mise en cache
 $KEY_CACHE_FILE_XML = 'key_cache_file_xml'.md5(str_replace(array('/admin/netbase'), '', getcwd()));//Prefix pour la cle des variables en cache pour les fichiers XML
 
+//Variables MYSQL
+$SQL_MOTOR_TYPE = '';
+$SQL_VARIABLES = "sql_mode=''";
+
 // définition des périodicités de pério
 define('ABT_PERIODICITE_JOUR'		,    1);
 
@@ -103,6 +107,7 @@ define('AUDIT_EDITORIAL_ARTICLE',20);
 define('AUDIT_EDITORIAL_SECTION',21);
 define('AUDIT_EXPLNUM',22);
 define('AUDIT_CONCEPT', 23);
+define('AUDIT_BANNETTE', 24);
 
 /* la langue est fixée sur la valeur par défaut pour l'instant */
 $lang= $default_lang;
@@ -113,7 +118,7 @@ $backup_dir = "backups";
 
 // est stockée en base mais par défaut, si vide ...
 if (!isset($pmb_opac_url)) $pmb_opac_url = "./opac_css/";
-	
+
 /* Nbre d'enregistrements affichés par page */
 /* autorités */                  /* each was 10 */
 $nb_per_page_author = 20 ;

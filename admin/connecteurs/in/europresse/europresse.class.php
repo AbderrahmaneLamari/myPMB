@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: europresse.class.php,v 1.11 2020/09/16 15:22:12 dbellamy Exp $
+// $Id: europresse.class.php,v 1.12 2022/02/16 13:33:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -319,6 +319,7 @@ class europresse extends connector {
 		global $lang;
 		$this->get_client();
 		
+		$query = array();
 		$query['query'] = $connector_query['criterion']. pmb_utf8_encode($connector_query['value']);
 		$query['documentBase'] = $this->europresse_documentBase;
 		$query['domainId'] = $this->europresse_domain;

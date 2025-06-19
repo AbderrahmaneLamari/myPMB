@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_nomenclature_ui.js,v 1.58 2018/08/27 15:17:24 apetithomme Exp $
+// $Id: nomenclature_nomenclature_ui.js,v 1.59 2022/06/02 10:14:27 qvarin Exp $
 
 define(["dojo/_base/declare", "apps/nomenclature/nomenclature_nomenclature","apps/nomenclature/nomenclature_family_ui","apps/nomenclature/nomenclature_workshops_ui", "dojo/on", "dojo/dom-construct", "dojo/_base/lang", "dojo/dom", "dojo/topic", "dojo/dom-style", "apps/nomenclature/nomenclature_exotic_instruments_ui", "dijit/registry", "dijit/_WidgetBase", "dojo/request/xhr", "dijit/ProgressBar", "apps/pmb/PMBDialog"], function(declare, Nomenclature,Family_ui, Workshops_ui, on, domConstruct, lang, dom, topic, domStyle, Exotic_instruments_ui, registry, _WidgetBase, xhr, ProgressBar, Dialog){
 	/*
@@ -52,7 +52,7 @@ define(["dojo/_base/declare", "apps/nomenclature/nomenclature_nomenclature","app
 		    			if(evt_args.hash == this.nomenclature.get_hash()){
 		    				this.show_analize_error(evt_args.error);
 		    			}
-		    		case "intru_changed" :
+		    		case "instru_changed" :
 		    			if(evt_args.nomenclature_hash == this.nomenclature.get_hash()){
 			    			this.allow_sync_from_details();
 			    		}
@@ -113,9 +113,24 @@ define(["dojo/_base/declare", "apps/nomenclature/nomenclature_nomenclature","app
 		    				this.update_progress_bar(evt_args);
 		    			}
 		    			break;
-		    	}
+					case "drag_and_drop_end":
+						if (evt_args.hash.indexOf(this.nomenclature.get_hash()) != -1) {
+							// l'abbreviation a changé on sync et on save
+							this.sync_from_details();
+							this.ajax_save();
+							topic.publish('nomenclature_ui', 'sync_and_save_end', { hash: this.nomenclature.get_hash() });
+							this.reorder_children();
+						}
+						break;
+				}
 		    },
-		    
+		    reorder_children : function() {
+				xhr("./ajax.php?module=ajax&categ=nomenclature&sub=nomenclature_record_formations&action=reorder_children&id_parent="+this.nomenclature.record_formation.get_record(), {
+					handleAs: "json",
+					method:"GET",
+					sync:true
+				});
+			},
 		    show_analize_error: function(error){
 		    	this.purge_instruments();
 		    	domConstruct.empty(this.error_node);
@@ -434,6 +449,7 @@ define(["dojo/_base/declare", "apps/nomenclature/nomenclature_nomenclature","app
 								this.workshops_ui.workshops[k].instruments_list_ui.instruments[l].create_child();
 							}
 						}
+						this.reorder_children();
 					}
 				}
 			},

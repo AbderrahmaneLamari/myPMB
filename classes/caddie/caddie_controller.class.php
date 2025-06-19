@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: caddie_controller.class.php,v 1.50.2.3 2021/10/11 13:59:54 dgoron Exp $
+// $Id: caddie_controller.class.php,v 1.56.4.2 2023/05/24 11:44:05 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -39,6 +39,22 @@ class caddie_controller extends caddie_root_controller {
 	
 	protected static $list_ui_class_name = 'list_caddies_ui';
 	
+	protected static $list_content_ui_class_name = 'list_caddie_content_ui';
+	
+	public static function get_aff_paniers_from_panier($idcaddie = 0, $sub = '') {
+		global $msg;
+		
+		$idcaddie = intval($idcaddie);
+		static::$title = $msg['caddie_select_pointe_panier'];
+		static::$action_click = "choix_quoi";
+		static::$lien_origine = static::get_constructed_link($sub) . "&moyen=panier&idcaddie_selected=".$idcaddie;
+		$display = "<script type='text/javascript' src='./javascript/tablist.js'></script>";
+		$display .= "<hr />";
+		$display .= static::get_display_list("display");
+		$display .= "<div class='row'><hr /></div>";
+		print $display;
+	}
+	
 	public static function get_aff_paniers($sub = '', $sub_action = '', $moyen = '') {
 		global $msg;
 	
@@ -48,6 +64,7 @@ class caddie_controller extends caddie_root_controller {
 		$lien_pointage=0;
 		switch ($sub) {
 			case 'action':
+				$args_others = '';
 				switch ($sub_action) {
 					case 'edition':
 						static::$title = $msg["caddie_select_edition"];
@@ -65,8 +82,14 @@ class caddie_controller extends caddie_root_controller {
 						static::$title = $msg["caddie_select_supprpanier"];
 						static::$action_click = "choix_quoi";
 						break;
-					case 'expdocnum':
-						static::$title = $msg["caddie_select_expdocnum"];
+					case 'docnum':
+						global $tab;
+						if($tab == 'del') {
+							static::$title = $msg["caddie_select_deldocnum"];
+						} else {
+							static::$title = $msg["caddie_select_expdocnum"];
+						}
+						$args_others .= '&tab='.$tab;
 						static::$action_click = "choix_quoi";
 						break;
 					case 'transfert':
@@ -92,7 +115,7 @@ class caddie_controller extends caddie_root_controller {
 						$restriction_panier='EXPL';
 						break;
 				}
-				static::$lien_origine = static::get_constructed_link($sub, $sub_action);
+				static::$lien_origine = static::get_constructed_link($sub, $sub_action, '', 0, $args_others);
 				break;
 			case 'pointage':
 				switch ($moyen) {
@@ -131,7 +154,7 @@ class caddie_controller extends caddie_root_controller {
 	public static function get_aff_editable_paniers($idcaddie) {
 		global $msg;
 	
-		return aff_paniers($idcaddie, "NOTI", "./catalog.php?categ=caddie&sub=gestion&quoi=panier", "", $msg["caddie_select_afficher"], "", 1, 0, 1);
+		return aff_paniers($idcaddie, "NOTI", static::get_constructed_link('gestion', 'panier'), "", $msg["caddie_select_afficher"], "", 1, 0, 1);
 	}
 	
 	public static function get_object_instance($caddie_id=0) {
@@ -232,9 +255,9 @@ class caddie_controller extends caddie_root_controller {
 							echo "&nbsp;<input type='button' class='bouton' value='".htmlentities($msg["caddie_select_access_rights"],ENT_QUOTES,$charset)."' onclick='document.location=&quot;./catalog.php?categ=caddie&amp;sub=action&amp;quelle=access_rights&amp;action=suite&amp;idcaddie=".$idcaddie."&amp;elt_flag=".$elt_flag."&amp;elt_no_flag=".$elt_no_flag."&quot;' />";
 						}
 						echo "&nbsp;<input type='button' class='bouton' value='".$msg["caddie_menu_action_suppr_panier"]."' onclick='document.location=&quot;./catalog.php?categ=caddie&amp;sub=action&amp;quelle=supprpanier&amp;action=choix_quoi&amp;object_type=NOTI&amp;idcaddie=".$idcaddie."&amp;item=0&amp;elt_flag=".$elt_flag."&amp;elt_no_flag=".$elt_no_flag."&quot;' />",
-						"&nbsp;<input type='button' class='bouton' value='".$msg["caddie_menu_action_edit_panier"]."' onclick=\"document.location='./catalog.php?categ=caddie&sub=gestion&action=edit_cart&idcaddie=".$idcaddie."'\" />",
+						"&nbsp;<input type='button' class='bouton' value='".$msg["caddie_menu_action_edit_panier"]."' onclick=\"document.location='".static::get_constructed_link('gestion', '', 'edit_cart', $idcaddie)."'\" />",
 						"&nbsp;<input type='button' class='bouton' value='".$msg["caddie_supprimer"]."' onclick=\"confirmation_delete(".$myCart->get_idcaddie().",'".htmlentities(addslashes($myCart->name),ENT_QUOTES, $charset)."')\" />",
-						confirmation_delete("./catalog.php?categ=caddie&sub=gestion&action=del_cart&quoi=&idcaddie=");
+						confirmation_delete(static::get_constructed_link('gestion', '', 'del_cart')."&idcaddie=");
 					}
 					break;
 				default:
@@ -386,7 +409,7 @@ class caddie_controller extends caddie_root_controller {
 					print $myCart->aff_cart_nb_items();
 						
 					// form de saisie cb exemplaire
-					print get_cb_expl($msg["caddie_".$action_prefix."_expl"], $msg[661], "./catalog.php?categ=caddie&sub=".$sub."&moyen=douchette&action=".$action_prefix."_item&idcaddie=$idcaddie");
+					print get_cb_expl($msg["caddie_".$action_prefix."_expl"], $msg[661], static::get_constructed_link($sub, 'douchette', $action_prefix."_item", $idcaddie));
 					if ($item_info->expl_ajout_ok) {
 						if ($res_ajout==CADDIE_ITEM_OK) {
 							print "<hr /><div class='row'><span class='erreur'>".$msg["caddie_".$myCart->type."_".($action_prefix == 'add' ? 'added' : $action_prefix)]."</span></div><hr />";
@@ -410,7 +433,7 @@ class caddie_controller extends caddie_root_controller {
 				default:
 					print $myCart->aff_cart_nb_items();
 					// form de saisie cb exemplaire
-					print get_cb_expl($msg["caddie_".$action_prefix."_expl"], $msg[661], "./catalog.php?categ=caddie&sub=".$sub."&moyen=douchette&action=".$action_prefix."_item&idcaddie=$idcaddie");
+					print get_cb_expl($msg["caddie_".$action_prefix."_expl"], $msg[661], static::get_constructed_link($sub, 'douchette', $action_prefix."_item", $idcaddie));
 					break;
 			}
 		} else {
@@ -418,8 +441,76 @@ class caddie_controller extends caddie_root_controller {
 		}
 	}
 	
+	public static function proceed_search_history($idcaddie=0) {
+		global $idcaddie, $action, $msg;
+		
+		if($idcaddie) {
+			$myCart = static::get_object_instance($idcaddie);
+			print pmb_bidi($myCart->aff_cart_titre());
+			switch ($action) {
+				case 'pointe_item':
+					print $myCart->aff_cart_nb_items();
+					switch ($myCart->type) {
+						case "EXPL" :
+							$sc=new search(true,"search_fields_expl");
+							break;
+						case "NOTI" :
+							$sc=new search(true,"search_fields");
+							break;
+							
+					}
+					if(!empty($sc) && is_object($sc)) {
+						$table=$sc->get_results(static::get_constructed_link('pointage', 'search_history'),"",true);
+						$requete="select count(1) from $table";
+						$res = pmb_mysql_query($requete);
+						if($res) $nb_results=pmb_mysql_result(pmb_mysql_query($requete),0,0);
+						else $nb_results=0;
+						if ($nb_results) {
+							switch ($myCart->type) {
+								case "EXPL" :
+									$requete="select $table.* from ".$table.", exemplaires where exemplaires.expl_id=$table.expl_id";
+									$resultat=pmb_mysql_query($requete);
+									while ($row = pmb_mysql_fetch_object($resultat)) {
+										$myCart->pointe_item($row->expl_id,$myCart->type);
+									}
+									break;
+								case "NOTI" :
+									$requete="select $table.* from ".$table;
+									$resultat=pmb_mysql_query($requete);
+									while ($row = pmb_mysql_fetch_object($resultat)) {
+										$myCart->pointe_item($row->notice_id,$myCart->type);
+									}
+									break;
+							}
+						}
+						print "<h3>".$msg["caddie_menu_pointage_apres_pointage"]."</h3>";
+						print pmb_bidi($myCart->aff_cart_nb_items());
+						print $sc->show_search_history($idcaddie, $myCart->type, static::get_constructed_link('pointage', 'search_history'), "pointe_item");
+					}
+					break;
+				default:
+					print pmb_bidi($myCart->aff_cart_nb_items());
+					switch ($myCart->type) {
+						case "EXPL" :
+							$sc=new search(true,"search_fields_expl");
+							break;
+						case "NOTI" :
+							$sc=new search(true,"search_fields");
+							break;
+							
+					}
+					if(!empty($sc) && is_object($sc)) {
+						print $sc->show_search_history($idcaddie, $myCart->type, static::get_constructed_link('pointage', 'search_history'), "pointe_item");
+					}
+					break;
+			}
+		} else {
+			static::get_aff_paniers('pointage', '', 'search_history');
+		}
+	}
+	
 	public static function proceed_print_barcode($idcaddie=0) {
-		global $msg, $base_path;
+		global $msg, $charset, $base_path;
 		global $action;
 		global $barcodes_sheet_id;
 		
@@ -442,6 +533,7 @@ class caddie_controller extends caddie_root_controller {
 					</div>
 					<div class='row'>
 						<select id='barcodes_sheet_id' name='barcodes_sheet_id' onchange=\"document.forms['maj_proc'].setAttribute('action', '".static::get_constructed_link('action', 'print_barcode', 'choix_quoi', $idcaddie, '&object_type='.$myCart->type.'&item=0')."&barcodes_sheet_id='+this.value);document.forms['maj_proc'].submit(); \">
+							<option value='0' ".(empty($barcodes_sheet_id) ? "selected='selected'" : "").">".htmlentities($msg['edit_cbgen_name_default'], ENT_QUOTES, $charset)."</option>
 							".$barcodes_sheets->get_display_options_selector($barcodes_sheet_id)."
 						</select>
 					</div>
@@ -533,7 +625,7 @@ class caddie_controller extends caddie_root_controller {
                 }
                 $print_cart[$ctype]["classement_list"][$ca->caddie_classement]["cart_list"].= pmb_bidi("<tr class='$pair_impair' $tr_javascript ><td class='classement60'><input type='checkbox' id='id_" . $ca->idcaddie . "' name='caddie[" . $ca->idcaddie . "]' value='" . $ca->idcaddie . "' />&nbsp;");
                 $link = "print_cart.php?action=print&object_type=" . $object_type . "&idcaddie=" . $ca->idcaddie . "&item=$item&current_print=$current_print";
-                $print_cart[$ctype]["classement_list"][$ca->caddie_classement]["cart_list"].= pmb_bidi("<a href='javascript:document.getElementById(\"id_" . $ca->idcaddie . "\").checked=true;document.forms[\"print_options\"].submit();' /><strong>" . $ca->name . "</strong>");
+                $print_cart[$ctype]["classement_list"][$ca->caddie_classement]["cart_list"].= pmb_bidi("<a href='javascript:document.getElementById(\"id_" . $ca->idcaddie . "\").checked=true;document.forms[\"print_options\"].submit();'><strong>" . $ca->name . "</strong></a>");
                 if ($ca->comment) {
                     $print_cart[$ctype]["classement_list"][$ca->caddie_classement]["cart_list"].= pmb_bidi("<br /><small>(" . $ca->comment . ")</small>");
                 }
@@ -568,8 +660,8 @@ class caddie_controller extends caddie_root_controller {
             </div>";
         print "<hr />";
 
-        print pmb_bidi("<div class='row'><a href='javascript:expandAll()'><img src='".get_url_icon('expand_all.gif')."' id='expandall' style='border:0px'></a>
-                                        <a href='javascript:collapseAll()'><img src='".get_url_icon('collapse_all.gif')."' id='collapseall' style='border:0px'></a>" . $msg['caddie_add_search'] . "</div>");
+        print pmb_bidi("<div class='row'><a href='javascript:expandAll()'><img src='".get_url_icon('expand_all.gif')."' id='expandall' style='border:0px' /></a>
+                                        <a href='javascript:collapseAll()'><img src='".get_url_icon('collapse_all.gif')."' id='collapseall' style='border:0px' /></a>" . $msg['caddie_add_search'] . "</div>");
 
         if (count($print_cart)) {
             foreach ($print_cart as $key => $cart_type) {
@@ -718,8 +810,7 @@ class caddie_controller extends caddie_root_controller {
 			foreach ($environement["caddie"] as $environement_caddie) {
 				$c = new caddie($environement_caddie);
 				$nb_items_before = $c->nb_item;
-				$resultat = @pmb_mysql_query($requete);
-				print pmb_mysql_error();
+				$resultat = pmb_mysql_query($requete);
 				while (($r = pmb_mysql_fetch_object($resultat))) {
 					if ($environement["pager"] != 2 || in_array($r->notice_id, $environement['selected_objects'])) {
 						if ($environement["include_child"]) {

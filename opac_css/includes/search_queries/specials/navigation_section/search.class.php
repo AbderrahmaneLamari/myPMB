@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.8.2.1 2022/01/10 10:35:57 dgoron Exp $
+// $Id: search.class.php,v 1.9.4.1 2023/08/31 12:56:44 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -37,8 +37,8 @@ class navigation_section_search {
     //fonction de création de la requête (retourne une table temporaire)
     public function make_search() {
     	global $msg,$gestion_acces_active,$gestion_acces_empr_notice,$class_path;
-    	
-//    	var_dump($_SESSION);
+    	global $default_tmp_storage_engine;
+
     	
     	$id=intval($_SESSION['last_module_search']['search_id']);
     	$location=intval($_SESSION['last_module_search']['search_location']);
@@ -80,7 +80,7 @@ class navigation_section_search {
     	}
     	if($type_aff_navigopac == 0){//Pas de navigation
     		//On récupère les notices de monographie avec au moins un exemplaire dans la localisation et la section
-			$requete="create temporary table temp_n_id ENGINE=MyISAM ( SELECT notice_id FROM notices ".$acces_j." JOIN exemplaires ON expl_section='".$id."' and expl_location='".$location."' and expl_notice=notice_id ".$statut_j." WHERE 1 ".$statut_r." GROUP BY notice_id)";
+			$requete="create temporary table temp_n_id ENGINE={$default_tmp_storage_engine} ( SELECT notice_id FROM notices ".$acces_j." JOIN exemplaires ON expl_section='".$id."' and expl_location='".$location."' and expl_notice=notice_id ".$statut_j." WHERE 1 ".$statut_r." GROUP BY notice_id)";
 			pmb_mysql_query($requete);
 			//On récupère les notices de périodique avec au moins un exemplaire d'un bulletin dans la localisation et la section
 			$requete="INSERT INTO temp_n_id (SELECT notice_id FROM exemplaires JOIN bulletins ON expl_section='".$id."' and expl_location='".$location."' and expl_bulletin=bulletin_id JOIN notices ON notice_id=bulletin_notice ".$acces_j." ".$statut_j." WHERE 1 ".$statut_r." GROUP BY notice_id)";
@@ -88,7 +88,7 @@ class navigation_section_search {
 			pmb_mysql_query("alter table temp_n_id add index(notice_id)");
 			$requeteSource = "SELECT notices.notice_id FROM temp_n_id JOIN notices ON notices.notice_id=temp_n_id.notice_id GROUP BY notices.notice_id";
     	}elseif($type_aff_navigopac == -1){//Navigation par auteurs
-    		$requete="create temporary table temp_n_id ENGINE=MyISAM ( SELECT notice_id FROM notices ".$acces_j." JOIN exemplaires ON expl_section='".$id."' and expl_location='".$location."' and expl_notice=notice_id ".$statut_j." WHERE 1 ".$statut_r." GROUP BY notice_id)";
+    		$requete="create temporary table temp_n_id ENGINE={$default_tmp_storage_engine} ( SELECT notice_id FROM notices ".$acces_j." JOIN exemplaires ON expl_section='".$id."' and expl_location='".$location."' and expl_notice=notice_id ".$statut_j." WHERE 1 ".$statut_r." GROUP BY notice_id)";
     		pmb_mysql_query($requete);
     		//On récupère les notices de périodique avec au moins un exemplaire d'un bulletin dans la localisation et la section
     		$requete="INSERT INTO temp_n_id (SELECT notice_id FROM exemplaires JOIN bulletins ON expl_section='".$id."' and expl_location='".$location."' and expl_bulletin=bulletin_id JOIN notices ON notice_id=bulletin_notice ".$acces_j." ".$statut_j." WHERE 1 ".$statut_r." GROUP BY notice_id)";
@@ -154,7 +154,7 @@ class navigation_section_search {
     	
     		if($nbr_lignes) {
     			//Table temporaire de tous les id
-    			$requete = "create temporary table temp_n_id ENGINE=MyISAM (select notice_id, expl_id FROM notices $acces_j ,exemplaires $statut_j ";
+    			$requete = "create temporary table temp_n_id ENGINE={$default_tmp_storage_engine} (select notice_id, expl_id FROM notices $acces_j ,exemplaires $statut_j ";
     			$requete.= "WHERE expl_location=$location and expl_section=$id and notice_id=expl_notice ";
     			if (strlen($dcote)) {
     				if (!$ssub) {
@@ -183,9 +183,9 @@ class navigation_section_search {
     			pmb_mysql_query("alter table temp_n_id add index(notice_id, expl_id)");
     			//Calcul du classement
     			if (!$ssub) {
-    				$rq1_index="create temporary table union1 ENGINE=MyISAM (select distinct expl_cote from exemplaires, temp_n_id where expl_location='".$location."' and expl_section='".$id."' and expl_notice=temp_n_id.notice_id) ";
+    				$rq1_index="create temporary table union1 ENGINE={$default_tmp_storage_engine} (select distinct expl_cote from exemplaires, temp_n_id where expl_location='".$location."' and expl_section='".$id."' and expl_notice=temp_n_id.notice_id) ";
     				pmb_mysql_query($rq1_index);
-    				$rq2_index="create temporary table union2 ENGINE=MyISAM (select distinct expl_cote from exemplaires join (select distinct bulletin_id from bulletins join temp_n_id where bulletin_notice=notice_id) as sub on (bulletin_id=expl_bulletin) where expl_location='".$location."' and expl_section='".$id."') ";
+    				$rq2_index="create temporary table union2 ENGINE={$default_tmp_storage_engine} (select distinct expl_cote from exemplaires join (select distinct bulletin_id from bulletins join temp_n_id where bulletin_notice=notice_id) as sub on (bulletin_id=expl_bulletin) where expl_location='".$location."' and expl_section='".$id."') ";
     				pmb_mysql_query($rq2_index);
     				$req_index="select distinct expl_cote from union1 union select distinct expl_cote from union2";
     				$res_index=pmb_mysql_query($req_index);

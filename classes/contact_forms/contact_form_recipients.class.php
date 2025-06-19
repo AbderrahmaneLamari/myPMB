@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contact_form_recipients.class.php,v 1.7 2021/05/17 21:01:25 dgoron Exp $
+// $Id: contact_form_recipients.class.php,v 1.8.4.1 2023/10/10 07:43:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/contact_forms/contact_form_objects.class.php");
 require_once($class_path."/contact_forms/contact_form_parameters.class.php");
 
@@ -82,10 +83,6 @@ class contact_form_recipients {
 			<td><i>".htmlentities($msg['admin_opac_contact_form_recipient_copy_email'], ENT_QUOTES, $charset)."</i></td>
 			<td><input type='text' class='saisie-30em' id='recipient_".$this->mode."_".$id."_copy_email' name='recipients[".$this->mode."][".$id."][copy_email]' value='".(isset($this->recipients[$this->mode][$id]['copy_email']) ? htmlentities($this->recipients[$this->mode][$id]['copy_email'], ENT_QUOTES, $charset) : '')."' /></td>	
 		</tr>
-		<tr class='even'>
-			<td><i>".htmlentities($msg['admin_opac_contact_form_recipient_transmitter_email'], ENT_QUOTES, $charset)."</i></td>
-			<td><input type='text' class='saisie-30em' id='recipient_".$this->mode."_".$id."_transmitter_email' name='recipients[".$this->mode."][".$id."][transmitter_email]' value='".(isset($this->recipients[$this->mode][$id]['transmitter_email']) ? htmlentities($this->recipients[$this->mode][$id]['transmitter_email'], ENT_QUOTES, $charset) : '')."' /></td>	
-		</tr>	
 		";
 	}
 	
@@ -144,9 +141,8 @@ class contact_form_recipients {
 	
 	protected function _get_display_content_list_by_persons() {
 		global $msg, $charset;
-		global $base_path;
 		
-		$display = "<tr><th colspan='2'>".htmlentities($msg['admin_opac_contact_form_recipient_add'], ENT_QUOTES, $charset)." <input type='button' class='bouton' id='contact_form_button_add' name='contact_form_button_add' value='".htmlentities($msg['req_bt_add_line'], ENT_QUOTES, $charset)."' onclick=\"document.location='".$base_path."/admin.php?categ=contact_forms&sub=recipients&action=add&mode=".$this->mode."&id=".$this->id."';\" /></th></tr>";
+		$display = "<tr><th colspan='2'>".htmlentities($msg['admin_opac_contact_form_recipient_add'], ENT_QUOTES, $charset)." <input type='button' class='bouton' id='contact_form_button_add' name='contact_form_button_add' value='".htmlentities($msg['req_bt_add_line'], ENT_QUOTES, $charset)."' onclick=\"document.location='".static::format_url("&action=add&mode=".$this->mode."&id=".$this->id)."';\" /></th></tr>";
 		if(count($this->recipients['by_persons'])) {
 			foreach ($this->recipients['by_persons'] as $key=>$person) {
 				$display .= "
@@ -155,7 +151,7 @@ class contact_form_recipients {
 							<table>
 								<tr><th colspan='2'>".(!empty($this->recipients[$this->mode][$key]['name']) ? $this->recipients[$this->mode][$key]['name'] : htmlentities($msg['admin_opac_contact_form_recipient_without_name'], ENT_QUOTES, $charset))."</th></tr>";
 				$display .= $this->_get_recipients_lines($key);
-				$display .= "<tr><td></td><td><input type='button' class='bouton' id='contact_form_button_delete' name='contact_form_button_delete' value=\"".htmlentities($msg['admin_opac_contact_form_recipient_delete'], ENT_QUOTES, $charset)."\" onclick=\"document.location='".$base_path."/admin.php?categ=contact_forms&sub=recipients&action=delete&mode=".$this->mode."&id=".$this->id."&recipient_key=".$key."';\" /></td></tr>
+				$display .= "<tr><td></td><td><input type='button' class='bouton' id='contact_form_button_delete' name='contact_form_button_delete' value=\"".htmlentities($msg['admin_opac_contact_form_recipient_delete'], ENT_QUOTES, $charset)."\" onclick=\"document.location='".static::format_url("&action=delete&mode=".$this->mode."&id=".$this->id."&recipient_key=".$key)."';\" /></td></tr>
 							</table>
 						</td>
 					</tr>";
@@ -206,7 +202,7 @@ class contact_form_recipients {
 		global $base_path, $msg, $charset;
 		global $current_module;
 		
-		$display = "<form id='contact_form_recipients' name='contact_form_recipients' class='form-".$current_module."' action='".$base_path."/admin.php?categ=contact_forms&sub=recipients&action=save&mode=".$this->mode."&id=".$this->id."' method='post'>
+		$display = "<form id='contact_form_recipients' name='contact_form_recipients' class='form-".$current_module."' action='".static::format_url("&action=save&mode=".$this->mode."&id=".$this->id)."' method='post'>
 			<div class='form-contenu'>";
 		if($this->message != "") {
 			$display .= "<span class='erreur'>".htmlentities($this->message, ENT_QUOTES, $charset)."</span>";
@@ -214,7 +210,7 @@ class contact_form_recipients {
 		$display .= "
 				<div class='row'>
 					<label>".htmlentities($msg['admin_opac_contact_form_parameter_recipients_mode'], ENT_QUOTES, $charset)."</label>
-					".contact_form_parameters::gen_recipients_mode_selector($this->mode, "document.location='".$base_path."/admin.php?categ=contact_forms&sub=recipients&mode='+this.value+'&id=".$this->id."'")."
+					".contact_form_parameters::gen_recipients_mode_selector($this->mode, "document.location='".static::format_url("&mode='+this.value+'&id=".$this->id)."'")."
 				</div>
 				<div class='row'>&nbsp;</div>";
 		//Affichage de la liste des destinataires selon le mode
@@ -241,7 +237,6 @@ class contact_form_recipients {
 								var email = document.getElementById('recipient_".$this->mode."_' + key + '_email').value;
 								var name = document.getElementById('recipient_".$this->mode."_' + key + '_name').value;
 								var copy_email = document.getElementById('recipient_".$this->mode."_' + key + '_copy_email').value;
-								var transmitter_email = document.getElementById('recipient_".$this->mode."_' + key + '_transmitter_email').value;
 								if (name == ''){
 									alert(\"".sprintf($msg['onto_error_no_minima'], $msg['67'])."\");
 									return;
@@ -256,12 +251,6 @@ class contact_form_recipients {
 									if(copy_email != ''){
 										if(!check_mail(copy_email)){
 											alert(copy_email+\" : ".lcfirst($msg['761'])."\");
-											return;
-										}
-									}
-									if(transmitter_email != ''){
-										if(!check_mail(transmitter_email)){
-											alert(transmitter_email+\" : ".lcfirst($msg['761'])."\");
 											return;
 										}
 									}
@@ -356,5 +345,11 @@ class contact_form_recipients {
 	
 	public function set_message($message) {
 		$this->message = $message;
+	}
+	
+	protected static function format_url($url='') {
+		global $base_path;
+		
+		return $base_path.'/admin.php?categ=contact_forms&sub=recipients'.$url;
 	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ? 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_exldap.inc.php,v 1.12.4.1 2022/01/03 10:28:30 dgoron Exp $
+// $Id: empr_exldap.inc.php,v 1.13 2022/01/03 10:20:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

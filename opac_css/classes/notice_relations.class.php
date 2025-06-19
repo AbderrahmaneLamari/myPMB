@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_relations.class.php,v 1.18.2.2 2021/12/03 15:23:22 dgoron Exp $
+// $Id: notice_relations.class.php,v 1.20.4.1 2023/08/31 12:56:45 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -29,7 +29,7 @@ class notice_relations {
 	public static $liste_type_relation;
 	public static $corresp_relation_up_down;
 	
-	public static $rank_by_type;
+	public static $ranking_by_type;
 	
 	protected static $access_rights;
 	
@@ -102,7 +102,7 @@ class notice_relations {
 				join notices on notice_id=linked_notice
 				join notices n2 on n2.notice_id=num_notice ".$access_rights['acces_j']." ".$access_rights['statut_j']." 
 				where num_notice = ".$this->notice_id." ".$access_rights['statut_r']."
-				order by relation_type, rank, notices.create_date";
+				order by relation_type, ranking, notices.create_date";
 		$result = pmb_mysql_query($query);
 		$i = 0;
 		while ($row = pmb_mysql_fetch_object($result)) {
@@ -216,23 +216,23 @@ class notice_relations {
 		return $select;
 	}
 	
-	public static function get_next_rank($notice_id=0, $direction='') {
-		$query = "select max(rank) as max_rank from notices_relations where num_notice=".$notice_id." and direction='".$direction."'";
+	public static function get_next_ranking($notice_id=0, $direction='') {
+		$query = "select max(ranking) as max_ranking from notices_relations where num_notice=".$notice_id." and direction='".$direction."'";
 		$result = pmb_mysql_query($query);
 		$row = pmb_mysql_fetch_object($result);
-		if ($row->max_rank !== null) {
-			$rank = $row->max_rank + 1;
+		if ($row->max_ranking !== null) {
+			$ranking = $row->max_ranking + 1;
 		} else {
-			$rank = 0;
+			$ranking = 0;
 		}
 	
-		return $rank;
+		return $ranking;
 	}
 	
 	public function set_properties_from_form() {
 		global $max_rel;
 
-		static::$rank_by_type = array(
+		static::$ranking_by_type = array(
 				'up' => 0,
 				'down' => 0,
 				'both' => 0
@@ -250,11 +250,11 @@ class notice_relations {
 			global ${$f_rel_id};
 			
 			if(${$f_rel_id}) {
-				if(!is_object($this->links[$i])) {
+			    if(!isset($this->links[$i]) || !is_object($this->links[$i])) {
 					$this->links[$i] = new notice_relation();
 					$this->links[$i]->set_num_notice($this->notice_id);
 				}
-				if(!($this->links[$i]->get_serial_id() == $this->links[$i]->get_linked_notice() && ($this->links[$i]->get_relation_type() == 'b'))) {
+				if(isset($this->links[$i]) && !($this->links[$i]->get_serial_id() == $this->links[$i]->get_linked_notice() && ($this->links[$i]->get_relation_type() == 'b'))) {
 					switch (${$f_rel_delete_link}) {
 						case 1:
 							$this->links[$i]->set_to_delete(true);
@@ -333,14 +333,14 @@ class notice_relations {
 		return $display_links;
 	}
 	
-	public static function insert($num_notice, $linked_notice, $relation_type, $rank=0, $direction='up', $add_reverse_link=true) {
-		$id_notices_relations = static::insert_link($num_notice, $linked_notice, $relation_type, $rank, $direction, 0);
+	public static function insert($num_notice, $linked_notice, $relation_type, $ranking=0, $direction='up', $add_reverse_link=true) {
+		$id_notices_relations = static::insert_link($num_notice, $linked_notice, $relation_type, $ranking, $direction, 0);
 		
 		if ($add_reverse_link) {
 			static::parse();
 			$reverse_relation_type = static::$liste_type_relation[$direction]->attributes[$relation_type]['REVERSE_CODE'];
 			$reverse_direction = static::$liste_type_relation[$direction]->attributes[$relation_type]['REVERSE_DIRECTION'];
-			$reverse_id_notices_relations = static::insert_link($linked_notice, $num_notice, $reverse_relation_type, $rank, $reverse_direction, $id_notices_relations);
+			$reverse_id_notices_relations = static::insert_link($linked_notice, $num_notice, $reverse_relation_type, $ranking, $reverse_direction, $id_notices_relations);
 			
 			pmb_mysql_query("update notices_relations 
 				set num_reverse_link=".$reverse_id_notices_relations." 
@@ -348,12 +348,12 @@ class notice_relations {
 		}
 	}
 	
-	public static function insert_link($num_notice, $linked_notice, $relation_type, $rank=0, $direction='', $num_reverse_link=0) {
+	public static function insert_link($num_notice, $linked_notice, $relation_type, $ranking=0, $direction='', $num_reverse_link=0) {
 		$query = "insert into notices_relations set
 			num_notice = '".$num_notice."',
 			linked_notice = '".$linked_notice."',
 			relation_type = '".addslashes($relation_type)."',
-			rank = '".$rank."',
+			ranking = '".$ranking."',
 			direction = '".addslashes($direction)."',
 			num_reverse_link = ".$num_reverse_link;
 		pmb_mysql_query($query);
@@ -361,20 +361,20 @@ class notice_relations {
 		return pmb_mysql_insert_id();
 	}
 	
-	public static function replace($num_notice, $linked_notice, $relation_type, $rank=0) {
+	public static function replace($num_notice, $linked_notice, $relation_type, $ranking=0) {
 		$query = "replace into notices_relations set
 				num_notice = '".$num_notice."',
 				linked_notice = '".$linked_notice."',
 				relation_type = '".addslashes($relation_type)."',
-				rank = '".$rank."',
+				ranking = '".$ranking."',
 				direction = 'up',
 				num_reverse_link = 0";
 		pmb_mysql_query($query);
 	}
 	
-	public static function update_nomenclature_rank($num_notice, $linked_notice, $relation_type, $rank=0) {
+	public static function update_nomenclature_ranking($num_notice, $linked_notice, $relation_type, $ranking=0) {
 		$query = "update notices_relations set
-				rank = '".$rank."' 
+				ranking = '".$ranking."' 
 				where
 				num_notice = '".$num_notice."' and
 				linked_notice = '".$linked_notice."' and
@@ -382,9 +382,9 @@ class notice_relations {
 		pmb_mysql_query($query);
 	}
 	
-	public static function update_rank($id, $rank=0) {
+	public static function update_ranking($id, $ranking=0) {
 		$query = "update notices_relations set
-				rank = '".$rank."'
+				ranking = '".$ranking."'
 				where
 				id_notices_relations = '".$id."'";
 		pmb_mysql_query($query);
@@ -581,7 +581,7 @@ class notice_relations {
 						$reverse_direction = 'both';
 						$direction = 'both';
 					}
-					$reverse_id_notices_relations = static::insert_link($row->linked_notice, $row->num_notice, $reverse_relation_type, $row->rank, $reverse_direction, $row->id_notices_relations);
+					$reverse_id_notices_relations = static::insert_link($row->linked_notice, $row->num_notice, $reverse_relation_type, $row->ranking, $reverse_direction, $row->id_notices_relations);
 				}				
 				
 				pmb_mysql_query("update notices_relations

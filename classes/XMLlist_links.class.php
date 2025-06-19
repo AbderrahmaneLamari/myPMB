@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: XMLlist_links.class.php,v 1.13 2020/04/24 07:32:34 dgoron Exp $
+// $Id: XMLlist_links.class.php,v 1.13.6.1 2023/04/28 09:58:44 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,18 +13,18 @@ class XMLlist_links extends XMLlist {
 
 	public $inverse_of = array();	// Tableau des attributs inverseOf dans le fichier XML
 	public $sens = '';					// Attribut sens dans le fichier XML
-	
+
 	// constructeur
 	public function __construct($fichier, $s=1) {
 		parent::__construct($fichier,$s);
 	}
-		                
+
 
 	//Méthodes
 	public function debutBalise($parser, $nom, $attributs) {
 		parent::debutBalise($parser, $nom, $attributs);
 		global $_starttag;
-	
+
 		if($nom == 'ENTRY' && $attributs['INVERSEOF']){
 			$this->inverse_of[$attributs['CODE']] = $attributs['INVERSEOF'];
 		}
@@ -33,12 +33,12 @@ class XMLlist_links extends XMLlist {
 			$this->sens = $attributs['SENS'];
 		}
 	}
-	
+
 	//Méthodes
 	public function debutBaliseSubst($parser, $nom, $attributs) {
 		global $_starttag;
 		parent::debutBaliseSubst($parser, $nom, $attributs);
-		
+
 		if($nom == 'ENTRY' && $attributs['INVERSEOF']){
 			$this->inverse_of[$attributs['CODE']] = $attributs['INVERSEOF'];
 		}
@@ -54,10 +54,10 @@ class XMLlist_links extends XMLlist {
 					break;
 				}
 			}
-		
+
 		}
 	}
-	
+
 	public function finBalise($parser, $nom) {
 		parent::finBalise($parser, $nom);
 		$this->sens = '';
@@ -67,9 +67,9 @@ class XMLlist_links extends XMLlist {
 		parent::finBaliseSubst($parser, $nom);
 		$this->sens = '';
 	}
-	
+
 	public function texte($parser, $data) {
-		global $_starttag; 
+		global $_starttag;
 		if($this->current){
 			if ($_starttag) {
 				$this->table[$this->sens][$this->current] = $data;
@@ -81,7 +81,7 @@ class XMLlist_links extends XMLlist {
 	}
 
 	public function texteSubst($parser, $data) {
-		global $_starttag; 
+		global $_starttag;
 		$this->flag_elt = true;
 		if ($this->current) {
 		if ($_starttag) {
@@ -92,7 +92,7 @@ class XMLlist_links extends XMLlist {
 			}
 		}
 	}
-	
+
 
  // Modif Armelle Nedelec recherche de l'encodage du fichier xml et transformation en charset'
  	public function analyser() {
@@ -116,7 +116,7 @@ class XMLlist_links extends XMLlist {
 			$with_subst=false;
 		}
 		$dejaParse = false;
-		
+
 		$cache_php=cache_factory::getCache();
 		$key_file="";
 		if ($cache_php) {
@@ -171,27 +171,27 @@ class XMLlist_links extends XMLlist {
 				}
 			}
 		}
-		
+
 		if(!$dejaParse){
 			$this->table = array();
 			$this->inverse_of = array();
 			$this->attributes = array();
 			$file_size=filesize ($this->fichierXml);
 			$data = fread ($fp, $file_size);
-	
+
 	 		$rx = "/<?xml.*encoding=[\'\"](.*?)[\'\"].*?>/m";
 			if (preg_match($rx, $data, $m)) $encoding = strtoupper($m[1]);
 				else $encoding = "ISO-8859-1";
-			
+
 	 		$this->analyseur = xml_parser_create($encoding);
-	 		xml_parser_set_option($this->analyseur, XML_OPTION_TARGET_ENCODING, $charset);		
+	 		xml_parser_set_option($this->analyseur, XML_OPTION_TARGET_ENCODING, $charset);
 			xml_parser_set_option($this->analyseur, XML_OPTION_CASE_FOLDING, true);
 			xml_set_object($this->analyseur, $this);
 			xml_set_element_handler($this->analyseur, "debutBalise", "finBalise");
 			xml_set_character_data_handler($this->analyseur, "texte");
-		
+
 			fclose($fp);
-	
+
 			if ( !xml_parse( $this->analyseur, $data, TRUE ) ) {
 			    if($pmb_display_errors) {
 			        print_r( sprintf( "erreur XML %s à la ligne: %d ( $this->fichierXml )\n\n",
@@ -200,10 +200,10 @@ class XMLlist_links extends XMLlist {
 			    }
 				return ;
 			}
-	
+
 			xml_parser_free($this->analyseur);
 			unset($this->analyseur);
-	
+
 			if ($fp = @fopen($this->fichierXmlSubst, "r")) {
 				$file_sizeSubst=filesize ($this->fichierXmlSubst);
 				if($file_sizeSubst) {
@@ -213,7 +213,7 @@ class XMLlist_links extends XMLlist {
 					if (preg_match($rx, $data, $m)) $encoding = strtoupper($m[1]);
 						else $encoding = "ISO-8859-1";
 					$this->analyseur = xml_parser_create($encoding);
-					xml_parser_set_option($this->analyseur, XML_OPTION_TARGET_ENCODING, $charset);		
+					xml_parser_set_option($this->analyseur, XML_OPTION_TARGET_ENCODING, $charset);
 					xml_parser_set_option($this->analyseur, XML_OPTION_CASE_FOLDING, true);
 					xml_set_object($this->analyseur, $this);
 					xml_set_element_handler($this->analyseur, "debutBaliseSubst", "finBaliseSubst");
@@ -228,9 +228,9 @@ class XMLlist_links extends XMLlist {
 					}
 					xml_parser_free($this->analyseur);
 					unset($this->analyseur);
-				}	
+				}
 			}
-			
+
 			if ($this->s && is_array($this->table)) {
 				reset($this->table);
 				$tmp = array();
@@ -269,5 +269,6 @@ class XMLlist_links extends XMLlist {
 				fclose($tmp);
 			}
 		}
+		@fclose($fp);
 	}
 }

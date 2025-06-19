@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: oai.class.php,v 1.21.2.1 2021/07/19 13:48:51 dgoron Exp $
+// $Id: oai.class.php,v 1.22 2021/07/19 13:46:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

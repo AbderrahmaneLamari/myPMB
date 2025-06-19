@@ -2,12 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.8 2017/07/12 15:15:01 tsamson Exp $
+// $Id: search.class.php,v 1.9 2022/06/08 10:35:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
-
-global $msg,$lang,$charset,$base_path,$class_path,$include_path;
-
 
 //Classe de gestion de la recherche spécial "combine"
 
@@ -34,9 +31,6 @@ class serials_list{
     
     //fonction de récupération de l'affichage de la saisie du critère
     public function get_input_box() {
-    	global $msg;
-    	global $charset;
-    	global $get_input_box_id;
     	global $base_path;
 
     	//$this->s = new search(false,"search_simple_fields.xml");
@@ -45,7 +39,7 @@ class serials_list{
     	$valeur_="field_".$this->n_ligne."_s_".$this->id;
     	global ${$valeur_};
     	$valeur=${$valeur_};
-    	$r.="
+    	$r ="
    			<script type='text/javascript'>
    				if(typeof(seriallist_fields)=='undefined'){
    					var seriallist_fields = new Array();
@@ -215,6 +209,8 @@ class serials_list{
 		    		$query = "select * from (".implode(" union ",$queries).") as uni order by date,num,val";
 		    	}else if(count($queries)==1){
 		    		$query = $queries[0]. "order by date,num,val";
+		    	} else {
+		    		$query = "";
 		    	}
    				if($query){
 		    		$result = pmb_mysql_query($query);
@@ -247,7 +243,9 @@ class serials_list{
 		    		$query = "select * from (".implode(" union ",$queries).") as uni order by val";
 		    	}else if(count($queries)==1){
 		    		$query = $queries[0]. "order by val";
-		    	} 
+		    	} else {
+		    		$query = "";
+		    	}
 		    	if($query){
 		    		$result = pmb_mysql_query($query);
 					$list=array();

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_watcheslist_view_django.class.php,v 1.4 2018/08/24 08:44:59 plmrozowski Exp $
+// $Id: cms_module_watcheslist_view_django.class.php,v 1.4.12.1 2023/12/07 15:07:35 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -18,7 +18,7 @@ class cms_module_watcheslist_view_django extends cms_module_common_view_django{
 {% else %}			
 <img src='{{watch.logo_url}}' alt=''/>
 {% endif %}
-<blockquote>{{watch.desc}}</blockquote>
+<div>{{watch.desc}}</div>
 {% endfor %}
 </div>";
 	}

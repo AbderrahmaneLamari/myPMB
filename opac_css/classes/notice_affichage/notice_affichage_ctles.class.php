@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_affichage_ctles.class.php,v 1.36.6.1 2022/01/13 15:02:05 dgoron Exp $
+// $Id: notice_affichage_ctles.class.php,v 1.37 2022/01/13 14:59:56 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

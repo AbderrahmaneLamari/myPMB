@@ -2,10 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authority.class.php,v 1.94.2.9 2021/11/05 10:54:14 qvarin Exp $
+// $Id: authority.class.php,v 1.110.2.1 2023/06/15 11:57:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+use Pmb\Ark\Models\ArkModel;
+use Pmb\Ark\Entities\ArkEntityPmb;
+use Pmb\Ark\Entities\ArkAuthority;
+
+global $class_path, $include_path;
 require_once($include_path."/h2o/pmb_h2o.inc.php");
 require_once($class_path.'/skos/skos_concepts_list.class.php');
 require_once($class_path.'/skos/skos_view_concepts.class.php');
@@ -191,6 +196,12 @@ class authority {
 			TYPE_CONCEPT => AUT_TABLE_CONCEPT,
 	);
 	
+	/**
+	 * Lien ARK pointant vers l'autorité
+	 * @var string
+	 */
+	private $ark_link;
+	
 	public function __construct($id=0, $num_object=0, $type_object=0){
 	    $this->id = intval($id);
 	    $this->num_object = intval($num_object);
@@ -207,6 +218,8 @@ class authority {
 	        if($result) {
 	        	if(pmb_mysql_num_rows($result)) {
 	        		$row = pmb_mysql_fetch_object($result);
+	        		pmb_mysql_free_result($result);
+	        		
 	        		$this->id = $row->id_authority;
 	        		$this->num_statut = $row->num_statut;
 	        		$this->statut_label = $row->authorities_statut_label;
@@ -221,11 +234,13 @@ class authority {
 	        		$this->statut_class_html = 'statutnot1';
 	        	}
 	        }
-		} else if ($this->id) {
+		} elseif ($this->id) {
 			$query = "select num_object, type_object, num_statut, authorities_statut_label, authorities_statut_class_html, thumbnail_url from authorities join authorities_statuts on authorities_statuts.id_authorities_statut = authorities.num_statut where id_authority=".$this->id;
 			$result = pmb_mysql_query($query);
 			if($result && pmb_mysql_num_rows($result)) {
 				$row = pmb_mysql_fetch_object($result);
+				pmb_mysql_free_result($result);
+				
 				$this->num_object = $row->num_object;
 				$this->type_object = $row->type_object;
 				$this->num_statut = $row->num_statut;
@@ -278,11 +293,14 @@ class authority {
 	}
 	
 	public function update() {
-		global $msg;
+		global $pmb_ark_activate;
 		if($this->num_object && $this->type_object) {
 			$query = "update authorities set num_statut='".$this->num_statut."', thumbnail_url = '".addslashes($this->thumbnail_url)."'  where num_object=".$this->num_object." and type_object=".$this->type_object;
 			$result = pmb_mysql_query($query);
 			if($result) {
+			    if ($pmb_ark_activate) {
+			        ArkModel::saveArkFromEntity($this);
+			    }
 				return true;
 			} else {
 				return false;
@@ -356,6 +374,7 @@ class authority {
 	}
 	
 	public function delete() {
+	    global $pmb_ark_activate;
 		//Suppression de cet item dans les paniers
 		$authorities_caddie = new authorities_caddie();
 		$authorities_caddie->del_item_all_caddies($this->id, $this->type_object);
@@ -369,7 +388,10 @@ class authority {
 		    $query = "DELETE FROM " . $this->get_prefix_for_pperso() . "_custom_dates where " . $this->get_prefix_for_pperso() ."_custom_origine=" . $this->num_object;
 		    pmb_mysql_query($query);		    
 		}
-		
+		if ($pmb_ark_activate) {
+		    $ark = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $this->id);
+    		$ark->markAsDeleted();
+		}
 	    $query = "delete from authorities where num_object=".$this->num_object." and type_object=".$this->type_object;
 	    $result = pmb_mysql_query($query);
 	    if($result) {
@@ -447,10 +469,7 @@ class authority {
 	}
 	
 	public function render($context=array()){
-		$template_path =  "./includes/templates/authorities/".$this->get_string_type_object().".html";
-		if(file_exists("./includes/templates/authorities/".$this->get_string_type_object()."_subst.html")){
-			$template_path =  "./includes/templates/authorities/".$this->get_string_type_object()."_subst.html";
-		}
+		$template_path =  $this->find_template();
 		if(file_exists($template_path)){
 			$h2o = new H2o($template_path);
 			
@@ -476,6 +495,61 @@ class authority {
 			$h2o->set('aut_link', $this->autlink_class);
 			echo $h2o->render($context);
 		}
+	}
+	
+	public function find_template($what="")
+	{
+	    global  $include_path;  
+	    // Le rep de templates
+	    $template_path= $include_path.'/templates/authorities/';
+	    if(!empty($what)){
+	        $template_path.="$what/";
+	    }
+	    
+	    // On gère les quelques cas particuliers possibles...
+	    switch ($this->get_string_type_object()){
+	        case "titre_uniforme" :
+	            // on cherche le suffix suffixe possible _<nature>_<type>
+	            $template = $this->get_string_type_object()."_".$this->get_object_instance()->oeuvre_nature."_".$this->get_object_instance()->oeuvre_type.".html";
+	            $subst = $this->get_string_type_object()."_".$this->get_object_instance()->oeuvre_nature."_".$this->get_object_instance()->oeuvre_type."_subst.html";
+	            if (file_exists($template_path.$subst)) {
+	                return $template_path.$subst;
+	            }
+	            if (file_exists($template_path.$template)) {
+	                return $template_path.$template;
+	            }
+	            // on cherche le suffix suffixe possible _<nature>
+	            $template = $this->get_string_type_object()."_".$this->get_object_instance()->oeuvre_nature.".html";
+	            $subst = $this->get_string_type_object()."_".$this->get_object_instance()->oeuvre_nature."_subst.html";
+	            if (file_exists($template_path.$subst)) {
+	                return $template_path.$subst;
+	            }
+	            if (file_exists($template_path.$template)) {
+	                return $template_path.$template;
+	            }
+	        case "author" :
+	            //on cherche le suffix suffixe possible _<type>
+	            $template = $this->get_string_type_object()."_".$this->get_object_instance()->type.".html";
+	            $subst = $this->get_string_type_object()."_".$this->get_object_instance()->type."_subst.html";
+	            if (file_exists($template_path.$subst)) {
+	                return $template_path.$subst;
+	            }
+	            if (file_exists($template_path.$template)) {
+	                return $template_path.$template;
+	            }
+	    }
+	    // On est encore, la, c'est donc le cas général qui s'applique, on prend le subst en priorité...
+	    $template = $this->get_string_type_object().'.html';
+	    $subst = $this->get_string_type_object().'_subst.html';
+	    if (file_exists($template_path.$subst)) {
+	        return $template_path.$subst;
+	    }
+	    if (file_exists($template_path.$template)) {
+	        return $template_path.$template;
+	    }
+	 
+	    // On est encore là... désolé, ça ne devrait arriver, on n'a aucun template à utiliser !
+	    return false;
 	}
 	
 	/**
@@ -1013,6 +1087,7 @@ class authority {
 			    case 'author':
 			    case 'authors':
 					return AUT_TABLE_AUTHORS;
+			    case 'categ':
 			    case 'category':
 			    case 'categories':
 					return AUT_TABLE_CATEG;
@@ -1024,10 +1099,12 @@ class authority {
 					return AUT_TABLE_COLLECTIONS;
 			    case 'subcollection' :
 			    case 'subcollections' :
+			    case 'sub_collections' :
 					return AUT_TABLE_SUB_COLLECTIONS;
 			    case 'serie':
 			    case 'series':
 					return AUT_TABLE_SERIES;
+			    case 'tu' :
 			    case 'work' :
 			    case 'works' :
 			    case 'titre_uniforme' :
@@ -1279,30 +1356,19 @@ class authority {
 	}
 	
 	public function get_isbd_template() {
-	    global $include_path;
-	    $template_path = '';
-	    if (file_exists($include_path.'/templates/authorities/isbd/'.$this->get_string_type_object().'.html')) {
-	        $template_path = $include_path.'/templates/authorities/isbd/'.$this->get_string_type_object().'.html';
-	    }
-	    if (file_exists($include_path.'/templates/authorities/isbd/'.$this->get_string_type_object().'_subst.html')) {
-	        $template_path = $include_path.'/templates/authorities/isbd/'.$this->get_string_type_object().'_subst.html';
+	    $template_path = $this->find_template("isbd");
+	    if(false === $template_path) {
+	        return '';
 	    }
 	    return $template_path;
 	}
 
 	public function get_detail() {
-		global $msg, $include_path;
 		if (isset($this->detail)) {
 			return $this->detail;
 		}
 		$this->detail = '';
-		$template_path = '';
-		if (file_exists($include_path.'/templates/authorities/detail/'.$this->get_string_type_object().'.html')) {
-			$template_path = $include_path.'/templates/authorities/detail/'.$this->get_string_type_object().'.html';
-		}
-		if (file_exists($include_path.'/templates/authorities/detail/'.$this->get_string_type_object().'_subst.html')) {
-			$template_path = $include_path.'/templates/authorities/detail/'.$this->get_string_type_object().'_subst.html';
-		}
+		$template_path = $this->find_template("detail");
 		if($template_path){
 			$h2o = H2o_collection::get_instance($template_path);
 			$this->detail = $h2o->render(array('element' => $this));
@@ -1657,5 +1723,60 @@ class authority {
 	        return true;
 	    } 
         return false;
+	}
+	
+	public function get_ark_link() {
+	    if (empty($this->ark_link)) {
+	        global $pmb_ark_activate;
+	        if ($pmb_ark_activate) {
+	            $arkEntity = new ArkAuthority(intval($this->id));
+	            $ark = ArkModel::getArkFromEntity($arkEntity);
+	            $this->ark_link = $ark->getArkLink();
+	        }
+	    }
+	    return $this->ark_link;
+	}
+	
+	public function get_permalink() {
+	    if (!empty($this->get_ark_link())) {
+	        return $this->get_ark_link();
+	    }
+	    global $pmb_opac_url;
+	    if ($this->num_object) {
+	        $type_see = "";
+            switch ($this->type_object) {
+                case AUT_TABLE_AUTHORS :
+                    $type_see = "author_see";
+                    break;
+                case AUT_TABLE_CATEG :
+                     $type_see = "categ_see&id";
+                    break;
+                case AUT_TABLE_COLLECTIONS :
+                     $type_see = "coll_see&id";
+                    break;
+                case AUT_TABLE_CONCEPT :
+                     $type_see = "concept_see&id";
+                    break;
+                case AUT_TABLE_INDEXINT :
+                     $type_see = "indexint_see&id";
+                    break;
+                case AUT_TABLE_PUBLISHERS :
+                     $type_see = "publisher_see&id";
+                    break;
+                case AUT_TABLE_SERIES :
+                     $type_see = "serie_see&id";
+                    break;
+                case AUT_TABLE_SUB_COLLECTIONS :
+                     $type_see = "subcoll_see&id";
+                    break;
+                case AUT_TABLE_TITRES_UNIFORMES :
+                     $type_see = "titre_uniforme_see&id";
+                    break;
+            }
+            if ($type_see) {
+                return $pmb_opac_url.'./index.php?lvl='.$type_see.'&id='.$this->num_object;
+            }
+	    }
+	    return "";
 	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes_theme.class.php,v 1.1 2021/01/14 08:49:31 dgoron Exp $
+// $Id: demandes_theme.class.php,v 1.1.8.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -39,11 +39,15 @@ class demandes_theme {
 		$this->libelle = $data->libelle_theme;
 	}
 
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $liste_simple_content_form, $msg, $charset;
-		
-		$content_form = $liste_simple_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('simple_list_form');
 		if(!$this->id){
@@ -51,11 +55,9 @@ class demandes_theme {
 		}else{
 			$interface_form->set_label($msg['demandes_modif_theme']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['demandes_del_theme'])
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('demandes_theme')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();

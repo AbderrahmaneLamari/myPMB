@@ -2,20 +2,16 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_build.class.php,v 1.61.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: cms_build.class.php,v 1.65.2.1 2023/11/28 15:16:39 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path, $include_path;
 require_once ("$include_path/cms/cms.inc.php");
 require_once ("$include_path/templates/cms/cms_build.tpl.php");  
-require_once($class_path."/autoloader.class.php");
 require_once($class_path."/cms/cms_pages.class.php");
 require_once("$class_path/param_subst.class.php");
 
-$autoloader = new autoloader();
-$autoloader->add_register("cms_modules",true);		
-$autoloader->add_register("frbr_entities",true);		
 class cms_build{
 	
 	public $data = "";
@@ -331,6 +327,7 @@ class cms_build{
 		$tpl=str_replace("!!frbr_cadres_list_in_page!!", $this->build_frbr_cadres_list_in_page(),$tpl);
 		$tpl=str_replace("!!frbr_cadres_list_in_page_nb!!", $this->nb_frbr_cadres_in_page,$tpl);
 		$tpl=str_replace("!!cms_objet_versions!!", $this->build_versions_list(),$tpl);
+		$tpl=str_replace("!!cms_migrate_portal!!", $this->migrate_portal(),$tpl);
 		
 		$tpl=str_replace("!!cms_clean_cache!!", $this->get_clean_cache_button(),$tpl);
 		$tpl=str_replace("!!cms_reset_all_css!!", $this->get_reset_all_css_button(),$tpl);
@@ -676,11 +673,11 @@ class cms_build{
 	    return $tpl;
 	}
 	
-	public function is_fixed($cadre){
-		if($this->objets_att[$cadre['name']]){
+	public function is_fixed($cadre) {
+	    if (!empty($this->objets_att) && !empty($this->objets_att[$cadre['name']])) {
 			return $this->objets_att[$cadre['name']]['fixed'];
 		}
-		return $cadre['fixed'];    		
+		return $cadre['fixed'];
 	}
 	
 	public function get_fixed_after($zone,$cadre_name){			
@@ -747,102 +744,112 @@ class cms_build{
 		}	
 	}	
 	
-	public function save_opac($build_info,$data){			
-		$this->get_last_version_data();
-		$id_version=$this->version_create_new();
-		$cadre_list=array();
-		$cadre_list=array();
-		$zone_before="";
-		$zone_after="";
-		foreach($data['cms_nodes'][0] as $key => $zone){				
-			$zone_name=	$zone['name'];	
-			$zone_style=$zone['style'];
-			$zone_parent=$zone['parent'];				
-			$build_div=$zone['build_div'];		
-			if($data['cms_nodes'][0][$key+1])$zone_after=$data['cms_nodes'][0][$key+1]['name'];
-			else $zone_after="";
+	public function save_opac($build_info, $data) {
+	    $this->get_last_version_data();
+	    $id_version = $this->version_create_new();
+	    $cadre_list = array();
+	    $cadre_list = array();
+	    $zone_before = "";
+	    $zone_after = "";
+	    foreach ($data['cms_nodes'][0] as $key => $zone) {
+	        $zone_name = $zone['name'];
+	        $zone_style = $zone['style'] ?? "";
+	        $zone_parent = $zone['parent'] ?? "";
+	        $build_div = $zone['build_div'] ?? "";
 
-			$rqt = "insert into cms_build SET 	
+	        if (!empty($data['cms_nodes'][0][$key + 1])) {
+	            $zone_after = $data['cms_nodes'][0][$key + 1]['name'];
+	        } else {
+	            $zone_after = "";
+	        }
+
+	        $rqt = "insert into cms_build SET
 				build_version_num= '$id_version',
 				build_type	='zone',
 				build_fixed	='1',
-				build_obj='$zone_name'	,			
-				build_parent='".$zone_parent."' ,
-				build_child_before='".$zone_before."', 
-				build_child_after='".$zone_after."', 
-				build_css='".$zone_style."', 
-				build_div='".$build_div."' 		 						
-			";		
-			pmb_mysql_query($rqt);	
-			$zone_before=$zone_name;
-			$cadre_list[]=$zone_name;
-			$cadre_before="";
-			$cadre_fixed_before="";
-			foreach($zone['childs'] as $cadre){	
-				$cadre_name= $cadre['name'];		
+				build_obj='$zone_name'	,
+				build_parent='" . $zone_parent . "' ,
+				build_child_before='" . $zone_before . "',
+				build_child_after='" . $zone_after . "',
+				build_css='" . $zone_style . "',
+				build_div='" . $build_div . "'
+			";
+	        pmb_mysql_query($rqt);
+	        $zone_before = $zone_name;
+	        $cadre_list[] = $zone_name;
+	        $cadre_before = "";
+	        $cadre_fixed_before = "";
+	        foreach ($zone['childs'] as $cadre) {
+	            $cadre_name = $cadre['name'];
 /*				if(!in_array($cadre_name,$this->cadre_list) && strstr($cadre_name,"cms_module_")){
 					continue;
 				}
 */
-				if(strstr($cadre_name,"add_div_"))continue;
-				$cadre_after=$this->get_after($zone, $cadre_name);					
-				$cadre_fixed_after=$this->get_fixed_after($zone, $cadre_name);				
-				$style=$cadre['style'];				
-				$build_div=$cadre['build_div'];			
-				if($this->is_fixed($cadre)){		// Le cadre est fixe
-					$rqt = "insert into cms_build SET 	
+	            if (strstr($cadre_name, "add_div_")) {
+	                continue;
+	            }
+	            $cadre_after = $this->get_after($zone, $cadre_name);
+	            $cadre_fixed_after = $this->get_fixed_after($zone, $cadre_name);
+	            $style = $cadre['style'] ?? "";
+	            $build_div = $cadre['build_div'] ?? "";
+	            if ($this->is_fixed($cadre)) { // Le cadre est fixe
+	                $rqt = "insert into cms_build SET
 						build_version_num= '$id_version',
 						build_type	='cadre',
 						build_fixed	='1',
-						build_obj='$cadre_name'	,			
-						build_parent='".$zone_name."' ,
-						build_child_before='".$cadre_fixed_before."', 
-						build_child_after='".$cadre_fixed_after."', 
-						build_css='".$style."', 
-						build_div='".$build_div."' 							
-					";		
-					pmb_mysql_query($rqt);
-				}else{		
-					$rqt = "insert into cms_build SET 	
+						build_obj='$cadre_name'	,
+						build_parent='" . $zone_name . "' ,
+						build_child_before='" . $cadre_fixed_before . "',
+						build_child_after='" . $cadre_fixed_after . "',
+						build_css='" . $style . "',
+						build_div='" . $build_div . "'
+					";
+	                pmb_mysql_query($rqt);
+	            } else {
+	                $rqt = "insert into cms_build SET
 						build_version_num= '$id_version',
 						build_type	='cadre',
 						build_fixed	='0',
-						build_obj='$cadre_name'	,	
-						build_parent='".$zone_name."' ,
-						build_child_before='".$cadre_before."', 
-						build_child_after='".$cadre_after."', 
-						build_css='".$style."' , 
-						build_div='".$build_div."' 							
-					";				
-					pmb_mysql_query($rqt);
-				}	
-				if($this->is_fixed($cadre)) $cadre_fixed_before=$cadre_name; 
-				$cadre_before=$cadre_name;
-				
-				$cadre_list[]=$cadre_name;
-			}
-			$this->clean_link($zone_name,$id_version);	
-		}
-		//retauration des cadres non présents dans la page
-		foreach($this->last_version_data as $cadre_name =>$cadre){	
-			if(!in_array($cadre_name,$cadre_list)){
-				if(strstr($cadre_name,"add_div_"))continue;
-				$rqt = "insert into cms_build SET 	
-					build_version_num= '$id_version',
-					build_type	='".$this->last_version_data[$cadre_name]->build_type."',
-					build_fixed	='".$this->last_version_data[$cadre_name]->build_fixed."',
-					build_obj='$cadre_name'	,	
-					build_parent='".$this->last_version_data[$cadre_name]->build_parent."' ,
-					build_child_before='".$this->last_version_data[$cadre_name]->build_child_before."', 
-					build_child_after='".$this->last_version_data[$cadre_name]->build_child_after."', 
-					build_css='".$this->last_version_data[$cadre_name]->build_css."', 
-					build_div='".$this->last_version_data[$cadre_name]->build_div."'									
-				";				
-				pmb_mysql_query($rqt);	
-			}
-		}	
-		return $id_version;
+						build_obj='$cadre_name'	,
+						build_parent='" . $zone_name . "' ,
+						build_child_before='" . $cadre_before . "',
+						build_child_after='" . $cadre_after . "',
+						build_css='" . $style . "' ,
+						build_div='" . $build_div . "'
+					";
+	                pmb_mysql_query($rqt);
+	            }
 
+	            if ($this->is_fixed($cadre)) {
+	                $cadre_fixed_before = $cadre_name;
+	            }
+
+	            $cadre_before = $cadre_name;
+	            $cadre_list[] = $cadre_name;
+	        }
+	        $this->clean_link($zone_name, $id_version);
+	    }
+	    // retauration des cadres non présents dans la page
+	    foreach ($this->last_version_data as $cadre_name => $cadre) {
+	        if (! in_array($cadre_name, $cadre_list)) {
+	            if (strstr($cadre_name, "add_div_")) {
+	                continue;
+	            }
+	            $rqt = "insert into cms_build SET
+					build_version_num= '$id_version',
+					build_type	='" . $this->last_version_data[$cadre_name]->build_type . "',
+					build_fixed	='" . $this->last_version_data[$cadre_name]->build_fixed . "',
+					build_obj='$cadre_name'	,
+					build_parent='" . $this->last_version_data[$cadre_name]->build_parent . "' ,
+					build_child_before='" . $this->last_version_data[$cadre_name]->build_child_before . "',
+					build_child_after='" . $this->last_version_data[$cadre_name]->build_child_after . "',
+					build_css='" . $this->last_version_data[$cadre_name]->build_css . "',
+					build_div='" . $this->last_version_data[$cadre_name]->build_div . "'
+				";
+	            pmb_mysql_query($rqt);
+	        }
+	    }
+	    return $id_version;
 	}
 	
 	public function clean_link($zone_name,$id_version){
@@ -944,7 +951,7 @@ class cms_build{
 	    $path = '';
 	    $needles = ["{% extends", "{% include"];
 
-	    $data = $this->cms_cadre_content[$id_cadre];
+	    $data = $this->cms_cadre_content[$id_cadre] ?? "";
 	    foreach ($needles as $needle){
 	        $haystack = $data; 
 	        $nb_occurence = substr_count($haystack, $needle);
@@ -957,5 +964,68 @@ class cms_build{
     	    }
 	    }
 	    return stripslashes($path);
+	}
+
+	public function migrate_portal()
+	{
+	    global $msg, $charset;
+
+		$info = strip_tags(
+			str_replace('\n','<br>', $msg['cms_migrate_portal_explain']),
+			'<br>'
+		);
+
+		$infoChain = strip_tags(
+			str_replace('\n','<br>', $msg['cms_migrate_portal_chain_explain']),
+			'<br>'
+		);
+
+	    return "
+            <span class='notice-heada'>" . $msg['cms_migrate_portal_title'] . "</span>
+            <div class='cms_build_pages_list'>
+                <p>{$info}</p>
+			</div>
+            <div class='cms_build_pages_list'>
+                <p>
+                    {$infoChain}
+                    <a href='./devel/cmsBuildMigration.php' target='_blank'>{$msg['cms_migrate_portal_chain_link']}</a>
+                </p>
+			</div>
+			<div class='cms_build_pages_list'>
+				<input type='button' class='bouton'
+                    onclick='migrate_portal()'
+                    value='" . htmlentities($msg['cms_migrate_portal_button'], ENT_QUOTES, $charset) . "'>
+			</div>
+            <div class='row'>
+                <p id='migrate_error' class='erreur' style='display:none;'></p>
+            </div>
+            <script>
+                async function migrate_portal() {
+                    if(!confirm('" . addslashes($msg['cms_migrate_portal_confirm']) . "')) {
+                        return;
+                    }
+
+                    let reponse = await fetch('./ajax.php?module=cms&categ=migrate_portal')
+                        .then(response => response.json());
+
+                    if(reponse.error) {
+                        let migrateError = document.getElementById('migrate_error');
+                        if (!migrateError) {
+                            return;
+                        }
+
+                        migrateError.innerText = reponse.message;
+                        migrateError.setAttribute('style', '')
+
+						setTimeout(() => {
+                            migrateError.innerText = '';
+                            migrateError.setAttribute('style', 'display:none;')
+						}, 5000);
+                    } else {
+						document.location = './cms.php?categ=portal';
+                    }
+                }
+            </script>
+        ";
 	}
 }

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // � 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_small_text_ui.class.php,v 1.1.4.5 2021/12/20 15:48:16 tsamson Exp $
+// $Id: onto_contribution_datatype_small_text_ui.class.php,v 1.7 2022/06/08 14:14:13 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+require_once $class_path.'/onto/common/onto_common_datatype_small_text_ui.class.php';
 
 /**
  * class onto_contribution_datatype_small_text_ui
@@ -67,14 +68,14 @@ class onto_contribution_datatype_small_text_ui extends onto_common_datatype_smal
 					$order=$key;
 				}
 				$inside_row=$ontology_tpl['form_row_content_small_text'];
-				
+				$inside_row .= $ontology_tpl['form_row_content_type'];
 				$inside_row=str_replace("!!onto_row_content_small_text_value!!",htmlentities($data->get_formated_value() ,ENT_QUOTES,$charset) ,$inside_row);
 
 				if ($property->multilingue) {
 				    $multilingue = self::get_combobox_lang($instance_name.'_'.$property->pmb_name.'['.$order.'][lang]',$instance_name.'_'.$property->pmb_name.'_'.$order.'_lang',$data->get_lang(), 1, '', $tab_lang);
 				}
 				$inside_row=str_replace("!!onto_row_combobox_lang!!", $multilingue, $inside_row);
-				$inside_row=str_replace("!!onto_row_content_small_text_range!!",$property->range[0] , $inside_row);
+				$inside_row = str_replace("!!onto_row_content_range!!", $property->range[0], $inside_row);
 				
 				$row=str_replace("!!onto_inside_row!!",$inside_row , $row);
 				

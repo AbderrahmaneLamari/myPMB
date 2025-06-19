@@ -4,7 +4,7 @@
 // | creator : Eric ROBERT                                                    |
 // | modified : ...                                                           |
 // +-------------------------------------------------+
-// $Id: func_bretagne.inc.php,v 1.12 2019/08/01 13:16:34 btafforeau Exp $
+// $Id: func_bretagne.inc.php,v 1.12.8.1 2023/10/11 10:11:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -27,41 +27,10 @@ function z_traite_exemplaires () {
 	
 // enregistrement de la notices dans les catégories
 function traite_categories_enreg($notice_retour,$categories,$thesaurus_traite=0) {
-	// si $thesaurus_traite fourni, on ne delete que les catégories de ce thesaurus, sinon on efface toutes
-	//  les indexations de la notice sans distinction de thesaurus
-	if (empty($thesaurus_traite)) {
-	    $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' ";
-	} else {
-	    $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' and num_noeud in (select id_noeud from noeuds where num_thesaurus='$thesaurus_traite' and id_noeud=notices_categories.num_noeud) ";
-	}
-	$res_del = @pmb_mysql_query($rqt_del);
-	$rqt_ins = "INSERT INTO notices_categories (notcateg_notice, notcateg_categorie, ordre_categorie) VALUES ";
-	$nb_categories = count($categories);
-	for ($i = 0; $i < $nb_categories; $i++) {
-		$id_categ = $categories[$i]['categ_id'];
-		if (!empty($id_categ)) {
-			$rqt = $rqt_ins . " ('$notice_retour','$id_categ',$i) "; 
-			$res_ins = @pmb_mysql_query($rqt);
-		}
-	}
-}
-
-function traite_categories_for_form($tableau_600="",$tableau_601="",$tableau_602="",$tableau_605="",$tableau_606="",$tableau_607="",$tableau_608="") {
-	return array(
-		"form" => "",
-		"message" => ""
-	);
+	z3950_notice::traite_categories_enreg($notice_retour, $categories, $thesaurus_traite);
 }
 
 function traite_categories_from_form() {
-global $max_categ ;
-$categories = array () ;
-for ($i=0; $i< $max_categ ; $i++) {
-	$var_categ = "f_categ_id$i" ;
-	global ${$var_categ} ;
-	if (${$var_categ}) 
-		$categories[] = array('categ_id' => ${$var_categ} );
-	}
-return $categories ;
+	return z3950_notice::traite_categories_from_form();
 }
 	

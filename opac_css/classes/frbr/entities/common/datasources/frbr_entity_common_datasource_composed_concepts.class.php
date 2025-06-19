@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_common_datasource_composed_concepts.class.php,v 1.4.10.1 2021/11/18 09:14:23 rtigero Exp $
+// $Id: frbr_entity_common_datasource_composed_concepts.class.php,v 1.5 2021/11/18 09:16:37 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

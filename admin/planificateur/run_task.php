@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: run_task.php,v 1.20 2020/05/11 14:40:39 jlaurent Exp $
+// $Id: run_task.php,v 1.20.6.2 2023/04/04 09:35:32 dgoron Exp $
 
 $base_path="..";
 $base_title="";
@@ -26,10 +26,15 @@ require_once($class_path."/external_services.class.php");
 require_once($class_path."/connecteurs_out.class.php");
 require_once($class_path."/scheduler/scheduler_log.class.php");
 require_once($class_path."/scheduler/scheduler_planning.class.php");
+require_once($class_path."/scheduler/scheduler_task.class.php");
 
 $dbh = connection_mysql();
 
-if (empty($user_id)) $user_id=$argv[4];
+if (empty($user_id)) {
+	$user_id = intval($argv[4]);
+} else {
+	$user_id = intval($user_id);
+}
 
 $requete_nom = "SELECT userid, username, rights, user_lang FROM users 
 	LEFT JOIN es_esgroups on userid=esgroup_pmbusernum
@@ -73,13 +78,16 @@ function run_task($id_tache, $type_tache, $id_planificateur, $num_es_user, $conn
 	global $styles_path;
 	global $msg,$charset;
 	global $current_module;
-
+	
+	$num_es_user = intval($num_es_user);
+	$connectors_out_source_id = intval($connectors_out_source_id);
+	
 	$query = "select * from connectors_out_sources where connectors_out_source_id=".$connectors_out_source_id;
 	$res = pmb_mysql_query($query);
 	$row = pmb_mysql_fetch_object($res);
-
-	$connectors_out_sources_connectornum = $row->connectors_out_sources_connectornum; 
-
+	
+	$connectors_out_sources_connectornum = $row->connectors_out_sources_connectornum;
+	
 	$daconn = instantiate_connecteur_out($connectors_out_sources_connectornum);
 	if ($daconn) {
 		$source_object = $daconn->instantiate_source_class($connectors_out_source_id);
@@ -88,13 +96,13 @@ function run_task($id_tache, $type_tache, $id_planificateur, $num_es_user, $conn
 	}
 	
 	$es=new external_services();
-
+	
 	$array_functions = array();
 	foreach ($source_object->config["exported_functions"] as $exported_function) {
 		$array_functions[] = $exported_function["group"]."_".$exported_function["name"];
 	}
 	$proxy=$es->get_proxy($PMBuserid,$array_functions);
-
+	
 	if (file_exists($base_path."/admin/planificateur/catalog_subst.xml")) {
 		$filename = $base_path."/admin/planificateur/catalog_subst.xml";
 	} else {
@@ -109,6 +117,7 @@ function run_task($id_tache, $type_tache, $id_planificateur, $num_es_user, $conn
 			require_once($base_path."/admin/planificateur/".$anitem["PATH"]."/".$anitem["NAME"].".class.php");
 			$obj_type = new $anitem["NAME"]($id_tache);
 			$obj_type->setEsProxy($proxy);
+			$obj_type->set_connectors_out_source_id($connectors_out_source_id);
 			$obj_type->execute();
 			$scheduler_planning = new scheduler_planning($id_planificateur);
 			$scheduler_planning->checkParams();
@@ -116,6 +125,14 @@ function run_task($id_tache, $type_tache, $id_planificateur, $num_es_user, $conn
 	}
 }
 
-if ($argv[1] && $argv[2] && $argv[3] && $argv[4] && $argv[5]) {	
+global $argv;
+
+$argv[1] = intval($argv[1]); // Identifiant de la tâche
+$argv[2] = intval($argv[2]); // Type de tâche
+$argv[3] = intval($argv[3]); // Identifiant du planificateur
+$argv[4] = intval($argv[4]); // Identifiant de l'utilisateur externe
+$argv[5] = intval($argv[5]); // Identifiant du connecteur sortant
+if ($argv[1] && $argv[2] && $argv[3] && $argv[4] && $argv[5]) {
 	run_task($argv[1], $argv[2], $argv[3], $argv[4], $argv[5]);
 }
+pmb_mysql_close();

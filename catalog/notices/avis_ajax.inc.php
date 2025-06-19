@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: avis_ajax.inc.php,v 1.17.2.1 2022/01/04 08:48:17 dgoron Exp $
+// $Id: avis_ajax.inc.php,v 1.18 2022/01/04 08:41:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

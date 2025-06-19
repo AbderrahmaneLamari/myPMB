@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_view_animationslist.class.php,v 1.1 2021/03/26 13:47:45 btafforeau Exp $
+// $Id: cms_module_common_view_animationslist.class.php,v 1.4.2.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,8 +14,8 @@ class cms_module_common_view_animationslist extends cms_module_common_view_djang
 		parent::__construct($id);
 		
 		$this->default_template = "{% for animation in animations %}
-    <p>{{ animation.header }}</p>
-    <blockquote>{{ animation.content }}</blockquote>
+    <p>{{ animation.name }}</p>
+    <div>{{ animation.description }}</div>
 {% endfor %}";
 	}
 	
@@ -32,18 +32,6 @@ class cms_module_common_view_animationslist extends cms_module_common_view_djang
 				</div>
 			</div>";
 		$form .= parent::get_form();
-		$form .= "
-			<div class='row'>
-				<div class='colonne3'>
-					<label for='cms_module_common_view_animationslist_used_template'>".$this->format_text($this->msg['cms_module_common_view_animationslist_used_template'])."</label>
-				</div>
-				<div class='colonne-suite'>";
-		$form .= notice_tpl::gen_tpl_select('cms_module_common_view_animationslist_used_template', $this->parameters['used_template']);
-		$form .= "				
-				</div>
-			</div>
-		";
-		
 		return $form;
 	}
 	
@@ -56,10 +44,10 @@ class cms_module_common_view_animationslist extends cms_module_common_view_djang
 		return parent::save_form();
 	}
 	
-	public function render($data) {
+	public function render($datas) {
 	    $animation_data = [];
-	    if (! empty($data['animations'])) {
-	        foreach ($data['animations'] as $animation_id) {
+	    if (! empty($datas['animations'])) {
+	        foreach ($datas['animations'] as $animation_id) {
 	            if (! empty($animation_id)) {
 	                $animation = new AnimationModel($animation_id);
 	                $animation->getViewData();
@@ -69,16 +57,39 @@ class cms_module_common_view_animationslist extends cms_module_common_view_djang
 	    }
 	    
 	    $render_data = array(
-	        'title' => $data['title'] ?? '',
+	        'title' => $datas['title'] ?? '',
 	        'animations' => $animation_data,
 	    );
+	    
+	    // Données de la pagination
+	    if(isset($datas['paging']) && $datas['paging']['activate']) {
+	        $render_data['paging'] = $datas['paging'];
+	    }
 	    
 	    return parent::render($render_data);
 	}
 	
 	public function get_format_data_structure() {
         $animation = new AnimationModel();
-        
-        return array_merge($animation->getCmsStructure('animation'), parent::get_format_data_structure());
+        $format = $animation->getCmsStructure('animation');
+        $format[] = array(
+            'var' => "paginator",
+            'desc' => $this->msg['cms_module_common_view_list_paging_title'],
+            'children' => array(
+                array(
+                    'var' => "paginator.paginator",
+                    'desc' => $this->msg['cms_module_common_view_list_paging_paginator_title']
+                ),
+                array(
+                    'var' => "paginator.nbPerPageSelector",
+                    'desc' => $this->msg['cms_module_common_view_list_paging_nb_per_page_title']
+                ),
+                array(
+                    'var' => "paginator.navigator",
+                    'desc' => $this->msg['cms_module_common_view_list_paging_navigator_title']
+                )
+            )
+        );
+        return array_merge($format, parent::get_format_data_structure());
 	}
 }

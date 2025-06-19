@@ -2,11 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestions.class.php,v 1.30.2.2 2021/12/22 15:08:51 dgoron Exp $
+// $Id: suggestions.class.php,v 1.35.4.1 2023/09/28 09:07:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $include_path;
+global $class_path, $include_path;
+require_once($class_path.'/suggestions_map.class.php');
 require_once($include_path."/notice_affichage.inc.php");
 
 class suggestions{
@@ -72,6 +73,25 @@ class suggestions{
 		$this->sugg_explnum = $obj->num_explnum_doc;
 	}
 
+	public function set_properties_from_form() {
+		global $tit, $edi, $aut, $code, $prix, $nb;
+		global $url_sug, $comment, $date_publi, $sug_src;
+		
+		$this->titre = stripslashes($tit);
+		$this->editeur = stripslashes($edi);
+		$this->auteur = stripslashes($aut);
+		$this->code = stripslashes($code);
+		$prix = str_replace(',','.',$prix);
+		if (is_numeric($prix)) $this->prix = $prix;
+		$this->nb = ((int)$nb?(int)$nb:"1");
+		$sug_map = new suggestions_map();
+		$this->statut = $sug_map->getFirstStateId();
+		$this->url_suggestion = stripslashes($url_sug);
+		$this->commentaires = stripslashes($comment);
+		$this->date_creation = today();
+		$this->date_publi = stripslashes($date_publi);
+		$this->sugg_src = $sug_src;
+	}
 	
 	// enregistre une suggestion en base.
 	public function save($explnum_doc=""){
@@ -111,7 +131,7 @@ class suggestions{
 			$this->id_suggestion = pmb_mysql_insert_id();
 		}
 		
-		if($explnum_doc){
+		if(!empty($explnum_doc)){
 			$explnum_doc->save();
 			$req = "insert into explnum_doc_sugg set 
 				num_explnum_doc='".$explnum_doc->explnum_doc_id."',
@@ -126,22 +146,23 @@ class suggestions{
 		if(!trim($origine)){
 			return 0;
 		}
-		$q = "select count(1) from suggestions_origine, suggestions where origine = '".$origine."' and titre = '".$titre."' and id_suggestion = num_suggestion and auteur='".$auteur."' and editeur = '".$editeur."' and code = '".$isbn."' ";
+		$q = "select count(1) from suggestions_origine, suggestions where origine = '".addslashes($origine)."' and titre = '".$titre."' and id_suggestion = num_suggestion and auteur='".$auteur."' and editeur = '".$editeur."' and code = '".$isbn."' ";
 		$q.= "and statut in (1,2,8) ";
 		$r = pmb_mysql_query($q);
 		return pmb_mysql_result($r, 0, 0);
 	}
 
 	//supprime une suggestion de la base
-	public function delete($id_suggestion= 0) {
+	public static function delete($id_suggestion= 0) {
 		$id_suggestion = intval($id_suggestion);
-		if(!$id_suggestion) $id_suggestion = $this->id_suggestion; 	
-
-		$q = "delete from suggestions where id_suggestion = '".$id_suggestion."' ";
-		pmb_mysql_query($q);
-				
+		if($id_suggestion) {
+    		$q = "delete from suggestions where id_suggestion = '".$id_suggestion."' ";
+    		pmb_mysql_query($q);
+    		
+    		$q = "delete ed,eds from explnum_doc ed join explnum_doc_sugg eds on ed.id_explnum_doc=eds.num_explnum_doc where eds.num_suggestion=$id_suggestion";
+    		pmb_mysql_query($q);
+		}
 	}
-
 
 	//Compte le nb de suggestion par statut pour une bibliothèque
 	public static function getNbSuggestions($id_bibli=0, $statut='-1', $num_categ='-1', $mask, $aq=0) {
@@ -226,18 +247,17 @@ class suggestions{
 	
 	//Retourne  une requete pour liste des suggestions par origine 
 	//type_origine: 0=utilisateur, 1=lecteur, 2=visiteur
-	public static function listSuggestionsByOrigine($id_origine, $type_origine='1') { 
-		
-		$q = "select * from suggestions_origine, suggestions where origine = '".$id_origine."' ";
+	public static function listSuggestionsByOrigine($origine, $type_origine='1') {
+		$q = "select * from suggestions_origine, suggestions where origine = '".addslashes($origine)."' ";
 		if ($type_origine != '-1') $q.= "and type_origine = '".$type_origine."' ";
 		$q.= "and id_suggestion=num_suggestion order by date_suggestion ";		
 		return $q;				
 	}
 
-	
 	//Retourne un tableau des origines pour une suggestion
 	public function getOrigines($id_suggestion=0) {
 		$tab_orig=array();
+		$id_suggestion = intval($id_suggestion);
 		if (!$id_suggestion) $id_suggestion = $this->id_suggestion;
 		$q = "select * from suggestions_origine where num_suggestion=$id_suggestion order by date_suggestion, type_origine ";
 		$r = pmb_mysql_query($q);
@@ -248,14 +268,12 @@ class suggestions{
 		return $tab_orig;
 	}
 	
-	
 	//optimization de la table suggestions
 	public function optimize() {
 		$opt = pmb_mysql_query('OPTIMIZE TABLE suggestions');
 		return $opt;
 	}
 	
-
 	//Récupération du docnum associé
 	public function get_explnum($champ=''){
 		$req = "select * from explnum_doc join explnum_doc_sugg on num_explnum_doc=id_explnum_doc where num_suggestion='".$this->id_suggestion."'";
@@ -386,7 +404,7 @@ class suggestions{
 					<br /><i>".$userIdOrEmail."</i><hr />";
 		}
 		//Biblios destinataires selon paramétrage et localisation de la suggestion
-		$query = "SELECT DISTINCT location_libelle, email, nom, prenom, user_email, date_format(sysdate(), '".$msg["format_date_heure"]."') AS aff_quand 
+		$query = "SELECT DISTINCT location_libelle, email, nom, prenom, userid, user_email, date_format(sysdate(), '".$msg["format_date_heure"]."') AS aff_quand 
 				FROM docs_location, users WHERE idlocation=deflt_docs_location AND user_email like('%@%') and user_alert_suggmail=1";
 		if($sugg_location_id){
 			$query.=" AND idlocation=".$sugg_location_id;
@@ -394,19 +412,17 @@ class suggestions{
 		$result = pmb_mysql_query($query);
 		if($result && pmb_mysql_num_rows($result)){
 			while($row=pmb_mysql_fetch_object($result)){
-				$PMBuseremail="";
-				$PMBusernom = $row->location_libelle;
-				$PMBuseremail = $row->user_email;
-				if (trim($PMBuseremail)) {
-					$headers  = "MIME-Version: 1.0\n";
-					$headers .= "Content-type: text/html; charset=".$charset."\n";
-					$output_final = "<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><meta charset=\"".$charset."\" /></head><body>" ;
-					//infos visiteur
-					$output_final .= $empr;				
-					$output_final .= $tableHtml;
-					$output_final .= "<hr /></body></html> ";
-					mailpmb($row->nom." ".$row->prenom, $row->user_email,$msg["mail_sugg_obj"]." ".$row->aff_quand,$output_final,$PMBusernom, $PMBuseremail, $headers, "", "", 0);
-				}
+				$mail_opac_user_suggestion = new mail_opac_user_suggestion();
+				$mail_opac_user_suggestion->set_mail_to_id($row->userid);
+				$mail_opac_user_suggestion->set_recipient($row);
+				
+				$mail_content = "<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><meta charset=\"".$charset."\" /></head><body>" ;
+				//infos visiteur
+				$mail_content .= $empr;
+				$mail_content .= $tableHtml;
+				$mail_content .= "<hr /></body></html>";
+				$mail_opac_user_suggestion->set_mail_content($mail_content);
+				$mail_opac_user_suggestion->send_mail();
 			}
 		}					
 	}
@@ -471,6 +487,5 @@ class suggestions{
 		}
 		return '';
 	}
-	
 }
 ?>

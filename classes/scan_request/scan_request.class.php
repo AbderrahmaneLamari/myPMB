@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scan_request.class.php,v 1.47.2.4 2022/01/19 11:46:43 dgoron Exp $
+// $Id: scan_request.class.php,v 1.55 2022/11/26 16:08:59 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -51,6 +51,8 @@ class scan_request {
 	protected $elapsed_time;
 
 	protected $num_dest_empr;
+
+	protected $empr;
 
 	protected $num_creator;
 	
@@ -591,32 +593,15 @@ class scan_request {
 	}
 	
 	public function send_mail($request_creation = false){
-		global $charset, $msg;
 		global $pmb_scan_request_location_activate, $opac_scan_request_send_mail_status;
-		global $PMBuserprenom, $PMBusernom, $PMBuseremail;
-		
-		$headers  = "MIME-Version: 1.0\n";
-		$headers .= "Content-type: text/html; charset=".$charset."\n";
 		
 		if ($request_creation || $this->loc_updated) {
 			//En création de demande ou changement de localisation, on envoie à la localisation
 			if ($pmb_scan_request_location_activate) {
-				$location = new docs_location($this->num_location);
-				if ($location->email) {		
-					if (!$request_creation) {
-						$title = $msg["scan_request_update_mail_title"];
-						$content = $msg["scan_request_update_mail_content"];
-					} else {
-						$title = $msg["scan_request_creation_mail_title"];
-						$content = $msg["scan_request_creation_mail_content"];
-					}
-					$content = str_replace("!!scan_title!!", $this->title, $content);
-					$content = str_replace("!!scan_desc!!", $this->desc, $content);
-					$content = str_replace("!!scan_dest!!", $this->get_lib_empr($this->num_dest_empr*1), $content);
-					$content = str_replace("!!scan_status!!", $this->status->get_label(), $content);
-					$content = str_replace("!!scan_comment!!", $this->comment, $content);						
-					mailpmb($location->libelle, $location->email, $title, $content, $PMBuserprenom." ".$PMBusernom, $PMBuseremail, $headers);
-				}
+				$mail_scan_request = new mail_scan_request();
+				$mail_scan_request->set_mail_to_id($this->num_location);
+				$mail_scan_request->set_scan_request($this);
+				$mail_scan_request->send_mail();
 			}
 		}
 		if (!$request_creation) {
@@ -624,15 +609,10 @@ class scan_request {
 			if (trim($opac_scan_request_send_mail_status)) {
 				$send_mail_status = json_decode($opac_scan_request_send_mail_status);
 				if (is_array($send_mail_status) && count($send_mail_status) && in_array($this->status->get_id(),$send_mail_status)) {
-					if ($email_dest = $this->get_mail_empr($this->num_dest_empr)) {
-						$title = $msg["scan_request_update_mail_title"];
-						$content = $msg["scan_request_update_mail_content"];
-						$content = str_replace("!!scan_title!!", $this->title, $content);
-						$content = str_replace("!!scan_desc!!", $this->desc, $content);
-						$content = str_replace("!!scan_status!!", $this->status->get_label(), $content);
-						$content = str_replace("!!scan_comment!!", $this->comment, $content);
-						mailpmb($this->get_lib_empr($this->num_dest_empr), $email_dest, $title, $content, $PMBuserprenom." ".$PMBusernom, $PMBuseremail, $headers);
-					}
+					$mail_scan_request = new mail_scan_request();
+					$mail_scan_request->set_scan_request($this);
+					$mail_scan_request->set_request_creation(false);
+					$mail_scan_request->send_mail();
 				}
 			}
 		}
@@ -826,6 +806,22 @@ class scan_request {
 		return $this->num_dest_empr;
 	}
 
+	public function get_empr() {
+	    if (!isset($this->empr)) {
+	        $this->empr = "";
+	        if (!empty($this->num_dest_empr)) {
+	            $query = 'select empr_nom, empr_prenom from empr where id_empr = '.$this->num_dest_empr;
+	            $result = pmb_mysql_query($query);
+	            if (pmb_mysql_num_rows($result)) {
+	                $row = pmb_mysql_fetch_object($result);
+	                $this->empr = $row->empr_nom;
+	                if($row->empr_prenom) $this->empr .= ', '.$row->empr_prenom;
+	            }
+	        }
+	    }
+		return $this->empr;
+	}
+
 	public function get_num_creator() {
 		return $this->num_creator;
 	}
@@ -848,6 +844,10 @@ class scan_request {
 
 	public function get_linked_records() {
 		return $this->linked_records;
+	}
+	
+	public function get_linked_bulletin() {
+		return $this->linked_bulletin;
 	}
 	
 	public function get_display_link() {

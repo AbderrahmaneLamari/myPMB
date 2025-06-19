@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: fournisseurs.tpl.php,v 1.29.2.1 2021/07/01 08:13:56 dgoron Exp $
+// $Id: fournisseurs.tpl.php,v 1.30 2021/07/01 08:13:13 dgoron Exp $
 
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");

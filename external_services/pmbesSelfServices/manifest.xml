@@ -3,7 +3,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: manifest.xml,v 1.10.4.1 2021/09/17 13:43:02 rtigero Exp $ -->
+$Id: manifest.xml,v 1.13 2022/05/11 15:26:02 rtigero Exp $ -->
 
 <manifest>
 	<name>pmbesSelfServices</name>
@@ -99,6 +99,29 @@ $Id: manifest.xml,v 1.10.4.1 2021/09/17 13:43:02 rtigero Exp $ -->
 				<result name="due_date" type="scalar" dataType="string" description="msg:self_checkout_due_date"/>
 				<result name="message_quota" type="scalar" dataType="string" description="msg:self_checkout_message_quota"/>
 				<result name="message_expl_comment" type="scalar" dataType="string" description="msg:self_checkout_message_quota"/>		
+			</outputs>
+		</method>		
+		<method name="get_loans_printer_template" comment="msg:print_loans_description" rights="" version="1.0" language_independant="false">
+			<inputs>
+				<description>msg:print_loans_inputs_description</description>
+				<param name="empr_cb" type="scalar" dataType="string" description="msg:print_loans_empr_cb"/>
+				<param name="expl_cb" type="scalar" dataType="string" description="msg:print_loans_expl_cb" optional="yes" />
+			</inputs>
+			<outputs>
+				<description>msg:print_loans_outputs_description</description>
+				<result name="print_tpl"  type="scalar" dataType="string" description="msg:print_loans_tpl_result"/>
+			</outputs>
+		</method>		
+		<method name="get_printers_config" comment="msg:get_printers_config_description" rights="" version="1.0" language_independant="false">
+			<inputs>
+				<description></description>
+			</inputs>
+			<outputs>
+				<description>msg:print_loans_outputs_description</description>
+				<result name="printer_list" type="array" description="msg:get_printers_config_result">
+					<result name="printer" type="scalar" dataType="string" description="msg:get_printers_config_printer_list" />
+					<result name="printer_name"  type="scalar" dataType="string" description="msg:get_printers_config_printer_name"/>
+				</result>
 			</outputs>
 		</method>		
 	</methods>

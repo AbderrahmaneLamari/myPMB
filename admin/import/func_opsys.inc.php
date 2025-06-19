@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_opsys.inc.php,v 1.18.2.1 2021/06/30 12:01:41 dgoron Exp $
+// $Id: func_opsys.inc.php,v 1.19 2021/06/30 12:00:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormSearchSegmentSelector.js,v 1.1.2.1 2021/10/13 12:59:20 tsamson Exp $
+// $Id: FormSearchSegmentSelector.js,v 1.2 2021/10/13 13:16:27 tsamson Exp $
 
 /*****
  * 

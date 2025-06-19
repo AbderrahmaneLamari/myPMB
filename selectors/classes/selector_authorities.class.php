@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_authorities.class.php,v 1.19.2.1 2021/10/20 11:57:44 dgoron Exp $
+// $Id: selector_authorities.class.php,v 1.22 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -88,7 +88,7 @@ class selector_authorities extends selector {
 				break;
 			case 'element_display':
 				global $id_authority;
-				$id_authority += 0;
+				$id_authority = intval($id_authority);
 				if($id_authority) {
 					$elements_authorities_selectors_list_ui = new elements_authorities_selectors_list_ui(array($id_authority), 1, 1);
 					$elements = $elements_authorities_selectors_list_ui->get_elements_list();
@@ -196,19 +196,11 @@ class selector_authorities extends selector {
 	}
 	
 	protected function get_display_list() {
-		global $nb_per_page;
-		global $page;
-		
 		$display_list = '';
-		if(!$page) {
-			$debut = 0;
-		} else {
-			$debut = ($page-1)*$nb_per_page;
-		}
 		$searcher_instance = $this->get_searcher_instance();
 		$this->nbr_lignes = $searcher_instance->get_nb_results();
 		if($this->nbr_lignes) {
-			$sorted_objects = $searcher_instance->get_sorted_result('default', $debut, $nb_per_page);
+			$sorted_objects = $searcher_instance->get_sorted_result('default', $this->get_start_list(), $this->get_nb_per_page_list());
 			foreach ($sorted_objects as $object_id) {
 				$display_list .= $this->get_display_object($object_id);
 			}
@@ -281,6 +273,14 @@ class selector_authorities extends selector {
 		$search = new search_authorities(true, 'search_fields_authorities');
 		$search->add_context_parameter('in_selector', true);
 		return $search;
+	}
+	
+	protected function get_searcher_instance() {
+		$searcher = searcher_factory::get_searcher($this->objects_type, '', $this->user_input);
+		if(method_exists($searcher, 'add_context_parameter')) {
+			$searcher->add_context_parameter('in_selector', true);
+		}
+		return $searcher;
 	}
 }
 ?>

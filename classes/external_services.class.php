@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: external_services.class.php,v 1.26 2021/03/04 09:48:47 dbellamy Exp $
+// $Id: external_services.class.php,v 1.27.2.3 2023/09/22 07:37:04 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -39,7 +39,7 @@ héritent de ^             ^ hérite de                  .------------------------
             |             |
             |     .---------------.               .-------------------------------.
             |     |  es_catalog   |               |       external_services       |
-            |     |---------------|file_put_contents[1]            |-------------------------------|
+            |     |---------------|[1]            |-------------------------------|
             '-----| contient des  |<--------------| gère les différentes méthodes |
             ^     | groupes       |               | et génère le proxy associé    |
             |     '---------------'               '-------------------------------'
@@ -84,6 +84,14 @@ class es_base {
 	public function clear_error() {
 		$this->error=false;
 		$this->error_message="";
+	}
+	
+	public function has_error() {
+	    return $this->error;
+	}
+	
+	public function get_error_message() {
+	    return $this->error_message;
 	}
 }
 
@@ -547,6 +555,18 @@ class external_services_api_class {
 		$this->merge_msg();		
 	}
 	
+	public function restore_general_config() {
+		
+	}
+	
+	public function form_general_config() {
+		return false;
+	}
+	
+	public function save_general_config() {
+		
+	}
+	
 	// Permet de surcharger les messages avec ceux du web services, utile pour bibloto par exeemple
 	public function merge_msg() {	    
 	   /*
@@ -680,6 +700,22 @@ class external_services_api_class {
 		return $filter;
 	}
 	
+	public function clear_error() {
+	    $this->error = false;
+	    $this->error_message = '';
+	}
+	
+	public function set_error($error_message) {
+	    $this->error = true;
+	    $this->error_message = $error_message;
+	}
+	
+	public function has_user_rights($module_auth) {
+	    if (SESSrights & $module_auth) {
+	        return true;
+	    }
+	    return false;
+	}
 }
 
 //Classe qui implémente les fonctions externes
@@ -826,7 +862,7 @@ class es_proxy extends es_base {
 					}
 					$group_has_method=true;
 					$proxy_func.="
-	function ".$group_name."_".$method_name."(".implode(",",$params).") {
+	public function ".$group_name."_".$method_name."(".implode(",",$params).") {
 		try {
 		\$result =  \$this->".$group_name."->".$method_name."(".implode(",",$params_call).");
 		} catch(Exception \$e) {
@@ -834,6 +870,12 @@ class es_proxy extends es_base {
 				call_user_func(\$this->error_callback_function, \$e);
 		}
 		return \$result;
+	}
+    public function ".$group_name."_".$method_name."_hasError() {
+		return \$this->".$group_name."->error;
+	}
+    public function ".$group_name."_".$method_name."_errorMessage() {
+		return \$this->".$group_name."->error_message;
 	}
 ";
 					$mdesc=array();
@@ -946,7 +988,9 @@ class es_proxy extends es_base {
 	
 	public function method_exists($group,$method) {
 		if ($this->group_exists($group)) {
-			if (is_object($this->catalog->groups[$group]->methods[$method])) return true;
+		    if (!empty($this->catalog->groups[$group]->methods[$method]) && is_object($this->catalog->groups[$group]->methods[$method])) {
+		        return true;
+		    }
 		}
 		return false;
 	}
@@ -979,4 +1023,3 @@ class es_proxy extends es_base {
 		}
 	}
 }
-?>

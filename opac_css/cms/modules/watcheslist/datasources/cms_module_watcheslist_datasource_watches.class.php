@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_watcheslist_datasource_watches.class.php,v 1.6.2.1 2022/01/18 20:37:41 dgoron Exp $
+// $Id: cms_module_watcheslist_datasource_watches.class.php,v 1.8 2022/02/18 08:53:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -73,7 +73,7 @@ class cms_module_watcheslist_datasource_watches extends cms_module_common_dataso
 			$return = array();
 			if (count($selector->get_value()) > 0) {
 				foreach ($selector->get_value() as $value) {
-					$return[] = $value*1;
+					$return[] = intval($value);
 				}
 			}
 			

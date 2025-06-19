@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: clean.php,v 1.45.2.2 2021/12/15 08:53:05 dgoron Exp $
+// $Id: clean.php,v 1.49.2.2 2023/09/15 10:01:35 tsamson Exp $
 
 $base_path="../..";                            
 $base_auth = "ADMINISTRATION_AUTH";  
@@ -12,7 +12,8 @@ require_once ("$base_path/includes/init.inc.php");
 global $class_path, $include_path, $msg, $charset, $pmb_indexation_lang, $spec, $pass2, $v_state;
 global $index_global, $index_notices, $index_acquisitions;
 global $clean_authors, $clean_editeurs, $clean_collections, $clean_subcollections, $clean_categories, $clean_series, $clean_relations, $clean_notices;
-global $gen_signature_notice, $gen_date_publication_article, $gen_date_tri, $gen_phonetique, $gen_signature_docnum, $gen_aut_link;
+global $gen_signature_notice, $gen_date_publication_article, $gen_date_tri, $gen_phonetique, $gen_signature_docnum, $gen_aut_link, $gen_ark, $clean_autoload_files;
+global $gen_docnum_thumbnail;
 global $nettoyage_clean_tags, $clean_categories_path, $clean_opac_search_cache, $clean_cache_amende, $clean_titres_uniformes, $clean_indexint;
 global $clean_records_thumbnail, $clean_cache_temporary_files, $clean_cache_apcu, $clean_entities_data, $clean_docnum_thumbnail;
 global $reindex_docnum, $index_rdfstore, $index_synchrordfstore, $index_faq, $index_cms, $index_concept, $index_authorities, $index_date_flot;
@@ -27,6 +28,8 @@ echo "<div id='contenu-frame'>";
 require_once($class_path."/netbase/netbase.class.php");
 
 if(empty($spec)) $spec = 0;
+$pass2 = intval($pass2);
+
 if(!$spec) {
 	$spec += intval($index_global);
 	$spec += intval($index_notices);
@@ -66,6 +69,9 @@ if(!$spec) {
 	$spec += intval($clean_cache_apcu);
 	$spec += intval($clean_entities_data);
 	$spec += intval($clean_docnum_thumbnail);
+	$spec += intval($gen_ark);
+	$spec += intval($clean_autoload_files);
+	$spec += intval($gen_docnum_thumbnail);
 }
 $spec = intval($spec);
 if($spec) {
@@ -151,7 +157,13 @@ if($spec) {
 		include('./clean_entities_data.inc.php');
 	} elseif ($spec & CLEAN_DOCNUM_THUMBNAIL){
 	    include('./clean_docnum_thumbnail.inc.php');
-	}
+	} elseif ($spec & GEN_ARK){
+	    include('./gen_ark.inc.php');
+	} elseif ($spec & CLEAN_AUTOLOAD_FILES){
+    include('./clean_autoload_files.inc.php');
+	} elseif ($spec & GEN_DOCNUM_THUMBNAIL){
+    include('./gen_docnum_thumbnail.inc.php');
+}
 } else {
 	if(empty($v_state)) $v_state = '';
 	if($v_state) {

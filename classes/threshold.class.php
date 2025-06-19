@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: threshold.class.php,v 1.3.2.1 2022/01/21 08:46:17 dgoron Exp $
+// $Id: threshold.class.php,v 1.4.4.1 2023/07/07 07:05:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -75,29 +75,41 @@ class threshold {
 		}
 	}
 		
+	public function get_content_form() {
+		global $pmb_gestion_devise;
+		
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->set_grid_model('flat_column_25');
+		$interface_content_form->add_element('threshold_entity', 'threshold_entity')
+		->add_html_node('<b>'.$this->entity->raison_sociale.'</b>');
+		$interface_content_form->add_element('threshold_num_entity')
+		->add_input_node('hidden', $this->entity->id_entite);
+		$interface_content_form->add_element('threshold_label', 'threshold_label')
+		->add_input_node('text', $this->label)
+		->set_class('saisie-30em');
+		$interface_content_form->add_element('threshold_amount', 'threshold_amount')
+		->add_input_node('float', $this->amount)
+		->set_label($pmb_gestion_devise);
+		$interface_content_form->add_element('threshold_amount_tax_included', 'threshold_amount_tax_included')
+		->add_input_node('boolean', $this->amount_tax_included);
+		$interface_content_form->add_element('threshold_footer', 'threshold_footer')
+		->add_textarea_node($this->footer)
+		->set_cols(55)
+		->set_rows(10);
+		return $interface_content_form->get_display();
+	}
+	
 	/**
 	 * Formulaire
 	 */
 	public function get_form(){
 		global $msg;
-		global $threshold_content_form_tpl;
-		
-		$content_form = $threshold_content_form_tpl;
 		
 		$interface_form = new interface_form('threshold_form');
 		$interface_form->set_label($msg['threshold_form_edit']);
-		$content_form = str_replace("!!entity_label!!",$this->entity->raison_sociale,$content_form);
-		$content_form = str_replace("!!num_entity!!",$this->entity->id_entite,$content_form);
-		$content_form = str_replace("!!label!!",$this->label,$content_form);
-		$content_form = str_replace("!!amount!!",$this->amount,$content_form);
-		$content_form = str_replace("!!amount_tax_included!!",($this->amount_tax_included ? "checked='checked'" : ""),$content_form);
-		$content_form = str_replace("!!footer!!",$this->footer,$content_form);
-		
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['threshold_delete_confirm'])
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('thresholds')
 		->set_field_focus('threshold_label');
 		

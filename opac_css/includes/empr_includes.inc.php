@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_includes.inc.php,v 1.169.2.3 2021/12/29 14:42:14 jparis Exp $
+// $Id: empr_includes.inc.php,v 1.180.2.8 2023/10/25 10:48:30 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -18,6 +18,9 @@ global $empr_ldap, $allow_pwd, $empr_active_opac_renewal, $empr_date_expiration,
 global $opac_show_liensbas, $opac_show_bandeau_2, $opac_show_bandeaugauche, $opac_facette_in_bandeau_2, $opac_accessibility, $opac_show_homeontop, $opac_biblio_main_header;
 
 use Pmb\Animations\Opac\Controller\RegistrationController;
+use Pmb\Payments\Opac\Controller\PaymentsController;
+use Pmb\DSI\Opac\Controller\DiffusionsPrivateController;
+use Pmb\DSI\Opac\Controller\DiffusionsController;
 
 require_once ($base_path . '/includes/init.inc.php');
 
@@ -265,6 +268,10 @@ if ($log_ok) {
 		if ($animations_active) {
 		    $empr_onglet_menu .= "<li " . (($tab == "animations") ? "class=\"subTabCurrent\"" : "") . "><a href='./empr.php?tab=animations&lvl=animations_list'>" . htmlentities($msg['empr_menu_animations'], ENT_QUOTES, $charset) . "</a></li>";
 		}
+		
+		// En cour de Dev
+	    // $empr_onglet_menu .= "<li " . (($tab == "payments_list") ? "class=\"subTabCurrent\"" : "") . "><a href='./empr.php?tab=payments&lvl=payments_list'>" . htmlentities($msg['empr_menu_payment'], ENT_QUOTES, $charset) . "</a></li>";
+		    
 		if (function_exists('empr_extended_bandeau')) {
 			empr_extended_bandeau($tab);
 		}
@@ -311,6 +318,18 @@ if ($log_ok) {
 				
 				break;
 			case 'dsi' :
+				global $dsi_active;
+				if($dsi_active == 2) {
+					//Nouvelle DSI
+					$controller_data = new \stdClass();
+					$controller_data->id = (int) $_SESSION['id_empr_session'];
+					//On ne gère que les listes d'emprunteurs
+					//Pour le moment ...
+					$controller_data->emprType = "pmb";
+					$controller = new DiffusionsController($controller_data);
+					$controller->proceed($lvl);
+					break;
+				}
 				// Mes abonnements
 				$abo_item = "<ul class='empr_subtabs empr_dsi_subtabs'>";
 				if (($opac_dsi_active) && ($allow_dsi || $allow_dsi_priv)) {
@@ -434,25 +453,14 @@ if ($log_ok) {
 			case 'animations' :
 			    $subitems .= '<div class="row"></div>';
 			    break;
+			// En cour
+// 			case 'payments' :
+// 			    $subitems .= '<div class="row"></div>';
+// 			    break;
 			default :
 				if (function_exists('empr_extended_tab_default')) {
 					if (empr_extended_tab_default($tab))
 						break;
-				}
-				// Mon Compte
-				$my_account_item ='';
-				if (! $empr_ldap && $allow_pwd) {
-					$my_account_item .= "<li " . (($lvl == "change_password") ? "class=\"subTabCurrent\"" : "") . "><a id='change_password' href='./empr.php?lvl=change_password'>" . htmlentities($msg['empr_modify_password'], ENT_QUOTES, $charset) . "</a></li>";
-				}
-				if(emprunteur_display::is_renewal_form_set() ){
-					$my_account_item .= "<li " . (($lvl == "change_profil" ) ? "class=\"subTabCurrent\"" : "") . "><a id='change_profil' href='./empr.php?lvl=change_profil'>" . htmlentities($msg['empr_change_profil'], ENT_QUOTES, $charset) . "</a></li>";
-				}
-				global $pmb_relance_adhesion;
-				if ($empr_active_opac_renewal && strtotime($empr_date_expiration) <= (time() + ($pmb_relance_adhesion* 86400))) {
-					$my_account_item .= "<li " . (($lvl == "renewal" ) ? "class=\"subTabCurrent\"" : "") . "><a id='renewal' href='./empr.php?lvl=renewal'>" . htmlentities($msg['empr_renewal'], ENT_QUOTES, $charset) . "</a></li>";
-				}
-				if (!empty($my_account_item)){
-				    $subitems .= '<div class="row"><ul class="empr_subtabs">' . $my_account_item . '</ul></div>';
 				}
 				break;
 		}
@@ -481,91 +489,113 @@ if ($log_ok) {
 		case 'resa_planning' :
 			$all_checked = " checked";
 			if (! $dest) {
-				print "<div id='empr-all'>\n";
-				print '<h3><span>' . $msg['empr_loans'] . '</span><span id="empr_loans_number"></span></h3>';
+			    print "<div id='empr-all'>\n";
 			}
-			$critere_requete = " AND empr.empr_login='$login' order by location_libelle, pret_retour ";
+			$critere_requete = " AND empr.empr_login='" . addslashes($login) . "' order by location_libelle, pret_retour ";
 			require_once ($base_path . '/empr/all.inc.php');
-			print "</div>";
-			if(dilicom::is_pnb_active()){
-			    print "<div id='empr-pnb_loan'>\n";
-			    require_once ($base_path . '/empr/pnb_loan.inc.php');
-			    print "</div>";			    
+			if (! $dest) {
+			    print "</div>";
 			}
-			print '<div id="empr-resa">';
-			if ($allow_book) {
-				
-				include ($base_path . '/includes/resa.inc.php');
-				print '<div id="empr-resa_planning">';
-				include ($base_path . '/includes/resa_planning.inc.php');
+			if (! $dest) {
+				if(dilicom::is_pnb_active()){
+				    print "<div id='empr-pnb_loan'>\n";
+				    require_once ($base_path . '/empr/pnb_loan.inc.php');
+				    print "</div>";			    
+				}
+				print '<div id="empr-resa">';
+				if ($allow_book) {
+					include ($base_path . '/includes/resa.inc.php');
+					print '<div id="empr-resa_planning">';
+					include ($base_path . '/includes/resa_planning.inc.php');
+					print '</div>';
+				} else {
+					print $msg['empr_no_allow_book'];
+				}
 				print '</div>';
-			} else {
-				print $msg['empr_no_allow_book'];
 			}
-			print '</div>';
 			break;
 		case 'old' :
 			if (! $dest) {
 				print "<div id='empr-old'>\n";
-				print '<h3><span>' . $msg['empr_loans_old'] . '</span><span id="empr_loans_old_number"></span></h3>';
 			}
 			require_once ($base_path . '/empr/old.inc.php');
-			print "</div>\n";
+			if (! $dest) {
+				print "</div>\n";
+			}
 			break;
 		case 'bannette' :
+			if($dsi_active == 2) {
+				//On ne passe plus par ce systeme avec la nouvelle dsi
+				//Donc ciao
+				break;
+			}
 			print "<div id='empr-dsi'>\n";
-			if ($allow_dsi_priv || $allow_dsi)
+			if ($allow_dsi_priv || $allow_dsi) {
 				require_once ($base_path . '/includes/bannette.inc.php');
-			else
+			} else {
 				print $msg['empr_no_allow_dsi'];
+			}
 			print "</div>";
 			break;
 		case 'bannette_gerer' :
 			print "<div id='empr-dsi'>\n";
-			if ($allow_dsi_priv || $allow_dsi)
+			if ($allow_dsi_priv || $allow_dsi) {
 				require_once ($base_path . '/includes/bannette_gerer.inc.php');
-			else
+			} else {
 				print $msg['empr_no_allow_dsi'];
+			}
 			print "</div>";
 			break;
 		case 'bannette_creer' :
 			print "<div id='empr-dsi'>\n";
-			if ($allow_dsi_priv)
-				require_once ($base_path . '/includes/bannette_creer.inc.php');
-			else
-				print $msg['empr_no_allow_dsi_priv'];
+			if($dsi_active == 2) {
+				$controller_data = new \stdClass();
+				$controller_data->id = (int) $_SESSION['id_empr_session'];
+				$controller = new DiffusionsPrivateController($controller_data);
+				$controller->proceed($lvl);
+			} else {
+				if ($allow_dsi_priv) {
+					require_once ($base_path . '/includes/bannette_creer.inc.php');
+				} else {
+					print $msg['empr_no_allow_dsi_priv'];
+				}
+			}
 			print "</div>";
 			break;
 		case 'bannette_edit' :
 			print "<div id='empr-dsi'>\n";
-			if ($allow_dsi_priv)
+			if ($allow_dsi_priv) {
 				require_once ($base_path . '/includes/bannette_edit.inc.php');
-			else
+			} else {
 				print $msg['empr_no_allow_dsi_priv'];
+			}
 			print "</div>";
 			break;
 		case 'bannette_unsubscribe' :
 			print "<div id='empr-dsi'>\n";
-			if ($allow_dsi_priv)
+			if ($allow_dsi_priv) {
 				require_once ($base_path . '/includes/bannette_unsubscribe.inc.php');
-			else
+			} else {
 				print $msg['empr_no_allow_dsi_priv'];
+			}
 			print "</div>";
 			break;
 		case 'make_sugg' :
 			print "<div id='empr-sugg'>\n";
-			if ($allow_sugg)
+			if ($allow_sugg) {
 				require_once ($base_path . '/empr/make_sugg.inc.php');
-			else
+			} else {
 				print $msg['empr_no_allow_sugg'];
+			}
 			print "</div>";
 			break;
 		case 'make_multi_sugg' :
 			print "<div id='empr-sugg'>\n";
 			if ($allow_sugg) {
 				require_once ($base_path . '/empr/make_multi_sugg.inc.php');
-			} else
+			} else {
 				print $msg['empr_no_allow_sugg'];
+			}
 			print "</div>";
 			break;
 		case 'import_sugg' :
@@ -580,16 +610,18 @@ if ($log_ok) {
 			print "<div id='empr-sugg'>\n";
 			if ($allow_sugg) {
 				require_once ($base_path . '/empr/make_multi_sugg.inc.php');
-			} else
+			} else {
 				print $msg['empr_no_allow_sugg'];
+			}
 			print "</div>";
 			break;
 		case 'valid_sugg' :
 			print "<div id='empr-sugg'>\n";
-			if ($allow_sugg)
+			if ($allow_sugg) {
 				require_once ($base_path . '/empr/valid_sugg.inc.php');
-			else
+			} else {
 				print $msg['empr_no_allow_sugg'];
+			}
 			print "</div>";
 			break;
 		case 'view_sugg' :
@@ -694,7 +726,7 @@ if ($log_ok) {
 		case "animations_list" :
 		    print "<div id='empr_animations'>\n";
 		    if ($animations_active) {
-		        $controller_data = new stdClass();
+		        $controller_data = new \stdClass();
 		        $controller_data->empr_id = (int) $_SESSION['id_empr_session'];
 		        $animation_controller = new RegistrationController($controller_data);
 		        $animation_controller->proceed('list');
@@ -703,12 +735,24 @@ if ($log_ok) {
 		    }
 		    print "</div>";
 		    break;
+		    // En cour de Dev
+// 		case "payments_list" :
+// 		    print "<div id='empr_payments'>\n";
+// 		        $controller_data = new stdClass();
+// 		        $controller_data->empr_id = (int) $_SESSION['id_empr_session'];
+// 		        $payments_controller = new PaymentsController($controller_data);
+// 		        $payments_controller->proceed('list');
+// 		    print "</div>";
+// 		    break;
 		default :
 			if (function_exists('empr_extended_lvl_default')) {
 				if (empr_extended_lvl_default($lvl))
 					break;
 			}
-			print pmb_bidi($empr_identite);
+			// Avant s'il n'y avait pas de lvl on affichait forcement mon compte
+			if ("account" == $tab) {
+    			print pmb_bidi($empr_identite);
+			}
 			break;
 	}
 } else {
@@ -790,6 +834,8 @@ if ($opac_show_bandeaugauche == 0) {
 	$footer = str_replace('!!contenu_bandeau!!', ($opac_accessibility ? $accessibility : '') . $home_on_left . $loginform . $meteo . $adresse, $footer);
 	$footer = str_replace('!!contenu_bandeau_2!!', $opac_facette_in_bandeau_2 ? $lvl1 . $facette : '', $footer);
 }
+
+printPasswordNoCompliant();
 
 cms_build_info(array(
     'input' => 'empr.php',

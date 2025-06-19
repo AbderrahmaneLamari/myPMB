@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormContainer.js,v 1.47.2.2 2022/01/13 14:29:30 rtigero Exp $
+// $Id: FormContainer.js,v 1.50.4.1 2023/12/27 13:52:40 tsamson Exp $
 
 
 define([
@@ -96,7 +96,7 @@ define([
 				var formURL = domAttr.get(node, "data-form_url");
 				this.usedScenario = domAttr.get(node, "data-linked_scenario"); 
 				var hiddenValue = dom.byId(this.fillIdFinder(node.id) + "_value");
-				if (hiddenValue.value) {
+				if (hiddenValue && hiddenValue.value) {
 					var parameters = formURL.split("?");
 					var objURL = ioQuery.queryToObject(parameters[1]);
 					objURL.id = hiddenValue.value; 
@@ -203,6 +203,7 @@ define([
                 }else {
                     var baseId = originalOne.split(/_edit$/)[0]; //Id du bouton (...)
                 }
+                return baseId;
                 var nodeList = query('input[id*="'+baseId+'"][type="text"]'); //Noeuds dom correspondants aux champs texte associes au bouton
                 var nodeToFill = nodeList[(nodeList.length)-1]; // On recupere le dernier creer (dernier dans la liste de resultat)
                 var splittedId = nodeToFill.getAttribute('id').split('_display_label')[0];//On split cet id pour recuperer la chaine de base (a terme pour valoriser type / value)
@@ -372,7 +373,8 @@ define([
 						return;
 					}
 				}
-				var type = data.id_authority ? "authority" : "record";
+				//todo : a revoir quand on aura des entites diffrentes des autorites ou des notices
+				var type = (data.id_authority ? "authority" : (data.type == "bulletin" ? "bulletin" : "record"));
 				var url = "./ajax.php?module=selectors&what=contribution&action=save_in_store";
 				var selector_data = {
 						type,

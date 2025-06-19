@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: convert.class.php,v 1.10 2020/04/30 06:58:07 dgoron Exp $
+// $Id: convert.class.php,v 1.12.2.1 2023/04/21 12:32:37 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -59,7 +59,7 @@ function _input_convert_($param) {
 	$input_type = $param['TYPE'];
 	$input_params = $param;
 	
-	if ($param["SPECIALEXPORT"]=="yes") {
+	if (isset($param["SPECIALEXPORT"]) && $param["SPECIALEXPORT"]=="yes") {
 		$specialexport=true; 
 	} else $specialexport=false;
 }
@@ -235,7 +235,7 @@ class convert {
 				break;
 			} else {
 				$notice = $r['DATA'];
-				if($r['WARNING']){
+				if(!empty($r['WARNING'])){
 					$this->n_errors=true;
 					$this->message_convert= $r['WARNING'];
 				}
@@ -253,6 +253,42 @@ class convert {
 		}
 	}
 
+	protected static function get_converted_field_uni($zone, $ss_zone, $value, $others_ss_zone = array(), $ind = '') {
+		global $charset;
+		
+		$data = "";
+		if ($value) {
+			$data.="  <f c='".$zone."' ind='  '>\n";
+			$data.="    <s c='".$ss_zone."'>".htmlspecialchars(trim($value),ENT_QUOTES,$charset)."</s>\n";
+			if(!empty($others_ss_zone)) {
+				foreach ($others_ss_zone as $ss_zone_code=>$ss_zone_value) {
+					$data.="    <s c='".$ss_zone_code."'>".htmlspecialchars(trim($ss_zone_value),ENT_QUOTES,$charset)."</s>\n";
+				}
+			}
+			$data.="  </f>\n";
+		}
+		return $data;
+	}
+	
+	/**
+	 * Permet de convertir une chaine avec le bon encodage (global $charset)
+	 * Si l'encodage n'a pas fonctionne, retourne la chaine initiale
+	 *
+	 * @param string $str
+	 * @return string
+	 */
+	public static function convert_encoding($str) {
+		global $charset;
+		
+		if(function_exists("mb_convert_encoding")){
+			$encoding = mb_detect_encoding($str, ["UTF-8", "ISO-8859-1"]);
+			if ($encoding && (strtolower($encoding) != $charset)) {
+				$convert = mb_convert_encoding($str, $charset, $encoding);
+				return $convert ? $convert : $str;
+			}
+		}
+		return $str;
+	}
 }
 
 ?>

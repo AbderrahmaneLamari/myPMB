@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_controller.class.php,v 1.4.2.1 2021/09/03 09:35:59 tsamson Exp $
+// $Id: selector_controller.class.php,v 1.5 2021/09/03 09:53:38 tsamson Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

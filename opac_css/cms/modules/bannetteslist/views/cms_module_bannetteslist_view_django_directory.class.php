@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_bannetteslist_view_django_directory.class.php,v 1.3 2019/05/23 13:26:35 dgoron Exp $
+// $Id: cms_module_bannetteslist_view_django_directory.class.php,v 1.3.12.2 2023/06/09 08:21:08 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 class cms_module_bannetteslist_view_django_directory extends cms_module_common_view_bannetteslist{
 
@@ -56,11 +58,12 @@ class cms_module_bannetteslist_view_django_directory extends cms_module_common_v
 			$resultat = pmb_mysql_query($requete, $dbh);
 			$cpt_record=0;
 			$datas["bannettes"][$i]['records']=array();
+			$thumbnailSourcesHandler = new ThumbnailSourcesHandler();
 			while ($r=pmb_mysql_fetch_object($resultat)) {	
 				$content="";
 				$url_vign = "";
-				if (($r->thumbnail_url || $r->code) && ($opac_show_book_pics=='1' && ($opac_book_pics_url || $r->thumbnail_url))) {
-					$url_vign = getimage_url($r->code, $r->thumbnail_url);
+				if ($opac_show_book_pics=='1') {
+				    $url_vign = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $r->num_notice);
 				}
 				if(!empty($this->parameters['django_directory'])) {
 					if (!$record_css_already_included) {

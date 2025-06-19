@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment.tpl.php,v 1.13.2.4 2021/11/17 11:31:20 gneveu Exp $
+// $Id: search_segment.tpl.php,v 1.17.4.1 2023/04/27 09:40:14 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -54,7 +54,8 @@ $search_segment_content_form = "
 <div class='row'>
 	<select name='segment_type' id='segment_type' !!segment_type_readonly!!>					
 		!!segment_type!!
-	</select>
+    </select>
+    !!segment_additional!!
 </div>
 <br/>
 <div class='row'>

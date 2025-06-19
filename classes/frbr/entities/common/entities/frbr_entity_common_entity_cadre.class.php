@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_common_entity_cadre.class.php,v 1.26 2021/02/25 16:27:00 tsamson Exp $
+// $Id: frbr_entity_common_entity_cadre.class.php,v 1.28 2022/02/11 11:31:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/frbr/frbr_entities.class.php");
 require_once($class_path."/frbr/frbr_entity_graph.class.php");
 
@@ -167,7 +168,7 @@ class frbr_entity_common_entity_cadre extends frbr_entity_common_entity {
 	}
 	
 	public function get_parameters_form() {
-		global $msg, $charset;
+		global $charset;
 		$parameters_form = "
 			<div class='row'>
 				<div class='colonne3'>
@@ -330,16 +331,14 @@ class frbr_entity_common_entity_cadre extends frbr_entity_common_entity {
 	 * Suppression
 	 */
 	public static function delete($id=0){
-		global $msg;
-	
-		$id += 0;
+		$id = intval($id);
 		if($id) {
 			//suppression du placement du cadre
 			frbr_place::delete($id);
 			$query = "delete from frbr_cadres_content where cadre_content_num_cadre = ".$id;
-			$result = pmb_mysql_query($query);
+			pmb_mysql_query($query);
 			$query = "delete from frbr_cadres where id_cadre = ".$id;
-			$result = pmb_mysql_query($query);
+			pmb_mysql_query($query);
 			return true;
 		}
 		return false;
@@ -374,7 +373,7 @@ class frbr_entity_common_entity_cadre extends frbr_entity_common_entity {
 	}
 	
 	public static function get_class_name_from_id($id_cadre) {
-		$id_cadre+=0;
+		$id_cadre = intval($id_cadre);
 		$class_name = '';
 		$query = '	SELECT cadre_object
 					FROM frbr_cadres
@@ -424,8 +423,12 @@ class frbr_entity_common_entity_cadre extends frbr_entity_common_entity {
 			    if (!empty($datanodes_data[$this->datanode->get_id()]) && count($datanodes_data[$this->datanode->get_id()][0])) {
 					$datanode_datasource_class_name = $this->datanode->get_datasource()['name'];
 					$datasource = new $datanode_datasource_class_name($this->datanode->get_datasource()['id']);
+					//Gestion de la limite d'éléments à renvoyer
 					$limit = $datasource->get_parameters()->nb_max_elements;
-					$data = array_slice($datanodes_data[$this->datanode->get_id()][0], 0, $limit);
+					$data = $datanodes_data[$this->datanode->get_id()][0];
+					if($limit > 0){
+					    $data = array_slice($data, 0, $limit);
+					} 
 					$grouped_data = $datanodes_data[$this->datanode->get_id()]["group"] ?? [];
 					return $this->get_content_cadre($data, $grouped_data);
 				} else {
@@ -433,7 +436,7 @@ class frbr_entity_common_entity_cadre extends frbr_entity_common_entity {
 				}
 			}
 		} elseif($this->view['id'] != 0){
-			$view = new $this->view['name']($this->view['id']);
+			//$view = new $this->view['name']($this->view['id']);
 			$data = array($this->get_object_id());
 			return $this->get_content_cadre($data);
 		}

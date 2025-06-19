@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: authorities.xml,v 1.29.2.2 2021/10/14 13:06:08 gneveu Exp $ -->
+<!-- $Id: authorities.xml,v 1.31 2021/10/14 13:28:10 gneveu Exp $ -->
 <pmbtabs>
 	<url_target>autorites.php?categ=search</url_target>
 	<default_mode>0</default_mode>

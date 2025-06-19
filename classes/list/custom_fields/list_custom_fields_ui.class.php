@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_custom_fields_ui.class.php,v 1.29.2.3 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_custom_fields_ui.class.php,v 1.34.4.2 2023/09/29 08:02:21 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -170,25 +170,11 @@ class list_custom_fields_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
-	 */
-	protected function _get_query_order() {
-	
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				default :
-					$order .= $sort_by;
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
-	}
+     * Champ(s) du tri SQL
+     */
+    protected function _get_query_field_order($sort_by) {
+        return $sort_by;
+    }
 	
 	/**
 	 * Filtres provenant du formulaire
@@ -219,26 +205,9 @@ class list_custom_fields_ui extends list_ui {
 		return $this->get_search_filter_multiple_selection('', 'data_type', '', $datatype_list);
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if(is_array($this->filters['input_type']) && count($this->filters['input_type'])) {
-		    $filters [] = 'type IN ("'.implode('","', $this->filters['input_type']).'")';
-		}
-		if(is_array($this->filters['data_type']) && count($this->filters['data_type'])) {
-		    $filters [] = 'datatype IN ("'.implode('","', $this->filters['data_type']).'")';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_multiple_restriction('input_type', 'type');
+		$this->_add_query_filter_multiple_restriction('data_type', 'datatype');
 	}
 		
 	protected function _get_object_property_type($object) {
@@ -252,12 +221,15 @@ class list_custom_fields_ui extends list_ui {
 	}
 	
 	protected function get_cell_content($object, $property) {
-		global $msg;
+		global $msg, $charset;
 		
 		$content = '';
 		switch($property) {
+		    case 'titre':
+		        $content = htmlentities($object->{$property}, ENT_QUOTES, $charset);
+		        break;
 			case 'name':
-				$content .= "<b>".$object->{$property}."</b>";
+				$content .= "<b>".htmlentities($object->{$property}, ENT_QUOTES, $charset)."</b>";
 				break;
 			case 'multiple':
 			case 'opac_sort':
@@ -297,13 +269,10 @@ class list_custom_fields_ui extends list_ui {
 		return $labels;
 	}
 		
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "window.location=\"".static::get_controller_url_base()."&action=edit&id=".$object->id."\""
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_display_left_actions() {

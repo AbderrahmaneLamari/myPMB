@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment.class.php,v 1.25.2.8 2021/11/17 11:31:20 gneveu Exp $
+// $Id: search_segment.class.php,v 1.37.2.7 2023/11/07 14:46:39 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -66,7 +66,11 @@ class search_segment {
 	protected $rmc_enabled;
 	
 	protected $search_universes_associate;
-		
+
+	protected $search_segment_data;
+	
+	protected $sort;
+
 	private function __construct($id = 0){
 		$this->id = intval($id);
 		$this->fetch_data();
@@ -100,6 +104,9 @@ class search_segment {
 // 				search_segment_facets::set_num_segment($this->id);
 				$this->facets = search_segment_facets::get_instance('', $this->id);
 				$this->get_search_universes_associate();
+				if (isset($row["search_segment_data"])) {
+				    $this->search_segment_data = json_decode(stripslashes($row["search_segment_data"]));
+				}
 			}
 		}
 	}
@@ -112,11 +119,11 @@ class search_segment {
 		global $universe_id;
 		$universe = new search_universe($this->num_universe);
 		$html = $search_segment_form;
-		$html = str_replace('!!universe_label!!', htmlentities($universe->get_label(), ENT_QUOTES, $charset), $html);
+		$html = str_replace('!!universe_label!!', htmlentities($universe->get_translated_label(), ENT_QUOTES, $charset), $html);
 		$html = str_replace('!!segment_universe_id!!', $this->num_universe, $html);
-		$html = str_replace('!!segment_label!!', htmlentities($this->label, ENT_QUOTES, $charset), $html);
+		$html = str_replace('!!segment_label!!', htmlentities($this->get_translated_label(), ENT_QUOTES, $charset), $html);
 		$html = str_replace('!!segment_logo!!', htmlentities($this->logo, ENT_QUOTES, $charset), $html);
-		$html = str_replace('!!segment_description!!', htmlentities($this->description, ENT_QUOTES, $charset), $html);
+		$html = str_replace('!!segment_description!!', htmlentities($this->get_translated_description(), ENT_QUOTES, $charset), $html);
 	    $html = str_replace('!!segment_id!!', $this->id, $html);
 	    $html = str_replace('!!segment_universe_id!!', $this->num_universe, $html);
 	    $html = str_replace('!!last_query!!', htmlentities(stripslashes(search_universe::$start_search["query"]), ENT_QUOTES, $charset), $html);
@@ -130,8 +137,8 @@ class search_segment {
 		if ($this->num_universe != '') {
 		    $universe = new search_universe($this->num_universe);
 			$html = $search_segment_parent_universe;
-			$html = str_replace('!!segment_universe_label!!', htmlentities($universe->get_label(), ENT_QUOTES, $charset), $html);
-			$html = str_replace('!!segment_universe_description!!', htmlentities($universe->get_description(), ENT_QUOTES, $charset), $html);
+			$html = str_replace('!!segment_universe_label!!', htmlentities($universe->get_translated_label(), ENT_QUOTES, $charset), $html);
+			$html = str_replace('!!segment_universe_description!!', htmlentities($universe->get_translated_description(), ENT_QUOTES, $charset), $html);
 			$html = str_replace('!!segment_universe_id!!', $this->num_universe, $html);
 		    $html = str_replace('!!get_parameters!!', search_universe::get_parameters(), $html);
 			//$html = str_replace('!!last_query!!', search_universe::$start_search["query"], $html);
@@ -208,6 +215,9 @@ class search_segment {
 		    $query = "INSERT INTO search_segments_associated_universes SET num_segment = '" . $this->id ."', num_universe = '" . $this->search_universes_associate[$i] ."'";
 		    pmb_mysql_query($query);
 		}
+		$translation = new translation($this->id, "search_segments");
+		$translation->update("segment_label", "segment_label");
+		$translation->update("segment_description", "segment_description");
 	}
 	
 	public static function delete($id=0) {
@@ -327,12 +337,15 @@ class search_segment {
 	    $entities = $this->get_list_entities();
 	    $html = '';
 	    foreach ($entities as $type => $entity) {
-	        switch ($type) {
-	            case 'authperso':
-	                $html .= "<optgroup label='".$msg['authperso_multi_search_title']."'>";
+	        switch (true) {
+	            case $type == 'authperso':
+	                $html .= "<optgroup label='".htmlentities($msg['authperso_multi_search_title'], ENT_QUOTES, $charset)."'>";
 	                break;
-	            case 'connectors':
+	            case $type == 'connectors':
 	                $html .= "<optgroup label='".$msg['facettes_external_records']."'>";
+	           		break;
+	            case $type != 'default':
+	                $html .= "<optgroup label='".htmlentities($type, ENT_QUOTES, $charset)."'>";
 	                break;
 	            default:
 	                break;
@@ -349,7 +362,8 @@ class search_segment {
 	
 	public function get_list_entities() {
 	    global $msg, $pmb_use_uniform_title, $thesaurus_concepts_active;
-	    
+	    global $animations_active;
+
 	    $entities = array('default' => array(
 	        TYPE_NOTICE => $msg[130],
 	        TYPE_AUTHOR => $msg[133]
@@ -376,10 +390,14 @@ class search_segment {
 	    foreach ($authpersos->get_authpersos() as $authperso) {
 	        $entities['authperso'][$authperso['id']+1000] = $authperso['name'];
 	    }
-	    
-	    //$entities[TYPE_CMS_SECTION] = $msg['cms_menu_editorial_section'];
-	    //$entities[TYPE_CMS_ARTICLE] = $msg['cms_menu_editorial_article'];
-	    
+	    $ontologies = new ontologies();
+	    $entities = array_merge($entities,$ontologies->get_available_segments());
+
+	    $entities['default'][TYPE_CMS_EDITORIAL] = $msg['cms_menu_editorial'];
+
+	    if ($animations_active) {
+	        $entities['default'][TYPE_ANIMATION] = "animations";
+	    }
 	    return $entities;
 	}
 	
@@ -407,11 +425,11 @@ class search_segment {
 	}
 	
 	public function get_translated_label() {
-		return translation::get_text($this->id, 'search_segments', 'search_segment_label',  $this->label);
+		return translation::get_translated_text($this->id, 'search_segments', 'segment_label',  $this->label);
 	}
 	
 	public function get_translated_description() {
-		return translation::get_text($this->id, 'search_segments', 'search_segment_description',  $this->description);
+		return translation::get_translated_text($this->id, 'search_segments', 'segment_description',  $this->description);
 	}
 	
 	public function get_display_search_with_results() {
@@ -442,7 +460,7 @@ class search_segment {
 	    search_segment_search_view::set_segment($this);
 	    search_segment_search_view::set_search_type($search_segment_type);
 	    search_segment_search_view::set_user_query($user_query);
-	    search_segment_search_view::set_url_base($base_path.'/index.php?lvl=search_segment&id='.$this->id.'&');
+	    search_segment_search_view::set_url_base($base_path.'/index.php?lvl=search_segment&id='.$this->id.search_universe::get_segments_dynamic_params().'&');
 	    return search_segment_search_view::get_display_search();
 	}
 	
@@ -489,7 +507,9 @@ class search_segment {
                 static::$instances[$id] = new search_segment($id);
                 break;
         }
-        static::$current_instance = static::$instances[$id];
+        if (empty(static::$current_instance)) {
+            static::$current_instance = static::$instances[$id];
+        }
         return static::$instances[$id];
 	}
 	
@@ -564,11 +584,11 @@ class search_segment {
 	        $result = pmb_mysql_query($query);
 	        if ($result) {
 	            $row = pmb_mysql_fetch_assoc($result);
-	            static::$segments_labels[$segment_id] = $row["search_segment_label"];
+	            static::$segments_labels[$segment_id] = translation::get_translated_text($segment_id, 'search_segments', 'segment_label',  $row["search_segment_label"]);
 	            return static::$segments_labels[$segment_id];
 	        }
 	    }
-	    return '';
+	    return "";
 	}
 	public function get_sort() {
 	    if (isset($this->sort)) {
@@ -581,8 +601,8 @@ class search_segment {
 	public function get_opac_search_instance() {
 	    if($this->get_type() == TYPE_NOTICE){
 	        return new search('search_fields');
-	    }elseif(($this->get_type() == TYPE_CMS_ARTICLE) || ($this->get_type() == TYPE_CMS_SECTION)){
-	        return new search('search_fields_articles');
+	    }elseif(($this->get_type() == TYPE_CMS_EDITORIAL)){
+	        return new search('search_fields_cms_editorial');
 	    } elseif($this->get_type() == TYPE_EXTERNAL) {
 	        return new search('search_fields_unimarc');
 	    } else {
@@ -624,7 +644,7 @@ class search_segment {
 	    for ($i = 0; $i < $index; $i++) {
 	        $universe = new search_universe($universe_associat[$i]);
 	        $row = $search_segment_universe_associate_form_row;
-	        $row = str_replace('!!universe_associate_label!!', $universe->get_label(), $row);
+	        $row = str_replace('!!universe_associate_label!!', $universe->get_translated_label(), $row);
 	        $row = str_replace('!!universe_associate_id!!', $universe->get_id(), $row);
 	        $row = str_replace('!!search_form_hidden!!', $universe->get_hidden_form(), $row);
 	        $content .= $row;
@@ -641,5 +661,45 @@ class search_segment {
 	public function has_rmc_enabled() {
         $universe = new search_universe($this->num_universe);
         return $universe->has_rmc_enabled();
+	}
+
+	/**
+	 * autocompletion disponible
+	 * @return boolean
+	 */
+	public function is_autocomplete() {
+        $universe = new search_universe($this->num_universe);
+        return $universe->is_autocomplete();
+	}
+	
+	/**
+	 * determine l'utilisation d'un champ dynamique
+	 * @return number
+	 */
+	public function use_dynamic_field() {
+	    if (strpos($this->get_set()->get_data_set(), "s_12") !== false) {
+	        return 1;
+	    }
+	    return 0;
+	}
+
+	public function get_search_segment_data() {
+	    return $this->search_segment_data;
+	}
+	
+	public function get_formated_type() {
+	    switch ($this->type) {
+	        case TYPE_NOTICE :
+	        case TYPE_EXTERNAL :
+	        case TYPE_CMS_EDITORIAL :
+	        case TYPE_ANIMATION :
+	            return $this->type;
+	        default:
+	            if ($this->type > 10000) {
+	                return $this->type;
+	            }
+	            return TYPE_AUTHORITY;
+	        
+	    }
 	}
 }

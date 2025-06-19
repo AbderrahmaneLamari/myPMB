@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmb2mba.class.php,v 1.5 2019/07/11 10:24:50 btafforeau Exp $
+// $Id: pmb2mba.class.php,v 1.6 2022/08/03 12:12:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -17,22 +17,17 @@ require_once($base_path."/admin/convert/convert.class.php");
 class pmb2mba extends convert {
 
 	protected static function mba_isbd($obj){
-		global $dbh, $base_path;
+		global $base_path;
 		global $msg;
 		global $tdoc;
 		global $fonction_auteur;
 		global $charset;
-		global $thesaurus_mode_pmb, $thesaurus_categories_categ_in_line, $pmb_keyword_sep, $thesaurus_categories_affichage_ordre;
 		global $load_tablist_js;
 		global $lang;
-		global $categories_memo,$libelle_thesaurus_memo;
-		global $categories_top,$use_opac_url_base,$thesaurus_categories_show_only_last;
+		global $categories_top;
 		global $categ;
 		global $id_empr;
-		global $pmb_show_notice_id;
-		global $sort_children;
 		global $pmb_resa_planning;
-		global $pmb_etat_collections_localise,$pmb_droits_explr_localises,$explr_visible_mod ;
 	
 		$editeurs = '';
 		
@@ -71,6 +66,7 @@ class pmb2mba extends convert {
 			$collections = '';
 	
 			// constitution de la mention de responsabilité
+			$mention_resp = array();
 			//$obj->responsabilites
 			$as = array_search("0", $obj->responsabilites["responsabilites"]);
 			if ($as !== FALSE && $as !== NULL) {
@@ -292,6 +288,7 @@ class pmb2mba extends convert {
 			}
 			$display_isbd .= ' ['.$tdoc->table[$obj->notice->typdoc].']';
 			// constitution de la mention de responsabilité
+			$mention_resp = array();
 			//$obj->responsabilites
 			$as = array_search("0", $obj->responsabilites["responsabilites"]);
 			if ($as !== FALSE && $as !== NULL) {

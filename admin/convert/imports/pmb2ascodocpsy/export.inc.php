@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: export.inc.php,v 1.11.8.1 2022/01/03 10:28:30 dgoron Exp $
+// $Id: export.inc.php,v 1.12 2022/01/03 10:20:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

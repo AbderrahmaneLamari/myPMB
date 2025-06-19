@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: edition_func.inc.php,v 1.60.6.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: edition_func.inc.php,v 1.62.4.1 2023/08/31 12:56:44 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -66,6 +66,7 @@ function afftab_cart_objects ($idcaddie=0, $flag="" , $no_flag = "",$notice_tpl=
 		$noti_tpl=new notice_tpl_gen($notice_tpl);		
 	}
 	if(pmb_mysql_num_rows($result)) {
+		$flag_notice_id = array();
 		while ($temp = pmb_mysql_fetch_object($result)) {		
 			if($dest=="EXPORT_NOTI"){
 				if ($caddie_type=="EXPL"){
@@ -116,7 +117,8 @@ function afftab_cart_objects ($idcaddie=0, $flag="" , $no_flag = "",$notice_tpl=
 	// en fonction du type de caddie on affiche ce qu'il faut
 	if ($caddie_type=="NOTI") {
 		// calcul du nombre max de colonnes pour les auteurs
-		$rqt_compte1 = "create temporary table tmp_compte1 ENGINE=MyISAM as select count(*) as comptage from caddie_content join notices on object_id=notice_id left join responsability on responsability_notice=notice_id where caddie_id=$idcaddie group by notice_id" ;
+		pmb_mysql_query("drop table if exists tmp_compte1");
+		$rqt_compte1 = "create temporary table tmp_compte1 ENGINE=memory as select count(*) as comptage from caddie_content join notices on object_id=notice_id left join responsability on responsability_notice=notice_id where caddie_id=$idcaddie group by notice_id" ;
 		pmb_mysql_query($rqt_compte1) ; 
 		$rqt_compte2 = "select max(comptage) as max_aut from tmp_compte1 " ;
 		$res_compte2 = pmb_mysql_query($rqt_compte2) ; 
@@ -173,12 +175,25 @@ function afftab_cart_objects ($idcaddie=0, $flag="" , $no_flag = "",$notice_tpl=
 	// si EXPL
 	if ($caddie_type=="EXPL") {
 		// calcul du nombre max de colonnes pour les auteurs
-		$rqt_compte1 = "create temporary table tmp_compte1 ENGINE=MyISAM as select count(*) as comptage from caddie_content join notices on object_id=notice_id left join responsability on responsability_notice=notice_id where caddie_id=$idcaddie group by notice_id" ;
+		//auteurs associés aux exemplaires de notices
+		pmb_mysql_query("drop table if exists tmp_compte1");
+		$rqt_compte1 = "create temporary table tmp_compte1 ENGINE=memory as select count(*) as comptage from caddie_content join exemplaires on expl_id = object_id join notices on notice_id=expl_notice and expl_notice <> 0 left join responsability on responsability_notice=notice_id where caddie_id=$idcaddie group by notice_id" ;
 		pmb_mysql_query($rqt_compte1) ; 
 		$rqt_compte2 = "select max(comptage) as max_aut from tmp_compte1 " ;
 		$res_compte2 = pmb_mysql_query($rqt_compte2) ; 
 		$compte2 = pmb_mysql_fetch_object($res_compte2) ;
 		$max_aut = $compte2->max_aut ;
+		
+		//auteurs associés aux périodiques des exemplaires de bulletins
+		pmb_mysql_query("drop table if exists tmp_compte1");
+		$rqt_compte1 = "create temporary table tmp_compte1 ENGINE=memory as select count(*) as comptage from caddie_content join exemplaires on expl_id = object_id join bulletins on bulletin_id=expl_bulletin and expl_bulletin <> 0 join notices on notices.notice_id = bulletins.bulletin_notice left join responsability on responsability_notice=notice_id where caddie_id=$idcaddie group by notice_id" ;
+		pmb_mysql_query($rqt_compte1) ;
+		$rqt_compte2 = "select max(comptage) as max_aut from tmp_compte1 " ;
+		$res_compte2 = pmb_mysql_query($rqt_compte2) ;
+		$compte2 = pmb_mysql_fetch_object($res_compte2) ;
+		if($compte2->max_aut > $max_aut) {
+			$max_aut = $compte2->max_aut ;
+		}
 		
 		// calcul du nombre max de colonnes pour les champs perso
 		$rqt_compte3 = "select idchamp, titre from expl_custom order by ordre " ;
@@ -396,7 +411,7 @@ function extrait_info ($sql="", $entete=1, $flag="") {
 						$odd_even=0;
 					}
 					if ($flag) print "<td>X</td>"; else print "<td>&nbsp;</td>";
-					foreach($row as $dummykey=>$col) {
+					foreach($row as $col) {
 						if(!$col) $col="&nbsp;";
 						print pmb_bidi("<td>$col</td>");
 					}
@@ -486,9 +501,12 @@ function extrait_info_notice ($sql="", $entete=1, $flag="") {
 						$worksheet->write_string((1+$debligne_excel),($i*6+6+$nbr_champs+$nbr_languages),"aut_resp_type_$i");
 					}
 					$worksheet->write_string((1+$debligne_excel),($max_aut*6+$nbr_champs+$nbr_languages+1),"DESCR");
+					reset($res_compte3);
 					for($i=0; $i < $max_perso; $i++) {
-						$perso = pmb_mysql_fetch_object($res_compte3) ;
-						$worksheet->write_string((1+$debligne_excel),($max_aut*6+$nbr_champs+$nbr_languages+2+$i),$perso->titre);
+						$perso = pmb_mysql_fetch_object($res_compte3);
+						if(!empty($perso) && is_object($perso)) {
+							$worksheet->write_string((1+$debligne_excel),($max_aut*6+$nbr_champs+$nbr_languages+2+$i),$perso->titre);
+						}
 					}
 					$debligne_excel++;
 				}
@@ -510,7 +528,7 @@ function extrait_info_notice ($sql="", $entete=1, $flag="") {
 					}
 					if ($flag) $worksheet->write_string($debligne_excel,0,"X");
 					$j=0;
-					foreach($row as $dummykey=>$col) {
+					foreach($row as $col) {
 						if(!$col) $col=" ";
 						$worksheet->write_string($debligne_excel,($j+1),$col);
 						$j++;
@@ -598,7 +616,7 @@ function extrait_info_notice ($sql="", $entete=1, $flag="") {
 					}
 					echo "<tr>";
 					if ($flag) print "<td>X</td>"; else print "<td>&nbsp;</td>";
-					foreach($row as $dummykey=>$col) {
+					foreach($row as $col) {
 						if (is_numeric($col)){
  							$col = "'".$col ;
 						}
@@ -702,7 +720,7 @@ function extrait_info_notice ($sql="", $entete=1, $flag="") {
 						$odd_even=0;
 					}
 					if ($flag) print "<td>X</td>"; else print "<td>&nbsp;</td>";
-					foreach($row as $dummykey=>$col) {
+					foreach($row as $col) {
 						if(!$col) $col="&nbsp;";
 						print pmb_bidi("<td>$col</td>");
 					}
@@ -803,12 +821,13 @@ function get_functions_authors() {
 
 function get_categs_edition($id_notice, $lang){
 	global $thesaurus_mode_pmb, $thesaurus_defaut, $pmb_keyword_sep;
+	global $default_tmp_storage_engine;
 	
 	$lib_desc = "";
 	
 	$q = "drop table if exists catlg ";
 	pmb_mysql_query($q);
-	$q = "CREATE TEMPORARY TABLE catlg ENGINE=MyISAM as ";
+	$q = "CREATE TEMPORARY TABLE catlg ENGINE={$default_tmp_storage_engine} as ";
 	$q.= "SELECT categories.num_noeud, categories.libelle_categorie ";
 	$q.= "FROM noeuds, categories, notices_categories ";
 	$q.= "WHERE notices_categories.notcateg_notice = '".$id_notice."' ";
@@ -824,7 +843,7 @@ function get_categs_edition($id_notice, $lang){
 	$q = "CREATE TEMPORARY TABLE catdef ( ";
 	$q.= "num_noeud int(9) unsigned not null default '0', ";
 	$q.= "num_thesaurus int(3) unsigned not null default '0', ";
-	$q.= "libelle_categorie text not null ) ENGINE=MyISAM ";
+	$q.= "libelle_categorie text not null ) ENGINE={$default_tmp_storage_engine} ";
 	pmb_mysql_query($q);
 		
 	$thes_list = thesaurus::getThesaurusList();

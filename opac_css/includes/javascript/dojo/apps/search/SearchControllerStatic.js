@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SearchControllerStatic.js,v 1.1.2.1 2021/10/25 09:33:53 tsamson Exp $
+// $Id: SearchControllerStatic.js,v 1.2 2021/10/25 09:38:33 tsamson Exp $
 
 define(['apps/search/SearchController',
 ], function(SearchController) {

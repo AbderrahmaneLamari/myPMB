@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_mails_waiting_ui.class.php,v 1.1.4.3 2021/11/17 13:33:29 dgoron Exp $
+// $Id: list_mails_waiting_ui.class.php,v 1.6.4.1 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -32,58 +32,26 @@ class list_mails_waiting_ui extends list_mails_ui {
 		$this->add_column('date');
 	}
 	
-	/**
-	 * Tri SQL
-	 */
-	protected function _get_query_order() {
-		
-		if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'to_name' :
-				case 'to_mail' :
-				case 'object' :
-				case 'from_name' :
-				case 'from_mail' :
-				case 'copy_cc' :
-				case 'copy_bcc' :
-				case 'reply_name' :
-				case 'reply_mail' :
-				case 'date' :
-					$order .= 'mail_waiting_'.$sort_by;
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'to_name' :
+	        case 'to_mail' :
+	        case 'object' :
+	        case 'from_name' :
+	        case 'from_mail' :
+	        case 'copy_cc' :
+	        case 'copy_bcc' :
+	        case 'reply_name' :
+	        case 'reply_mail' :
+	        case 'date' :
+	            return 'mail_waiting_'.$sort_by;
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['date_start']) {
-			$filters [] = 'mail_waiting_date >= "'.$this->filters['date_start'].'"';
-		}
-		if($this->filters['date_end']) {
-			$filters [] = 'mail_waiting_date <= "'.$this->filters['date_end'].' 23:59:59"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_interval_restriction('date', 'mail_waiting_date', 'datetime');
 	}
 	
 	public static function delete_object($id) {

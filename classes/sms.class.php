@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sms.class.php,v 1.11 2021/03/09 09:36:31 btafforeau Exp $
+// $Id: sms.class.php,v 1.14 2022/12/06 15:29:39 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -51,6 +51,8 @@ class smstrend {
 	
 	public function send_sms($telephone, $message) {
 		global $charset;
+		global $pmb_curl_timeout;
+		
 		$telephone = preg_replace("/.[^0-9]/", "", $telephone); 
 		$telephone = preg_replace("/^[\+|[^0-9]]/", "", $telephone);
 		if (substr($telephone, 0, 1) == "0") {
@@ -72,12 +74,15 @@ class smstrend {
 		        $fields[$key] = encoding_normalize::utf8_normalize($val);
 		    }
 		}
+		$post=array();
 		foreach ($fields as $key=>$val) $post[]=$key."=".rawurlencode($val);
+		$timeout=($pmb_curl_timeout*1 ? $pmb_curl_timeout*1 : 5);
 		$ch=curl_init();
 		curl_setopt($ch, CURLOPT_URL, "http://www.smstrend.net/fra/sendMessageFromPost.oeg");
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, implode("&",$post));
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
 		$r=curl_exec($ch);
 		curl_close($ch);
 		
@@ -114,7 +119,7 @@ class sms_rouenbs {
 		return $r;
 	}
 
-} // fin de déclaration de la classe sms_pmb
+}
   
 
 class allmysms {
@@ -164,5 +169,49 @@ class allmysms {
 		}
 		return true;
 	}
+	
+}
+
+class tunisie_sms {
+    
+    // "https://www.tunisiesms.tn/client/Api/Api.aspx?fct=sms&key={{KEY}}&mobile={{MOBILE}}&sms={{SMS}}&sender={{SENDER}}&date={{DATE}}&heure={{HEURE}}";
+    // Parametres a indiquer dans > empr > sms_config = key, sender, [url]
+    private $url = "https://www.tunisiesms.tn/client/Api/Api.aspx?";
+    private $key = "";
+    private $sender = "";
+    
+    public function __construct(array $param_list) {
+        
+        $param_list = pmb_utf8_array_encode($param_list);
+        foreach ($param_list as $k=>$v) {
+            if(property_exists($this, $k)) {
+                $this->$k = $v;
+            }
+        }
+    }
+    
+    public function send_sms($telephone, $message) {
+        
+        $telephone = preg_replace("/[^\+|0-9]/", "", $telephone);
+        $message = encoding_normalize::utf8_normalize($message);
+        
+        $fields = [
+            'fct'       => 'sms',
+            'key'       => $this->key,
+            'mobile'	=> $telephone,
+            'sms'       => $message,
+            'sender'	=> $this->sender
+        ];
+        
+        $curl = new Curl();
+        $curl->set_option('CURLOPT_CONNECTTIMEOUT', 10);
+        $response = $curl->get($this->url, $fields);
+        
+        $response_body = json_decode($response->body, true);
+        if( 200 != $response_body['status'] ) {
+            return false;
+        }
+        return true;
+    }
 }
 

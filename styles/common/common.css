@@ -1,7 +1,7 @@
 /* +--------------------------------------------------------------------------+
 // ? 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: common.css,v 1.159.2.10 2022/01/05 10:56:02 lbeguin Exp $ */
+// $Id: common.css,v 1.186.2.12 2024/01/05 11:02:19 jparis Exp $ */
 
 /* ---------------------------------------------------------------------------*/
 
@@ -108,6 +108,8 @@ textarea {
 	min-width: 50%;
 }
 
+button.bouton:not(.disabled),
+button.bouton_small:not(.disabled),
 input.bouton,
 input.bouton_small {
 	cursor: pointer;
@@ -141,6 +143,24 @@ form:after {
 	content: "";
 	display: block;
 	clear: both;
+}
+
+.interface-element-display-form_class_html {
+	margin-top : 1em;
+}
+
+#zbibform .interface-element-display-flat {
+	min-height : 3.5em;
+	
+}
+
+#zbibform .interface-element-display-flat label {
+	padding-right : 0.5em;
+	
+}
+
+table.demandes-actions-types {
+	margin-top:2em;
 }
 
 /* ---------------------------------------------------------------------------*/
@@ -778,6 +798,7 @@ iframe#alerte {
 
 #up_frame {
 	z-Index: 1000;
+	overflow: scroll;
 }
 
 #expl-form {
@@ -970,6 +991,7 @@ body.alter h2 .bdd_version {
 .img_notice {
 	max-width: 140px;
 	max-height: 200px;
+	min-width: 50px;
 }
 
 .heada {
@@ -988,6 +1010,14 @@ body.alter h2 .bdd_version {
 	padding: 1em;
 	margin-bottom: 1em;
 	margin-top: 1em;
+}
+
+.red {
+    color: red;
+}
+.green {
+    color: green;
+    
 }
 
 .gris {
@@ -1211,6 +1241,7 @@ ul.li_draggable li {
 }
 
 #login-box input#user,
+#login-box input#code-otp,
 #login-box input#password {
 	margin-bottom: 10px;
 	width: 90%;
@@ -1287,6 +1318,17 @@ ul.li_draggable li {
 .warning {
 	color: #ff0000;
 	font-weight: bold;
+}
+
+.visually-hidden {
+	position: absolute !important;
+	width: 1px !important;
+	height: 1px !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	overflow: hidden !important;
+	white-space: nowrap !important;
+	border: 0 !important;
 }
 
 /* -------------- Z39.50 ----------------*/
@@ -2932,6 +2974,14 @@ div.olMapViewport svg {
 	font-weight: normal!important;
 }
 
+table.list_ui_list tbody tr td input[type="text"] {
+    width: 95%;
+}
+
+table.list_ui_list tbody tr td select{
+    width: 95%;
+}
+
 /* ---------------------------------------------------------------------------*/
 
 /*	Gestion des listes - Personnalisation par type d'objets            		  */
@@ -2954,11 +3004,12 @@ div.olMapViewport svg {
 
 .list_ui_montrerquoi_checkbox {
 	display: block;
-	margin-bottom: -10px;
+	height: 15px;
 }
 
 .list_ui_montrerquoi_checkbox>label {
 	font-weight: normal !important;
+	vertical-align: middle;
 }
 
 .readers_relances_ui_list_cell_header,
@@ -2995,6 +3046,24 @@ div.olMapViewport svg {
 .caddie_content_ui_BULL_notice_tpl_content {
 	display: block;
 	margin-top: 20px;
+}
+
+.reservations_circ_ui_export_icons_edit_links {
+	position: absolute;
+	display:block;
+	margin-top: -60px;
+}
+
+table.list_ui_list tbody tr td.acces_profiles_resources_ui_list_cell_content_prf_name,
+table.list_ui_list tbody tr td.acces_profiles_resources_ui_list_cell_content_prf_use,
+table.list_ui_list tbody tr td.acces_profiles_resources_ui_list_cell_content_prf_rule {
+	width: 32%;
+}
+
+table.list_ui_list tbody tr td.acces_profiles_users_ui_list_cell_content_prf_name,
+table.list_ui_list tbody tr td.acces_profiles_users_ui_list_cell_content_prf_use,
+table.list_ui_list tbody tr td.acces_profiles_users_ui_list_cell_content_prf_rule {
+	width: 32%;
 }
 
 /* ---------------------------------------------------------------------------*/
@@ -3301,7 +3370,7 @@ input.bouton.disabled, input.bouton_small.disabled {
 
 /* ---------------------------------------------------------------------------*/
 
-/*                      Champs personnalisés                           		  */
+/*                      Champs personnalisï¿½s                           		  */
 
 /* ---------------------------------------------------------------------------*/
 
@@ -3330,7 +3399,7 @@ div.customfieldsgroupcheckbox {
 }
 /* 5 et plus ont 20% dans tous les cas */
 
-/*                      Planificateur de tâches                        		  */
+/*                      Planificateur de tï¿½ches                        		  */
 
 /* ---------------------------------------------------------------------------*/
 
@@ -3365,6 +3434,26 @@ div.schedulersgroupcheckbox {
 	min-width: 25%;
 	display: inline-block;
 	padding: 2px;
+}
+
+div.scheduler_progress_bar {
+	width:90%;
+	height:25px;
+	border: 1px solid #000000;
+	padding: 3px 3px 3px 3px;
+	z-index:1;
+}
+
+.scheduler_progress_bar_img {
+	height:25px;
+	display:block;
+}
+
+div.scheduler_progress_bar_percent {
+	text-align:center;
+	position:relative;
+	top: -20px; 
+	z-index:1;
 }
 
 /* ---------------------------------------------------------------------------*/
@@ -3519,6 +3608,239 @@ span.ui-panel-display {
 }
 
 /*module droit d acces*/
-.form-admin div.form-contenu table tbody tr td input{
+.form-admin div.form-contenu table tbody#used_prf_tab tr td input{
     width: 95%;
+}
+
+/* ========================================================================	*/
+/* Common cursor																	*/
+/* ======================================================================== */
+
+.cursor-pointer {
+	cursor: pointer !important;
+}
+
+.cursor-default {
+	cursor: default !important;
+}
+
+/* ========================================================================	*/
+/* Vignette																	*/
+/* ======================================================================== */
+
+.thumbnail .grid-2-col {
+    display: grid;
+	grid-template-columns: 25% 73%;
+	gap: 2px
+}
+
+.thumbnail .grid-2-col > div {
+	border: 1px solid #c6c2c2;
+	padding: 2% 2% 1% 2%;
+}
+
+.thumbnail .form-admin .group-form,
+.thumbnail .form-contenu .group-form {
+	display: grid;	
+}
+
+.thumbnail .form-admin .group-form-action,
+.thumbnail .form-contenu .group-form-action {
+	display: grid;
+	grid-template-columns: 90% 10%;
+}
+
+.thumbnail .thumbnail-small-form .group-form {
+	width: 25%;
+}
+
+.thumbnail .source-item-action img {
+	margin: 0px !important;
+}
+
+/* ---------------------------------------------------------------------------*/
+
+/*                Historique de diffusions des bannettes                      */
+
+/* ---------------------------------------------------------------------------*/
+
+.bannette_diffusion_view_box {
+	float: left;
+	width: 20%;
+	text-align: center;
+	margin: 10px;
+	background-color: rgb(165, 212, 255);
+	border-radius: 5px;
+	padding: 15px 5px 15px 5px;
+}
+
+.bannette_diffusion_view_box_label {
+	display: block;
+	font-weight: bold;
+	margin-bottom: 10px;
+}
+
+.bannette_diffusion_view_mail_object_title,
+.bannette_diffusion_view_mail_content_title,
+.bannette_diffusion_view_equations_title {
+	display: block;
+	font-weight: bold;
+	margin-bottom: 10px;
+}
+
+.bannette_diffusion_view_mail_object_text,
+.bannette_diffusion_view_mail_content_text,
+.bannette_diffusion_view_equations_text {
+	display: block;
+	margin: 10px;
+	background-color: #f8f8f8;
+	border-radius: 5px;
+	padding: 15px 5px 15px 5px;
+}
+
+.bannette_diffusion_view_recipients,
+.bannette_diffusion_view_deleted_records {
+	display: block;
+	margin-top: 30px;
+}
+
+/* ---------------------------------------------------------------------------*/
+/*                                  Modal                                     */
+/* ---------------------------------------------------------------------------*/
+
+.modal-background {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 100%;
+	width: 100%;
+	background: #8080805e;
+	z-index: 1000;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.modal {
+	background: white;
+	min-height: 30%;
+	min-width: 30%;
+	border: 1px solid gray;
+	border-radius: 5px;
+	box-shadow: 0px 7px 11px 0px #7c7c7c;
+	display: flex;
+	flex-direction: column;
+	justify-content: stretch;
+}
+
+.modal .modal-header,
+.modal .modal-content,
+.modal .modal-footer {
+	padding: 2%;
+}
+
+.modal-header {
+	height: 25%;
+	border-bottom: 1px solid #80808082;
+}
+
+.modal-content {
+	height: 50%;
+	flex-grow: 1;
+}
+
+.modal-footer {
+	height: 25%;
+	border-top: 1px solid #80808082;
+}
+
+/* ---------------------------------------------------------------------------*/
+/*                                  MFA                                       */
+/* ---------------------------------------------------------------------------*/
+
+.mfa-otp-label label,
+.mfa-mail-label label,
+.mfa-service-active div {
+	padding-left: 1rem;
+}
+
+.mfa-otp-row,
+.mfa-sms-row,
+.mfa-mail-row {
+	display: flex;
+	min-height: 32px;
+	align-items: center;
+}
+
+.mfa-mail-main {
+	margin-top: 1rem;
+	padding-left: 1rem;
+}
+
+.mfa-mail-text a,
+.mfa-sms-text a {
+	padding-left: 2rem;
+	font-weight: 700;
+	text-decoration: underline;
+}
+
+.mfa-otp:nth-last-of-type(2),
+.mfa-sms:nth-last-of-type(2),
+.mfa-mails:nth-last-of-type(2) {
+	margin-bottom: 2rem;
+}
+
+/* ---------------------------------------------------------------------------*/
+/*                                  Loader                                    */
+/* ---------------------------------------------------------------------------*/
+
+.generic-loader {	
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	background-color: #e3e3e36e;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	cursor: wait;
+	z-index: 99; 
+	top: 0;
+	left: 0;
+}
+
+.generic-loader-container {	
+	text-align: center;
+	color: #74a3cf;
+}
+
+
+/* ---------------------------------------------------------------------------*/
+/*                                  Rï¿½colteur                                 */
+/* ---------------------------------------------------------------------------*/
+
+.harvest-profil-field {
+	padding : 8px;
+	margin : 8px;
+}
+
+.harvest-field {
+	margin-top : 3px;
+	margin-bottom : 3px;
+	display : flex;
+	align-items : center;
+	gap : 10px;
+}
+
+.harvest-profil-sources {
+	display : grid;
+	grid-template-columns: repeat(3, 1fr);
+	padding: 8px;
+}
+
+.harvest-profil-source {
+	display : grid;
+	grid-template-columns: repeat(2, 1fr);
+	padding: 4px;
 }

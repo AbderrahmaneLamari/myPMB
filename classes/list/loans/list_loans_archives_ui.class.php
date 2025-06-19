@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_loans_archives_ui.class.php,v 1.5.2.1 2021/09/21 16:43:41 dgoron Exp $
+// $Id: list_loans_archives_ui.class.php,v 1.8.2.1 2023/09/29 07:24:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/pret_archive.class.php");
 
 class list_loans_archives_ui extends list_loans_ui {
@@ -38,6 +39,12 @@ class list_loans_archives_ui extends list_loans_ui {
 		$this->add_applied_sort('arc_fin');
 	}
 	
+	protected function init_default_settings() {
+		parent::init_default_settings();
+		$this->set_setting_column('arc_debut', 'datatype', 'date');
+		$this->set_setting_column('arc_fin', 'datatype', 'date');
+	}
+	
 	/**
 	 * Initialisation des colonnes disponibles
 	 */
@@ -59,8 +66,8 @@ class list_loans_archives_ui extends list_loans_ui {
 				'arc_empr_statut' => 'statut_empr',
 				'arc_empr_location' => 'localisation_sort',
 				'arc_expl_typdoc' => '294',
-				'arc_expl_statut' => '',
-				'arc_expl_location' => ''
+				'arc_expl_statut' => 'editions_datasource_expl_statut',
+				'arc_expl_location' => 'editions_datasource_expl_location'
 		);
 		foreach ($main_fields as $key=>$main_field) {
 			$main_fields[$key] = $msg[$main_field]." <sup>(arc)</sup>";
@@ -70,119 +77,52 @@ class list_loans_archives_ui extends list_loans_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-	
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
+	protected function _get_query_field_order($sort_by) {
 			switch($sort_by) {
 				case 'pret_retour_empr' :
-					$order .= 'arc_fin, empr_nom, empr_prenom';
-					break;
+	            	return 'arc_fin, empr_nom, empr_prenom';
 				case 'arc_expl_cote':
 				case 'arc_debut':
 				case 'arc_fin':
-					$order .= $sort_by;
-					break;
+	            	return $sort_by;
 				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
+	            	return parent::_get_query_field_order($sort_by);
 		}
 	}
-			
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
 		
-		$this->set_filters_from_form();
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('empr_location_id', 'arc_empr_location', 'integer');
+		$this->_add_query_filter_simple_restriction('docs_location_id', 'arc_expl_location', 'integer');
+		$this->_add_query_filter_simple_restriction('empr_categ_filter', 'arc_empr_categ', 'integer');
+		$this->_add_query_filter_simple_restriction('empr_codestat_filter', 'arc_empr_codestat', 'integer');
+		$this->_add_query_filter_simple_restriction('empr_location_id', 'arc_empr_location', 'integer');
 		
-		$filters = array();
-		if($this->filters['empr_location_id']) {
-			$filters [] = 'arc_empr_location = "'.$this->filters['empr_location_id'].'"';
-		}
-		if($this->filters['docs_location_id']) {
-			$filters [] = 'arc_expl_location = "'.$this->filters['docs_location_id'].'"';
-		}
-		if($this->filters['empr_categ_filter']) {
-			$filters [] = 'arc_empr_categ = "'.$this->filters['empr_categ_filter'].'"';
-		}
-		if($this->filters['empr_codestat_filter']) {
-			$filters [] = 'arc_empr_codestat = "'.$this->filters['empr_codestat_filter'].'"';
-		}
-		if($this->filters['pret_date_start']) {
-			$filters [] = 'arc_debut >= "'.$this->filters['pret_date_start'].'"';
-		}
-		if($this->filters['pret_date_end']) {
-			$filters [] = 'arc_debut < "'.$this->filters['pret_date_end'].'"';
-		}
-		if($this->filters['pret_retour_start']) {
-			$filters [] = 'arc_fin >= "'.$this->filters['pret_retour_start'].'"';
-		}
-		if($this->filters['pret_retour_end']) {
-			$filters [] = 'arc_fin < "'.$this->filters['pret_retour_end'].'"';
-		}
-		if($this->filters['short_loan_flag']) {
-			$filters [] = 'arc_short_loan_flag = "'.$this->filters['short_loan_flag'].'"';
-		}
-		if ($this->filters['pnb_flag']) {
-		    $filters [] = 'arc_pnb_flag = "'.$this->filters['pnb_flag'].'"';
-		}
-		if(count($filters)) {
-		    $filter_query .= $this->_get_query_join_filters();
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
+		$this->_add_query_filter_interval_restriction('pret_date', 'arc_debut');
+		$this->_add_query_filter_interval_restriction('pret_retour', 'arc_fin');
+		
+		$this->_add_query_filter_simple_restriction('short_loan_flag', 'arc_short_loan_flag', 'integer');
+		$this->_add_query_filter_simple_restriction('pnb_flag', 'arc_pnb_flag', 'integer');
 	}
 	
-	protected function get_cell_content($object, $property) {
-		$content = '';
-		$method_name = 'get_'.$property;
-		switch($property) {
-			case 'arc_debut':
-				$content .= formatdate($object->get_arc_debut());
-				break;
-			case 'arc_fin':
-				$content .= formatdate($object->get_arc_fin());
-				break;
-			case 'arc_empr_categ':
-				
-				break;
-			case 'arc_empr_codestat':
-				
-				break;
-			case 'arc_empr_statut':
-				
-				break;
-			case 'arc_empr_location':
-				$docs_location = new docs_location($object->{$method_name}());
-				$content .= $docs_location->libelle;
-				break;
-			case 'arc_expl_typdoc':
-				$docs_type = new docs_type($object->{$method_name}());
-				$content .= $docs_type->libelle;
-				break;
-			case 'arc_expl_statut':
-				$docs_statut = new docs_statut($object->{$method_name}());
-				$content .= $docs_statut->libelle;
-				break;
-			case 'arc_expl_location':
-				$docs_location = new docs_location($object->{$method_name}());
-				$content .= $docs_location->libelle;
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
-		}
-		return $content;
+	protected function _get_object_property_arc_empr_location($object) {
+		$docs_location = new docs_location($object->get_arc_empr_location());
+		return $docs_location->libelle;
+	}
+	
+	protected function _get_object_property_arc_expl_typdoc($object) {
+		$docs_type = new docs_type($object->get_arc_expl_typdoc());
+		return $docs_type->libelle;
+	}
+	
+	protected function _get_object_property_arc_expl_statut($object) {
+		$docs_statut = new docs_statut($object->get_arc_expl_statut());
+		return $docs_statut->libelle;
+	}
+	
+	protected function _get_object_property_arc_expl_location($object) {
+		$docs_location = new docs_location($object->get_arc_expl_location());
+		return $docs_location->libelle;
 	}
 }

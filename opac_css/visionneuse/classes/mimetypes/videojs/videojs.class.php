@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: videojs.class.php,v 1.10.8.1 2022/01/03 11:18:34 dgoron Exp $
+// $Id: videojs.class.php,v 1.11 2022/01/03 11:17:32 dgoron Exp $
 
 global $visionneuse_path;
 require_once($visionneuse_path."/classes/mimetypes/affichage.class.php");

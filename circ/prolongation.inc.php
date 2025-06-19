@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: prolongation.inc.php,v 1.39.2.2 2021/12/09 09:04:05 dgoron Exp $
+// $Id: prolongation.inc.php,v 1.42 2022/08/02 07:26:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -28,13 +28,9 @@ require_once($include_path.'/mailing.inc.php');
 
 function prolonger($id_prolong) {
 	global $id_empr,$date_retour, $form_cb, $cb_doc, $confirm;
-	global $msg;
 	global $pmb_pret_restriction_prolongation, $pmb_pret_nombre_prolongation, $force_prolongation, $bloc_prolongation;
 	global $deflt2docs_location,$pmb_location_reservation;
-	global $pdflettreresa_resa_prolong_email, $pmb_mail_html_format, $pmb_img_url, $pmb_img_folder;
-	global $opac_url_base, $opac_connexion_phrase;
-	global $PMBuserprenom, $PMBusernom, $PMBuseremail;
-	global $charset;
+	global $pdflettreresa_resa_prolong_email;
 	
 	$prolongation=TRUE;	
 
@@ -125,129 +121,18 @@ function prolonger($id_prolong) {
 				}
 				$result_resa = pmb_mysql_query($query_resa);
 				if(pmb_mysql_num_rows($result_resa)){
-					
-					$query = 'select tit1 from notices where notice_id = '.$retour->expl_notice;
-					$title_notice = pmb_mysql_fetch_object(pmb_mysql_query($query));
-					$notice = new notice($retour->expl_notice);
-					
 					$obj_result = pmb_mysql_fetch_object($result_resa);
 					$query = 'select * from empr where id_empr = '.$obj_result->resa_idempr;
 					$empr_result = pmb_mysql_query($query);
 					
-					$mailtpl = new mailtpl($pdflettreresa_resa_prolong_email);
 					$destinataire=pmb_mysql_fetch_object($empr_result);
 					
-					$emprunteur_datas = new emprunteur_datas($destinataire->id_empr);
-					
-					$objet_mail = $mailtpl->info['objet'];
-					$message = $mailtpl->info['tpl'];
-					
-					if (strpos("<html",substr($message,0,20))===false) $message="<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><meta charset=\"".$charset."\" /></head><body>$message</body></html>";
-					$headers  = "MIME-Version: 1.0\n";
-					$headers .= "Content-type: text/html; charset=iso-8859-1";
-					
-					$iddest=$destinataire->id_empr;
-					$emaildest=$destinataire->empr_mail;
-					$nomdest=$destinataire->empr_nom;
-					
-					if ($destinataire->empr_prenom) $nomdest=$destinataire->empr_prenom." ".$destinataire->empr_nom;
-					
-					$loc_name = '';
-					$loc_adr1 = '';
-					$loc_adr2 = '';
-					$loc_cp = '';
-					$loc_town = '';
-					$loc_phone = '';
-					$loc_email = '';
-					$loc_website = '';
-					if ($destinataire->empr_location) {
-						$empr_dest_loc = pmb_mysql_query("SELECT * FROM docs_location WHERE idlocation=".$destinataire->empr_location);
-						if (pmb_mysql_num_rows($empr_dest_loc)) {
-							$empr_loc = pmb_mysql_fetch_object($empr_dest_loc);
-							$loc_name = $empr_loc->name;
-							$loc_adr1 = $empr_loc->adr1;
-							$loc_adr2 = $empr_loc->adr2;
-							$loc_cp = $empr_loc->cp;
-							$loc_town = $empr_loc->town;
-							$loc_phone = $empr_loc->phone;
-							$loc_email = $empr_loc->email;
-							$loc_website = $empr_loc->website;
-						}
-					}
-					
-					$message_to_send = $message;
-					$message_to_send=str_replace("!!empr_name!!", $destinataire->empr_nom,$message_to_send);
-					$message_to_send=str_replace("!!empr_first_name!!", $destinataire->empr_prenom,$message_to_send);
-					switch ($destinataire->empr_sexe) {
-						case "2":
-							$empr_civilite = $msg["civilite_madame"];
-							break;
-						case "1":
-							$empr_civilite = $msg["civilite_monsieur"];
-							break;
-						default:
-							$empr_civilite = $msg["civilite_unknown"];
-							break;
-					}
-					$message_to_send=str_replace('!!empr_sexe!!',$empr_civilite,$message_to_send);
-					$message_to_send=str_replace("!!empr_cb!!", $destinataire->empr_cb,$message_to_send);
-					$message_to_send=str_replace("!!empr_login!!", $destinataire->empr_login,$message_to_send);
-					$message_to_send=str_replace("!!empr_mail!!", $destinataire->empr_mail,$message_to_send);
-					if (strpos($message_to_send,"!!empr_loans!!") !== false) $message_to_send=str_replace("!!empr_loans!!", $emprunteur_datas->m_liste_prets(),$message_to_send);
-					if (strpos($message_to_send,"!!empr_resas!!") !== false) $message_to_send=str_replace("!!empr_resas!!", $emprunteur_datas->m_liste_resas(),$message_to_send);
-					if (strpos($message_to_send,"!!empr_name_and_adress!!") !== false) $message_to_send=str_replace("!!empr_name_and_adress!!", nl2br($emprunteur_datas->m_lecteur_adresse()),$message_to_send);
-					if (strpos($message_to_send,"!!empr_dated!!") !== false) $message_to_send=str_replace("!!empr_dated!!", $destinataire->aff_empr_date_adhesion,$message_to_send);
-					if (strpos($message_to_send,"!!empr_datef!!") !== false) $message_to_send=str_replace("!!empr_datef!!", $destinataire->aff_empr_date_expiration,$message_to_send);
-					if (strpos($message_to_send,"!!empr_all_information!!") !== false) $message_to_send=str_replace("!!empr_all_information!!", nl2br($emprunteur_datas->m_lecteur_info()),$message_to_send);
-					$message_to_send=str_replace("!!empr_loc_name!!", $loc_name,$message_to_send);
-					$message_to_send=str_replace("!!empr_loc_adr1!!", $loc_adr1,$message_to_send);
-					$message_to_send=str_replace("!!empr_loc_adr2!!", $loc_adr2,$message_to_send);
-					$message_to_send=str_replace("!!empr_loc_cp!!", $loc_cp,$message_to_send);
-					$message_to_send=str_replace("!!empr_loc_town!!", $loc_town,$message_to_send);
-					$message_to_send=str_replace("!!empr_loc_phone!!", $loc_phone,$message_to_send);
-					$message_to_send=str_replace("!!empr_loc_email!!", $loc_email,$message_to_send);
-					$message_to_send=str_replace("!!empr_loc_website!!", $loc_website,$message_to_send);
-					$dates = time();
-					$login = $destinataire->empr_login;
-					$code=md5($opac_connexion_phrase.$login.$dates);
-					if (strpos($message_to_send,"!!code!!") !== false) $message_to_send=str_replace("!!code!!", $code,$message_to_send);
-					if (strpos($message_to_send,"!!login!!") !== false) $message_to_send=str_replace("!!login!!", $login,$message_to_send);
-					if (strpos($message_to_send,"!!date_conex!!") !== false) $message_to_send=str_replace("!!date_conex!!", $dates,$message_to_send);
-					
-					/**
-					 * Partie résa: 
-					 */
-					
-					//Title notice & date & permalink
-					if (strpos($message_to_send,"!!expl_title!!") !== false) $message_to_send=str_replace("!!expl_title!!", $title_notice->tit1, $message_to_send);
-					if (strpos($message_to_send,"!!new_date!!") !== false) $message_to_send=str_replace("!!new_date!!", formatdate($date_retour), $message_to_send);
-					if (strpos($message_to_send,"!!record_permalink!!") !== false){
-						if($retour->expl_notice){
-							$permalink = $opac_url_base."index.php?lvl=notice_display&id=".$retour->expl_notice;
-						}else{
-							$permalink = $opac_url_base."index.php?lvl=bulletin_display&id=".$retour->expl_bulletin;
-						}
-						$message_to_send=str_replace("!!record_permalink!!", $permalink, $message_to_send);
-					}
-					
-					
-					//générer le corps du message
-					if ($pmb_mail_html_format==2){
-						// transformation des url des images pmb en chemin absolu ( a cause de tinyMCE )
-						preg_match_all("/(src|background)=\"(.*)\"/Ui", $message_to_send, $images);
-						if(isset($images[2])) {
-							foreach($images[2] as $i => $url) {
-								$filename  = basename($url);
-								$directory = dirname($url);
-								if(urldecode($directory."/")==$pmb_img_url){
-									$newlink=$pmb_img_folder .$filename;
-									$message_to_send = preg_replace("/".$images[1][$i]."=\"".preg_quote($url, '/')."\"/Ui", $images[1][$i]."=\"".$newlink."\"", $message_to_send);
-								}
-							}
-						}
-					}
-					$bcc="";
-					$envoi_OK = mailpmb($nomdest, $emaildest, $objet_mail, $message_to_send, $PMBuserprenom." ".$PMBusernom, $PMBuseremail, $headers, "", $bcc, 0, '') ;
+					$mail_reader_loans_extension = new mail_reader_loans_extension();
+					$mail_reader_loans_extension->set_mail_to_id($obj_result->resa_idempr);
+					$mail_reader_loans_extension->set_expl_notice($retour->expl_notice)
+						->set_expl_bulletin($retour->expl_bulletin)
+						->set_empr($destinataire);
+					$mail_reader_loans_extension->send_mail();
 				}
 				
 				/** Check resa **/

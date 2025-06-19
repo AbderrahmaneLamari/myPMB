@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_multiple.class.php,v 1.8.2.1 2022/01/03 11:45:55 dgoron Exp $
+// $Id: cms_module_common_datasource_multiple.class.php,v 1.10 2022/02/18 09:09:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -31,9 +31,9 @@ class cms_module_common_datasource_multiple extends cms_module_common_datasource
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
 				$row = pmb_mysql_fetch_object($result);
-				$this->id = $row->id_cadre_content+0;
+				$this->id = (int) $row->id_cadre_content;
 				$this->hash = $row->cadre_content_hash;
-				$this->cadre_parent = $row->cadre_content_num_cadre+0;
+				$this->cadre_parent = (int) $row->cadre_content_num_cadre;
 				$this->unserialize($row->cadre_content_data);
 			}
 			//on va chercher les infos des sous-sources
@@ -42,7 +42,7 @@ class cms_module_common_datasource_multiple extends cms_module_common_datasource
 			if(pmb_mysql_num_rows($result)){
 				while($row=pmb_mysql_fetch_object($result)){
 					$this->datasources[] = array(
-						'id' => $row->id_cadre_content+0,
+					    'id' => (int) $row->id_cadre_content,
 						'name' => $row->cadre_content_object
 					);	
 				}
@@ -55,6 +55,7 @@ class cms_module_common_datasource_multiple extends cms_module_common_datasource
 	 */
 	public function get_form(){
 		$this->get_available_datasources();
+		
 		$form = "
 			<div class='row'>";
 		$form.=$this->get_hash_form();
@@ -109,7 +110,7 @@ class cms_module_common_datasource_multiple extends cms_module_common_datasource
 						var ParentId = BaseId+'Parent';
 						var ChildId = BaseId+'Child';
 						var title = multiple_msg[datasource];
-						var container = domConstruct.toDom('<div class=\"row\" id=\"'+BaseId+'\"><div class=\"colonne80\"><div id=\"'+ParentId+'\" class=\"parent\"><img id=\"'+BaseId+'Img\" class=\"img_plus\" src=\"".get_url_icon('minus.gif')."\" name=\"imEx\" title=\"'+title+'\" alt=\"\" onclick=\"expandBase(\''+BaseId+'\',true)\" style='border:0px' hspace=\"3\"/><span class=\"heada\">'+title+'</span></div><div id=\"'+ChildId+'\" class=\"child\" style=\"margin-bottom:6px;display:block;\"></div></div><div class=\"colonne_suite\"><input type=\"button\" class=\"bouton\" value=\"X\" id=\"'+BaseId+'_delete\" /></div></div>');
+						var container = domConstruct.toDom('<div class=\"row\" id=\"'+BaseId+'\"><div class=\"colonne80\"><div id=\"'+ParentId+'\" class=\"parent\"><img id=\"'+BaseId+'Img\" class=\"img_plus\" src=\"".get_url_icon('minus.gif')."\" name=\"imEx\" title=\"'+title+'\" onclick=\"expandBase(\''+BaseId+'\',true)\" style='border:0px' hspace=\"3\"/><span class=\"heada\">'+title+'</span></div><div id=\"'+ChildId+'\" class=\"child\" style=\"margin-bottom:6px;display:block;\"></div></div><div class=\"colonne_suite\"><input type=\"button\" class=\"bouton\" value=\"X\" id=\"'+BaseId+'_delete\" /></div></div>');
 						domConstruct.place(container,subdatasources);
 						var input = domConstruct.toDom('<input type=\"hidden\" name=\"".$this->get_form_value_name("datasources_name")."[]\" value=\"'+datasource+'\"/>');
 						domConstruct.place(input,ChildId);

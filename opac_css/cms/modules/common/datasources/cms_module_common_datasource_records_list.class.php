@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_list.class.php,v 1.2 2018/01/08 14:52:37 tsamson Exp $
+// $Id: cms_module_common_datasource_records_list.class.php,v 1.3 2022/09/06 07:52:19 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,6 +12,7 @@ class cms_module_common_datasource_records_list extends cms_module_common_dataso
 		parent::__construct($id);
 		$this->limitable = true;
 		$this->sortable = true;
+		$this->paging = false;
 	}
 	
 	/*
@@ -37,7 +38,7 @@ class cms_module_common_datasource_records_list extends cms_module_common_dataso
 		$query = 'select notice_id from notices
 				where notice_id in ('.implode(',', $records).')
 				order by '.$this->parameters["sort_by"].' '.$this->parameters["sort_order"];
-		if ($this->parameters['nb_max_elements']*1) {
+		if (!empty($this->parameters['nb_max_elements']) && $this->parameters['nb_max_elements']*1) {
 			$query.= ' limit '.$this->parameters['nb_max_elements']*1;
 		}
 		$result = pmb_mysql_query($query);

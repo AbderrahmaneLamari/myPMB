@@ -1,0 +1,92 @@
+/*-----------------
+- COMPONENTS: CART -
+ -----------------*/
+
+#resume_panier {
+  height: 35px;
+}
+
+.cartText {
+  display: none;
+  /* en fonction du client */
+}
+
+#iframe_resume_panier {
+  height: 100%;
+  width: 162px;
+}
+
+body#cart_info_body {
+  margin: 0;
+  padding: 0;
+}
+
+#cart_info_iframe_content {
+  color: var(--c-black);
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  font-size: 1.6rem;
+  font-family: var(--font);
+  font-weight: 400;
+  position: relative;
+}
+
+#cart_info_iframe_content a::after {
+  content: "";
+  width: 112px;
+  height: 35px;
+  position: absolute;
+}
+
+.pmb_basket_number {
+  font-size: 1.8rem;
+  font-family: var(--font);
+  font-weight: 500;
+}
+
+#cart_info_iframe_content .img_basket {
+  margin-right: 6px;
+}
+
+#cart_info_iframe_content a {
+  text-transform: none;
+  text-decoration: none;
+  line-height: 24px;
+}
+
+#cart_info_iframe_content #pmb-basket-empty,
+#cart_info_iframe_content #pmb-basket-full,
+#cart_info_iframe_content #pmb-basket-not-empty {
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+
+.pmb_basket_nb {
+  display: block;
+}
+
+/*=======================RESPONSIVE========================*/
+@media screen and (max-device-width:959px) {
+
+  body#cart_info_body {
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  #cart_info_iframe_content > a {
+    display: none;
+  }
+
+  #cart_info_iframe_content a::after {
+    content: none;
+  }
+
+}

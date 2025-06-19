@@ -2,9 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authority.class.php,v 1.45.2.2 2021/11/08 11:17:00 rtigero Exp $
+// $Id: authority.class.php,v 1.53.4.1 2023/07/12 14:02:38 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Ark\Entities\ArkAuthority;
+use Pmb\Ark\Models\ArkModel;
 
 require_once($include_path."/h2o/pmb_h2o.inc.php");
 require_once($class_path."/authorities_collection.class.php");
@@ -15,6 +18,7 @@ require_once($class_path.'/thumbnail.class.php');
 require_once($class_path."/parametres_perso.class.php");
 require_once($class_path."/custom_parametres_perso.class.php");
 require_once $class_path."/contribution_area/contribution_area_form.class.php";
+require_once $class_path."/entities.class.php";
 
 class authority {
 	
@@ -136,6 +140,22 @@ class authority {
 	
 	private $authority_page;
 	
+	/**
+	 * Lien ARK pointant vers l'autorité
+	 * @var string
+	 */
+	private $ark_link;
+	
+	private $comment;
+	
+	private $commentaire;
+
+	private $author_comment;
+	
+	private $ed_comment;
+
+	private $title;
+	
 	public static $properties = array();
 	
 	public function __construct($id=0, $num_object=0, $type_object=0){
@@ -181,7 +201,30 @@ class authority {
 			}
 		}
     }
-	
+    public static function aut_const_to_type_const($aut_const){
+    	switch ($aut_const) {
+    		case AUT_TABLE_AUTHORS :
+    			return TYPE_AUTHOR;
+    		case AUT_TABLE_CATEG :
+    			return TYPE_CATEGORY;
+    		case AUT_TABLE_PUBLISHERS :
+    			return TYPE_PUBLISHER;
+    		case AUT_TABLE_COLLECTIONS :
+    			return TYPE_COLLECTION;
+    		case AUT_TABLE_SUB_COLLECTIONS :
+    			return TYPE_SUBCOLLECTION;
+    		case AUT_TABLE_SERIES :
+    			return TYPE_SERIE;
+    		case AUT_TABLE_TITRES_UNIFORMES :
+    			return TYPE_TITRE_UNIFORME;
+    		case AUT_TABLE_INDEXINT :
+    			return TYPE_INDEXINT;
+    		case AUT_TABLE_CONCEPT :
+    			return TYPE_CONCEPT;
+    		case AUT_TABLE_AUTHPERSO :
+    			return TYPE_AUTHPERSO;
+    	}
+    }
 	public function get_id() {
 	    return $this->id;
 	}
@@ -363,23 +406,8 @@ class authority {
 	}
 	
 	public function render($context=array(), $templates_folder = ''){
-		global $opac_authorities_templates_folder, $include_path;
 		
-		if (!$templates_folder) {
-			$templates_folder = $opac_authorities_templates_folder;
-		}
-		if (!$templates_folder) {
-			$templates_folder = "common";
-		}
-		$template_path = $include_path.'/templates/authorities/'.$templates_folder."/".$this->get_string_type_object().'.html';
-		
-		if (!file_exists($template_path)) {
-			$template_path =  $include_path.'/templates/authorities/common/'.$this->get_string_type_object().'.html';
-		}
-		if (file_exists($include_path.'/templates/authorities/'.$templates_folder.'/'.$this->get_string_type_object().'_subst.html')) {
-			$template_path =  $include_path.'/templates/authorities/'.$templates_folder.'/'.$this->get_string_type_object().'_subst.html';
-		}
-		
+		$template_path = $this->find_template("",$templates_folder);
 		switch ($this->type_object) {
 		    case AUT_TABLE_TITRES_UNIFORMES:
 		    case AUT_TABLE_COLLECTIONS:
@@ -405,6 +433,69 @@ class authority {
 			return $h2o->render($context);
 		}
 		return '';
+	}
+	
+	public function find_template($what="",$template_folder="")
+	{
+	    global $opac_authorities_templates_folder, $include_path;
+	    
+	    if (empty($template_folder)) {
+	        $template_folder = $opac_authorities_templates_folder ?? "common";
+	    }
+	    // Le rep de templates
+	    $template_path= $include_path.'/templates/authorities/'.$template_folder."/";
+	    if(!empty($what)){
+	        $template_path.="$what/";
+	    }
+	    
+	    
+	    // On gère les quelques cas particuliers possibles... 
+	    switch ($this->get_string_type_object()){
+	        case "titre_uniforme" :
+	            // on cherche le suffix suffixe possible _<nature>_<type>
+	            $template = $this->get_string_type_object()."_".$this->get_object_instance()->oeuvre_nature."_".$this->get_object_instance()->oeuvre_type.".html";
+	            $subst = $this->get_string_type_object()."_".$this->get_object_instance()->oeuvre_nature."_".$this->get_object_instance()->oeuvre_type."_subst.html";
+	            if (file_exists($template_path.$subst)) {
+	                return $template_path.$subst;
+	            }
+	            if (file_exists($template_path.$template)) {
+	                return $template_path.$template;
+	            }  
+	            // on cherche le suffix suffixe possible _<nature>
+	            $template = $this->get_string_type_object()."_".$this->get_object_instance()->oeuvre_nature.".html";
+	            $subst = $this->get_string_type_object()."_".$this->get_object_instance()->oeuvre_nature."_subst.html";
+	            if (file_exists($template_path.$subst)) {
+	                return $template_path.$subst;
+	            }
+	            if (file_exists($template_path.$template)) {
+	                return $template_path.$template;
+	            }
+	        case "author" : 
+	            //on cherche le suffix suffixe possible _<type>
+	            $template = $this->get_string_type_object()."_".$this->get_object_instance()->type.".html";
+	            $subst = $this->get_string_type_object()."_".$this->get_object_instance()->type."_subst.html"; 
+	            if (file_exists($template_path.$subst)) {
+	                return $template_path.$subst;
+	            }
+	            if (file_exists($template_path.$template)) {
+	                return $template_path.$template;
+	            }  
+	    }
+	    // On est encore, la, c'est donc le cas général qui s'applique, on prend le subst en priorité...
+	    $template = $this->get_string_type_object().'.html';
+	    $subst = $this->get_string_type_object().'_subst.html';
+	    if (file_exists($template_path.$subst)) {
+	        return $template_path.$subst;
+	    }
+	    if (file_exists($template_path.$template)) {
+	        return $template_path.$template;
+	    }  
+	    // Si c'est pas le common, on essaye avec le common...
+	    if ($template_folder != "common") {   
+	        return $this->find_template($what,"common");
+	    }
+	    // On est encore là... désolé, on n'a aucun template à utiliser !
+	    return false;
 	}
 
 	private function init_autlink_class(){
@@ -784,7 +875,7 @@ class authority {
 	        }
 	    }
 	    return $this->type_icon;
-	}	
+	}
 	
 	public function get_permalink() {
 		return $this->get_object_instance()->get_permalink();
@@ -795,19 +886,12 @@ class authority {
 	}
 	
 	public function get_isbd() {
-		global $msg, $include_path;
 		if (!empty($this->isbd)) {
 			return $this->isbd;
 		}
 		$this->isbd = $this->get_object_instance()->get_isbd();
 	
-		$template_path = '';
-		if (file_exists($include_path.'/templates/authorities/common/isbd/'.$this->get_string_type_object().'.html')) {
-			$template_path = $include_path.'/templates/authorities/common/isbd/'.$this->get_string_type_object().'.html';
-		}
-		if (file_exists($include_path.'/templates/authorities/common/isbd/'.$this->get_string_type_object().'_subst.html')) {
-			$template_path = $include_path.'/templates/authorities/common/isbd/'.$this->get_string_type_object().'_subst.html';
-		}
+		$template_path = $this->find_template("isbd");
 		if($template_path){
 			$h2o = H2o_collection::get_instance($template_path);
 			$isbd = $h2o->render(array('authority' => $this));
@@ -818,18 +902,11 @@ class authority {
 	}
 	
 	public function get_detail() {
-		global $msg, $include_path;
 		if (isset($this->detail)) {
 			return $this->detail;
 		}
 		$this->detail = '';
-		$template_path = '';
-		if (file_exists($include_path.'/templates/authorities/common/detail/'.$this->get_string_type_object().'.html')) {
-			$template_path = $include_path.'/templates/authorities/common/detail/'.$this->get_string_type_object().'.html';
-		}
-		if (file_exists($include_path.'/templates/authorities/common/detail/'.$this->get_string_type_object().'_subst.html')) {
-			$template_path = $include_path.'/templates/authorities/common/detail/'.$this->get_string_type_object().'_subst.html';
-		}
+		$template_path = $this->find_template("detail");
 		if($template_path){
 			$h2o = H2o_collection::get_instance($template_path);
 			$this->detail = $h2o->render(array('element' => $this));
@@ -1028,5 +1105,75 @@ class authority {
 	        return "./index.php?lvl=contribution_area&sub=convert&action=edit_entity&entity_type=$this->string_type_object&entity_id=$this->num_object";
 	    }
 	    return "";
+	}
+	
+	/**
+	 * Liste les methodes, utile pour les templates django
+	 * @return []
+	 */
+	public function get_methods_infos() {
+	    return entities::get_methods_infos($this);
+	}
+	
+	/**
+	 * Liste les proprietes, utile pour les templates django
+	 * @return []
+	 */
+	public function get_properties_infos() {
+	    return entities::get_properties_infos($this);
+	}
+	
+	public function get_ark_link() {
+		if(empty($this->ark_link)) {
+			global $pmb_ark_activate;
+			if($pmb_ark_activate) {
+				$arkAuthority = new ArkAuthority(intval($this->id));
+				$ark = ArkModel::getArkFromEntity($arkAuthority);
+				$ark->setArkEntity($arkAuthority);
+				$this->ark_link = $ark->getArkLink();
+			}
+		}
+		return $this->ark_link;
+	}
+
+	/**
+	 * Retourne le titre de l'autorité selon son type
+	 */
+	public function get_title()
+	{
+		if(! empty($this->title)) {
+			return $this->title;
+		}
+
+		if(method_exists($this->get_object_instance(), "getData")) {
+			$this->get_object_instance()->getData();
+		} else if(method_exists($this->get_object_instance(), "get_data")) {
+			$this->get_object_instance()->get_data();
+		} else {
+			//TODO trouver quoi mettre dans le else
+		}
+
+		switch(true) {
+			case ! empty($this->get_object_instance()->isbd_entry):
+				$this->title = $this->get_object_instance()->isbd_entry;
+				break;
+			case ! empty($this->get_object_instance()->name):
+				$this->title = $this->get_object_instance()->name;
+				break;
+			case !empty($this->get_object_instance()->libelle):
+				$this->title = $this->get_object_instance()->libelle;
+				break;
+			case method_exists($this->get_object_instance(), "get_name"):
+				$this->title = $this->get_object_instance()->get_name();
+				break;
+			case method_exists($this->get_object_instance(), "get_display_label"):
+				$this->title = $this->get_object_instance()->get_display_label();
+				break;
+			default:
+				$this->title = $this->get_isbd();
+				break;
+		}
+
+		return $this->title;
 	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: common.tpl.php,v 1.201.2.1 2022/01/03 10:21:11 tsamson Exp $
+// $Id: common.tpl.php,v 1.204 2022/08/30 08:03:20 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -386,9 +386,18 @@ $std_header = "<!DOCTYPE html>
               } else {
                   $doc_params = '';
               }
+
               $pos = strrpos($doc_params_explode[0], "/") + 1;
-              $script_name=substr($doc_params_explode[0],$pos);
-              $extra .= '<a class="icon_help" href="./doc/index.php?script_name='.$script_name.'&'.$doc_params.'&lang='.$lang.'" alt="'.$msg['1900'].'" title="'.$msg['1900'].'" target="__blank" >';
+              $script_name = substr($doc_params_explode[0], $pos);
+              
+              // On évite la vulnérabilités xss
+              $help_url = sprintf("./doc/index.php?script_name=%s", urlencode($script_name));
+              if (!empty($doc_params)) {       	
+              	$help_url = "{$help_url}&" . htmlentities($doc_params, ENT_QUOTES, $charset);
+              }
+              $help_url .= "&lang={$lang}";
+              
+              $extra .= '<a class="icon_help" href="'. $help_url .'" alt="'.$msg['1900'].'" title="'.$msg['1900'].'" target="__blank" >';
               $extra .= "<img src='".get_url_icon('aide.gif')."' class='align_middle' hspace='3' alt='' /></a>";
           }
           if (defined('SESSrights') && SESSrights & PREF_AUTH)

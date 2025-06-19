@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_authperso.class.php,v 1.11.2.1 2021/10/20 11:57:44 dgoron Exp $
+// $Id: selector_authperso.class.php,v 1.14 2023/01/03 15:11:58 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -44,7 +44,7 @@ class selector_authperso extends selector_authorities {
 		        break;
 			case 'simple_search':
 				$searcher_tabs = $this->get_searcher_tabs_instance();
-				$authperso_id += 0;
+				$authperso_id = intval($authperso_id);
 				if(empty($mode)){
 					$mode = (1000+$authperso_id);
 				}
@@ -56,7 +56,7 @@ class selector_authperso extends selector_authorities {
 				break;
 			case 'results_search':
 				$searcher_tabs = $this->get_searcher_tabs_instance();
-				$authperso_id += 0;
+				$authperso_id = intval($authperso_id);
 				if(empty($mode)){
 					$mode = (1000+$authperso_id);
 				}
@@ -118,15 +118,15 @@ class selector_authperso extends selector_authorities {
 		global $id;
 		global $base_url;
 		global $type_autorite;
-		global $nb_per_page, $rech_regexp;
+		global $rech_regexp;
 		
-		$authperso_id += 0;
-		$id += 0;
-		$type_autorite += 0;
+		$authperso_id = intval($authperso_id);
+		$id = intval($id);
+		$type_autorite = intval($type_autorite);
 		$base_url = static::get_base_url()."&rech_regexp=$rech_regexp&user_input=".rawurlencode($this->user_input)."&type_autorite=".$type_autorite;
 		
 		$authperso=new authperso($authperso_id);
-		$display_list = $authperso->get_list_selector($id,$this->get_link_pagination(),$nb_per_page);
+		$display_list = $authperso->get_list_selector($id,$this->get_link_pagination(),$this->get_nb_per_page_list());
 		return $display_list;
 	}
 	
@@ -134,7 +134,7 @@ class selector_authperso extends selector_authorities {
 		global $rech_regexp;
 		global $type_autorite;
 		
-		$type_autorite += 0;
+		$type_autorite = intval($type_autorite);
 		$link = static::get_base_url()."&rech_regexp=$rech_regexp&user_input=".rawurlencode($this->user_input)."&type_autorite=".$type_autorite;
 		return $link;
 	}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_document.class.php,v 1.25.2.3 2022/01/11 11:24:00 gneveu Exp $
+// $Id: cms_document.class.php,v 1.29.4.2 2023/05/12 09:43:28 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,7 +12,7 @@ class cms_document extends storage_document {
 
 	protected static $table = 'cms_documents';
 	protected static $prefix = 'document';
-	
+
 	protected function fetch_datas_cache(){
 		if($tmp=cms_cache::get_at_cms_cache($this)){
 			$this->restore($tmp);
@@ -21,13 +21,13 @@ class cms_document extends storage_document {
 			cms_cache::set_at_cms_cache($this);
 		}
 	}
-	
+
 	protected function restore($cms_object){
 		foreach(get_object_vars($cms_object) as $propertieName=>$propertieValue){
 			$this->{$propertieName}=$propertieValue;
 		}
 	}
-	
+
 	protected function fetch_datas(){
 		parent::fetch_datas();
 		if($this->id){
@@ -42,7 +42,7 @@ class cms_document extends storage_document {
 			}
 		}
 	}
-	
+
 	public function get_item_form($selected = false,$edit_js_function="openEditDialog"){
 		global $msg,$charset;
 		$item = "
@@ -59,7 +59,7 @@ class cms_document extends storage_document {
 		</div>";
 		return $item;
 	}
-	
+
 	public function get_vignette_url(){
 		global $pmb_url_base,$pmb_img_cache_url, $pmb_img_cache_folder;
 		$vign_url = "./ajax.php?module=cms&categ=document&action=thumbnail&id=".$this->id;
@@ -70,15 +70,15 @@ class cms_document extends storage_document {
 		}
 		return $vign_url;
 	}
-		
+
 	public function get_document_url(){
 		global $opac_url_base;
 		return "./ajax.php?module=cms&categ=document&action=render&id=".$this->id;
 	}
-	
+
 	public function get_form($action="./ajax.php?module=cms&categ=documents&action=save_form&id=") {
 	    global $msg, $charset, $opac_url_base, $_mimetypes_bymimetype_, $base_path;
-		
+
 		$form = "
 		<form name='cms_document_form' id='cms_document_form' method='POST' action='".$action.$this->id."' style='width:800px;' enctype='multipart/form-data'>
 			<div class='form-contenu'>
@@ -109,15 +109,15 @@ class cms_document extends storage_document {
 					</div>
 				</div>";
 		}
-		
+
 		create_tableau_mimetype();
 		$selector_mimetype = "<select id='cms_document_mime_vign' name='cms_document_mime_vign'><option value=''>".htmlentities($msg['explnum_no_mimetype'], ENT_QUOTES, $charset)."</option>";
 		foreach($_mimetypes_bymimetype_ as $key=>$val){
 			$selector_mimetype .= "<option value='".$key."'>".htmlentities($key, ENT_QUOTES, $charset)."</option>";
 		}
 		$selector_mimetype .= "</select>";
-		
-		if($this->id){	
+
+		if($this->id){
 			$form.= "
 				<div class='row'>
 					<div class='colonne3'>
@@ -144,7 +144,7 @@ class cms_document extends storage_document {
 					</div>
 				</div>";
 		}
-		
+
 		$collections=new cms_collections();
 		$form.="
 				<div class='row'>&nbsp;</div>
@@ -253,7 +253,7 @@ class cms_document extends storage_document {
 						<input type='submit' class='bouton'  value='".htmlentities($msg['cms_document_save'],ENT_QUOTES,$charset)."'/>
 					</div>
 					<div class='right'>
-						<input type='button' class='bouton' id='use_del_button' value='".htmlentities($msg['cms_document_delete_use'],ENT_QUOTES,$charset)."'/>	
+						<input type='button' class='bouton' id='use_del_button' value='".htmlentities($msg['cms_document_delete_use'],ENT_QUOTES,$charset)."'/>
 						<input type='button' class='bouton' id='doc_del_button' value='".htmlentities($msg['cms_document_delete'],ENT_QUOTES,$charset)."'/>
 					</div>
 				</div>
@@ -304,21 +304,21 @@ class cms_document extends storage_document {
 			        selection.removeAllRanges();
 	            }
 	        }
-			
+
 			require(['dojo/dom-construct',
 			        'dojo/on',
 			        'dojo/request',
 			        'dojo/dom-form',
        				'dojo/_base/lang',
 					'dojo/request/iframe'
-			], function(domConstruct, on, request, domForm, lang, iframe) {		
-								
-				form = dojo.byId('cms_document_form');	
+			], function(domConstruct, on, request, domForm, lang, iframe) {
+
+				form = dojo.byId('cms_document_form');
 				form.setAttribute('accept-charset','utf-8');
-				dojo.connect(form, 'onsubmit', function(event) {								
+				dojo.connect(form, 'onsubmit', function(event) {
 					dojo.stopEvent(event);
-								
-					iframe('".$action.$this->id."',{		
+
+					iframe('".$action.$this->id."',{
 						form : 'cms_document_form',
 						handleAs: 'html'
 					}).then(function(data) {
@@ -328,8 +328,8 @@ class cms_document extends storage_document {
                         }
 						domConstruct.place(result,'document_".$this->id."','replace');
 						dijit.byId('dialog_document').hide();
-					}, function(err){console.log('err', err);});								
-				});									
+					}, function(err){console.log('err', err);});
+				});
 				dojo.connect(dojo.byId('doc_del_button'),'onclick',function(event){
 					if(confirm('".addslashes($msg['cms_document_confirm_delete'])."')){
 						var xhrArgs = {
@@ -357,7 +357,7 @@ class cms_document extends storage_document {
 								if(data == 1){
 									dijit.byId('dialog_document').hide();
 									window.setTimeout(function(){openEditDialog('".$this->id."')},1000);
- 									
+
 								}else{
 									alert(data);
 								}
@@ -371,14 +371,14 @@ class cms_document extends storage_document {
 		</script>";
 		return $form;
 	}
-	
+
 	public function save_form($caller="collection"){
 		global $msg, $charset;
 		global $cms_document_title, $cms_document_description, $cms_document_url, $cms_document_vign;
 		global $cms_document_mime_vign;
 		global $cms_document_collection, $base_path;
 		global $prefix_url_image;
-		
+
 		$this->title = stripslashes($cms_document_title);
 		$this->description = stripslashes($cms_document_description);
 		$this->url = stripslashes($cms_document_url);
@@ -394,7 +394,7 @@ class cms_document extends storage_document {
 			$vignette_temp = $_FILES['cms_document_vign_file']['tmp_name'];
 			$vignette_moved = basename($vignette_temp);
 			$vignette_name = preg_replace("/ |'|\\|\"|\//m", "_", $vignette_name);
-			
+
 			move_uploaded_file($vignette_temp,$base_path.'/temp/'.$vignette_moved);
 			$this->vignette = construire_vignette($vignette_moved, $userfile_moved);
 			$maj_vignette = 1 ;
@@ -411,7 +411,10 @@ class cms_document extends storage_document {
 			$vignette = $tmpprefix_url_image."images/mimetype/".icone_mimetype($cms_document_mime_vign, "");
 			if(file_exists($vignette)){
 				$fp = fopen($vignette , "r" );
-				if ($fp) $contenu_vignette = fread ($fp, filesize($vignette));
+				if ($fp) {
+				    $contenu_vignette = fread ($fp, filesize($vignette));
+				    fclose($fp);
+				}
 			}
 			if($contenu_vignette) {
 				$this->vignette = $contenu_vignette;
@@ -426,51 +429,51 @@ class cms_document extends storage_document {
 			$query = "insert into cms_documents set ";
 			$clause="";
 		}
-		
+
 		$query.= "
 			document_title = '".addslashes($this->title)."',
 			document_description = '".addslashes($this->description)."',
-			document_url = '".addslashes($this->url)."', 					
+			document_url = '".addslashes($this->url)."',
 			document_num_object = '".$this->num_object."' ";
 		if($maj_vignette){
 			$query.= ",
-			document_vignette = '".addslashes($this->vignette)."'";	
-		}	
-				
+			document_vignette = '".addslashes($this->vignette)."'";
+		}
+
 		if(pmb_mysql_query($query.$clause)){
 			if($caller = "editorial_form"){
 				if($flag_collection_change){
 					return "<div></div>";
-				}				
+				}
 				return $this->get_item_form(true,"openEditDialog");
 			}else{
 				return $this->get_item_render("openEditDialog");
 			}
 		}
 	}
-	
+
 	public function delete(){
 		global $msg;
-	
+
 		//vérification d'utilisation
 		$query = "select * from cms_documents_links where document_link_num_document = ".$this->id;
 		$result = pmb_mysql_query($query);
 		if(!pmb_mysql_num_rows($result)){
+			$this->clean_cache();
 			return parent::delete();
 		}else{
 			return $msg['cms_document_delete_document_used'];
 		}
-		return false;
 	}
-	
+
 	public function format_datas(){
 		$datas = parent::format_datas();
-		
+
 		$collection = new cms_collection($this->num_object);
 		$datas['collection'] = $collection->get_infos();
 		return $datas;
 	}
-	
+
 	public static function get_format_data_structure(){
 		global $msg;
 		$format_datas = array();
@@ -481,7 +484,7 @@ class cms_document extends storage_document {
 		$format_datas[] = array(
 			'var' => "name",
 			'desc'=> $msg['cms_document_format_data_name']
-		);	
+		);
 		$format_datas[] = array(
 			'var' => "description",
 			'desc'=> $msg['cms_document_format_data_description']
@@ -489,7 +492,7 @@ class cms_document extends storage_document {
 		$format_datas[] = array(
 			'var' => "filename",
 			'desc'=> $msg['cms_document_format_data_filename']
-		);		
+		);
 		$format_datas[] = array(
 			'var' => "mimetype",
 			'desc'=> $msg['cms_document_format_data_mimetype']
@@ -507,7 +510,7 @@ class cms_document extends storage_document {
 					'desc'=> $msg['cms_document_format_data_filesize_value']
 				)
 			)
-		);	
+		);
 		$format_datas[] = array(
 				'var' => "url",
 				'desc'=> $msg['cms_document_format_data_url']
@@ -519,7 +522,7 @@ class cms_document extends storage_document {
 		$format_datas[] = array(
 				'var' => "thumbnails_url",
 				'desc'=> $msg['cms_document_format_data_thumbnails_url']
-		);	
+		);
 		$format_datas[] = array(
 			'var' => "collection",
 			'desc'=> $msg['cms_document_format_data_collection'],
@@ -540,10 +543,10 @@ class cms_document extends storage_document {
 		);
 		return $format_datas;
 	}
-	
+
 	public function delete_use(){
 		global $used;
-		
+
 		$elem =array();
 		for($i=0 ; $i<count($used) ; $i++){
 			$tmp = explode("_",$used[$i]);
@@ -556,8 +559,9 @@ class cms_document extends storage_document {
 			if(!$result) return false;
 		}
 		return true;
+
 	}
-	
+
 	public static function remove_thumbnail_cache($id) {
 	    global $pmb_url_base;
 	    // On supprime l'image en cache
@@ -567,7 +571,7 @@ class cms_document extends storage_document {
 	        unlink($img['location']);
 	    }
 	}
-	
+
 	public function get_item_render($edit_js_function = "openEditDialog") {
 	    global $msg, $charset;
 	    $item = "
@@ -583,10 +587,10 @@ class cms_document extends storage_document {
                 <input id='delete_document_" . $this->id . "' name='delete_document_" . $this->id . "' class='delete_document' type='checkbox' title='" . $msg['req_type_sel'] . "' value='" . $this->id . "'/>
     		</div>
 		</div>";
-	    
+
 	    return $item;
 	}
-    
+
 	public static function delete_in_batch($list_ids){
 	    $return = "";
 	    $tabs_ids = array();
@@ -604,5 +608,37 @@ class cms_document extends storage_document {
 	    }
 	    return $return;
 	}
-	
+
+	protected function clean_cache($id = 0){
+		global $base_path;
+		if(!$id) {
+			$id = $this->id;
+		}
+		$path = $base_path . "/opac_css/temp/cms_document/";
+		$file_extensions = array("jpg", "jpeg", "png", "gif");
+		if (is_dir($path)) {
+    		$dd = opendir($path);
+    		while($database = readdir($dd)){
+    			if($database != "." && $database!= ".." && $database != "CVS"){
+    				$dh = opendir($path . $database);
+    				while($mode = readdir($dh)){
+    					if($mode != "." && $mode!= ".." && $mode != "CVS"){
+    						$mh = opendir($path . $database."/".$mode);
+    						while($file = readdir($mh)){
+    							if($file != "." && $file!= ".." && $file != "CVS"){
+    								$parsed_file = explode(".", $file);
+    								if(file_exists($path . $database."/".$mode."/".$file) && ($parsed_file[0] == $id) && in_array($parsed_file[1], $file_extensions)) {
+    									unlink($path . $database."/".$mode."/".$file);
+    								}
+    							}
+    						}
+    						closedir($mh);
+    					}
+    				}
+    				closedir($dh);
+    			}
+    		}
+    		closedir($dd);
+    	}
+    }
 }

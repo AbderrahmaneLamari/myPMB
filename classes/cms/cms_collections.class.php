@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_collections.class.php,v 1.24.2.2 2022/01/19 13:37:17 dgoron Exp $
+// $Id: cms_collections.class.php,v 1.27 2022/03/10 15:21:12 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -416,8 +416,8 @@ class cms_collection extends cms_root{
                         			}).then(lang.hitch(this, function(content){
                                         if(content){
                                             alert(content);
-                                            window.location.reload();
                                         }
+                                        window.location.reload();
                         			}));
                                 }
                             }

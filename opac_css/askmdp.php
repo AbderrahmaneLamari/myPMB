@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: askmdp.php,v 1.69 2020/10/20 12:19:46 gneveu Exp $
+// $Id: askmdp.php,v 1.71 2022/06/21 15:22:51 qvarin Exp $
 
 $base_path=".";
 $is_opac_included = false;
@@ -84,70 +84,59 @@ print $std_header;
 
 require_once ($base_path.'/includes/navigator.inc.php');
 	
-global $msg, $charset;
+global $msg, $charset, $include_path;
 global $email, $demande, $empr_firstname_name;
 
 $query = "SELECT valeur_param FROM parametres WHERE type_param='opac' AND sstype_param = 'biblio_name'";
 $result = pmb_mysql_query($query) or die ("*** Erreur dans la requ&ecirc;te <br />*** $query<br />\n");
 $row = pmb_mysql_fetch_array($result);
-$demandeemail= "<hr /><p class='texte'>".$msg['mdp_txt_intro_demande']."</p>
-	<form action=\"askmdp.php\" method=\"post\" ><br />
-	<input type=\"text\" name=\"email\" size=\"20\" border=\"0\" value=\"email@\" onFocus=\"this.value='';\">&nbsp;&nbsp;
-	<input type=\"hidden\" name=\"demande\" value=\"ok\" >
-	<input type='submit' name='ok' value='".$msg['mdp_bt_send']."' class='bouton'>
-	</form>"; 
 
-print "<blockquote id='askmdp'>";
-$email = str_replace("%", "", $email);
-if ($demande!="ok" || $email=='') {
+$send_email = false;
+$email_unavailable = (!empty($email) && !is_valid_mail($email));
 
-	// Mettre ici le formulaire de saisie de l'email
-	print $demandeemail ;
-	
-} elseif ($email) {
+if (!empty($email) && is_valid_mail($email) && $demande == "ok") {
 	$query = "SELECT id_empr, empr_login, empr_password, empr_location,empr_mail,concat(empr_prenom,' ',empr_nom) as nom_prenom FROM empr WHERE empr_mail like '%".$email."%'";
 	if($empr_firstname_name) {
 		$query .= " AND concat(empr_prenom,' ',empr_nom) = '".addslashes($empr_firstname_name)."'";
 	}
 	$result = pmb_mysql_query($query) or die ("*** Erreur dans la requ&ecirc;te <br />*** $query<br />\n");
-	if (pmb_mysql_num_rows($result) > 1) {
-		print "<hr /><p class='texte'>".$msg['mdp_txt_intro_demande']."</p>
-			<form action=\"askmdp.php\" method=\"post\" ><br />
-			<input type=\"text\" name=\"email\" size=\"20\" border=\"0\" value=\"".$email."\" onFocus=\"this.value='';\">&nbsp;&nbsp;
-			<input type=\"hidden\" name=\"demande\" value=\"ok\" >";
-		print "<br /><br /><p class='texte'>".$msg['mdp_txt_multiple_accounts']."</p><br />";
+	if (pmb_mysql_num_rows($result)) {
 		while ($row = pmb_mysql_fetch_object($result)) {
-			print "<p class='texte'><input type='radio' name='empr_firstname_name' value='".htmlentities($row->nom_prenom, ENT_QUOTES, $charset)."' />&nbsp;".$row->nom_prenom."</p><br />" ;
-		}
-		print "<input type='submit' name='ok' value='".$msg['mdp_bt_send']."' class='bouton'>
-			</form>";
-	} elseif (pmb_mysql_num_rows($result)==1) {
-		$res_envoi = false;
-		$row = pmb_mysql_fetch_object($result);
-		$emails_empr = explode(";",$row->empr_mail);
-		for ($i=0; $i<count($emails_empr); $i++) {
-			if (strtolower($email) == strtolower($emails_empr[$i])) {
-				print "<hr />";
+			$emails_empr = explode(";", $row->empr_mail);
+			$success = array_walk($emails_empr, "strtolower");
+			if (!$success) continue; 
+			
+			if (in_array(strtolower($email), $emails_empr)) {
 				$emprunteur = new emprunteur($row->id_empr);
-				$res_envoi = $emprunteur->forgotten_password_email(strtolower($emails_empr[$i]));
-				if (!$res_envoi) {
-					print "<p class='texte error'>Could not send information to $emails_empr[$i].</p><br />" ;
-				} else {
-					print "<p class='texte'>".$msg['mdp_sent_ok']." $emails_empr[$i].</p><br />" ;
-				}
+				$emprunteur->forgotten_password_email($email);
 			}
 		}
-		if (!$res_envoi) {
-			print "<hr /><p class='texte error'>".str_replace("!!biblioemail!!","<a href=mailto:$opac_biblio_email>$opac_biblio_email</a>",$msg['mdp_no_email'])."</p>" ;
-			print $demandeemail ;
-		}
-	} else {
-		print "<hr /><p class='texte error'>".str_replace("!!biblioemail!!","<a href=mailto:$opac_biblio_email>$opac_biblio_email</a>",$msg['mdp_no_email'])."</p>" ;
-		print $demandeemail ;
 	}
+	
+	// Ticket #127259
+	// On indique que le mail à été envoyé, mais on de dit pas si un compte correspond ou non.
+	$send_email = true;
+} else {
+	$email = "";
 }
 
-print "</blockquote>";
+try{
+	$template_path = $include_path.'/templates/askmdp.tpl.html';
+	$H2o = H2o_collection::get_instance($template_path);
+	print $H2o->render([
+		'email' => $email,
+		'send_email' => $send_email,
+		'email_unavailable' => $email_unavailable,
+		'success_msg' => $send_email ? sprintf($msg['mdp_sent_succesfully'], $email) : ""
+	]);
+} catch(Exception $e) {
+	print '<blockquote id="askmdp">';
+	print '<!-- '.$e->getMessage().' -->';
+	print '<div class="error_on_template" title="' . htmlspecialchars($e->getMessage(), ENT_QUOTES) . '">';
+	print $msg["error_template"];
+	print '</div>';
+	print '</blockquote>';
+}
 
 //insertions des liens du bas dans le $footer si $opac_show_liensbas
 if ($opac_show_liensbas==1) $footer = str_replace("!!div_liens_bas!!",$liens_bas,$footer);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lettre_reader_loans_late_group_PDF.class.php,v 1.6 2021/02/10 11:13:39 dgoron Exp $
+// $Id: lettre_reader_loans_late_group_PDF.class.php,v 1.9.2.1 2023/04/12 15:38:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -15,12 +15,10 @@ class lettre_reader_loans_late_group_PDF extends lettre_reader_loans_late_PDF {
 	
 	protected function get_parameter_value($name) {
 	    $parameter_name = static::get_parameter_prefix().'_'.static::$niveau_relance.$name.'_group';
-		$parameter_value = $this->get_evaluated_parameter($parameter_name);
-		if($parameter_value) {
-			return $parameter_value;
-		} else {
-			return parent::get_parameter_value($name);
-		}
+	    if($this->is_exist_parameter($parameter_name)) {
+	    	return $this->get_evaluated_parameter($parameter_name);
+	    }
+		return parent::get_parameter_value($name);
 	}
 		
 	protected function _init_default_parameters() {
@@ -33,7 +31,12 @@ class lettre_reader_loans_late_group_PDF extends lettre_reader_loans_late_PDF {
 		$this->_init_position_values('biblio_info', array($this->get_parameter_value('marge_page_gauche'),15));
 		$this->_init_position_values('groupe_adresse', array($this->get_parameter_value('marge_page_gauche'),45,0,0,12));
 		$this->_init_position_values('lecteur_adresse', array($this->get_parameter_value('marge_page_gauche'),45,0,0,12));
-		$this->_init_position_values('madame_monsieur', array($this->get_parameter_value('marge_page_gauche'),125,0,0,10));
+		if(!empty($this->get_parameter_value('objet'))) {
+			$this->_init_position_values('objet', array($this->get_parameter_value('marge_page_gauche'),125,0,0,10));
+			$this->_init_position_values('madame_monsieur', array($this->get_parameter_value('marge_page_gauche'),132,0,0,10));
+		} else {
+			$this->_init_position_values('madame_monsieur', array($this->get_parameter_value('marge_page_gauche'),125,0,0,10));
+		}
 	}
 	
 	protected function get_query_list_order() {
@@ -49,6 +52,23 @@ class lettre_reader_loans_late_group_PDF extends lettre_reader_loans_late_PDF {
 	    return "select  empr_id, expl_cb from pret, exemplaires, empr_groupe, empr where groupe_id='".$id_groupe."' and pret_retour < curdate() and pret_idexpl=expl_id and empr_id=pret_idempr and empr_id=id_empr $lecteur_ids_text ".$this->get_query_list_order();
 	}
 	
+	protected function display_parameter_multiCell($name) {
+		switch ($name) {
+			case 'before_list_group':
+				$this->display_multiCell($this->w, 8, $this->get_parameter_value($name));
+				break;
+			case 'after_list':
+				$this->display_multiCell($this->w, 8, $this->get_parameter_value($name)."\n\n");
+				break;
+			case 'fdp':
+				$this->display_multiCell($this->w, 8, $this->get_parameter_value($name), 0, 'R');
+				break;
+			default:
+				parent::display_parameter_multiCell($name);
+				break;
+		}
+	}
+	
 	public function doLettre($id_groupe) {
 		global $msg;
 		
@@ -57,9 +77,10 @@ class lettre_reader_loans_late_group_PDF extends lettre_reader_loans_late_PDF {
 		$this->display_biblio_info() ;
 		$this->display_groupe_adresse($id_groupe, 90);
 		
+		$this->display_objet();
 		$this->display_madame_monsieur($id_groupe);
 		
-		$this->PDF->multiCell($this->w, 8, $this->get_parameter_value('before_list_group'), 0, 'J', 0);
+		$this->display_parameter_multiCell('before_list_group');
 		
 		// compter les totaux pour ce groupe et les retards
 		$sqlcount = "SELECT count(pret_idexpl) as combien , IF(pret_retour>=curdate(),0,1) as retard ";
@@ -92,7 +113,7 @@ class lettre_reader_loans_late_group_PDF extends lettre_reader_loans_late_PDF {
 				$indice_page = 0 ;
 			}
 			$pos_page = $this->get_pos_page($nb_page, $indice_page);
-			$this->display_expl_retard_empr($data['empr_id'], $data['expl_cb'], $this->get_parameter_value('marge_page_gauche'),$pos_page,$this->w, 10);
+			$this->display_expl_retard_empr($data['empr_id'], $data['expl_cb'],$pos_page, 10);
 			$i++;
 			$indice_page++;
 		}
@@ -104,9 +125,11 @@ class lettre_reader_loans_late_group_PDF extends lettre_reader_loans_late_PDF {
 			$pos_after_list = $pos_page+$this->get_parameter_value('taille_bloc_expl');
 		}
 		$this->PDF->SetXY ($this->get_parameter_value('marge_page_gauche'),($pos_after_list));
-		$this->PDF->multiCell($this->w, 8, $this->get_parameter_value('after_list')."\n\n", 0, 'J', 0);
+		$this->display_parameter_multiCell('after_list');
 		$this->PDF->setFont($this->font, 'I', 10);
-		$this->PDF->multiCell($this->w, 8, $this->get_parameter_value('fdp'), 0, 'R', 0);
+		$this->display_parameter_multiCell('fdp');
+		
+		$this->display_after_sign();
 	}
 	
 	public function set_lecteurs_ids($lecteurs_ids) {
@@ -126,6 +149,10 @@ class lettre_reader_loans_late_group_PDF extends lettre_reader_loans_late_PDF {
 			$text_madame_monsieur=str_replace("!!empr_first_name!!", "",$text_madame_monsieur);
 		}
 		return $text_madame_monsieur;
+	}
+	
+	protected static function get_parameter_name($name) {
+		return static::get_parameter_prefix().'_'.$name.'_group';
 	}
 	
 }

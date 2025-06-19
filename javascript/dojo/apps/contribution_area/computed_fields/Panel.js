@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Panel.js,v 1.15 2020/09/02 07:18:51 jlaurent Exp $
+// $Id: Panel.js,v 1.16 2022/05/24 08:53:14 rtigero Exp $
 
 define(['dojo/_base/declare', 
         'dijit/layout/ContentPane', 
@@ -124,6 +124,11 @@ define(['dojo/_base/declare',
 					computed_field_fields_used: dojoJson.stringify(fields_used)
 				}
 			}).then(lang.hitch(this, function(data) {
+				var data = JSON.parse(data);
+				this.field.id = data.id;
+				if(dom.byId('computed_fields_id')){
+					dom.byId('computed_fields_id').value = data.id;
+				}
 				this.modified = false;
 				topic.publish("dGrowl", pmbDojo.messages.getMessage('frbr', 'frbr_save_done'), {'sticky' : false, 'duration' : 5000, 'channel' : 'info'});
 			}))

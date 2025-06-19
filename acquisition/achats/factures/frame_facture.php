@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frame_facture.php,v 1.35.2.1 2022/01/05 15:29:50 dgoron Exp $
+// $Id: frame_facture.php,v 1.36 2022/01/05 15:25:28 dgoron Exp $
 
 global $action, $retour_liste;
 

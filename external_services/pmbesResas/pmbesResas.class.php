@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesResas.class.php,v 1.8.8.1 2022/01/04 08:48:17 dgoron Exp $
+// $Id: pmbesResas.class.php,v 1.9.4.1 2023/03/16 11:03:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,18 +12,6 @@ require_once($class_path."/bannette.class.php");
 
 class pmbesResas extends external_services_api_class {
 	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
-		
 	public function list_empr_resas($empr_id) {
 		if (SESSrights & CIRCULATION_AUTH) {
 			$result = array();
@@ -69,6 +57,7 @@ class pmbesResas extends external_services_api_class {
 	}
 	
 	public function get_empr_information_and_resas($empr_id) {
+		$empr_id = intval($empr_id);
 		return array(
 			"information" => $this->get_empr_information($empr_id),
 			"resas_ids" => $this->list_empr_resas($empr_id)
@@ -87,8 +76,3 @@ class pmbesResas extends external_services_api_class {
 
 	}
 }
-
-
-
-
-?>

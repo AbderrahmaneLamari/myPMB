@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_nomenclature_voices_ui.js,v 1.12 2017/11/30 10:53:34 dgoron Exp $
+// $Id: nomenclature_nomenclature_voices_ui.js,v 1.13 2022/06/02 10:14:27 qvarin Exp $
 
 define(["dojo/_base/declare", "dojo/dom-construct", "dojo/topic", "apps/nomenclature/nomenclature_voices_list_ui", "dojo/on", "dojo/_base/lang", "dijit/_WidgetBase", "apps/nomenclature/nomenclature_nomenclature_voices", "dijit/registry", "dojo/dom", "dojo/request/xhr", "apps/pmb/PMBDialog",  "dijit/ProgressBar"], function(declare, domConstruct, topic, Voices_list_ui,on,lang, _WidgetBase, Nomenclature_voices, registry, dom, xhr, Dialog, ProgressBar){
 	/*
@@ -56,9 +56,25 @@ define(["dojo/_base/declare", "dojo/dom-construct", "dojo/topic", "apps/nomencla
 		    				this.update_progress_bar(evt_args);
 		    	 		}
 		    			break;
-		    	}
+					case "drag_and_drop_end":
+						if (evt_args.hash.indexOf(this.nomenclature_voices.get_hash()) != -1) {
+							// l'abbreviation a changé on sync et on save
+							this.sync_from_details();
+							this.ajax_save();
+							topic.publish('nomenclature_voices_ui', 'sync_and_save_end', { hash: this.nomenclature_voices.get_hash() });
+							this.reorder_children();
+						}
+						break;
+				}
 		    },
-		    
+		     reorder_children : function() {
+				xhr("./ajax.php?module=ajax&categ=nomenclature&sub=nomenclature_record_formations&action=reorder_children&id_parent="+this.nomenclature_voices.record_formation.get_record(), {
+					handleAs: "json",
+					method:"GET",
+					sync:true
+				});
+			},
+			
 		    build_form: function(){
 		    	
 		    	domConstruct.create('div', {class:'row'}, this.get_dom_node());
@@ -379,7 +395,8 @@ define(["dojo/_base/declare", "dojo/dom-construct", "dojo/topic", "apps/nomencla
 						this.init_progress_bar();
 						for(var i=0 ; i<this.voices_list_ui.voices_ui.length ; i++){
 							this.voices_list_ui.voices_ui[i].create_child();
-						}						
+						}
+						this.reorder_children();						
 					}
 				}
 			},

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serialcirc_expl.class.php,v 1.1.2.5 2022/01/17 13:28:03 dgoron Exp $
+// $Id: serialcirc_expl.class.php,v 1.8 2023/01/05 11:11:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -236,6 +236,10 @@ class serialcirc_expl {
 	public function get_classements() {
 		if(empty($this->classements)) {
 			$this->classements = array();
+			if($this->is_serialcirc_diff_no_ret_circ()) {
+				$this->classements[] = 'no_ret_circ';
+				return $this->classements;
+			}
 			if($this->is_in_alert()) {
 				$this->classements[] = 'alert';
 			} else if($this->is_in_to_be_circ()) {
@@ -320,6 +324,25 @@ class serialcirc_expl {
 	public function is_in_resa_ask(){
 	}
 	
+	public function is_serialcirc_diff_no_ret_circ(){
+		if($this->get_serialcirc_diff()->no_ret_circ) {
+			return true;
+		}
+		return false;
+	}
+	
+	public function is_lost_num_serialcirc_abt(){
+		if($this->is_in_circ() || !empty($this->info_circ)) {
+			return false;
+		}
+		$query = "SELECT num_serialcirc_abt FROM serialcirc WHERE id_serialcirc = ".$this->num_serialcirc." AND num_serialcirc_abt = 0";
+		$result = pmb_mysql_query($query);
+		if(pmb_mysql_num_rows($result)) {
+			return true;
+		}
+		return false;
+	}
+	
 	public function fetch_info_circ(){
 		if(!isset($this->info_circ)) {
 			$this->info_circ=array();
@@ -345,7 +368,7 @@ class serialcirc_expl {
 	public function build_diff_sel(){
 		global $charset;
 		$tpl="
-			<select name='".$this->classement."_group_circ_select_".$this->expl_id."' id='".$this->classement."_group_circ_select_".$this->expl_id."' >
+			<select name='".$this->classement."_group_circ_select_".$this->expl_id."' id='".$this->classement."_group_circ_select_".$this->expl_id."' style='width: 15em;'>
 				!!diff_select!!
 			</select>";
 		$list="";
@@ -426,7 +449,7 @@ class serialcirc_expl {
 			$empr_infos = serialcirc::empr_info($empr_id);
 			$name = "<a href='".$empr_infos['view_link']."'>".htmlentities(($info_circ->get_group_name() ? '('.$info_circ->get_group_name().') ' : '').$empr_infos["empr_libelle"],ENT_QUOTES,$charset)."</a><br />";
 			if ($info_circ->get_current_owner() || ($this->num_current_empr == $empr_id))	 {
-				$name = "<span class='erreur'>".$name."</span>";
+				$name = "<span class='erreur'>".$name."</span><br />";
 			}
 			$name_list.= $name;
 		}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_autorities_skos_conceptschemes.class.php,v 1.1.2.2 2022/01/13 15:02:04 dgoron Exp $
+// $Id: searcher_autorities_skos_conceptschemes.class.php,v 1.3 2022/01/13 14:59:56 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_articleslist_view_carousel.class.php,v 1.12 2020/03/16 10:28:02 tsamson Exp $
+// $Id: cms_module_articleslist_view_carousel.class.php,v 1.13 2022/09/29 13:57:24 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -33,15 +33,13 @@ class cms_module_articleslist_view_carousel extends cms_module_carousel_view_car
 		return parent::save_form();
 	}
 	
-	public function render($ids){
+	public function render($data) {
 		$datas = array();
 		$datas['records']=array();
 		$links = ["article" => $this->get_constructed_link("article", "!!id!!")];
-		
-		for($i=0 ; $i<count($ids) ; $i++){
-			$article = cms_provider::get_instance("article",$ids[$i]);
-			$infos = $article->format_datas($links);
-			$datas['records'][]=$infos;
+		for($i=0; $i < count($data['articles']); $i++) {
+			$article = cms_provider::get_instance("article", $data['articles'][$i]);
+			$datas['records'][] = $article->format_datas($links);
 		}
 		return parent::render($datas);
 	}

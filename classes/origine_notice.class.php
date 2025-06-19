@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: origine_notice.class.php,v 1.15.2.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: origine_notice.class.php,v 1.16.4.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -64,13 +64,19 @@ class origine_notice {
 		);
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_nom', 'orinot_nom')
+		->add_input_node('text', $this->orinot_nom);
+		$interface_content_form->add_element('form_pays', 'orinot_pays')
+		->add_input_node('text', $this->orinot_pays);
+		$interface_content_form->add_element('form_diffusion', 'orinot_diffusable', 'flat')
+		->add_input_node('boolean', $this->orinot_diffusion);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_orinot_content_form;
-		global $charset;
-		
-		$content_form = $admin_orinot_content_form;
-		$content_form = str_replace('!!id!!', $this->orinot_id, $content_form);
 		
 		$interface_form = new interface_admin_form('orinotform');
 		if(!$this->orinot_id){
@@ -78,15 +84,9 @@ class origine_notice {
 		}else{
 			$interface_form->set_label($msg['orinot_modification']);
 		}
-		$content_form = str_replace('!!nom!!', htmlentities($this->orinot_nom, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!pays!!', htmlentities($this->orinot_pays,ENT_QUOTES, $charset), $content_form);
-		if($this->orinot_diffusion) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox!!', $checkbox, $content_form);
-		$content_form = str_replace('!!diffusion!!', $this->orinot_diffusion, $content_form);
-		
 		$interface_form->set_object_id($this->orinot_id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->orinot_nom." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('origine_notice')
 		->set_field_focus('form_nom');
 		return $interface_form->get_display();

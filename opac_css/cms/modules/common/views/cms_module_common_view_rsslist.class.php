@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_view_rsslist.class.php,v 1.2 2021/04/29 13:49:16 btafforeau Exp $
+// $Id: cms_module_common_view_rsslist.class.php,v 1.2.6.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,10 +16,10 @@ class cms_module_common_view_rsslist extends cms_module_common_view_django {
     <h2>{{ rss.title }}</h2>
     <p>{{ rss.description }}</p>
     {% for item in rss.items %}
-        <blockquote>
+        <div>
             <h4><a href='{{ item.link }}' target='_blank'>{{ item.title }}</a></h4>
             <p>{{ item.description.0 }}</p>
-        </blockquote>
+        </div>
     {% endfor %}
 {% endfor %}";
 	}

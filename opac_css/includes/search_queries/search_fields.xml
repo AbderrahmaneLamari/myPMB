@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: search_fields.xml,v 1.144 2021/02/03 14:03:11 dgoron Exp $ -->
+<!-- $Id: search_fields.xml,v 1.145 2022/05/16 15:28:14 tsamson Exp $ -->
 <pmbfields>
 	<!-- Zone fixedFields :
 		Liste des champs de recherche possibles de la base de données
@@ -3556,6 +3556,7 @@
 		<field type="search_segment" title="msg:search_segment" id="10" opacVisibility="no" visible="no"/>	
 		<field type="combine_extended_search" title="msg:combine_extended_search" id="11" opacVisibility="no"/>		
 		<field type="map_circle" group="6" title="msg:search_extended_map_circle" id="104" opacVisibility="no" visible="no"/>
+		<field group="1001" type="dynamic_value" title="msg:dynamic_value_field" id="12" />
 	</specialFields>
 	
 	<!-- Zone operators :

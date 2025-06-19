@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_codestat.class.php,v 1.3 2021/01/12 07:42:45 dgoron Exp $
+// $Id: empr_codestat.class.php,v 1.3.6.1 2023/07/04 12:11:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -43,13 +43,15 @@ class empr_codestat {
 		$this->libelle = $data->libelle;
 	}
 
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_libelle', '103')
+		->add_input_node('text', $this->libelle);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_statlec_content_form ;
-		global $charset;
-		
-		$content_form = $admin_statlec_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('lenderform');
 		if(!$this->id){
@@ -57,11 +59,9 @@ class empr_codestat {
 		}else{
 			$interface_form->set_label($msg['102']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('empr_codestat')
 		->set_field_focus('form_libelle');
 		return $interface_form->get_display();

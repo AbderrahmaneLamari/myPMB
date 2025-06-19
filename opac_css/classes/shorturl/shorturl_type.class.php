@@ -1,8 +1,8 @@
 <?php
 // +-------------------------------------------------+
-// Â© 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: shorturl_type.class.php,v 1.13 2021/04/13 14:34:26 dgoron Exp $
+// $Id: shorturl_type.class.php,v 1.14 2022/07/29 12:29:02 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,8 +14,8 @@ class shorturl_type {
 	protected $action ='';
 	
 	public function __construct($id=0)
-	{
-		$this->id = $id*1;
+	{	    
+		$this->id = intval($id);
 		$this->fetch_datas();
 	}
 	

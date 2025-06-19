@@ -2,27 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum_licence.tpl.php,v 1.11.2.1 2021/11/10 11:14:16 dgoron Exp $
+// $Id: explnum_licence.tpl.php,v 1.12.4.1 2023/08/30 07:19:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $what, $admin_explnum_licence_content_form, $msg, $charset;
+global $what, $msg, $charset;
 global $admin_explnum_licence_settings_menu, $explnum_licence_selector, $explnum_licence_selector_script, $base_path, $explnum_licence_profiles_form_list_item, $explnum_licence_profile_details, $explnum_licence_pdf_container_template, $explnum_licence_right_details, $explnum_licence_info_picto, $explnum_licence_script_dialog, $explnum_licence_profile_quotation;
-
-//statuts de contribution
-$admin_explnum_licence_content_form = "
-<div class='row'>
-	<label class='etiquette' for='explnum_licence_label'>".htmlentities($msg["docnum_statut_libelle"], ENT_QUOTES, $charset)."</label>
-</div>
-<div class='row'>
-	<input type='text' class='saisie-50em' id='explnum_licence_label' name='explnum_licence_label' value='!!explnum_licence_label!!' data-translation-fieldname='explnum_licence_label'>
-</div>
-<div class='row'>
-	<label class='etiquette' for='explnum_licence_uri'>".htmlentities($msg["explnum_licence_uri"], ENT_QUOTES, $charset)."</label>
-</div>
-<div class='row'>
-	<input type='text' class='saisie-50em' id='explnum_licence_uri' name='explnum_licence_uri' value='!!explnum_licence_uri!!' data-translation-fieldname='explnum_licence_uri'>
-</div>";
 
 $admin_explnum_licence_settings_menu = '
 		<div class="hmenu">

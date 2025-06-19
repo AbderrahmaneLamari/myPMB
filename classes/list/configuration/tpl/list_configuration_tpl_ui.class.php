@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_tpl_ui.class.php,v 1.1 2021/02/01 08:45:02 dgoron Exp $
+// $Id: list_configuration_tpl_ui.class.php,v 1.2 2022/03/01 08:01:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -21,6 +21,7 @@ class list_configuration_tpl_ui extends list_configuration_ui {
 	
 	protected function init_default_settings() {
 		parent::init_default_settings();
+		$this->set_setting_column('id', 'datatype', 'integer');
 		$this->set_setting_column('id', 'align', 'right');
 		$this->set_setting_column('id', 'text', array('bold' => true));
 	}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: etagere.class.php,v 1.39.2.2 2022/01/18 21:05:25 dgoron Exp $
+// $Id: etagere.class.php,v 1.41.4.1 2023/09/04 14:36:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -139,7 +139,9 @@ class etagere {
 		$js_script = "";
 		if($pmb_javascript_office_editor){
 			$js_script .= $pmb_javascript_office_editor;
-			$js_script .= "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+			$js_script .= "<script type='text/javascript'>
+                pmb_include('$base_path/javascript/tinyMCE_interface.js');
+            </script>";
 		}
 		$interface_form->set_object_id($this->idetagere)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")

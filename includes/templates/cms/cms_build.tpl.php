@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_build.tpl.php,v 1.89.2.1 2021/06/30 09:13:51 btafforeau Exp $
+// $Id: cms_build.tpl.php,v 1.90.4.1 2023/11/28 15:16:40 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "tpl.php")) die("no access");
 
@@ -1105,6 +1105,9 @@ $cms_build_block_tpl="
 				        </div>
 				        <div dojoType= 'dijit.layout.AccordionPane' title='".$msg["cms_build_versions"]."'>
 				        	!!cms_objet_versions!!
+				        </div>
+				        <div dojoType= 'dijit.layout.AccordionPane' title='" . $msg["cms_migrate_portal"] . "'>
+				        	!!cms_migrate_portal!!
 				        </div>
 		      		</div>
 		        </div>

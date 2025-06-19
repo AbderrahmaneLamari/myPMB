@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum_ajax.inc.php,v 1.23.2.3 2021/11/25 12:59:07 dgoron Exp $
+// $Id: explnum_ajax.inc.php,v 1.27 2022/02/04 15:54:52 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -86,6 +86,10 @@ switch($quoifaire){
                             		'has_doublons' => ($pmb_explnum_controle_doublons ? count($explnum->has_doublons()) : 0)
 	                            )
                             );
+	                        //indexation de la notice liee
+	                        if (!empty($explnum->explnum_notice)) {
+	                            notice::update_index($explnum->explnum_notice, "explnum");
+	                        }
                     	}
                         /**
                          * TODO: check explnum bulletin ou explnum notice

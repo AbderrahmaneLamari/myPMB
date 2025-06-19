@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_empr_caddies_ui.class.php,v 1.5 2020/11/05 12:26:41 dgoron Exp $
+// $Id: list_empr_caddies_ui.class.php,v 1.6.4.3 2023/10/31 10:24:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,7 +16,7 @@ class list_empr_caddies_ui extends list_caddies_root_ui {
 	
 	protected static $field_name = 'idemprcaddie';
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'classement_label');
 	}
 	
@@ -30,17 +30,17 @@ class list_empr_caddies_ui extends list_caddies_root_ui {
 		if($this->item && $action!="save_cart" && $action!="del_cart") {
 			if($action != "transfert" && $action != "del_cart" && $action!="save_cart") {
 				$content .= "<input type='checkbox' id='id_".$object->get_idcaddie()."' name='caddie[".$object->get_idcaddie()."]' value='".$object->get_idcaddie()."'>&nbsp;";
-				$content .= "<a href='#' onClick='javascript:document.getElementById(\"id_".$object->get_idcaddie()."\").checked=true; document.forms[\"print_options\"].submit();' />";
+				$content .= "<a href='#' onClick='javascript:document.getElementById(\"id_".$object->get_idcaddie()."\").checked=true; document.forms[\"print_options\"].submit();'>";
 			} else {
-				$content .= "<a href='$link' />";
+				$content .= "<a href='$link'>";
 			}
 			
 		} else {
 			if($sub!='gestion' && $sub!='action'  && $action!="save_cart") {
 				$content.= "<input type='checkbox' id='id_".$object->get_idcaddie()."' name='caddie[".$object->get_idcaddie()."]' value='".$object->get_idcaddie()."'>&nbsp;";
-				$content .= "<a href='#' onClick='javascript:document.getElementById(\"id_".$object->get_idcaddie()."\").checked=true; document.forms[\"print_options\"].submit();' />";
+				$content .= "<a href='#' onClick='javascript:document.getElementById(\"id_".$object->get_idcaddie()."\").checked=true; document.forms[\"print_options\"].submit();'>";
 			} else {
-				$content.= "<a href='$link' />";
+				$content.= "<a href='$link'>";
 			}
 		}
 		return $content;
@@ -63,6 +63,35 @@ class list_empr_caddies_ui extends list_caddies_root_ui {
 		} else {
 			return $aff_lien;
 		}
+	}
+	
+	protected function get_cell_content($object, $property) {
+	    global $base_path, $msg, $charset;
+	    
+	    $content = '';
+	    switch($property) {
+	        case 'pointed_unpointed':
+	            $content .= "<b>".$object->nb_item_pointe."</b>". $msg['caddie_contient_pointes']." / <b>".$object->nb_item."</b>";
+	            $number_not_sended = $object->has_flag_not_sended();
+	            if ($number_not_sended) {
+	                $infobulle = $msg['caddie_has_used_by_scheduler']." ";
+	                if($number_not_sended == 1) {
+	                    $infobulle .= $msg['caddie_has_one_flag_not_sended'];
+	                } else {
+	                    $infobulle .= str_replace('!!number!!', $number_not_sended, $msg['caddie_has_several_flag_not_sended']);
+	                }
+	                $link = $base_path."/circ.php?categ=caddie&sub=action&quelle=edition&action=choix_quoi&object_type=&item=0&idemprcaddie=".$object->get_id()."&mode=advanced&show_list=1&elt_flag_not_sended=1";
+	                $content .= " 
+                        <a href='".$link."' target='_blank'>
+                            <img src='".get_url_icon('mail_not_sended.png')."' title='".htmlentities($infobulle, ENT_QUOTES, $charset)."' alt='".htmlentities($infobulle, ENT_QUOTES, $charset)."' />
+                        </a>";
+				}
+	            break;
+	        default :
+	            $content .= parent::get_cell_content($object, $property);
+	            break;
+	    }
+	    return $content;
 	}
 	
 	protected function get_button_add() {

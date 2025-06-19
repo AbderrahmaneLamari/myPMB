@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: liste_expl_dispo.php,v 1.15.8.2 2022/01/12 11:18:52 dgoron Exp $
+// $Id: liste_expl_dispo.php,v 1.17 2022/01/12 11:17:36 dgoron Exp $
 
 $base_path="./../..";
 $base_auth = "CIRCULATION_AUTH";

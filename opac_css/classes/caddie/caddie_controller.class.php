@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: caddie_controller.class.php,v 1.7.2.1 2021/12/16 09:49:54 dgoron Exp $
+// $Id: caddie_controller.class.php,v 1.8 2021/12/16 09:47:45 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: edit.php,v 1.88.2.3 2021/12/23 13:55:45 dgoron Exp $
+// $Id: edit.php,v 1.93.2.2 2023/09/20 07:35:05 dgoron Exp $
 
 // définition du minimum nécéssaire 
 $base_path=".";                            
@@ -11,25 +11,10 @@ $base_title = "\$msg[6]";
 $base_noheader=1;
 $base_use_dojo = true;
 
-global $msg, $charset, $class_path;
-global $categ, $sub, $action, $dest;
+global $msg, $charset, $class_path, $include_path;
+global $categ, $sub, $action, $dest, $current_module;
 
-if ((isset($_GET["dest"])) && ($_GET["dest"]=="TABLEAUCSV" || $_GET["dest"]=="EXPORT_NOTI")) {
-	
-	$base_nosession=1;
-	$base_nocheck = 1 ;
-	$include_path = $base_path."/includes" ;
-	require_once("$include_path/db_param.inc.php");
-	require_once("$include_path/mysql_connect.inc.php");
-	$dbh = connection_mysql();
-	// on checke si l'utilisateur existe et si le mot de passe est OK
-	$query = "SELECT count(1) FROM users WHERE username='".$_GET["user"]."' AND pwd=password('".$_GET["password"]."') ";
-	$result = pmb_mysql_query($query);
-	$valid_user = pmb_mysql_result($result, 0, 0);
-	if (!$valid_user) exit;
-}
 require_once ("$base_path/includes/init.inc.php");
-
 require_once($class_path."/modules/module_edit.class.php");
 require_once("$include_path/marc_tables/$pmb_indexation_lang/empty_words");
 require_once("$class_path/marc_table.class.php");
@@ -175,13 +160,6 @@ switch($categ) {
 				$restrict = " empr_date_expiration >= now() ";
 				include("./edit/empr_list.inc.php");
 				break;
-		}
-			
-		if (($sub=="limite")||($sub=="depasse")) {
-			if (($action)&&($action=="print_all")) {
-				print "<script>openPopUp('./pdf.php?pdfdoc=lettre_relance_adhesion&action=print_all&empr_location_id=$empr_location_id&empr_statut_edit=$empr_statut_edit&restricts=".rawurlencode(stripslashes($restrict))."', 'lettre');</script>";	
-				if ($empr_relance_adhesion==1) print "<script>openPopUp('./mail.php?type_mail=mail_relance_adhesion&action=print_all&empr_location_id=$empr_location_id&empr_statut_edit=$empr_statut_edit&restricts=".rawurlencode(stripslashes($restrict))."', 'mail');</script>";
-			} 	
 		}
 		break ;
 	// EDITIONS LIEES AUX PERIODIQUES

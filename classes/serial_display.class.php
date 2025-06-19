@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serial_display.class.php,v 1.224.2.4 2022/01/11 08:29:49 qvarin Exp $
+// $Id: serial_display.class.php,v 1.235.4.4 2023/12/26 08:12:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -265,7 +265,16 @@ class serial_display extends record_display {
 		if ($this->notice->niveau_biblio =='s') {
 			$this->result = str_replace('!!serial_type!!', "<span class='fond-mere'>[".$msg['isbd_type_perio']."]</span>", $this->result);
 		} else {
-				$this->result = str_replace('!!serial_type!!', "<span class='fond-article'>[".$msg['isbd_type_art']."]</span>", $this->result);
+			$this->result = str_replace('!!serial_type!!', "<span class='fond-article'>[".$msg['isbd_type_art']."]</span>", $this->result);
+            if ($this->notice->niveau_biblio =='a') {
+                
+                global $avis_quoifaire,$valid_id_avis;
+                $this->isbd = str_replace('<!-- !!avis_notice!! -->', avis_notice($this->notice_id,$avis_quoifaire,$valid_id_avis), $this->isbd);
+                $this->isbd = str_replace('<!-- !!caddies_notice!! -->', caddie_controller::get_display_list_from_item('display', 'NOTI', $this->notice_id), $this->isbd);
+                if(explnum::get_default_upload_directory()){
+                    $this->isbd = str_replace('<!-- !!explnum_drop_zone!! -->', explnum::get_drop_zone($this->notice_id, 'article', $this->bul_id), $this->isbd);
+                }
+            }
 		}
 		parent::finalize();
 	}
@@ -276,6 +285,9 @@ class serial_display extends record_display {
 		$display = '';
 		if($art_to_show && ($art_to_show == $this->notice_id)){
 			$display .= "startOpen=\"Yes\"";
+			if (!empty($this->ajax_mode)) {
+    			$display .= " data-expand-ajax=\"1\"";
+			}
 		}
 		return $display;
 	}
@@ -295,7 +307,6 @@ class serial_display extends record_display {
 		global $msg, $base_path;
 		global $tdoc;
 		global $charset;
-		global $pmb_etat_collections_localise;
 		global $pmb_show_notice_id,$pmb_opac_url,$pmb_show_permalink;
 		global $thesaurus_concepts_active;
 		global $pmb_map_activate;
@@ -379,7 +390,7 @@ class serial_display extends record_display {
 
 			if($this->action_bulletin) {
 				$this->action_bulletin = str_replace('!!id!!', $this->bul_id, $this->action_bulletin);
-				$bulletin = "<a href=\"".$this->action_bulletin."\">".htmlentities($bulletin,ENT_QUOTES, $charset)."</a>";
+				$bulletin = "<a href=\"".$this->action_bulletin."\">".$bulletin."</a>";
 			}
 			$mention_parent = "in <b>$bulletin</b>";
 		}
@@ -404,7 +415,7 @@ class serial_display extends record_display {
 		}
 		// Permalink OPAC
 		if ($pmb_show_permalink) {
-				$this->isbd .= "<b>".$msg["notice_permalink_opac"]."&nbsp;</b><a href='".$pmb_opac_url."index.php?lvl=notice_display&id=".$this->notice_id."' target=\"_blank\">".$pmb_opac_url."index.php?lvl=notice_display&id=".$this->notice_id."</a><br />";
+		    $this->isbd .= "<b>".$msg["notice_permalink_opac"]."&nbsp;</b><a href='".$this->get_permalink()."' target=\"_blank\">".$this->get_permalink()."</a><br />";
 		}
 		// fin du niveau 1
 		if($this->level == 1) {
@@ -412,9 +423,9 @@ class serial_display extends record_display {
 				$this->isbd .= '<div id="expl_area_' . $this->notice_id . '">'; 
 				$explnum = show_explnum_per_notice($this->notice_id, 0, $this->lien_explnum);
 				if ($explnum) $this->isbd .= "<br /><div id='explnum_list_container_serial_".$this->notice->notice_id."'><b>$msg[explnum_docs_associes]</b><br />".$explnum."</div>";
-				if ($this->notice->niveau_biblio == 'a' && $this->notice->niveau_hierar == '2' && (SESSrights & CATALOGAGE_AUTH) && $this->bouton_explnum) $this->isbd .= "<br /><input type='button' class='bouton' value=' $msg[explnum_ajouter_doc] ' onClick=\"document.location='".$base_path."/catalog.php?categ=serials&analysis_id=$this->notice_id&sub=analysis&action=explnum_form&bul_id=$this->bul_id'\">" ;
-				if((SESSrights & CIRCULATION_AUTH) && $pmb_scan_request_activate && !$this->context_dsi_id_bannette){
-					$this->isbd .= "<input type='button' class='bouton' value='".$msg["scan_request_record_button"]."' onclick='document.location=\"./circ.php?categ=scan_request&sub=request&action=edit&from_record=".$this->notice_id."\"' />";
+				if ($this->notice->niveau_biblio == 'a' && $this->notice->niveau_hierar == '2' && (SESSrights & CATALOGAGE_AUTH) && $this->bouton_explnum) $this->isbd .= "<br /><input type='button' class='bouton' value=' ".htmlentities($msg['explnum_ajouter_doc'], ENT_QUOTES, $charset)." ' onClick=\"document.location='".$base_path."/catalog.php?categ=serials&analysis_id=$this->notice_id&sub=analysis&action=explnum_form&bul_id=$this->bul_id'\">" ;
+				if ($this->notice->niveau_biblio == 'a' && $this->notice->niveau_hierar == '2' && (SESSrights & CIRCULATION_AUTH) && $pmb_scan_request_activate && !$this->context_dsi_id_bannette){
+					$this->isbd .= "<input type='button' class='bouton' value='".htmlentities($msg["scan_request_record_button"], ENT_QUOTES, $charset)."' onclick='document.location=\"./circ.php?categ=scan_request&sub=request&action=edit&from_record=".$this->notice_id."\"' />";
 				}
 				$this->isbd .= '</div>'; 
 			}
@@ -549,7 +560,7 @@ class serial_display extends record_display {
 			if ($this->notice->niveau_biblio == 'a' && $this->notice->niveau_hierar == '2' && (SESSrights & CATALOGAGE_AUTH) && $this->bouton_explnum) {
 				$boutons.= "<br /><input type='button' class='bouton' value=' $msg[explnum_ajouter_doc] ' onClick=\"document.location='".$base_path."/catalog.php?categ=serials&analysis_id=".$this->notice_id."&sub=analysis&action=explnum_form&bul_id=".$this->bul_id."&explnum_id=0'\">" ;
 			}
-			if((SESSrights & CIRCULATION_AUTH) && $this->bouton_explnum && $pmb_scan_request_activate && !$this->context_dsi_id_bannette){
+			if ($this->notice->niveau_biblio == 'a' && $this->notice->niveau_hierar == '2' && (SESSrights & CIRCULATION_AUTH) && $this->bouton_explnum && $pmb_scan_request_activate && !$this->context_dsi_id_bannette){
 				$boutons .= "<input type='button' class='bouton' value='".$msg["scan_request_record_button"]."' onclick='document.location=\"./circ.php?categ=scan_request&sub=request&action=edit&from_record=".$this->notice_id."\"' />";
 			}
 			if ((SESSrights & CATALOGAGE_AUTH) && $this->bouton_explnum && $pmb_type_audit && $this->notice->niveau_biblio == 'a') {
@@ -579,15 +590,10 @@ class serial_display extends record_display {
 			$this->isbd.=$this->get_etat_periodique();
 			$this->isbd.=$this->print_etat_periodique();
 			//état des collections
-			$collstate = new collstate(0,$this->notice_id);
-			//$this->isbd.= $collstate->get_callstate_isbd();
-			if($pmb_etat_collections_localise)
-				$collstate->get_display_list("",0,0,0,1,0,true);
-			else
-				$collstate->get_display_list("",0,0,0,0,0,true);
-			if($collstate->nbr) {
+			$list_collstate_ui = new list_collstate_ui(array('serial_id' => $this->notice_id, 'bulletin_id' => 0), array('all_on_page' => true));
+			if(count($list_collstate_ui->get_objects())) {
 				$this->isbd .= "<br /><b>".$msg["abts_onglet_collstate"]."</b><br />";
-				$this->isbd.=$collstate->liste;
+				$this->isbd.=$list_collstate_ui->get_display_list();
 			}
 		}
 		//Ajout de l'upload de documents numérique en lot
@@ -664,7 +670,6 @@ class serial_display extends record_display {
 
 	protected function get_icon_abo_actif() {
 		global $msg;
-		global $use_opac_url_base, $opac_url_base, $base_path;
 		
 		$this->icon_abo_actif = "";
 		if($this->notice->niveau_biblio == 's' && $this->notice->niveau_hierar == 1) {
@@ -673,11 +678,10 @@ class serial_display extends record_display {
 			if (pmb_mysql_num_rows($res)) {
 				$icon = "check.png";
 				$info_bulle_icon_abo_actif=$msg['abonnements_actif_img_title'];
-				if ($use_opac_url_base)	$this->icon_abo_actif="<img src=\"".$opac_url_base."images/$icon\" alt=\"$info_bulle_icon_abo_actif\" title=\"$info_bulle_icon_abo_actif\" class='align_top' />";
-				else $this->icon_abo_actif="<img src=\"".$base_path."/images/$icon\" alt=\"$info_bulle_icon_abo_actif\" title=\"$info_bulle_icon_abo_actif\" class='align_top' />";
+				$this->icon_abo_actif="<img src=\"".get_url_icon($icon)."\" alt=\"$info_bulle_icon_abo_actif\" title=\"$info_bulle_icon_abo_actif\" class='align_top' />";
 			} else {
 				$icon = "spacer.gif";
-				$this->icon_abo_actif="<img src=\"".$base_path."/images/$icon\" width=\"10\" height=\"10\" />";
+				$this->icon_abo_actif="<img src=\"".get_url_icon($icon)."\" width=\"10\" height=\"10\" />";
 			}
 		}
 		return $this->icon_abo_actif;
@@ -714,8 +718,11 @@ class serial_display extends record_display {
 					$this->header_texte=$notice_tpl_header;
 				}
 			}
+    		if (!$this->header) {
+    		    $type_reduit = "1";
+    		}
 		}
-
+		
 		if ($type_reduit!="H"){
 			$this->header = htmlentities($this->notice->tit1,ENT_QUOTES, $charset);
 			$this->header_texte = $this->notice->tit1;
@@ -786,21 +793,23 @@ class serial_display extends record_display {
 
 		if (!$this->print_mode) {
 			if($this->notice->niveau_biblio == 's' && $this->notice->niveau_hierar == 1) {
-				if($this->action_serial)
-					$this->header = "<a href=\"".$this->action_serial."\">".$this->header.'</a>';
+			    if($this->action_serial) {
+			        $this->header = "<a href=\"".$this->action_serial."\">".$this->header.'</a>';
+			    }
 			}
 			if($this->notice->niveau_biblio == 'a' && $this->notice->niveau_hierar == 2) {
-				if($this->action_analysis)
+			    if($this->action_analysis) {
 					$this->header= "<a href=\"".$this->action_analysis."\">".$this->header.'</a>';
-					if ($this->level!=2) {
-					    $this->header .= " <i>in ".htmlentities($this->parent_title, ENT_QUOTES, $charset)." ".$this->parent_numero;
-					    if ($this->parent_date) {
-					        $this->header .= " (".$this->parent_date.")";
-					    } else if ($this->parent_date_date) {
-					        $this->header .= " [".$this->parent_aff_date_date."]";
-					    }
-					    $this->header .= "</i>";
-					}
+			    }
+				if ($this->level!=2) {
+				    $this->header .= " <i>in ".htmlentities($this->parent_title, ENT_QUOTES, $charset)." ".$this->parent_numero;
+				    if ($this->parent_date) {
+				        $this->header .= " (".$this->parent_date.")";
+				    } else if ($this->parent_date_date) {
+				        $this->header .= " [".$this->parent_aff_date_date."]";
+				    }
+				    $this->header .= "</i>";
+				}
 			}
 		}
 		if (isset($this->icon_is_new)) $this->header = $this->header." ".$this->icon_is_new;
@@ -817,8 +826,7 @@ class serial_display extends record_display {
 				$explnumrow = pmb_mysql_fetch_object($explnums);
 				if (!$use_opac_url_base) $this->header .= "<a href=\"".$base_path."/doc_num.php?explnum_id=".$explnumrow->explnum_id."\" target=\"_blank\">";
 				else $this->header .= "<a href=\"".$opac_url_base."doc_num.php?explnum_id=".$explnumrow->explnum_id."\" target=\"_blank\">";
-				if (!$use_opac_url_base) $this->header .= "<img src='".get_url_icon('globe_orange.png')."' border=\"0\" class='align_middle' hspace=\"3\"";
-				else $this->header .= "<img src=\"".$opac_url_base."images/globe_orange.png\" border=\"0\" class='align_middle' hspace=\"3\"";
+				$this->header .= "<img src='".get_url_icon('globe_orange.png')."' border=\"0\" class='align_middle' hspace=\"3\"";
 				$this->header .= " alt=\"";
 				$this->header .= htmlentities($explnumrow->explnum_nom,ENT_QUOTES,$charset);
 				$this->header .= "\" title=\"";
@@ -827,8 +835,7 @@ class serial_display extends record_display {
 				$this->header .='</a>';
 			}
 			else if ($explnumscount > 1 ) {
-				if (!$use_opac_url_base) $this->header .= "<img src='".get_url_icon('globe_rouge.png')."' border=\"0\" class='align_middle' alt=\"".$msg['info_docs_num_notice']."\" title=\"".$msg['info_docs_num_notice']."\" hspace=\"3\">";
-				else $this->header .= "<img src=\"".$opac_url_base."images/globe_rouge.png\" border=\"0\" class='align_middle' alt=\"".$msg['info_docs_num_notice']."\" title=\"".$msg['info_docs_num_notice']."\" hspace=\"3\">";
+				$this->header .= "<img src='".get_url_icon('globe_rouge.png')."' border=\"0\" class='align_middle' alt=\"".$msg['info_docs_num_notice']."\" title=\"".$msg['info_docs_num_notice']."\" hspace=\"3\">";
 			}
 			if (($this->drag) && (!$this->print_mode)) $this->header.="<span onMouseOver='if(init_drag) init_drag();' id=\"NOTI_drag_".$this->notice_id."\" dragicon='".get_url_icon('icone_drag_notice.png')."' dragtext=\"".htmlentities($this->notice->tit1,ENT_QUOTES, $charset)."\" draggable=\"yes\" dragtype=\"notice\" callback_before=\"show_carts\" callback_after=\"\" style=\"padding-left:7px\"><img src=\"".get_url_icon('notice_drag.png')."\"/></span>";
 		}

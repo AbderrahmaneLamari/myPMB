@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_authorities_extended.class.php,v 1.12.2.3 2021/12/27 08:20:53 dgoron Exp $
+// $Id: searcher_authorities_extended.class.php,v 1.15.4.1 2023/10/02 13:39:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -135,7 +135,9 @@ class searcher_authorities_extended extends searcher_autorities {
 			}
 		}else{
 			$this->objects_ids = $cache_result;
-			if(!$this->objects_ids) return array();
+            if (! $this->objects_ids) {
+                return array();
+            }
 			$this->table = $this->get_temporary_table_name('get_result');
 			$rqt = "create temporary table ".$this->table." engine=memory select ".$this->object_index_key." from authorities where ".$this->object_index_key." in(".$this->objects_ids.")";
 			pmb_mysql_query($rqt);
@@ -143,8 +145,16 @@ class searcher_authorities_extended extends searcher_autorities {
 			if (!empty($this->pert)) {
 			    $query="alter table ".$this->table." add pert decimal(16,1) default 1";
 			    pmb_mysql_query($query);
+			    //Adaptation du tableau pour ne plus réaliser un UPDATE par identifiant
+			    $reverse_pert = array();
 			    foreach ($this->pert as $id => $pert) {
-			        $query = "UPDATE ".$this->table." SET pert = $pert WHERE id_authority = $id";
+			        if(empty($reverse_pert[$pert])) {
+			            $reverse_pert[$pert] = array();
+			        }
+			        $reverse_pert[$pert][] = $id;
+			    }
+			    foreach ($reverse_pert as $pert => $authorities_ids) {
+			        $query = "UPDATE " . $this->table . " SET pert = $pert WHERE id_authority IN (".implode(',', $authorities_ids).")";
 			        pmb_mysql_query($query);
 			    }
 			}

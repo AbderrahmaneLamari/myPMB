@@ -2,14 +2,12 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: dashboard.class.php,v 1.7 2021/04/23 11:48:04 dgoron Exp $
+// $Id: dashboard.class.php,v 1.8 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path, $include_path, $autoload;
 require_once($include_path."/templates/dashboard.tpl.php");
-require_once($class_path."/autoloader.class.php");
-$autoload = new autoloader();
 
 class dashboard {
 	private $dashboard_modules = array();

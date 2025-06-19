@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: dynamic_search_q_txt_i18n.class.php,v 1.5 2021/03/25 10:20:29 tsamson Exp $
+// $Id: dynamic_search_q_txt_i18n.class.php,v 1.6 2022/11/03 09:56:04 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -42,7 +42,7 @@ class dynamic_search_q_txt_i18n extends dynamic_search {
 				}
 				$restricts[] = implode(" ".$q["MULTIPLE_OPERATOR"]." ",$multiple_terms);
 			} else {
-				$restricts[] = str_replace("!!p!!", addslashes($field['text']), $restrict_query);
+				$restricts[] = str_replace("!!p!!", addslashes($field['txt']), $restrict_query);
 			}
 		}
 		if(isset($field['qualification']) && $field['qualification'] != '') {

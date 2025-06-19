@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_tabs_autorites_ui.class.php,v 1.2.2.1 2021/10/06 12:53:20 tsamson Exp $
+// $Id: list_tabs_autorites_ui.class.php,v 1.3.4.1 2023/12/27 08:07:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -48,10 +48,8 @@ class list_tabs_autorites_ui extends list_tabs_ui {
 		$this->add_tab('caddie_menu', 'caddie', 'caddie_menu_action', 'action');
 		
 		//Semantique
-		if (SESSrights & THESAURUS_AUTH) {
-			$this->add_tab('semantique', 'semantique', 'word_syn_menu', 'synonyms');
-			$this->add_tab('semantique', 'semantique', 'empty_words_libelle', 'empty_words');
-		}
+		$this->add_tab('semantique', 'semantique', 'word_syn_menu', 'synonyms');
+		$this->add_tab('semantique', 'semantique', 'empty_words_libelle', 'empty_words');
 	
 		//Import
 		$this->add_tab('authorities_gest', 'import', 'authorities_import');

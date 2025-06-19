@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: connecteurs.class.php,v 1.38.2.1 2021/12/28 13:33:54 dgoron Exp $
+// $Id: connecteurs.class.php,v 1.41.4.2 2023/12/14 08:43:24 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,7 +10,7 @@ global $include_path;
 require_once($include_path."/parser.inc.php");
 
 class connector {
-	
+
 	public $repository;				//Est-ce un entrepot ?
 	public $timeout;					//Time-out
 	public $retry;						//Nombre de réessais
@@ -19,41 +19,57 @@ class connector {
 	public $sources;					//Sources disponibles
 	public $msg;						//Messages propres au connecteur
 	public $connector_path;
-	
+
 	//Calcul ISBD
 	protected static $xml_indexation;
 	protected static $isbd_ask_list = array();
 	protected static $ufields = array();
-	
+
 	//Variables internes pour la progression de la récupération des notices
 	public $callback_progress;		//Nom de la fonction de callback progression passée par l'appellant
 	public $source_id;				//Numéro de la source en cours de synchro
 	public $del_old;				//Supression ou non des notices dejà existantes
-	
+
 	//Résultat de la synchro
 	public $error;					//Y-a-t-il eu une erreur
 	public $error_message;			//Si oui, message correspondant
-	
+
 	public function __construct($connector_path="") {
 		$this->fetch_global_properties();
 		$this->get_messages($connector_path);
 		$this->connector_path=$connector_path;
 	}
-	
+
 	//Signature de la classe
 	public function get_id() {
 		return "";
 	}
-	
+
 	//Est-ce un entrepot ?
 	public function is_repository() {
 		return 0;
 	}
-	
+
 	public function get_libelle($message) {
 		if (substr($message,0,4)=="msg:") return $this->msg[substr($message,4)]; else return $message;
 	}
-	
+
+
+    /**
+     * Retourne une liste des champs specifiques interrogeables en recherche externe
+     * (tableau vide => tous les champs peuvent etre interroges)
+     *
+     * Les donnees retournees sont les id et valeurs des attributs unimarField decrits dans
+     * - includes/search_queries/search_fields_unimarc.xml
+     * - includes/search_queries/search_simple_fields_unimarc.xml
+     *
+     * @return string []
+     */
+    public static function getSpecificUnimarcSearchFields()
+    {
+        return [];
+    }
+
 	protected function unserialize_source_params($source_id) {
 		$params=$this->get_source_params($source_id);
 		if ($params["PARAMETERS"]) {
@@ -62,10 +78,10 @@ class connector {
 		}
 		return $params;
 	}
-	
+
 	public function get_messages($connector_path) {
 		global $lang;
-		
+
 		$file_name = '';
 		if (file_exists($connector_path."/messages/".$lang.".xml")) {
 			$file_name=$connector_path."/messages/".$lang.".xml";
@@ -78,8 +94,8 @@ class connector {
 			$this->msg=$xmllist->table;
 		}
 	}
-	
-	//Récupération de la liste des sources
+
+	//Recuperation de la liste des sources d'un connecteur
 	public function get_sources() {
 		if(!isset($this->sources) || !count($this->sources)) {
 			$sources=array();
@@ -111,15 +127,16 @@ class connector {
 		}
 		return $this->sources;
 	}
-	
+
 	//Récupération des paramètres d'une source
 	public function get_source_params($source_id) {
-		if ($source_id) {
+	    
+	    $s = [];
+	    if ($source_id) {
 			$requete="select * from connectors_sources where id_connector='".addslashes($this->get_id())."' and source_id=".$source_id;
 			$resultat=pmb_mysql_query($requete);
 			if (pmb_mysql_num_rows($resultat)) {
 				$r=pmb_mysql_fetch_object($resultat);
-				$s=array();
 				$s["SOURCE_ID"]=$r->source_id;
 				$s["PARAMETERS"]=$r->parameters;
 				$s["NAME"]=$r->name;
@@ -142,7 +159,6 @@ class connector {
 				}
 			}
 		} else {
-			$s=array();
 			$s["SOURCE_ID"]="";
 			$s["PARAMETERS"]="";
 			$s["NAME"]="Nouvelle source";
@@ -171,29 +187,29 @@ class connector {
 		}
 		return $s;
 	}
-	
+
 	//Formulaire des propriétés d'une source
 	public function source_get_property_form($source_id) {
 		return "";
 	}
-	
+
 	public function make_serialized_source_properties($source_id) {
 		$this->sources[$source_id]["PARAMETERS"]="";
 	}
-	
+
 	//Formulaire de sauvegarde des propriétés d'une source
 	public function source_save_property_form($source_id) {
 		$this->make_serialized_source_properties($source_id);
 		$requete="replace into connectors_sources (source_id,id_connector,parameters,comment,name,repository,retry,ttl,timeout,opac_allowed,upload_doc_num,rep_upload,enrichment,opac_affiliate_search,opac_selected,gestion_selected) values('".$source_id."','".addslashes($this->get_id())."','".addslashes($this->sources[$source_id]["PARAMETERS"])."','".addslashes($this->sources[$source_id]["COMMENT"])."','".addslashes($this->sources[$source_id]["NAME"])."','".addslashes($this->sources[$source_id]["REPOSITORY"])."','".addslashes($this->sources[$source_id]["RETRY"])."','".addslashes($this->sources[$source_id]["TTL"])."','".addslashes($this->sources[$source_id]["TIMEOUT"])."','".addslashes($this->sources[$source_id]["OPAC_ALLOWED"])."','".addslashes($this->sources[$source_id]["UPLOAD_DOC_NUM"])."','".addslashes($this->sources[$source_id]["REP_UPLOAD"])."','".addslashes($this->sources[$source_id]["ENRICHMENT"])."','".addslashes($this->sources[$source_id]["OPAC_AFFILIATE_SEARCH"])."','".addslashes($this->sources[$source_id]["OPAC_SELECTED"])."','".addslashes($this->sources[$source_id]["GESTION_SELECTED"])."')";
 		return pmb_mysql_query($requete);
 	}
-	
+
 	//Suppression d'une source
 	public function del_source($source_id) {
 		$requete="delete from connectors_sources where source_id=$source_id and id_connector='".addslashes($this->get_id())."'";
 		return pmb_mysql_query($requete);
 	}
-	
+
 	//Récupération  des propriétés globales par défaut du connecteur (timeout, retry, repository, parameters)
 	public function fetch_default_global_values() {
 		$this->timeout=5;
@@ -202,7 +218,7 @@ class connector {
 		$this->ttl=1800;
 		$this->parameters="";
 	}
-	
+
 	//Récupération  des propriétés globales du connecteur (timeout, retry, repository, parameters)
 	public function fetch_global_properties() {
 		$requete="select * from connectors where connector_id='".addslashes($this->get_id())."'";
@@ -218,18 +234,18 @@ class connector {
 			$this->fetch_default_global_values();
 		}
 	}
-	
+
 	//Formulaire des propriétés générales
 	public function get_property_form() {
 		$this->fetch_global_properties();
 		return "";
 	}
-	
+
 	public function make_serialized_properties() {
 		//Mise en forme des paramètres à partir de variables globales (mettre le résultat dans $this->parameters)
 		$this->parameters="";
 	}
-	
+
 	//Sauvegarde des propriétés générales
 	public function save_property_form() {
 		$this->make_serialized_properties();
@@ -237,7 +253,7 @@ class connector {
 		'".addslashes($this->parameters)."','".$this->retry."','".$this->timeout."','".$this->ttl."','".$this->repository."')";
 		return pmb_mysql_query($requete);
 	}
-	
+
 	//Supression des notices dans l'entrepot !
 	public function del_notices($source_id) {
 		$requete="select * from source_sync where source_id=".$source_id;
@@ -250,56 +266,66 @@ class connector {
 		pmb_mysql_query("delete from source_sync where source_id=".$source_id);
 		return true;
 	}
-	
+
 	//Annulation de la mise à jour (faux = synchro conservée dans la table, vrai = synchro supprimée dans la table)
 	public function cancel_maj($source_id) {
 		return false;
 	}
-	
+
 	//Annulation de la mise à jour (faux = synchro conservée dans la table, vrai = synchro supprimée dans la table)
 	public function break_maj($source_id) {
 		return false;
 	}
-	
+
 	public function sync_custom_page($source_id) {
 		return '';
 	}
-	
-	//Formulaire complementaire facultatif pour la synchronisation
+
+	/**
+	 * Formulaire complementaire facultatif pour la synchronisation
+	 *
+	 * @param int $source_id
+	 * @return boolean
+	 */
 	public function form_pour_maj_entrepot($source_id) {
 		return false;
 	}
-	
-	//Nécessaire pour passer les valeurs obtenues dans form_pour_maj_entrepot au javascript asynchrone
+
+	/**
+	 * Nécessaire pour passer les valeurs obtenues dans form_pour_maj_entrepot au javascript asynchrone
+	 *
+	 * @param int $source_id
+	 * @return array
+	 */
 	public function get_maj_environnement($source_id) {
 		return array();
 	}
-	
+
 	//M.A.J. Entrepôt lié à une source
 	public function maj_entrepot($source_id,$callback_progress="",$recover=false,$recover_env="") {
 		return 0;
 	}
-	
+
 	//Export d'une notice en UNIMARC
 	public function to_unimarc($notice) {
 	}
-	
+
 	//Export d'une notice en Dublin Core (c'est le minimum)
 	public function to_dublin_core($notice) {
 	}
-	
+
 	//Fonction de recherche
 	public function search($source_id,$query,$search_id) {
 	}
-	
+
 	//Recherche d'une page de résultat
 	public function get_page_result($search_id,$page, $n_per_page) {
 	}
-	
+
 	//Nombre de résultats d'une recherche
 	public function get_n_results($search_id) {
 	}
-	
+
 	//Récupération de la valeur d'une autorité
 	public function get_values_from_id($id,$ufield) {
 		$r="";
@@ -356,7 +382,7 @@ class connector {
 		}
 		return $r;
 	}
-	
+
 	public function get_unimarc_search_fields() {
 		$fields=array();
 		//Calcul de la liste des champs disponibles
@@ -393,16 +419,16 @@ class connector {
 		}
 		return $fields;
 	}
-	
+
 	public function enrichment_is_allow(){
 		return false;
 	}
-	
+
 	protected function delete_from_external_count($source_id, $ref) {
 		$requete="delete from external_count where recid='".addslashes($this->get_id()." ".$source_id." ".$ref)."' and source_id = ".$source_id;
 		pmb_mysql_query($requete);
 	}
-	
+
 	protected function is_into_external_count($source_id, $ref) {
 		$rid = 0;
 		$query = "select rid from external_count where source_id=".$source_id." and recid='".addslashes($this->get_id()." ".$source_id." ".$ref)."' limit 1";
@@ -412,7 +438,7 @@ class connector {
 		}
 		return $rid;
 	}
-	
+
 	protected function insert_into_external_count($source_id, $ref) {
 		$recid = 0;
 		$query = "insert into external_count (recid, source_id) values('".addslashes($this->get_id()." ".$source_id." ".$ref)."', ".$source_id.")";
@@ -420,14 +446,14 @@ class connector {
 		if ($rid) $recid=pmb_mysql_insert_id();
 		return $recid;
 	}
-	
+
 	protected function insert_header_into_entrepot($source_id, $ref, $date_import, $ufield, $value, $recid, $search_id = '') {
 		$query = "insert ignore into entrepot_source_".$source_id." (connector_id,source_id,ref,date_import,ufield,usubfield,field_order,subfield_order,value,i_value,recid, search_id) values(
 			'".addslashes($this->get_id())."',".$source_id.",'".addslashes($ref)."','".addslashes($date_import)."',
 			'".$ufield."','',0,0,'".addslashes($value)."','',$recid, '$search_id')";
 		pmb_mysql_query($query);
 	}
-	
+
 	protected function insert_content_into_entrepot($source_id, $ref, $date_import, $ufield, $usubfield, $field_order, $subfield_order, $value, $recid, $search_id = '') {
 		$query = "insert ignore into entrepot_source_".$source_id." (connector_id,source_id,ref,date_import,ufield,usubfield,field_order,subfield_order,value,i_value,recid, search_id) values(
 			'".addslashes($this->get_id())."',".$source_id.",'".addslashes($ref)."','".addslashes($date_import)."',
@@ -435,8 +461,8 @@ class connector {
 			' ".addslashes(strip_empty_words($value))." ',$recid, '$search_id')";
 		pmb_mysql_query($query);
 	}
-	
-	protected function update_content_into_entrepot($source_id, $ref, $ufield, $usubfield, $field_order, $subfield_order, $search_id = '', $value) {
+
+	protected function update_content_into_entrepot($source_id, $ref, $ufield, $usubfield, $field_order, $subfield_order, $search_id = '', $value = '') {
 		$query = "update ignore entrepot_source_".$source_id." ";
 		$query.= "set value = '".addslashes($value)."', i_value = '".addslashes(strip_empty_words($value))."' ";
 		$query.= "where source_id = {$source_id} ";
@@ -449,7 +475,7 @@ class connector {
 		$query.= "limit 1";
 		pmb_mysql_query($query);
 	}
-	
+
 	protected function insert_content_into_entrepot_multiple($records) {
 		$query = "insert ignore into entrepot_source_".$records[0]["source_id"]." (connector_id,source_id,ref,date_import,ufield,usubfield,field_order,subfield_order,value,i_value,recid, search_id) values";
 		for ($i=0; $i<count($records);$i++) {
@@ -462,12 +488,19 @@ class connector {
 		}
 		pmb_mysql_query($query);
 	}
-	
+
 	protected function insert_origine_into_entrepot($source_id, $ref, $date_import, $recid, $search_id = '') {
 		$this->insert_content_into_entrepot($source_id, $ref, $date_import, '801', 'a', 0, 0, 'FR', $recid, $search_id);
 		$this->insert_content_into_entrepot($source_id, $ref, $date_import, '801', 'b', 0, 0, $this->get_sources()[$source_id]["NAME"], $recid, $search_id);
 	}
-	
+
+	protected function insert_human_query_into_entrepot($source_id, $ref, $date_import, $value, $recid, $search_id = '') {
+		$query = "insert ignore into entrepot_source_".$source_id." (connector_id,source_id,ref,date_import,ufield,usubfield,field_order,subfield_order,value,i_value,recid, search_id) values(
+			'".addslashes($this->get_id())."',".$source_id.",'".addslashes($ref)."','".addslashes($date_import)."',
+			'hum','',0,0,'".addslashes($value)."',' ".addslashes(strip_empty_words($value))." ',$recid, '$search_id')";
+		pmb_mysql_query($query);
+	}
+
 	protected function delete_from_entrepot($source_id, $ref, $search_id = '') {
 		$query = "delete from entrepot_source_".$source_id." where ref='".addslashes($ref)."'";
 		if($search_id) {
@@ -475,7 +508,7 @@ class connector {
 		}
 		pmb_mysql_query($query);
 	}
-	
+
 	protected function has_ref($source_id, $ref, $search_id = '') {
 		$query = "select count(*) from entrepot_source_".$source_id." where ref='".addslashes($ref)."'";
 		if($search_id) {
@@ -487,7 +520,7 @@ class connector {
 		}
 		return 0;
 	}
-	
+
 	protected function get_ref($source_id, $ref, $search_id='') {
 		$query = "select * from entrepot_source_".$source_id." where ref='".addslashes($ref)."'";
 		if($search_id) {
@@ -499,7 +532,7 @@ class connector {
 			return [];
 		}
 		$ret = [];
-		
+
 		while( $row = pmb_mysql_fetch_assoc($result)) {
 			if($row['usubfield'] ==='') {
 				$ret[$row['ufield']] = $row;
@@ -509,7 +542,7 @@ class connector {
 		}
 		return $ret;
 	}
-	
+
 	public function apply_xsl_to_xml($xml, $xsl) {
 		global $charset;
 		$xh = xslt_create();
@@ -522,7 +555,7 @@ class connector {
 		xslt_free($xh);
 		return $result;
 	}
-	
+
 	/**
 	 * ISBD d'une personne physique
 	 */
@@ -546,7 +579,7 @@ class connector {
 		}
 		return $isbd;
 	}
-	
+
 	/**
 	 * ISBD d'une collectivité / d'un congrès
 	 */
@@ -560,7 +593,7 @@ class connector {
 		$lieu = static::$ufields[substr($unimarcKey, 0, 3).'$k'][$field_order][$subfield_order];
 		$ville = static::$ufields[substr($unimarcKey, 0, 3).'$l'][$field_order][$subfield_order];
 		$pays = static::$ufields[substr($unimarcKey, 0, 3).'$m'][$field_order][$subfield_order];
-		
+
 		$isbd = $name;
 		if ($rejete) {
 			$isbd .= ", " .$rejete;
@@ -592,7 +625,7 @@ class connector {
 			}
 			return $isbd;
 	}
-	
+
 	public function get_external_isbd($class_name, $type = '') {
 		$external_isbd = array();
 		foreach (static::$ufields as $unimarcKey=>$ufield) {
@@ -676,7 +709,7 @@ class connector {
 								$external_isbd[$field_order][$subfield_order] = $name.($issn ? ', ISSN '.$issn : '');
 							}
 						}
-						
+
 					}
 					break;
 				case 'subcollection':
@@ -703,7 +736,7 @@ class connector {
 					}
 					break;
 				case 'categories':
-					
+
 					break;
 				case 'titre_uniforme':
 					if ($unimarcKey == '500$a') {
@@ -718,9 +751,9 @@ class connector {
 		}
 		return $external_isbd;
 	}
-	
+
 	public function rec_isbd_record($source_id, $ref, $recid) {
-		
+
 		$this->get_xml_indexation();
 		$query = "select * from entrepot_source_".$source_id." where ref='".addslashes($ref)."'";
 		$result = pmb_mysql_query($query);
@@ -741,8 +774,8 @@ class connector {
 			}
 		}
 	}
-	
-	
+
+
 	/**
 	 * Insertion de lots d'enregistrements avec header,content,origine,isbd
 	 *
@@ -778,22 +811,22 @@ class connector {
 	 *
 	 */
 	protected function insert_records_into_entrepot($records) {
-		
+
 		$q = "insert ignore into entrepot_source_".$records['source_id']." ";
 		$q.= "(connector_id,source_id,ref,date_import,ufield,usubfield,field_order,subfield_order,value,i_value,recid, search_id) ";
 		$q.= "values ";
 		$i = 0;
-		
+
 		//ISBD
 		$this->get_xml_indexation();
-		
+
 		$addslashed_date_import = addslashes($records['date_import']);
-		
+
 		foreach($records['records'] as $ref=>$record) {
-			
+
 			$addslashed_ref = addslashes($ref);
 			$addslashed_id = addslashes($this->get_id());
-			
+
 			//header
 			foreach($record['header'] as $ufield=>$v) {
 				if($i) {
@@ -802,29 +835,29 @@ class connector {
 				$q.= "('".$addslashed_id."', ".$records['source_id'].", '".$addslashed_ref."', '".$addslashed_date_import."', ";
 				$q.= "'".$ufield."', '', 0, 0, '".addslashes($v)."', '', ".$record['recid'].", '".$records['search_id']."')";
 				$i = 1;
-				
+
 				//prepare isbd
 				$records['records'][$ref]['isbd'][$ufield][0][0] = $v;
-				
+
 			}
-			
+
 			//content
 			foreach($record['content'] as $v) {
 				$q.= ", ";
 				$q.= "('".$addslashed_id."', ".$records['source_id'].", '".$addslashed_ref."', '".$addslashed_date_import."', ";
 				$q.= "'".$v['ufield']."', '".$v['usubfield']."', ".$v['field_order'].", ".$v['subfield_order'].", ";
 				$q.= "'".addslashes($v['value'])."', '".addslashes(strip_empty_words($v["value"]))."', ".$record['recid'].", '".$records['search_id']."')";
-				
+
 				//prepare isbd
 				$records['records'][$ref]['isbd'][$v['ufield'].($v['usubfield'] ? '$'.$v['usubfield'] : '')][$v['field_order']][$v['subfield_order']] = $v["value"];
 			}
-			
+
 			//origine
 			$q.= ", ('".$addslashed_id."', ".$records['source_id'].", '".$addslashed_ref."', '".$addslashed_date_import."', ";
 			$q.= "'801', 'a', 0, 0, 'FR', '', ".$record['recid'].", '".$records['search_id']."')";
 			$q.= ", ('".$addslashed_id."', ".$records['source_id'].", '".$addslashed_ref."', '".$addslashed_date_import."', ";
 			$q.= "'801', 'b', 0, 0, '".addslashes($this->get_sources()[$records['source_id']]["NAME"])."', '', ".$record['recid'].", '".$records['search_id']."')";
-			
+
 			//ISBD
 			static::$ufields = $records['records'][$ref]['isbd'];
 			foreach(static::$isbd_ask_list as $infos){
@@ -842,12 +875,12 @@ class connector {
 			}
 		}
 		pmb_mysql_query($q);
-		
+
 	}
-	
-	
+
+
 	protected function get_xml_indexation() {
-		
+
 		global $include_path;
 		$type = 'notices_externes';
 		if(!isset(static::$xml_indexation[$type])) {
@@ -861,7 +894,7 @@ class connector {
 			}
 			fclose($fp);
 			static::$xml_indexation[$type] = _parser_text_no_function_($xml,"INDEXATION",$file);
-			
+
 			for ($i=0;$i<count(static::$xml_indexation[$type]['FIELD']);$i++) { //pour chacun des champs decrits
 				if(isset(static::$xml_indexation[$type]['FIELD'][$i]['ISBD']) && static::$xml_indexation[$type]['FIELD'][$i]['ISBD']){ // isbd autorités
 					static::$isbd_ask_list[static::$xml_indexation[$type]['FIELD'][$i]['ID']]= array(
@@ -875,7 +908,7 @@ class connector {
 			}
 		}
 	}
-	
+
 	/**
 	 * Liste les appels de fonctions autorisés en ajax
 	 * @return array
@@ -883,31 +916,50 @@ class connector {
 	public function get_ajax_allowed_methods() {
 		return [];
 	}
-	
+
 }
 
 class connecteurs {
+
+    /* Liste des connecteurs declares */
+    public $catalog=array();
+    
+    /* Instance de la classe */
+	private static $instance;
+
+	/* Tableau liste des sources */
+	protected static $source_list = null;
+
+	/* Tableau liste des sources dans lesquelles on peut chercher */
+	protected static $searchable_source_list = null;
+
+
+	public function __construct()
+	{
+	    global $base_path;
+	    if (file_exists($base_path . "/admin/connecteurs/in/catalog_subst.xml")) {
+	        $catalog = $base_path . "/admin/connecteurs/in/catalog_subst.xml";
+	    } else {
+	        $catalog = $base_path . "/admin/connecteurs/in/catalog.xml";
+	        $this->parse_catalog($catalog);
+	    }
+	}
+
 	
-	public $catalog=array();			//Liste des connecteurs déclarés
-	private static $instance;			//Instance de la classe
-	
-	//Constructeur
-	public function __construct() {
-		global $base_path;
-		if (file_exists($base_path."/admin/connecteurs/in/catalog_subst.xml"))
-			$catalog=$base_path."/admin/connecteurs/in/catalog_subst.xml";
-			else
-				$catalog=$base_path."/admin/connecteurs/in/catalog.xml";
-				$this->parse_catalog($catalog);
+	public static function get_instance() {
+	    if(!isset(static::$instance)) {
+	        static::$instance = new connecteurs();
+	    }
+	    return static::$instance;
 	}
 	
 	public static function get_class_name($source_id) {
-		
+
 		$source_id = intval($source_id);
 		if( !$source_id) {
 			return '';
 		}
-		
+
 		$connector_id="";
 		$requete="select id_connector from connectors_sources where source_id=".$source_id;
 		$resultat=pmb_mysql_query($requete);
@@ -916,47 +968,109 @@ class connecteurs {
 		}
 		return $connector_id;
 	}
-	
-	public function parse_catalog($catalog) {
-		global $base_path,$lang;
-		//Construction du tableau des connecteurs disponbibles
-		$xml=file_get_contents($catalog);
-		$param=_parser_text_no_function_($xml,"CATALOG",$catalog);
-		for ($i=0; $i<count($param["ITEM"]); $i++) {
-			$item=$param["ITEM"][$i];
-			$t=array();
-			$t["PATH"]=$item["PATH"];
-			//Parse du manifest du connecteur!
-			$xml_manifest=file_get_contents($base_path."/admin/connecteurs/in/".$item["PATH"]."/manifest.xml");
-			$manifest=_parser_text_no_function_($xml_manifest,"MANIFEST");
-			$t["NAME"]=$manifest["NAME"][0]["value"];
-			$t["AUTHOR"]=$manifest["AUTHOR"][0]["value"];
-			$t["ORG"]=$manifest["ORG"][0]["value"];
-			$t["DATE"]=$manifest["DATE"][0]["value"];
-			$t["STATUS"]=$manifest["STATUS"][0]["value"];
-			$t["URL"]=$manifest["URL"][0]["value"];
-			$t["REPOSITORY"]=$manifest["REPOSITORY"][0]["value"];
-			//Commentaires
-			$comment=array();
-			for ($j=0; $j<count($manifest["COMMENT"]); $j++) {
-				if(!isset($manifest["COMMENT"][$j]["lang"])) $manifest["COMMENT"][$j]["lang"] = '';
-				if ($manifest["COMMENT"][$j]["lang"]==$lang) {
-					$comment=$manifest["COMMENT"][$j]["value"];
-					break;
-				} else if (!$manifest["COMMENT"][$j]["lang"]) {
-					$c_default=$manifest["COMMENT"][$j]["value"];
-				}
-			}
-			if ($j==count($manifest["COMMENT"])) $comment=$c_default;
-			$t["COMMENT"]=$comment;
-			$this->catalog[$item["ID"]]=$t;
-		}
-	}
-	
-	public static function get_instance() {
-		if(!isset(static::$instance)) {
-			static::$instance = new connecteurs();
-		}
-		return static::$instance;
-	}
+
+
+    /**
+     * Construction du tableau des connecteurs disponibles
+     *
+     * @param string $catalog : fichier catalog
+     */
+	public function parse_catalog($catalog)
+    {
+        global $base_path, $lang;
+
+        $xml = file_get_contents($catalog);
+        $param = _parser_text_no_function_($xml, "CATALOG", $catalog);
+        for ($i = 0; $i < count($param["ITEM"]); $i++) {
+            $item = $param["ITEM"][$i];
+            $t = array();
+            $t["PATH"] = $item["PATH"];
+            //Parse du manifest du connecteur!
+            $xml_manifest = file_get_contents($base_path . "/admin/connecteurs/in/" . $item["PATH"] . "/manifest.xml");
+            $manifest = _parser_text_no_function_($xml_manifest, "MANIFEST");
+            $t["NAME"] = $manifest["NAME"][0]["value"];
+            $t["AUTHOR"] = $manifest["AUTHOR"][0]["value"];
+            $t["ORG"] = $manifest["ORG"][0]["value"];
+            $t["DATE"] = $manifest["DATE"][0]["value"];
+            $t["STATUS"] = $manifest["STATUS"][0]["value"];
+            $t["URL"] = $manifest["URL"][0]["value"];
+            $t["SEARCH"] = ('yes' == $manifest["SEARCH"][0]["value"]) ? 'yes ' : 'no';
+            $t["REPOSITORY"] = $manifest["REPOSITORY"][0]["value"];
+            $t["ENRICHMENT"] = ('yes' == $manifest["ENRICHMENT"][0]["value"]) ? 'yes ' : 'no';
+            //Commentaires
+            $comment = array();
+            for ($j = 0; $j < count($manifest["COMMENT"]); $j++) {
+                if (!isset($manifest["COMMENT"][$j]["lang"])) {
+                    $manifest["COMMENT"][$j]["lang"] = '';
+                }
+                if ($manifest["COMMENT"][$j]["lang"] == $lang) {
+                    $comment = $manifest["COMMENT"][$j]["value"];
+                    break;
+                } else if (!$manifest["COMMENT"][$j]["lang"]) {
+                    $c_default = $manifest["COMMENT"][$j]["value"];
+                }
+            }
+            if ($j == count($manifest["COMMENT"])) {
+                $comment = $c_default;
+            }
+            $t["COMMENT"] = $comment;
+            $this->catalog[$item["ID"]] = $t;
+        }
+    }
+
+
+    /**
+     * Recupere la liste des sources
+     *
+     * @return []
+     */
+    public function getSourceList()
+    {
+        if (!is_null(static::$source_list)) {
+            return static::$source_list;
+        }
+        static::$source_list = [];
+        $q = "SELECT * FROM connectors_sources";
+        $r = pmb_mysql_query($q);
+        if (!pmb_mysql_num_rows($r)) {
+            return static::$source_list;
+        }
+        while ($row = pmb_mysql_fetch_assoc($r)) {
+            static::$source_list[$row['source_id']] = $row;
+        }
+        return static::$source_list;
+    }
+
+    
+    
+    /**
+     * Recupere la liste des sources dans lesquelles on peut chercher
+     *
+     * @return []
+     */
+    public function getSearchableSourceList()
+    {
+        if (!is_null(static::$searchable_source_list)) {
+            return static::$searchable_source_list;
+        }
+        static::$searchable_source_list = [];
+        
+        // Parcours du catalogue des connecteurs pour trouver ceux dans lesquels on peut chercher
+        $searchable_connectors = [];
+        foreach($this->catalog as $k => $connector) {
+            if ( ('yes' == $connector['SEARCH']) || ('yes' == $connector['REPOSITORY']) ) {
+                $searchable_connectors[] = $connector['PATH'];
+            }
+        }
+        
+        //Parcours des sources
+        $sources = $this->getSourceList();
+        foreach($sources as $source) {
+            if( in_array($source['id_connector'], $searchable_connectors) ) {
+                static::$searchable_source_list[$source['source_id']] = $source;
+            }
+        }
+        return static::$searchable_source_list;
+    }
+    
 }

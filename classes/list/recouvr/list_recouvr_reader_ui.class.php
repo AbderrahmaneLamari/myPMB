@@ -2,14 +2,14 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_recouvr_reader_ui.class.php,v 1.1.4.1 2021/11/23 09:58:08 dgoron Exp $
+// $Id: list_recouvr_reader_ui.class.php,v 1.3 2022/09/27 06:32:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class list_recouvr_reader_ui extends list_recouvr_ui {
 	
 	protected function _get_query_base() {
-	    $query = "SELECT recouvrements.recouvr_id as id, recouvrements.*, empr.*, expl_notice, expl_bulletin, expl_cote , expl_cb 
+	    $query = "SELECT recouvrements.recouvr_id as id, recouvrements.*, empr.*, exemplaires.* 
 			FROM recouvrements
 			JOIN empr ON id_empr=empr_id
 			JOIN docs_location ON empr_location=idlocation

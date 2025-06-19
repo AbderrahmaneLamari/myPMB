@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_accounting_entites_ui.class.php,v 1.2 2021/04/20 06:44:56 dgoron Exp $
+// $Id: list_accounting_entites_ui.class.php,v 1.3.4.1 2023/03/24 07:55:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -55,30 +55,17 @@ class list_accounting_entites_ui extends list_ui {
 		$this->add_column('raison_sociale');
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['type_entite']) {
-			$filters[] = 'type_entite = "'.$this->filters['type_entite'].'"';
-		}
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('type_entite', 'type_entite');
 		if($this->filters['num_user']) {
-			$filters[] = 'autorisations like("% '.$this->filters['num_user'].' %")';
+			$this->query_filters [] = 'autorisations like("% '.$this->filters['num_user'].' %")';
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=list&id_bibli=".$object->id_entite."\"";
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	public function get_display_header_list() {

@@ -1,7 +1,7 @@
 /* +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: classementGen.js,v 1.3.8.1 2021/06/21 14:22:20 dgoron Exp $ */
+// $Id: classementGen.js,v 1.4 2021/06/21 14:20:42 dgoron Exp $ */
 
 require(["dojo/request"], function(request) {
     function classementGen_save(object_type, object_id, url_callback){

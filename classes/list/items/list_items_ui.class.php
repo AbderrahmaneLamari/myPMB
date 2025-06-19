@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_items_ui.class.php,v 1.5.2.5 2022/01/21 13:58:09 dgoron Exp $
+// $Id: list_items_ui.class.php,v 1.11.4.1 2023/09/28 10:41:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -229,69 +229,43 @@ class list_items_ui extends list_ui {
 		return $this->get_search_filter_multiple_selection($this->get_selection_query('docs_groups'), 'expl_groups', $msg['all']);
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('expl_id', 'expl_id', 'integer');
+		$this->_add_query_filter_simple_restriction('expl_notice', 'expl_notice', 'integer');
+		$this->_add_query_filter_simple_restriction('expl_bulletin', 'expl_bulletin', 'integer');
+		$this->_add_query_filter_simple_restriction('expl_group', 'groupexpl_num', 'integer');
 		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['expl_id']) {
-			$filters [] = 'expl_id = "'.$this->filters['expl_id'].'"';
-		}
-		if($this->filters['expl_notice']) {
-			$filters [] = 'expl_notice = "'.$this->filters['expl_notice'].'"';
-		}
-		if($this->filters['expl_bulletin']) {
-			$filters [] = 'expl_bulletin = "'.$this->filters['expl_bulletin'].'"';
-		}
-		if($this->filters['expl_group']) {
-			$filters [] = 'groupexpl_num = "'.$this->filters['expl_group'].'"';
-		}
 		/*if ($pmb_droits_explr_localises && $explr_invisible) {
-			$filters [] = 'expl_location not in ('.$explr_invisible.')';
+			$this->query_filters [] = 'expl_location not in ('.$explr_invisible.')';
 		}
 		if($this->filters['loaned']) {
-			$filters [] = 'pret.pret_idexpl is not null';
+			$this->query_filters [] = 'pret.pret_idexpl is not null';
 		}*/
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
 	}
 	
-	/**
-	 * Fonction de callback
-	 * @param object $a
-	 * @param object $b
-	 */
-	protected function _compare_objects($a, $b) {
-		if($this->applied_sort[0]['by']) {
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'record_header' :
-					if($a->expl_notice) {
-						$notice = static::get_instance_mono_display($a->expl_notice);
-						$strcmp_a = $notice->header;
-					} elseif ($a->expl_bulletin) {
-						$bl = static::get_instance_bulletinage_display($a->expl_bulletin);
-						$strcmp_a = $bl->header;
-					}
-					if($b->expl_notice) {
-						$notice = static::get_instance_mono_display($b->expl_notice);
-						$strcmp_b = $notice->header;
-					} elseif ($b->expl_bulletin) {
-						$bl = static::get_instance_bulletinage_display($b->expl_bulletin);
-						$strcmp_b = $bl->header;
-					}
-					return $this->strcmp($strcmp_a, $strcmp_b);
-					break;
-				default :
-					return parent::_compare_objects($a, $b);
-					break;
-			}
+	protected function _compare_objects($a, $b, $index=0) {
+	    $sort_by = $this->applied_sort[$index]['by'];
+		switch($sort_by) {
+			case 'record_header' :
+				if($a->expl_notice) {
+					$notice = static::get_instance_mono_display($a->expl_notice);
+					$strcmp_a = $notice->header;
+				} elseif ($a->expl_bulletin) {
+					$bl = static::get_instance_bulletinage_display($a->expl_bulletin);
+					$strcmp_a = $bl->header;
+				}
+				if($b->expl_notice) {
+					$notice = static::get_instance_mono_display($b->expl_notice);
+					$strcmp_b = $notice->header;
+				} elseif ($b->expl_bulletin) {
+					$bl = static::get_instance_bulletinage_display($b->expl_bulletin);
+					$strcmp_b = $bl->header;
+				}
+				return $this->strcmp($strcmp_a, $strcmp_b);
+				break;
+			default :
+			    return parent::_compare_objects($a, $b, $index);
+				break;
 		}
 	}
 	

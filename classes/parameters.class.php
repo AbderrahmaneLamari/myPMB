@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: parameters.class.php,v 1.35 2021/01/12 10:47:53 dgoron Exp $
+// $Id: parameters.class.php,v 1.36 2022/02/08 10:39:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 //Classe de gestion du paramarétrage des procédures stockées
-
+global $include_path;
 require_once("$include_path/fields.inc.php");
 require_once("$include_path/parser.inc.php");
 
@@ -136,6 +136,7 @@ class parameters {
 	//Si besoin, création des paramètres de la requête non détaillés dans le XML
 	public function check_parameters() {
 		//Paramètre par défaut : texte obligatoire
+		$default_param=array();
 		$default_param['MANDATORY']="yes";
 		$default_param['ALIAS'][0]['value']="";
 		$default_param['TYPE'][0]['value']="text";
@@ -202,7 +203,7 @@ class parameters {
 		$form .= "<br /><br />";
 		$form .= $this->get_content_form();
 		$form .= "</div>";
-		if(empty($champ_focus)) $champ_focus=$this->query_parameters[0];//Si pas de champ texte par défaut on prend le premier
+		$champ_focus=$this->query_parameters[0];//Si pas de champ texte par défaut on prend le premier
 		//Compilation des javascripts de validité renvoyés par les fonctions d'affichage
 		$check_scripts="<script>function cancel_submit(message) { alert(message); return false;}\nfunction check_form() {\n".$check_scripts."\nreturn true;\n}\n</script>";
 		$form .= $check_scripts;
@@ -284,28 +285,32 @@ class parameters {
 		global $val_list;
 			
 		//Vérification du formulaire côté serveur
-		for ($i=0; $i<count($this->query_parameters); $i++) {
-			$name=$this->query_parameters[$i];
-			eval("\$chk=".$chk_list[$this->get_field_type($this->parameters_description[$name])]."(\$this->parameters_description[\$name],\$check_message);");
-			
-			if (!$chk) {
-				echo "<script>alert(\"".$check_message."\"); history.go(-1);</script>";
-				exit();
+		if(!empty($this->query_parameters)) {
+			for ($i=0; $i<count($this->query_parameters); $i++) {
+				$name=$this->query_parameters[$i];
+				eval("\$chk=".$chk_list[$this->get_field_type($this->parameters_description[$name])]."(\$this->parameters_description[\$name],\$check_message);");
+				
+				if (!$chk) {
+					echo "<script>alert(\"".$check_message."\"); history.go(-1);</script>";
+					exit();
+				}
 			}
 		}
 		
 		//Récupération des valeurs finales & remplacement dans la requête
 		$query=$this->proc->requete;
-		for ($i=0; $i<count($this->query_parameters); $i++) {
-			$name=$this->query_parameters[$i];
-			eval("\$val=".$val_list[$this->get_field_type($this->parameters_description[$name])]."(\$this->parameters_description[\$name]);");
-			if($this->get_field_type($this->parameters_description[$name]) == 'selector'){
-				$field_options = $this->get_field_options($this->parameters_description[$name]);
-				if(!is_numeric($val) && ($field_options['DATA_TYPE'][0]['value'] == 9)){
-					$val = onto_common_uri::get_id($val);
+		if(!empty($this->query_parameters)) {
+			for ($i=0; $i<count($this->query_parameters); $i++) {
+				$name=$this->query_parameters[$i];
+				eval("\$val=".$val_list[$this->get_field_type($this->parameters_description[$name])]."(\$this->parameters_description[\$name]);");
+				if($this->get_field_type($this->parameters_description[$name]) == 'selector'){
+					$field_options = $this->get_field_options($this->parameters_description[$name]);
+					if(!is_numeric($val) && ($field_options['DATA_TYPE'][0]['value'] == 9)){
+						$val = onto_common_uri::get_id($val);
+					}
 				}
+				$query=str_replace("!!".$name."!!",$val,$query);
 			}
-			$query=str_replace("!!".$name."!!",$val,$query);
 		}
 		//Stockage du résultats
 		$this->final_query=$query;

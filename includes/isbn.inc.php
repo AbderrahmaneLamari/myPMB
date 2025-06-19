@@ -2,27 +2,29 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: isbn.inc.php,v 1.29 2019/07/15 14:24:31 btafforeau Exp $
+// $Id: isbn.inc.php,v 1.31 2023/02/08 11:17:42 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $class_path, $include_path;
+global $array_isbn_ranges;
 
 require_once($class_path."/cache_factory.class.php");
 
 if ((!isset($array_isbn_ranges))||(!is_array($array_isbn_ranges))||(!count($array_isbn_ranges))) {
-	require_once ($include_path."/parser.inc.php") ;
+	require_once $include_path."/parser.inc.php" ;
 	$array_isbn_ranges = load_isbn_ranges();
 }
 
 // fonctions pour gérer les ISBN
 
 function isISBN($isbn) {
-	$checksum=0;
+	if(empty($isbn)) return false;
 	
-	if(empty($isbn)) return FALSE;
 	// s'il y a des lettres, ce n'est pas un ISBN
-	if(preg_match('/[A-WY-Z]/i', $isbn))
-		return FALSE;
+	if(preg_match('/[A-WY-Z]/i', $isbn)) return false; 
 
+	$checksum=0;
 	$isbn = preg_replace('/-|\.| /', '', $isbn);
 	
 	$strlen_isbn = strlen($isbn);
@@ -217,7 +219,7 @@ function load_isbn_ranges() {
 				unlink($tempFile);
 			}
 			//Parse le fichier dans un tableau
-			$fp=fopen($xmlFile,"r") or die("Can't find XML file $xmlFile");
+			$fp=fopen($xmlFile,"r") or die(htmlentities("Can't find XML file $xmlFile", ENT_QUOTES, $charset));
 			$xml=fread($fp,filesize($xmlFile));
 			fclose($fp);
 			$param=_parser_text_no_function_($xml, "RANGES");
@@ -355,8 +357,12 @@ function EANtoISBN($ean) {
 	// on contrôle si cela la conversion est applicable
 	if (!isEAN($ean))
 		return '';
-	
-	return formatISBN($ean);
+	$isbn = formatISBN($ean);
+	// si échec de formatage (se termine par --), on prend l'EAN comme il vient
+	if(strpos($isbn, '--') !== false) {
+		return $ean;
+	}
+	return $isbn;
 }
 
 

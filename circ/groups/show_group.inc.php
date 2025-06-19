@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: show_group.inc.php,v 1.33.2.2 2021/11/29 10:46:54 gneveu Exp $
+// $Id: show_group.inc.php,v 1.35 2021/11/29 10:45:37 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

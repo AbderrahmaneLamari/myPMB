@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: param_subst.class.php,v 1.6.10.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: param_subst.class.php,v 1.8 2022/02/16 13:22:02 dgoron Exp $
 
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
@@ -63,9 +63,9 @@ class param_subst {
 		global $form_sstype_param; // si memorisation du formulaire, pour mettre en rouge le param				
 		global $section_table;
 		
-		$form="<script type='text/javascript' src='./javascript/tablist.js'></script>";				
+		$form="<script type='text/javascript' src='./javascript/tablist.js'></script>";
+		$lines="";
 		if(count($this->subst_param)){
-			$lines="";
 			$pair="odd";
 			$section_param='';	
 			foreach($this->subst_param as $subst_param){
@@ -123,7 +123,7 @@ class param_subst {
 			return $this->save_param_form($link_modif_param);
 		}elseif($action_subst=="suppr"){
 			$req="DELETE from param_subst where subst_type_param='".$this->type."' and	subst_module_param='".$this->module."' and subst_module_num='".$this->module_num."' and	subst_sstype_param='".$param_subst."' limit 1";
-			$erreur=pmb_mysql_query($req);	
+			pmb_mysql_query($req);	
 			$this->fetch_data();
 			return "";
 		}		
@@ -136,11 +136,9 @@ class param_subst {
 				break;
 			}
 		}	
-		$found_no_subst=0;	
 		if(!$found_subst){
 			foreach($this->no_subst_param as $param_data){				
 				if($param_data['sstype_param']==$param_subst){
-					$found_no_subst=1;
 					break;
 				}
 			}					

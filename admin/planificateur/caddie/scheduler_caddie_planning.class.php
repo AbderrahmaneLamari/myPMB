@@ -2,8 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scheduler_caddie_planning.class.php,v 1.13 2020/12/09 10:03:39 dgoron Exp $
+// $Id: scheduler_caddie_planning.class.php,v 1.15 2022/06/09 08:57:56 jparis Exp $
 
+global $class_path;
 require_once($class_path."/scheduler/scheduler_planning.class.php");
 require_once($class_path."/authorities_caddie.class.php");
 require_once($class_path."/caddie.class.php");
@@ -76,7 +77,7 @@ class scheduler_caddie_planning extends scheduler_planning {
 			</div>
 			<div class='colonne_suite'>
 				<select name='scheduler_caddie_type' onchange='scheduler_caddie_get_actions(this.value);scheduler_caddie_get_list(this.value);'>";
-		foreach ($types as $table_name=>$options) {
+		foreach ($types as $options) {
 			foreach($options as $type) {
 				$form_task .= "<option value='".$type."' ".($scheduler_caddie_type == $type ? "selected='selected'" : "").">".$msg['caddie_de_'.$type]."</option>";
 			}
@@ -98,8 +99,6 @@ class scheduler_caddie_planning extends scheduler_planning {
 	}
 		
 	public static function get_display_caddie_row($caddie_instance, $valeur=array(), $list=array()) {
-		global $msg;
-	
 		$display= "
 			<td>
 				<input type='checkbox' id='scheduler_caddie_list_".$valeur['idcaddie']."' name='scheduler_caddie_list[".$valeur['idcaddie']."]' value='".$valeur['idcaddie']."' ".(isset($list[$valeur['idcaddie']]) && $list[$valeur['idcaddie']] ? "checked='checked'" : "")." />
@@ -117,14 +116,14 @@ class scheduler_caddie_planning extends scheduler_planning {
 	public static function get_display_caddie_list($object_type='', $list=array()) {
 		global $msg;
 		global $PMBuserid;
-		global $charset;
 	
 		$display = '';
 		$model_class_name = static::get_model_class_name_from_object_type($object_type);
 		$liste = $model_class_name::get_cart_list($object_type);
 		if (!empty($liste)) {
+			$print_cart = array();
 			$parity = array();
-			foreach ($liste as $cle => $valeur) {
+			foreach ($liste as $valeur) {
 				$rqt_autorisation=explode(" ",$valeur['autorisations']);
 				if (array_search ($PMBuserid, $rqt_autorisation)!==FALSE || $valeur['autorisations_all'] || $PMBuserid==1) {
 					$myCart = new $model_class_name();
@@ -184,6 +183,7 @@ class scheduler_caddie_planning extends scheduler_planning {
 		$model_class_name = static::get_model_class_name_from_object_type($object_type);
 		$liste = $model_class_name::get_cart_list($object_type);
 		if (!empty($liste)) {
+			$print_cart = array();
 		    foreach ($liste as $valeur) {
 				$rqt_autorisation=explode(" ",$valeur['autorisations']);
 				if (array_search ($PMBuserid, $rqt_autorisation)!==FALSE || $valeur['autorisations_all'] || $PMBuserid==1) {
@@ -240,7 +240,8 @@ class scheduler_caddie_planning extends scheduler_planning {
 								'supprpanier' => $msg['caddie_menu_action_suppr_panier'],
 								'selection' => $msg['caddie_menu_action_selection'],
 								'supprbase' => $msg['caddie_menu_action_suppr_base'],
-								'reindex' => $msg['caddie_menu_action_reindex']
+								'reindex' => $msg['caddie_menu_action_reindex'],
+								'signature' => $msg['caddie_menu_action_signature']
 						)
 				),
 				'empr_caddie' => array(
@@ -291,9 +292,40 @@ class scheduler_caddie_planning extends scheduler_planning {
 	}
 	
 	public function get_choix_quoi_content($action_what) {
-		global $msg;
+	    global $msg, $pmb_digital_signature_activate;
 		
-		return "
+		$html = "";
+		if($action_what == "signature") {
+		    if(empty($pmb_digital_signature_activate)) {
+		        return "<div class='row'>
+                           <span class='erreur'>" . $msg["planificateur_signature_need_activate"] . "<span>
+        			    </div>";
+		    }
+		    $signature_id = 0;
+		    if (!empty($this->param['scheduler_caddie_action_sign'])) {
+		        $signature_id = $this->param['scheduler_caddie_action_sign'];
+		    }
+		    
+		    $caddie_clear = "";
+		    if (!empty($this->param['scheduler_caddie_action_clear'])) {
+		        $caddie_clear = "checked";
+		    }
+		    $html = "
+                <div class='row'>
+        			<div>
+        				<label for='scheduler_caddie_action_sign'>" . $msg["planificateur_signature_list_choice"] . "</label>
+        				" . gen_liste_multiple("select id, name, num_cert from digital_signature", "id", "name", "", "scheduler_caddie_action_sign","",$signature_id,"", "", "", "", 0) . "
+        			</div>
+        		</div>
+                <div class='row'>
+        			<div>
+        				<label for='scheduler_caddie_action_clear'>" . $msg["planificateur_signature_clear_caddie"] . "</label>
+                        <input type='checkbox' name='scheduler_caddie_action_clear' value='1' " . $caddie_clear . ">
+        			</div>
+        		</div>
+            ";
+		}
+		$html .= "
 			<div class='scheduler_caddie_action_flag'>
 				<div class='row'>
 					<input type='checkbox' name='scheduler_caddie_action_elt_flag' id='scheduler_caddie_action_elt_flag' ".(isset($this->param['scheduler_caddie_action_elt_flag']) && $this->param['scheduler_caddie_action_elt_flag'] ? "checked='checked'" : "")." value='1'><label for='scheduler_caddie_action_elt_flag'>".$msg['caddie_item_marque']."</label>
@@ -305,6 +337,7 @@ class scheduler_caddie_planning extends scheduler_planning {
 				</div>
 			</div>
 				";
+		return $html;
 	}
 	
 	public function get_action_form($object_type='', $action='') {
@@ -312,11 +345,10 @@ class scheduler_caddie_planning extends scheduler_planning {
 		$action_form = '';
 		if($action) {
 			$exploded_action = explode('|||', $action);
-			$action_model_class_name = $exploded_action[0];
+			//$action_model_class_name = $exploded_action[0];
 			$action_type = $exploded_action[1];
 			$action_what = $exploded_action[2];
 			
-			$myCart = new $action_model_class_name();
 			switch ($action_type) {
 				case 'collecte':
 					switch ($action_what) {
@@ -356,6 +388,9 @@ class scheduler_caddie_planning extends scheduler_planning {
 						case 'reindex':
 							$action_form .= $this->get_choix_quoi_content($action_what);
 							break;
+						case 'signature':
+						    $action_form .= $this->get_choix_quoi_content($action_what);
+						    break;
 					}
 					break;
 			}
@@ -404,6 +439,8 @@ class scheduler_caddie_planning extends scheduler_planning {
 		global $scheduler_caddie_action_by_caddie;
 		global $scheduler_caddie_list;
 		global $scheduler_proc;
+		global $scheduler_caddie_action_clear;
+		global $scheduler_caddie_action_sign;
 		
 		$t = parent::make_serialized_task_params();
 		
@@ -415,6 +452,8 @@ class scheduler_caddie_planning extends scheduler_planning {
 		$t['scheduler_caddie_action_elt_no_flag_inconnu'] = (int) $scheduler_caddie_action_elt_no_flag_inconnu;
 		$t['scheduler_caddie_action_by_caddie'] = (int) $scheduler_caddie_action_by_caddie;
 		$t['scheduler_caddie_list'] = $scheduler_caddie_list;
+		$t['scheduler_caddie_action_clear'] = $scheduler_caddie_action_clear;
+		$t['scheduler_caddie_action_sign'] = $scheduler_caddie_action_sign;
 		$t['scheduler_proc'] = $scheduler_proc;
 		$t['scheduler_proc_options'] = array();
 		if($t['scheduler_proc']) {
@@ -436,7 +475,7 @@ class scheduler_caddie_planning extends scheduler_planning {
 	
 	// affichage du tableau des procédures
 	public function get_display_procs_list($object_type, $type='ACTION') {
-		global $msg,$charset;
+		global $msg;
 		global $PMBuserid;
 	
 		$model_class_name = static::get_model_class_name_from_object_type($object_type);

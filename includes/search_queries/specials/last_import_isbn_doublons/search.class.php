@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.2 2017/05/18 15:14:32 dgoron Exp $
+// $Id: search.class.php,v 1.2.14.1 2023/08/31 12:56:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -42,8 +42,10 @@ class last_import_isbn_doublons_search {
     
     //fonction de création de la requête (retourne une table temporaire)
     public function make_search() {
+        global $default_tmp_storage_engine;
+
     	$table_tempo = 'last_import_isbn_doublons_'.md5(microtime(true));
-    	$requete="create temporary table ".$table_tempo." ENGINE=MyISAM SELECT notice_id FROM notices WHERE code IN (".json_decode($_SESSION['last_import_isbn_doublons']).")";	
+    	$requete="create temporary table ".$table_tempo." ENGINE={$default_tmp_storage_engine} SELECT notice_id FROM notices WHERE code IN (".json_decode($_SESSION['last_import_isbn_doublons']).")";	
 		pmb_mysql_query($requete);
     	    	    	
     	return $table_tempo;

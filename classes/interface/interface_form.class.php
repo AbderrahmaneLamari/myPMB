@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interface_form.class.php,v 1.23 2021/04/29 12:22:22 dgoron Exp $
+// $Id: interface_form.class.php,v 1.28 2022/09/16 12:19:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/translation.class.php');
 
 class interface_form {
@@ -30,7 +31,11 @@ class interface_form {
 	
 	protected $actions_extension;
 	
-	protected $block_delete;
+	protected $no_deletable;
+	
+	protected $no_deletable_msg;
+	
+	protected $deletable_on_auth;
 	
 	protected $enctype;
 	
@@ -83,7 +88,19 @@ class interface_form {
 	
 	protected function get_action_delete_label() {
 		global $msg;
-		return $msg['63'];
+		
+		switch ($this->table_name) {
+			case 'lists':
+			case 'modules':
+			case 'selectors':
+			case 'tabs':
+			case 'forms':
+			case 'mails_settings':
+			case 'mails_configuration':
+				return $msg['initialize'];
+			default:
+				return $msg['63'];
+		}
 	}
 	
 	protected function get_action_duplicate_label() {
@@ -141,13 +158,34 @@ class interface_form {
 	}
 	
 	protected function get_delete_action() {
-		return $this->get_url_base()."&action=delete&id=".$this->object_id;
+		global $name;
+		
+		switch ($this->table_name) {
+			case 'mails_configuration':
+			case 'modules':
+			case 'selectors':
+				return $this->get_url_base()."&action=delete&name=".$name;
+			default:
+				return $this->get_url_base()."&action=delete&id=".$this->object_id;
+		}
 	}
 	
 	protected function get_display_delete_action() {
 		global $charset;
 		
-		return "<input type='button' class='bouton' name='delete_button' id='delete_button' value='".htmlentities($this->get_action_delete_label(), ENT_QUOTES, $charset)."' onclick=\"if(confirm('".htmlentities(addslashes($this->confirm_delete_msg), ENT_QUOTES, $charset)."')){document.location='".$this->get_delete_action()."';}\" />";
+		if(!empty($this->no_deletable)) {
+			if(!empty($this->no_deletable_msg)) {
+				return "<input type='button' class='bouton' name='delete_button' id='delete_button' value='".htmlentities($this->get_action_delete_label(), ENT_QUOTES, $charset)."' onclick=\"javascript:alert('".htmlentities(addslashes($this->no_deletable_msg), ENT_QUOTES, $charset)."')\" />";
+			} else {
+				return "";
+			}	
+		} else {
+			if(!empty($this->deletable_on_auth)) {
+				return "<input type='button' class='bouton' name='delete_button' id='delete_button' value='".htmlentities($this->get_action_delete_label(), ENT_QUOTES, $charset)."' onclick=\"if(promptAuthenticityCheck()) {if(confirm('".htmlentities(addslashes($this->confirm_delete_msg), ENT_QUOTES, $charset)."')){document.location='".$this->get_delete_action()."';}}\" />";
+			} else {
+				return "<input type='button' class='bouton' name='delete_button' id='delete_button' value='".htmlentities($this->get_action_delete_label(), ENT_QUOTES, $charset)."' onclick=\"if(confirm('".htmlentities(addslashes($this->confirm_delete_msg), ENT_QUOTES, $charset)."')){document.location='".$this->get_delete_action()."';}\" />";
+			}			
+		}
 	}
 	
 	protected function get_display_actions_extension() {
@@ -212,6 +250,9 @@ class interface_form {
 			case 'pclassement':
 				$error_label = $msg['pclassement_libelle_manquant'];
 				break;
+			case 'thesaurus':
+				$error_label = $msg['thes_libelle_manquant'];
+				break;
 			case 'etagere':
 				$error_label = $msg['etagere_name_oblig'];
 				break;
@@ -223,6 +264,14 @@ class interface_form {
 				break;
 			case 'demandes_notes':
 				$error_label = $msg['demandes_note_create_ko'];
+				break;
+			case 'authorities_caddie':
+			case 'caddie':
+			case 'empr_caddie':
+				$error_label = $msg['caddie_name_oblig'];
+				break;
+			case 'connectors_sources':
+				$error_label = $msg["connecteurs_check_source_name"];
 				break;
 			default :
 				$error_label = $msg[98];
@@ -410,8 +459,18 @@ class interface_form {
 		return $this;
 	}
 
-	public function set_block_delete($flag) {
-		$this->block_delete = $flag;
+	public function set_no_deletable($no_deletable) {
+		$this->no_deletable = $no_deletable;
+		return $this;
+	}
+	
+	public function set_no_deletable_msg($no_deletable_msg) {
+		$this->no_deletable_msg = $no_deletable_msg;
+		return $this;
+	}
+	
+	public function set_deletable_on_auth($deletable_on_auth) {
+		$this->deletable_on_auth = $deletable_on_auth;
 		return $this;
 	}
 	

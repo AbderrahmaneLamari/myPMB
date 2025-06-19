@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_ui.class.php,v 1.13.2.3 2021/09/03 08:14:43 qvarin Exp $
+// $Id: onto_common_datatype_ui.class.php,v 1.17 2022/05/24 13:25:48 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -190,6 +190,7 @@ abstract class onto_common_datatype_ui extends onto_root_ui{
 		} else {
 			$form = str_replace("!!onto_rows!!", $content, $form);
 		}
+		$form = str_replace("!!onto_row_scripts!!", static::get_scripts(), $form);
 		$form = str_replace("!!onto_row_id!!", $instance_name.'_'.$property->pmb_name, $form);
 		
 		return $form;

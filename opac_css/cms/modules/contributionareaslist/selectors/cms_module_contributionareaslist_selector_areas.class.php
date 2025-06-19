@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_contributionareaslist_selector_areas.class.php,v 1.2 2021/03/23 09:26:18 jlaurent Exp $
+// $Id: cms_module_contributionareaslist_selector_areas.class.php,v 1.3 2022/05/31 08:37:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -25,8 +25,6 @@ class cms_module_contributionareaslist_selector_areas extends cms_module_common_
 	
 	
 	public function get_areas(){
-		global $dbh;
-		
 		$areaslist = array();
 		
 		$query = "select * from contribution_area_areas where area_opac_visibility = 1";
@@ -35,7 +33,7 @@ class cms_module_contributionareaslist_selector_areas extends cms_module_common_
 		    if ($this->parameters["sort_order"] != "") $query .= " ".addslashes($this->parameters["sort_order"]);
 		}
 		
-		$result = pmb_mysql_query($query,$dbh);
+		$result = pmb_mysql_query($query);
 		if ($result) {
 		    if (pmb_mysql_num_rows($result)) {
 		        while($row=pmb_mysql_fetch_object($result)){

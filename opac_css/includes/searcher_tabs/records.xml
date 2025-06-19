@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: records.xml,v 1.4 2020/07/23 12:00:51 gneveu Exp $ -->
+<!-- $Id: records.xml,v 1.5 2022/09/20 07:37:22 qvarin Exp $ -->
 <pmbtabs>
 	<url_target>catalog.php?categ=search</url_target>
 	<default_mode>0</default_mode>
@@ -116,5 +116,24 @@
 			</searchFields>
 		</tab>
 		<tab title="msg:search_extended" mode="6" multiSearchCriteria="yes" />
+		
+		<tab title="msg:bulletin_query" mode="100000" objects_type='bulletins' show_in_selector='no'>
+			<searchFields>
+				<field title="msg:global_search" id="1">
+					<input type="text" ifSearchEmpty="*" />
+					<class type="bulletins"></class>
+					<fieldcontribution>
+						<properties>
+							<property>all_fields</property>
+						</properties>
+					</fieldcontribution>
+					<queryid>
+						SELECT DISTINCT num_notice as "notices_id" FROM bulletins 
+						JOIN notices on notices.notices_id = bulletins.num_notice
+						WHERE notices.niveau_biblio = "b" AND num_notice IN (!!p!!) 
+					</queryid>
+				</field>
+			</searchFields>
+		</tab>
 	</tabs>
 </pmbtabs>

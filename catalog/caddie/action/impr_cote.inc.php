@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: impr_cote.inc.php,v 1.9 2019/06/05 09:04:41 btafforeau Exp $
+// $Id: impr_cote.inc.php,v 1.10 2022/03/08 13:45:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -21,8 +21,7 @@ function aff_choix_quoi_impr_cote($action = "", $action_redo="", $action_cancel 
 	global $cart_choix_quoi_impr_cote;
 	global $msg, $charset;
 	global $pmb_label_construct_script;
-	
-	global $id_caddie, $elt_flag, $elt_no_flag;
+	global $elt_flag, $elt_no_flag;
 	global $label_id;
 
 	$cart_choix_quoi_impr_cote = str_replace('!!action!!', $action, $cart_choix_quoi_impr_cote);

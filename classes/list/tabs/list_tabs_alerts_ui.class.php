@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_tabs_alerts_ui.class.php,v 1.3 2021/04/07 12:31:08 btafforeau Exp $
+// $Id: list_tabs_alerts_ui.class.php,v 1.4 2023/01/19 14:57:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -52,6 +52,9 @@ class list_tabs_alerts_ui extends list_tabs_ui {
 			case 'animations':
 			    $this->check_module('registrations');
 			    break;
+			case 'admin':
+				$this->check_module('mails_configuration');
+				break;
 		}
 	}
 	

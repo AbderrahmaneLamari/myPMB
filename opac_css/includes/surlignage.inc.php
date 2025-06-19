@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: surlignage.inc.php,v 1.7 2018/04/17 12:48:32 dgoron Exp $
+// $Id: surlignage.inc.php,v 1.7.12.1 2023/10/10 06:37:55 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -62,8 +62,8 @@ function activation_surlignage() {
 		$surligne=$opac_surlignage;
 		unset($_SESSION['surlignez']);
 	}
-	$footer=str_replace("//rechercher!!",($surligne?"rechercher(1);":""),$footer);
-	$inclus_footer=str_replace("//rechercher!!",($surligne?"rechercher(1);":""),$inclus_footer);
+	$footer=str_replace("//rechercher!!",($surligne?"addLoadEvent(function() {rechercher(1);});":""),$footer);
+	$inclus_footer=str_replace("//rechercher!!",($surligne?"addLoadEvent(function() {rechercher(1);});":""),$inclus_footer);
 	return $activation_surlignage;
 }
 

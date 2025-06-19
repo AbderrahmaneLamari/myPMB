@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bul_func.inc.php,v 1.78.2.1 2022/01/11 08:29:49 qvarin Exp $
+// $Id: bul_func.inc.php,v 1.82 2022/03/11 09:56:39 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $class_path, $include_path;
 
 require_once ($include_path."/avis_notice.inc.php");
 require_once ($include_path.'/h2o/pmb_h2o.inc.php');
@@ -23,7 +25,7 @@ function show_bulletinage_info_catalogage(	$bul_id,
 											$show_in_receptions=false
 											) {
 
-	global $dbh, $msg, $charset, $base_path;
+	global $msg, $charset, $base_path;
 	global $liste_script;
 	global $liste_debut;
 	global $liste_fin;
@@ -35,7 +37,6 @@ function show_bulletinage_info_catalogage(	$bul_id,
 	global $flag_no_delete_bulletin;
 	global $pmb_resa_planning;
 	global $categ, $quoi, $action, $sub;
-	global $pmb_etat_collections_localise;
 	global $pmb_map_activate;
 	global $pmb_url_base;
 	
@@ -78,7 +79,7 @@ function show_bulletinage_info_catalogage(	$bul_id,
 			if ($bul_titre) $link_parent .= " : ".htmlentities($bul_titre,ENT_QUOTES, $charset) ;
 
 			// Titre de la page
-			$form.= '<script type="text/javascript">document.title = "'.addslashes($txt_drag.($bul_titre ? ' : '.htmlentities($bul_titre,ENT_QUOTES, $charset) : '')).'";</script>';
+			$form.= '<script type="text/javascript">document.title = "'.addslashes($txt_drag.($bul_titre ? ' : '.strip_tags($bul_titre) : '')).'";</script>';
 			
 			$form.= "<div class='row'><div class='perio-barre'>".$link_parent."</div></div>";
 
@@ -129,15 +130,10 @@ function show_bulletinage_info_catalogage(	$bul_id,
 			$form.= $list_expl;
 
 			//état des collections
-			$collstate = new collstate(0,0,$bul_id);
-			if($pmb_etat_collections_localise) {
-				$collstate->get_display_list("",0,0,0,1,0,true);
-			} else {
-				$collstate->get_display_list("",0,0,0,0,0,true);
-			}
-			if($collstate->nbr) {
-				$form.= "<br /><h3>".$msg["abts_onglet_collstate"]." (".$collstate->nbr.")</h3>";
-				$form.= $collstate->liste;
+			$list_collstate_ui = new list_collstate_ui(array('serial_id' => 0, 'bulletin_id' => $bul_id), array('all_on_page' => true));
+			if(count($list_collstate_ui->get_objects())) {
+				$form.= "<br /><h3>".$msg["abts_onglet_collstate"]." (".count($list_collstate_ui->get_objects()).")</h3>";
+				$form.= $list_collstate_ui->get_display_list();
 			}
 			
 			if ($aff_expl_num) {
@@ -179,7 +175,6 @@ function show_bulletinage_info_catalogage(	$bul_id,
 			}
 			$req="select * from serialcirc_copy, bulletins where num_serialcirc_copy_bulletin=bulletin_id and bulletin_id= $bul_id";
 			$resultat=pmb_mysql_query($req);
-			$i=0;
 			if (pmb_mysql_num_rows($resultat)) {
 				$btn_print_ask="<input type='button' class='bouton' value=' ".$msg["serialcirc_circ_list_reproduction_isdone_bt"]." ' onClick=\"document.location='./catalog.php?categ=serials&sub=bulletinage&action=copy_isdone&bul_id=".$bul_id."';\" />";
 			} else {
@@ -220,7 +215,7 @@ function show_bulletinage_info_catalogage(	$bul_id,
 					JOIN docs_statut ON exemplaires.expl_statut=docs_statut.idstatut
 					JOIN bulletins ON exemplaires.expl_bulletin=bulletins.bulletin_id
 					WHERE statut_allow_resa=1 and bulletins.bulletin_id=".$bul_id;
-			$result = pmb_mysql_query($rqt_nt, $dbh) or die ($rqt_nt. " ".pmb_mysql_error()) ;
+			$result = pmb_mysql_query($rqt_nt) or die ($rqt_nt. " ".pmb_mysql_error()) ;
 			$nb_expl_reservables = pmb_mysql_result($result,0,0);
 
 			$aff_resa=resa_list(0, $bul_id, 0) ;

@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_tpl.tpl.php,v 1.15 2021/03/09 08:43:06 dgoron Exp $
+// $Id: notice_tpl.tpl.php,v 1.15.6.1 2023/07/21 12:59:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
 // Affichage de la liste des templates de notices
 
-global $notice_tpl_show_loc_btn, $msg, $notice_tpl_content_form, $current_module, $notice_tpl_form_code, $notice_tpl_eval, $notice_tpl_form_import;
+global $notice_tpl_show_loc_btn, $msg, $current_module, $notice_tpl_form_code, $notice_tpl_eval, $notice_tpl_form_import;
 
 $notice_tpl_show_loc_btn = "<input value='".$msg["notice_tpl_show_loc_btn"]."' id='show_loc_btn' class='bouton' type='button' onclick='notice_tpl_load_locations();'>
 <script type='text/javascript'>
@@ -29,47 +29,6 @@ function notice_tpl_load_locations(){
 	}
 }
 </script>";
-
-$notice_tpl_content_form = "
-<script type='text/javascript' src='./javascript/tabform.js'></script>
-<script src='./javascript/ace/ace.js' type='text/javascript' charset='".$charset."'></script>
-<!--	nom	-->
-<div class='row'>
-	<label class='etiquette' for='name'>".$msg["notice_tpl_name"]."</label>
-</div>
-<div class='row'>
-	<input type='text' class='saisie-80em' id='name' name='name' value=\"!!name!!\" data-pmb-deb-rech='1'/>
-</div>
-<!-- 	Commentaire -->
-<div class='row'>
-	<label class='etiquette' for='comment'>".$msg["notice_tpl_description"]."</label>
-</div>
-<div class='row'>
-	<textarea class='saisie-80em' id='comment' name='comment' cols='62' rows='4' wrap='virtual'>!!comment!!</textarea>
-</div>
-<!-- 	Code -->
-<div class='row'>
-	<label class='etiquette'>".$msg["notice_tpl_code"]."</label>
-</div>
-<div class='row'>
-!!code_part!!
-</div>
-<div class='row' id='show_loc_div'>
-	!!show_loc!!
-</div>
-<!--	id notice pour test	-->
-<div class='row'>
-	<label class='etiquette' for='id_test'>".$msg["notice_tpl_id_test"]."</label>
-</div>
-<div class='row'>
-	<input type='text' class='saisie-10em' id='id_test' name='id_test' value=\"!!id_test!!\" />
-</div>
-<!--	Visible en OPAC	-->
-<div class='row'>
-	<input name='show_opac' value='1' id='show_opac'  type='checkbox' !!show_opac!!>
-	<label class='etiquette' for='show_opac'>".$msg["notice_tpl_show_opac"]."</label>
-</div>
-";
 
 $notice_tpl_form_code ="
 <div class='row'>

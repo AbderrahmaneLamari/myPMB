@@ -1,7 +1,7 @@
 /* +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: handle_drop.js,v 1.9.8.1 2021/10/04 09:33:38 dgoron Exp $ */
+// $Id: handle_drop.js,v 1.10 2021/10/04 09:24:39 dgoron Exp $ */
 
 requete=new Array();
 

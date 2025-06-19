@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_resource_selector_ui.class.php,v 1.51.2.3 2021/09/09 14:18:26 tsamson Exp $
+// $Id: onto_contribution_datatype_resource_selector_ui.class.php,v 1.63 2023/01/02 13:47:51 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -28,9 +28,8 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	 * @access public
 	 */
 	public static function get_form($item_uri, $property, $restrictions, $datas, $instance_name, $flag) {
-		global $charset, $ontology_tpl, $area_id;
-		
-		$form=$ontology_tpl['form_row'];
+		global $charset, $ontology_tpl, $area_id, $from_record;
+        $form=$ontology_tpl['form_row'];
 		$form=str_replace("!!onto_row_label!!",htmlentities(encoding_normalize::charset_normalize($property->get_label(), 'utf-8') ,ENT_QUOTES,$charset) , $form);
 		/** traitement initial du range ?!*/
 		$range_for_form = "";
@@ -67,7 +66,9 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 				if (!isset($management_data['is_draft'])) {
 				    $management_data['is_draft'] = "0";
 				}
-				
+				if($data->get_value_type() == 'http://www.pmbservices.fr/ontology#record' && isset($from_record)){
+				    $property->pmb_extended['readonly'] = true;
+				}
 				$row = self::get_template($item_uri, $property, $range, $order, $data, $management_data['is_draft']);
 				$row = str_replace("!!onto_row_inputs!!", ($property->pmb_extended['readonly'] == false ? self::get_inputs($item_uri, $property, $order, $add_button, $management_data, $new_element_order) : ""), $row);
 				$row = str_replace("!!onto_row_resource_selector!!", $ontology_tpl['form_row_content_resource_template'], $row);
@@ -95,7 +96,6 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 		$form = str_replace("!!onto_area_id!!", ($area_id ? $area_id : ''), $form);		
 		$form = self::get_form_with_special_properties($property, $datas, $instance_name, $form);	
 		$form = str_replace("!!onto_row_id!!", $instance_name.'_'.$property->pmb_name, $form);
-	
 		return $form;
 	} // end of member function get_form
 	
@@ -145,7 +145,7 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 				}else{
 					$order=$key;
 				}				
-				$row=str_replace("!!onto_row_content_hidden_display_label!!",htmlentities($data->get_formated_value() ,ENT_QUOTES,$charset) ,$row);
+				$row=str_replace("!!onto_row_content_hidden_display_label!!",htmlentities(addslashes($data->get_formated_value()) ,ENT_QUOTES,$charset) ,$row);
 				if ($key == 0 && $value) {
     				$row=str_replace("!!onto_row_content_hidden_value!!",htmlentities($value ,ENT_QUOTES,$charset) ,$row);
 				} else {
@@ -177,7 +177,8 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 			$form=str_replace("!!onto_rows!!",$content ,$form);
 		}
 				
-		$form=str_replace("!!onto_row_id!!",$instance_name.'_'.$property->pmb_name , $form);
+		$form = str_replace("!!onto_row_scripts!!", static::get_scripts(), $form);
+		$form = str_replace("!!onto_row_id!!",$instance_name.'_'.$property->pmb_name , $form);
 		
 		return $form;
 	}
@@ -197,6 +198,7 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	            return 'publishers';
 	        case 'http://www.pmbservices.fr/ontology#collection' :
 	            return 'collections';
+	        case 'http://www.pmbservices.fr/ontology#subcollection' :
 	        case 'http://www.pmbservices.fr/ontology#sub_collection' :
 	            return 'subcollections';
 	        case 'http://www.pmbservices.fr/ontology#serie' :
@@ -211,6 +213,8 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	            return 'onto';
 	        case 'http://www.pmbservices.fr/ontology#bulletin':
 	            return 'bull';
+	        case 'http://www.pmbservices.fr/ontology#expl':
+	            return 'expl';
 	        default:
 	            if(strpos($range,'http://www.pmbservices.fr/ontology#authperso') !== false){
 	                return 'authperso_'.explode('_',$range)[1];
@@ -249,6 +253,8 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	            return 'bull';
 	        case 'http://www.pmbservices.fr/ontology#docnum' :
 	            return 'docnum';
+	        case 'http://www.pmbservices.fr/ontology#expl' :
+	            return 'expl';
 	        default:
 	            if(strpos($range,'http://www.pmbservices.fr/ontology#authperso') !== false){
     	            return 'authperso_'.explode('_',$range)[1];
@@ -333,9 +339,9 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	 * @param string|int $new_element_order
 	 * @return string
 	 */
-	private static function get_inputs($item_uri, $property, $order, $add_button = "", $management_data = array(), $new_element_order = 0) 
+	protected static function get_inputs($item_uri, $property, $order, $add_button = "", $management_data = array(), $new_element_order = 0) 
 	{
-	    global $ontology_tpl;
+	    global $ontology_tpl, $charset;
 	    
 	    global $gestion_acces_active, $gestion_acces_empr_contribution_scenario;
 	    if (($gestion_acces_active == 1) && ($gestion_acces_empr_contribution_scenario == 1)) {
@@ -346,7 +352,6 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	    $input='';
 	    
 	    $input .= $ontology_tpl['form_row_content_input_remove'];
-	    
 	    if (!$property->is_no_search()) {
 	        $input .= $ontology_tpl['form_row_content_search'];
 	    }
@@ -354,6 +359,7 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	    $params = [];
 	    $params['type'] = self::get_type_from_range($property->range[0]);
 	    $params['sub_form'] = 1;
+	    $params['sub_form_data'] = [];
 	    $params['is_draft'] = $property->is_draft ?? 0;
 	    $params['is_entity'] =  $property->is_entity ? true : false;
 	    $params['equation'] = static::get_equation_query($property);
@@ -372,6 +378,16 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	                if (!empty($management_data['form_uri']) && $linked_form['form_id_store'] == $management_data['form_uri']) {
 	                    $linked_forms = true;
 	                    break;
+	                }
+	                if (isset($linked_form["form_type"])) {
+	                    if (!isset($params['sub_form_data'][$linked_form["form_type"]])) {
+    	                    $params['sub_form_data'][$linked_form["form_type"]] = [
+    	                        "type" => $linked_form["form_type"], 
+    	                        "multiple" => 0,
+    	                    ];
+	                    } else {
+	                        $params['sub_form_data'][$linked_form["form_type"]]["multiple"] = 1;
+	                    }
 	                }
 	            }
 	        }
@@ -425,6 +441,7 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	            $params['scenario'] = $property->linked_forms[0]['scenario_id'] ?? 0;
 	            $params['multiple_scenarios'] = $property->has_multiple_scenarios;
 	            $params['attachment'] = $property->linked_forms[0]['attachment_id'] ?? 0;
+	            $params['no_search'] = $property->is_no_search() ?? 0;
 	            
 	            $json_data = encoding_normalize::json_encode($params);
 	            $url = "./select.php?what=contribution&selector_data=".urlencode($json_data);
@@ -434,12 +451,18 @@ class onto_contribution_datatype_resource_selector_ui extends onto_common_dataty
 	    }
 	    
 	    $params['scenario'] = $property->linked_scenarios[0] ?? 0;
+	    $params['attachment'] = $property->scenarios_tab[0]['attachmentId'] ?? 0;
+	    $params['area_id'] = $property->scenarios_tab[0]['area_id'] ?? 0;
 	    $params['multiple_scenarios'] = $property->has_multiple_scenarios;
 	    $params['select_tab'] = 0;
 	    $params['is_entity'] = $property->is_entity;
+	    $params['no_search'] = $property->is_no_search() ?? 0;
 	    $json_data = encoding_normalize::json_encode($params);
 	    $url_search = "./select.php?what=contribution&selector_data=".urlencode($json_data);
 	    $input = str_replace("!!url_search_form!!", $url_search, $input);
+	    
+	    $input .= $ontology_tpl['form_row_content_input_json_data'];
+	    $input = str_replace("!!onto_json_data!!", htmlentities($json_data, ENT_QUOTES, $charset), $input);
 	    
 	    $input = str_replace("!!property_name!!", rawurlencode($property->pmb_name), $input);
 	    $input = str_replace("!!linked_tab_title!!", $property->label, $input);

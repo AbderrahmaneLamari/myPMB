@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docs_location.class.php,v 1.27.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: docs_location.class.php,v 1.28 2021/12/27 07:35:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

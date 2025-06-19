@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: comptes.class.php,v 1.20 2020/07/17 13:05:18 dgoron Exp $
+// $Id: comptes.class.php,v 1.20.6.1 2023/03/21 13:48:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -108,10 +108,10 @@ class comptes {
     	global $msg;
     	global $PMBuserid, $PMBusername;
     	global $deflt_cashdesk;
-    	
+
     	$my_caisse=$deflt_cashdesk;
     	$transactype+=0;
-    	
+
     	if ($this->is_valid()) {
     		//Vérification du sens
     		if (($sens!=-1)&&($sens!=1)) {
@@ -342,6 +342,9 @@ class comptes {
     			break;
     		case 3:
     			$r=$msg["finance_cmpte_prets"];
+    			break;
+    		case 22:
+    			$r=$msg["finance_cmpte_animation"];
     			break;
     		default:
     			$requete="select libelle from type_comptes where id_type_compte=".$id_typ_compte;

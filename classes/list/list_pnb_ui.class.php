@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_pnb_ui.class.php,v 1.24 2021/03/26 10:06:49 dgoron Exp $
+// $Id: list_pnb_ui.class.php,v 1.25.4.5 2024/01/08 14:10:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $include_path;
 require_once($include_path.'/templates/list/list_pnb_ui.tpl.php');
 
 class list_pnb_ui extends list_ui {
@@ -71,6 +72,14 @@ class list_pnb_ui extends list_ui {
 	protected function init_default_settings() {
 		parent::init_default_settings();
 		$this->set_setting_column('default', 'align', 'left');
+		$this->set_setting_column('loan_max_duration', 'datatype', 'integer');
+		$this->set_setting_column('nb_loans', 'datatype', 'integer');
+		$this->set_setting_column('nb_simultaneous_loans', 'datatype', 'integer');
+		$this->set_setting_column('nb_consult_in_situ', 'datatype', 'integer');
+		$this->set_setting_column('nb_consult_ex_situ', 'datatype', 'integer');
+		$this->set_setting_column('offer_date', 'datatype', 'datetime');
+		$this->set_setting_column('offer_date_end', 'datatype', 'datetime');
+		$this->set_setting_column('offer_duration', 'datatype', 'integer');
 	}
 	
 	/**
@@ -81,29 +90,23 @@ class list_pnb_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {	
-	    if ($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'offer_date':
-					$order .= 'pnb_order_offer_date';
-					break;
-				case 'offer_date_end':
-					$order .= 'pnb_order_offer_date_end';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if ($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}	
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'line_id':
+	        case 'loan_max_duration':
+	        case 'nb_loans':
+	        case 'nb_simultaneous_loans':
+	        case 'nb_consult_in_situ':
+	        case 'nb_consult_ex_situ':
+	        case 'offer_date':
+	        case 'offer_date_end':
+	        case 'offer_duration':
+	            return 'pnb_order_'.$sort_by;
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -125,27 +128,15 @@ class list_pnb_ui extends list_ui {
 		parent::set_filters_from_form();
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
+	protected function _add_query_filters() {
 		global $pmb_pnb_alert_end_offers;
 		
-		$filter_query = '';		
-		$this->set_filters_from_form();
-		
-		$filters = array();
 		if ($this->filters['alert_end_offers']) {
-			$filters [] = " DATE_ADD(pnb_order_offer_date_end, INTERVAL - " . $pmb_pnb_alert_end_offers . " DAY) < NOW() ";
+			$this->query_filters [] = " DATE_ADD(pnb_order_offer_date_end, INTERVAL - " . $pmb_pnb_alert_end_offers . " DAY) < NOW() ";
 		}
 		if ($this->filters['alert_staturation_offers']) {
-		    $filters [] = " DATE_ADD(pnb_order_offer_date_end, INTERVAL - " . $pmb_pnb_alert_end_offers . " DAY) < NOW() ";
+			$this->query_filters [] = " DATE_ADD(pnb_order_offer_date_end, INTERVAL - " . $pmb_pnb_alert_end_offers . " DAY) < NOW() ";
 		}
-
-		if (count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}	
-		return $filter_query;
 	}
 	
 	protected function fetch_data() {
@@ -175,28 +166,62 @@ class list_pnb_ui extends list_ui {
 	        }
 	    }
 	    $this->messages = "";
+	    
+	    $this->init_dilicom();
 	}
 	
 	/**
-	 * Fonction de callback
-	 * @param object $a
-	 * @param object $b
+	 * Initialise les données Dilicom.
+	 *
+	 * Cette fonction récupère les identifiants de ligne à partir du tableau d'objets et appelle l'API Dilicom pour chaque groupe de 10 identifiants de ligne.
+	 * Si des identifiants de ligne restent, la fonction appelle également l'API Dilicom pour ces identifiants.
+	 *
 	 */
-	protected function _compare_objects($a, $b) {
-	    if ($this->applied_sort[0]['by']) {
-	        $sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'nb_loans':
-					return strcmp($a->get_loans_completed_number(), $b->get_loans_completed_number());
-					break;
-				case 'nb_simultaneous_loans':
-					return strcmp($a->get_loans_in_progress(), $b->get_loans_in_progress());
-					break;
-				default :
-					return parent::_compare_objects($a, $b);
-					break;
-			}
-		}
+	protected function init_dilicom() {
+	    global $dbh;
+	    
+	    $line_ids = array();
+	    if(!empty($this->objects)) {
+    	    foreach ($this->objects as $object) {
+    	        $line_ids[] = $object->get_line_id();
+    	        if(count($line_ids) === 10) {
+    	            $this->call_dilicom($line_ids);
+    	            $line_ids = [];
+    	        }
+    	    }
+    	    
+    	    if(count($line_ids)) {
+    	        $this->call_dilicom($line_ids);
+    	    }
+    	    if(empty($dbh)) {
+    	        //L'interrogation Dilicom peut prendre du temps
+    	        //Verifions que nous n'avons pas perdu la connexion
+    	        $dbh = connection_mysql();
+    	    }
+	    }
+	}
+	
+	/**
+	 * Appelle l'API Dilicom pour obtenir le statut de prêt des IDs spécifiés.
+	 *
+	 * @param array $line_ids Les IDs des lignes de commandes pour lesquelles obtenir le statut de prêt.
+	 * @return void
+	 */
+	protected function call_dilicom($line_ids) {
+	    $response = dilicom::get_instance()->get_loan_status($line_ids);
+	    if(is_array($response) && count($response["loanResponseLine"])) {
+	        foreach ($response["loanResponseLine"] as $response_line) {
+	            pnb_order::$loans_infos[$response_line["orderLineId"]] = $response_line;
+	        }
+	    }
+	}
+	
+	protected function _get_object_property_nb_loans($object) {
+	    return $object->get_loans_completed_number();
+	}
+	
+	protected function _get_object_property_nb_simultaneous_loans($object) {
+	    return $object->get_loans_in_progress();
 	}
 	
 	/**
@@ -217,6 +242,9 @@ class list_pnb_ui extends list_ui {
 	protected function get_cell_content($object, $property) {
 		$content = '';
 		switch($property) {
+		    case 'notice':
+		        $content .= $object->get_notice(); //conservation de l'interprétation du HTML
+		        break;
 			case 'nb_loans':
 			    $content.=  $object->get_loans_completed_number() . " / " . parent::get_cell_content($object, $property);
 				break;

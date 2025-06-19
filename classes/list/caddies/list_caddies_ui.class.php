@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_caddies_ui.class.php,v 1.5 2020/11/05 12:26:41 dgoron Exp $
+// $Id: list_caddies_ui.class.php,v 1.5.6.1 2023/04/04 06:55:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,19 +22,19 @@ class list_caddies_ui extends list_caddies_root_ui {
 		if($this->item && $action!="save_cart" && $action!="del_cart") {
 			$content .= (!$this->nocheck?"<input type='checkbox' id='id_".$object->get_idcaddie()."' name='caddie[".$object->get_idcaddie()."]' value='".$object->get_idcaddie()."'>":"")."&nbsp;";
 			if(!$this->nocheck){
-				$content.=  "<a href='#' onclick='javascript:document.getElementById(\"id_".$object->get_idcaddie()."\").checked=true;document.forms[\"print_options\"].submit();' />";
+				$content.=  "<a href='#' onclick='javascript:document.getElementById(\"id_".$object->get_idcaddie()."\").checked=true;document.forms[\"print_options\"].submit();'>";
 			} else {
 				if ($this->lien_pointage) {
-					$content.=  "<a href='#' onclick='javascript:document.getElementById(\"idcaddie\").value=".$this->item.";document.getElementById(\"idcaddie_selected\").value=".$object->get_idcaddie().";document.forms[\"print_options\"].submit();' />";
+					$content.=  "<a href='#' onclick='javascript:document.getElementById(\"idcaddie\").value=".$this->item.";document.getElementById(\"idcaddie_selected\").value=".$object->get_idcaddie().";document.forms[\"print_options\"].submit();'>";
 				} else {
-					$content.=  "<a href='#' onclick='javascript:document.getElementById(\"idcaddie\").value=".$object->get_idcaddie().";document.forms[\"print_options\"].submit();' />";
+					$content.=  "<a href='#' onclick='javascript:document.getElementById(\"idcaddie\").value=".$object->get_idcaddie().";document.forms[\"print_options\"].submit();'>";
 				}
 			}
 		} else {
 			//spécifique paniers de notices ????
 			$link = $this->lien_origine."&action=".$this->action_click."&object_type=".$object->type."&idcaddie=".$object->get_idcaddie()."&item=".$this->item;
 			
-			$content.= "<a href='$link' />";
+			$content.= "<a href='$link'>";
 		}
 		return $content;
 	}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: print_cart_tpl.class.php,v 1.5 2021/03/11 09:11:49 dgoron Exp $
+// $Id: print_cart_tpl.class.php,v 1.5.6.1 2023/07/04 09:16:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -70,11 +70,23 @@ class print_cart_tpl {
 		$this->footer = $footer;
 	}
 	       
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('f_name', 'admin_print_cart_tpl_form_name')
+		->add_input_node('text', $this->name);
+		$interface_content_form->add_element('f_header', 'admin_print_cart_tpl_form_header')
+		->add_textarea_node($this->header)
+		->set_cols(100)
+		->set_rows(20);
+		$interface_content_form->add_element('f_footer', 'admin_print_cart_tpl_form_footer')
+		->add_textarea_node($this->footer)
+		->set_cols(100)
+		->set_rows(20);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $cart_tpl_content_form, $msg, $charset;
-		
-		$content_form = $cart_tpl_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $cart_tpl_content_js_form, $msg;
 		
 		$interface_form = new interface_form('print_cart_tpl');
 		if(!$this->id){
@@ -82,14 +94,10 @@ class print_cart_tpl {
 		}else{
 			$interface_form->set_label($msg['admin_print_cart_tpl_form_edit']);
 		}
-		$content_form = str_replace('!!name!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!header!!', htmlentities($this->header, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!footer!!', htmlentities($this->footer, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_duplicable(true)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($cart_tpl_content_js_form.$this->get_content_form())
 		->set_table_name('print_cart_tpl')
 		->set_field_focus('f_name');
 		return $interface_form->get_display();

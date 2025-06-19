@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: classementGen.class.php,v 1.6.10.1 2021/07/28 08:06:00 dgoron Exp $
+// $Id: classementGen.class.php,v 1.8 2022/10/12 13:50:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -19,7 +19,8 @@ class classementGen {
 	public $libelle = '';		//libellé du classement
 	
 	public static $classementGenListe = array(); //Liste des classements existants, passé en static pour éviter de recalculer
-
+	public static $classementGenShowSelectors = array(); //Liste des sélecteurs calculés à l'écran pour éviter les doublons d'identifiants
+	
 	// constructeur
 	public function __construct($object_type, $object_id = 0) {
 		if (!isset($_SESSION["classementGen_types"][$object_type])){
@@ -86,8 +87,14 @@ class classementGen {
 	public function show_selector($url_callback,$user_id) {
 		global $msg,$classementGen_selector;
 		
+		if(empty(static::$classementGenShowSelectors[$this->object_id])) {
+			static::$classementGenShowSelectors[$this->object_id] = 0;
+		}
+		static::$classementGenShowSelectors[$this->object_id]++;
+		
 		$to_show = $classementGen_selector;
-		$to_show = str_replace("!!object_id!!",$this->object_id,$to_show);
+		$object_uid = $this->object_id.'_'.static::$classementGenShowSelectors[$this->object_id];
+		$to_show = str_replace("!!object_id!!", $object_uid,$to_show);
 		$to_show = str_replace("!!object_type!!",$this->object_type,$to_show);
 		$to_show = str_replace("!!classements_liste!!",$this->getClassementsSelectorContent($user_id,$this->libelle),$to_show);
 		$to_show = str_replace("!!msg_object_classement!!",$msg[$this->object_type.'_classement_list'],$to_show);

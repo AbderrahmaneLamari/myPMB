@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_acquisition_entite_ui.class.php,v 1.1 2021/03/03 07:34:42 dgoron Exp $
+// $Id: list_configuration_acquisition_entite_ui.class.php,v 1.2 2022/10/06 11:57:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -30,22 +30,11 @@ class list_configuration_acquisition_entite_ui extends list_configuration_acquis
 		$this->set_setting_column('raison_sociale', 'text', array('italic' => true));
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['type_entite']) {
-			$filters[] = 'type_entite = "'.$this->filters['type_entite'].'"';
-		}
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('type_entite', 'type_entite');
 		if($this->filters['num_user']) {
-			$filters[] = 'autorisations like("% '.$this->filters['num_user'].' %")';
+			$this->query_filters [] = 'autorisations like("% '.$this->filters['num_user'].' %")';
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	protected function get_main_fields_from_sub() {

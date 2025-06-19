@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_transferts_demandes_ui.class.php,v 1.1.2.3 2021/12/23 15:49:51 dgoron Exp $
+// $Id: list_transferts_demandes_ui.class.php,v 1.2 2021/12/23 15:48:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_editorial_data.class.php,v 1.8.2.1 2021/10/11 13:31:27 btafforeau Exp $
+// $Id: cms_editorial_data.class.php,v 1.9.4.2 2023/12/06 14:30:31 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -28,12 +28,12 @@ class cms_editorial_data extends cms_root {
 	protected $resume;					// résumé du contenu
 	protected $contenu;				// contenu
 	protected $logo;					// objet gérant le logo
-	protected $publication_state;		// statut de publication	
+	protected $publication_state;		// statut de publication
 	protected $start_date;				// date de début de publication
 	protected $end_date;				// date de fin de publication
 	protected $descriptors;			// descripteurs
 	protected $type;				// le type de l'objet
-	protected $num_type;				// id du type de contenu 
+	protected $num_type;				// id du type de contenu
 	protected $type_content;		// libellé du type de contenu
 	protected $fields_type;
 	protected $opt_elements;		// les éléments optionnels constituants l'objet
@@ -46,16 +46,65 @@ class cms_editorial_data extends cms_root {
 	protected $parent;
 	protected $link;
 	protected $articles;
-	protected $num_page; //Id de la page sur laquelle seras affiché l'élément (défini par le type en administration) 
+	protected $num_page; //Id de la page sur laquelle seras affiché l'élément (défini par le type en administration)
 	protected $var_name; //Nom de la variable d'environnement utilisé sur la page pour afficher l'élément (défini par le type également)
-	protected $links_patterns; 
-	
+	protected $links_patterns;
+
+	/**
+	 * Nom du calendrier
+	 *
+	 * @var string
+	 */
+	public $calendar = "";
+
+	/**
+	 * Couleur du calendrier
+	 *
+	 * @var string
+	 */
+	public $color = "";
+
+	/**
+	 * Identifiant du Type d'evenement
+	 *
+	 * @var integer
+	 */
+	public $id_type = 0;
+
+	/**
+	 * Identifiant de l'evenement
+	 *
+	 * @var integer
+	 */
+	public $id_event = 0;
+
+	/**
+	 * Titre de l'evenement
+	 *
+	 * @var string
+	 */
+	public $event_title = "";
+
+	/**
+	 * Date de debut de l'evenement
+	 *
+	 * @var array
+	 */
+	public $event_start = [];
+
+	/**
+	 * Date de fin de l'evenement
+	 *
+	 * @var array
+	 */
+	public $event_end = [];
+
 	/**
 	 * Concepts associés
 	 * @var index_concept
 	 */
 	protected $index_concept = null;
-	
+
 	public function __construct($id, $type, $links_patterns = []) {
 		$this->type = $type;
 		$id = intval($id);
@@ -65,16 +114,16 @@ class cms_editorial_data extends cms_root {
 			$this->fetch_data();
 		}
 	}
-	
+
 	protected function fetch_data(){
 	    if(!$this->id || ($this->type != "article" && $this->type != "section")) {
 	        return false;
 	    }
-        
+
         // les infos générales...
 	    $rqt = "
-            SELECT * 
-            FROM cms_".$this->type."s 
+            SELECT *
+            FROM cms_".$this->type."s
             WHERE id_".$this->type." ='".$this->id."'";
         $res = pmb_mysql_query($rqt);
         if(pmb_mysql_num_rows($res)){
@@ -100,7 +149,7 @@ class cms_editorial_data extends cms_root {
             $this->end_date = "";
         }
 	}
-	
+
 	public function get_descriptors(){
 		global $lang;
 		if(!isset($this->descriptors)) {
@@ -122,18 +171,23 @@ class cms_editorial_data extends cms_root {
 		}
 		return $this->descriptors;
 	}
-	
+
 	public function get_fields_type(){
 		if(!isset($this->fields_type)){
 			$this->fields_type = array();
 			$query = "select id_editorial_type from cms_editorial_types where editorial_type_element = '".$this->type."_generic'";
 			$result = pmb_mysql_query($query);
+            $num_type = 0;
 			if(pmb_mysql_num_rows($result)){
-				$fields_type = new cms_editorial_parametres_perso(pmb_mysql_result($result,0,0));
+                $num_type = pmb_mysql_result($result,0,0);//par defaut on selectionne le type generique
+                $fields_type = new cms_editorial_parametres_perso($num_type);
 				$this->fields_type = $fields_type->get_out_values($this->id);
 			}
-			if($this->num_type){
-				$query = "select editorial_type_label, editorial_type_permalink_num_page, editorial_type_permalink_var_name from cms_editorial_types where id_editorial_type = ".$this->num_type;
+            if (!empty($this->num_type)) {
+                $num_type = $this->num_type;// si besoin on selectionne le type specifique
+            }
+            if($num_type){
+                $query = "select editorial_type_label, editorial_type_permalink_num_page, editorial_type_permalink_var_name from cms_editorial_types where id_editorial_type = ".$num_type;
 				$result = pmb_mysql_query($query);
 				if(pmb_mysql_num_rows($result)){
 					$row = pmb_mysql_fetch_object($result);
@@ -149,16 +203,19 @@ class cms_editorial_data extends cms_root {
 							}
 						}
 					}
-			
+
 					$this->type_content = $row->editorial_type_label;
-					$fields_type = new cms_editorial_parametres_perso($this->num_type);
-					$this->fields_type = array_merge($this->fields_type, $fields_type->get_out_values($this->id));
+                    //on merge eventuellement avec les cp specifiques
+                    if ($this->num_type) {
+						$fields_type = new cms_editorial_parametres_perso($this->num_type);
+						$this->fields_type = array_merge($this->fields_type, $fields_type->get_out_values($this->id));
+					}
 				}
-			}	
-		}
+			}
+        }
 		return $this->fields_type;
 	}
-	
+
 	public function get_documents(){
 	    if(!isset($this->documents)) {
 			$documents_linked =array();
@@ -176,66 +233,66 @@ class cms_editorial_data extends cms_root {
 		}
 		return $this->documents;
 	}
-	
+
 	public function get_nb_documents() {
 	    if(!isset($this->documents)) {
 	        $this->get_documents();
 	    }
 	    return count($this->documents);
 	}
-	
+
 	public function get_permalink(){
 	    //on appelle get_fields_type pour recuperer le num_page et var_name
 	    $this->get_fields_type();
 		if($this->num_page && $this->var_name){ //Le type d'élément sur lequel on se trouve a une page et une variable d'environnement renseignés
-			return "./index.php?lvl=cmspage&pageid=".$this->num_page."&".$this->var_name."=".$this->id; 
+			return "./index.php?lvl=cmspage&pageid=".$this->num_page."&".$this->var_name."=".$this->id;
 		}
 		return '';
 	}
-	
+
 	public function get_num_page() {
 		return $this->num_page;
 	}
-	
+
 	public function get_var_name() {
 		return $this->var_name;
 	}
-	
+
 	public function get_id(){
 		return $this->id;
 	}
-	
+
     public function get_title(){
         return $this->title;
     }
-    
+
 	public function get_logo() {
 	    if (!isset($this->logo)) {
 	        $this->logo = new cms_logo($this->id,$this->type);
 	    }
 	    return $this->logo->format_datas();
 	}
-	
+
 	public function get_start_date() {
 	    return format_date($this->start_date);
 	}
-	
+
 	public function get_end_date() {
 	    return format_date($this->end_date);
 	}
-	
+
 	public function get_create_date() {
 	    return format_date($this->create_date);
 	}
-	
+
 	public function get_last_update_date() {
 	    return format_date($this->last_update_date);
 	}
-	
+
 	public function get_last_update_sql_date() {
 	    return $this->last_update_date;
 	}
-	
+
 	public function get_concepts() {
 	    if (isset($this->concepts)) {
 	        return $this->concepts;
@@ -251,9 +308,9 @@ class cms_editorial_data extends cms_root {
 	            break;
 	    }
 	    $query = "
-            SELECT num_concept, order_concept 
-            FROM index_concept 
-            WHERE num_object = ".$this->id." AND type_object = ".$type_constant." 
+            SELECT num_concept, order_concept
+            FROM index_concept
+            WHERE num_object = ".$this->id." AND type_object = ".$type_constant."
             ORDER BY order_concept";
         $result = pmb_mysql_query($query);
         if (pmb_mysql_num_rows($result)) {
@@ -263,14 +320,14 @@ class cms_editorial_data extends cms_root {
         }
 	    return $this->concepts;
 	}
-	
+
 	public function get_type() {
 	    if (!isset($this->type_content)) {
 	        $this->get_fields_type();
 	    }
 	    return $this->type_content;
 	}
-	
+
 	public function get_parent() {
 	    if (isset($this->parent)) {
 	        return $this->parent;
@@ -279,7 +336,7 @@ class cms_editorial_data extends cms_root {
 	    $this->parent = $parent->format_datas($this->links_patterns);
 	    return $this->parent;
 	}
-	
+
 	public function get_children(){
 	    if (isset($this->children)) {
 	        return $this->children;
@@ -296,7 +353,7 @@ class cms_editorial_data extends cms_root {
                     OR (section_start_date != 0 AND section_end_date =0 AND to_days(section_start_date)<=to_days(now()))
                     OR (section_start_date = 0 AND to_days(section_end_date)>=to_days(now()))
                     OR (section_start_date = 0 AND section_end_date = 0))
-                    AND (editorial_publication_state_opac_show=1".(!$_SESSION['id_empr_session'] ? " AND editorial_publication_state_auth_opac_show = 0" : "").") 
+                    AND (editorial_publication_state_opac_show=1".(!$_SESSION['id_empr_session'] ? " AND editorial_publication_state_auth_opac_show = 0" : "").")
                     ORDER BY section_order";
     	        $result = pmb_mysql_query($query);
     	        if(pmb_mysql_num_rows($result)){
@@ -309,7 +366,7 @@ class cms_editorial_data extends cms_root {
     	}
     	return $this->children;
 	}
-	
+
 	public function get_social_media_sharing(){
 	    global $opac_url_base;
 	    return "
@@ -324,7 +381,7 @@ class cms_editorial_data extends cms_root {
 				}
 			</script>";
 	}
-	
+
 	public function get_articles(){
 	    if (isset($this->articles)) {
 	        return $this->articles;
@@ -333,16 +390,16 @@ class cms_editorial_data extends cms_root {
 	    if ($this->type == "section") {
     	    if($this->id){
     	        $query = "
-                    SELECT id_article 
-                    FROM cms_articles 
-                    JOIN cms_editorial_publications_states 
+                    SELECT id_article
+                    FROM cms_articles
+                    JOIN cms_editorial_publications_states
                     ON article_publication_state=id_publication_state WHERE num_section = ".$this->id."
-                    AND ((article_start_date != 0 AND to_days(article_start_date)<=to_days(now()) 
+                    AND ((article_start_date != 0 AND to_days(article_start_date)<=to_days(now())
                     AND to_days(article_end_date)>=to_days(now()))
                     OR (article_start_date != 0 AND article_end_date =0 AND to_days(article_start_date)<=to_days(now()))
-                    OR (article_start_date=0 AND article_end_date=0) 
-                    OR (article_start_date = 0 AND to_days(article_end_date)>=to_days(now()))) 
-                    AND (editorial_publication_state_opac_show=1".(!$_SESSION['id_empr_session'] ? " AND editorial_publication_state_auth_opac_show = 0" : "").") 
+                    OR (article_start_date=0 AND article_end_date=0)
+                    OR (article_start_date = 0 AND to_days(article_end_date)>=to_days(now())))
+                    AND (editorial_publication_state_opac_show=1".(!$_SESSION['id_empr_session'] ? " AND editorial_publication_state_auth_opac_show = 0" : "").")
                     ORDER BY article_order";
     	        $result = pmb_mysql_query($query);
     	        if(pmb_mysql_num_rows($result)){
@@ -356,19 +413,19 @@ class cms_editorial_data extends cms_root {
 	    $this->articles = $articles;
 	    return $this->articles;
 	}
-	
+
 	public function get_resume(){
 	    return $this->resume;
 	}
-	
+
 	public function get_content(){
-	   // Anciennement, le contenu d'un article sortait sous la variable Django {{content}}. 
+	   // Anciennement, le contenu d'un article sortait sous la variable Django {{content}}.
 	   // On ne peut pas changer ce comportement sans avoir à repasser PARTOUT.
-	   // Donc on ajoute la feinte qui va bien...    
+	   // Donc on ajoute la feinte qui va bien...
 	   return $this->contenu;
 	}
-	
-	
+
+
 	private function look_for_attribute_in_class($class, $attribute, $parameters = array()) {
 	    if (is_object($class)) {
 	        //Test du getter en premier pour le get_type() afin d'être compatible à l'existant
@@ -384,12 +441,12 @@ class cms_editorial_data extends cms_root {
 	    }
 	    return null;
 	}
-	
+
 	public function __get($name) {
 	    return $this->look_for_attribute_in_class($this, $name);
 	}
-	
-	
+
+
 	public function get_link() {
 	    if (!empty($this->link)) {
 	        return $this->link;
@@ -399,14 +456,14 @@ class cms_editorial_data extends cms_root {
 	    }
 	    return $this->link;
 	}
-	
+
 	public static function get_cms_article_from_concept($concept) {
 	    $tab_id = array();
 	    $concept_id = $concept->get_num_object();
-	    
+
 	    $query = "select num_object from index_concept where num_concept = ".$concept_id ." AND type_object=". TYPE_CMS_ARTICLE ;
 	    $result = pmb_mysql_query($query);
-	    
+
 	    if (pmb_mysql_num_rows($result)) {
 	        while ($rows = pmb_mysql_fetch_assoc($result)) {
 	            $tab_id[] = $rows['num_object'];
@@ -414,14 +471,14 @@ class cms_editorial_data extends cms_root {
 	    }
 	    return $tab_id;
 	}
-	
+
 	public static function get_cms_section_from_concept($concept) {
 	    $tab_id = array();
 	    $concept_id = $concept->get_num_object();
-	    
+
 	    $query = "select num_object from index_concept where num_concept = ".$concept_id ." AND type_object=" . TYPE_CMS_SECTION;
 	    $result = pmb_mysql_query($query);
-	    
+
 	    if (pmb_mysql_num_rows($result)) {
 	        while ($rows = pmb_mysql_fetch_assoc($result)) {
 	            $tab_id[] = $rows['num_object'];

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serie.class.php,v 1.90.2.1 2021/12/28 13:51:32 dgoron Exp $
+// $Id: serie.class.php,v 1.94 2023/02/14 15:47:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+use Pmb\Ark\Entities\ArkEntityPmb;
 // définition de la classe de gestion des 'titres de séries'
 if ( ! defined( 'SERIE_CLASS' ) ) {
   define( 'SERIE_CLASS', 1 );
@@ -58,6 +59,8 @@ class serie {
 			$result = pmb_mysql_query($requete);
 			if(pmb_mysql_num_rows($result)) {
 				$row = pmb_mysql_fetch_object($result);
+				pmb_mysql_free_result($result);
+				
 				$this->s_id = $row->serie_id;
 				$this->name = $row->serie_name;
 				$this->index = $row->serie_index;
@@ -242,6 +245,7 @@ class serie {
 	public function replace($by,$link_save=0) {
 		// à compléter
 		global $msg;
+		global $pmb_ark_activate;
 	
 		if(!$by) {
 			// pas de valeur de remplacement !!!
@@ -274,6 +278,16 @@ class serie {
 		// nettoyage indexation concepts
 		$index_concept = new index_concept($this->s_id, TYPE_SERIE);
 		$index_concept->delete();
+		
+		if ($pmb_ark_activate) {
+		    $idReplaced = authority::get_authority_id_from_entity($this->s_id, AUT_TABLE_SERIES);
+		    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_SERIES);
+		    if ($idReplaced && $idReplacing) {
+		        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+		        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+		        $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		    }
+		}
 		
 		// effacement de l'identifiant unique d'autorité
 		$authority = new authority(0, $this->s_id, AUT_TABLE_SERIES);
@@ -409,10 +423,13 @@ class serie {
 		// résultat
 	
 		// récupération du résultat de la recherche
-		$tserie  = pmb_mysql_fetch_object($result);
-		// du résultat et récupération éventuelle de l'id
-		if($tserie->serie_id)
-			return $tserie->serie_id;
+		if(pmb_mysql_num_rows($result)) {
+			$tserie  = pmb_mysql_fetch_object($result);
+			// du résultat et récupération éventuelle de l'id
+			if($tserie->serie_id) {
+				return $tserie->serie_id;
+			}
+		}
 	
 		// id non-récupérée, il faut créer la forme.
 		$index = addslashes(strip_empty_words($title));

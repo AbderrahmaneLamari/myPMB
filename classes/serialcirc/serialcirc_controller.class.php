@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serialcirc_controller.class.php,v 1.1.2.2 2022/01/17 08:26:05 dgoron Exp $
+// $Id: serialcirc_controller.class.php,v 1.1 2022/01/17 08:19:56 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

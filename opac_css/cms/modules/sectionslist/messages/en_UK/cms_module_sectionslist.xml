@@ -5,7 +5,7 @@
 ****************************************************************************************
 © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: cms_module_sectionslist.xml,v 1.4.8.2 2021/10/13 12:23:11 qvarin Exp $ -->
+$Id: cms_module_sectionslist.xml,v 1.6.4.1 2023/06/26 14:55:15 rtigero Exp $ -->
 
 <XMLlist>
 	<entry code='cms_module_common_datasource_sections_sections'>Parent Rubrics</entry>
@@ -23,4 +23,5 @@ $Id: cms_module_sectionslist.xml,v 1.4.8.2 2021/10/13 12:23:11 qvarin Exp $ -->
 	<entry code='cms_module_common_datasource_sections_by_section_categories'>Rubriques des catégories d'une rubrique</entry>
 	<entry code='cms_module_sectionslist_filter_sections_has_article'>Contient un ou des article(s)</entry>
 	<entry code='cms_module_sectionslist_view_dynamic_grid'>Vue en Dynamic Grid</entry>
+	<entry code='cms_module_common_datasource_sections_by_section_cp'>Rubriques citées en CP d'une rubrique</entry>
 </XMLlist>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: search_fields_empr.xml,v 1.29 2020/09/14 11:59:23 dgoron Exp $ -->
+<!-- $Id: search_fields_empr.xml,v 1.30 2022/01/31 09:03:55 dgoron Exp $ -->
 <pmbfields>
 
 	<!-- Zone fixedFields :
@@ -701,6 +701,10 @@
 			<query for="GTEQ">
 				<main><![CDATA[select distinct pret_idempr as id_empr from pret where pret_date>='!!p!!']]></main>
 			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct pret_idempr as id_empr from pret where 
+				if('!!p!!', pret_date>='!!p!!', 1) and if('!!p1!!', pret_date<='!!p1!! 23:59:59', 1)]]></main>
+			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct pret_idempr as id_empr from pret where pret_date > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>
 			</query>
@@ -773,6 +777,10 @@
 			<query for="GTEQ">
 				<main><![CDATA[select distinct pret_idempr as id_empr from pret where pret_retour>='!!p!!']]></main>
 			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct pret_idempr as id_empr from pret where 
+				if('!!p!!', pret_retour>='!!p!!', 1) and if('!!p1!!', pret_retour<='!!p1!!', 1)]]></main>
+			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct pret_idempr as id_empr from pret where pret_retour > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>
 			</query>
@@ -808,6 +816,10 @@
 			</query>
 			<query for="GTEQ">
 				<main><![CDATA[select distinct pret_idempr as id_empr from pret where date_relance>='!!p!!']]></main>
+			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct pret_idempr as id_empr from pret where 
+				if('!!p!!', date_relance>='!!p!!', 1) and if('!!p1!!', date_relance<='!!p1!!', 1)]]></main>
 			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct pret_idempr as id_empr from pret where date_relance > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>
@@ -894,6 +906,10 @@
 			<query for="GTEQ">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa where resa_date>='!!p!!']]></main>
 			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct resa_idempr as id_empr from resa where 
+				if('!!p!!', resa_date>='!!p!!', 1) and if('!!p1!!', resa_date<='!!p1!! 23:59:59', 1)]]></main>
+			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa where resa_date > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>
 			</query>
@@ -930,6 +946,10 @@
 			<query for="GTEQ">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa where resa_date_debut>='!!p!!']]></main>
 			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct resa_idempr as id_empr from resa where 
+				if('!!p!!', resa_date_debut>='!!p!!', 1) and if('!!p1!!', resa_date_debut<='!!p1!!', 1)]]></main>
+			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa where resa_date_debut > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>
 			</query>
@@ -965,6 +985,10 @@
 			</query>
 			<query for="GTEQ">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa where resa_date_fin>='!!p!!']]></main>
+			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct resa_idempr as id_empr from resa where 
+				if('!!p!!', resa_date_fin>='!!p!!', 1) and if('!!p1!!', resa_date_fin<='!!p1!!', 1)]]></main>
 			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa where resa_date_fin > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>
@@ -1042,6 +1066,10 @@
 			<query for="GTEQ">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa_planning where resa_date>='!!p!!']]></main>
 			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct resa_idempr as id_empr from resa_planning where 
+				if('!!p!!', resa_date>='!!p!!', 1) and if('!!p1!!', resa_date<='!!p1!! 23:59:59', 1)]]></main>
+			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa_planning where resa_date > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>
 			</query>
@@ -1081,6 +1109,10 @@
 			<query for="GTEQ">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa_planning where resa_date_debut>='!!p!!']]></main>
 			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct resa_idempr as id_empr from resa_planning where 
+				if('!!p!!', resa_date_debut>='!!p!!', 1) and if('!!p1!!', resa_date_debut<='!!p1!!', 1)]]></main>
+			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa_planning where resa_date_debut > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>
 			</query>
@@ -1119,6 +1151,10 @@
 			</query>
 			<query for="GTEQ">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa_planning where resa_date_fin>='!!p!!']]></main>
+			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct resa_idempr as id_empr from resa_planning where 
+				if('!!p!!', resa_date_fin>='!!p!!', 1) and if('!!p1!!', resa_date_fin<='!!p1!!', 1)]]></main>
 			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct resa_idempr as id_empr from resa_planning where resa_date_fin > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>
@@ -1185,6 +1221,10 @@
 			</query>
 			<query for="GTEQ">
 				<main><![CDATA[select distinct empr_id as id_empr from recouvrements where date_rec>='!!p!!']]></main>
+			</query>
+			<query for="BETWEEN">
+				<main><![CDATA[select distinct empr_id as id_empr from recouvrements where 
+				if('!!p!!', date_rec>='!!p!!', 1) and if('!!p1!!', date_rec<='!!p1!!', 1)]]></main>
 			</query>
 			<query for="LESS_THAN_DAYS">
 				<main><![CDATA[select distinct empr_id as id_empr from recouvrements where date_rec > DATE_SUB(NOW(), INTERVAL !!p!! DAY)]]></main>

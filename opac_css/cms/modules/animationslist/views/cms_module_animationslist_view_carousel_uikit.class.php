@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_animationslist_view_carousel_uikit.class.php,v 1.1 2021/03/26 13:47:46 btafforeau Exp $
+// $Id: cms_module_animationslist_view_carousel_uikit.class.php,v 1.2 2023/01/04 15:35:58 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,6 +54,7 @@ class cms_module_animationslist_view_carousel_uikit extends cms_module_common_vi
 	            if (! empty($animation_id)) {
 	                $animation = new AnimationModel($animation_id);
 	                $animation->getViewData();
+	                $animation->link = $this->get_constructed_link("animation", $animation_id);
 	                $animation_data[] = $animation;
 	            }
 	        }
@@ -68,8 +69,11 @@ class cms_module_animationslist_view_carousel_uikit extends cms_module_common_vi
 	}
 	
 	public function get_format_data_structure() {
-	    $animation = new AnimationModel();
-	    
-	    return array_merge($animation->getCmsStructure('animation'), parent::get_format_data_structure());
+	    $formatData = (new AnimationModel())->getCmsStructure("animations[i]");
+	    $formatData[0]['children'][] = array(
+	        'var' => "animations[i].link",
+	        'desc'=> $this->msg['cms_module_animationslist_view_animation_link']
+	    );
+	    return array_merge($formatData, parent::get_format_data_structure());
 	}
 }

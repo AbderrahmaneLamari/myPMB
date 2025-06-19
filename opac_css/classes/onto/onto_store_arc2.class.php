@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_store_arc2.class.php,v 1.9 2021/02/03 09:46:45 qvarin Exp $
+// $Id: onto_store_arc2.class.php,v 1.10.2.1 2023/10/27 08:59:57 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,6 +16,8 @@ require_once "$class_path/onto/onto_store.class.php";
  */
 class onto_store_arc2 extends onto_store {
 	
+	public $store;
+
 	/**
 	 * @param array() config
 	
@@ -129,9 +131,10 @@ class onto_store_arc2 extends onto_store {
 	 */
 	public function query($query,$prefix=array()){
 	
-		$query=$this->format_namespaces($prefix).$this->utf8_normalize($query);
-		$result=array();
-		$tabResult=array();
+	    $query = $this->format_namespaces($prefix).encoding_normalize::utf8_normalize($query);
+	    $result = [];
+	    $tabResult = [];
+	    $this->result = [];
 	
 		if(!count($this->errors)){
 		    //Si je n'ai pas déjà des erreurs
@@ -205,5 +208,12 @@ class onto_store_arc2 extends onto_store {
 	
 	public function drop(){
 		$this->store->drop();
+	}
+	
+	public function reset_after_save()
+	{
+	    $this->close();
+	    $this->store = ARC2::getStore($this->config);
+	    $this->store->getDBCon();
 	}
 } // end of onto_store_arc2

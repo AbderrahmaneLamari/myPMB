@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: amende.class.php,v 1.27 2019/12/31 14:13:22 ngantier Exp $
+// $Id: amende.class.php,v 1.28 2022/02/10 10:46:07 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/calendar.class.php");
 require_once($class_path."/quotas.class.php");
 require_once($class_path."/expl.class.php");
@@ -18,7 +19,7 @@ class amende {
 	
     public function __construct($id_empr, $noreadcache=false) {
     	global $progress_bar;
-    	$this->id_empr=$id_empr+0;
+    	$this->id_empr=intval($id_empr);
     	if (!$noreadcache) {
     		// lire en cache
     		$req="select data_amendes from cache_amendes where id_empr=$id_empr and cache_date=CURDATE()";
@@ -49,11 +50,11 @@ class amende {
     }
     
     public function get_parameters($id_expl) {
-    	global $pmb_gestion_financiere,$pmb_gestion_amende,$lang,$include_path;
+    	global $pmb_gestion_amende,$lang,$include_path;
     	global $finance_amende_jour,$finance_delai_avant_amende,$finance_delai_recouvrement,$finance_amende_maximum,$finance_delai_1_2,$finance_delai_2_3, $finance_frais_recouvrement;
     	global $tbclasses;
     	
-    	$id_expl += 0;
+    	$id_expl = intval($id_expl);
 		$param=array();
     	
     	if ($pmb_gestion_amende==1) {
@@ -146,7 +147,7 @@ class amende {
     public function get_amende($id_expl) {
         global $pmb_amende_comptabilisation, $pmb_utiliser_calendrier, $pmb_utiliser_calendrier_location;
     	
-    	$id_expl += 0;
+        $id_expl = intval($id_expl);
     	
     	//Paramètre permettant de calculer l'amende sur le calendrier d'ouverture de la localisation de l'exemplaire
     	$loc_calendar = 0;

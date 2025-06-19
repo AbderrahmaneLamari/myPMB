@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: custom_parametres_perso.class.php,v 1.20.2.1 2021/12/06 14:13:28 dgoron Exp $
+// $Id: custom_parametres_perso.class.php,v 1.21 2021/12/06 14:11:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

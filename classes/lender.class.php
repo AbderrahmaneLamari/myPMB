@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lender.class.php,v 1.19.2.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: lender.class.php,v 1.20.4.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -49,12 +49,15 @@ class lender {
 		}
 	}
 
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_libelle', '558')
+		->add_input_node('text', $this->lender_libelle);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $msg, $charset;
-		global $admin_lender_content_form;
-		
-		$content_form = $admin_lender_content_form;
-		$content_form = str_replace('!!id!!', $this->idlender, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('lenderform');
 		if(!$this->idlender){
@@ -62,11 +65,9 @@ class lender {
 		}else{
 			$interface_form->set_label($msg['557']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->lender_libelle, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->idlender)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->lender_libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('lenders')
 		->set_field_focus('form_libelle');
 		return $interface_form->get_display();

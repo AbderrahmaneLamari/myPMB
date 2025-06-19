@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette_func.inc.php,v 1.63.2.2 2021/11/19 15:55:53 gneveu Exp $
+// $Id: bannette_func.inc.php,v 1.65 2021/11/19 15:57:02 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -213,10 +213,7 @@ function get_bannette_human_query($id_bannette = 0) {
 }
 
 function affiche_public_bannette($bannettes="", $aff_notices_nb=0, $link_to_bannette="", $htmldiv_id="bannette-container", $htmldiv_class="bannette-container") {
-	global $msg,$charset;
 	// récupération des bannettes
-	global $id_empr ;
-	
 	$tableau_bannettes = tableau_bannette($bannettes);
 	
 	if (!sizeof($tableau_bannettes))

@@ -2,20 +2,18 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_ontologies.class.php,v 1.2.2.2 2021/12/27 08:20:53 dgoron Exp $
+// $Id: searcher_ontologies.class.php,v 1.5 2023/02/07 15:31:39 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-class searcher_ontologies extends searcher_generic {
+class searcher_ontologies extends opac_searcher_generic {
 
 	protected $id_ontology = 0;
 	
-	protected $object_table = '';
+	public $object_table = '';
 	
-	/**
-	 * @param string $user_query
-	 * @param int|string $id_ontology
-	 */
+	public $object_table_key;
+	
 	public function __construct($user_query) {
 	    parent::__construct($user_query);
 	    
@@ -23,13 +21,11 @@ class searcher_ontologies extends searcher_generic {
 	    if (func_num_args() == 2) {
 	        $id_ontology = func_get_arg(1);
 	    }
-	    
 		$this->object_index_key = "id_item";
 		$this->object_words_table = "ontology".$id_ontology."_words_global_index";
 		$this->object_fields_table = "ontology".$id_ontology."_fields_global_index";
 		$this->object_key = 'id_item';
 		$this->id_ontology = $id_ontology;
-		
 	}
 	
 	public function _get_search_type(){
@@ -37,10 +33,10 @@ class searcher_ontologies extends searcher_generic {
 	}
 	
 	protected function get_full_results_query(){
-		return 'select distinct '.$this->object_key.' from '.$this->object_words_table;;
+	    return 'select distinct '.$this->object_key.' from '.$this->object_words_table.' where '.$this->aq->get_field_restrict($this->field_restrict);
 	}
 	
-	protected function _get_ontology_filters(){		
+	protected function _get_ontology_filters(){;
 		return [];
 	}
 	
@@ -72,7 +68,7 @@ class searcher_ontologies extends searcher_generic {
 			if($res && pmb_mysql_num_rows($res)){
 				$this->result=array();
 				while($row = pmb_mysql_fetch_object($res)){
-					$this->result[] = $row->id_authority;
+				    $this->result[] = $row->{$this->object_key};
 				}
 			}
 		}
@@ -80,11 +76,14 @@ class searcher_ontologies extends searcher_generic {
 	
 	public function get_ontology_tri() {
 		// à surcharger si besoin
+	    if (!empty($this->table_tempo)) {
+	        return ' '.$this->table_tempo.'.id_item desc ';
+	    }
 		return '';
 	}
-	
+
 	protected function _sort_result($start,$number){
-		if ($this->user_query != '*') {
+		if ($this->user_query != '*' && $this->user_query !== '') {
 			$this->_get_pert();
 		}
 		$this->_sort($start,$number);
@@ -95,6 +94,7 @@ class searcher_ontologies extends searcher_generic {
 		$this->_analyse();
 		return $this->_get_search_query();
 	}
+	
 	public function get_pert_result($query = false) {
 		$pert = '';
 		if ($this->get_result() && ($this->user_query != '*')) {

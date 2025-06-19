@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: custom_cote_caue38.inc.php,v 1.4.16.1 2022/01/03 14:13:07 dgoron Exp $
+// $Id: custom_cote_caue38.inc.php,v 1.6 2023/01/27 15:07:55 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -15,7 +15,7 @@ function prefill_cote ($id_notice=0,$cote="") {
 		//Recherche du Plan de classement
 		$q = "select cat1.libelle_categorie as libelle_pc ";
 		$q.= "from notices, notices_categories, noeuds, categories as cat1, categories as cat2 ";
-		$q.= "where notice_id='".$id_notice."' and num_thesaurus='2' ";
+		$q.= "where notice_id='".$id_notice."' and noeuds.num_thesaurus='2' ";
 		$q.= "and cat2.num_noeud=noeuds.num_renvoi_voir and cat1.num_noeud=noeuds.id_noeud ";
 		$q.= "and notices_categories.num_noeud=cat2.num_noeud and notices.notice_id=notices_categories.notcateg_notice ";
 		$q.= "order by ordre_categorie ";

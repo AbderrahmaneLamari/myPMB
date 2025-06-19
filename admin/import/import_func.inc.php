@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: import_func.inc.php,v 1.136.2.1 2021/08/06 07:55:18 dgoron Exp $
+// $Id: import_func.inc.php,v 1.142.2.1 2023/11/14 15:26:06 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -75,7 +75,7 @@ $tpl_beforeupload_expl = "
                    			<div class='colonne2'>
 	                   			<label class='etiquette' for='import_notice_existing_replace'>".$msg['import_notice_existing_replace']."</label>
 	                    		<div>
-	                    			<input type='radio' name='import_notice_existing_replace' id='import_notice_existing_replace0' value='0' checked='checked' onclick='param_existing_replace_display();'> <label for='import_notice_existing_replace0'>".$msg['39']."</label> 
+	                    			<input type='radio' name='import_notice_existing_replace' id='import_notice_existing_replace0' value='0' checked='checked' onclick='param_existing_replace_display();'> <label for='import_notice_existing_replace0'>".$msg['39']."</label>
 	                    			<input type='radio' name='import_notice_existing_replace' id='import_notice_existing_replace1' value='1' onclick='param_existing_replace_display();'> <label for='import_notice_existing_replace1'>".$msg['40']."</label>
 	                    		</div>
 	                    		<div id='import_notice_existing_replace_message' class='warning' style='display: none;'>
@@ -221,7 +221,7 @@ $tpl_beforeupload_notices = "
                    			<div class='colonne2'>
 	                   			<label class='etiquette' for='import_notice_existing_replace'>".$msg['import_notice_existing_replace']."</label>
 	                    		<div>
-	                    			<input type='radio' name='import_notice_existing_replace' id='import_notice_existing_replace0' value='0' checked='checked' onclick='param_existing_replace_display();'> <label for='import_notice_existing_replace0'>".$msg['39']."</label> 
+	                    			<input type='radio' name='import_notice_existing_replace' id='import_notice_existing_replace0' value='0' checked='checked' onclick='param_existing_replace_display();'> <label for='import_notice_existing_replace0'>".$msg['39']."</label>
 	                    			<input type='radio' name='import_notice_existing_replace' id='import_notice_existing_replace1' value='1' onclick='param_existing_replace_display();'> <label for='import_notice_existing_replace1'>".$msg['40']."</label>
 	                    		</div>
 	                    		<div id='import_notice_existing_replace_message' class='warning' style='display: none;'>
@@ -539,13 +539,15 @@ function recup_noticeunimarc($notice) {
 	$bibliographic_level_origine=$record->inner_guide['bl'];
 	$hierarchic_level_origine=$record->inner_guide['hl'];
 
-	// traitements particuliers, solution d'urgence pour les pério et autres.
-	if($link_generate){
-		//Si on choisit d'importer les liens on reprend le niveau
-			switch ($bibliographic_level_origine) {
+	if($bibliographic_level_origine){
+		switch ($bibliographic_level_origine) {
 			case 'a':
 				$hierarchic_level = '2';
 				$bibliographic_level = 'a';
+				break;
+			case 'b':
+				$hierarchic_level = '2';
+				$bibliographic_level = 'b';
 				break;
 			case 's':
 				if($hierarchic_level_origine <= '1'){
@@ -589,13 +591,18 @@ function recup_noticeunimarc($notice) {
 					break;
 				case "010": /* isbn */
 					$isbn=$record->get_subfield($cle,'a');
-					$prix=$record->get_subfield($cle,'d');
+					if(empty($prix)) {
+						$prix=$record->get_subfield($cle,'d');
+					}
 					break;
 				case "011": /* issn_011 */
 					$issn_011=$record->get_subfield($cle,'a');
 					break;
 				case "071": /* barcode */
 					$cb=$record->get_subfield($cle,"a");
+					if(empty($prix)) {
+						$prix=$record->get_subfield($cle,'d');
+					}
 					break;
 				case "101": /* language */
 					$lang_code=$record->get_subfield_array($cle,"a");
@@ -787,25 +794,25 @@ function del_associations_existing_notice($id=0) {
 	if($id) {
 		//Suppression de la vignette de la notice si il y en a une d'uploadée
 		thumbnail::delete($id);
-		
+
 		$p_perso=new parametres_perso("notices");
 		$p_perso->delete_values($id);
-		
+
 		$requete = "DELETE FROM notices_categories WHERE notcateg_notice='$id'" ;
 		pmb_mysql_query($requete);
-		
+
 		$requete = "DELETE FROM notices_langues WHERE num_notice='$id'" ;
 		pmb_mysql_query($requete);
-		
+
 		notice_relations::delete($id);
-		
+
 		$requete = "DELETE FROM responsability WHERE responsability_notice='$id'" ;
 		pmb_mysql_query($requete);
-		
+
 		// Supression des liens avec les titres uniformes
 		$requete = "DELETE FROM notices_titres_uniformes WHERE ntu_num_notice='$id'" ;
 		pmb_mysql_query($requete);
-		
+
 		// Nettoyage indexation concepts
 		$index_concept = new index_concept($id, TYPE_NOTICE);
 		$index_concept->delete();
@@ -888,7 +895,7 @@ function import_new_notice($notice_existing_id=0) {
 
 	global $import_force_notice_is_new;
 	global $import_notice_existing_replace;
-	
+
 	global $notice_replace_links;
 
 	//Suppression des associations pour le remplacement
@@ -896,7 +903,7 @@ function import_new_notice($notice_existing_id=0) {
 	if($import_notice_existing_replace && $notice_existing_id) {
 		del_associations_existing_notice($notice_existing_id);
 	}
-	
+
 	$origin_authority= $authorities_default_origin;
 	$add_explnum=FALSE;
 	/* traitement des éditeurs */
@@ -931,6 +938,16 @@ function import_new_notice($notice_existing_id=0) {
 		//Pour le cas ou on import sans les liens un fichier exporter avec les exemplaires et les liens
 		$tit_200d[0]="";
 	}
+
+	$coll_name="";
+	$subcoll_name="";
+	$coll_issn="";
+	$coll_aut_number="";
+	$subcoll_issn="";
+	$subcoll_aut_number="";
+	$nocoll_ins="";
+	$collec = array();
+	$subcollec = array();
 
 	if($bibliographic_level != "a" && $bibliographic_level != "b"){
 		//Pour les articles et les bulletins on ne garde pas les informations suivantes
@@ -990,13 +1007,6 @@ function import_new_notice($notice_existing_id=0) {
 		if($bibliographic_level != "s"){
 			//Pour les periodiques on ne garde pas les informations suivantes
 			/* traitement des collections */
-			$coll_name="";
-			$subcoll_name="";
-			$coll_issn="";
-			$coll_aut_number="";
-			$subcoll_issn="";
-			$subcoll_aut_number="";
-			$nocoll_ins="";
 			/* traitement de 225$a, si rien alors 410$t pour la collection */
 			if (isset($collection_225[0]['a']) && $collection_225[0]['a']!="") {
 				$coll_name=$collection_225[0]['a'];
@@ -1025,7 +1035,6 @@ function import_new_notice($notice_existing_id=0) {
 			else
 				$nocoll_ins="";
 
-			$collec = array();
 			$collec['name'] = ($coll_name ? clean_string($coll_name) : '');
 			$collec['parent'] = $ed1_id;
 			$collec['issn'] = ($coll_issn ? clean_string($coll_issn) : '');
@@ -1037,7 +1046,6 @@ function import_new_notice($notice_existing_id=0) {
 			}
 
 			/* sous collection */
-			$subcollec = array();
 			$subcollec['name'] = ($subcoll_name ? clean_string($subcoll_name) : '');
 			$subcollec['coll_parent'] = $coll_id;
 			$subcollec['issn'] = ($subcoll_issn ? clean_string($subcoll_issn) : '');
@@ -1105,7 +1113,7 @@ function import_new_notice($notice_existing_id=0) {
 		for ($j = 0; $j< count($analytique[$i]); $j++) {
 			$ana[$analytique[$i][$j]["label"]][]=$analytique[$i][$j]["content"];
 		}
-		if(is_array($ana["a"])) {
+		if(isset($ana["a"]) && is_array($ana["a"])) {
 		    if(count($ana["a"]) == 1){//Selon la norme le $a n'est pas répétable dans le même champ 4XX
 		        $n_contenu_total.=$ana["a"][0].(count($ana["e"])?" ; ".implode(" ; ",$ana["e"]):"").(count($ana["f"])?" / ".implode(" / ",$ana["f"]):"").(count($ana["g"])?" / ".implode(" / ",$ana["g"]):"")."\n";
 		    }else{//Au cas où
@@ -1181,15 +1189,15 @@ function import_new_notice($notice_existing_id=0) {
 	global $form_notice_statut;
 	$typdoc = $doc_type;
 	$form_notice_statut = $statutnot;
-	
+
 	$notice_is_new = intval($notice_is_new);
 	$notice_date_is_new = '';
 
 	if ($notice_is_new || (isset($import_force_notice_is_new)) && ($import_force_notice_is_new==1)) {
 		$notice_is_new = 1;
-		$notice_date_is_new = date('Y-m-d H:i:s');		
+		$notice_date_is_new = date('Y-m-d H:i:s');
 	}
-	
+
 	/* and at least, the insertion in notices table */
 	if(isset($import_notice_existing_replace) && ($import_notice_existing_replace==1) && $notice_existing_id) {
 		$sql_ins = "update notices set ";
@@ -1234,7 +1242,7 @@ function import_new_notice($notice_existing_id=0) {
 	if(isset($import_notice_existing_replace) && ($import_notice_existing_replace==1) && $notice_existing_id) {
 		$sql_ins .= " where notice_id = ".$notice_existing_id;
 	} else {
-		$sql_ins .= ", create_date = sysdate() "; 
+		$sql_ins .= ", create_date = sysdate() ";
 	}
 	pmb_mysql_query($sql_ins) or die ("Couldn't insert into notices ! = ".$sql_ins);
 	if($notice_existing_id) {
@@ -1245,15 +1253,15 @@ function import_new_notice($notice_existing_id=0) {
 		audit::insert_creation(AUDIT_NOTICE,$notice_id);
 	}
 	notice::majNotices($notice_id);
-	
+
 	//calcul des droits d'accès s'ils sont activés
-	calc_notice_acces_rights($notice_id);
+	notice::calc_access_rights($notice_id);
 
 	// on devait attendre que la notice soit intégrée pour faire l'association avec la notice..;
-	if($collec['authority_number']){
+	if(!empty($collec['authority_number'])){
 		keep_authority_infos($collec['authority_number'],"scollection",$origin_authority,$notice_id,$collec);
 	}
-	if($subcollec['authority_number']){
+	if(!empty($subcollec['authority_number'])){
 		keep_authority_infos($subcollec['authority_number'],"subcollection",$origin_authority,$notice_id,$subcollec);
 	}
 
@@ -1640,7 +1648,7 @@ function import_notice_link(){
 			creer_relation_notice($enfants);
 		}
 	}
-	
+
 	//Traitement des relations horizontales
 	$pairs = get_infos_notices_liees($notices_liees,'','pair');
 	if(count($pairs)){
@@ -1684,7 +1692,7 @@ function import_notice_link(){
 					$id_art = pmb_mysql_insert_id();
 					audit::insert_creation(AUDIT_NOTICE,$id_art);
 					//calcul des droits d'accès s'ils sont activés
-					calc_notice_acces_rights($id_art);
+					notice::calc_access_rights($id_art);
 					$notices_crees[$id_unimarc] = $id_art;
 				}
 				$id_perio=$notices_a_creer[$id_unimarc][$i]['id_asso'];
@@ -1700,7 +1708,7 @@ function import_notice_link(){
 					$id_perio = pmb_mysql_insert_id();
 					audit::insert_creation(AUDIT_NOTICE,$id_perio);
 					//calcul des droits d'accès s'ils sont activés
-					calc_notice_acces_rights($id_perio);
+					notice::calc_access_rights($id_perio);
 					$notices_crees[$id_unimarc] = $id_perio;
 				}else{
 					$id_perio=$notices_crees[$id_unimarc];
@@ -1735,7 +1743,7 @@ function get_infos_notices_liees($notices_liees=array(), $cle_uni='', $lien='', 
 	$type_link_tab = array();
 	if($cle_uni){
 		$result_tab = $notices_liees[$cle_uni];
-		if($lien && $result_tab){
+		if(!empty($lien) && $result_tab){
 			foreach($result_tab as $field){
 				//on récupère toutes les options du $9 dans un tableau
 			   $options=array();
@@ -1748,7 +1756,7 @@ function get_infos_notices_liees($notices_liees=array(), $cle_uni='', $lien='', 
 			    if($options["lien"] == $lien) $link_tab[] = $field;
 			}
 			$result_tab = $link_tab;
-			if($type_lien){
+			if(!empty($type_lien)){
 				foreach($result_tab as $field){
 					//on récupère toutes les options du $9 dans un tableau
 				   $options=array();
@@ -1762,7 +1770,7 @@ function get_infos_notices_liees($notices_liees=array(), $cle_uni='', $lien='', 
 				} $result_tab = $type_link_tab;
 			}
 		}
-	} elseif($lien){
+	} elseif(!empty($lien)){
 		foreach($notices_liees as $fields){
 			foreach($fields as $field){
 				//on récupère toutes les options du $9 dans un tableau
@@ -1793,7 +1801,7 @@ function get_infos_notices_liees($notices_liees=array(), $cle_uni='', $lien='', 
 			}
 			$result_tab = $type_link_tab;
 		}
-	} elseif($type_lien){
+	} elseif(!empty($type_lien)){
 		foreach($notices_liees as $fields){
 			foreach($fields as $field){
 				//on récupère toutes les options du $9 dans un tableau
@@ -1896,7 +1904,7 @@ function creer_liens_pour_articles($tab_bull=array(),$tab_perio=array(), $tab_fi
 					$notices_crees[$tab_field['id_base']] = pmb_mysql_insert_id();
 					audit::insert_creation(AUDIT_NOTICE,$notices_crees[$tab_field['id_base']]);
 					//calcul des droits d'accès s'ils sont activés
-					calc_notice_acces_rights($notices_crees[$tab_field['id_base']]);
+					notice::calc_access_rights($notices_crees[$tab_field['id_base']]);
 				}
 			}
 		} elseif($tab_bull && !$tab_perio){
@@ -2104,12 +2112,8 @@ function creer_notice_monographie($ancien_id=0,$titre="",$code=""){
 	pmb_mysql_query($requete);
 	$id=pmb_mysql_insert_id();
 	audit::insert_creation(AUDIT_NOTICE,$id);
-	// Mise à jour des index de la notice
-	notice::majNotices($id);
-	// Mise à jour de la table "notices_global_index"
-	notice::majNoticesGlobalIndex($id);
-	// Mise à jour de la table "notices_mots_global_index"
-	notice::majNoticesMotsGlobalIndex($id);
+	// Mise à jour de tous les index de la notice
+	notice::majNoticesTotal($id);
 	if($ancien_id){
 		$notices_crees[$ancien_id]=$id;
 	}
@@ -2135,12 +2139,8 @@ function creer_notice_periodique($ancien_id=0,$titre="",$code=""){
 				pmb_mysql_query($requete);
 				$id_perio = pmb_mysql_insert_id();
 				audit::insert_creation(AUDIT_NOTICE,$id_perio);
-				// Mise à jour des index de la notice
-				notice::majNotices($id_perio);
-				// Mise à jour de la table "notices_global_index"
-				notice::majNoticesGlobalIndex($id_perio);
-				// Mise à jour de la table "notices_mots_global_index"
-				notice::majNoticesMotsGlobalIndex($id_perio);
+				// Mise à jour de tous les index de la notice
+				notice::majNoticesTotal($id_perio);
 			}
 			$notices_crees[$ancien_id]=$id_perio;
 		}
@@ -2155,16 +2155,13 @@ function creer_notice_periodique($ancien_id=0,$titre="",$code=""){
 			pmb_mysql_query($requete);
 			$id_perio = pmb_mysql_insert_id();
 			audit::insert_creation(AUDIT_NOTICE,$id_perio);
-			// Mise à jour des index de la notice
-			notice::majNotices($id_perio);
-			// Mise à jour de la table "notices_global_index"
-			notice::majNoticesGlobalIndex($id_perio);
-			// Mise à jour de la table "notices_mots_global_index"
-			notice::majNoticesMotsGlobalIndex($id_perio);
+			// Mise à jour de tous les index de la notice
+			notice::majNoticesTotal($id_perio);
 		}
 	}
 	return $id_perio;
 }
+
 /*
  * Créer les bulletins
  * Bulletin est un tableau avec les clés : titre, date, mention, num
@@ -2220,13 +2217,9 @@ function creer_notice_article($ancien_id=0,$titre_article="",$npage_article="",$
 				$id_article=pmb_mysql_insert_id();
 				audit::insert_creation(AUDIT_NOTICE,$id_article);
 				//calcul des droits d'accès s'ils sont activés
-				calc_notice_acces_rights($id_article);
-				// Mise à jour des index de la notice
-				notice::majNotices($id_article);
-				// Mise à jour de la table "notices_global_index"
-				notice::majNoticesGlobalIndex($id_article);
-				// Mise à jour de la table "notices_mots_global_index"
-				notice::majNoticesMotsGlobalIndex($id_article);
+				notice::calc_access_rights($id_article);
+				// Mise à jour de tous les index de la notice
+				notice::majNoticesTotal($id_article);
 			}
 			//Je regarde si je n'ai pas un autre article avec ce titre
 			$requete="SELECT old.notice_id,old.tit1 FROM notices new, notices old JOIN analysis ON analysis_notice=old.notice_id WHERE new.notice_id='".addslashes($id_article)."' AND new.notice_id!=old.notice_id AND analysis_bulletin='".addslashes($id_bulletin)."' AND new.tit1=old.tit1 ";
@@ -2260,13 +2253,9 @@ function creer_notice_article($ancien_id=0,$titre_article="",$npage_article="",$
 			$id_article=pmb_mysql_insert_id();
 			audit::insert_creation(AUDIT_NOTICE,$id_article);
 			//calcul des droits d'accès s'ils sont activés
-			calc_notice_acces_rights($id_article);
-			// Mise à jour des index de la notice
-			notice::majNotices($id_article);
-			// Mise à jour de la table "notices_global_index"
-			notice::majNoticesGlobalIndex($id_article);
-			// Mise à jour de la table "notices_mots_global_index"
-			notice::majNoticesMotsGlobalIndex($id_article);
+			notice::calc_access_rights($id_article);
+			// Mise à jour de tous les index de la notice
+			notice::majNoticesTotal($id_article);
 		}
 		//Je regarde si je n'ai pas un autre article avec ce titre
 		$requete="SELECT old.notice_id,old.tit1 FROM notices new, notices old JOIN analysis ON analysis_notice=old.notice_id WHERE new.notice_id='".addslashes($id_article)."' AND new.notice_id!=old.notice_id  AND analysis_bulletin='".addslashes($id_bulletin)."' AND new.tit1=old.tit1 ";
@@ -2320,48 +2309,24 @@ function creer_notice_bulletin($ancien_id=0,$titre_notice_bulletin="",$bulletin=
  * Faire les liens d'une notice de bulletin
  */
 
-function creer_lien_notice_bulletin($ancien_id=0,$id_perio=0,$id_bulletin=0,$id_not_bull=0,$titre_not_bull="",$bulletin){
+function creer_lien_notice_bulletin($ancien_id=0,$id_perio=0,$id_bulletin=0,$id_not_bull=0,$titre_not_bull="",$bulletin=array()){
 	global $msg,$isbn_OK,$tit_200a,$notice_id,$notices_crees,$statutnot;
-	//On control que ce bulletin n'a pas déjà une notice
-	$requete="select num_notice from bulletins where bulletin_id='".$id_bulletin."'";
-	if($id_not_bull)$requete.=" and num_notice!='".$id_not_bull."'";
-	$res=pmb_mysql_query($requete);
-	if(pmb_mysql_num_rows($res) && pmb_mysql_result($res,0,0)){
-		//Si j'ai déja une notice associé à ce bulletin je la récupère
-		if($id_not_bull){
-			//Si j'ai aussi un identifiant de notice de bulletin, je supprime le plus récent
-			notice::del_notice($id_not_bull);
-			pmb_mysql_query("insert into error_log (error_origin, error_text) values ('import_".addslashes(SESSid).".inc', '".$msg[542]." $id_unimarc "." $isbn_OK ".addslashes(clean_string(implode (" ; ",$tit_200a)))."') ") ;
-			$id_notice_bulletin=pmb_mysql_result($res,0,0);//A voir pr modif
-		}else{
-			$id_notice_bulletin= pmb_mysql_result($res,0,0);
-		}
-		$notice_id=$id_notice_bulletin;
-	}else{
-		if($titre_not_bull){
-			//Si j'ai un titre je créé la notice de bulletin
-			$requete="insert into notices (tit1,niveau_biblio, niveau_hierar,statut) values ('".addslashes(clean_string($titre_not_bull))."', 'b', '2','".$statutnot."')";
-			pmb_mysql_query($requete);
-			$id_notice_bulletin=pmb_mysql_insert_id();
-			audit::insert_creation(AUDIT_NOTICE,$id_notice_bulletin);
-			//calcul des droits d'accès s'ils sont activés
-			calc_notice_acces_rights($id_notice_bulletin);
-			// Mise à jour des index de la notice
-			notice::majNotices($id_notice_bulletin);
-			// Mise à jour de la table "notices_global_index"
-			notice::majNoticesGlobalIndex($id_notice_bulletin);
-			// Mise à jour de la table "notices_mots_global_index"
-			notice::majNoticesMotsGlobalIndex($id_notice_bulletin);
-		}else{
-			$id_notice_bulletin=$id_not_bull;
-		}
-		//On créer le lien entre le bulletin et la notice de bulletin
-		$requete="update bulletins set num_notice='".$id_notice_bulletin."' where bulletin_id='".$id_bulletin."'";
-		pmb_mysql_query($requete);
+
+	if (empty($titre_not_bull)) {
+		$titre_not_bull = $tit_200a[0];
 	}
+	$data = array(
+			'titles' => $tit_200a,
+			'code' => $isbn_OK,
+			'tit1' => $titre_not_bull,
+			'statut' => $statutnot,
+	);
+	$id_notice_bulletin = import_records::insert_relation_bulletin_num_notice($id_bulletin, $id_not_bull, $data);
+	$notice_id = $id_notice_bulletin;
+
 	$notices_crees[$ancien_id]=$id_notice_bulletin;
 	//Lien entre la notice de bulletin et la notice de periodique
-	notice_relations::insert($id_notice_bulletin, $id_perio, 'b', 'up', false);
+	notice_relations::insert($id_notice_bulletin, $id_perio, 'b', 0, 'up', false);
 	if($id_notice_bulletin && ($bulletin["date"])){
 		$requete="UPDATE notices SET year='".addslashes(substr($bulletin["date"],0,4))."', date_parution='".addslashes($bulletin["date"])."' WHERE notice_id='".$id_notice_bulletin."'";
 		pmb_mysql_query($requete);
@@ -2424,24 +2389,4 @@ function keep_authority_infos($authority_number,$type,$origin_authority,$notice_
 		pmb_mysql_query($query);
 	}
 	return $num_authority;
-}
-
-function calc_notice_acces_rights($id) {
-	global $gestion_acces_active;
-	global $gestion_acces_user_notice;
-	global $gestion_acces_empr_notice;
-
-	if ($gestion_acces_active==1) {
-		$ac= new acces();
-		//traitement des droits acces user_notice
-		if ($gestion_acces_user_notice==1) {
-			$dom_1= $ac->setDomain(1);
-			$dom_1->storeUserRights(0, $id);
-		}
-		//traitement des droits acces empr_notice
-		if ($gestion_acces_empr_notice==1) {
-			$dom_2= $ac->setDomain(2);
-			$dom_2->storeUserRights(0, $id);
-		}
-	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.2 2018/06/18 14:08:27 tsamson Exp $
+// $Id: search.class.php,v 1.3 2022/08/17 13:19:54 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,7 +54,7 @@ class combine_extended_search {
     public function make_human_query(){
     	$litteral = array();
     	
-    	$this->get_serialized_searcht();
+    	$this->get_serialized_search();
     	
     	//enregistrement de l'environnement courant
     	$this->search->push();
@@ -78,8 +78,6 @@ class combine_extended_search {
     
     public function get_input_box() {
     	global $charset;
-    	
-    	$this->get_segment_set();
     	
 		//enregistrement de l'environnement courant
 		$this->search->push();
@@ -117,4 +115,3 @@ class combine_extended_search {
     }
     
 }
-?>

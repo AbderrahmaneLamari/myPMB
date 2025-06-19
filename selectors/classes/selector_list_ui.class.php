@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_list_ui.class.php,v 1.1.2.2 2021/09/18 12:50:13 dgoron Exp $
+// $Id: selector_list_ui.class.php,v 1.2 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -42,15 +42,6 @@ class selector_list_ui extends selector {
 	}
 	
 	protected function get_display_list() {
-		global $nb_per_page;
-		global $page;
-		
-		$display_list = '';
-		if(!$page) {
-			$debut = 0;
-		} else {
-			$debut = ($page-1)*$nb_per_page;
-		}
 		$this->get_list_ui_instance();
 		if(!empty($this->list_ui_instance)) {
 			$query = $this->list_ui_instance->get_ajax_selection_query($this->filter_name);
@@ -65,7 +56,7 @@ class selector_list_ui extends selector {
 				}
 				$this->nbr_lignes = count($list);
 				if($this->nbr_lignes) {
-					$list = array_slice($list, $debut, $nb_per_page, true);
+					$list = array_slice($list, $this->get_start_list(), $this->get_nb_per_page_list(), true);
 					foreach ($list as $key=>$element) {
 						$display_list .= $this->get_display_element($key, $element);
 					}

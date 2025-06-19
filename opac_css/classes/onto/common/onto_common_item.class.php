@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_item.class.php,v 1.17.2.1 2021/09/03 08:14:43 qvarin Exp $
+// $Id: onto_common_item.class.php,v 1.19 2022/05/24 13:25:48 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -59,6 +59,13 @@ class onto_common_item {
 	 * @var onto_handler
 	 */
 	protected static $handler;
+	
+	/**
+	 * Tableau de données complémentaires
+	 * @var array
+	 */
+	protected $additionnal_data = [];
+	
 	/**
 	 * 
 	 *
@@ -571,6 +578,18 @@ class onto_common_item {
 	 */
 	public function post_save() {
 	    
+	}
+
+	public function set_additionnal_data($additionnal_data) {
+	    $this->additionnal_data = $additionnal_data;
+	}
+	
+	public function add_additionnal_data($key, $value = "") {
+	    $this->additionnal_data[$key] = $value;
+	}
+	
+	public function get_additionnal_data() {
+	    return $this->additionnal_data;
 	}
 
 } // end of onto_common_item

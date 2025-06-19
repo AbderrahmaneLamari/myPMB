@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_instrument_ui.js,v 1.51.8.1 2022/01/04 08:57:55 arenou Exp $
+// $Id: nomenclature_instrument_ui.js,v 1.54 2022/06/08 14:45:16 rtigero Exp $
 
 
 define(["dojo/_base/declare", "dojo/on","dojo/dom-construct","dojo/dom", "dojo/dom-attr", "dojo/_base/lang", "dojo/topic", "apps/nomenclature/nomenclature_instrument", "dijit/_WidgetBase", "dijit/registry", "dojo/request/xhr", "apps/nomenclature/nomenclature_dialog"], function(declare, on, domConstruct, dom, domAttr, lang, topic, Instrument, _WidgetBase, registry, xhr, Dialog){
@@ -32,7 +32,8 @@ define(["dojo/_base/declare", "dojo/on","dojo/dom-construct","dojo/dom", "dojo/d
 		    	}
 		    	this.own(
 		    		topic.subscribe("instrument_ui",lang.hitch(this, this.handle_events)),
-	    			topic.subscribe("form_instrument",lang.hitch(this, this.handle_events))
+	    			topic.subscribe("form_instrument",lang.hitch(this, this.handle_events)),
+	    			topic.subscribe("nomenclature_ui",lang.hitch(this, this.handle_events))
 		    	);
 		    },
 		    
@@ -43,7 +44,12 @@ define(["dojo/_base/declare", "dojo/on","dojo/dom-construct","dojo/dom", "dojo/d
 		    	 			this.input_changed();
 		    	 		}
 		    			break;
-		    	}
+					case "sync_and_save_end":
+						if (this.instrument.get_hash().indexOf(evt_args.hash) != -1) {
+							this.update_record();
+						}
+						break;
+				}
 		    },
 		    
 		    buildRendering: function(){ 
@@ -233,7 +239,6 @@ define(["dojo/_base/declare", "dojo/on","dojo/dom-construct","dojo/dom", "dojo/d
 		    	
 		    	this.own(on(bouton_delete, "click", lang.hitch(this, function(){
 		    		this.delete_record_child();
-		    		this.publish_event('instrument_delete');
 		    	})));
 		    	this.ajax_parse();
 		    },
@@ -550,11 +555,24 @@ define(["dojo/_base/declare", "dojo/on","dojo/dom-construct","dojo/dom", "dojo/d
 			},
 			delete_record_child: function(){
 				if(this.record_id){
-					xhr("./ajax.php?module=ajax&categ=nomenclature&sub=record_child&action=delete_record&id="+this.record_id, {
+					xhr("./ajax.php?module=ajax&categ=nomenclature&sub=record_child&action=get_explnums&id="+this.record_id, {
 						handleAs: "json",
-						method:"POST",
-						data:this.ajax_prepare_args()
+						method:"GET",
+					}).then((explnums)=>{
+						if(explnums && explnums.length) {
+							var message = registry.byId('nomenclature_datastore').get_message('nomenclature_js_explnum_confirm');
+							if(!confirm(message)){
+								return;
+							}
+						}
+						xhr("./ajax.php?module=ajax&categ=nomenclature&sub=record_child&action=delete_record&id="+this.record_id, {
+							handleAs: "json",
+							method:"POST",
+							data:this.ajax_prepare_args()
+						}).then(() => this.publish_event('instrument_delete'));
 					});
+				} else {
+					this.publish_event('instrument_delete');
 				}
 			}
 	    });

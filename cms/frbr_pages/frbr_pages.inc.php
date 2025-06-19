@@ -2,20 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_pages.inc.php,v 1.9 2021/04/06 07:50:43 dgoron Exp $
+// $Id: frbr_pages.inc.php,v 1.10 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $class_path, $autoloader, $sub, $action, $id;
+global $class_path, $sub, $action, $id;
 
 require_once($class_path."/frbr/frbr_pages.class.php");
 require_once($class_path."/frbr/frbr_page.class.php");
 require_once($class_path."/list/frbr/list_frbr_cadres_ui.class.php");
-
-if(!isset($autoloader)) {
-	$autoloader = new autoloader();
-}
-$autoloader->add_register("frbr_entities",true);
 
 switch($sub) {			
 	case 'list':

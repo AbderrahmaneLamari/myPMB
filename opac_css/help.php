@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: help.php,v 1.22 2021/02/10 16:36:12 dbellamy Exp $
+// $Id: help.php,v 1.22.6.2 2023/08/16 15:14:18 qvarin Exp $
 
 $base_path = './';
 $class_path = './classes/';
@@ -49,6 +49,7 @@ print "	<meta name=\"description\" content=\"Recherches simples dans l'OPAC de P
 
 ";
 
+$aide = "";
 if (file_exists("includes/messages/".$lang."/doc_".$whatis."_subst.txt")) {
 	$aide = file_get_contents("includes/messages/".$lang."/doc_".$whatis."_subst.txt");
 } elseif (file_exists("includes/messages/".$lang."/doc_".$whatis.".txt")) {
@@ -62,10 +63,11 @@ if ($whatis == 'expbool') {
     $aide = str_replace('!!operator_more_uppercase!!', strtoupper($operator_more), $aide);
     $aide = str_replace('!!operator_more_lowercase!!', strtolower($operator_more), $aide);
 }
+
 if ($charset=='utf-8') {
-	print utf8_encode($aide);
+    print utf8_encode($aide);
 } else {
-	print $aide;
+    print $aide;
 }
 
 print "

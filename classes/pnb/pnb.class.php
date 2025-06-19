@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pnb.class.php,v 1.39 2021/02/09 15:30:46 jlaurent Exp $
+// $Id: pnb.class.php,v 1.40 2022/02/11 10:16:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) 
 	die("no access");
@@ -398,7 +398,7 @@ class pnb {
     }
     
     public static function delete_pnb_record_links($record_id){
-        $record_id+= 0;
+    	$record_id = intval($record_id);
         $query = 'select expl_id, expl_cb from exemplaires where expl_notice =' . $record_id;
         $result = pmb_mysql_query($query);
         if (pmb_mysql_num_rows($result)) {

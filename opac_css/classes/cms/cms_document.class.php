@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_document.class.php,v 1.10 2021/02/09 13:43:57 dgoron Exp $
+// $Id: cms_document.class.php,v 1.13 2022/10/21 15:00:14 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -26,6 +26,9 @@ class cms_document {
 	public $num_object=0;
 	protected $human_size = 0;
 	protected $storage;
+	protected $data;
+	protected $img_infos;
+	
 	
 	public function __construct($id=0){
 		$this->id = intval($id);
@@ -108,8 +111,18 @@ class cms_document {
 		return "./ajax.php?module=cms&categ=document&action=thumbnail&id=".$this->id;
 	}
 		
-	public function get_document_url(){
-		global $opac_url_base;
+	public function get_document_url($mode=''){
+		global $base_path, $opac_url_base, $database;
+		if(!empty($mode) && is_object($this->storage)) {
+			$this->data = $this->storage->get_content($this->path . $this->filename);
+			$this->get_img_infos();
+			
+			if(file_exists($base_path . '/temp/cms_document/'.$database.'/'.$mode.'/'.$this->id.'.'.$this->img_infos['type'])){
+				return $opac_url_base . 'temp/cms_document/'.$database.'/'.$mode.'/'.$this->id.'.'.$this->img_infos['type'];
+			}
+			
+			return "./ajax.php?module=cms&categ=document&action=render&id=".$this->id."&mode=".$mode;
+		}
 		return "./ajax.php?module=cms&categ=document&action=render&id=".$this->id;
 	}
 			
@@ -283,7 +296,9 @@ class cms_document {
 	
 	public function delete(){
 		//TODO vérification avant suppression dans le contenu éditorial
-		
+		if(!is_object($this->storage)){
+			return $msg['cms_document_delete_physical_error'];;
+		}
 		//suppression physique
 		if($this->storage->delete($this->path.$this->filename)){
 			//il ne reste plus que la base
@@ -320,7 +335,7 @@ class cms_document {
 		$path = $base_path."/temp/cms_document_".$this->id;
  		if(file_exists($path)){
  			return $path;
- 		}else if($this->storage->duplicate($this->path.$this->filename,$path)){
+ 		}else if(is_object($this->storage) && $this->storage->duplicate($this->path.$this->filename,$path)){
  			return $path;
  		}
 		return false;
@@ -382,11 +397,25 @@ class cms_document {
 				'value' => $this->filesize
 			),
 			'url' => $this->get_document_url(),
+			'urls' => $this->format_datamode(),
 			'create_date' => $this->create_date,
 			'thumbnails_url' => $this->get_vignette_url()
 		);
 		$datas['collection'] = $collection->get_infos();
 		return $datas;
+	}
+	
+	public function format_datamode(){
+		return array(
+			'small_vign' => $this->get_document_url("small_vign"),
+			'vign' =>		$this->get_document_url("vign"),
+			'small' =>		$this->get_document_url("small"),
+			'medium' =>		$this->get_document_url("medium"),
+			'big' =>		$this->get_document_url("big"),
+			'large' =>		$this->get_document_url("large"),
+			'custom' =>		$this->get_document_url("custom_"),
+			'exists' =>		($this->data ? true : false)
+		);
 	}
 	
 	public static function get_format_data_structure(){
@@ -471,19 +500,203 @@ class cms_document {
 		}
 	}
 	
-	public function render_doc(){
-	    if($this->num_storage && is_object($this->storage)) {
-    		$content = $this->storage->get_content($this->path.$this->filename);
-    		if($content){
-    			header('Content-Type: '.$this->mimetype);
-    			header('Content-Disposition: inline; filename="'.$this->filename.'"');
-    			if($this->filesize) header("Content-Length: ".$this->filesize);
-    			print $content;
-    		}
-	    }
+	public function render_doc($mode = "") {
+		if ($this->num_storage && is_object($this->storage)) {
+			$this->data = $this->storage->get_content($this->path . $this->filename);
+			if ($this->data) {
+				header('Content-Type: ' . $this->mimetype);
+				header('Content-Disposition: inline; filename="' . $this->filename . '"');
+				if(!empty($mode)) {
+					$this->get_img_infos();
+					print $this->get_resized_document($mode);
+					return;
+				}
+				//TODO récup le filesize quand on resize l'image
+				if ($this->filesize) header("Content-Length: " . $this->filesize);
+				print $this->data;
+			}
+		}
 	}
 	
 	public function get_num_storage() {
 		return $this->num_storage;
+	}
+	
+	protected function get_resized_document($mode) {
+		global $cms_active_image_cache, $base_path, $database;
+		
+		if($cms_active_image_cache && file_exists($base_path.'/temp/cms_document/'.$database.'/'.$mode.'/'.$this->id.'.'.$this->img_infos['type'])){
+			header('Content-Type: '.$this->img_infos['mimetype']);
+			print file_get_contents($base_path.'/temp/cms_document/'.$database.'/'.$mode.'/'.$this->id.'.'.$this->img_infos['type']);
+		}
+		if(strpos($mode,'custom_') !== false){
+			$elems = explode('_',$mode);
+			if (!is_numeric($elems[1])) {
+				header("HTTP/1.0 404 Not Found");
+				return;
+			}
+			$size = $elems[1]*1;
+			if($size>0){
+				$dst_img=$this->resize($size,$size);
+			}else{
+				$dst_img=$this->resize(500,500);
+			}
+		} else {
+			switch($mode){
+				case 'small_vign' :
+					$dst_img = $this->resize(16,16);
+					break;
+				case 'vign' :
+					$dst_img=$this->resize(100,100);
+					break;
+				case 'small' :
+					$dst_img=$this->resize(140,140);
+					break;
+				case 'medium' :
+					$dst_img=$this->resize(300,300);
+					break;
+				case 'big' :
+					$dst_img=$this->resize(600,600);
+					break;
+				case 'large' :
+					$dst_img=$this->resize(0,0);
+					if($this->img_infos['type'] == 'png') {
+						//Pour les images non redimensionnées
+						imageSaveAlpha($dst_img, true);
+					}
+					break;
+				default :
+					header("HTTP/1.0 404 Not Found");
+					return;
+			}
+		}
+		if($dst_img) {
+			if(function_exists($this->img_infos['render_fct'])) {
+				if($cms_active_image_cache) {
+					$this->init_cache_path($mode);
+					$render_params = array_merge(array($dst_img, $base_path.'/temp/cms_document/'.$database.'/'.$mode.'/'.$this->id.'.'.$this->img_infos['type']),$this->img_infos['render_params']);
+					call_user_func_array($this->img_infos['render_fct'], $render_params);
+				}
+				$render_params = array_merge(array($dst_img, null),$this->img_infos['render_params']);
+				call_user_func_array($this->img_infos['render_fct'], $render_params);
+			}
+		}
+	}
+	
+	private function init_cache_path($mode){
+		global $base_path, $database;
+		if(!file_exists($base_path."/temp/cms_document")){
+			mkdir($base_path."/temp/cms_document");
+		}
+		if(!file_exists($base_path."/temp/cms_document/".$database)){
+			mkdir($base_path."/temp/cms_document/".$database);
+		}
+		if(!file_exists($base_path."/temp/cms_document/".$database."/".$mode)){
+			mkdir($base_path."/temp/cms_document/".$database."/".$mode);
+		}
+	}
+	
+	protected function resize($size_x=0,$size_y=0){
+		
+		$src_img = imagecreatefromstring($this->data);
+		if(!$src_img) {
+			header('Content-Type: image/png');
+			print file_get_contents(get_url_icon('vide.png'));
+			return;
+		}
+		
+		if(!$size_x && !$size_y){
+			return $src_img;
+		}
+		
+		$maxX=$size_x;
+		$maxY=$size_y;
+		
+		$rs=$maxX/$maxY;
+		$taillex=$this->img_infos['width'];
+		$tailley=$this->img_infos['height'];
+		if (!$taillex || !$tailley) {
+			header('Content-Type: image/png');
+			print file_get_contents(get_url_icon('vide.png'));
+			return;
+		}
+		if (($taillex>$maxX)||($tailley>$maxY)) {
+			$r=$taillex/$tailley;
+			if (($r<1)&&($rs<1)) {
+				//Si x plus petit que y et taille finale portrait
+				//Si le format final est plus large en proportion
+				if ($rs>$r) {
+					$new_h=$maxY;
+					$new_w=$new_h*$r;
+				} else {
+					$new_w=$maxX;
+					$new_h=$new_w/$r;
+				}
+			} else if (($r<1)&&($rs>=1)){
+				//Si x plus petit que y et taille finale paysage
+				$new_h=$maxY;
+				$new_w=$new_h*$r;
+			} else if (($r>1)&&($rs<1)) {
+				//Si x plus grand que y et taille finale portrait
+				$new_w=$maxX;
+				$new_h=$new_w/$r;
+			} else {
+				//Si x plus grand que y et taille finale paysage
+				if ($rs<$r) {
+					$new_w=$maxX;
+					$new_h=$new_w/$r;
+				} else {
+					$new_h=$maxY;
+					$new_w=$new_h*$r;
+				}
+			}
+		} else {
+			$new_h = $tailley ;
+			$new_w = $taillex ;
+		}
+		$dst_img=imagecreatetruecolor($new_w,$new_h);
+		if($this->img_infos['type'] == 'png') {
+			imageSaveAlpha($dst_img, true);
+			imageAlphaBlending($dst_img, false);
+		}
+		imagecopyresampled($dst_img,$src_img,0,0,0,0,$new_w,$new_h,$this->img_infos['width'],$this->img_infos['height']);
+		
+		return $dst_img;
+	}
+	
+	protected function get_img_infos() {
+		$img_infos = getimagesizefromstring($this->data);
+		if($img_infos) {
+			$this->img_infos['width'] = $img_infos[0];
+			$this->img_infos['height'] = $img_infos[1];
+			$this->img_infos['mimetype'] = $img_infos['mime'];
+			
+			$this->img_infos['render_fct']= false;
+			$this->img_infos['render_params'] = array();
+			
+			switch($this->img_infos['mimetype']) {
+				case 'image/png' :
+					$this->img_infos['type'] = 'png';
+					$this->img_infos['render_fct'] = 'imagepng';
+					if(defined('PNG_ALL_FILTERS')) {
+						$this->img_infos['render_params'] = array(9, PNG_ALL_FILTERS);
+					} else {
+						$this->img_infos['render_params'] = array(9);
+					}
+					break;
+				case 'image/jpeg' :
+					$this->img_infos['type'] = 'jpeg';
+					$this->img_infos['render_fct'] = 'imagejpeg';
+					if (strlen($this->data) < 102400) {
+						// Si image < 100ko, on ne réduit pas la qualité, sinon on laisse le réglage par défaut de imagejpeg
+						$this->img_infos['render_params'] = array(100);
+					}
+					break;
+				case 'image/gif' :
+					$this->img_infos['type'] = 'gif';
+					$this->img_infos['render_fct'] = 'imagegif';
+					break;
+			}
+		}
 	}
 }

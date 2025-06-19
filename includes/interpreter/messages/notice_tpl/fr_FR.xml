@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: fr_FR.xml,v 1.34.2.1 2021/07/27 11:48:23 dgoron Exp $ -->
+$Id: fr_FR.xml,v 1.37.4.1 2023/12/15 09:06:54 qvarin Exp $ -->
 
 <!DOCTYPE XMLlist SYSTEM "../../../../includes/XMLlist.dtd" >
 <XMLlist>
@@ -398,7 +398,12 @@ Pour obtenir les noms des fichiers PDF :
   <entry code="img_url_description">Affiche le lien vers la vignette de couverture de la notice.</entry>
   <entry code="img_url_input_description"></entry>
   <entry code="img_url_output_description"></entry>
-  
+
+<!--#img_base64();-->
+  <entry code="img_base64_description">Affiche la vignette de couverture de la notice en base64.</entry>
+  <entry code="img_base64_input_description"></entry>
+  <entry code="img_base64_output_description">data:image/png;base64,cXZhcmlu</entry>
+
 <!--#no_image();-->
   <entry code="no_image_description">Affiche la no_image en fonction du niveau bibliographique et du type de document.</entry>
   <entry code="no_image_input_description"></entry>
@@ -1182,6 +1187,14 @@ param2 : chaîne de caractères pour le suffixe. Valeur par défaut : [...]
   <entry code="ucfirst_description">Affiche la chaîne de caractères param0 avec la 1e lettre en majuscules.</entry>
   <entry code="ucfirst_input_description"></entry>
   <entry code="ucfirst_output_description"></entry>
+  
+<!-- #ucwords($param); -->
+  <entry code="ucwords_description">Affiche un texte avec les premières lettres des mots en majuscule</entry>
+  <entry code="ucwords_input_description">
+  param[0] = texte
+  param[1] = séparateurs. Valeur par défaut : " \t\r\n\f\v"
+  </entry>
+  <entry code="ucwords_output_description">Exemple : Si param[0]="logiciel pmb", on aura "Logiciel Pmb"</entry>
   
 <!--#set_variable(param0);-->
   <entry code="set_variable_description">Affecte une valeur à une variable.</entry>

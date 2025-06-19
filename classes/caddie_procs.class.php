@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: caddie_procs.class.php,v 1.23 2019/07/17 12:06:27 dgoron Exp $
+// $Id: caddie_procs.class.php,v 1.24 2022/02/10 10:46:07 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once ($class_path."/procs.class.php");
 require_once ($include_path."/templates/cart.tpl.php");
 require_once ($class_path."/parameters.class.php");
@@ -98,7 +99,7 @@ class caddie_procs extends procs {
 				} else {
 					$autorisations='';
 				}
-				$autorisations_all += 0;
+				$autorisations_all = intval($autorisations_all);
 				$param_name=parameters::check_param($f_proc_code);
 				if ($param_name!==true) {
 					error_message_history($param_name, sprintf($msg["proc_param_check_field_name"],$param_name), 1);
@@ -121,14 +122,14 @@ class caddie_procs extends procs {
 		global $userautorisation;
 		global $autorisations_all;
 		
-		$id += 0;
+		$id = intval($id);
 		if($id) {
 			if (is_array($userautorisation)) {
 				$autorisations=implode(" ",$userautorisation);
 			} else {
 				$autorisations="";
 			}
-			$autorisations_all += 0;
+			$autorisations_all = intval($autorisations_all);
 			$param_name=parameters::check_param($f_proc_code);
 			if ($param_name!==true) {
 				error_message_history($param_name, sprintf($msg["proc_param_check_field_name"],$param_name), 1);
@@ -142,12 +143,12 @@ class caddie_procs extends procs {
 	}
 	
 	public static function get_proc_form($id=0) {
-		global $base_path, $msg;
+		global $msg;
 		global $cart_procs_form;
 		global $charset;
 		global $PMBuserid;
 		
-		$id += 0;
+		$id = intval($id);
 		$form = $cart_procs_form;
 		switch (static::$table) {
 			case 'empr_caddie_procs':
@@ -236,7 +237,7 @@ class caddie_procs extends procs {
 		
 		$autorisations_users="";
 		$id_check_list='';
-		foreach ($autorisations as $row_number => $row_data) {
+		foreach ($autorisations as $row_data) {
 			$id_check="auto_".$row_data[1];
 			if($id_check_list)$id_check_list.='|';
 			$id_check_list.=$id_check;
@@ -357,7 +358,6 @@ class caddie_procs extends procs {
 	}
 	
 	public static function check_rights($id) {
-		global $msg;
 		global $PMBuserid;
 	
 		if ($id) {

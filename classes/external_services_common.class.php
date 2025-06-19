@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: external_services_common.class.php,v 1.2 2021/03/04 09:48:47 dbellamy Exp $
+// $Id: external_services_common.class.php,v 1.4 2022/03/04 09:08:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -82,9 +82,9 @@ class external_services_common {
 		
 		//Allons chercher les infos dans le cache si elles existent
 		if ($fetch_values) {
-			$cache_ref = "getAdvancedSearchFields_results_valued_".$lang."_".$search_realm;
+			$cache_ref = "getAdvancedSearchFields_results_valued_".(!empty($vlang) ? $vlang : $lang)."_".$search_realm;
 		} else {
-			$cache_ref = "getAdvancedSearchFields_results_".$lang."_".$search_realm;
+			$cache_ref = "getAdvancedSearchFields_results_".(!empty($vlang) ? $vlang : $lang)."_".$search_realm;
 		}
 		$es_cache = new external_services_cache('es_cache_blob', 86400);
 		$cached_result = $es_cache->decache_single_object($cache_ref, CACHE_TYPE_MISC);
@@ -120,6 +120,11 @@ class external_services_common {
 			}
 		}
 		
+		//Modifions la globale $lang pour la construction dans la classe search.class.php
+		//Attention : à ne pas remonter plus haut car il faut que les messages soient dans la bonne langue
+		if(!empty($vlang)) {
+			$lang = $vlang;
+		}
 		$s=new search(false, $search_realm, $full_path);
 		$results=array();
 		//les champs statiques
@@ -161,7 +166,7 @@ class external_services_common {
 		
 		if (!$nocache) {
 			//Allons chercher les infos dans le cache si elles existent
-			$cache_ref = "getAdvancedSearchField_result_".$field_id."_".$lang."_".$search_realm;
+			$cache_ref = "getAdvancedSearchField_result_".$field_id."_".(!empty($vlang) ? $vlang : $lang)."_".$search_realm;
 			$es_cache = new external_services_cache('es_cache_blob', 86400);
 			$cached_result = $es_cache->decache_single_object($cache_ref, CACHE_TYPE_MISC);
 			if ($cached_result !== false) {
@@ -199,7 +204,11 @@ class external_services_common {
 					$msg = $messages->table;
 				}
 			}
-			
+			//Modifions la globale $lang pour la construction dans la classe search.class.php
+			//Attention : à ne pas remonter plus haut car il faut que les messages soient dans la bonne langue
+			if(!empty($vlang)) {
+				$lang = $vlang;
+			}
 			$search_object=new search(false, $search_realm, $full_path);
 		}
 		

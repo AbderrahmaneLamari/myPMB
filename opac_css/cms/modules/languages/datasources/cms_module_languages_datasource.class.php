@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_languages_datasource.class.php,v 1.1.2.3 2022/01/07 09:05:15 moble Exp $
+// $Id: cms_module_languages_datasource.class.php,v 1.3 2022/01/07 09:01:04 moble Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

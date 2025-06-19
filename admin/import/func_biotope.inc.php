@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_biotope.inc.php,v 1.2.16.1 2022/01/12 07:57:53 dgoron Exp $
+// $Id: func_biotope.inc.php,v 1.3 2022/01/12 07:49:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

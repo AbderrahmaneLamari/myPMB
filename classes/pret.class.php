@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pret.class.php,v 1.29.2.2 2021/12/27 11:15:09 dgoron Exp $
+// $Id: pret.class.php,v 1.32.4.1 2023/07/28 09:44:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/expl.class.php");
 
 // définition de la classe de gestion des 'prêts'
@@ -53,6 +54,7 @@ class pret {
 	public $display;
 	protected $exemplaire;
 	protected $emprunteur;
+	public $owner;
 
 	public function __construct( $id_empr, $id_expl, $cb_expl='', $pret_date='', $pret_retour='') {
 	    $this->id_empr= intval($id_empr);
@@ -240,12 +242,7 @@ class pret {
 	}
 	
 	public static function get_display_info($title='', $content='') {
-		global $pmb_play_pret_sound;
-		global $alert_sound_list;
-		
-		if($pmb_play_pret_sound) {
-			$alert_sound_list[]="information";
-		}
+		static::add_alert_sound_list('information');
 		return "
 			<hr />
 			<div class='row'>
@@ -261,9 +258,7 @@ class pret {
 	
 	public static function get_display_error($title='', $content='', $show_cancel=0, $show_loan=0, $suffix_link_loan='') {
 		global $msg, $charset;
-		global $pmb_play_pret_sound;
-		global $alert_sound_list;
-		global $id_empr, $cb_doc, $confirm;
+		global $id_empr;
 		
 		if(!$title && !$content) { 
 		    return "<hr />
@@ -272,9 +267,7 @@ class pret {
 			<div class='colonne-suite'><span class='erreur'></span></div>
 			</div><br />";
 		}
-		if($pmb_play_pret_sound) {
-			$alert_sound_list[]="critique";
-		}
+		static::add_alert_sound_list('critique');
 		$display = "
 			<hr />
 			<div class='row'>
@@ -380,6 +373,68 @@ class pret {
 	    pmb_mysql_query($query);
 	    
 	    return true;
+	}
+	
+	public static function is_last_late($id_empr, $expl_id) {
+		$id_empr = intval($id_empr);
+		$is_last_loan_late = false;
+		$loans_late = emprunteur::get_loans_late($id_empr);
+		if(!empty($loans_late[$expl_id])) {
+			unset($loans_late[$expl_id]);
+		}
+		if(empty($loans_late)) {
+			$is_last_loan_late = true;
+		}
+		return $is_last_loan_late;
+	}
+	
+	public static function update_blocage($id_empr, $id_expl, $ndays, $loc_calendar = 0) {
+		global $msg;
+		global $pmb_blocage_max, $selfservice_retour_blocage_msg;
+		
+		$id_empr = intval($id_empr);
+		$id_expl = intval($id_expl);
+		$ndays = intval($ndays);
+		
+		$informations = array();
+		//Le lecteur est-il déjà bloqué ?
+		$date_fin_blocage_empr = pmb_mysql_result(pmb_mysql_query("select date_fin_blocage from empr where id_empr='".$id_empr."'"),0,0);
+		//Calcul de la date de fin
+		if ($pmb_blocage_max!=-1) {
+			$date_fin=calendar::add_days(date("d"),date("m"),date("Y"),$ndays,$loc_calendar);
+		} else {
+			$date_fin=calendar::add_days(date("d"),date("m"),date("Y"),0,$loc_calendar);
+		}
+		if ($pmb_blocage_max==-1 && static::is_last_late($id_empr, $id_expl)) {
+			if($date_fin_blocage_empr != '0000-00-00') {
+				//on lève le blocage
+				//Mise à jour
+				pmb_mysql_query("update empr set date_fin_blocage='0000-00-00' where id_empr='".$id_empr."'");
+				$informations['message'] = $msg["blocage_retard_pret_is_up"];
+				static::add_alert_sound_list('information');
+			} else {
+				//on ne bloque pas car il s'agit du dernier retard
+				$informations['message'] = $msg["blocage_retard_pret_last_late"];
+				static::add_alert_sound_list('information');
+			}
+		} else {
+			if ($date_fin > $date_fin_blocage_empr) {
+				//Mise à jour
+				pmb_mysql_query("update empr set date_fin_blocage='".$date_fin."' where id_empr='".$id_empr."'");
+				$informations['message'] = sprintf($msg["blocage_retard_pret"],formatdate($date_fin));
+				$informations['custom_message'] = sprintf($selfservice_retour_blocage_msg,formatdate($date_fin));
+				static::add_alert_sound_list('critique');
+			} else {
+				$informations['message'] = sprintf($msg["blocage_already_retard_pret"],formatdate($date_fin_blocage_empr));
+				$informations['custom_message'] = sprintf($selfservice_retour_blocage_msg,formatdate($date_fin_blocage_empr));
+				static::add_alert_sound_list('critique');
+			}
+		}
+		return $informations;
+	}
+	
+	public function get_id() {
+	    return $this->id_expl;
 	}
 } # fin de définition de la classe pret
 

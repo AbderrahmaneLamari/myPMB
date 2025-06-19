@@ -2,15 +2,18 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_password_rules.tpl.php,v 1.1 2020/11/19 08:31:50 dbellamy Exp $
+// $Id: empr_password_rules.tpl.php,v 1.2.4.2 2023/06/13 09:19:25 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
 global $msg, $admin_empr_password_rules_tpl;
 
+
+
 $admin_empr_password_rules_tpl['form'] = "
 <form class='form-admin' name='admin_empr_password_rules' method='post' id='admin_empr_password_rules' action='./admin.php?categ=empr&sub=password_rules&action=save'>
 	<h3>".$msg['admin_empr_password_rules_form_title']."</h3>
+    <span style='!!admin_empr_password_no_rules_ext_auth!!' class='erreur'>".$msg['admin_empr_password_no_rules_ext_auth']."</span>
 	<div class='form-contenu'>
 		<table class='modern'>
 			<thead id='empr_renewal_form_fixed_header'>

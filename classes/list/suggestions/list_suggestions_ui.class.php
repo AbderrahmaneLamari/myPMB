@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_suggestions_ui.class.php,v 1.26.2.4 2021/11/22 13:23:47 dgoron Exp $
+// $Id: list_suggestions_ui.class.php,v 1.36.2.3 2023/09/29 07:24:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -123,36 +123,22 @@ class list_suggestions_ui extends list_ui {
 	}
 		
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-	
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'category':
-					$order .= "libelle_categ";
-					break;
-				case 'url':
-					$order .= "url_suggestion";
-					break;
-				case 'source':
-					$order .= "libelle_source";
-					break;
-				case 'etat':
-					$this->applied_sort_type = 'OBJECTS';
-					break;
-				default :
-					$order .= $sort_by;
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'category':
+	            return "libelle_categ";
+	        case 'url':
+	            return "url_suggestion";
+	        case 'source':
+	            return "libelle_source";
+	        case 'etat':
+	            $this->applied_sort_type = 'OBJECTS';
+	            return "";
+	        default :
+	            return $sort_by;
+	    }
 	}
 	
 	/**
@@ -238,9 +224,7 @@ class list_suggestions_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_user_input() {
-		global $charset;
-		
-		return "<input type='text' class='saisie-30em' id='".$this->objects_type."_user_input' name='".$this->objects_type."_user_input' value='".htmlentities($this->filters['user_input'], ENT_QUOTES, $charset)."' />";
+		return $this->get_search_filter_simple_text('user_input');
 	}
 	
 	protected function get_search_filter_location() {
@@ -361,48 +345,23 @@ class list_suggestions_ui extends list_ui {
 		return $search_filters_form;
 	}
 	
-	/**
-	 * Jointure externes SQL pour les besoins des filtres
-	 */
-	protected function _get_query_join_filters() {
-	
-		$filter_join_query = '';
-		return $filter_join_query;
-	}
-	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+	protected function _add_query_filters() {
 		if($this->filters['location']) {
-			$filters[] = 'sugg_location IN (0, '.intval($this->filters['location']).')';
+			$this->query_filters [] = 'sugg_location IN (0, '.intval($this->filters['location']).')';
 		}
 		if($this->filters['category'] && $this->filters['category'] != '-1') {
-			$filters[] = 'num_categ = "'.$this->filters['category'].'"';
+			$this->query_filters [] = 'num_categ = "'.$this->filters['category'].'"';
 		}
 		if($this->filters['state'] != '-1') {
 			$mask = $this->get_suggestions_map()->getMask_FILED();
 			if ($this->filters['state'] == $mask) {
-				$filters[] = "(statut & '".$mask."') = '".$mask."' ";
+				$this->query_filters [] = "(statut & '".$mask."') = '".$mask."' ";
 			} else {
-				$filters[] = "(statut & '".$mask."') = 0 and (statut & ".$this->filters['state'].") = '".$this->filters['state']."' ";
+				$this->query_filters [] = "(statut & '".$mask."') = 0 and (statut & ".$this->filters['state'].") = '".$this->filters['state']."' ";
 			}
 		}
-		if($this->filters['source']) {
-			$filters[] = 'sugg_source = "'.$this->filters['source'].'"';
-		}
-		if($this->filters['date_start']) {
-			$filters[] = 'date_creation >= "'.$this->filters['date_start'].'"';
-		}
-		if($this->filters['date_end']) {
-			$filters[] = 'date_creation <= "'.$this->filters['date_end'].'"';
-		}
+		$this->_add_query_filter_simple_restriction('source', 'sugg_source');
+		$this->_add_query_filter_interval_restriction('date', 'date_creation', 'date');
 		$tab_empr=array();
 		$tab_user=array();
 		$tab_visitor=array();
@@ -429,7 +388,7 @@ class list_suggestions_ui extends list_ui {
 				$filters_origins[] = 'suggestions_origine.origine IN ("'.implode('","', $tab_visitor).'") AND type_origine="2"';
 			}
 			if(count($filters_origins)) {
-				$filters[] = "(".implode(") or (", $filters_origins).")";
+				$this->query_filters [] = "(".implode(") or (", $filters_origins).")";
 			}
 		}
 		if($this->filters['user_input']) {
@@ -462,17 +421,12 @@ class list_suggestions_ui extends list_ui {
 					}
 				}
 				$q_codes.=") ";
-				$filters[] = $q_codes;
+				$this->query_filters [] = $q_codes;
 			} else {
 				$members=$aq->get_query_members("suggestions","concat(titre,' ',editeur,' ',auteur,' ',commentaires)","index_suggestion","id_suggestion");
-				$filters[] = $members["where"];
+				$this->query_filters [] = $members["where"];
 			}
 		}
-		if(count($filters)) {
-			$filter_query .= $this->_get_query_join_filters();
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 		
 	protected function get_link_action($action, $act) {
@@ -531,6 +485,9 @@ class list_suggestions_ui extends list_ui {
 		
 		$content = '';
 		switch($property) {
+			case 'etat':
+				$content .= $this->_get_object_property_etat($object); //Interprétation du HTML
+				break;
 			case 'catalog':
 				if($object->num_notice) {
 					$req_ana = "select analysis_bulletin as bull , analysis_notice as noti from analysis where analysis_notice ='".$object->num_notice."'";
@@ -586,19 +543,17 @@ class list_suggestions_ui extends list_ui {
 		return "chk";
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
+		$attributes = array();
 		switch($property) {
 			case 'catalog':
-				$display = "<td class='center'><i>".$this->get_cell_content($object, $property)."</i></td>";
-				break;
 			case 'url':
-				$display = "<td class='center'>".$this->get_cell_content($object, $property)."</td>";
 				break;
 			default:
-				$display = "<td onclick=\"window.location='".static::get_controller_url_base()."&action=modif&id_bibli=".$this->filters['entite']."&id_sug=".$object->id_suggestion."'\" style='cursor:pointer;'><i>".$this->get_cell_content($object, $property)."</i></td>";
+				$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=modif&id_bibli=".$this->filters['entite']."&id_sug=".$object->id_suggestion."\"";
 				break;
-		}	
-		return $display;
+		}
+		return $attributes;
 	}
 	
 	public function get_error_message_empty_list() {
@@ -714,6 +669,9 @@ class list_suggestions_ui extends list_ui {
 				        'origin' => 'acquisition_sug_orig',
 						'commentaires' => 'acquisition_sug_com',
 						'commentaires_gestion' => 'acquisition_sug_com_gestion',
+						'nb' => 'acquisition_sug_qte',
+						'code' => 'acquisition_sug_cod',
+						'prix' => 'acquisition_sug_pri'
 				)
 		);
 		if ($acquisition_sugg_categ) {
@@ -744,7 +702,15 @@ class list_suggestions_ui extends list_ui {
 		parent::init_default_settings();
 		$this->set_setting_display('search_form', 'options', true);
 		$this->set_setting_display('search_form', 'export_icons', false);
+		$this->set_setting_column('default', 'align', 'left');
+		$this->set_setting_column('catalog', 'align', 'center');
+		$this->set_setting_column('url', 'align', 'center');
+		$this->set_setting_column('nb', 'align', 'center');
+		$this->set_setting_column('prix', 'align', 'center');
+		$this->set_setting_column('default', 'text', array('italic' => true));
+		$this->set_setting_column('url', 'text', array('italic' => false));
 		$this->set_setting_column('date_creation', 'datatype', 'date');
+		$this->set_setting_column('nb', 'datatype', 'integer');
 	}
 	
 	protected function init_no_sortable_columns() {
@@ -758,7 +724,7 @@ class list_suggestions_ui extends list_ui {
 	 * Initialisation du tri par défaut appliqué
 	 */
 	protected function init_default_applied_sort() {
-	    $this->add_applied_sort('statut');
+	    $this->add_applied_sort('date_creation', 'desc');
 	}
 	
 	public static function get_controller_url_base() {
@@ -818,62 +784,25 @@ class list_suggestions_ui extends list_ui {
 		return 'button';
 	}
 	
-	protected function add_event_on_selection_action($action=array()) {
-	    global $msg;
-	    
-	    $display = "
-			on(dom.byId('".$this->objects_type."_selection_action_".$action['name']."_link'), 'click', function() {
-				var selection = new Array();
-				query('.".$this->objects_type."_selection:checked').forEach(function(node) {
-					selection.push(node.value);
+	protected function get_inheritance_nodes_selected_objects_form($action=array()) {
+		return "
+			if(dom.byId('".$this->objects_type."_selection_action_to_categ_link')) {
+				var to_categ_hidden = domConstruct.create('input', {
+					type : 'hidden',
+					name : 'to_categ',
+					value : dom.byId('".$this->objects_type."_selection_action_to_categ_link').value
 				});
-				if(selection.length) {
-					var confirm_msg = '".(isset($action['link']['confirm']) ? addslashes($action['link']['confirm']) : '')."';
-					if(!confirm_msg || confirm(confirm_msg)) {
-						".(isset($action['link']['href']) && $action['link']['href'] ? "
-							var selected_objects_form = domConstruct.create('form', {
-								action : '".$action['link']['href']."',
-								name : '".$this->objects_type."_selected_objects_form',
-								id : '".$this->objects_type."_selected_objects_form',
-								method : 'POST'
-							});
-							selection.forEach(function(selected_option) {
-								var selected_objects_hidden = domConstruct.create('input', {
-									type : 'hidden',
-									name : '".$this->get_name_selected_objects()."[]',
-									value : selected_option
-								});
-								domConstruct.place(selected_objects_hidden, selected_objects_form);
-							});
-                            if(dom.byId('".$this->objects_type."_selection_action_to_categ_link')) {
-                                var to_categ_hidden = domConstruct.create('input', {
-									type : 'hidden',
-									name : 'to_categ',
-									value : dom.byId('".$this->objects_type."_selection_action_to_categ_link').value
-								});
-                                domConstruct.place(to_categ_hidden, selected_objects_form);
-                            }
-                            if(dom.byId('".$this->objects_type."_selection_action_export_list')) {
-                                var export_list_hidden = domConstruct.create('input', {
-									type : 'hidden',
-									name : 'export_list',
-									value : dom.byId('".$this->objects_type."_selection_action_export_list').value
-								});
-                                domConstruct.place(export_list_hidden, selected_objects_form);
-                            }
-							domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
-							dom.byId('".$this->objects_type."_selected_objects_form').submit();
-							"
-						    : "")."
-						".(isset($action['link']['openPopUp']) && $action['link']['openPopUp'] ? "openPopUp('".$action['link']['openPopUp']."&selected_objects='+selection.join(','), '".$action['link']['openPopUpTitle']."'); return false;" : "")."
-						".(isset($action['link']['onClick']) && $action['link']['onClick'] ? $action['link']['onClick']."(selection); return false;" : "")."
-					}
-				} else {
-					alert('".addslashes($msg['list_ui_no_selected'])."');
-				}
-			});
+				domConstruct.place(to_categ_hidden, selected_objects_form);
+			}
+			if(dom.byId('".$this->objects_type."_selection_action_export_list')) {
+				var export_list_hidden = domConstruct.create('input', {
+					type : 'hidden',
+					name : 'export_list',
+					value : dom.byId('".$this->objects_type."_selection_action_export_list').value
+				});
+				domConstruct.place(export_list_hidden, selected_objects_form);
+			}
 		";
-        return $display;
 	}
 	
 	protected function add_event_on_selection_other_action($action=array()) {

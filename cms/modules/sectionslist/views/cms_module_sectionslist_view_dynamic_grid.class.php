@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_sectionslist_view_dynamic_grid.class.php,v 1.1.2.1 2021/10/13 12:23:13 qvarin Exp $
+// $Id: cms_module_sectionslist_view_dynamic_grid.class.php,v 1.3 2022/10/20 13:18:21 jparis Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
     die("no access");
 
@@ -65,10 +65,13 @@ class cms_module_sectionslist_view_dynamic_grid extends cms_module_common_view_d
             "article" => $this->get_constructed_link("article", "!!id!!"),
             "section" => $this->get_constructed_link("section", "!!id!!")
         ];
-        
-        $index = count($ids);
+        $local_ids = $ids;
+        if (isset($ids["sections"])) {
+            $local_ids = $ids["sections"];
+        }
+        $index = count($local_ids);
         for ($i = 0; $i < $index; $i++) {            
-            $section = new cms_section($ids[$i]);
+            $section = new cms_section($local_ids[$i]);
             $sections[] = $section->format_datas($links);
         }
         

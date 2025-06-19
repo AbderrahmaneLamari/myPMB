@@ -1,4 +1,4 @@
-<!-- $Id: animations_list.tpl.html,v 1.4 2021/03/18 11:04:22 qvarin Exp $ -->
+<!-- $Id: animations_list.tpl.html,v 1.5 2023/01/23 12:44:06 gneveu Exp $ -->
 
 {% if animations %}
 	<div class="AnimList">
@@ -28,9 +28,13 @@
 							{% if animation.event.startHour != '00:00' %}
 								{{ animation.event.startHour }}
 							{% endif %}<br>
-							{{ msg.animations_date_to }} {{ animation.event.endDate }} 
-							{% if animation.event.endHour != '00:00' %}
-								{{ animation.event.endHour }}
+							{% if !animation.event.duringDay %}
+								{% if animation.event.startDate != animation.event.endDate %}
+									{{ msg.animations_date_to }} {{ animation.event.endDate }} 
+									{% if animation.event.endHour != '00:00' %}
+										{{ animation.event.endHour }}
+									{% endif %}
+								{% endif %}
 							{% endif %}
 						</td>
 					{% endblock %}
@@ -42,9 +46,17 @@
 										{{ animation.allQuotas.availableQuotas.global }} / {{ animation.globalQuota }}
 									</span>
 								{% else %}
-									<span>
-										{{ msg.animation_quota_no_limit }}
-									</span>
+									{% if animation.allQuotas.animationQuotas.global == 0 %}
+										{{ msg.quotas_not_set_biblio }}
+									{% else %}
+										{% if animation.allQuotas.animationQuotas.global == 0 %}
+											{{ msg.animation_no_place }}
+										{% else %}
+											<span>
+												{{ msg.animation_quota_no_limit }}
+											</span>
+										{% endif %}
+									{% endif %}
 								{% endif %}
 							{% endif %}
 						</td>

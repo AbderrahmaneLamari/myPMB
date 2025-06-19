@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: paiements.class.php,v 1.13 2021/01/18 12:58:01 dgoron Exp $
+// $Id: paiements.class.php,v 1.13.6.1 2023/06/28 07:57:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -33,12 +33,20 @@ class paiements{
 		$this->commentaire = $obj->commentaire;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle);
+		$interface_content_form->add_element('comment', 'acquisition_mode_comment')
+		->add_textarea_node($this->commentaire)
+		->set_cols(62)
+		->set_rows(6)
+		->set_attributes(array('wrap' => 'virtual'));
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $msg, $charset;
-		global $mode_content_form;
-		
-		$content_form = $mode_content_form;
-		$content_form = str_replace('!!id!!', $this->id_paiement, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('modeform');
 		if(!$this->id_paiement){
@@ -46,12 +54,9 @@ class paiements{
 		}else{
 			$interface_form->set_label($msg['acquisition_modif_mode']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!commentaire!!', htmlentities($this->commentaire, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id_paiement)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('paiements')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();

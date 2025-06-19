@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_linked_authority_selector.class.php,v 1.1.8.2 2021/09/03 08:14:43 qvarin Exp $
+// $Id: onto_contribution_datatype_linked_authority_selector.class.php,v 1.3 2021/09/03 08:16:22 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

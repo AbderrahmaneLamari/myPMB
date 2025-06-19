@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_create.inc.php,v 1.17.8.2 2022/01/07 14:25:10 dgoron Exp $
+// $Id: empr_create.inc.php,v 1.19 2022/01/07 14:23:33 dgoron Exp $
 
 // récupération code barre en vue saisie d'un emprunteur (modifié F CEROVETTI 12/2007 pour marcher aussi avec ALPHANUMERIQUE )
 // corrigé et augmenté par Eric ROBERT

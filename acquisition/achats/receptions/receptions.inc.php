@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: receptions.inc.php,v 1.24.2.1 2022/01/07 14:02:04 dgoron Exp $
+// $Id: receptions.inc.php,v 1.25 2022/01/07 14:00:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

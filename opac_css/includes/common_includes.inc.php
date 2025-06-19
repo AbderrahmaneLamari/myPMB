@@ -2,11 +2,13 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: common_includes.inc.php,v 1.7.2.6 2021/09/22 09:28:35 dgoron Exp $
+// $Id: common_includes.inc.php,v 1.16 2023/01/03 09:11:52 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $base_path, $charset;
+global $base_path, $class_path, $charset, $dbh;
+global $cms_build_activate, $pmb_indexation_lang;
+global $opac_opac_view_activate, $opac_view, $pmb_opac_view_class, $opac_default_style;
 
 require_once($base_path."/includes/error_report.inc.php") ;
 require_once($base_path."/includes/global_vars.inc.php");
@@ -44,6 +46,7 @@ require_once($base_path.'/includes/localisation.inc.php');
 
 require_once($base_path."/includes/marc_tables/".$pmb_indexation_lang."/empty_words");
 require_once($base_path."/includes/misc.inc.php");
+require_once($class_path."/pmb_error.class.php");
 
 // version actuelle de l'opac
 require_once ($base_path . '/includes/opac_version.inc.php');
@@ -86,17 +89,4 @@ if($opac_opac_view_activate){
 		$_SESSION["opac_view"]=0;
 	}
 	$css=$_SESSION["css"]=$opac_default_style;
-}
-
-if ($_SESSION['password_no_longer_compliant'] && $lvl != "change_password") {
-    global $msg;
-    print '<script>
-        // Si on est dans une iframe, on fait rien
-        if (parent.location == window.location) {
-            if (confirm("'.$msg['password_no_longer_compliant'].'")) {
-                 window.location = "./empr.php?lvl=change_password";
-            }
-        }
-    </script>';
-    unset($_SESSION['password_no_longer_compliant']);
 }

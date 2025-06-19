@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_scan_requests_ui.class.php,v 1.20.2.2 2021/11/17 13:33:29 dgoron Exp $
+// $Id: list_scan_requests_ui.class.php,v 1.26.2.4 2023/12/07 10:02:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -66,6 +66,7 @@ class list_scan_requests_ui extends list_ui {
                 'wish_date_end' => '',
                 'deadline_date_start' => '',
                 'deadline_date_end' => '',
+				'empr' => array()
 		);
 		if($pmb_scan_request_location_activate) {
 		    $this->filters['location'] = '';
@@ -117,62 +118,21 @@ class list_scan_requests_ui extends list_ui {
 	}
 	
 	/**
-	 * Fonction de callback
-	 * @param $a
-	 * @param $b
+	 * Champ(s) du tri SQL
 	 */
-	protected function _compare_objects($a, $b) {
-		$sort_by = $this->applied_sort[0]['by'];
-		switch ($sort_by) {
-			case 'creator_name':
-				$content_a = '';
-				if($a->get_location_name()) {
-					$content_a .= $a->get_location_name().$a->get_creator_name();
-				} else {
-					$content_a .= $a->get_creator_name();
-				}
-				$content_b = '';
-				if($b->get_location_name()) {
-					$content_b .= $b->get_location_name().$b->get_creator_name();
-				} else {
-					$content_b .= $b->get_creator_name();
-				}
-				return $this->strcmp($content_a, $content_b);
-				break;
-			default:
-				return parent::_compare_objects($a, $b);
-		}
-	}
-	
-	/**
-	 * Tri SQL
-	 */
-	protected function _get_query_order() {
-		
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'id':
-					$order .= 'id_scan_request';
-					break;
-				case 'title' :
-				case 'desc' :
-				case 'date':
-				case 'wish_date':
-				case 'deadline_date':
-					$order .= 'scan_request_'.$sort_by;
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order); 
-			} else {
-				return "";
-			}
-		}	
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'id':
+	            return 'id_scan_request';
+	        case 'title' :
+	        case 'desc' :
+	        case 'date':
+	        case 'wish_date':
+	        case 'deadline_date':
+	            return 'scan_request_'.$sort_by;
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	protected function get_form_title() {
@@ -228,6 +188,7 @@ class list_scan_requests_ui extends list_ui {
 	    $this->set_filter_from_form('deadline_date_start');
 	    $this->set_filter_from_form('deadline_date_end');
 	    $this->set_filter_from_form('location', 'integer');
+	    $this->set_filter_from_form('empr', 'integer');
 		parent::set_filters_from_form();
 	}
 	
@@ -244,11 +205,15 @@ class list_scan_requests_ui extends list_ui {
 	    );
 	}
 	
-	protected function add_column_edit() {
+	protected function add_column_actions() {
+	    global $msg, $charset;
+	    
 	    $this->columns[] = array(
 	        'property' => 'edit',
-	        'label' => '',
-	        'html' => "<img onclick=\"document.location='!!edit_link!!'\" class='icon' width='16' height='16' src='".get_url_icon('b_edit.png')."'>",
+	        'label' => $msg['scan_request_actions'],
+	        'html' => "<a href='!!edit_link!!'>
+                        <img class='icon' width='16' height='16' src='".get_url_icon('b_edit.png')."' title='".htmlentities($msg["scan_request_edit"], ENT_QUOTES, $charset)."' alt='".htmlentities($msg["scan_request_edit"], ENT_QUOTES, $charset)."' />
+                       </a>",
 	        'exportable' => false
 	    );
 	}
@@ -264,7 +229,7 @@ class list_scan_requests_ui extends list_ui {
 		$this->add_column('deadline_date');
 		$this->add_column('priority');
 		$this->add_column('status');
-		$this->add_column_edit();
+		$this->add_column_actions();
 	}
 	
 	protected function init_default_settings() {
@@ -302,8 +267,7 @@ class list_scan_requests_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_user_input() {
-	    $input = "<input type='text' class='saisie-50em' name='".$this->objects_type."_user_input' value='".$this->filters['user_input']."'/>";
-	    return $input;
+		return $this->get_search_filter_simple_text('user_input', 50);
 	}
 	
 	protected function get_search_filter_date() {
@@ -324,58 +288,44 @@ class list_scan_requests_ui extends list_ui {
 	}
 	
 	/**
-	 * Filtre SQL
+	 * Jointure externes SQL pour les besoins des filtres
 	 */
-	protected function _get_query_filters() {
-	    global $PMBuserid;
-	    
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		
-		if($this->filters['status']) {
-		    $filters [] = 'scan_request_num_status = "'.$this->filters['status'].'"';
+	protected function _get_query_join_filters() {
+		$filter_join_query = '';
+		if($this->filters['status'] == -1) {
+			$filter_join_query .= " LEFT JOIN scan_request_status ON scan_request_status.id_scan_request_status=scan_requests.scan_request_num_status";
 		}
-		if($this->filters['priority']) {
-		    $filters [] = 'scan_request_num_priority = "'.$this->filters['priority'].'"';
+		return $filter_join_query;
+	}
+	
+	protected function _add_query_filters() {
+		global $PMBuserid;
+		
+		if($this->filters['status'] == -1) {
+			$this->query_filters [] = 'scan_request_status_is_closed = 0';
+		} elseif($this->filters['status']) {
+			$this->query_filters [] = 'scan_request_num_status = "'.$this->filters['status'].'"';
 		}
+		$this->_add_query_filter_simple_restriction('priority', 'scan_request_num_priority', 'integer');
 		if($this->filters['user_only']) {
-		    $filters [] = 'scan_request_num_creator = "'.$PMBuserid.'" and scan_request_type_creator=1';
+			$this->query_filters [] = 'scan_request_num_creator = "'.$PMBuserid.'" and scan_request_type_creator=1';
 		}
 		if($this->filters['user_input']) {
-		    $filters [] = 'scan_request_title like "%'.$this->filters['user_input'].'%"';
+			$this->query_filters [] = 'scan_request_title like "%'.$this->filters['user_input'].'%"';
 		}
-		if($this->filters['date_start']) {
-			$filters [] = 'scan_request_date >= "'.$this->filters['date_start'].'"';
-		}
-		if($this->filters['date_end']) {
-			$filters [] = 'scan_request_date <= "'.$this->filters['date_end'].' 23:59:59"';
-		}
-		if($this->filters['wish_date_start']) {
-		    $filters [] = 'scan_request_wish_date >= "'.$this->filters['wish_date_start'].'"';
-		}
-		if($this->filters['wish_date_end']) {
-		    $filters [] = 'scan_request_wish_date <= "'.$this->filters['wish_date_end'].' 23:59:59"';
-		}
-		if($this->filters['deadline_date_start']) {
-		    $filters [] = 'scan_request_deadline_date >= "'.$this->filters['deadline_date_start'].'"';
-		}
-		if($this->filters['deadline_date_end']) {
-		    $filters [] = 'scan_request_deadline_date <= "'.$this->filters['deadline_date_end'].' 23:59:59"';
-		}
-		if($this->filters['location']) {
-		    $filters [] = 'scan_request_num_location = "'.$this->filters['location'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+		$this->_add_query_filter_interval_restriction('date', 'scan_request_date', 'datetime');
+		$this->_add_query_filter_interval_restriction('wish_date', 'scan_request_wish_date', 'datetime');
+		$this->_add_query_filter_interval_restriction('deadline_date', 'scan_request_deadline_date', 'datetime');
+		$this->_add_query_filter_simple_restriction('location', 'scan_request_num_location', 'integer');
+		$this->_add_query_filter_multiple_restriction('empr', 'scan_request_num_dest_empr', 'integer');
 	}
 	
 	protected function _get_query_human_status() {
-		if(!empty($this->filters['status'])) {
+		global $msg;
+		
+		if($this->filters['status'] == -1) {
+			return $msg['scan_request_list_statuses_selector_open'];
+		} elseif(!empty($this->filters['status'])) {
 			$query = "select scan_request_status_label from scan_request_status where id_scan_request_status = ".$this->filters['status'];
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
@@ -404,6 +354,14 @@ class list_scan_requests_ui extends list_ui {
 		return '';
 	}
 	
+	protected function _get_object_property_creator_name($object) {
+	    if($object->get_location_name()) {
+	        return $object->get_location_name().' / '.$object->get_creator_name();
+	    } else {
+	        return $object->get_creator_name();
+	    }
+	}
+	
 	protected function _get_object_property_priority($object) {
 		return $object->get_priority()->get_label();
 	}
@@ -417,9 +375,9 @@ class list_scan_requests_ui extends list_ui {
 		switch($property) {
 		    case 'creator_name':
 		    	if($object->get_location_name()) {
-		        	$content .= $object->get_location_name()."<span class='scan_request_creator_name'> / ".$object->get_creator_name()."</span>";
+		    		$content .= $object->get_location_name()."<span class='scan_request_creator_name'> / ".parent::get_cell_content($object, $property)."</span>";
 		        } else {
-		        	$content .= $object->get_creator_name();
+		        	$content .= parent::get_cell_content($object, $property);
 		        }
 		        break;
 		    case 'empr':
@@ -427,7 +385,7 @@ class list_scan_requests_ui extends list_ui {
 		        break;
 			case 'status':
 			    $content .= "<span><img id='scan_request_img_statut_part_".$object->get_id()."' class='".$object->get_status()->get_class_html()."' style='width:7px; height:7px; vertical-align:middle; margin-left:-3px;' src='./images/spacer.gif'></span>";
-			    $content .= $this->_get_object_property_status($object);
+			    $content .= parent::get_cell_content($object, $property);
 			    break;
 			case 'edit':
 			    break;
@@ -438,13 +396,10 @@ class list_scan_requests_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "scan_request_show_form(".$object->get_id().")"
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-	    return $display;
 	}
 	
 	/**
@@ -488,16 +443,7 @@ class list_scan_requests_ui extends list_ui {
 	    }
 	    if(file_exists($tpl)) {
 	       $h2o = H2o_collection::get_instance($tpl);
-	       $empr = '';
-	       if ($object->get_num_dest_empr()) {
-	           $query = 'select empr_nom, empr_prenom from empr where id_empr = '.$object->get_num_dest_empr();
-	           $result = pmb_mysql_query($query);
-	           if (pmb_mysql_num_rows($result)) {
-	               $row = pmb_mysql_fetch_object($result);
-	               $empr = $row->empr_nom;
-	               if($row->empr_prenom) $empr .= ', '.$row->empr_prenom;
-	           }
-	       }
+	       $empr = $object->get_empr();
 	       $display .= $h2o->render(array('scan_request' => $object, 'empr' => $empr));
 	    } else {
             $display .= "

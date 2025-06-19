@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc_file.class.php,v 1.8 2020/09/22 13:44:41 dgoron Exp $
+// $Id: misc_file.class.php,v 1.9 2023/01/18 10:53:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/encoding_normalize.class.php");
 // require_once($include_path."/templates/misc/files/misc_file.tpl.php");
 
@@ -45,6 +46,7 @@ class misc_file {
 		$result = pmb_mysql_query($query);
 		if($result && pmb_mysql_num_rows($result)) {
 			$row = pmb_mysql_fetch_assoc($result);
+			pmb_mysql_free_result($result);
 			$this->id = $row['id_subst_file'];
 			$this->data = encoding_normalize::json_decode($row['subst_file_data'], true);
 		}
@@ -108,7 +110,7 @@ class misc_file {
 			foreach ($subst_file_data as $code=>$element) {
 				$this->data[$code] = array(
 						'visible' => (isset($element['visible']) && $element['visible'] ? 1 : 0),
-						'group' => (isset($element['group']) ? $element['group'] : ''),
+						'group' => (isset($element['group']) ? stripslashes($element['group']) : ''),
 				);
 			}
 		}

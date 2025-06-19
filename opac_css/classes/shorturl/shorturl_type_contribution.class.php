@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: shorturl_type_contribution.class.php,v 1.1 2019/01/07 11:39:09 apetithomme Exp $
+// $Id: shorturl_type_contribution.class.php,v 1.2 2022/01/28 15:29:38 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -15,6 +15,9 @@ class shorturl_type_contribution extends shorturl_type{
 		global $opac_url_base;
 		$context = unserialize($this->context);
 		$url = $opac_url_base.'/index.php?lvl='.$context['lvl'].'&sub='.$context['sub'].'&area_id='.$context['area_id'].'&scenario='.$context['scenario'].'&form_id='.$context['form_id'].'&form_uri='.$context['form_uri'];
+		if(isset($context['from_record'])){
+		    $url .= "&from_record={$context['from_record']}";
+		}
 		$_SESSION['contribution_default_fields'] = $context['default_fields'];
 		//redirection simple
 		header('Location: '.$url);

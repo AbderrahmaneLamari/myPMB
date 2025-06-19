@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: log.class.php,v 1.3.4.10 2021/11/26 12:52:43 dgoron Exp $
+// $Id: log.class.php,v 1.14.2.1 2023/07/13 06:47:05 dgoron Exp $
 
 class log {
 	
@@ -45,6 +45,13 @@ class log {
 		}
 	}
 	
+	protected static function get_dbh() {
+		if(!pmb_mysql_ping(static::$dbh)) {
+			static::$dbh = connection_mysql();
+		}
+		return static::$dbh;
+	}
+	
 	protected function fetch_data() {
 		global $PMBuserid;
 		
@@ -60,7 +67,7 @@ class log {
 		$this->data = array();
 		if($this->uniqid) {
 			$query = "SELECT * FROM logs WHERE uniqid_log='".addslashes($this->uniqid)."'";
-			$result = pmb_mysql_query($query, static::$dbh);
+			$result = pmb_mysql_query($query, static::get_dbh());
 			if(pmb_mysql_num_rows($result)) {
 				$row = pmb_mysql_fetch_object($result);
 				$this->service = $row->log_service;
@@ -99,7 +106,7 @@ class log {
 				log_type_user ='".$this->type_user."',
 				log_data ='".addslashes(encoding_normalize::json_encode($this->data))."'
 				";
-		pmb_mysql_query($query, static::$dbh);
+		pmb_mysql_query($query, static::get_dbh());
 	}
 	
 	protected static function table_exists() {
@@ -121,7 +128,7 @@ class log {
 	public static function delete($uniqid='') {
 		if($uniqid) {
 			$query = "DELETE FROM logs WHERE uniqid_log = '".addslashes($uniqid)."'";
-			pmb_mysql_query($query, static::$dbh);
+			pmb_mysql_query($query, static::get_dbh());
 			return true;
 		}
 		return false;
@@ -380,7 +387,13 @@ class log {
 	public static function purge() {
 		static::_init_connection_mysql();
 		$query = "DELETE FROM logs where date_add(log_date, INTERVAL ".static::$purge_hours." hour)<sysdate()";
-		pmb_mysql_query($query, static::$dbh);
+		pmb_mysql_query($query, static::get_dbh());
+	}
+	
+	public static function clean() {
+		static::_init_connection_mysql();
+		$query = "TRUNCATE logs";
+		pmb_mysql_query($query, static::get_dbh());
 	}
 	
 	public static function is_activated_logs() {

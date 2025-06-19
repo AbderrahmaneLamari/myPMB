@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_animationslist_selector_type.class.php,v 1.1.2.1 2022/01/19 12:53:55 qvarin Exp $
+// $Id: cms_module_animationslist_selector_type.class.php,v 1.3 2022/06/03 13:12:23 jparis Exp $
 use Pmb\Animations\Orm\AnimationTypesOrm;
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) {
@@ -25,7 +25,7 @@ class cms_module_animationslist_selector_type extends cms_module_common_selector
 					<label for=''>" . $this->format_text($this->msg['cms_module_animationslist_selector_type_id_type']) . "</label>
 				</div>
 				<div class='colonne-suite'>
-                    <select  name='" . $this->get_form_value_name("id_type") . "'>
+                    <select  name='" . $this->get_form_value_name("id_type") . "[]' multiple='yes'>
                         ".$this->get_options_type()."
                     </select>
 				</div>
@@ -58,7 +58,7 @@ class cms_module_animationslist_selector_type extends cms_module_common_selector
         $index = count($animationTypes);
         for ($i = 0; $i < $index; $i++) {
             $selected = "";
-            if ($this->get_value() == $animationTypes[$i]->id_type) {
+            if (is_array($this->parameters) && in_array($animationTypes[$i]->id_type,$this->parameters)) {
                 $selected = "selected='selected'";                
             }
             $options .= "<option value='{$this->format_text($animationTypes[$i]->id_type)}' $selected>{$animationTypes[$i]->label}</option>";

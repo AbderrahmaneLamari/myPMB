@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesItems.class.php,v 1.25 2021/06/03 08:33:34 dbellamy Exp $
+// $Id: pmbesItems.class.php,v 1.25.6.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,18 +13,6 @@ require_once $class_path."/mono_display.class.php";
 
 
 class pmbesItems extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	public function fetch_notice_items($notice_id, $OPACUserId=-1) {
 

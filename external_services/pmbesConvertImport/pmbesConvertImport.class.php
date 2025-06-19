@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesConvertImport.class.php,v 1.18.2.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: pmbesConvertImport.class.php,v 1.19.4.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -39,16 +39,6 @@ require_once("$include_path/parser.inc.php");
 class pmbesConvertImport extends external_services_api_class {
 	public $catalog;
 	public $converted_notice;
-	
-	public function restore_general_config() {
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-	}
 	
 	public function get_catalog() {
 		

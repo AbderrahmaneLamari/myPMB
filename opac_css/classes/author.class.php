@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: author.class.php,v 1.49.2.2 2021/12/24 13:23:41 dgoron Exp $
+// $Id: author.class.php,v 1.51.4.3 2023/05/23 13:49:42 gneveu Exp $
 
 // définition de la classe de gestion des 'auteurs'
 
@@ -697,6 +697,37 @@ class auteur {
 	
 	public function get_authority() {
 		return authorities_collection::get_authority('authority', 0, ['num_object' => $this->id, 'type_object' => AUT_TABLE_AUTHORS]);
+	}
+
+	/**
+	 * Retourne une liste formatee de toutes les fonctions de l'auteur avec le nombre de fois qu'il a ete utilise
+	 */
+	public function get_functions() {
+	    $functions = array();
+	    $author_functions = new marc_list('function');
+
+	    $query = "SELECT responsability_tu_fonction FROM responsability_tu WHERE responsability_tu_author_num = '".$this->id."' GROUP BY responsability_tu_fonction";
+	    $result = pmb_mysql_query($query);
+
+	    while ($row = pmb_mysql_fetch_object($result)) {
+	        //on skip si c'est vide
+	        if (empty($row->responsability_tu_fonction)) {
+	            continue;
+	        }
+
+	        $query_count_responsability = "SELECT count(*) AS count FROM responsability WHERE responsability_author = $this->id AND responsability_fonction = $row->responsability_tu_fonction";
+	        $query_count_tu = "SELECT count(*) AS count FROM responsability_tu WHERE responsability_tu_author_num = $this->id AND responsability_tu_fonction = $row->responsability_tu_fonction";
+	        $query_count_authperso = "SELECT count(id_responsability_authperso) AS count FROM responsability_authperso WHERE responsability_authperso_author = $this->id AND responsability_authperso_fonction = $row->responsability_tu_fonction";
+
+	        $functions[] = [
+	            "id" => $row->responsability_tu_fonction,
+	            "label" => $author_functions->table[$row->responsability_tu_fonction] ?? "",
+	            "count_responsability" => pmb_mysql_result(pmb_mysql_query($query_count_responsability), 0, 0),
+	            "count_tu" => pmb_mysql_result(pmb_mysql_query($query_count_tu), 0, 0),
+	            "count_authperso" => pmb_mysql_result(pmb_mysql_query($query_count_authperso), 0, 0),
+	        ];
+	    }
+	    return $functions;
 	}
 } # fin de définition de la classe auteur
 

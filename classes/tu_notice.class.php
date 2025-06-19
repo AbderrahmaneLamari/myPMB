@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: tu_notice.class.php,v 1.46.8.3 2022/01/03 10:28:29 dgoron Exp $
+// $Id: tu_notice.class.php,v 1.50 2023/02/16 16:02:12 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -628,24 +628,26 @@ class tu_notice {
 		if(!$this->id) return false;
 		$requete = "DELETE FROM notices_titres_uniformes WHERE ntu_num_notice=".$this->id;
 		pmb_mysql_query($requete);
-		// nettoyage des chaînes en entrée		
-		$ordre=0;
-		foreach($values as $value) {			
-			if($value['num_tu']) {
-				$requete = "INSERT INTO notices_titres_uniformes SET 
-				ntu_num_notice='$this->id', 
-				ntu_num_tu='".$value['num_tu']."', 
-				ntu_titre='".clean_string($value['ntu_titre'])."', 
-				ntu_date='".clean_string($value['ntu_date'])."', 
-				ntu_sous_vedette='".clean_string($value['ntu_sous_vedette'])."', 
-				ntu_langue='".clean_string($value['ntu_langue'])."', 
-				ntu_version='".clean_string($value['ntu_version'])."', 
-				ntu_mention='".clean_string($value['ntu_mention'])."',
-				ntu_ordre=$ordre 				
-				";
-				pmb_mysql_query($requete);
-			}
-			$ordre++;
+		if (!empty($values)) {
+    		// nettoyage des chaînes en entrée		
+    		$ordre=0;
+    		foreach($values as $value) {			
+    			if($value['num_tu']) {
+    				$requete = "INSERT INTO notices_titres_uniformes SET 
+    				ntu_num_notice='$this->id', 
+    				ntu_num_tu='".$value['num_tu']."', 
+    				ntu_titre='".clean_string($value['ntu_titre'])."', 
+    				ntu_date='".clean_string($value['ntu_date'])."', 
+    				ntu_sous_vedette='".clean_string($value['ntu_sous_vedette'])."', 
+    				ntu_langue='".clean_string($value['ntu_langue'])."', 
+    				ntu_version='".clean_string($value['ntu_version'])."', 
+    				ntu_mention='".clean_string($value['ntu_mention'])."',
+    				ntu_ordre=$ordre 				
+    				";
+    				pmb_mysql_query($requete);
+    			}
+    			$ordre++;
+    		}
 		}
 		return TRUE;
 	}

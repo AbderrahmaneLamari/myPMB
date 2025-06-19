@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_ontology.class.php,v 1.12.2.2 2021/11/12 13:55:44 dgoron Exp $
+// $Id: selector_ontology.class.php,v 1.16 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,12 +10,9 @@ global $base_path, $class_path;
 require_once($base_path."/selectors/classes/selector.class.php");
 require($base_path.'/selectors/templates/sel_ontology.tpl.php');
 require_once($class_path."/encoding_normalize.class.php");
-require_once($class_path."/autoloader.class.php");
 require_once($class_path."/authority.class.php");
 require_once($class_path.'/searcher_tabs.class.php');
 require_once($class_path.'/concept.class.php');
-require_once($class_path.'/autoloader.class.php');
-require_once($class_path.'/rdf/arc2/ARC2.php');
 require_once($class_path.'/elements_list/elements_authorities_selectors_list_ui.class.php');
 require_once($class_path.'/skos/skos_datastore.class.php');
 require_once($class_path.'/skos/skos_onto.class.php');
@@ -49,8 +46,6 @@ class selector_ontology extends selector {
         global $page;
         
         $entity_form = '';
-        $autoloader = new autoloader();
-        $autoloader->add_register("onto_class",true);
         
         global $base_url;
         $base_url = $this->get_base_url();
@@ -336,8 +331,7 @@ class selector_ontology extends selector {
     protected function create_concept_from_vedette($vedette){
         global $base_path;
         global $opac_url_base;
-        $autoloader = new autoloader();
-        $autoloader->add_register("onto_class",true);
+
         $data_store_config = array(
             /* db */
             'db_name' => DATA_BASE,

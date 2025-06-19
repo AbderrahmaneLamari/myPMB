@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: animation_conf.tpl.php,v 1.1.2.1 2022/01/18 09:12:47 qvarin Exp $
+// $Id: animation_conf.tpl.php,v 1.2.4.3 2023/03/22 10:53:09 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) {
     die("no access");
@@ -11,7 +11,7 @@ if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) {
 global $current_module, $base_path, $msg;
 global $animation_conf_form, $animation_conf_calendar_options, $animation_conf_section_parent;
 global $animation_conf_state_publication, $animation_conf_anim_create, $animation_conf_anim_update, $animation_conf_calendar_type_row;
-global $animation_conf_error_animation_not_active;
+global $animation_conf_error_animation_not_active, $animation_conf_anim_init, $animation_conf_anim_enddate_article;
 
 $animation_conf_form = "
     <h1>".plugins::get_message('animation', "animation_menu_title")." > " .plugins::get_message('animation', "animation_conf_sub_menu_title") ."</h1>
@@ -43,7 +43,7 @@ $animation_conf_form = "
 
     		<div class='row'>
     			<label class='etiquette' for='animation_section_parent'>".plugins::get_message('animation', "animation_section_parent")."</label>
-    		</div>    		
+    		</div>
             <div class='row'>
                 <select name='animation_section_parent' id='animation_section_parent'>
                     !!animation_conf_section_parent!!
@@ -64,9 +64,19 @@ $animation_conf_form = "
                !!animation_conf_anim_update!!
     		</div>
 
+    		<div class='row'>
+    			<label class='etiquette' for='animation_update'>".plugins::get_message('animation', "animation_enddate_article")."</label>
+    		</div>
+    		<div class='row'>
+               !!animation_conf_anim_enddate_article!!
+    		</div>
+
         	<div class='row'>
         		<div class='left'>
         			<input type='submit' class='bouton' value='".$msg['77']."'/>
+        		</div>
+        		<div class='right'>
+        			!!animation_conf_anim_init!!
         		</div>
         	</div>
         </div>
@@ -109,6 +119,33 @@ $animation_conf_anim_update = "
     <label for='animation_conf_update_1'>".plugins::get_message('animation', "animation_conf_state_auto_1")."</label>
     <input type='radio' name='animation_conf_update' value='0' id='animation_conf_update_0' !!checked_0!!/>
     <label for='animation_conf_update_0'>".plugins::get_message('animation', "animation_conf_state_manuel_0")."</label>
+";
+
+$animation_conf_anim_enddate_article = "
+    <input type='radio' name='animation_anim_enddate_article' value='1' id='animation_anim_enddate_article_1' !!checked_1!!/>
+    <label for='animation_anim_enddate_article_1'>".plugins::get_message('animation', "animation_yes")."</label>
+    <input type='radio' name='animation_anim_enddate_article' value='0' id='animation_anim_enddate_article_0' !!checked_0!!/>
+    <label for='animation_anim_enddate_article_0'>".plugins::get_message('animation', "animation_no")."</label>
+";
+
+$animation_conf_anim_init = "
+    <input type='button' class='bouton' name='animation_conf_init' value='".plugins::get_message('animation', "animation_conf_init_manuel")."' id='animation_conf_init_1' onclick='initCmsArticle()'/>
+    <script>
+        function initCmsArticle() {
+    		let url = './ajax.php?module=animations&categ=animations&action=initEvent';
+    		fetch(url,{
+    			method: 'POST',
+    		}).then(function(response) {
+    			if (response.ok) {
+    				window.alert('" . plugins::get_message('animation', 'animation_conf_init_done') . "')
+    			} else {
+    				console.log(response.errors);
+    			}
+    		})
+    		.catch(function(error) {
+    		});
+        }
+    </script>
 ";
 
 

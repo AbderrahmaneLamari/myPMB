@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_editorial_tree.tpl.php,v 1.25 2021/05/25 07:32:24 arenou Exp $
+// $Id: cms_editorial_tree.tpl.php,v 1.25.6.1 2023/09/14 13:42:32 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 global $base_path, $cms_editorial_tree_layout, $cms_editorial_tree_content, $cms_editorial_tree_selected_item;
@@ -67,6 +67,10 @@ $cms_editorial_tree_content ="
 			</div>
 			<div class='ss-nav-cms-item' class='clear'></div>
             <div>
+				<select id='fast_filter_param'>
+					<option value='title' selected>".$msg['cms_editorial_filter_by_title']."</option>
+					<option value='id'>".$msg['cms_editorial_filter_by_id']."</option>
+				</select>
                 <input type='text' id='fast_filter_input' />
             </div>
 		</div>
@@ -149,16 +153,15 @@ $cms_editorial_tree_content ="
             			dojo.connect(treeModel, 'onAddToRoot', cms_section_add_to_root);
                 		dojo.connect(treeModel, 'onLeaveRoot', cms_section_leave_root);
             			dojo.connect(treeModel, 'onChildrenChange', cms_child_change);
-                        on(dom.byId('fast_filter_input'), 'keyup', function (evt){
-                            // Les TreeNode ne sont présents dans l'arbre DOM que si tout est déplié
+
+						const fast_filter = function(param, value) {
+							// Les TreeNode ne sont présents dans l'arbre DOM que si tout est déplié
                             cms_editorial_tree.expandAll().then(lang.hitch(this,function(){
             				    // On cherche les items dans le store
                 				let searchedItems = store.fetch({
-                                    query :{
-                                        title : '*'+evt.target.value+'*'
-                                    },
+                                    query: { [param]: '*' + value + '*' },
                                     queryOptions: { ignoreCase: true },
-                                    onComplete : function(items){
+                                    onComplete: function(items){
                                         let focused = [];
                                         for(let i=0 ; i<items.length ; i++){
                         					let treeNode = cms_editorial_tree.getNodesByItem(items[i].id[0]);
@@ -168,6 +171,15 @@ $cms_editorial_tree_content ="
                                     }
                                 });
                             }))
+						}
+						
+                        on(dom.byId('fast_filter_input'), 'keyup', function (evt) {
+							fast_filter(dom.byId('fast_filter_param').value, evt.target.value);
+                        });
+						on(dom.byId('fast_filter_param'), 'change', function (evt) {
+							const fast_filter_input = dom.byId('fast_filter_input');
+							fast_filter_input.value = '';
+							fast_filter(evt.target.value, fast_filter_input.value);
                         });
                     });
 			     });

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area.inc.php,v 1.21.2.1 2021/12/24 13:10:24 gneveu Exp $
+// $Id: contribution_area.inc.php,v 1.22 2021/12/24 13:16:32 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

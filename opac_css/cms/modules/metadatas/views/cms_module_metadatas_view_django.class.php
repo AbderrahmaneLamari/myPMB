@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_metadatas_view_django.class.php,v 1.7 2021/02/12 11:58:25 dbellamy Exp $
+// $Id: cms_module_metadatas_view_django.class.php,v 1.8 2022/06/07 10:41:45 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -15,6 +15,7 @@ class cms_module_metadatas_view_django extends cms_module_common_view_django{
 	
 	
 	public function get_headers($datas=array()){
+		global $charset;
 
 		$headers=array(
 			'add' => array(),
@@ -27,7 +28,7 @@ class cms_module_metadatas_view_django extends cms_module_common_view_django{
 						foreach ($group["metadatas"] as $key=>$value) {
 							if ($value != "") {
 								$html = str_replace("{{key_metadata}}", $key, $group["group_template"]);
-								$html = str_replace("{{value_metadata}}", strip_tags($value), $html);
+								$html = str_replace("{{value_metadata}}", htmlentities(strip_tags($value), ENT_QUOTES, $charset), $html);
 								if($group['replace']){
 									$headers['replace'][] = $html;
 								}else{

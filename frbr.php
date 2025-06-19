@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr.php,v 1.4 2021/04/29 13:10:22 dgoron Exp $
+// $Id: frbr.php,v 1.5 2022/04/15 12:16:06 dbellamy Exp $
 
 
 // définition du minimum nécessaire 
@@ -14,11 +14,6 @@ $base_use_dojo=1;
 
 require_once ("$base_path/includes/init.inc.php");
 require_once($class_path."/modules/module_frbr.class.php");
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-if($cms_active && (SESSrights & CMS_BUILD_AUTH)) {
-	$autoloader->add_register("cms_modules",true);
-}
 
 print " <script type='text/javascript' src='javascript/ajax.js'></script>";
 

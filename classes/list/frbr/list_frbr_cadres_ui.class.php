@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_frbr_cadres_ui.class.php,v 1.7.2.1 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_frbr_cadres_ui.class.php,v 1.9.4.1 2023/12/07 14:48:07 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -81,12 +81,12 @@ class list_frbr_cadres_ui extends list_ui {
     }
     
     protected function add_column_sel_button() {
-        global $msg;
+        global $msg, $charset;
         $this->columns[] = array(
             'property' => '',
             'label' => "<div class='center'></div>",
             'html' => "	<a onclick=\"frbr_edit_entity('cadre','get_form',!!id_cadre!!);\" href='#' >
-			                 <img class='icon' width='16' height='16' title='".$msg["cms_build_edit_bt"]."' alt='".$msg["cms_build_page_add_bt"]."' src='".get_url_icon('b_edit.png')."'  >
+			                 <img class='icon' width='16' height='16' title='".htmlentities($msg["cms_build_edit_bt"], ENT_QUOTES, $charset)."' alt='".htmlentities($msg["cms_build_page_add_bt"], ENT_QUOTES, $charset)."' src='".get_url_icon('b_edit.png')."'  >
 		                  </a>",
             'exportable' => false
         );
@@ -166,29 +166,12 @@ class list_frbr_cadres_ui extends list_ui {
         parent::set_filters_from_form();
     }
     
-    
-    /**
-     * Filtre SQL
-     */
-    protected function _get_query_filters() {
-        $filter_query = '';
-        
-        $this->set_filters_from_form();
-        $filters = array();
-        if($this->filters['id_cadre']) {
-            $filters[] = 'id_cadre = "'.$this->filters['id_cadre'].'"';
-        }
-        if($this->filters['num_page']) {
-            $filters[] = 'cadre_num_page = "'.$this->filters['num_page'].'"';
-        }
-        if($this->filters['template_content']) {
-            $filters[] = 'cadre_content_data LIKE "%'.$this->filters['template_content'].'%"';
-        }
-        if(count($filters)) {
-            $filter_query .= $this->_get_query_join_filters();
-            $filter_query .= ' where '.implode(' and ', $filters);
-        }
-        return $filter_query;
+    protected function _add_query_filters() {
+    	$this->_add_query_filter_simple_restriction('id_cadre', 'id_cadre', 'integer');
+    	$this->_add_query_filter_simple_restriction('num_page', 'cadre_num_page', 'integer');
+    	if($this->filters['template_content']) {
+    		$this->query_filters [] = 'cadre_content_data LIKE "%'.$this->filters['template_content'].'%"';
+    	}
     }
     
     /**

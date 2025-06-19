@@ -13,6 +13,7 @@ var vm = new Vue({
 		pmb: pmbDojo.messages,
 		statuslist : $data.statusRegistrationlist,
 		selectedstatus : $data.selectedStatusRegistration,
+		localisationlist : $data.localisationList,
 	},
 	components : {
 		registration : registration,

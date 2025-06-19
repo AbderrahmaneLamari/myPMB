@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_transferts_ui.tpl.php,v 1.2.8.1 2021/07/30 14:48:34 dgoron Exp $
+// $Id: list_transferts_ui.tpl.php,v 1.4 2022/03/09 12:47:52 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -50,49 +50,8 @@ $list_transferts_ui_parcours_search_content_form_tpl = "
 
 $list_transferts_ui_script_case_a_cocher = "
 <script language='javascript'>
-	var val_sel = false;
-	function SelAll(formToCheck) {
-		var nb;
-		val_sel = !val_sel;
-		nb = formToCheck.elements.length;
-		for (var i=0;i<nb;i++) {
-			var e = formToCheck.elements[i];
-
-			if ((e.type == 'checkbox')&&(e.name.substr(0,4)=='sel_')) {
-				e.checked = val_sel;
-			}
-		}
-	}
-
 	function check(cac) {
 		cac.checked=!cac.checked;
-	}
-
-	function verifChk(formToCheck,valAction) {
-		nb = formToCheck.elements.length;
-		res = false;
-		for (var i=0;i<nb;i++) {
-			var e = formToCheck.elements[i];
-			if ((e.type == 'checkbox')&&(e.name.substr(0,4)=='sel_'))
-				if (e.checked == true) {
-					res = true;
-					break;
-				}
-		}
-		if (res==true) {
-            if(document.getElementById('statut_reception') && document.getElementById('statut_reception_list')) {
-                var e = document.getElementById('statut_reception');
-                document.getElementById('statut_reception_list').value = e.options[e.selectedIndex].value;
-            }
-            if(document.getElementById('section_reception') && document.getElementById('section_reception_list')) {
-                var e = document.getElementById('section_reception');
-                document.getElementById('section_reception_list').value = e.options[e.selectedIndex].value;
-            }
-			formToCheck.action.value = valAction;
-			formToCheck.submit();
-		} else {
-			alert('".$msg["transferts_circ_pas_de_selection"]."');
-		}
 	}
 </script>
 ";

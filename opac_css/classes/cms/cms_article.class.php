@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_article.class.php,v 1.39.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: cms_article.class.php,v 1.41 2022/02/24 14:55:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -58,7 +58,7 @@ class cms_article extends cms_editorial {
 			$save = "insert into ";
 			
 			//on place le nouvel article à la fin par défaut
-			$query = "SELECT id_article FROM cms_articles WHERE num_section='".($this->num_parent*1)."'";
+			$query = "SELECT id_article FROM cms_articles WHERE num_section='".$this->num_parent."'";
 			$result = pmb_mysql_query($query);
 			$order = ",article_order = '".(pmb_mysql_num_rows($result)+1)."' ";
 			
@@ -103,10 +103,11 @@ class cms_article extends cms_editorial {
 	}
 
 	public function duplicate($num_parent = 0) {
+		$num_parent = intval($num_parent);
 		if (!$num_parent) $num_parent = $this->num_parent;
 			
 		//on place le nouvel article à la fin par défaut
-		$query = "SELECT id_article FROM cms_articles WHERE num_section='".($num_parent*1)."'";
+		$query = "SELECT id_article FROM cms_articles WHERE num_section='".$num_parent."'";
 		$result = pmb_mysql_query($query);
 		if ($result) $order = ",article_order = '".(pmb_mysql_num_rows($result)+1)."' ";
 		else $order = ",article_order = 1";
@@ -154,7 +155,8 @@ class cms_article extends cms_editorial {
 	protected function _recurse_parent_select($parent=0,$lvl=0){
 		global $charset;
 		$opts = "";
-		$rqt = "select id_section, section_title from cms_sections where section_num_parent = '".($parent*1)."'";
+		$parent = intval($parent);
+		$rqt = "select id_section, section_title from cms_sections where section_num_parent = '".$parent."'";
 		$res = pmb_mysql_query($rqt);
 		if(pmb_mysql_num_rows($res)){
 			while($row = pmb_mysql_fetch_object($res)){
@@ -167,8 +169,9 @@ class cms_article extends cms_editorial {
 	}
 	
 	public function update_parent_section($num_section,$order=0){
-		$this->num_section = $num_section;
-		$update = "update cms_articles set num_section ='".($num_section*1)."', article_order = '".($order*1)."' where id_article = '".$this->id."'";
+		$this->num_section = intval($num_section);
+		$order = intval($order);
+		$update = "update cms_articles set num_section ='".$this->num_section."', article_order = '".$order."' where id_article = '".$this->id."'";
 		pmb_mysql_query($update);
 	}
 	

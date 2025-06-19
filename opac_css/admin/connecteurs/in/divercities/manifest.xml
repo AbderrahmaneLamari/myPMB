@@ -4,12 +4,14 @@
 ****************************************************************************************
 © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: manifest.xml,v 1.2 2020/06/24 08:46:36 dbellamy Exp $ -->
+$Id: manifest.xml,v 1.2.6.1 2023/12/12 15:41:46 dbellamy Exp $ -->
 
 <manifest>
 	<name>divercities</name>
-	<repository>yes</repository>
 	<comment>Divercities</comment>
+	<search>no</search>
+	<repository>yes</repository>
+	<enrichment>no</enrichment>
 	<author>Didier Bellamy</author>
 	<org>PMB Services</org>
 	<date>2020-06-22</date>

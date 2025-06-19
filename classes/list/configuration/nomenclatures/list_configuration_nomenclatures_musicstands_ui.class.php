@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_nomenclatures_musicstands_ui.class.php,v 1.3 2021/04/19 07:10:28 dgoron Exp $
+// $Id: list_configuration_nomenclatures_musicstands_ui.class.php,v 1.4 2022/10/06 11:57:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -44,19 +44,8 @@ class list_configuration_nomenclatures_musicstands_ui extends list_configuration
 	    $this->add_applied_sort('order');
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['num_family']) {
-			$filters[] = 'musicstand_famille_num = "'.$this->filters['num_family'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('num_family', 'musicstand_famille_num');
 	}
 	
 	protected function get_main_fields_from_sub() {

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interface_admin_cms_form.class.php,v 1.2.2.1 2022/01/04 12:54:40 qvarin Exp $
+// $Id: interface_admin_cms_form.class.php,v 1.3 2022/01/04 12:57:57 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

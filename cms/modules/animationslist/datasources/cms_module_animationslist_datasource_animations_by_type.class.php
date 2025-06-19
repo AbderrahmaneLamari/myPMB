@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_animationslist_datasource_animations_by_type.class.php,v 1.1.2.1 2022/01/19 12:53:55 qvarin Exp $
+// $Id: cms_module_animationslist_datasource_animations_by_type.class.php,v 1.4 2022/09/28 15:12:30 gneveu Exp $
 use Pmb\Animations\Orm\AnimationOrm;
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) {
@@ -17,6 +17,7 @@ class cms_module_animationslist_datasource_animations_by_type extends cms_module
         parent::__construct($id);
         $this->sortable = true;
         $this->limitable = true;
+        $this->paging = true;
     }
 
     /*
@@ -42,14 +43,19 @@ class cms_module_animationslist_datasource_animations_by_type extends cms_module
                 "animations" => array()
             );
             $animations = array();
-            $num_type = intval($selector->get_value());
-
-            $animationsOrm = AnimationOrm::find("num_type", $num_type);
-
-            $index = count($animationsOrm);
-            for ($i = 0; $i < $index; $i ++) {
-                $animations[] = $animationsOrm[$i]->id_animation;
+            
+            $values = $selector->get_value();
+            if(!is_array($selector->get_value())) {
+                $values = [$selector->get_value()];
             }
+            foreach ($values as $num_type) {
+                $animationsOrm = AnimationOrm::find("num_type", $num_type);
+                $index = count($animationsOrm);
+                for ($i = 0; $i < $index; $i ++) {
+                    $animations[] = $animationsOrm[$i]->id_animation;
+                }
+            }
+
 
             $data['animations'] = $this->filter_datas('animations', $animations);
             if (! count($data['animations'])) {
@@ -58,7 +64,15 @@ class cms_module_animationslist_datasource_animations_by_type extends cms_module
 
             $data = $this->sort_animations($data['animations']);
             $data['title'] = "";
-
+            
+            // Pagination
+            if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+                $data['paging'] = $this->inject_paginator($data['animations']);
+                $data['animations'] = $this->cut_paging_list($data['animations'], $data['paging']);
+            }else if ($this->parameters["nb_max_elements"] > 0) {
+                $data['animations'] = array_slice($data['animations'], 0, $this->parameters["nb_max_elements"]);
+            }
+            
             return $data;
         }
         return false;

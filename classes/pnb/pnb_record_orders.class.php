@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pnb_record_orders.class.php,v 1.6 2019/12/20 11:21:22 qvarin Exp $
+// $Id: pnb_record_orders.class.php,v 1.7.4.2 2023/12/22 10:48:03 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path."/templates/pnb/pnb_record_orders.tpl.php");
 require_once($class_path.'/pnb/pnb_order.class.php');
 require_once($class_path.'/pnb/dilicom.class.php');
@@ -17,13 +18,9 @@ class pnb_record_orders {
 	
 	protected $record_id;
 	protected $pnb_orders;
-	private static $loans_infos= [];
 	
 	public function __construct($record_id = 0){
-		$record_id += 0;
-		if ($record_id) {
-			$this->record_id = $record_id;
-		}
+		$this->record_id = intval($record_id);
 		$this->fetch_data();
 	}
 	
@@ -82,25 +79,33 @@ class pnb_record_orders {
 	 * @return mixed|string
 	 */
 	public function get_loans_completed_number($line_id) {
-	    if(!isset(self::$loans_infos[$line_id] )){
-	        self::$loans_infos[$line_id] = dilicom::get_instance()->get_loan_status(array($line_id));
+	    if(!isset(pnb_order::$loans_infos[$line_id] )) {
+	        $loans_infos = dilicom::get_instance()->get_loan_status(array($line_id));
+	        
+	        if(is_array($loans_infos["loanResponseLine"]) && count($loans_infos["loanResponseLine"])) {
+    	        pnb_order::$loans_infos[$line_id] = $loans_infos["loanResponseLine"][0];
+	        }
 	    }
-		if (isset(self::$loans_infos[$line_id] ['loanResponseLine'][0]['nta'])) {
-		    
-		    $query = "UPDATE pnb_orders SET pnb_current_nta = ".intval(self::$loans_infos[$line_id] ['loanResponseLine'][0]['nta'])." WHERE pnb_order_line_id = '".addslashes($line_id)."'";
+	    
+	    if (isset(pnb_order::$loans_infos[$line_id]['nta'])) {
+	        $query = "UPDATE pnb_orders SET pnb_current_nta = ".intval(pnb_order::$loans_infos[$line_id]['nta'])." WHERE pnb_order_line_id = '".addslashes($line_id)."'";
 		    pmb_mysql_query($query);
 		    
-		    return self::$loans_infos[$line_id] ['loanResponseLine'][0]['nta']; 
+		    return pnb_order::$loans_infos[$line_id]['nta']; 
 		}
 		return '0';
 	}
 	
 	protected function get_loans_in_progress($line_id) {
-	    if(!isset(self::$loans_infos[$line_id] )){
-	        self::$loans_infos[$line_id] = dilicom::get_instance()->get_loan_status(array($line_id));
+	    if(!isset(pnb_order::$loans_infos[$line_id] )) {
+	        $loans_infos = dilicom::get_instance()->get_loan_status(array($line_id));
+	        
+	        if(is_array($loans_infos["loanResponseLine"]) && count($loans_infos["loanResponseLine"])) {
+	            pnb_order::$loans_infos[$line_id] = $loans_infos["loanResponseLine"][0];
+	        }
 	    }
-	    if (isset(self::$loans_infos[$line_id] ['loanResponseLine'][0]['nus1'])) {
-	        return self::$loans_infos[$line_id] ['loanResponseLine'][0]['nus1'];
+	    if (isset(pnb_order::$loans_infos[$line_id]['nus1'])) {
+	        return pnb_order::$loans_infos[$line_id]['nus1'];
 	    }
 	    return '0';
 	}

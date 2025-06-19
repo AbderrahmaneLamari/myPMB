@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_resa_planning_circ_reader_ui.class.php,v 1.6 2020/11/09 09:06:50 dgoron Exp $
+// $Id: list_resa_planning_circ_reader_ui.class.php,v 1.7.4.1 2023/03/29 12:34:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,8 +13,6 @@ class list_resa_planning_circ_reader_ui extends list_resa_planning_circ_ui {
     }
     
 	protected function init_default_columns() {
-	    global $pmb_location_resa_planning;
-		
 		$this->add_column('record');
 		$this->add_column('resa_date');
 		$this->add_column('resa_date_debut');
@@ -22,7 +20,7 @@ class list_resa_planning_circ_reader_ui extends list_resa_planning_circ_ui {
 		$this->add_column('resa_qty');
 		$this->add_column('resa_validee');
 		$this->add_column('resa_confirmee');
-		if ($pmb_location_resa_planning=='1') {
+		if ($this->get_locations_number() > 1) {
 		    $this->add_column('resa_loc_retrait');
 		}
 		$this->add_column('resa_delete', 'resa_suppr_th');
@@ -61,9 +59,10 @@ class list_resa_planning_circ_reader_ui extends list_resa_planning_circ_ui {
 	    
 	    $display .= $this->get_js_func_callback();
 	    
+	    $display .= $this->pager_top();
 	    //Affichage de la liste des objets
 	    $display .= $this->get_display_objects_list();
-	    $display .= $this->pager();
+	    $display .= $this->pager_bottom();
 	    return $display;
 	}
 	

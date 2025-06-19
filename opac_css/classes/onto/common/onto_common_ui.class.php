@@ -1,8 +1,8 @@
 <?php
 // +-------------------------------------------------+
-// © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// ï¿½ 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_ui.class.php,v 1.6.2.2 2021/08/05 14:27:37 qvarin Exp $
+// $Id: onto_common_ui.class.php,v 1.9 2022/09/15 14:30:39 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -25,7 +25,7 @@ class onto_common_ui extends onto_root_ui{
 	
 	/**
 	 * 
-	 * Renvoie le formulaire de recherche pour le selecteur d'autorité
+	 * Renvoie le formulaire de recherche pour le selecteur d'autoritï¿½
 	 * 
 	 * @param onto_common_controler $controler
 	 * @param onto_param $params
@@ -38,6 +38,8 @@ class onto_common_ui extends onto_root_ui{
 		
 		if($params->objs){
 			$property = $controler->get_onto_property_from_pmb_name($params->objs);
+			// AR - 15/09/22 Pas d'ordre naturel Ã  la lecture de l'ontologie, donc on trie arbitrairement pour garantir une cohÃ©rence dans les ids d'onglets
+			sort($property->range);
 			$element = $property->range[$params->range];
 			$type = $controler->get_class_pmb_name($element);
 		}else {
@@ -74,7 +76,7 @@ class onto_common_ui extends onto_root_ui{
 	}
 	
 	/**
-	 * Renvoie l'affichage html de la liste pour le selecteur d'autorité
+	 * Renvoie l'affichage html de la liste pour le selecteur d'autoritï¿½
 	 *
 	 * @param onto_common_controler $controler
 	 * @param onto_param $params
@@ -204,7 +206,7 @@ class onto_common_ui extends onto_root_ui{
 	}
 	
 	/**
-	 * Retourne la liste des assertions contenant l'item susceptible d'être supprimé
+	 * Retourne la liste des assertions contenant l'item susceptible d'ï¿½tre supprimï¿½
 	 * @param onto_common_controler $controler
 	 * @param onto_param $params
 	 * @param onto_assertion $assertions

@@ -2,11 +2,24 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: init.inc.php,v 1.21.2.2 2021/10/13 10:36:13 dgoron Exp $
+// $Id: init.inc.php,v 1.28.4.4 2023/11/30 13:43:25 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $include_path, $base_path, $class_path, $javascript_path, $lvl, $user_query, $opac_view, $search_type_asked, $current_module;
+
+// Securite, on bloque les URL non autorisees
+// Exemple :
+// http://localhost/opac_css/index.php/
+// http://localhost/opac_css/index.php/index.php
+$scriptname = strtolower(basename($_SERVER['SCRIPT_NAME']));
+if (
+	!in_array($scriptname, ['rest.php', 'cms_rest.php', 'visionneuse.php', 'vig_num.php'], true) &&
+	!empty($_SERVER['PATH_INFO'])
+) {
+	http_response_code(403);
+	exit();
+}
 
 //Chemins par défaut de l'application (il faut initialiser $base_path relativement à l'endroit où s'exécute le script)
 $include_path=$base_path."/includes";
@@ -34,6 +47,10 @@ if (!defined('TYPE_ONTOLOGY'))		define('TYPE_ONTOLOGY',18);
 if (!defined('TYPE_DOCWATCH'))		define('TYPE_DOCWATCH',19);
 if (!defined('TYPE_EXTERNAL'))		define('TYPE_EXTERNAL',20);
 if (!defined('TYPE_ANIMATION'))		define('TYPE_ANIMATION',21);
+if (!defined('TYPE_BULLETIN'))		define('TYPE_BULLETIN',22);
+if (!defined('TYPE_AUTHORITY'))		define('TYPE_AUTHORITY',23);
+if (!defined('TYPE_DSI_DIFFUSION'))		define('TYPE_DSI_DIFFUSION',24);
+if (!defined('TYPE_CMS_EDITORIAL'))		define('TYPE_CMS_EDITORIAL',25);
 
 // A n'utiliser QUE dans le contexte des MAP
 if (!defined( 'TYPE_RECORD' )) 		define('TYPE_RECORD',11);
@@ -67,18 +84,48 @@ if(!isset($opac_view)) $opac_view = '';
 if(!isset($search_type_asked)) $search_type_asked = '';
 if(!isset($current_module)) $current_module = '';
 
+$lvl = strip_tags($lvl);
+$user_query = strip_tags($user_query);
+$opac_view = strip_tags($opac_view);
+$search_type_asked = strip_tags($search_type_asked);
+$current_module = strip_tags($current_module);
+
 // Chargement de l'autoload de gestion pour les librairies externes
 require_once '../vendor/autoload.php';
+// Chargement de l'autoload front-office
+require_once __DIR__."/../classes/autoloader/classLoader.class.php";
+$al = classLoader::getInstance();
+$al->register();
 
 // Ne peut pas être mis dans misc,Dans misc on a besoin de la BDD et on manipule le cookie avant...
-function pmb_setcookie($name, $value = "", $expires = 0, $path = "", $domain = ""){
+function pmb_setcookie($name, $value = "", $expires = 0, $path = "", $domain = "", $httponly = true){
+	switch (true) {
+	    case ( !empty($_SERVER['HTTPS']) && ( (strtolower($_SERVER['HTTPS']) === 'on') || ($_SERVER['HTTPS'] == 1) ) ) :
+	    case ( !empty($_SERVER['HTTP_SSL_HTTPS']) && ( (strtolower($_SERVER['HTTP_SSL_HTTPS']) === 'on') || ($_SERVER['HTTP_SSL_HTTPS'] == 1) ) ) :
+	    case ( !empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && (strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ) :
+	        ini_set('session.cookie_secure', 1);
+	        break;
+	    default :
+	        break;
+	}
+	
+	if (session_status() !== PHP_SESSION_ACTIVE) {
+		// Warning: ini_set(): A session is active.
+		ini_set('session.cookie_httponly', 1);
+	}
+	
 	$params = session_get_cookie_params();
-	$params["expires"]=$expires;
-	$params["path"]=$path;
-	$params["domain"]=$domain;
+	
+	// Warning: setcookie n'attend pas de clé 'lifetime'
+	if (isset($params['lifetime'])) {
+		unset($params['lifetime']);
+	}
+	
+	$params["expires"] = $expires;
+	$params["path"] = $path;
+	$params["domain"] = $domain;
+	$params["httponly"] = $httponly;
+	
 	return setcookie($name,$value,$params);
 }
 
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("logs_class",true);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: indexation_authority.class.php,v 1.24.2.3 2021/12/23 08:18:10 dgoron Exp $
+// $Id: indexation_authority.class.php,v 1.28 2023/01/23 14:31:34 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -175,25 +175,27 @@ class indexation_authority extends indexation {
 	}
 	
 	public function maj($object_id,$datatype = 'all'){
-		global $sphinx_active;
-		$authority = static::get_authority_instance($object_id, $this->type);
-		$vedette_composee_found = vedette_composee::get_vedettes_built_with_element($authority->get_num_object(), $authority->get_type_const());
-		foreach ($vedette_composee_found as $vedette_id) {
-			$vedette = new vedette_composee($vedette_id);
-			$vedette->update_label();
-			$vedette->save();
-			vedette_link::update_objects_linked_with_vedette($vedette);
-		}
-		
-		parent::maj($object_id,$datatype);
-		//SPHINX
-		if($sphinx_active){
-			$si = self::get_sphinx_indexer($this->type);
-			if(is_object($si)) {
-				$si->fillIndex($authority->get_id());
-			}
-		}
-		
+	    global $sphinx_active;
+	    
+	    $authority = static::get_authority_instance($object_id, $this->type);
+	    if ('all' == $datatype) {
+	        $vedette_composee_found = vedette_composee::get_vedettes_built_with_element($authority->get_num_object(), $authority->get_type_const());
+	        foreach ($vedette_composee_found as $vedette_id) {
+	            $vedette = new vedette_composee($vedette_id);
+	            $vedette->update_label();
+	            $vedette->save();
+	            vedette_link::update_objects_linked_with_vedette($vedette);
+	        }
+	    }
+	    parent::maj($object_id,$datatype);
+	    
+	    //SPHINX
+	    if($sphinx_active){
+	        $si = self::get_sphinx_indexer($this->type);
+	        if(is_object($si)) {
+	            $si->fillIndex($authority->get_id());
+	        }
+	    }
 	}
 	
 	protected static function get_authority_instance($object_id, $object_type) {

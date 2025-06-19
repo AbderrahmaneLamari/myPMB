@@ -2,13 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serie.class.php,v 1.18 2018/07/26 15:25:52 tsamson Exp $
+// $Id: serie.class.php,v 1.19 2022/02/10 08:18:42 dgoron Exp $
 
 // définition de la classe de gestion des 'titres de séries'
 
 if ( ! defined( 'SERIE_CLASS' ) ) {
   define( 'SERIE_CLASS', 1 );
 
+global $base_path;
 require_once($base_path.'/includes/templates/serie.tpl.php');
   
 class serie {
@@ -27,7 +28,7 @@ class serie {
 	// ---------------------------------------------------------------
 
 	public function __construct($id) {
-		$this->id = $id+0;
+		$this->id = intval($id);
 		$this->getData();
 	}
 

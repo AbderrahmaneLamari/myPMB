@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_articles_categories.class.php,v 1.12 2019/10/24 08:03:45 dgoron Exp $
+// $Id: cms_module_common_datasource_articles_categories.class.php,v 1.14 2022/12/23 09:27:06 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,6 +12,7 @@ class cms_module_common_datasource_articles_categories extends cms_module_common
 		parent::__construct($id);
 		$this->sortable = true;
 		$this->limitable = true;
+		$this->paging = true;
 	}
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
@@ -76,10 +77,21 @@ class cms_module_common_datasource_articles_categories extends cms_module_common
 	 * Récupération des données de la source...
 	 */
 	public function get_datas(){
-		$return = $this->get_sorted_datas('id_article', 'num_noeud');
-		if($return) {
-			$return = $this->filter_datas("articles",$return);
-			if ($this->parameters["nb_max_elements"] > 0) $return = array_slice($return, 0, $this->parameters["nb_max_elements"]);
+		$articles = $this->get_sorted_datas('id_article', 'num_noeud');
+		
+		$return = [
+		    "articles" => []
+		];
+		
+		if($articles) {
+			$return["articles"] = $this->filter_datas("articles", $articles);
+			
+			if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+			    $return["paging"] = $this->inject_paginator($return['articles']);
+			    $return['articles'] = $this->cut_paging_list($return['articles'], $return["paging"]);
+			} else if ($this->parameters["nb_max_elements"] > 0) {
+			    $return["articles"] = array_slice($return["articles"], 0, $this->parameters["nb_max_elements"]);
+			}
 		}
 		return $return;
 	}

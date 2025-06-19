@@ -2,35 +2,32 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_item.tpl.php,v 1.28.2.3 2021/07/01 12:13:07 qvarin Exp $
+// $Id: onto_common_item.tpl.php,v 1.35 2022/10/31 11:18:17 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $ontology_tpl,$msg,$base_path,$ontology_id, $pmb_form_authorities_editables, $PMBuserid;
+global $ontology_tpl,$msg,$base_path,$ontology_id, $PMBuserid;
 
 $ontology_tpl['form_body'] = '
 <script type="text/javascript" src="./javascript/ajax.js"></script>
 <script type="text/javascript">
-	require(["dojo/ready", "apps/pmb/gridform/FormEdit"], function(ready, FormEdit){
+	require(["dojo/ready", "apps/pmb/gridform/OntoFormEdit"], function(ready, OntoFormEdit){
 	     ready(function(){
-	     	new FormEdit();
+           	new OntoFormEdit();
 	     });
 	});
 </script>
-<form id="!!onto_form_id!!" name="!!onto_form_name!!" method="POST" action="!!onto_form_action!!" class="form-autorites" onSubmit="return false;">
+<form id="!!onto_form_id!!" name="!!onto_form_name!!" method="POST" action="!!onto_form_action!!" class="form-autorites" onSubmit="return false;" data-advanced-form="true">
 	<input type="hidden" name="item_uri" value="!!uri!!"/>
 	<input type="hidden" name="save_and_create_concept" id="save_and_create_concept" value=""/>		
 	<div class="left">
 		<h3>!!onto_form_title!!</h3>
 	</div>
 	<div class="right">';
-if ($PMBuserid==1 && $pmb_form_authorities_editables==1){
+if ($PMBuserid==1){
 	$ontology_tpl['form_body'] .='<input type="button" class="bouton_small" value="'.$msg['authorities_edit_format'].'" id="bt_inedit"/>';
 }
-if ($pmb_form_authorities_editables==1) {
-	$ontology_tpl['form_body'] .='<input type="button" class="bouton_small" value="'.$msg['authorities_origin_format'].'" id="bt_origin_format"/>';
-}
-$ontology_tpl['form_body'] .= '
+$ontology_tpl['form_body'] .='
 	</div>
 	<div id="form-contenu">
 		<div class="row">&nbsp;</div>
@@ -43,8 +40,6 @@ $ontology_tpl['form_body'] .= '
 		!!onto_form_history!!
 		&nbsp;
 		!!onto_form_submit!!
-		&nbsp;
-		!!onto_form_save_and_create_concept!!
 	</div>
 	<div class="right">
 		!!onto_form_delete!!
@@ -54,52 +49,16 @@ $ontology_tpl['form_body'] .= '
 !!onto_form_scripts!!
 ';
 
-$ontology_tpl['form_body_grid'] = '
-<script type="text/javascript" src="./javascript/ajax.js"></script>
-<script type="text/javascript">
-	require(["dojo/ready", "apps/contribution_area/ContributionFormEdit", "dojo/dom" ], function(ready, ContributionFormEdit, dom){
-	     ready(function(){
-	     	new ContributionFormEdit("modelling");
-	     });
-	});
-</script>
-<form class="form-autorites" onSubmit="return false;">
-	<input type="hidden" id="return_url" name="return_url" value="!!return_url!!"/>	
-	<div class="left">
-		<h3>!!onto_form_title!!</h3>
-	</div>
-	<div class="right">';
-if ($PMBuserid==1 && $pmb_form_authorities_editables==1){
-	$ontology_tpl['form_body_grid'] .='<input type="button" class="bouton_small" value="'.$msg['authorities_edit_format'].'" id="bt_inedit"/>';
-}
-if ($pmb_form_authorities_editables==1) {
-	$ontology_tpl['form_body_grid'] .='<input type="button" class="bouton_small" value="'.$msg['authorities_origin_format'].'" id="bt_origin_format"/>';
-}
-
-$ontology_tpl['form_body_grid'] .='<input type="button" class="bouton" value="'.$msg['contribution_area_edit_form'].'" onclick="window.location.href=\'./modelling.php?categ=contribution_area&sub=form&type=!!form_type!!&action=edit&form_id=!!form_id!!\'"/>';
-
-$ontology_tpl['form_body_grid'] .= '
-	</div>
-	<div id="form-contenu">
-		<div class="row">&nbsp;</div>
-		<div id="zone-container">
-			!!onto_form_content!!
-		</div>
-	</div>
-	<div class="row">&nbsp;</div>
-	<div class="left">
-		!!onto_form_save!!
-		&nbsp;
-		!!onto_form_back!!
-	</div>
-	<div class="row"></div>
-</form>
-!!onto_form_scripts!!
-';
 
 $ontology_tpl['form_scripts'] = '
 <script type="text/javascript" src="'.$base_path.'/javascript/ajax.js"></script>
 <script type="text/javascript">
+	require(["dojo/ready", "apps/pmb/form/FormController"], function(ready, FormController){
+	     ready(function(){
+	     	new FormController();
+	     });
+	});
+			
 	!!onto_datasource_validation!!
 	function submit_onto_form() {		
 		if (check_onto_form()) {

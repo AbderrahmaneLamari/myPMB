@@ -36,10 +36,10 @@ class sip2_protocol {
     			$this->messages[$attribs["ID"]]["FROM"]=$attribs["FROM"];
     			switch ($attribs["FROM"]) {
     				case "SC":
-    					$this->messages[$attribs["ID"]]["REPLY_ID"]=$attribs["REPLY_ID"];
+    					$this->messages[$attribs["ID"]]["REPLY_ID"]=$attribs["REPLY_ID"] ?? null;
     					break;
     				case "ACS":
-    					$this->messages[$attribs["ID"]]["REQUEST_ID"]=$attribs["REQUEST_ID"];
+    					$this->messages[$attribs["ID"]]["REQUEST_ID"]=$attribs["REQUEST_ID"] ?? null;
     					break;
     			}
     			break;
@@ -50,7 +50,7 @@ class sip2_protocol {
     			$this->cur_id=$attribs["ID"];
     			$this->fields[$this->cur_id]["TYPE"]=$attribs["TYPE"];
     			$this->fields[$this->cur_id]["LEN"]=$attribs["LENGTH"];
-    			if ($attribs["IDENTIFIER"]) {
+    			if (isset($attribs["IDENTIFIER"])) {
 					$this->fields[$this->cur_id]["IDENTIFIER"]=$attribs["IDENTIFIER"];
 					$this->identifiers[$attribs["IDENTIFIER"]]=$this->cur_id;
     			}
@@ -62,15 +62,17 @@ class sip2_protocol {
     	$this->cur_elt="";
     	switch ($name) {
     		case "MESSAGE":
-    			for ($i=0; $i<count($this->messages[$this->cur_id]["FIELDS"]); $i++) {
-    				$field=$this->messages[$this->cur_id]["FIELDS"][$i];
-    				if ($field[strlen($field)-1]=="*") {
-    					$optional=true; 
-    					$field=substr($field,0,strlen($field)-1);
-    					$this->messages[$this->cur_id]["FIELDS"][$i]=$field;
-    				} else $optional=false;
-    				$this->messages[$this->cur_id]["OPTIONALS"][$field]=$optional;
-    			}
+    		    if(isset($this->messages[$this->cur_id]["FIELDS"]) && is_countable($this->messages[$this->cur_id]["FIELDS"])) {
+        			for ($i=0; $i<count($this->messages[$this->cur_id]["FIELDS"]); $i++) {
+        				$field=$this->messages[$this->cur_id]["FIELDS"][$i];
+        				if ($field[strlen($field)-1]=="*") {
+        					$optional=true; 
+        					$field=substr($field,0,strlen($field)-1);
+        					$this->messages[$this->cur_id]["FIELDS"][$i]=$field;
+        				} else $optional=false;
+        				$this->messages[$this->cur_id]["OPTIONALS"][$field]=$optional;
+        			}
+    		    }
     			$this->cur_id="";
     			break;
     		case "MESSAGES":
@@ -85,17 +87,26 @@ class sip2_protocol {
     public function charElement($parser,$char) {
     	switch ($this->cur_elt) {
     		case "FIXEDFIELDS":
-    			$fixedfields=explode(",",$char);
+    			$fixedfields = explode(",", $char);
+				if (!isset($this->messages[$this->cur_id]['FIXEDFIELDS'])) {
+					$this->messages[$this->cur_id]['FIXEDFIELDS'] = [];
+				}
     			$this->messages[$this->cur_id]["FIXEDFIELDS"]=array_merge((array)$this->messages[$this->cur_id]["FIXEDFIELDS"],$fixedfields);
     			break;
     		case "FIELDS":
     			if ($this->in_messages) {
-    				$fields=explode(",",$char);
+    				$fields=explode(",", $char);
+					if (!isset($this->messages[$this->cur_id]['FIELDS'])) {
+						$this->messages[$this->cur_id]['FIELDS'] = [];
+					}
     				$this->messages[$this->cur_id]["FIELDS"]=array_merge((array)$this->messages[$this->cur_id]["FIELDS"],$fields);
     			}
     			break;
     		case "ITEMS":
     			$items=explode(",",$char);
+				if (!isset($this->fields[$this->cur_id]['ITEMS'])) {
+					$this->fields[$this->cur_id]['ITEMS'] = [];
+				}
     			$this->fields[$this->cur_id]["ITEMS"]=array_merge((array)$this->fields[$this->cur_id]["ITEMS"],$items);
     			break;
     	}

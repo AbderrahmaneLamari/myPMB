@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
-<!-- $Id: sort.xml,v 1.4.2.2 2021/06/29 14:59:15 gneveu Exp $ -->
+<!-- $Id: sort.xml,v 1.6 2021/06/29 15:00:15 gneveu Exp $ -->
 <sort>	
 	<!--Titre-->
 	<field name="title" type="text" typefield="select" id="1">

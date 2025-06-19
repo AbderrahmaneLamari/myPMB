@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_ui.tpl.php,v 1.57.2.13 2021/09/07 10:23:31 gneveu Exp $
+// $Id: onto_common_datatype_ui.tpl.php,v 1.79.4.1 2023/11/16 14:51:13 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -13,9 +13,9 @@ global $ontology_tpl,$msg,$base_path;
  */
 $ontology_tpl['form_row'] = '
 <div id="!!onto_row_id!!"  data-pmb-uniqueId="!!data_pmb_uniqueid!!">
-	<div class="row">	
+	<div class="row" title="!!form_row_label_tooltip!!">	
 		<hr />
-		<label class="etiquette !!form_row_content_mandatory_class!!" for="!!onto_row_id!!" title="!!form_row_label_tooltip!!">
+		<label class="etiquette !!form_row_content_mandatory_class!!" for="!!onto_row_id!!">
             !!onto_row_label!! !!form_row_content_mandatory_sign!! 
         </label>
 		!!form_row_content_comment!! !!form_row_content_tooltip!!
@@ -117,7 +117,7 @@ $ontology_tpl['form_row_content_small_text']='
  */
 $ontology_tpl['form_row_card'] = '
 <div id="!!onto_row_id!!" data-pmb-uniqueId="!!data_pmb_uniqueid!!">
-	<div class="row">
+	<div class="row" title="!!form_row_label_tooltip!!">
 		<label class="etiquette !!form_row_content_mandatory_class!!" for="!!onto_row_id!!">!!onto_row_label!! !!form_row_content_mandatory_sign!!</label>
 		!!form_row_content_comment!! !!form_row_content_tooltip!!
 	</div>
@@ -295,6 +295,9 @@ $ontology_tpl['form_row_hidden'] = '
 	<input type="hidden" id="!!onto_row_id!!_new_order" value="!!onto_new_order!!" />
 	!!onto_rows!!
 </div>
+<script type="text/javascript">
+	!!onto_row_scripts!!
+</script>
 ';
 
 $ontology_tpl['form_row_content_hidden']='
@@ -325,7 +328,7 @@ $ontology_tpl['form_row_content_list_hidden']='
 ';
 
 $ontology_tpl['form_row_content_list_item_hidden']='
-	<input type="hidden" value="!!onto_row_content_hidden_value!!" name="!!onto_row_id!![!!onto_row_order!!][value][]"/>
+	<input type="hidden" id="!!onto_row_id!!_!!onto_row_order!!_value_list" value="!!onto_row_content_hidden_value!!" name="!!onto_row_id!![!!onto_row_order!!][value][]"/>
 ';
 
 /*
@@ -456,7 +459,7 @@ $ontology_tpl['form_row_content_linked_record_selector']='
         templateNodeId:\'!!onto_row_id!!_!!onto_row_order!!_resource_template\'" 
     !!onto_disabled!! autocomplete="off"/>
 <datalist id="!!onto_row_id!!_!!onto_row_order!!_display_label_list"></datalist>
-<input type="hidden" value="!!onto_row_content_marclist_range!!" name="!!onto_row_id!![!!onto_row_order!!][type]" id="!!onto_row_id!!_!!onto_row_order!!_type"/>
+<input type="hidden" value="!!onto_row_content_marclist_range!!" name="!!onto_row_id!![!!onto_row_order!!][marclist_type]" id="!!onto_row_id!!_!!onto_row_order!!_marclist_type"/>
 <input type="hidden" value="!!form_row_content_linked_record_selector_value!!" name="!!onto_row_id!![!!onto_row_order!!][value]" id="!!onto_row_id!!_!!onto_row_order!!_value">
 <input type="hidden" value="!!form_row_content_linked_record_selector_is_draft!!" name="!!onto_row_id!![!!onto_row_order!!][is_draft]" id="!!onto_row_id!!_!!onto_row_order!!_is_draft">
 <input type="hidden" value="!!form_row_content_linked_record_selector_range!!" name="!!onto_row_id!![!!onto_row_order!!][type]" id="!!onto_row_id!!_!!onto_row_order!!_type"/>
@@ -469,10 +472,10 @@ $ontology_tpl['form_row_content_linked_authority_selector']='
 
 <div class="row" id="!!onto_row_id!!_!!onto_row_order!!">
     <div class="contribution_area_flex">
-        !!onto_row_content_authority_type!!
         <select name="!!onto_row_id!![!!onto_row_order!!][relation_type_authority]" id="!!onto_row_id!!_!!onto_row_order!!_relation_type_authority">
         	!!onto_row_content_marclist_options!!
         </select>
+        !!onto_row_content_authority_type!!
         <img class="img_plus" border="0" hspace="3" src="'.get_url_icon('plus.gif').'" id="!!onto_row_id!!_!!onto_row_order!!_img_plus" data-prefix="!!onto_row_id!!_!!onto_row_order!!"
         	onclick="show_comment_area(this.dataset.prefix);"/>		
         <input type="text" value="!!form_row_content_linked_authority_selector_display_label!!" list="!!onto_row_id!!_!!onto_row_order!!_display_label_list" 
@@ -492,9 +495,10 @@ $ontology_tpl['form_row_content_linked_authority_selector']='
                 templateNodeId:\'!!onto_row_id!!_!!onto_row_order!!_resource_template\'" 
             !!onto_disabled!! autocomplete="off"/>
         <datalist id="!!onto_row_id!!_!!onto_row_order!!_display_label_list"></datalist>
-        <input type="hidden" value="!!onto_row_content_marclist_range!!" name="!!onto_row_id!![!!onto_row_order!!][type]" id="!!onto_row_id!!_!!onto_row_order!!_type"/>
+        <input type="hidden" value="!!onto_row_content_marclist_range!!" name="!!onto_row_id!![!!onto_row_order!!][marclist_type]" id="!!onto_row_id!!_!!onto_row_order!!_marclist_type"/>
         <input type="hidden" value="!!form_row_content_linked_authority_selector_value!!" name="!!onto_row_id!![!!onto_row_order!!][value]" id="!!onto_row_id!!_!!onto_row_order!!_value">
         <input type="hidden" value="!!form_row_content_linked_authority_selector_range!!" name="!!onto_row_id!![!!onto_row_order!!][type]" id="!!onto_row_id!!_!!onto_row_order!!_type"/>
+		<input type="hidden" value="!!form_row_content_linked_authority_selector_is_draft!!" name="!!onto_row_id!![!!onto_row_order!!][is_draft]" id="!!onto_row_id!!_!!onto_row_order!!_is_draft">
         <!-- c est pas top de mettre les boutons direct ici mais sinon on est trop embete avec le display flex (pour aligner tous les champs)-->
     	!!onto_row_inputs!!
     </div>
@@ -567,10 +571,10 @@ $ontology_tpl['form_row_content_linked_authority_selector_script'] = '
                 break;
 		}	
         aut_link_display_label.completion = table_name;
+        show_add_btn(prefix);
     }
 
     function show_comment_area(prefix) {
-        console.log(prefix);
 		if(document.getElementById(prefix+"_comment_area").style.display=="none") {
 			document.getElementById(prefix+"_img_plus").src="'.get_url_icon('minus.gif').'";
 			document.getElementById(prefix+"_comment_area").style.display="block";
@@ -580,6 +584,87 @@ $ontology_tpl['form_row_content_linked_authority_selector_script'] = '
 			document.getElementById(prefix+"_comment_area").style.display="none";
 		}
     }
+
+    function show_add_btn(prefix) {
+        var selector = document.getElementById(prefix + "_authority_type");
+        var selIndex = selector.selectedIndex;
+        var table = selector.options[selIndex].value;
+        
+        var selectType = "author";
+
+        switch (table) {
+			case "1" :
+                selectType = "author";
+                break;
+			case "2" :
+                selectType = "category";
+                break;
+			case "3" :
+                selectType = "publisher";
+                break;
+			case "4" :
+                selectType = "collection";
+                break;
+			case "5" :
+                selectType = "subcollection";
+                break;
+			case "6" :
+                selectType = "serie";
+                break;
+			case "7" :
+                selectType = "work";
+                break;
+			case "8" :
+                selectType = "indexint";
+                break;
+			case "10" :
+                selectType = "concept";
+                break;
+            default : 
+                if (table > 1000) {
+                    selectType = "authperso_" + (table - 1000);
+                }
+                break;
+		}	
+        var btnAdd = document.getElementById(prefix + "_sel");
+        var btnSearch = document.getElementById(prefix + "_search");
+        var jsonDataNode = document.getElementById(prefix + "_json_data");
+        var formEditUrl = "";
+
+        var displayBtn = "none";
+        if (jsonDataNode && jsonDataNode.value) {
+            var jsonData = JSON.parse(jsonDataNode.value);
+            jsonData.create = 0;
+            jsonData.multiple_scenarios = 0;
+            if (jsonData.sub_form_data[selectType]) {
+                displayBtn = "block";
+                jsonData.create = 1;
+                jsonData.multiple_scenarios = jsonData.sub_form_data[selectType].multiple;
+            }
+            jsonData.type = selectType;
+            jsonData.select_tab = 1;
+            formEditUrl = "./select.php?what=contribution&selector_data="+encodeURIComponent(JSON.stringify(jsonData));
+            jsonData.select_tab = 0;
+            var formSearchUrl = "./select.php?what=contribution&selector_data="+encodeURIComponent(JSON.stringify(jsonData));
+            
+            btnSearch.setAttribute("data-form_url", formSearchUrl);
+        }
+        if (btnAdd) {
+            btnAdd.setAttribute("data-form_url", formEditUrl);
+            btnAdd.style.display = displayBtn;
+        }
+    }
+
+    function show_add_buttons() {
+        var maxOrder = document.getElementById("!!onto_row_id!!_new_order");
+        if (maxOrder) {
+            for(var i = 0; i <= maxOrder.value; i++) {
+                show_add_btn("!!onto_row_id!!_"+i);
+            }
+        }
+    }
+
+    show_add_buttons();
 ';
 
 /*
@@ -755,7 +840,7 @@ $ontology_tpl['onto_contribution_save_button_draft']='
  */
 $ontology_tpl['form_row_link'] = '
 <div id="!!onto_row_id!!">
-	<div class="row">
+	<div class="row" title="!!form_row_label_tooltip!!">
         <label class="etiquette !!form_row_content_mandatory_class!!" for="!!onto_row_id!!">
             !!onto_row_label!!  !!form_row_content_mandatory_sign!!
         </label>
@@ -841,4 +926,8 @@ function check_link(inputNode) {
     }
 }
 </script>";
+
+$ontology_tpl['form_row_content_input_json_data']='
+<input type="hidden" id="!!onto_row_id!!_!!onto_row_order!!_json_data" value="!!onto_json_data!!"/>
+';
 

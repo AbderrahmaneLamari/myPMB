@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_authorities_authperso_ui.class.php,v 1.2 2021/02/23 08:06:00 dgoron Exp $
+// $Id: list_configuration_authorities_authperso_ui.class.php,v 1.2.6.2 2023/09/28 10:41:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -55,12 +55,12 @@ class list_configuration_authorities_authperso_ui extends list_configuration_aut
 	
 	protected function add_column_action() {
 		global $msg;
-		$this->columns[] = array(
-				'property' => 'action',
-				'label' => $msg['admin_authperso_action'],
-				'html' => '<input type="button" class="bouton" value="'.$msg['admin_authperso_edition'].'"  onclick=\'document.location="'.static::get_controller_url_base().'&auth_action=edition&id_authperso=!!id!!"\'  />',
-				'exportable' => false
+		
+		$html_properties = array(
+				'value' => $msg['admin_authperso_edition'],
+				'link' => static::get_controller_url_base().'&auth_action=edition&id_authperso=!!id!!'
 		);
+		$this->add_column_simple_action('action', $msg['admin_authperso_action'], $html_properties);
 	}
 	
 	protected function get_display_content_object_list($object, $indice) {
@@ -68,43 +68,45 @@ class list_configuration_authorities_authperso_ui extends list_configuration_aut
 		return parent::get_display_content_object_list($object, $indice);
 	}
 	
-	protected function _compare_objects($a, $b) {
-		if($this->applied_sort[0]['by']) {
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'name':
-				case 'onglet_name':
-				case 'opac_search':
-				case 'gestion_search':
-				case 'opac_multi_search':
-				case 'gestion_multi_search':
-				case 'oeuvre_event':
-				case 'responsability_authperso':
-					return strcmp(strtolower(convert_diacrit($a->info[$sort_by])), strtolower(convert_diacrit($b->info[$sort_by])));
-					break;
-				default :
-					return parent::_compare_objects($a, $b);
-					break;
-			}
+	protected function _compare_objects($a, $b, $index=0) {
+		$sort_by = $this->applied_sort[$index]['by'];
+		switch($sort_by) {
+			case 'name':
+			case 'onglet_name':
+			case 'opac_search':
+			case 'gestion_search':
+			case 'opac_multi_search':
+			case 'gestion_multi_search':
+			case 'oeuvre_event':
+			case 'responsability_authperso':
+				return strcmp(strtolower(convert_diacrit($a->info[$sort_by])), strtolower(convert_diacrit($b->info[$sort_by])));
+				break;
+			default :
+				return parent::_compare_objects($a, $b, $index);
+				break;
 		}
 	}
 	
+	protected function _get_object_property_name($object) {
+		return $object->info['name'];
+	}
+	
+	protected function _get_object_property_onglet_name($object) {
+		return $object->info['onglet_name'];
+	}
+	
 	protected function get_cell_content($object, $property) {
-		global $msg;
+		global $msg, $charset;
 	
 		$content = '';
 		switch($property) {
-			case 'name':
-			case 'onglet_name':
-				$content .= $object->info[$property];
-				break;
 			case 'opac_search':
 			case 'gestion_search':
 				if($object->info[$property]==1) {
 					$content .= "x";
 				}
 				if($object->info[$property]==2) {
-					$content .= $msg['admin_authperso_'.$property.'_simple_list_valid'];
+					$content .= htmlentities($msg['admin_authperso_'.$property.'_simple_list_valid'], ENT_QUOTES, $charset);
 				}
 				break;
 			case 'opac_multi_search':
@@ -126,13 +128,10 @@ class list_configuration_authorities_authperso_ui extends list_configuration_aut
 		return static::get_controller_url_base().'&auth_action=form&id_authperso='.$object->id;
 	}
 	
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "document.location=\"".$this->get_edition_link($object)."\""
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_label_button_add() {

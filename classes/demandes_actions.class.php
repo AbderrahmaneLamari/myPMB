@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes_actions.class.php,v 1.53 2021/03/30 16:34:05 dgoron Exp $
+// $Id: demandes_actions.class.php,v 1.53.6.1 2023/12/28 11:16:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -166,59 +166,82 @@ class demandes_actions{
 		return $path;
 	}
 	
+	public function get_modif_content_form() {
+	    global $msg;
+	    global $pmb_gestion_devise;
+	    
+	    $interface_content_form = new interface_content_form(static::class);
+	    
+	    if($this->id_action){
+	        $type_action_html_node = $this->workflow->getTypeCommentById($this->type_action);
+	        $type_action_html_node .= "<input type='hidden' name='idtype' id='idtype' value='$this->type_action' />";
+	    } else {
+	        $type_action_html_node = $this->getTypeSelector();
+	    }
+	    $interface_content_form->add_element('idtype', 'demandes_action_type')
+	    ->set_class('colonne3')
+	    ->add_html_node($type_action_html_node);
+	    $interface_content_form->add_element('idstatut', 'demandes_action_statut')
+	    ->set_class('colonne3')
+	    ->add_html_node($this->getStatutSelector($this->statut_action));
+	    $interface_content_form->add_element('sujet', 'demandes_action_sujet')
+	    ->add_input_node('text', $this->sujet_action);
+	    $interface_content_form->add_element('detail', 'demandes_action_detail')
+	    ->add_textarea_node($this->detail_action, 50, 4)
+	    ->set_attributes(array('wrap' => 'virtual'));
+	    $interface_content_form->add_element('ck_prive', 'demandes_action_privacy', 'flat')
+	    ->add_input_node('boolean', $this->prive_action);
+	    
+	    if(!$this->id_action){
+	        $this->date_action = date("Y-m-d",time());
+	        $this->deadline_action = date("Y-m-d",time());
+	    }
+	    $interface_content_form->add_element('date_debut', 'demandes_action_date')
+	    ->set_class('colonne3')
+	    ->add_input_node('date', $this->date_action);
+	    $interface_content_form->add_element('date_fin', 'demandes_action_date_butoir')
+	    ->set_class('colonne3')
+	    ->add_input_node('date', $this->deadline_action);
+	    
+	    $interface_content_form->add_element('time_elapsed')
+	    ->set_label($msg['demandes_action_time_elapsed']." (".$msg['demandes_action_time_unit'].")")
+	    ->set_class('colonne3')
+	    ->add_input_node('text', $this->time_elapsed)
+	    ->set_class('saisie-20em');
+	    $interface_content_form->add_element('cout')
+	    ->set_label(sprintf($msg['demandes_action_cout'],$pmb_gestion_devise))
+	    ->set_class('colonne3')
+	    ->add_input_node('integer', $this->cout);
+	    $interface_content_form->add_element('progression', 'demandes_action_progression')
+	    ->set_class('colonne3')
+	    ->add_input_node('integer', $this->progression_action);
+	    
+	    $interface_content_form->add_zone('action', '', ['idtype', 'idstatut']);
+	    $interface_content_form->add_zone('body', '', ['sujet', 'detail', 'ck_prive']);
+	    $interface_content_form->add_zone('dates', '', ['date_debut', 'date_fin']);
+	    $interface_content_form->add_zone('additionals_info', '', ['time_elapsed', 'cout', 'progression']);
+	    return $interface_content_form->get_display();
+	}
+	
 	/*
 	 * Affichage du formulaire de création/modification
 	 */
 	public function show_modif_form(){
-		global $js_modif_action, $content_form_modif_action,$msg, $charset;
+		global $js_modif_action,$msg;
 		
 		print $js_modif_action;
 		print "<h2>".$this->get_path()."</h2>";
-		
-		$content_form = $content_form_modif_action;
 		
 		$interface_form = new interface_demandes_form('modif_action');
 		$interface_form->set_num_demande($this->num_demande);
 		if($this->id_action){
 			$interface_form->set_label(sprintf($msg['demandes_action_modif'],' : '.$this->sujet_action));
-			
-			$content_form = str_replace('!!select_type!!',$this->workflow->getTypeCommentById($this->type_action),$content_form);
-			$type_hide = "<input type='hidden' name='idtype' id='idtype' value='$this->type_action' />";
-			$content_form = str_replace('!!type_action!!',$type_hide,$content_form);
-			
-			$content_form = str_replace('!!date_fin_btn!!',formatdate($this->deadline_action),$content_form);
-			$content_form = str_replace('!!date_debut_btn!!',formatdate($this->date_action),$content_form);
-			$content_form = str_replace('!!date_debut!!',htmlentities($this->date_action,ENT_QUOTES,$charset),$content_form);
-			$content_form = str_replace('!!date_fin!!',htmlentities($this->deadline_action,ENT_QUOTES,$charset),$content_form);
-			
-			if($this->prive_action)
-				$content_form = str_replace('!!ck_prive!!','checked',$content_form);
-			else $content_form = str_replace('!!ck_prive!!','',$content_form);
 		} else {
 			$interface_form->set_label($msg['demandes_action_creation']);
-			
-			$date = formatdate(today());
-			$date_debut=date("Y-m-d",time());
-			$content_form = str_replace('!!date_fin_btn!!',$date,$content_form);
-			$content_form = str_replace('!!date_debut_btn!!',$date,$content_form);
-			$content_form = str_replace('!!date_debut!!',$date_debut,$content_form);
-			$content_form = str_replace('!!date_fin!!',$date_debut,$content_form);
-			$content_form = str_replace('!!select_type!!',$this->getTypeSelector(),$content_form);
-			$content_form = str_replace('!!type_action!!','',$content_form);
 		}
-		
-		$content_form = str_replace('!!sujet!!',htmlentities($this->sujet_action,ENT_QUOTES,$charset),$content_form);
-		$content_form = str_replace('!!detail!!',htmlentities($this->detail_action,ENT_QUOTES,$charset),$content_form);
-		$content_form = str_replace('!!cout!!',htmlentities($this->cout,ENT_QUOTES,$charset),$content_form);
-		$content_form = str_replace('!!time_elapsed!!',htmlentities($this->time_elapsed,ENT_QUOTES,$charset),$content_form);
-		$content_form = str_replace('!!progression!!',htmlentities($this->progression_action,ENT_QUOTES,$charset),$content_form);
-		$content_form = str_replace('!!select_statut!!',$this->getStatutSelector($this->statut_action),$content_form);
-		$content_form = str_replace('!!iddemande!!',$this->num_demande,$content_form);
-		$content_form = str_replace('!!idaction!!',$this->id_action,$content_form);
-		
 		$interface_form->set_object_id($this->id_action)
 		->set_confirm_delete_msg($msg['demandes_confirm_suppr'])
-		->set_content_form($content_form)
+		->set_content_form($this->get_modif_content_form())
 		->set_table_name('demandes_actions');
 		print $interface_form->get_display();
 		print "<div class='row' id='docnum'></div>";
@@ -292,14 +315,51 @@ class demandes_actions{
 	}
 	
 	/*
+	 * Contenu du formulaire d'ajout/modification d'un document numérique
+	 */
+	public function get_docnum_content_form(){
+	    global $explnumdoc_id, $explnum_doc;
+	    
+	    $explnumdoc_id = intval($explnumdoc_id);
+	    $nom = '';
+	    $doc_url = '';
+	    $prive = 0;
+	    $rapport = 0;
+	    if($explnumdoc_id){
+	        $explnum_doc = new explnum_doc($explnumdoc_id);
+	        $nom = $explnum_doc->explnum_doc_nomfichier;
+	        $doc_url = $explnum_doc->explnum_doc_url;
+	        
+	        $query = "select prive, rapport from explnum_doc_actions where num_explnum_doc='".$explnumdoc_id."'";
+	        $result = pmb_mysql_query($query);
+	        $row = pmb_mysql_fetch_object($result);
+	        $prive = $row->prive;
+	        $rapport = $row->rapport;
+	    }
+	    
+	    $interface_content_form = new interface_content_form(static::class);
+	    $interface_content_form->add_element('idaction')
+	    ->add_input_node('hidden', $this->id_action);
+	    $interface_content_form->add_element('f_nom', 'explnum_nom')
+	    ->add_input_node('text', $nom);
+	    $interface_content_form->add_element('f_fichier', 'explnum_fichier')
+	    ->add_input_node('file');
+	    $interface_content_form->add_element('f_url', 'demandes_url_docnum')
+	    ->add_input_node('text', $doc_url);
+	    $interface_content_form->add_element('ck_prive', 'demandes_note_privacy', 'flat')
+	    ->add_input_node('boolean', $prive);
+	    $interface_content_form->add_element('ck_rapport', 'demandes_docnum_rapport', 'flat')
+	    ->add_input_node('boolean', $rapport);
+	    return $interface_content_form->get_display();
+	}
+	
+	/*
 	 * Formulaire d'ajout/modification d'un document numérique
 	 */
 	public function show_docnum_form(){
-		global $content_form_add_docnum, $msg, $charset,$explnumdoc_id,$explnum_doc;
+		global $msg, $explnumdoc_id;
 		
 		print "<h2>".$this->get_path()."</h2>";
-		
-		$content_form = $content_form_add_docnum;
 		
 		$interface_form = new interface_demandes_form('explnum');
 		$interface_form->set_num_action($this->id_action);
@@ -307,33 +367,12 @@ class demandes_actions{
 		$explnumdoc_id = intval($explnumdoc_id);
 		if($explnumdoc_id){
 			$interface_form->set_label($msg['explnum_data_doc']);
-			
-			$rqt = "select prive, rapport from explnum_doc_actions where num_explnum_doc='".$explnumdoc_id."'";
-			$res = pmb_mysql_query($rqt);
-			$expl = pmb_mysql_fetch_object($res);
-			$prive = $expl->prive;
-			$rapport = $expl->rapport;
-			
-			$explnum_doc = new explnum_doc($explnumdoc_id);
-			$content_form = str_replace('!!url_doc!!',htmlentities($explnum_doc->explnum_doc_url,ENT_QUOTES,$charset), $content_form);
-			$content_form = str_replace('!!nom!!',htmlentities($explnum_doc->explnum_doc_nomfichier,ENT_QUOTES,$charset), $content_form);
-			$content_form = str_replace('!!iddocnum!!',$explnumdoc_id,$content_form);
-			$content_form = str_replace('!!ck_prive!!',($prive ? 'checked' :''),$content_form);
-			$content_form = str_replace('!!ck_rapport!!',($rapport ? 'checked' :''),$content_form);
 		} else {
 			$interface_form->set_label($msg['explnum_ajouter_doc']);
-			
-			$content_form = str_replace('!!url_doc!!',"", $content_form);
-			$content_form = str_replace('!!nom!!','', $content_form);
-			$content_form = str_replace('!!iddocnum!!','',$content_form);
-			$content_form = str_replace('!!ck_prive!!','',$content_form);
-			$content_form = str_replace('!!ck_rapport!!','',$content_form);
 		}
-		$content_form = str_replace('!!idaction!!',$this->id_action, $content_form);
-		
 		$interface_form->set_object_id($explnumdoc_id)
 		->set_confirm_delete_msg($msg['demandes_confirm_suppr'])
-		->set_content_form($content_form)
+		->set_content_form($this->get_docnum_content_form())
 		->set_table_name('explnum_doc');
 		print $interface_form->get_display();
 	}
@@ -342,7 +381,7 @@ class demandes_actions{
 	 * Retourne un sélecteur avec les types d'action
 	 */
 	public function getTypeSelector($idtype=0){
-		global $charset, $msg;
+		global $charset, $msg, $default;
 		
 		$selector = "<select name='idtype'>";
 		$select="";
@@ -382,7 +421,7 @@ class demandes_actions{
 	public function getStatutSelector($idstatut=0,$ajax=false){
 		global $charset;
 		
-		$selector = "<select ".($ajax ? "name='save_statut_".$this->id_action."' id='save_statut_".$this->id_action."'" : "name='idstatut'").">";
+		$selector = "<select ".($ajax ? "name='save_statut_".$this->id_action."' id='save_statut_".$this->id_action."'" : "id='idstatut' name='idstatut'").">";
 		$select="";
 		for($i=1;$i<=count($this->list_statut);$i++){
 			if($idstatut == $this->list_statut[$i]['id']) $select = "selected";

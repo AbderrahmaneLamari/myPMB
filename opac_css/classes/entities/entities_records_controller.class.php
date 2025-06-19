@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_records_controller.class.php,v 1.2.6.1 2022/01/07 14:25:11 dgoron Exp $
+// $Id: entities_records_controller.class.php,v 1.3 2022/01/07 14:23:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

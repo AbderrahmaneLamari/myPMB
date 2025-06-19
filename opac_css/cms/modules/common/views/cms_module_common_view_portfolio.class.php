@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_view_portfolio.class.php,v 1.7 2021/02/12 11:58:25 dbellamy Exp $
+// $Id: cms_module_common_view_portfolio.class.php,v 1.9 2022/09/30 14:12:02 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -66,6 +66,7 @@ class cms_module_common_view_portfolio extends cms_module_common_view_django{
 	
 	public function render($datas){
 		$render =  parent::render($datas);
+		
 		if($this->parameters['visionneuse']){
 			for($i=0 ; $i<count($datas['documents']) ; $i++){
 				$str_to_replace = substr($render,strpos($render,$datas['documents'][$i]['url'])-1,strlen($datas['documents'][$i]['url'])+2);
@@ -90,6 +91,25 @@ class cms_module_common_view_portfolio extends cms_module_common_view_django{
 	
 	public function get_format_data_structure(){
 		$datasource = new cms_module_common_datasource_portfolio();
-		return array_merge($datasource->get_format_data_structure(),parent::get_format_data_structure());
+		$format = $datasource->get_format_data_structure();
+		$format[] = array(
+		    'var' => "paginator",
+		    'desc' => $this->msg['cms_module_common_view_list_paging_title'],
+		    'children' => array(
+		        array(
+		            'var' => "paginator.paginator",
+		            'desc' => $this->msg['cms_module_common_view_list_paging_paginator_title']
+		        ),
+		        array(
+		            'var' => "paginator.nbPerPageSelector",
+		            'desc' => $this->msg['cms_module_common_view_list_paging_nb_per_page_title']
+		        ),
+		        array(
+		            'var' => "paginator.navigator",
+		            'desc' => $this->msg['cms_module_common_view_list_paging_navigator_title']
+		        )
+		    )
+		);
+		return array_merge($format,parent::get_format_data_structure());
 	}
 }

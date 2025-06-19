@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contact_form.tpl.php,v 1.2 2021/05/06 13:40:05 dgoron Exp $
+// $Id: contact_form.tpl.php,v 1.5 2022/09/02 08:36:41 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "tpl.php")) die("no access");
 
@@ -11,6 +11,7 @@ global $contact_form_form_tpl, $base_path, $msg, $charset, $contact_form_recipie
 $contact_form_form_tpl="
 <script type='text/javascript'>
 	function contact_form_send(form) {
+        clean_errors_form();
 		require([
 			'dojo/request/xhr',
 			'dojo/dom',
@@ -37,23 +38,17 @@ $contact_form_form_tpl="
         						h3_node.innerHTML = \"!!title!!\";
         						var response_node = document.createElement('p');
         						response_node.setAttribute('class', 'contact_form_response');
-        						response_node.innerHTML = response.messages.join('<br />');
+        						response_node.innerHTML = response.errors_messages.join('<br />');
         						document.getElementById('contact_form_content').innerHTML = '';
         						document.getElementById('contact_form_content').appendChild(h3_node);
         						document.getElementById('contact_form_content').appendChild(response_node);
         					} else {
-        						document.getElementById('contact_form_message').innerHTML = response.messages.join('<br />');
-                                captcha_image_audioObj.refresh(); 
-                                document.getElementById('contact_form_verifcode').value = '';
-                                document.getElementById('captcha_image').src = './includes/securimage/securimage_show.php?' + Math.random();
+                                show_errors(response);
         					}
         				}
         			})
                 } else {
-                    document.getElementById('contact_form_message').innerHTML = response.errors_messages.join('<br />');
-                    captcha_image_audioObj.refresh();
-                    document.getElementById('contact_form_verifcode').value = '';
-                    document.getElementById('captcha_image').src = './includes/securimage/securimage_show.php?' + Math.random();
+                    show_errors(response);
                 }
             })
 		});
@@ -96,8 +91,20 @@ $contact_form_form_tpl="
             ready(function() {
                 domStyle.set(dom.byId('contact_form_object_free_entry_block'), 'display', 'block');
                 domAttr.set(dom.byId('contact_form_object_free_entry'), 'required', 'true');
+				domStyle.set(dom.byId('contact_form_objects_block'), 'display', 'none');
             });
         });
+    }
+
+    function clean_errors_form() {
+        var nodes = document.querySelectorAll('div[class*=\"contact_form_error\"]');
+        nodes.forEach((node)=>{
+            node.classList.remove('contact_form_error');
+        })
+        var listP = document.querySelectorAll('p[class*=\"contact_form_field_error\"]');
+        listP.forEach((node)=>{
+            node.remove();
+        })
     }
 </script>
 <div id='contact_form_content'>
@@ -113,7 +120,7 @@ $contact_form_form_tpl="
 		</div>
 		!!recipients!!
 		!!fields!!
-		<div class='contact_form_objects'>
+		<div id='contact_form_objects_block' class='contact_form_objects'>
 			<div class='colonne2'>
 				<label>!!objects_label!!</label>
 			</div>
@@ -144,7 +151,7 @@ $contact_form_form_tpl="
 		<div class='contact_form_separator'>&nbsp;</div>
 		<div class='contact_form_code'>
 			<div class='colonne2'>
-                <span class='contact_form_text_verifcode'>".$msg['subs_f_verifcode']."</span>
+                <span class='contact_form_text_verifcode'><span class='contact_form_field_mandatory'>".$msg['subs_f_verifcode']."</span> : </span>
 			</div>
 			<div class='colonne2'>
 				<span class='contact_form_text_verif'>".$msg['subs_txt_codeverif']."</span><br />                
@@ -162,6 +169,42 @@ $contact_form_form_tpl="
 	</div>
 	</form>
 </div>
+";
+
+$contact_form_show_errors = "
+<script type='text/javascript'>
+    function show_errors(response) {
+        document.getElementById('contact_form_message').innerHTML = response.errors_messages.join('<br />');
+        captcha_image_audioObj.refresh();
+        document.getElementById('contact_form_verifcode').value = '';
+        document.getElementById('captcha_image').src = './includes/securimage/securimage_show.php?' + Math.random();
+    }
+</script>
+";
+
+$contact_form_show_fields_errors = "
+<script type='text/javascript'>
+    function show_errors(response) {
+        for (var key in response.fields_errors) {
+            var node = document.querySelector('div[class*='+key+']');
+            if (node && !node.className.includes('contact_form_error')) {
+                node.classList.add('contact_form_error');
+                var lastChild = node.lastElementChild;
+                var errorNode = document.createElement('p');
+                errorNode.classList.add('contact_form_field_error');
+                errorNode.appendChild(document.createTextNode(response.fields_errors[key]));
+                lastChild.appendChild(errorNode);
+            }
+        }
+        
+        if (!Object.values(response.fields_errors).length) {
+            document.getElementById('contact_form_message').innerHTML = response.errors_messages.join('<br />');
+        }
+        captcha_image_audioObj.refresh();
+        document.getElementById('contact_form_verifcode').value = '';
+        document.getElementById('captcha_image').src = './includes/securimage/securimage_show.php?' + Math.random();
+    }
+</script>
 ";
 
 $contact_form_recipients_tpl= "

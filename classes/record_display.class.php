@@ -2,9 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: record_display.class.php,v 1.57.2.2 2022/01/21 14:38:48 dgoron Exp $
+// $Id: record_display.class.php,v 1.65.4.5 2023/12/01 14:28:12 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Ark\Entities\ArkRecord;
+use Pmb\Ark\Models\ArkModel;
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 global $class_path;
 // require_once($class_path."/record_datas.class.php");
@@ -68,6 +72,12 @@ class record_display {
 	static private $special;
 	
 	public static $linked_permalink;
+	
+	/**
+	 * lien ark
+	 * @var string
+	 */
+	protected $ark_link;
 	
 	// récupération des valeurs en table
 	public function fetch_data() {
@@ -149,7 +159,6 @@ class record_display {
 	}
 	
 	protected function get_icondoc() {
-		global $use_opac_url_base, $opac_url_base, $base_path;
 		global $tdoc;
 		
 		//Icone type de Document
@@ -158,30 +167,25 @@ class record_display {
 		$this->icondoc = '';
 		if ($icon) {
 			$biblio_doc = marc_list_collection::get_instance('nivbiblio');
-			$info_bulle_icon=$biblio_doc->table[$this->notice->niveau_biblio]." : ".$tdoc->table[$this->notice->typdoc];
-			if ($use_opac_url_base)	$this->icondoc="<img src=\"".$opac_url_base."images/$icon\" alt=\"$info_bulle_icon\" title=\"$info_bulle_icon\" class='align_top' />";
-			else $this->icondoc="<img src=\"".$base_path."/images/$icon\" alt=\"$info_bulle_icon\" title=\"$info_bulle_icon\" class='align_top' />";
+			$info_bulle_icon=(!empty($biblio_doc->table[$this->notice->niveau_biblio]) ? $biblio_doc->table[$this->notice->niveau_biblio] : '')." : ".(!empty($tdoc->table[$this->notice->typdoc]) ? $tdoc->table[$this->notice->typdoc] : '');
+			$this->icondoc="<img src=\"".get_url_icon($icon)."\" alt=\"$info_bulle_icon\" title=\"$info_bulle_icon\" class='align_top' />";
 		}
 		return $this->icondoc;
 	}
 	
 	protected function get_icon_is_new() {
 		global $msg;
-		global $use_opac_url_base, $opac_url_base, $base_path;
-		
-		$icon = "icone_nouveautes.png";
+
 		$this->icon_is_new = "";
 		if (!empty($this->notice->notice_is_new)) {
 			$info_bulle_icon_new=$msg["notice_is_new_gestion"];
-			if ($use_opac_url_base)	$this->icon_is_new="<img src=\"".$opac_url_base."images/$icon\" alt=\"$info_bulle_icon_new\" title=\"$info_bulle_icon_new\" class='align_top' />";
-			else $this->icon_is_new="<img src=\"".$base_path."/images/$icon\" alt=\"$info_bulle_icon_new\" title=\"$info_bulle_icon_new\" class='align_top' />";
+			$this->icon_is_new="<img src=\"".get_url_icon('icone_nouveautes.png')."\" alt=\"$info_bulle_icon_new\" title=\"$info_bulle_icon_new\" class='align_top' />";
 		}
 		return $this->icon_is_new;
 	}
 	
 	protected function get_aff_statut() {
 		global $charset;
-		global $use_opac_url_base;
 		
 		if (!empty($this->notice->statut)) {
 			$rqt_st = "SELECT class_html , gestion_libelle FROM notice_statut WHERE id_notice_statut='".$this->notice->statut."' ";
@@ -196,12 +200,11 @@ class record_display {
 			if ($txt) $txt .= ":\r\n".$this->notice->commentaire_gestion ;
 			else $txt = $this->notice->commentaire_gestion ;
 		}
-		$use_opac_url_base = intval($use_opac_url_base);
 		if ($txt && empty($this->context_parameters['in_selector'])) {
-			$this->aff_statut = "<small><span $class_html style='margin-right: 3px;'><a href=# onmouseover=\"z=document.getElementById('zoom_statut".$this->notice_id."'); z.style.display=''; \" onmouseout=\"z=document.getElementById('zoom_statut".$this->notice_id."'); z.style.display='none'; \"><img src='".get_url_icon('spacer.gif', $use_opac_url_base)."' width='10' height='10' /></a></span></small>";
+			$this->aff_statut = "<small><span $class_html style='margin-right: 3px;'><a href=# onmouseover=\"z=document.getElementById('zoom_statut".$this->notice_id."'); z.style.display=''; \" onmouseout=\"z=document.getElementById('zoom_statut".$this->notice_id."'); z.style.display='none'; \"><img src='".get_url_icon('spacer.gif')."' width='10' height='10' /></a></span></small>";
 			$this->aff_statut .= "<div id='zoom_statut".$this->notice_id."' style='border: solid 2px #555555; background-color: #FFFFFF; position: absolute; display:none; z-index: 2000;'><b>".nl2br(htmlentities($txt,ENT_QUOTES, $charset))."</b></div>" ;
 		} else {
-			$this->aff_statut = "<small><span $class_html style='margin-right: 3px;'><img src='".get_url_icon('spacer.gif', $use_opac_url_base)."' width='10' height='10' /></span></small>";
+			$this->aff_statut = "<small><span $class_html style='margin-right: 3px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' /></span></small>";
 		}
 		return $this->aff_statut;
 	}
@@ -244,13 +247,11 @@ class record_display {
 	
 	protected function get_resources_link() {
 		global $use_dsi_diff_mode;
-		global $use_opac_url_base, $opac_url_base;
 		
 		$resources_link = '';
 		if (!$this->print_mode || $this->print_mode=='2' || $use_dsi_diff_mode) {
 			$resources_link .= "<a href=\"".$this->notice->lien."\" target=\"_blank\">";
-			if (!$use_opac_url_base) $resources_link .= "<img src='".get_url_icon('globe.gif')."' border=\"0\" class='align_middle' hspace=\"3\"";
-			else $resources_link .= "<img src=\"".$opac_url_base."images/globe.gif\" border=\"0\" class='align_middle' hspace=\"3\"";
+			$resources_link .= "<img src='".get_url_icon('globe.gif')."' border=\"0\" class='align_middle' hspace=\"3\"";
 			$resources_link .= " alt=\"";
 			$resources_link .= $this->notice->eformat;
 			$resources_link .= "\" title=\"";
@@ -612,6 +613,8 @@ class record_display {
 				$expl_list_id = array();
 				if($pmb_transferts_actif) $expl_list_id_transfer = array();
 				while($expl = pmb_mysql_fetch_object($result)) {
+					$expl->section_libelle = translation::get_translated_text($expl->idsection, "docs_section", "section_libelle", $expl->section_libelle);
+					$expl->statut_libelle = translation::get_translated_text($expl->expl_statut, "docs_statut", "statut_libelle", $expl->statut_libelle);
 					$expl_list_id[] = $expl->expl_id;
 					//visibilité des exemplaires
 					if ($pmb_droits_explr_localises) {
@@ -946,6 +949,16 @@ class record_display {
 		if (!isset(self::$records_datas[$notice_id])) {
 			self::$records_datas[$notice_id] = new record_datas($notice_id);
 		}
+		return self::$records_datas[$notice_id];
+	}
+	
+	/**
+	 * Ré-initialisation du singleton record_datas
+	 * @param int $notice_id Identifiant de la notice
+	 * @return record_datas
+	 */
+	static public function init_record_datas($notice_id) {
+		self::$records_datas[$notice_id] = new record_datas($notice_id);
 		return self::$records_datas[$notice_id];
 	}
 	
@@ -1543,12 +1556,18 @@ class record_display {
 	static public function do_image($notice_id, &$entree,$depliable) {
 		global $charset;
 		global $msg;
+		global $use_opac_url_base;
 		
 		$record_datas = static::get_record_datas($notice_id);
 		$image = "";
 		if ($record_datas->get_code() || $record_datas->get_thumbnail_url()) {
 			if (static::get_parameter_value('show_book_pics')=='1' && (static::get_parameter_value('book_pics_url') || $record_datas->get_thumbnail_url())) {
-				$url_image_ok=getimage_url($record_datas->get_code(), $record_datas->get_thumbnail_url());
+			    $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+			    if($use_opac_url_base) {
+			        $url_image_ok = $thumbnailSourcesHandler->generateSrcBase64(TYPE_NOTICE, $record_datas->get_id());
+			    } else {
+			        $url_image_ok = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $record_datas->get_id());
+			    }
 				$title_image_ok = "";
 				if(!$record_datas->get_thumbnail_url()){
 					$title_image_ok = htmlentities(static::get_parameter_value('book_pics_msg'), ENT_QUOTES, $charset);
@@ -1557,9 +1576,9 @@ class record_display {
 					$title_image_ok = htmlentities($record_datas->get_tit1(), ENT_QUOTES, $charset);
 				}
 				if ($depliable) {
-					$image = "<img class='vignetteimg align_right' src='".static::get_parameter_value('url_base')."images/vide.png' title=\"".$title_image_ok."\" hspace='4' vspace='2' vigurl=\"".$url_image_ok."\"  alt='".$msg["opac_notice_vignette_alt"]."'/>";
+					$image = "<img class='vignetteimg align_right' src='".static::get_parameter_value('url_base')."images/vide.png' title=\"".$title_image_ok."\" hspace='4' vspace='2' vigurl=\"".$url_image_ok."\"  alt='".htmlentities($msg["opac_notice_vignette_alt"],ENT_QUOTES,$charset)."'/>";
 				} else {
-					$image = "<img class='vignetteimg align_right' src='".$url_image_ok."' title=\"".$title_image_ok."\" hspace='4' vspace='2' alt='".$msg["opac_notice_vignette_alt"]."' />";
+					$image = "<img class='vignetteimg align_right' src='".$url_image_ok."' title=\"".$title_image_ok."\" hspace='4' vspace='2' alt='".htmlentities($msg["opac_notice_vignette_alt"],ENT_QUOTES,$charset)."' />";
 				}
 			}
 		}
@@ -1937,37 +1956,70 @@ class record_display {
 		
 		return static::render($notice_id, $template);
 	}
-	
-	/**
-	 * Retourne le bon template
-	 * @param string $template_name Nom du template : record_extended ou record_in_result
-	 * @param string $niveau_biblio Niveau bibliographique
-	 * @param string $typdoc Type de document
-	 * @param string $django_directory Répertoire Django à utiliser (paramètre opac_notices_format_django_directory par défaut)
-	 * @return string Nom du template à appeler
-	 */
-	static public function get_template($template_name, $niveau_biblio, $typdoc, $django_directory = "") {
-		global $include_path;
-		
-		if (!$django_directory) $django_directory = static::get_parameter_value('notices_format_django_directory');
-		
-		if (file_exists($include_path."/templates/record/".$django_directory."/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html")) {
-			return $include_path."/templates/record/".$django_directory."/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html";
-		}
-		if (file_exists($include_path."/templates/record/common/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html")) {
-			return $include_path."/templates/record/common/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html";
-		}
-		if (file_exists($include_path."/templates/record/".$django_directory."/".$template_name."_".$niveau_biblio.".tpl.html")) {
-			return $include_path."/templates/record/".$django_directory."/".$template_name."_".$niveau_biblio.".tpl.html";
-		}
-		if (file_exists($include_path."/templates/record/common/".$template_name."_".$niveau_biblio.".tpl.html")) {
-			return $include_path."/templates/record/common/".$template_name."_".$niveau_biblio.".tpl.html";
-		}
-		if (file_exists($include_path."/templates/record/".$django_directory."/".$template_name.".tpl.html")) {
-			return $include_path."/templates/record/".$django_directory."/".$template_name.".tpl.html";
-		}
-		return $include_path."/templates/record/common/".$template_name.".tpl.html";
-	}
+
+    /**
+     * Retourne le bon template
+     * @param string $template_name Nom du template : record_extended ou record_in_result
+     * @param string $niveau_biblio Niveau bibliographique
+     * @param string $typdoc Type de document
+     * @param string $django_directory Répertoire Django à utiliser (paramètre opac_notices_format_django_directory par défaut)
+     * @param bool $opac_template Permet d'utilise les template OPAC
+     * @return string Nom du template à appeler
+     */
+    static public function get_template($template_name, $niveau_biblio, $typdoc, $django_directory = "", $connector_id = "", $source_id = "", $opac_template = false, $dsi_template = false) {
+        global $include_path, $base_path;
+
+        $template_path = "{$include_path}/templates";
+        if ($opac_template) {
+            $template_path = "$base_path/opac_css/includes/templates";
+        }
+
+        if($dsi_template) {
+            $template_path .= "/dsi";
+        }
+
+        if (!$django_directory) {
+            $django_directory = static::get_parameter_value('notices_format_django_directory');
+        }
+
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name."_".$source_id."_".$niveau_biblio.$typdoc.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name."_".$source_id."_".$niveau_biblio.$typdoc.".tpl.html";
+        }
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name."_".$connector_id."_".$niveau_biblio.$typdoc.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name."_".$connector_id."_".$niveau_biblio.$typdoc.".tpl.html";
+        }
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name."_".$source_id."_".$niveau_biblio.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name."_".$source_id."_".$niveau_biblio.".tpl.html";
+        }
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name."_".$connector_id."_".$niveau_biblio.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name."_".$connector_id."_".$niveau_biblio.".tpl.html";
+        }
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name."_".$source_id.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name."_".$source_id.".tpl.html";
+        }
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name."_".$connector_id.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name."_".$connector_id.".tpl.html";
+        }
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html";
+        }
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html";
+        }
+        if (file_exists($template_path."/record/common/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html")) {
+            return $template_path."/record/common/".$template_name."_".$niveau_biblio.$typdoc.".tpl.html";
+        }
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name."_".$niveau_biblio.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name."_".$niveau_biblio.".tpl.html";
+        }
+        if (file_exists($template_path."/record/common/".$template_name."_".$niveau_biblio.".tpl.html")) {
+            return $template_path."/record/common/".$template_name."_".$niveau_biblio.".tpl.html";
+        }
+        if (file_exists($template_path."/record/".$django_directory."/".$template_name.".tpl.html")) {
+            return $template_path."/record/".$django_directory."/".$template_name.".tpl.html";
+        }
+        return $template_path."/record/common/".$template_name.".tpl.html";
+    }
 	
 	static public function get_liens_opac() {
 		global $liens_opac;
@@ -1979,7 +2031,7 @@ class record_display {
 		global $base_path;
 		global $use_opac_url_base, $opac_url_base;
 		
-		$use_opac_url_base += 0;
+		$use_opac_url_base = intval($use_opac_url_base);
 		if(!isset(static::$linked_permalink[$use_opac_url_base])) {
 			if($use_opac_url_base) {
 				static::$linked_permalink[$use_opac_url_base] = array(
@@ -2172,18 +2224,14 @@ class record_display {
 	 * @return string
 	 */
 	static public function get_display_social_network($notice_id){
-		global $charset;
-		
-		$record_datas = static::get_record_datas($notice_id);
+		$opac_view = "";
 		if(isset($_SESSION["opac_view"])) {
-			$permalink = $record_datas->get_permalink()."&opac_view=".$_SESSION["opac_view"];
-		} else {
-			$permalink = $record_datas->get_permalink();
+			$opac_view = $_SESSION["opac_view"];
 		}
 		return "
 			<div id='el".$notice_id."addthis' class='addthis_toolbox addthis_default_style '
-				addthis:url='".static::get_parameter_value('url_base')."fb.php?title=".rawurlencode(strip_tags(($charset != "utf-8" ? utf8_encode($record_datas->get_tit1()) : $record_datas->get_tit1())))."&url=".rawurlencode(($charset != "utf-8" ? utf8_encode($permalink) : $permalink))."'>
-			</div>
+				addthis:url='".static::get_parameter_value('url_base')."fb.php?&opac_view=" . $opac_view . "id=" . intval($notice_id) . "&type=" . intval(TYPE_NOTICE) . "'>
+            </div>
 			<script type='text/javascript'>
 				if(param_social_network){
 					creeAddthis('el".$notice_id."');
@@ -2564,11 +2612,35 @@ class record_display {
 	}
 	
 	public static function get_locations_list($notice_id, $property) {
-	    $record_datas = static::get_record_datas($notice_id);
+	    $locations = [];
 	    
-	    $data = $record_datas->get_locations();
+	    //Localisations des exemplaires
+	    $query = "SELECT distinct location_libelle FROM exemplaires JOIN docs_location ON docs_location.idlocation = exemplaires.expl_location WHERE expl_notice = '".$notice_id."'";
+	    $query .= " AND docs_location.location_visible_opac=1";
+	    $result = pmb_mysql_query($query);
+	    if (pmb_mysql_num_rows($result)) {
+		    while ($row = pmb_mysql_fetch_object($result)) {
+		        $locations[] = array(
+		            'label' => $row->location_libelle
+		        );
+		    }
+		    pmb_mysql_free_result($result);
+	    }
+	    //Localisations des documents numériques
+	    $query = "SELECT distinct location_libelle FROM explnum JOIN explnum_location ON explnum_location.num_explnum = explnum.explnum_id JOIN docs_location ON docs_location.idlocation = explnum_location.num_location WHERE explnum_notice = '".$notice_id."'";
+	    $query .= " AND docs_location.location_visible_opac=1";
+	    $result = pmb_mysql_query($query);
+	    if (pmb_mysql_num_rows($result)) {
+		    while ($row = pmb_mysql_fetch_object($result)) {
+		        $locations[] = array(
+		            'label' => $row->location_libelle
+		        );
+		    }
+		    pmb_mysql_free_result($result);
+	    }
+	    
 	    $return_data = [];
-	    foreach ($data as $infos) {
+	    foreach ($locations as $infos) {
 	        if (!empty($infos[$property])) {
 	            $return_data[] = $infos[$property];
 	        }
@@ -2578,11 +2650,34 @@ class record_display {
 	}
 	
 	public static function get_lenders_list($notice_id, $property) {
-	    $record_datas = static::get_record_datas($notice_id);
+	    $lenders = array();
 	    
-	    $data = $record_datas->get_lenders();
+	    //Localisations des exemplaires
+	    $query = "SELECT distinct lender_libelle FROM exemplaires JOIN lenders ON lenders.idlender = exemplaires.expl_owner WHERE expl_notice = '".$notice_id."'";
+	    $result = pmb_mysql_query($query);
+	    if (pmb_mysql_num_rows($result)) {
+	        while ($row = pmb_mysql_fetch_object($result)) {
+	            $lenders[] = array(
+	                'label' => $row->lender_libelle
+	            );
+	        }
+	        pmb_mysql_free_result($result);
+	    }
+        
+	    //Localisations des documents numériques
+        $query = "SELECT distinct lender_libelle FROM explnum JOIN explnum_lenders ON explnum_lenders.explnum_lender_num_explnum = explnum.explnum_id JOIN lenders ON lenders.idlender = explnum_lenders.explnum_lender_num_lender WHERE explnum_notice = '".$notice_id."'";
+        $result = pmb_mysql_query($query);
+        if (pmb_mysql_num_rows($result)) {
+		    while ($row = pmb_mysql_fetch_object($result)) {
+		        $lenders[] = array(
+		            'label' => $row->lender_libelle
+		        );
+		    }
+		    pmb_mysql_free_result($result);
+        }
+	    
 	    $return_data = [];
-	    foreach ($data as $infos) {
+	    foreach ($lenders as $infos) {
 	        if (!empty($infos[$property])) {
 	            $return_data[] = $infos[$property];
 	        }
@@ -2629,5 +2724,31 @@ class record_display {
 		$parameter_name = 'pmb_'.$name;
 		global ${$parameter_name};
 		return ${$parameter_name};
+	}
+	
+	/**
+	 * Retourne le permalink
+	 * @return string
+	 */
+	public function get_permalink() {
+	    global $pmb_ark_activate;
+	    global $pmb_opac_url;
+	    
+	    if ($pmb_ark_activate && !empty($this->get_ark_link())) {
+	        return $this->get_ark_link();
+	    }
+	    return $pmb_opac_url."index.php?lvl=notice_display&id=".$this->notice_id;
+	}
+	
+	public function get_ark_link() {
+	    if (empty($this->ark_link)) {
+	        global $pmb_ark_activate;
+	        if ($pmb_ark_activate) {
+                $arkEntity = new ArkRecord(intval($this->notice_id));
+	            $ark = ArkModel::getArkFromEntity($arkEntity);
+	            $this->ark_link = $ark->getArkLink();
+	        }
+	    }
+	    return $this->ark_link;
 	}
 }

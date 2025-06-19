@@ -3,7 +3,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: map_model.class.php,v 1.26.8.1 2021/12/24 08:40:07 dgoron Exp $
+// $Id: map_model.class.php,v 1.30.4.1 2023/03/14 15:14:47 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
     die("no access");
@@ -15,6 +15,7 @@ require_once($class_path . "/map/map_layer_model_authority.class.php");
 require_once($class_path . "/map/map_holds_reducer.class.php");
 require_once($class_path . "/map/map_layer_model_location.class.php");
 require_once($class_path . "/map/map_layer_model_sur_location.class.php");
+require_once($class_path . "/search.class.php");
 
 /**
  * class map_model
@@ -165,6 +166,9 @@ class map_model {
      * @access public
      */
     public function get_objects($id_layer) {
+        if (empty($id_layer)) {
+            return;
+        }
         $objects = $this->models[$id_layer]->get_holds();
         if ($this->get_mode() == "edition" || $this->get_mode() == "visualisation" || $this->cluster === "false") {
             uasort($objects, array('map_holds_reducer', 'cmp_area'));
@@ -261,9 +265,19 @@ class map_model {
                             $notices_ids[] = $row->notice_id;
                         }                    
                     }
+                } else if (!empty($_SESSION["session_history"][$_SESSION['CURRENT']]["NOTI"]["EXTENDED_SEARCH"])) {
+                    $search = new search();
+                    $search->json_decode_search($_SESSION["session_history"][$_SESSION['CURRENT']]["NOTI"]["EXTENDED_SEARCH"]);
+                    $requete = "SELECT * FROM ".$search->make_search();
+                    $result = pmb_mysql_query($requete);
+                    if (pmb_mysql_num_rows($result)) {
+                        while ($row = pmb_mysql_fetch_object($result)) {
+                            $notices_ids[] = $row->notice_id;
+                        }
+                    }
                 }
                 if ($type_authority == 2) {
-                    $requete = "select notcateg_notice as notice_id from notices_categories where num_noeud in (" . implode(",", $infos['objects']['authority']) . ")";
+                    $requete = "select DISTINCT notcateg_notice as notice_id from notices_categories where num_noeud in (" . implode(",", $infos['objects']['authority']) . ")";
                     if (count($notices_ids)) {
                         $requete.= " and notcateg_notice in (" . implode(",", $notices_ids) . ")";
                     }
@@ -280,7 +294,14 @@ class map_model {
                 }
                 $infos['objects']['record'] = $notice_ids;
             }
-            $informations[] = $infos;
+            // Evite d'avoir des points sur la carte avec 0 notice associee
+            if(!empty($infos['objects']['record'])) {
+                $informations[] = $infos;
+            } elseif (count($holds_layer) == 1) {
+                // s'il y a un seul hold_layer, on est soit sur une recherche par selection d'autorite, 
+                //soit un aperçu d'autorite, soit une modification d'autorite
+                $informations[] = $infos;
+            }
         }
         return $informations;
     }

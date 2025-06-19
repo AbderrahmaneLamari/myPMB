@@ -2,11 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serial_search.inc.php,v 1.36 2021/03/19 14:57:32 dgoron Exp $
+// $Id: serial_search.inc.php,v 1.37 2022/02/23 08:05:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $class_path, $include_path, $msg, $charset;
+global $class_path, $include_path, $msg, $charset, $serial_header, $serial_access_form;
+global $PMBuserid, $pmb_indexation_lang;
+global $gestion_acces_active, $gestion_acces_user_notice;
+global $user_query, $issn_query, $nb_per_page_a_search;
 
 if(!isset($page)) $page = 0;
 

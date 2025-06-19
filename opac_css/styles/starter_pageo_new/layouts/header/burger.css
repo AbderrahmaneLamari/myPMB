@@ -1,0 +1,105 @@
+ /* Toggle Menu */
+
+ .pmb_toggle_menu {
+     margin-left: 8px;
+ }
+
+ .pmb_icon_burger span {
+     text-transform: uppercase;
+     font-size: 1.6rem;
+     font-weight: bold;
+     color: var(--c-primary);
+     letter-spacing: 1px;
+ }
+
+ .pmb_icon_burger {
+     transition: var(--transition);
+     gap: 8px;
+ }
+
+ .pmb_user a {
+     gap: 12px;
+ }
+
+ .pmb_icon_burger>div {
+     background-color: var(--c-white);
+     width: 54px;
+     height: 54px;
+     border-radius: 100%;
+     border: 1px solid var(--c-primary);
+     box-shadow: 3px 3px 0 var(--c-primary);
+ }
+
+ .menu_bar {
+     display: flex;
+     gap: 6px;
+     flex-direction: column;
+     width: 28px;
+     height: 24px;
+ }
+
+ .menu_bar div {
+     transition: .2s ease-in-out;
+ }
+
+ .menu_bar div:not(.menu_bar_bottom) {
+     background-color: var(--c-primary);
+     height: 4px;
+     border-radius: 2px;
+ }
+
+ .menu_bar .menu_bar_top {
+     width: 18px;
+     align-self: flex-end;
+ }
+
+ .menu_bar .menu_bar_middle {
+     width: 28px;
+ }
+
+ .menu_bar .menu_bar_bottom {
+     display: flex;
+     justify-content: space-between;
+ }
+
+ .menu_bar .menu_bar_bottom div:first-of-type {
+     width: 5px;
+ }
+
+ .menu_bar .menu_bar_bottom div:last-of-type {
+     width: 16px;
+ }
+
+ /* Croix au clic */
+
+ .uk-offcanvas-container .pmb_icon_burger div {
+     transition: var(--transition);
+ }
+
+ .uk-offcanvas-container .pmb_icon_burger .menu_bar_top {
+     width: 28px;
+     transform: translateY(10px) rotate(-45deg);
+ }
+
+ .uk-offcanvas-container .pmb_icon_burger .menu_bar_bottom div:last-of-type {
+     width: 28px;
+     transform: translateY(-10px) rotate(45deg);
+ }
+
+ .uk-offcanvas-container .pmb_icon_burger .menu_bar_middle,
+ .uk-offcanvas-container .pmb_icon_burger .menu_bar_bottom div:first-of-type {
+     opacity: 0;
+ }
+
+ .uk-offcanvas-container .pmb_icon_burger .menu_bar .menu_bar_bottom div:first-of-type {
+     width: 0px;
+ }
+
+
+ @media (min-width: 1220px) {
+
+     .pmb_toggle_menu {
+         margin-left: 44px;
+     }
+
+ }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: custom_fields_controller.class.php,v 1.1.2.2 2021/07/27 13:23:56 dgoron Exp $
+// $Id: custom_fields_controller.class.php,v 1.1 2021/07/27 13:21:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

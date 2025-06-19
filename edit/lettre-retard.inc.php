@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lettre-retard.inc.php,v 1.45.2.1 2021/12/10 09:43:46 dgoron Exp $
+// $Id: lettre-retard.inc.php,v 1.46 2021/12/10 09:36:12 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

@@ -2,15 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mail_accounting.class.php,v 1.3 2020/05/14 08:35:19 dgoron Exp $
+// $Id: mail_accounting.class.php,v 1.6.4.1 2023/09/15 06:43:05 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $class_path, $include_path;
-require_once($class_path."/mail/mail_root.class.php");
+global $include_path;
 require_once ($include_path."/mail.inc.php") ;
 
-class mail_accounting extends mail_root {
+abstract class mail_accounting extends mail_root {
 	
     protected $id_bibli;
     protected $id_acte;
@@ -20,55 +19,80 @@ class mail_accounting extends mail_root {
     protected $coord_fac;
     protected $coord_fou;
     
-    protected $dest_name;
-    protected $dest_mail;
+    protected function _init_default_settings() {
+    	parent::_init_default_settings();
+    	$this->_init_setting_value('sender', 'accounting_bib_coords');
+    	$this->_init_setting_value('copy_bcc', '1');
+    }
     
+	protected function get_mail_to_name() {
+		$this->mail_to_name = '';
+		$coord_fou = $this->get_coord_fou();
+		if($coord_fou->libelle) {
+			$this->mail_to_name = $coord_fou->libelle;
+		} else {
+			$this->mail_to_name = $this->get_fou()->raison_sociale;
+		}
+		if($coord_fou->contact) $this->mail_to_name.=" ".$coord_fou->contact;
+		return $this->mail_to_name;
+	}
+	
+	protected function get_mail_to_mail() {
+		$coord_fou = $this->get_coord_fou();
+		$this->mail_to_mail=$coord_fou->email;
+		return $this->mail_to_mail;
+	}
+	
+	protected function get_mail_from_name() {
+	    switch ($this->get_setting_value('sender')) {
+	        case 'accounting_bib_coords':
+	            $bib_coord = pmb_mysql_fetch_object(entites::get_coordonnees($this->id_bibli,1));
+	            return $bib_coord->libelle;
+	        default:
+	            return parent::get_mail_from_name();
+	    }
+	}
+	
 	protected function get_mail_object() {
-	    $mail_object = $this->get_parameter_value('obj_mail');
-	    return static::render($mail_object, $this->get_formatted_data());
+		$mail_object = $this->get_parameter_value('obj_mail');
+		return static::render($mail_object, $this->get_formatted_data());
 	}
 	
 	protected function get_mail_content() {
-	    $mail_content = $this->get_parameter_value('text_mail');
-	    return static::render($mail_content, $this->get_formatted_data());
+		$mail_content = $this->get_parameter_value('text_mail');
+		return static::render($mail_content, $this->get_formatted_data());
 	}
 	
-	protected function get_attachments($id_bibli,$id_acte) {
-	    return array();
-	}
-	
-	public function send_mail($id_bibli, $id_acte) {
-		global $charset;
-		global $PMBuseremailbcc;
-		global $PMBuserprenom, $PMBusernom, $PMBuseremail;
-		
-		$this->id_bibli = $id_bibli;
-		$this->id_acte = $id_acte;
-		$bib_coord = pmb_mysql_fetch_object(entites::get_coordonnees($this->id_bibli,1));
-		$acte = new actes($this->id_acte);
-	    
-	    $id_fou = $acte->num_fournisseur;
-	    $fou = new entites($id_fou);
-	    $fou_coord = pmb_mysql_fetch_object(entites::get_coordonnees($id_fou,1));
-	    $this->dest_name='';
-	    if($fou_coord->libelle) {
-	        $this->dest_name = $fou_coord->libelle;
-	    } else {
-	        $this->dest_name = $fou->raison_sociale;
+	protected function get_mail_from_mail() {
+	    switch ($this->get_setting_value('sender')) {
+	        case 'accounting_bib_coords':
+	            $bib_coord = pmb_mysql_fetch_object(entites::get_coordonnees($this->id_bibli,1));
+	            return $bib_coord->email;
+	        default:
+	            return parent::get_mail_from_mail();
 	    }
-	    if($fou_coord->contact) $this->dest_name.=" ".$fou_coord->contact;
-	    $this->dest_mail=$fou_coord->email;
-	    $bib_name = $bib_coord->libelle;
-	    $bib_mail = $bib_coord->email;
-		$headers = "Content-Type: text/plain; charset=".$charset."\n";
-		$mail_content = $this->get_mail_content();
-		$attachments = $this->get_attachments($this->id_bibli, $this->id_acte);
-		if($this->dest_mail) {
-			$res_envoi=mailpmb($this->dest_name, $this->dest_mail, $this->get_mail_object(), $mail_content ,$bib_name, $bib_mail, $headers, '', $PMBuseremailbcc, 1, $attachments, $PMBuserprenom." ".$PMBusernom, $PMBuseremail);
-		} else {
-		    $res_envoi=false;
-		}
-		return $res_envoi;
+	}
+	
+	protected function get_mail_headers() {
+		global $charset;
+		
+		return "Content-Type: text/plain; charset=".$charset."\n";
+	}
+	
+	protected function get_mail_do_nl2br() {
+		return 1;
+	}
+	
+	protected function get_mail_reply_name() {
+		global $PMBuserprenom, $PMBusernom;
+		
+		return $PMBuserprenom." ".$PMBusernom;
+	}
+	
+	protected function get_mail_reply_mail() {
+		global $PMBuseremail;
+		
+		return $PMBuseremail;
 	}
 	
 	public function get_formatted_data(){
@@ -133,11 +157,15 @@ class mail_accounting extends mail_root {
 	    return $this->coord_fou;
 	}
 	
-	public function get_dest_name() {
-	    return $this->dest_name;
+	public function get_dest_mail() {
+	    return $this->get_mail_to_mail();
 	}
 	
-	public function get_dest_mail() {
-	    return $this->dest_mail;
+	public function set_id_bibli($id_bibli) {
+		$this->id_bibli = intval($id_bibli);
+	}
+	
+	public function set_id_acte($id_acte) {
+		$this->id_acte = intval($id_acte);
 	}
 }

@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_universes_search_view.class.php,v 1.1.2.5 2021/12/14 10:49:40 gneveu Exp $
+// $Id: search_universes_search_view.class.php,v 1.9.4.1 2023/07/12 14:02:38 rtigero Exp $
 if (stristr ( $_SERVER ['REQUEST_URI'], ".class.php" ))
 	die ( "no access" );
+
+use Pmb\Searchform\Views\SearchAutocompleteView;
 
 global $class_path;
 
@@ -31,6 +33,10 @@ class search_universes_search_view extends search_view {
 		if (isset(static::$universe) && static::$universe->has_rmc_enabled()) {
 		    $search_others_tabs .= static::get_search_others_tab('extended_search',$msg["extended_search"]);
 		}
+		if(isset(static::$universe) && static::$universe->has_perio_enabled()){
+		    $search_others_tabs .= static::get_search_others_tab('perio_a2z', $msg["a2z_onglet"]);
+		}
+		
 		return $search_others_tabs;
 	}
 	
@@ -47,11 +53,18 @@ class search_universes_search_view extends search_view {
 	
 	public static function get_display_simple_search_form() {
 	    global $msg, $opac_show_help, $base_path;
+
 		$form = "
           <div class='row' id='search_universe_form_input'>
-             <form id='search_universe_input' name='search_universe_input' action='".static::$url_base."&new_search=1' method='post' onSubmit=\"if (search_universe_input.user_query.value.length == 0) { search_universe_input.user_query.value='*'; return true; }\">
-                <input type='text' name='user_query' placeholder='".$msg["autolevel1_search"]."'  id='user_query' class='text_query' value='!!user_query!!' size='65' />
-                ".static::get_optional_param_form()."
+             <form id='search_universe_input' name='search_universe_input' action='".static::$url_base."&new_search=1' method='post' onSubmit=\"if (search_universe_input.user_query.value.length == 0) { search_universe_input.user_query.value='*'; return true; }\">";
+        //autocompletion
+		if (static::$universe->is_autocomplete()) {
+		    $form.=static::get_autocomplete_input();
+		} else {
+		    $form.="<input type='text' name='user_query' placeholder='".$msg["autolevel1_search"]."'  id='user_query' class='text_query' value='!!user_query!!' size='65'/>";
+		}
+		
+        $form.= static::get_optional_param_form()."
                 <input type='submit' name='search_input' value='".$msg["142"]."' class='bouton'/>";	
         if ($opac_show_help) {
 			$form .= "<input type='button' value='$msg[search_help]' class='bouton button_search_help' onClick='window.open(\"$base_path/help.php?whatis=simple_search\", \"search_help\", \"scrollbars=yes, toolbar=no, dependent=yes, width=400, height=400, resizable=yes\"); return false' />\n";
@@ -66,7 +79,7 @@ class search_universes_search_view extends search_view {
 	public static function get_display_search() {
 	    $display_search = "<div id='search_universe_search'>";
 	    $display_search .= static::get_search_tabs();
-	    if (empty(static::$universe) || !static::$universe->has_rmc_enabled()) {
+	    if (empty(static::$universe) || ((!static::$universe->has_rmc_enabled() && static::$search_type == "extended_search" ) || ( !static::$universe->has_perio_enabled() && static::$search_type == "perio_a2z" ))) {
 	        static::$search_type = "simple_search";
 	    }
 	    $display_search .= "<div id='search_universe_search_content_".static::$search_type."' class='row'>";
@@ -74,6 +87,13 @@ class search_universes_search_view extends search_view {
 	        case "extended_search":
 	            $display_search .= static::get_display_extended_search_form();
 	            break;
+	        case "perio_a2z":
+	            global $opac_perio_a2z_abc_search;
+	            global $opac_perio_a2z_max_per_onglet;
+	            // affichage des _perio_a2z
+	            $a2z=new perio_a2z(0,$opac_perio_a2z_abc_search,$opac_perio_a2z_max_per_onglet);
+	            $display_search .= $a2z->get_form();
+	            return $display_search;
 	        case "simple_search":
 	        default :
 	            $display_search .= static::get_display_simple_search_form();
@@ -141,6 +161,7 @@ class search_universes_search_view extends search_view {
             <input type="hidden" name="search_index" id="search_index" value="!!search_index!!"/>
             <input type="hidden" name="last_query" id="last_query" value="!!last_query!!"/>
             <input type="hidden" name="default_segment" id="default_segment" value="!!default_segment!!"/>
+            <input type="hidden" name="dynamic_params" id="dynamic_params" value="'.search_universe::get_segments_dynamic_params().'"/>
         ';
 	}
 	
@@ -154,5 +175,21 @@ class search_universes_search_view extends search_view {
 	        $tpl = "<input type='hidden' name='default_segment_url' id='default_segment_url' value='".static::$url_default_segment."' />";
 	    }
 	    return $tpl;
+	}
+	
+	private static function get_autocomplete_input() {
+	    global $msg;
+	    $searchView = new SearchAutocompleteView("searchform/searchautocomplete", [
+	        "universe_id" => static::$universe->get_id(),
+	        "input_id" => "user_query",
+	        "input_name" => "user_query",
+	        "input_value" => "!!user_query!!",
+	        "input_class" => "text_query",
+	        "input_size" => "65",
+	        "input_placeholder" => $msg["autolevel1_search"],
+	        "show_entities" => 0,
+			"form_id" => "search_universe_input"
+	    ]);
+	    return $searchView->render();
 	}
 }

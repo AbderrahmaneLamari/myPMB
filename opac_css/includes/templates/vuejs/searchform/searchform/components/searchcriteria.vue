@@ -20,7 +20,8 @@
 		
 		<div class="rmc_container rmc_criteria_form_container">
 			<template v-if="criteria">
-				<criteriaformtext v-if="criteria.INPUT_TYPE == 'text' || criteria.INPUT_TYPE == 'comment'" 
+				<criteriaformtext 
+					v-if="(criteria.INPUT_TYPE == 'text' || criteria.INPUT_TYPE == 'comment') && !isBetween" 
 					:index="inc" 
 					:criteria="criteria" 
 					:searchData="searchData"
@@ -29,6 +30,14 @@
 					@updateOperator="$emit('updateOperator', $event)" />	
 				<criteriaformdate 
 					v-if="criteria.INPUT_TYPE == 'date'" 
+					:index="inc" 
+					:criteria="criteria" 
+					:searchData="searchData"
+					:showfieldvars="showfieldvars"
+					@updateValue="$emit('updateValue', $event)"
+					@updateOperator="$emit('updateOperator', $event)" />
+				<criteriaformyeardate 
+					v-if="criteria.INPUT_TYPE == 'text' && isBetween" 
 					:index="inc" 
 					:criteria="criteria" 
 					:searchData="searchData"
@@ -70,6 +79,7 @@
 import criteriaformList from "./criteriaform/criteriaformList.vue";
 import criteriaformtext from "./criteriaform/criteriaFormText.vue";
 import criteriaformdate from "./criteriaform/criteriaFormDate.vue";
+import criteriaformyeardate from "./criteriaform/criteriaFormYearDate.vue";
 import criteriaformspecial from "./criteriaform/criteriaFormSpecial.vue";
 import criteriaformauthority from "./criteriaform/criteriaFormAuthority.vue";
 
@@ -92,7 +102,8 @@ export default {
 		criteriaformtext,
 		criteriaformspecial,
 		criteriaformdate,
-		criteriaformauthority
+		criteriaformauthority,
+		criteriaformyeardate
 	},
 	data : function(){
 		return {
@@ -117,6 +128,14 @@ export default {
         },
 		interName : function() {
 		    return `inter_${this.inc}_${this.dataFieldId}`;
+		},
+		isBetween : function(){
+			for(let querie of this.criteria.QUERIES) {
+                if ("BETWEEN" == querie.OPERATOR) {
+                    return true;
+                }
+            }
+            return false;
 		}
 	},
 	methods: {

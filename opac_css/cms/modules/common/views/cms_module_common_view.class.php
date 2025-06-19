@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_view.class.php,v 1.21.2.1 2022/01/03 11:45:55 dgoron Exp $
+// $Id: cms_module_common_view.class.php,v 1.23 2022/02/18 09:09:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -21,7 +21,6 @@ class cms_module_common_view extends cms_module_root{
 		parent::__construct();
 	}
 	
-	
 	protected function fetch_datas(){
 		if($this->id){
 		//on commence par aller chercher ses infos
@@ -29,14 +28,13 @@ class cms_module_common_view extends cms_module_root{
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
 				$row = pmb_mysql_fetch_object($result);
-				$this->id = $row->id_cadre_content+0;
+				$this->id = (int) $row->id_cadre_content;
 				$this->hash = $row->cadre_content_hash;
-				$this->cadre_parent = $row->cadre_content_num_cadre+0;
+				$this->cadre_parent = (int) $row->cadre_content_num_cadre;
 				$this->unserialize($row->cadre_content_data);
 			}	
 		}
 	}
-	
 	
 	public function save_form(){
 		$this->get_hash();
@@ -68,11 +66,9 @@ class cms_module_common_view extends cms_module_root{
 		return false;
 	}
 	
-	
 	public function set_cadre_parent($id){
-		$this->cadre_parent = $id+0;
+	    $this->cadre_parent = (int) $id;
 	}
-	
 	
 	/*
 	 * Méthode de suppression
@@ -104,16 +100,13 @@ class cms_module_common_view extends cms_module_root{
 		}
 	}
 	
-	
 	public function get_form(){
 		return "";
 	}
 	
-	
 	public function render($datas){
 		return "";		
 	}
-	
 	
 	public function get_headers($datas=array()){
 		
@@ -143,12 +136,10 @@ class cms_module_common_view extends cms_module_root{
 		return $headers;
 	}
 	
-	
 	public function set_module_class_name($module_class_name){
 		$this->module_class_name = $module_class_name;
 		$this->fetch_managed_datas();
 	}
-	
 	
 	protected function fetch_managed_datas($type="views"){
 		parent::fetch_managed_datas($type);

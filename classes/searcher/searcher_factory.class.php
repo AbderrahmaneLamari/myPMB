@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_factory.class.php,v 1.6 2019/04/24 13:53:42 arenou Exp $
+// $Id: searcher_factory.class.php,v 1.7 2023/02/07 14:31:06 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -78,7 +78,7 @@ class searcher_factory {
 		//typo dans le source déjà en place...
 		if($type == 'authorities' && $mode == ''){
 			$type = 'autorities';
-		}else if($type!='records'){
+		} elseif (!in_array($type, ['ontologies','records', 'bulletins']) && ($mode != 'extended')){
 			$type = 'authorities_'.$type;
 		}
 		if(class_exists('searcher_'.$type.'_'.$mode)){

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ManageActions.js,v 1.1.2.5 2021/12/13 08:37:51 dgoron Exp $
+// $Id: ManageActions.js,v 1.5 2022/05/11 13:04:10 dgoron Exp $
 
 define([
         "dojo/_base/declare",
@@ -91,40 +91,59 @@ define([
 			});
 			domConstruct.place(available_editable_columns_hidden, selected_objects_form);
 			
+			//Inputs fields
 			var values = document.querySelectorAll("input[name='"+this.objects_type+"_"+selectorAvailableEditableColumns.value+"']");
-			values.forEach(element => {
-				var value_hidden = null;
-				switch(element.getAttribute('type')) {
-					case 'checkbox':
-						if(element.checked) {
-							value_hidden = domConstruct.create('input', {
-								type : 'hidden',
-								name : this.objects_type+'_'+selectorAvailableEditableColumns.value+'[]',
-								value : element.value
-							});
-						}
-						break;
-					case 'radio':
-						if(element.checked) {
+			if(values.length) {
+				values.forEach(element => {
+					var value_hidden = null;
+					switch(element.getAttribute('type')) {
+						case 'checkbox':
+							if(element.checked) {
+								value_hidden = domConstruct.create('input', {
+									type : 'hidden',
+									name : this.objects_type+'_'+selectorAvailableEditableColumns.value+'[]',
+									value : element.value
+								});
+							}
+							break;
+						case 'radio':
+							if(element.checked) {
+								value_hidden = domConstruct.create('input', {
+									type : 'hidden',
+									name : this.objects_type+'_'+selectorAvailableEditableColumns.value,
+									value : element.value
+								});
+							}
+							break;
+						default :
 							value_hidden = domConstruct.create('input', {
 								type : 'hidden',
 								name : this.objects_type+'_'+selectorAvailableEditableColumns.value,
 								value : element.value
 							});
-						}
-						break;
-					default :
+							break;
+					}
+					if(value_hidden) {
+						domConstruct.place(value_hidden, selected_objects_form);
+					}
+				});
+			} else {
+				//Selectors fields
+				var values = document.querySelectorAll("select[name='"+this.objects_type+"_"+selectorAvailableEditableColumns.value+"']");
+				if(values.length) {
+					values.forEach(element => {
+						var value_hidden = null;
 						value_hidden = domConstruct.create('input', {
 							type : 'hidden',
 							name : this.objects_type+'_'+selectorAvailableEditableColumns.value,
 							value : element.value
 						});
-						break;
+						if(value_hidden) {
+							domConstruct.place(value_hidden, selected_objects_form);
+						}
+					});
 				}
-				if(value_hidden) {
-					domConstruct.place(value_hidden, selected_objects_form);
-				}
-			});
+			}
 			domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
 		},
 		applyOnSelectionAction: function(name) {

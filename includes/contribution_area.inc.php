@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area.inc.php,v 1.1.10.1 2021/07/01 12:13:08 qvarin Exp $
+// $Id: contribution_area.inc.php,v 1.3 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -15,10 +15,6 @@ global $class_path, $form_id, $nb_per_page_gestion;
 require_once($class_path."/contribution_area/contribution_area.class.php");
 require_once($class_path."/contribution_area/contribution_area_scenario.class.php");
 require_once($class_path."/contribution_area/contribution_area_form.class.php");
-
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("onto_class",true);
 
 $params = new onto_param(array(
 		'base_resource' => 'index.php',

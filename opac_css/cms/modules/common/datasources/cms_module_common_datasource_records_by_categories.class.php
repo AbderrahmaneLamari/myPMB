@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_by_categories.class.php,v 1.1 2017/07/27 12:51:28 ngantier Exp $
+// $Id: cms_module_common_datasource_records_by_categories.class.php,v 1.2 2022/09/06 07:52:19 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,6 +12,7 @@ class cms_module_common_datasource_records_by_categories extends cms_module_comm
 		parent::__construct($id);
 		$this->sortable = true;
 		$this->limitable = true;
+		$this->paging = true;
 	}
 	
 	/*
@@ -41,10 +42,18 @@ class cms_module_common_datasource_records_by_categories extends cms_module_comm
 			
 				$return['records'] = $this->filter_datas("notices",$records);
 	
-				if(!count($return['records'])) return false;
+				if(!count($return['records'])) {
+				    return false;
+				}
 				
 				$return = $this->sort_records($return['records']);
 				$return["title"] = "";
+				
+				if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+				    $return["paging"] = $this->inject_paginator($return['records']);
+				    $return['records'] = $this->cut_paging_list($return['records'], $return["paging"]);
+				}
+				
 				return $return;
 			}
 		}

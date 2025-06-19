@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette_abon.class.php,v 1.12.2.1 2021/11/24 10:13:22 dgoron Exp $
+// $Id: bannette_abon.class.php,v 1.15.4.1 2023/09/27 15:28:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/bannette.class.php");
 require_once($class_path."/classements.class.php");
 
@@ -17,8 +18,8 @@ class bannette_abon{
 	protected $groups;
 	
 	public function __construct($num_bannette=0,$num_empr=0) {
-		$this->num_bannette = $num_bannette+0;
-		$this->num_empr = $num_empr+0;
+		$this->num_bannette = intval($num_bannette);
+		$this->num_empr = intval($num_empr);
 		$this->fetch_data();
 	}
 	
@@ -64,7 +65,6 @@ class bannette_abon{
 	
 	// retourne un tableau des bannettes possibles de l'abonné : les privées / les publiques : celles de sa catégorie et/ou celles auxquelles il est abonné
 	public function tableau_gerer_bannette($priv_pub='PUB') {
-		global $msg;
 		global $empr_categ;
 	
 		$tableau_bannette = array();
@@ -100,12 +100,19 @@ class bannette_abon{
 			
 			$restrict = "((id_bannette IN (".implode(',',$access_liste_id).")) or (bannette_opac_accueil = 1))";
 			
-			$requete = "select distinct id_bannette, num_classement, nom_bannette from bannettes join bannette_abon on num_bannette=id_bannette where num_empr='".$this->num_empr."' and proprio_bannette=0 ";
-			$requete .= " union select distinct id_bannette, num_classement, nom_bannette from bannettes where ".$restrict." and proprio_bannette=0 ";
-			$requete .= " order by num_classement, nom_bannette ";
+			$requete = "SELECT DISTINCT id_bannette, num_classement, IF(comment_public <> '', comment_public, nom_bannette) AS label 
+                    FROM bannettes 
+                    JOIN bannette_abon ON num_bannette = id_bannette 
+                    WHERE num_empr='".$this->num_empr."' AND proprio_bannette=0
+                    UNION SELECT DISTINCT id_bannette, num_classement, IF(comment_public <> '', comment_public, nom_bannette) AS label 
+                    FROM bannettes 
+                    WHERE ".$restrict." AND proprio_bannette=0
+                    ORDER BY num_classement, label ";
 		} else {
-			$requete = "select distinct id_bannette, num_classement, nom_bannette from bannettes where proprio_bannette='".$this->num_empr."' ";
-			$requete .= " order by nom_bannette ";
+			$requete = "SELECT DISTINCT id_bannette, IF(comment_public <> '', comment_public, nom_bannette) AS label 
+                    FROM bannettes 
+                    WHERE proprio_bannette='".$this->num_empr."'
+                    ORDER BY label ";
 		}
 		$resultat = pmb_mysql_query($requete);
 		while ($r = pmb_mysql_fetch_object($resultat)) {
@@ -195,7 +202,7 @@ class bannette_abon{
 			$retour_aff .= "\n</td><td column_name='".htmlentities($msg['dsi_bannette_gerer_nom_liste'],ENT_QUOTES, $charset)."' class='bannette_nom_liste align_left' style='vertical-align:top'>";
 			if ($link_to_bannette) {
 				// Construction de l'affichage de l'info bulle de la requette
-				$recherche = get_bannette_human_query($id_bannette);
+			    $recherche = (!empty($bannette->equation_name) ? $bannette->equation_name : get_bannette_human_query($id_bannette));
 				if ($recherche) {
 					$zoom_comment = "<div id='zoom_comment".$id_bannette."' style='border: solid 2px #555555; background-color: #FFFFFF; position: absolute; display:none; z-index: 2000;'>";
 					$zoom_comment .= $recherche;

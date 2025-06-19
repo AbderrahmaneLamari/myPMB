@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_datastore.class.php,v 1.14.12.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: nomenclature_datastore.class.php,v 1.15 2021/12/27 07:35:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

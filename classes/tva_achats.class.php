@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: tva_achats.class.php,v 1.14 2021/01/18 12:58:01 dgoron Exp $
+// $Id: tva_achats.class.php,v 1.14.6.1 2023/06/28 07:57:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -35,12 +35,21 @@ class tva_achats{
 		$this->num_cp_compta = $obj->num_cp_compta;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle);
+		$interface_content_form->add_element('taux_tva', 'acquisition_tva_taux')
+		->add_input_node('float', $this->taux_tva)
+		->set_label(' %');
+		$interface_content_form->add_element('cp_compta', 'acquisition_num_cp_compta')
+		->add_input_node('integer', $this->num_cp_compta)
+		->set_class('saisie-20em');
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-			global $msg, $charset;
-			global $tva_content_form;
-			
-			$content_form = $tva_content_form;
-			$content_form = str_replace('!!id!!', $this->id_tva, $content_form);
+			global $msg;
 			
 			$interface_form = new interface_admin_form('tvaform');
 			if(!$this->id_tva){
@@ -48,13 +57,9 @@ class tva_achats{
 			}else{
 				$interface_form->set_label($msg['acquisition_modif_tva']);
 			}
-			$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-			$content_form = str_replace('!!taux_tva!!', htmlentities($this->taux_tva, ENT_QUOTES, $charset), $content_form);
-			$content_form = str_replace('!!cp_compta!!', htmlentities($this->num_cp_compta, ENT_QUOTES, $charset), $content_form);
-			
 			$interface_form->set_object_id($this->id_tva)
 			->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-			->set_content_form($content_form)
+			->set_content_form($this->get_content_form())
 			->set_table_name('tva_achats')
 			->set_field_focus('libelle');
 			return $interface_form->get_display();
@@ -126,7 +131,7 @@ class tva_achats{
 
 	//Retourne une requete contenant la liste des taux de tva achats
 	public static function listTva() {
-		$q = "select * from tva_achats order by libelle ";
+		$q = "select id_tva as id, concat(libelle, ' ', taux_tva, ' %') as label, tva_achats.* from tva_achats order by libelle ";
 		return $q;
 	}
 

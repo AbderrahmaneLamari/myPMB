@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: external_common.inc.php,v 1.27 2020/10/15 12:54:55 gneveu Exp $
+// $Id: external_common.inc.php,v 1.27.6.1 2023/12/06 10:58:13 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -218,6 +218,9 @@ if ($_SESSION["ext_type"]=="simple") {
 		//Récupération de l'environnement
 		$search=$_SESSION["session_history"][$_SESSION["CURRENT"]]["QUERY"]["POST"]["search"];
    		//Pour chaque champ
+		if(empty($search)) {
+			$search = array();
+		}
    		for ($i=0; $i<count($search); $i++) {
 	   	 	//Récupération de l'opérateur
 	   	 	$op="op_".$i."_".$search[$i];

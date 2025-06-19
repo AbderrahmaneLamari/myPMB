@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_ui.tpl.php,v 1.42.2.8 2021/12/10 16:12:54 dgoron Exp $
+// $Id: list_ui.tpl.php,v 1.53.4.2 2023/09/04 14:36:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -27,6 +27,7 @@ $list_ui_search_hidden_fields = "
 <input type='hidden' id='!!objects_type!!_go_directly_to_ancre' name='!!objects_type!!_go_directly_to_ancre' value='!!go_directly_to_ancre!!' />
 <input type='hidden' id='!!objects_type!!_initialization' name='!!objects_type!!_initialization' value='' />
 <input type='hidden' id='!!objects_type!!_applied_action' name='!!objects_type!!_applied_action' value='' />
+<input type='hidden' id='objects_type' name='objects_type' value='!!objects_type!!' />
 ";
 
 $list_ui_search_form_tpl = "
@@ -251,6 +252,9 @@ $list_ui_js_sort_script_sort = "
 				if(ancre) {
 					window.location='#'+ancre;
 				}
+				if(typeof initIt !== 'undefined') {
+					initIt();
+				}
             });
 		}
 	</script>
@@ -325,6 +329,9 @@ $list_dataset_form_tpl="
 		<div class='row'>
 			".$msg['per_page']." <input type='number' class='saisie-5em' name='!!objects_type!!_nb_per_page' id='!!objects_type!!_nb_per_page' value='!!nb_per_page!!' !!all_on_page!! />
 		</div>
+		<div class='row'>
+			".$msg['pager_position']." !!pager_position!!
+		</div>
 		<div class='row'>&nbsp;</div>
 		<div class='row'>
 			<input type='button' class='bouton_small align_middle' value='".$msg['tout_cocher_checkbox']."' onclick='check_checkbox(document.getElementById(\"auto_id_list\").value,1);'>
@@ -336,6 +343,13 @@ $list_dataset_form_tpl="
 		<div class='row'>&nbsp;</div>
 		<div class='row'>
 			!!autorisations_users!!
+		</div>
+		<div class='row'>&nbsp;</div>
+		<div class='row'>
+			<label class='etiquette' for='list_num_ranking'>".($msg['list_ranking'] ?? "")."</label>
+		</div>
+		<div class='row'>
+			!!ranking!!
 		</div>
 		<div class='row'>&nbsp;</div>
 		<div class='row'>
@@ -411,6 +425,7 @@ $list_ui_settings_columns_content_form_tpl = "
 			-->
 				<th>".htmlentities($msg['list_ui_settings_columns_visible'], ENT_QUOTES, $charset)."</th>
 				<th>".htmlentities($msg['list_ui_settings_columns_fast_filter'], ENT_QUOTES, $charset)."</th>
+				<th>".htmlentities($msg['list_ui_settings_columns_exportable'], ENT_QUOTES, $charset)."</th>
 			</tr>
 			!!settings_columns!!
 		</table>
@@ -489,6 +504,9 @@ $list_default_dataset_form_tpl="
 		</div>
 		<div class='row'>
 			".$msg['per_page']." <input type='number' class='saisie-5em' name='!!objects_type!!_nb_per_page' id='!!objects_type!!_nb_per_page' value='!!nb_per_page!!' !!all_on_page!! />
+		</div>
+		<div class='row'>
+			".$msg['pager_position']." !!pager_position!!
 		</div>
 	</div>
 	<div class='row'>

@@ -2,40 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serialcirc_ask.inc.php,v 1.5 2020/11/05 12:56:21 dgoron Exp $
+// $Id: serialcirc_ask.inc.php,v 1.7 2023/01/09 14:44:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-if(!isset($location_id)) $location_id = 0;
-if(!isset($type_filter)) $type_filter = 0;
-if(!isset($statut_filter)) $statut_filter = 0;
+global $class_path, $sub, $id;
 
-require_once("$class_path/serialcirc_ask.class.php");
+require_once("$class_path/serialcirc/serialcirc_ask_controller.class.php");
 
 switch($sub){		
-	case 'circ_ask':		
-		switch($action){	
-			case 'accept':		
-				foreach($asklist_id as $id){
-					$ask= new serialcirc_ask($id);
-					$ask->accept();
-				}				
-			break;		
-			case 'refus':		
-				foreach($asklist_id as $id){
-					$ask= new serialcirc_ask($id);
-					$ask->refus();
-				}				
-			break;		
-			case 'delete':		
-				foreach($asklist_id as $id){
-					$ask= new serialcirc_ask($id);
-					$ask->delete();
-				}				
-			break;				
-		}
-		$list_serialcirc_ask_ui = new list_serialcirc_ask_ui();
-		print $list_serialcirc_ask_ui->get_display_list();
+	case 'circ_ask':
+		serialcirc_ask_controller::proceed($id);
 	break;		
 	default :
 		$list_serialcirc_ask_ui = new list_serialcirc_ask_ui();

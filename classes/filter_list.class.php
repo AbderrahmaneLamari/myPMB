@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: filter_list.class.php,v 1.50.4.1 2021/06/30 07:21:25 dgoron Exp $
+// $Id: filter_list.class.php,v 1.52.4.1 2023/08/31 12:56:45 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $include_path;
 require_once($include_path."/parser.inc.php");
 
 class filter_list {
@@ -50,8 +51,9 @@ class filter_list {
     
     //fonction d'activation du filtre
     public function activate_filters() {
-    	global $msg;
-    	global $charset;
+    	global $msg, $charset;
+    	global $default_tmp_storage_engine;
+
     	$requete=$this->display_query();
     	if (!$this->no_filter) {
     		if ($this->original_query) {
@@ -79,10 +81,11 @@ class filter_list {
     	}
     	if (($this->original_query)&&(!$this->error)) {
     		//création d'une table temporaire
-    		$creer_table_tempo="CREATE TEMPORARY TABLE table_filter_tempo ENGINE=MyISAM (".$this->original_query.")";
-    		@pmb_mysql_query($creer_table_tempo);
+    		pmb_mysql_query("drop table if exists table_filter_tempo");
+    		$creer_table_tempo="CREATE TEMPORARY TABLE table_filter_tempo ENGINE={$default_tmp_storage_engine} (".$this->original_query.")";
+    		pmb_mysql_query($creer_table_tempo);
     		$modif_primaire="ALTER TABLE table_filter_tempo add PRIMARY KEY (".$this->params["REFERENCEKEY"][0]['value'].")";
-    		@pmb_mysql_query($modif_primaire);  
+    		pmb_mysql_query($modif_primaire);  
     		$requete.=" and ".$this->params["REFERENCE"][0]['value'].".".$this->params["REFERENCEKEY"][0]['value']."=table_filter_tempo.".$this->params["REFERENCEKEY"][0]['value'];
     		$requete.=" group by ".$this->params["REFERENCE"][0]['value'].".".$this->params["REFERENCEKEY"][0]['value'];
     	}
@@ -162,6 +165,7 @@ class filter_list {
     				global ${$nom_valeur_post};
     				$valeur_post=${$nom_valeur_post};
     				if (is_array($valeur_post)) {
+    					$t=array();
     					$t[0]=-1;
     					$v=array_diff($valeur_post,$t);
     					if (count($v)) {

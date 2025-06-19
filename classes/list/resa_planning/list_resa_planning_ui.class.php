@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_resa_planning_ui.class.php,v 1.13.2.2 2021/10/28 08:27:30 dgoron Exp $
+// $Id: list_resa_planning_ui.class.php,v 1.19.2.3 2023/03/29 13:09:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,6 +13,8 @@ require_once($class_path."/notice.class.php");
 require_once($class_path."/serials.class.php");
 
 class list_resa_planning_ui extends list_ui {
+	
+	protected $locations_number;
 	
 	protected function _get_query_base() {
 		$query = "SELECT resa_planning.id_resa
@@ -80,8 +82,6 @@ class list_resa_planning_ui extends list_ui {
 	 * Initialisation des colonnes disponibles
 	 */
 	protected function init_available_columns() {
-	    global $pmb_location_resa_planning;
-	    
 	    $this->available_columns =
 		array('main_fields' =>
 				array(
@@ -96,7 +96,7 @@ class list_resa_planning_ui extends list_ui {
 				        'resa_confirmee' => 'resa_confirmee',
 				)
 		);
-		if ($pmb_location_resa_planning=='1') {
+		if ($this->get_locations_number() > 1) {
 		    $this->available_columns['main_fields']['resa_loc_retrait'] = 'resa_planning_loc_retrait';
 		}
 	}
@@ -108,6 +108,9 @@ class list_resa_planning_ui extends list_ui {
 		parent::init_default_settings();
 		$this->set_setting_column('record', 'align', 'left');
 		$this->set_setting_column('record', 'text', array('bold' => true));
+		$this->set_setting_column('resa_date', 'datatype', 'date');
+		$this->set_setting_column('resa_date_debut', 'datatype', 'date');
+		$this->set_setting_column('resa_date_fin', 'datatype', 'date');
 		$this->set_setting_column('resa_validee', 'text', array('strong' => true));
 		$this->set_setting_column('resa_confirmee', 'text', array('strong' => true));
 		$this->set_setting_column('resa_validee', 'datatype', 'boolean');
@@ -196,64 +199,45 @@ class list_resa_planning_ui extends list_ui {
 	    return $search_filter;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-	    global $pmb_lecteurs_localises;
-	    global $pmb_location_resa_planning;
+	protected function _add_query_filters() {
+		global $pmb_lecteurs_localises;
+		global $pmb_location_resa_planning;
 		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		
-		if($this->filters['id_notice']) {
-		    $filters [] = 'resa_planning.resa_idnotice="'.$this->filters['id_notice'].'"';
-		}
-		if($this->filters['id_bulletin']) {
-		    $filters [] = 'resa_planning.resa_idbulletin="'.$this->filters['id_bulletin'].'"';
-		}
-		if($this->filters['id_empr']) {
-		    $filters [] = 'resa_planning.resa_idempr="'.$this->filters['id_empr'].'"';
-		}
+		$this->_add_query_filter_simple_restriction('id_notice', 'resa_planning.resa_idnotice', 'integer');
+		$this->_add_query_filter_simple_restriction('id_bulletin', 'resa_planning.resa_idbulletin', 'integer');
+		$this->_add_query_filter_simple_restriction('id_empr', 'resa_planning.resa_idempr', 'integer');
 		if($this->filters['montrerquoi']) {
-		    switch ($this->filters['montrerquoi']) {
-		        case 'validees':
-		            $filters [] = 'resa_planning.resa_validee="1"';
-		            $filters [] = 'resa_planning.resa_remaining_qty!=0';
-		            break;
-		        case 'invalidees':
-		            $filters [] = 'resa_planning.resa_validee="0"';
-		            $filters [] = 'resa_planning.resa_remaining_qty!=0';
-		            break;
-		        case 'valid_noconf':
-		            $filters [] = 'resa_planning.resa_validee="1"';
-		            $filters [] = 'resa_planning.resa_confirmee="0"';
-		            $filters [] = 'resa_planning.resa_remaining_qty!=0';
-		            break;
-		        case 'toresa':
-		            $filters [] = 'resa_planning.resa_remaining_qty=0';
-		            break;
-		        case 'all':
-		        default:
-		            $filters [] = 'resa_planning.resa_remaining_qty!=0';
-		            break;
-		    }
+			switch ($this->filters['montrerquoi']) {
+				case 'validees':
+					$this->query_filters [] = 'resa_planning.resa_validee="1"';
+					$this->query_filters [] = 'resa_planning.resa_remaining_qty!=0';
+					break;
+				case 'invalidees':
+					$this->query_filters [] = 'resa_planning.resa_validee="0"';
+					$this->query_filters [] = 'resa_planning.resa_remaining_qty!=0';
+					break;
+				case 'valid_noconf':
+					$this->query_filters [] = 'resa_planning.resa_validee="1"';
+					$this->query_filters [] = 'resa_planning.resa_confirmee="0"';
+					$this->query_filters [] = 'resa_planning.resa_remaining_qty!=0';
+					break;
+				case 'toresa':
+					$this->query_filters [] = 'resa_planning.resa_remaining_qty=0';
+					break;
+				case 'all':
+				default:
+					$this->query_filters [] = 'resa_planning.resa_remaining_qty!=0';
+					break;
+			}
 		} else {
-		    $filters [] = 'resa_planning.resa_remaining_qty!=0';
+			$this->query_filters [] = 'resa_planning.resa_remaining_qty!=0';
 		}
 		if($pmb_lecteurs_localises && $this->filters['empr_location']) {
-			$filters [] = 'empr_location = "'.$this->filters['empr_location'].'"';
+			$this->query_filters [] = 'empr_location = "'.$this->filters['empr_location'].'"';
 		}
 		if($pmb_location_resa_planning && $this->filters['resa_loc_retrait']) {
-			$filters [] = 'resa_planning.resa_loc_retrait = "'.$this->filters['resa_loc_retrait'].'"';
+			$this->query_filters [] = 'resa_planning.resa_loc_retrait = "'.$this->filters['resa_loc_retrait'].'"';
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
 	}
 	
 	protected function _get_object_property_record($object) {
@@ -278,8 +262,35 @@ class list_resa_planning_ui extends list_ui {
 		return $docs_location->libelle;
 	}
 	
+	protected function _get_object_property_resa_qty($object) {
+		$content = '';
+		if ($this->filters['montrerquoi'] != 'toresa') {
+			$content .= $object->resa_remaining_qty."/";
+		}
+		$content .= $object->resa_qty;
+		return $content;
+	}
+	
+	protected function _get_object_property_resa_date($object) {
+		return $object->aff_resa_date;
+	}
+	
+	protected function _get_object_property_resa_date_debut($object) {
+		if($object->resa_date_debut != '0000-00-00') {
+			return $object->aff_resa_date_debut;
+		}
+		return '';
+	}
+	
+	protected function _get_object_property_resa_date_fin($object) {
+		if($object->resa_date_fin != '0000-00-00') {
+			return $object->aff_resa_date_fin;
+		}
+		return '';
+	}
+		
 	protected function get_cell_content($object, $property) {
-		global $base_path, $charset;
+		global $charset;
 		
 		$content = '';
 		switch($property) {
@@ -307,37 +318,26 @@ class list_resa_planning_ui extends list_ui {
 				    $content .= notice::get_notice_title($object->resa_idnotice);
 				}
 				break;
-			case 'empr':
-				if (SESSrights & CIRCULATION_AUTH) {
-				    $content .= "<a href='".$base_path."/circ.php?categ=pret&form_cb=".rawurlencode(emprunteur::get_cb_empr($object->resa_idempr))."'>".emprunteur::get_name($object->resa_idempr)."</a>";
-				} else {
-				    $content .= emprunteur::get_name($object->resa_idempr);
-				}
-				break;
-			case 'resa_qty':
-			    if ($this->filters['montrerquoi'] != 'toresa') {
-			        $content .= $object->resa_remaining_qty."/";
-			    }
-			    $content .= $object->resa_qty;
-				break;
-			case 'resa_date':
-			    $content .= $object->aff_resa_date;
-				break;
-			case 'resa_date_debut':
-			    if($object->resa_date_debut != '0000-00-00') {
-			        $content .= $object->aff_resa_date_debut;
-				}
-				break;
-			case 'resa_date_fin':
-			    if($object->resa_date_fin != '0000-00-00') {
-			        $content .= $object->aff_resa_date_fin;
-				}
-				break;
 			default :
 				$content .= parent::get_cell_content($object, $property);
 				break;
 		}
 		return $content;
+	}
+	
+	protected function get_default_attributes_format_cell($object, $property) {
+		global $base_path;
+		
+		$attributes = array();
+		switch($property) {
+			case 'empr':
+				if (SESSrights & CIRCULATION_AUTH) {
+					$attributes['href'] = $base_path."/circ.php?categ=pret&form_cb=".rawurlencode(emprunteur::get_cb_empr($object->resa_idempr));
+				}
+			default:
+				break;
+		}
+		return $attributes;
 	}
 	
 	protected function get_display_cell_html_value($object, $value) {
@@ -350,7 +350,7 @@ class list_resa_planning_ui extends list_ui {
 		return $display;
 	}
 	
-	protected function _get_query_human_montrer_quoi() {
+	protected function _get_query_human_montrerquoi() {
 		global $msg;
 		
 		switch ($this->filters['montrerquoi']) {
@@ -378,5 +378,21 @@ class list_resa_planning_ui extends list_ui {
     		return $docs_location->libelle;
 	    }
 	    return '';
+	}
+	
+	public function get_locations_number() {
+		if(empty($this->locations_number)) {
+			$this->locations_number = pmb_mysql_result(pmb_mysql_query("SELECT count(*) FROM docs_location"), 0);
+		}
+		return $this->locations_number;
+	}
+	
+	public function has_rights() {
+		global $pmb_resa_planning;
+		
+		if(!$pmb_resa_planning) {
+			return false;
+		}
+		return parent::has_rights();
 	}
 }

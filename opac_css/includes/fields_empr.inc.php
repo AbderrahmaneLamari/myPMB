@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: fields_empr.inc.php,v 1.131.2.3 2022/01/24 14:42:12 gneveu Exp $
+// $Id: fields_empr.inc.php,v 1.139 2022/10/13 09:39:20 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -357,7 +357,7 @@ function aff_query_auth_empr_search($field,&$check_scripts,$varname) {
     $ret = "";
     if(empty($ajax_js_already_included)){
         $ajax_js_already_included = true;
-        $ret = "<script src='./includesjavascript/ajax.js'></script>";
+        $ret = "<script src='./includes/javascript/ajax.js'></script>";
     }
     
     $val_dyn=3;
@@ -475,12 +475,15 @@ function aff_date_box_empr($field,&$check_scripts) {
         $d=explode("-",$value);
         $val = "";
         
-        // Ici on a $d qui est vide si on provient du cp_date_acquisition, si il est vide on doit mettre la date du jour par defaut.
-        if ((!@checkdate($d[1],$d[2],$d[0]))&&(!isset($options["DEFAULT_TODAY"][0]["value"]) || !$options["DEFAULT_TODAY"][0]["value"])) {
+        $checked_date = false;
+        if(!empty($d[0]) && !empty($d[1]) && !empty($d[2])) {
+        	$checked_date = @checkdate($d[1],$d[2],$d[0]);
+        }
+		if ((!$checked_date)&&(!isset($options["DEFAULT_TODAY"][0]["value"]) || !$options["DEFAULT_TODAY"][0]["value"])) {
             if(!$flag_id_origine) { //on est en création
                 $val = date("Y-m-d",time());
             }
-        } elseif ((!@checkdate($d[1],$d[2],$d[0]))&&(isset($options["DEFAULT_TODAY"][0]["value"]) && $options["DEFAULT_TODAY"][0]["value"])) {
+		} elseif ((!$checked_date)&&(isset($options["DEFAULT_TODAY"][0]["value"]) && $options["DEFAULT_TODAY"][0]["value"])) {
             $val = "";
         } else {
             $val = $value;
@@ -2031,14 +2034,14 @@ function aff_url_empr($field,&$check_scripts){
 			function add_custom_url_(field_id, field_name, field_size) {
 				cpt = document.getElementById('customfield_text_'+field_id).value;
 				var check = document.createElement('div');
-				check.setAttribute('id','".$field['NAME']."_check_'+cpt);
+				check.setAttribute('id',field_name+'_check_'+cpt);
 				check.setAttribute('style','display:inline');
 				var link_label = document.createTextNode('".$msg['persofield_url_link']."');
 				var chklnk = document.createElement('input');
 				chklnk.setAttribute('type','button');
 				chklnk.setAttribute('value','".$msg['persofield_url_check']."');
 				chklnk.setAttribute('class','bouton');
-				chklnk.setAttribute('onclick','cp_chklnk_".$field['NAME']."('+cpt+',this);');
+				chklnk.setAttribute('onclick','cp_chklnk_'+field_name+'('+cpt+',this);');
 				document.getElementById('customfield_text_'+field_id).value = cpt*1 +1;
 				var link = document.createElement('input');
 		        link.setAttribute('name',field_name+'[link][]');
@@ -2047,7 +2050,7 @@ function aff_url_empr($field,&$check_scripts){
 				link.setAttribute('class','saisie-30em');
 		        link.setAttribute('size',field_size);
 		        link.setAttribute('value','');
-				link.setAttribute('onchange','cp_chklnk_".$field['NAME']."('+cpt+',this);');
+				link.setAttribute('onchange','cp_chklnk_'+field_name+'('+cpt+',this);');
 				var lib_label = document.createTextNode('".$msg['persofield_url_linklabel']."');
 				var lib = document.createElement('input');
 		        lib.setAttribute('name',field_name+'[linkname][]');
@@ -2142,7 +2145,7 @@ function val_url_empr($field,$value) {
         }
         $ret .= "<a href='".$val[0]."' target='".$target."'>".htmlentities($lib, ENT_QUOTES, $charset)."</a>";
         if( $without != "") $without.= $pmb_perso_sep;
-        $without .= $lib;
+        $without .= $val[0];
         $details[] = array('url' => $val[0], 'label' => $lib, 'target' => $target);
     }
     return array("ishtml" => true, "value"=>$ret, "withoutHTML" =>$without, "details" => $details);
@@ -2248,7 +2251,7 @@ function chk_resolve_empr($field,&$check_message) {
 }
 
 function val_resolve_empr($field,$value) {
-	global $charset,$pmb_perso_sep,$use_opac_url_base;
+	global $charset,$pmb_perso_sep;
     
     $without="";
     $options=$field['OPTIONS'][0];
@@ -2267,9 +2270,7 @@ function val_resolve_empr($field,$value) {
             }
             $link = str_replace("!!id!!",$id,$url);
             if( $ret != "") $ret.= " / ";
-            //$ret.= "<a href='$link' target='_blank'>".htmlentities($link,ENT_QUOTES,$charset)."</a>";
-            if (!$use_opac_url_base) $ret.= htmlentities($label,ENT_QUOTES,$charset)." : $id <a href='$link' target='_blank'><img class='center' src='".get_url_icon("globe.gif")."' alt='$link' title='link'/></a>";
-            else $ret.= htmlentities($label,ENT_QUOTES,$charset)." : $id <a href='$link' target='_blank'><img class='center' src='".get_url_icon("globe.gif", 1)."' alt='$link' title='link'/></a>";
+            $ret.= htmlentities($label,ENT_QUOTES,$charset)." : $id <a href='$link' target='_blank'><img class='center' src='".get_url_icon("globe.gif")."' alt='$link' title='link'/></a>";
             if($without)$without.=$pmb_perso_sep;
             $without.=$link;
         }else{

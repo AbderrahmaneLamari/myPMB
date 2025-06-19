@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_localisation_mpba.inc.php,v 1.8.2.1 2022/01/10 08:35:26 dgoron Exp $
+// $Id: search_localisation_mpba.inc.php,v 1.9 2022/01/10 08:31:27 dgoron Exp $
 
 /*
  * 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.1.2.1 2022/01/18 09:12:47 qvarin Exp $
+// $Id: main.inc.php,v 1.2 2022/01/18 09:44:24 qvarin Exp $
 
 if (stristr($_SERVER ['REQUEST_URI'], '.inc.php')) {
     die('no access');

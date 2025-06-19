@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_classements_ui.class.php,v 1.1.4.2 2021/09/21 16:43:41 dgoron Exp $
+// $Id: list_classements_ui.class.php,v 1.4.4.2 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -33,24 +33,13 @@ class list_classements_ui extends list_ui {
 		return new classement($row->id_classement);
 	}
 	
-	protected function _get_query_order() {
-	    if ($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'order':
-					$order .= 'classement_order, nom_classement';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'order':
+	            return 'classement_order, nom_classement';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -96,24 +85,12 @@ class list_classements_ui extends list_ui {
 		return "<input class='bouton' type='button' value='".$msg['dsi_clas_ajouter']."' onClick=\"document.location='".static::get_controller_url_base().'&suite=add'."';\" />";
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+	protected function _add_query_filters() {
 		if(static::$type == 'EQU') {
-			$filters [] = "(type_classement='EQU')";
+			$this->query_filters [] = "(type_classement='EQU')";
 		} elseif(static::$type !== '') {
-			$filters [] = "(type_classement='' or type_classement='".static::$type."')";
+			$this->query_filters [] = "(type_classement='' or type_classement='".static::$type."')";
 		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
 	}
 	
 	protected function _get_query_human() {
@@ -138,21 +115,16 @@ class list_classements_ui extends list_ui {
 		return $content;
 	}
 
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch ($property) {
 			case 'order':
-				$attributes = array(
-				);
-				break;
+				return array();
 			default:
-				$attributes = array(
+				return array(
 						'onclick' => "document.location=\"".static::get_controller_url_base()."&id_classement=".$object->id_classement."&suite=acces\""
 				);
 				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_display_left_actions() {

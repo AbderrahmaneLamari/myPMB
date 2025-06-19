@@ -29,7 +29,9 @@ const fs = require ('fs');
 	}, 
 	resolve: {
 		alias: {
-	    	'vue$': 'vue/dist/vue.esm.js'
+	    	'vue$': 'vue/dist/vue.esm.js',
+			'@': path.resolve(__dirname, 'includes/templates/vuejs'),
+			'@dsi': path.resolve(__dirname, 'includes/templates/vuejs/dsi'),
 		}
 	},
     plugins: [
@@ -39,7 +41,9 @@ const fs = require ('fs');
 
 var configOpac = Object.assign({}, config, {
     entry() {
-		var entries = {};
+		var entries = {
+			"babel-polyfill": "babel-polyfill"
+		};
 		let opacDirectories = fs.readdirSync('./opac_css/includes/templates/vuejs/');
 		for(let opacDir in opacDirectories){
 			let opacViews = fs.readdirSync('./opac_css/includes/templates/vuejs/'+ opacDirectories[opacDir]);
@@ -53,13 +57,17 @@ var configOpac = Object.assign({}, config, {
 	},
 	output: {
 		path: path.resolve( __dirname, './opac_css/includes/javascript/vuejs' ),
-		filename: '[name].js'
+		filename: '[name].js',
+		//publicPath: './opac_css/includes/javascript/vuejs/',
+		//chunkFilename: 'chunks/[contenthash].chunk.js',
 	}
 });
 
 var configGestion = Object.assign({}, config, {
     entry() {
-		var entries = {};
+		var entries = {
+			"babel-polyfill": "babel-polyfill"
+		};
 		let directories = fs.readdirSync('./includes/templates/vuejs/');
 		for(let dir in directories){
 			let views = fs.readdirSync('./includes/templates/vuejs/'+ directories[dir]);
@@ -73,7 +81,9 @@ var configGestion = Object.assign({}, config, {
 	},
 	output: {
 		path: path.resolve( __dirname, './javascript/vuejs' ),
-		filename: '[name].js'
+		filename: '[name].js',
+		//publicPath: './javascript/vuejs/',
+		//chunkFilename: 'chunks/[contenthash].chunk.js',
 	}
 });
 

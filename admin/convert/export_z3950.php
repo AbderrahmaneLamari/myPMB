@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: export_z3950.php,v 1.13 2020/11/16 11:10:27 arenou Exp $
+// $Id: export_z3950.php,v 1.14.2.3 2023/10/17 14:03:22 tsamson Exp $
 
 $base_path="../..";
 
@@ -17,7 +17,7 @@ include($base_path."/admin/convert/xml_unimarc.class.php");
 require_once($base_path."/includes/isbn.inc.php");
 
 function make_error($nerr,$err_message) {
-	echo $nerr."@".$err_message."@";
+	echo htmlentities($nerr."@".$err_message."@");
 	exit();
 }
 
@@ -34,7 +34,11 @@ $command=$_GET["command"];
 //Requete
 $query=$_GET["query"];
 function construct_query($query,$not,$level,$argn="") {
+    global $default_tmp_storage_engine;
+
 	//La requête commence-t-elle par and, or ou and not ?
+    $query = stripslashes($query);
+    
 	$pos=strpos($query,"and not");
 	if (($pos!==false)&&($pos==0)) {
 		$ope="and not";
@@ -59,7 +63,7 @@ function construct_query($query,$not,$level,$argn="") {
 		else
 			$return2=construct_query($args[2],0,$level+1,2);
 		if ($ope=="and not") $ope="and";
-		$requete="create temporary table r$level ENGINE=MyISAM ";
+		$requete="create temporary table r$level ENGINE={$default_tmp_storage_engine} ";
 		if ($ope=="and") {
 			$requete.="select distinct $return1.notice_id from $return1, $return2 where $return1.notice_id=$return2.notice_id";
 			@pmb_mysql_query($requete);
@@ -97,7 +101,7 @@ function construct_query($query,$not,$level,$argn="") {
 			// Auteur
 			case 1003:
 				if ($not) {
-				    	$requete="create temporary table aut ENGINE=MyISAM select distinct responsability.responsability_notice as notice_id, index_author as auth from authors, responsability where responsability_author = author_id ";
+				    	$requete="create temporary table aut ENGINE={$default_tmp_storage_engine} select distinct responsability.responsability_notice as notice_id, index_author as auth from authors, responsability where responsability_author = author_id ";
 				    	@pmb_mysql_query($requete);
 				    	$requete="select distinct notice_id from aut where auth not like '%".$use[1]."%'";
 				}
@@ -108,7 +112,7 @@ function construct_query($query,$not,$level,$argn="") {
 				make_error(3,"1=".$use[0]);
 				break;
 		}
-		$requete="create temporary table r".$level."_".$argn." ENGINE=MyISAM ".$requete;
+		$requete="create temporary table r".$level."_".$argn." ENGINE={$default_tmp_storage_engine} ".$requete;
 		@pmb_mysql_query($requete);
 		$return="r".$level."_".$argn;
 	}
@@ -128,7 +132,7 @@ switch ($command) {
 		}
 		break;
 	case "get_notice":
-		$id=$query;
+		$id=intval($query);
 		$e = new export(array($id));
 		$e -> get_next_notice();
 		$toiso = new xml_unimarc();

@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_converter_docnum.class.php,v 1.5 2021/04/21 12:43:29 gneveu Exp $
+// $Id: rdf_entities_converter_docnum.class.php,v 1.6 2022/05/25 08:24:25 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-require_once($class_path.'/rdf_entities_conversion/rdf_entities_converter_docnum.class.php');
+require_once($class_path.'/rdf_entities_conversion/rdf_entities_converter.class.php');
 require_once($class_path.'/explnum.class.php');
 
 class rdf_entities_converter_docnum extends rdf_entities_converter {

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pubmed_analyse_query.class.php,v 1.3.10.1 2021/07/22 12:24:51 dgoron Exp $
+// $Id: pubmed_analyse_query.class.php,v 1.5 2022/06/14 07:45:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/analyse_query.class.php");
 
 class pubmed_analyse_query extends analyse_query{
@@ -39,6 +40,7 @@ class pubmed_analyse_query extends analyse_query{
 	
 	//Affichage sous forme mathématique logique du résultat de l'analyse
 	public function show_analyse($tree="") {
+		$r ="";
 		if ($tree=="") $tree=$this->tree;
 		foreach($tree as $elem){
 			if($elem->start_with == 0){

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_voices.class.php,v 1.3.12.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: nomenclature_voices.class.php,v 1.4.4.1 2023/05/05 13:45:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -42,7 +42,7 @@ class nomenclature_voices{
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)){
 			while($row = pmb_mysql_fetch_object($result)){
-				$this->add_voice( new nomenclature_voice($row->id_voice));				
+				$this->add_voice(nomenclature_voice::get_instance($row->id_voice));				
 			}
 		}		
 	}

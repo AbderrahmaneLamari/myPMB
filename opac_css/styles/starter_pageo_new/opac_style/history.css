@@ -1,0 +1,28 @@
+/*--------------
+- OPAC: HISTORY -
+ --------------*/
+
+ #main form[name="cases_a_cocher"]>b {
+    margin-left: 5px;
+}
+
+#main form input[type=checkbox] {
+    vertical-align: middle;
+}
+
+#main form[name="cases_a_cocher"] a>b {
+    color: #626262;
+}
+
+#history_action,
+#main_hors_footer>form[action*="history"] {
+    margin-bottom: 15px;
+    margin: 0 auto;
+    /* background-color: #F2F2F2; */
+    padding: 10px 10px;
+    border: solid 0px #111;
+}
+
+#main_hors_footer>form[action*="history"] a {
+    color: #525252;
+}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_parameters_ui.class.php,v 1.10.2.1 2021/09/21 16:43:41 dgoron Exp $
+// $Id: list_parameters_ui.class.php,v 1.13.4.2 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -58,7 +58,7 @@ class list_parameters_ui extends list_ui {
 		parent::init_filters($filters);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		global $allow_section;
 		
 		if($allow_section) {
@@ -119,27 +119,15 @@ class list_parameters_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-		
-		if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'type_param':
-					$order .= $sort_by.", section_param, sstype_param";
-					break;
-				default :
-					$order .= $sort_by;
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'type_param':
+	            return $sort_by.", section_param, sstype_param";
+	        default :
+	            return $sort_by;
+	    }
 	}
 	
 	/**
@@ -150,24 +138,9 @@ class list_parameters_ui extends list_ui {
 		parent::set_filters_from_form();
 	}
 		
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		$filters [] = "gestion = ".$this->filters['gestion'];
-		if(is_array($this->filters['types_param']) && count($this->filters['types_param'])) {
-			$filters [] = 'type_param IN ("'.implode('","', addslashes_array($this->filters['types_param'])).'")';
-		}
-		
-		if (count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->query_filters [] = "gestion = ".$this->filters['gestion'];
+		$this->_add_query_filter_multiple_restriction('types_param', 'types_param');
 	}
 	
 	protected function _get_query_human_types_param() {
@@ -245,7 +218,7 @@ class list_parameters_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$class = '';
 		$style = '';
 		switch($property) {
@@ -259,13 +232,10 @@ class list_parameters_ui extends list_ui {
 				$style .= 'vertical-align:top;';
 				break;
 		}
-		$attributes = array(
+		return array(
 				'class' => $class,
 				'style' => $style,
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_display_content_object_list($object, $indice) {
@@ -322,6 +292,10 @@ class list_parameters_ui extends list_ui {
 	public function get_display_list() {
 		//Récupération du script JS de tris
 		$display = $this->get_js_sort_script_sort();
+		if($this->get_setting('display', 'objects_list', 'fast_filters')) {
+			//Récupération du script JS de filtres rapides
+			$display .= $this->get_js_fast_filters_script();
+		}
 		
 		//Affichage de la liste des objets
 		$display .= $this->get_display_objects_list();

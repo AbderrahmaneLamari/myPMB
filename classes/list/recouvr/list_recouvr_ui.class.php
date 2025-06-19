@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_recouvr_ui.class.php,v 1.1.4.2 2021/11/23 09:58:08 dgoron Exp $
+// $Id: list_recouvr_ui.class.php,v 1.5 2022/10/06 11:57:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -45,6 +45,12 @@ class list_recouvr_ui extends list_ui {
 				'titre' => 'relance_recouvrement_titre',
 				'expl_cb' => 'relance_recouvrement_cb',
 				'expl_cote' => 'relance_recouvrement_cote',
+				'expl_codestat_libelle' => 'relance_recouvrement_expl_codestat',
+				'expl_location_libelle' => 'relance_recouvrement_expl_location',
+				'expl_section_libelle' => 'relance_recouvrement_expl_section',
+				'expl_statut_libelle' => 'relance_recouvrement_expl_statut',
+				'expl_tdoc_libelle' => 'relance_recouvrement_expl_type',
+				'expl_lender_libelle' => 'relance_recouvrement_expl_lender',
 				'date_pret' => 'relance_recouvrement_pret_date',
 				'date_relance1' => 'relance_recouvrement_relance_date1',
 				'date_relance2' => 'relance_recouvrement_relance_date2',
@@ -112,6 +118,36 @@ class list_recouvr_ui extends list_ui {
 		return '';
 	}
 	
+	protected function _get_object_property_expl_codestat_libelle($object) {
+		$docs_codestat = new docs_codestat($object->expl_codestat);
+		return $docs_codestat->libelle;
+	}
+	
+	protected function _get_object_property_expl_location_libelle($object) {
+		$docs_location = new docs_location($object->expl_location);
+		return $docs_location->libelle;
+	}
+	
+	protected function _get_object_property_expl_section_libelle($object) {
+		$docs_section = new docs_section($object->expl_section);
+		return $docs_section->libelle;
+	}
+	
+	protected function _get_object_property_expl_statut_libelle($object) {
+		$docs_statut = new docs_statut($object->expl_statut);
+		return $docs_statut->libelle;
+	}
+	
+	protected function _get_object_property_expl_tdoc_libelle($object) {
+		$docs_type = new docs_type($object->expl_typdoc);
+		return $docs_type->libelle;
+	}
+	
+	protected function _get_object_property_expl_lender_libelle($object) {
+		$lender = new lender($object->expl_owner);
+		return $lender->lender_libelle;
+	}
+	
 	protected function get_cell_content($object, $property) {
 		global $charset;
 		$content = '';
@@ -143,21 +179,7 @@ class list_recouvr_ui extends list_ui {
 		return $content;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['id_empr']) {
-			$filters [] = 'id_empr = "'.$this->filters['id_empr'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('id_empr', 'id_empr', 'integer');
 	}
 }

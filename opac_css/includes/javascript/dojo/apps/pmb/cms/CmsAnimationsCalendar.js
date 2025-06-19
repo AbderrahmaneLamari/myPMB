@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: CmsAnimationsCalendar.js,v 1.1 2021/04/01 15:37:10 btafforeau Exp $
+// $Id: CmsAnimationsCalendar.js,v 1.2 2022/10/06 07:32:19 gneveu Exp $
 
 define([
 	"dojo/_base/declare",
@@ -69,8 +69,8 @@ define([
 				}
 				
 				if ((date.valueOf() >= start_day.valueOf() && (end_day && date.valueOf() <= end_day.valueOf())) || date.valueOf() == start_day.valueOf()) {
-					if (classname.indexOf('cms_module_animationslist_animation_' + animation['numStatus']) === -1) {
-						classname += 'cms_module_animationslist_animation_' + animation['numStatus'];	
+					if (classname.indexOf('cms_module_animationslist_animation_' + animation['color_key']) === -1) {
+						classname += 'cms_module_animationslist_animation_' + animation['color_key'];	
 					}
 					if (classname) {
 						classname += ' ';

@@ -2,10 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.361.2.28 2022/01/06 13:45:28 gneveu Exp $
+// $Id: search.class.php,v 1.414.2.9 2023/12/12 15:12:41 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 //Classe de gestion des recherches avancees
+
+use Pmb\Searchform\Views\SearchformView;
 
 global $class_path, $include_path;
 
@@ -33,7 +35,7 @@ require_once($class_path."/acces.class.php");
 
 global $opac_extended_search_dnd_interface, $module;
 if ($opac_extended_search_dnd_interface || $module == "selectors") {
-	require_once($include_path."/templates/extended_search_dnd.tpl.php");	
+	require_once($include_path."/templates/extended_search_dnd.tpl.php");
 }
 require_once($class_path."/facettes_external.class.php");
 require_once($class_path."/facettes_external_search_compare.class.php");
@@ -43,7 +45,6 @@ require_once($class_path."/searcher/searcher_factory.class.php");
 require_once($class_path."/search_view.class.php");
 require_once($class_path.'/misc/files/misc_file_search_fields.class.php');
 require_once($class_path."/translation.class.php");
-use Pmb\Searchform\Views\SearchformView;
 
 class mterm {
 	public $sc_type;
@@ -96,21 +97,21 @@ class search {
 	public $full_path='';
 	public $fichier_xml;
 	public $tableau_access_rights;
-	
+
 	public $dynamics_not_visible;
 	public $specials_not_visible;
-	
+
 	public $memory_engine_allowed = false;
-	public $current_engine = 'MyISAM';
+	public $current_engine;
 	public $authpersos = array();
 	public $groups_used = false;
 	public $groups = array();
 	public $filtered_objects_types = array();
 	public $keyName = "";
 	public $tableName = "";
-	
+
 	public $elements_list_ui_class_name;
-	
+
 	protected $is_created_temporary_table = false;
 	public static $ignore_subst_file = false;
 	protected $list_criteria;
@@ -119,23 +120,23 @@ class search {
 	 * @var string
 	 */
 	protected $js_prefix = "";
-	
+
 	/**
 	 * Script à appeler au chargement de la page (ne sert qu'à transmettre l'info au show_form())
 	 * @var string
 	 */
 	protected $script_window_onload;
-	
+
 	protected $context_parameters;
-	
+
 	protected $misc_file_search_fields;
-	
+
 	/**
 	 * tableau des champs propres aux univers
 	 * @var array
 	 */
 	public $universesfields;
-	
+
 	/**
 	 * tableau des instances de la classe search
 	 * @var array
@@ -143,10 +144,13 @@ class search {
 	protected static $instances = [];
 
 	protected const SHOW_FIELDVARS = false;
-	
+
 	public function __construct($fichier_xml="") {
+	    global $default_tmp_storage_engine;
+
+	    $this->current_engine = $default_tmp_storage_engine;
 		$this->fichier_xml = $fichier_xml;
-		
+
 		$this->parse_search_file();
 		$this->strip_slashes();
 		foreach ( $this->dynamicfields as $key => $value ) {
@@ -163,7 +167,7 @@ class search {
 		global $include_path,$base_path, $charset;
 		global $msg, $KEY_CACHE_FILE_XML;
 		global $lang;
-		
+
 		$filepath = "";
 		if(!$this->full_path){
 			if ($this->fichier_xml == '') {
@@ -185,7 +189,7 @@ class search {
 		$fileName = preg_replace("/[^a-z0-9]/i","",$fileInfo['dirname'].$fileInfo['filename'].$lang.$charset);
 		$tempFile = $base_path."/temp/XML".$fileName.".tmp";
 		$dejaParse = false;
-		
+
 		$cache_php=cache_factory::getCache();
 		$key_file="";
 		if ($cache_php) {
@@ -254,7 +258,7 @@ class search {
 				}
 			}
 		}
-		
+
 		if(!$dejaParse){
 			$fp=fopen($filepath,"r") or die("Can't find XML file");
 			$size=filesize($filepath);
@@ -273,12 +277,12 @@ class search {
 				}
 				uasort($this->groups, array($this, 'sort_groups'));
 			}
-	
+
 			//Lecture parametre memory_engine_allowed
 			if(isset($param['MEMORYENGINEALLOWED'][0]['value']) && $param['MEMORYENGINEALLOWED'][0]['value']=='yes') {
 				$this->memory_engine_allowed = true;
 			}
-	
+
 			//Lecture des operateurs
 			for ($i=0; $i<count($param["OPERATORS"][0]["OPERATOR"]); $i++) {
 				$operator_=$param["OPERATORS"][0]["OPERATOR"][$i];
@@ -298,7 +302,7 @@ class search {
 				    $this->op_special[$operator_["NAME"]]=false;
 				}
 			}
-	
+
 			//Lecture des champs fixes
 			if(!isset($param["FIXEDFIELDS"][0]["FIELD"])) {
 			    $param["FIXEDFIELDS"][0]["FIELD"] = array();
@@ -306,7 +310,7 @@ class search {
 			for ($i=0; $i<count($param["FIXEDFIELDS"][0]["FIELD"]); $i++) {
 				$t=array();
 				$ff=$param["FIXEDFIELDS"][0]["FIELD"][$i];
-	
+
 				if (substr($ff["TITLE"],0,4)=="msg:" && isset($msg[substr($ff["TITLE"],4,strlen($ff["TITLE"])-4)])) {
 					$t["TITLE"]=$msg[substr($ff["TITLE"],4,strlen($ff["TITLE"])-4)];
 				} else {
@@ -339,13 +343,13 @@ class search {
 					$t["VISIBLE"]=false;
 				else
 					$t["VISIBLE"]=true;
-				
+
 				//Moteur memory
 				if(isset($ff['MEMORYENGINEFORBIDDEN']) && $ff['MEMORYENGINEFORBIDDEN']=='yes')
 					$t['MEMORYENGINEFORBIDDEN']=true;
 				else
 					$t['MEMORYENGINEFORBIDDEN']=false;
-	
+
 				//Variables
 				$t["VAR"] = array();
 				if(isset($ff["VARIABLE"])) {
@@ -375,12 +379,12 @@ class search {
 						$t["VAR"][]=$v;
 					}
 				}
-	
+
 				if (!isset($ff["VISIBILITY"]))
 					$t["VISIBILITY"]=true;
 				else
 					if ($ff["VISIBILITY"]=="yes") $t["VISIBILITY"]=true; else $t["VISIBILITY"]=false;
-	
+
 				for ($j=0; $j<count($ff["QUERY"]); $j++) {
 					$q=array();
 					$q["OPERATOR"]=$ff["QUERY"][$j]["FOR"];
@@ -389,7 +393,7 @@ class search {
 					if (($ff["QUERY"][$j]["MULTIPLE"]=="yes")||($ff["QUERY"][$j]["CONDITIONAL"]=="yes")) {
 						if($ff["QUERY"][$j]["MULTIPLE"]=="yes") $element = "PART";
 						else $element = "VAR";
-	
+
 						for ($k=0; $k<count($ff["QUERY"][$j][$element]); $k++) {
 							$pquery=$ff["QUERY"][$j][$element][$k];
 							if($element == "VAR"){
@@ -581,23 +585,23 @@ class search {
 							$q[0]["DETECTDATE"]=$ff["QUERY"][$j]["DETECTDATE"];
 						} else $q[0]["DETECTDATE"]=false;
 						$q[0]["MAIN"]=(isset($ff["QUERY"][$j]["MAIN"][0]["value"]) ? $ff["QUERY"][$j]["MAIN"][0]["value"] : '');
-						
+
 						if (isset($ff["QUERY"][$j]['SPECIAL'])) {
     						$q[0]["SPECIAL"] = array();
     						$q[0]["SPECIAL"]["CLASS"] = (isset($ff["QUERY"][$j]['SPECIAL'][0]["CLASS"]) ? $ff["QUERY"][$j]['SPECIAL'][0]["CLASS"] : '');
     						$q[0]["SPECIAL"]['PARAMS'] = array();
-    						
+
     						//Variables
     						if(isset($ff["QUERY"][$j]['SPECIAL'][0]['VARIABLE'])) {
     						    $length = count($ff["QUERY"][$j]['SPECIAL'][0]['VARIABLE']);
     						    $params = array();
-    						    
+
     						    for ($x = 0; $x < $length; $x++) {
     						        $variable = $ff["QUERY"][$j]['SPECIAL'][0]['VARIABLE'][$x];
     						        $v = array();
     						        $v["NAME"] = $variable['NAME'];
     						        $v["TYPE"] = $variable['TYPE'];
-    						        
+
     						        $v["COMMENT"] = '';
     						        if(isset($variable['COMMENT'])) {
     						            if (substr($variable['COMMENT'], 0, 4) == "msg:" && isset($msg[substr($variable['COMMENT'], 4)])) {
@@ -606,25 +610,25 @@ class search {
     						                $v["COMMENT"] = $variable['COMMENT'];
     						            }
     						        }
-    						        
+
     						        $v["DEFAULT"] = array();
     						        if (isset($variable['DEFAULT'])) {
         						        $v["DEFAULT"] = $variable['DEFAULT'][0];
     						        }
     						        $params[] = $v;
     						    }
-    						    
+
     						    $q[0]["SPECIAL"]['PARAMS'] = $params;
     						}
 						}
-						
+
 						$q[0]["MULTIPLE_TERM"]=(isset($ff["QUERY"][$j]["MULTIPLETERM"][0]["value"]) ? $ff["QUERY"][$j]["MULTIPLETERM"][0]["value"] : '');
 						$q[0]["MULTIPLE_OPERATOR"]=(isset($ff["QUERY"][$j]["MULTIPLEOPERATOR"][0]["value"]) ? $ff["QUERY"][$j]["MULTIPLEOPERATOR"][0]["value"] : '');
 						$t["QUERIES"][]=$q;
 						$t["QUERIES_INDEX"][$q["OPERATOR"]]=count($t["QUERIES"])-1;
 					}
 				}
-	
+
 				// recuperation des visibilites parametrees
 				$t["VARVIS"] = array();
 				if(isset($ff["VAR"])) {
@@ -646,10 +650,10 @@ class search {
 						$t["VARVIS"][] = $q ;
 					} // fin for
 				}
-	
+
 				$this->fixedfields[$ff["ID"]]=$t;
 			}
-	
+
 			//Lecture des champs dynamiques
 			if (isset($param["DYNAMICFIELDS"][0]["VISIBLE"]) && $param["DYNAMICFIELDS"][0]["VISIBLE"]=="no") $this->dynamics_not_visible=true;
 			if(!isset($param["DYNAMICFIELDS"][0]["FIELDTYPE"]) || !$param["DYNAMICFIELDS"][0]["FIELDTYPE"]){//Pour le cas de fichiers subst basés sur l'ancienne version
@@ -674,120 +678,124 @@ class search {
 				if (isset($ft["HIDEBYCUSTOMNAME"])) {
 					$this->dynamicfields_hidebycustomname[$ft["TYPE"]]=$ft["HIDEBYCUSTOMNAME"];
 				}
-	
+
 				if($this->groups_used){
 					$champType["GROUP"]=(isset($ft["GROUP"]) ? $ft["GROUP"] : '');
 				}
-				for ($i=0; $i<count($ft["FIELD"]); $i++) {
-					$t=array();
-					$ff=$ft["FIELD"][$i];
-					$t["DATATYPE"]=$ff["DATATYPE"];
-					$t["NOTDISPLAYCOL"]=(isset($ff["NOTDISPLAYCOL"]) ? $ff["NOTDISPLAYCOL"] : '');
-					//Moteur memory
-					if(isset($ff['MEMORYENGINEFORBIDDEN']) && $ff['MEMORYENGINEFORBIDDEN']=='yes')
-						$t['MEMORYENGINEFORBIDDEN']=true;
-					else
-						$t['MEMORYENGINEFORBIDDEN']=false;
-					$q=array();
-					for ($j=0; $j<count($ff["QUERY"]); $j++) {
-						$q["OPERATOR"]=$ff["QUERY"][$j]["FOR"];
-						if (isset($ff["QUERY"][$j]["MULTIPLEWORDS"]) && $ff["QUERY"][$j]["MULTIPLEWORDS"]=="yes")
-							$q["MULTIPLE_WORDS"]=true;
-						else
-							$q["MULTIPLE_WORDS"]=false;
-						if (isset($ff["QUERY"][$j]["REGDIACRIT"]) && $ff["QUERY"][$j]["REGDIACRIT"]=="yes")
-							$q["REGDIACRIT"]=true;
-						else
-							$q["REGDIACRIT"]=false;
-						if (isset($ff["QUERY"][$j]["KEEP_EMPTYWORD"]) && $ff["QUERY"][$j]["KEEP_EMPTYWORD"]=="yes")
-							$q["KEEP_EMPTYWORD"]=true;
-						else
-							$q["KEEP_EMPTYWORD"]=false;
-						if (isset($ff["QUERY"][$j]["DEFAULT_OPERATOR"]))
-							$q["DEFAULT_OPERATOR"] = $ff["QUERY"][$j]["DEFAULT_OPERATOR"];
-						$q["NOT_ALLOWED_FOR"]=array();
-						$naf=(isset($ff["QUERY"][$j]["NOTALLOWEDFOR"]) ? $ff["QUERY"][$j]["NOTALLOWEDFOR"] : '');
-						if ($naf) {
-							$naf_=explode(",",$naf);
-							$q["NOT_ALLOWED_FOR"]=$naf_;
-						}
-						if(isset($ff["QUERY"][$j]['WORDSEARCH']) && $ff["QUERY"][$j]['WORDSEARCH']=="yes"){
-							$q["WORD"]=true;
-							if(isset($ff["QUERY"][$j]['CLASS'][0]['NAME'])) {
-								$q['CLASS'] = $ff["QUERY"][$j]['CLASS'][0]['NAME'];
-								if(count($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT'])) {
-									$q['FIELDSRESTRICT'] = array();
-									foreach ($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT'] as $fieldrestrict) {
-										$subfieldsrestrict = array();
-										if(isset($fieldrestrict['SUB'])) {
-											foreach ($fieldrestrict['SUB'][0]['FIELDRESTRICT'] as $subfieldrestrict) {
-												$subfieldsrestrict[] = array(
-														'sub_field' => $subfieldrestrict['SUB_FIELD'][0]['value'],
-														'values' => explode(',', $subfieldrestrict['VALUES'][0]['value']),
-														'op' => $subfieldrestrict['OP'][0]['value'],
-														'not' => (isset($subfieldrestrict['NOT'][0]['value']) ? $subfieldrestrict['NOT'][0]['value'] : '')
-												);
-											}
-										}
-										$q['FIELDSRESTRICT'][] = array(
-												'field' => $fieldrestrict['FIELD'][0]['value'],
-												'values' => explode(',', $fieldrestrict['VALUES'][0]['value']),
-												'op' => $fieldrestrict['OP'][0]['value'],
-												'not' => (isset($fieldrestrict['NOT'][0]['value']) ? $fieldrestrict['NOT'][0]['value'] : ''),
-												'sub' => $subfieldsrestrict
-										);
-									}
-								}
-							}elseif(isset($ff["QUERY"][$j]['CLASS'][0]['TYPE'])) {
-								$q['TYPE'] = $ff["QUERY"][$j]['CLASS'][0]['TYPE'];
-								if(isset($ff["QUERY"][$j]['CLASS'][0]['MODE'])){
-									$q['MODE'] = $ff["QUERY"][$j]['CLASS'][0]['MODE'];
-								}
-								if(isset($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT']) && count($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT'])) {
-									$q['FIELDSRESTRICT'] = array();
-									foreach ($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT'] as $fieldrestrict) {
-										$subfieldsrestrict = array();
-										if(isset($fieldrestrict['SUB'])) {
-											foreach ($fieldrestrict['SUB'][0]['FIELDRESTRICT'] as $subfieldrestrict) {
-												$subfieldsrestrict[] = array(
-														'sub_field' => $subfieldrestrict['SUB_FIELD'][0]['value'],
-														'values' => explode(',', $subfieldrestrict['VALUES'][0]['value']),
-														'op' => $subfieldrestrict['OP'][0]['value'],
-														'not' => (isset($subfieldrestrict['NOT'][0]['value']) ? $subfieldrestrict['NOT'][0]['value'] : '')
-												);
-											}
-										}
-										$q['FIELDSRESTRICT'][] = array(
-												'field' => $fieldrestrict['FIELD'][0]['value'],
-												'values' => explode(',', $fieldrestrict['VALUES'][0]['value']),
-												'op' => $fieldrestrict['OP'][0]['value'],
-												'not' => (isset($fieldrestrict['NOT'][0]['value']) ? $fieldrestrict['NOT'][0]['value'] : ''),
-												'sub' => $subfieldsrestrict
-										);
-									}
-								}
-							}else{
-								$q['CLASS'] = $ff["QUERY"][$j]['CLASS'][0]['value'];
-							}
-							$q['FOLDER'] = (isset($ff["QUERY"][$j]['CLASS'][0]['FOLDER']) ? $ff["QUERY"][$j]['CLASS'][0]['FOLDER'] : '');
-							$q['FIELDS'] = (isset($ff["QUERY"][$j]['CLASS'][0]['FIELDS']) ? $ff["QUERY"][$j]['CLASS'][0]['FIELDS'] : '');
-						}else $q["WORD"]=false;
-						if (isset($ff["QUERY"][$j]['SEARCHABLEONLY']) && $ff["QUERY"][$j]['SEARCHABLEONLY']=="yes"){
-							$q["SEARCHABLEONLY"]=true;
-						}else $q["SEARCHABLEONLY"]=false;
-	
-						$q["MAIN"]=(isset($ff["QUERY"][$j]["MAIN"][0]["value"]) ? $ff["QUERY"][$j]["MAIN"][0]["value"] : '');
-						$q["MULTIPLE_TERM"]=(isset($ff["QUERY"][$j]["MULTIPLETERM"][0]["value"]) ? $ff["QUERY"][$j]["MULTIPLETERM"][0]["value"] : '');
-						$q["MULTIPLE_OPERATOR"]=(isset($ff["QUERY"][$j]["MULTIPLEOPERATOR"][0]["value"]) ? $ff["QUERY"][$j]["MULTIPLEOPERATOR"][0]["value"] : '');
-						$t["QUERIES"][]=$q;
-						$t["QUERIES_INDEX"][$q["OPERATOR"]]=count($t["QUERIES"])-1;
-					}
-					$champType["FIELD"][$ff["ID"]]=$t;
+
+				if (!empty($ft["FIELD"]) && is_countable($ft["FIELD"])) {
+				    for ($i=0; $i<count($ft["FIELD"]); $i++) {
+				        $t=array();
+				        $ff=$ft["FIELD"][$i];
+				        $t["DATATYPE"]=$ff["DATATYPE"];
+				        $t["NOTDISPLAYCOL"]=(isset($ff["NOTDISPLAYCOL"]) ? $ff["NOTDISPLAYCOL"] : '');
+				        //Moteur memory
+				        if(isset($ff['MEMORYENGINEFORBIDDEN']) && $ff['MEMORYENGINEFORBIDDEN']=='yes')
+				            $t['MEMORYENGINEFORBIDDEN']=true;
+				            else
+				                $t['MEMORYENGINEFORBIDDEN']=false;
+				                $q=array();
+				                if (!empty($ff["QUERY"])) {
+				                    for ($j=0; $j<count($ff["QUERY"]); $j++) {
+				                        $q["OPERATOR"]=$ff["QUERY"][$j]["FOR"];
+				                        if (isset($ff["QUERY"][$j]["MULTIPLEWORDS"]) && $ff["QUERY"][$j]["MULTIPLEWORDS"]=="yes")
+				                            $q["MULTIPLE_WORDS"]=true;
+				                            else
+				                                $q["MULTIPLE_WORDS"]=false;
+				                                if (isset($ff["QUERY"][$j]["REGDIACRIT"]) && $ff["QUERY"][$j]["REGDIACRIT"]=="yes")
+				                                    $q["REGDIACRIT"]=true;
+				                                    else
+				                                        $q["REGDIACRIT"]=false;
+				                                        if (isset($ff["QUERY"][$j]["KEEP_EMPTYWORD"]) && $ff["QUERY"][$j]["KEEP_EMPTYWORD"]=="yes")
+				                                            $q["KEEP_EMPTYWORD"]=true;
+				                                            else
+				                                                $q["KEEP_EMPTYWORD"]=false;
+				                                                if (isset($ff["QUERY"][$j]["DEFAULT_OPERATOR"]))
+				                                                    $q["DEFAULT_OPERATOR"] = $ff["QUERY"][$j]["DEFAULT_OPERATOR"];
+				                                                    $q["NOT_ALLOWED_FOR"]=array();
+				                                                    $naf=(isset($ff["QUERY"][$j]["NOTALLOWEDFOR"]) ? $ff["QUERY"][$j]["NOTALLOWEDFOR"] : '');
+				                                                    if ($naf) {
+				                                                        $naf_=explode(",",$naf);
+				                                                        $q["NOT_ALLOWED_FOR"]=$naf_;
+				                                                    }
+				                                                    if(isset($ff["QUERY"][$j]['WORDSEARCH']) && $ff["QUERY"][$j]['WORDSEARCH']=="yes"){
+				                                                        $q["WORD"]=true;
+				                                                        if(isset($ff["QUERY"][$j]['CLASS'][0]['NAME'])) {
+				                                                            $q['CLASS'] = $ff["QUERY"][$j]['CLASS'][0]['NAME'];
+				                                                            if(count($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT'])) {
+				                                                                $q['FIELDSRESTRICT'] = array();
+				                                                                foreach ($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT'] as $fieldrestrict) {
+				                                                                    $subfieldsrestrict = array();
+				                                                                    if(isset($fieldrestrict['SUB'])) {
+				                                                                        foreach ($fieldrestrict['SUB'][0]['FIELDRESTRICT'] as $subfieldrestrict) {
+				                                                                            $subfieldsrestrict[] = array(
+				                                                                                'sub_field' => $subfieldrestrict['SUB_FIELD'][0]['value'],
+				                                                                                'values' => explode(',', $subfieldrestrict['VALUES'][0]['value']),
+				                                                                                'op' => $subfieldrestrict['OP'][0]['value'],
+				                                                                                'not' => (isset($subfieldrestrict['NOT'][0]['value']) ? $subfieldrestrict['NOT'][0]['value'] : '')
+				                                                                            );
+				                                                                        }
+				                                                                    }
+				                                                                    $q['FIELDSRESTRICT'][] = array(
+				                                                                        'field' => $fieldrestrict['FIELD'][0]['value'],
+				                                                                        'values' => explode(',', $fieldrestrict['VALUES'][0]['value']),
+				                                                                        'op' => $fieldrestrict['OP'][0]['value'],
+				                                                                        'not' => (isset($fieldrestrict['NOT'][0]['value']) ? $fieldrestrict['NOT'][0]['value'] : ''),
+				                                                                        'sub' => $subfieldsrestrict
+				                                                                    );
+				                                                                }
+				                                                            }
+				                                                        }elseif(isset($ff["QUERY"][$j]['CLASS'][0]['TYPE'])) {
+				                                                            $q['TYPE'] = $ff["QUERY"][$j]['CLASS'][0]['TYPE'];
+				                                                            if(isset($ff["QUERY"][$j]['CLASS'][0]['MODE'])){
+				                                                                $q['MODE'] = $ff["QUERY"][$j]['CLASS'][0]['MODE'];
+				                                                            }
+				                                                            if(isset($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT']) && count($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT'])) {
+				                                                                $q['FIELDSRESTRICT'] = array();
+				                                                                foreach ($ff["QUERY"][$j]['CLASS'][0]['FIELDRESTRICT'] as $fieldrestrict) {
+				                                                                    $subfieldsrestrict = array();
+				                                                                    if(isset($fieldrestrict['SUB'])) {
+				                                                                        foreach ($fieldrestrict['SUB'][0]['FIELDRESTRICT'] as $subfieldrestrict) {
+				                                                                            $subfieldsrestrict[] = array(
+				                                                                                'sub_field' => $subfieldrestrict['SUB_FIELD'][0]['value'],
+				                                                                                'values' => explode(',', $subfieldrestrict['VALUES'][0]['value']),
+				                                                                                'op' => $subfieldrestrict['OP'][0]['value'],
+				                                                                                'not' => (isset($subfieldrestrict['NOT'][0]['value']) ? $subfieldrestrict['NOT'][0]['value'] : '')
+				                                                                            );
+				                                                                        }
+				                                                                    }
+				                                                                    $q['FIELDSRESTRICT'][] = array(
+				                                                                        'field' => $fieldrestrict['FIELD'][0]['value'],
+				                                                                        'values' => explode(',', $fieldrestrict['VALUES'][0]['value']),
+				                                                                        'op' => $fieldrestrict['OP'][0]['value'],
+				                                                                        'not' => (isset($fieldrestrict['NOT'][0]['value']) ? $fieldrestrict['NOT'][0]['value'] : ''),
+				                                                                        'sub' => $subfieldsrestrict
+				                                                                    );
+				                                                                }
+				                                                            }
+				                                                        }else{
+				                                                            $q['CLASS'] = $ff["QUERY"][$j]['CLASS'][0]['value'];
+				                                                        }
+				                                                        $q['FOLDER'] = (isset($ff["QUERY"][$j]['CLASS'][0]['FOLDER']) ? $ff["QUERY"][$j]['CLASS'][0]['FOLDER'] : '');
+				                                                        $q['FIELDS'] = (isset($ff["QUERY"][$j]['CLASS'][0]['FIELDS']) ? $ff["QUERY"][$j]['CLASS'][0]['FIELDS'] : '');
+				                                                    }else $q["WORD"]=false;
+				                                                    if (isset($ff["QUERY"][$j]['SEARCHABLEONLY']) && $ff["QUERY"][$j]['SEARCHABLEONLY']=="yes"){
+				                                                        $q["SEARCHABLEONLY"]=true;
+				                                                    }else $q["SEARCHABLEONLY"]=false;
+
+				                                                    $q["MAIN"]=(isset($ff["QUERY"][$j]["MAIN"][0]["value"]) ? $ff["QUERY"][$j]["MAIN"][0]["value"] : '');
+				                                                    $q["MULTIPLE_TERM"]=(isset($ff["QUERY"][$j]["MULTIPLETERM"][0]["value"]) ? $ff["QUERY"][$j]["MULTIPLETERM"][0]["value"] : '');
+				                                                    $q["MULTIPLE_OPERATOR"]=(isset($ff["QUERY"][$j]["MULTIPLEOPERATOR"][0]["value"]) ? $ff["QUERY"][$j]["MULTIPLEOPERATOR"][0]["value"] : '');
+				                                                    $t["QUERIES"][]=$q;
+				                                                    $t["QUERIES_INDEX"][$q["OPERATOR"]]=count($t["QUERIES"])-1;
+				                    }
+				                }
+				                $champType["FIELD"][$ff["ID"]]=$t;
+				    }
 				}
 				$this->dynamicfields[$ft["PREFIX"]]=$champType;
 			}
-	
-	
+
 			//Lecture des champs speciaux
 			if (isset($param["SPECIALFIELDS"][0]["VISIBLE"]) && $param["SPECIALFIELDS"][0]["VISIBLE"]=="no") {
 				$this->specials_not_visible=true;
@@ -815,13 +823,13 @@ class search {
 						}
 					}
 					$t["TYPE"]=$sf["TYPE"];
-	
+
 					//Visibilite
 					if(isset($sf["VISIBLE"]) && $sf["VISIBLE"]=="no")
 						$t["VISIBLE"]=false;
 					else
 						$t["VISIBLE"]=true;
-					
+
 					if(isset($sf["DELNOTALLOWED"]) && $sf["DELNOTALLOWED"] == "yes")
 						$t["DELNOTALLOWED"]=true;
 					else
@@ -830,7 +838,7 @@ class search {
 					$this->specialfields[$sf["ID"]]=$t;
 				}
 			}
-			
+
 			//Lecture des champs des unvers
 			if(!isset($param["UNIVERSESFIELDS"][0]["FIELD"])) {
 			    $param["UNIVERSESFIELDS"][0]["FIELD"] = array();
@@ -871,7 +879,7 @@ class search {
 			    } else {
 			        $t["VISIBLE"]=true;
 			    }
-			    
+
 			    if (isset($uf["OPERATORS"][0]["OPERATOR"])) {
 			        for ($j=0; $j<count($uf["OPERATORS"][0]["OPERATOR"]); $j++) {
 			            $operator = $uf["OPERATORS"][0]["OPERATOR"][$j];
@@ -881,7 +889,7 @@ class search {
                         $t["QUERIES_INDEX"][$q["OPERATOR"]]=count($t["QUERIES"])-1;
 			        }
 			    }
-			    
+
 			    $t["SEGMENTS"] = [];
 			    if (isset($uf["SEGMENTS"][0]["SEGMENT"])) {
 			        for ($j=0; $j<count($uf["SEGMENTS"][0]["SEGMENT"]); $j++) {
@@ -905,18 +913,24 @@ class search {
 				$this->tableau_speciaux=_parser_text_no_function_($parametres, "SPECIALFIELDS");
 			}
 			$this->keyName = (isset($param["KEYNAME"][0]["value"]) ? $param["KEYNAME"][0]["value"] : '');
-			if(($this->fichier_xml == 'search_fields_authorities') || ($this->fichier_xml == 'search_fields_authorities_gestion')) {
+
+			if (!empty($param["TABLENAME"][0]["value"])) {
+			    $this->tableName = $param["TABLENAME"][0]["value"];
+			} elseif (
+			    ($this->fichier_xml == 'search_fields_authorities') ||
+			    ($this->fichier_xml == 'search_fields_authorities_gestion')
+			) {
 				if(!$this->keyName) {
 					$this->keyName="id_authority";
 				}
 				$this->tableName="authorities";
 			} else {
-				if(!$this->keyName) {
+				if (!$this->keyName) {
 					$this->keyName="notice_id";
 				}
 				$this->tableName="notices";
 			}
-	
+
 			$tmp_array_cache=array(
 					$this->groups_used,
 					$this->groups,
@@ -946,10 +960,10 @@ class search {
 			}
 		}
 	} // fin parse_search_file
-	
+
 	public function strip_slashes() {
 		global $search, $explicit_search;
-		
+
 		if(isset($search) && is_array($search)) {
 			for ($i=0; $i<count($search); $i++) {
 				$s=explode("_",$search[$i]);
@@ -1021,7 +1035,7 @@ class search {
 			}
 			return $value;
 		} else {
-			return stripslashes($value);
+			return stripslashes($value ?? "");
 		}
 	}
 
@@ -1032,7 +1046,7 @@ class search {
 		}
 		return '';
 	}
-	
+
 	protected function get_completion_selection_field($i,$n,$search, $v, $params=array()) {
 		global $charset;
 		global $msg;
@@ -1042,13 +1056,13 @@ class search {
 		$fname_id="field_".$n."_".$search."_id";
 		$fnamesanslib="field_".$n."_".$search."_lib";
 		$fnamelib="field_".$n."_".$search."_lib[]";
-		
+
 		$selector = $params['selector'];
 		$p1 = $params['p1'];
 		$p2 = $params['p2'];
-		
+
 		$op = $this->get_global_value("op_".$i."_".$search);
-		
+
 		$v=$this->clean_completion_empty_values($v);
 		$nb_values=count($v);
 		if(!$nb_values){
@@ -1063,6 +1077,7 @@ class search {
 		$r.= "</span>";
 		$r.= "<div id='el$fnamesans'>";
 		for($inc=0;$inc<$nb_values;$inc++){
+		    $r.= "<div class='search_group'>";
 			if(!isset($v[$inc])) $v[$inc] = '';
 			$r.="<input id='".$fnamesans."_".$inc."' name='$fname' value='".htmlentities($v[$inc],ENT_QUOTES,$charset)."' type='hidden' />";
 			switch ($op) {
@@ -1083,6 +1098,7 @@ class search {
 			$r.="<span class='search_dico'><img src='".get_url_icon("dictionnaire.png")."' alt='".$msg["10"]."' class='align_middle' onClick=\"document.getElementById('".$fnamesanslib."_".$inc."').focus();simulate_event('".$fnamesanslib."_".$inc."');\"></span>";
 			$r.= "<input class='bouton vider' type='button' onclick='this.form.".$fnamesanslib."_".$inc.".value=\"\";this.form.".$fname_id."_".$inc.".value=\"0\";this.form.".$fnamesans."_".$inc.".value=\"0\";' value='X'>";
 			$r.= "<input type='hidden' name='".$fname_id."_".$inc."' id='".$fname_id."_".$inc."' value='".htmlentities($v[$inc],ENT_QUOTES,$charset)."' /><br>";
+			$r.= "</div>";
 		}
 		$r.= "</div>";
 		if($nb_values>1){
@@ -1095,12 +1111,12 @@ class search {
 		}
 		return $r;
 	}
-	
+
 	protected function get_completion_authority_field($i,$n,$search, $v, $params=array()) {
 		global $charset;
 		global $opac_thesaurus;
 		global $msg;
-		
+
 		$fnamesans="field_".$n."_".$search;
 		$fname="field_".$n."_".$search."[]";
 		$fname_id="field_".$n."_".$search."_id";
@@ -1109,7 +1125,7 @@ class search {
 		$fname_name_aut_id="fieldvar_".$n."_".$search."[authority_id][]";
 		$fname_aut_id="fieldvar_".$n."_".$search."_authority_id";
 		$fnamevar_id = "";
-		
+
 		$authperso_id = 0;
 		if($params['selector'] == 'authperso') {
 			if($authperso_id_pos = strrpos($search,'_')) {
@@ -1121,8 +1137,8 @@ class search {
 		$selector = $params['selector'];
 		$p1 = $params['p1'];
 		$p2 = $params['p2'];
-		
-		if($params['ajax'] == "categories" and $opac_thesaurus == 1){
+
+		if( ($params['ajax'] == "categories" || $params['ajax'] == "categories_mul") && $opac_thesaurus == 1){
 			$fnamevar_id = "linkfield=\"fieldvar_".$n."_".$search."[id_thesaurus][]\"";
 			$fnamevar_id_js = "fieldvar_".$n."_".$search."[id_thesaurus][]";
 		}else if(($params['ajax'] == "onto") || ($params['ajax'] == "concepts")){
@@ -1154,7 +1170,7 @@ class search {
 		}
 		$op = $this->get_global_value("op_".$i."_".$search);
 		$fieldvar=$this->get_global_value("fieldvar_".$i."_".$search);
-		
+
 		$v=$this->clean_completion_empty_values($v);
 		$nb_values=count($v);
 		if(!$nb_values){
@@ -1169,11 +1185,11 @@ class search {
 			$r.= "<input class='bouton' type='button' value='+' onclick='add_line(\"$fnamesans\", \"AUTHORITY\")'>";
 		}
 		$r.= "</span>";
-		$r.= "<div id='el$fnamesans'>
-		          <div class='search_group'>";
+		$r.= "<div id='el$fnamesans'>";
 		for($inc=0;$inc<$nb_values;$inc++){
+			$r.= "<div class='search_group'>";
 			if(!isset($v[$inc])) $v[$inc] = '';
-		
+
 			switch ($op) {
 				case 'AUTHORITY':
 					if ($params['selector'] == 'ontology') {
@@ -1198,14 +1214,15 @@ class search {
 			}
 			$r.="<input id='".$fnamesans."_".$inc."' name='$fname' value='".htmlentities($v[$inc],ENT_QUOTES,$charset)."' type='hidden' />";
 			$r.="<span class='search_value'>
-					<input autfield='".$fname_id."_".$inc."' onkeyup='fieldChanged(\"".$fnamesans."\",".$inc.",this.value,event);' callback='authoritySelected' completion='".$params['ajax']."' $fnamevar_id id='".$fnamesanslib."_".$inc."' name='$fnamelib' value='".htmlentities($libelle,ENT_QUOTES,$charset)."' type='text' class='".($fieldvar['authority_id'][$inc] && ($op == "AUTHORITY") ? "authorities " : "")."ext_search_txt' param2='1' param1='".$params['param1']."' att_id_filter='".$params['att_id_filter']."'/>
+					<input autfield='".$fname_id."_".$inc."' onkeyup='fieldChanged(\"".$fnamesans."\",".$inc.",this.value,event);' callback='authoritySelected' completion='".$params['ajax']."' $fnamevar_id id='".$fnamesanslib."_".$inc."' name='$fnamelib' value='".htmlentities($libelle,ENT_QUOTES,$charset)."' type='text' class='".(!empty($fieldvar['authority_id'][$inc]) && ($op == "AUTHORITY") ? "authorities " : "")."ext_search_txt' param2='1' param1='".$params['param1']."' att_id_filter='".$params['att_id_filter']."'/>
 				</span>";
 			$r.="<span class='search_dico'><img src='".get_url_icon("dictionnaire.png")."' alt='".$msg["10"]."' class='align_middle' onClick=\"document.getElementById('".$fnamesanslib."_".$inc."').focus();simulate_event('".$fnamesanslib."_".$inc."');\"></span>";
 			$r.= "<input class='bouton vider' type='button' onclick='this.form.".$fnamesanslib."_".$inc.".value=\"\";this.form.".$fname_id."_".$inc.".value=\"0\";this.form.".$fname_aut_id."_".$inc.".value=\"0\";this.form.".$fnamesans."_".$inc.".value=\"0\"; enable_operator(\"".$fnamesans."\", \"".$i."\");' value='".$msg['raz']."'>";
 			$r.= "<input type='hidden' id='".$fname_aut_id."_".$inc."' name='$fname_name_aut_id' value='".htmlentities($v[$inc],ENT_QUOTES,$charset)."' />";
 			$r.= "<input type='hidden' name='".$fname_id."_".$inc."' id='".$fname_id."_".$inc."' value='".htmlentities($v[$inc],ENT_QUOTES,$charset)."' /><br>";
+			$r.= "</div>";
 		}
-		$r.= "</div></div>";
+		$r.= "</div>";
 		if($nb_values>1){
 			$r.="<script>
 					document.getElementById('op_".$n."_".$search."').disabled=true;
@@ -1216,7 +1233,7 @@ class search {
 		}
 		return $r;
 	}
-	
+
 	public function get_options_list_field($ff, $start='', $limit=0) {
 		$list = array();
 		switch ($ff["INPUT_TYPE"]) {
@@ -1248,7 +1265,8 @@ class search {
 				}
 				$resultat=pmb_mysql_query($requete);
 				while ($opt=pmb_mysql_fetch_row($resultat)) {
-					if (!$start || strtolower(substr($opt[1],0,strlen($start)))==strtolower($start)) {
+				    //ajout du "contient"
+				    if (!$start || strtolower(substr($opt[1],0,strlen($start)))==strtolower($start) || (strpos(strtolower($opt[1]), strtolower($start)) !== false)) {
 						if(!empty($ff["INPUT_OPTIONS"]["QUERY"][0]["GROUP_BY"])) {
 							if(empty($list[$opt[2]])) {
 								$list[$opt[2]] = array();
@@ -1274,7 +1292,7 @@ class search {
 				sort($options["OPTION"]);
 				for ($i=0; $i<count($options["OPTION"]); $i++) {
 					$label = get_msg_to_display($options["OPTION"][$i]["value"]);
-					if (!$start || strtolower(substr($label,0,strlen($start)))==strtolower($start)) {
+					if (!$start || strtolower(substr($label,0,strlen($start)))==strtolower($start) || (strpos(strtolower($label), strtolower($start)) !== false)) {
 						$list[$options["OPTION"][$i]["VALUE"]] = $label;
 					}
 				}
@@ -1300,12 +1318,12 @@ class search {
 				}
 				$options->table=$tmp;
 				reset($options->table);
-					
+
 				// gestion restriction par code utilise.
 				$existrestrict=false;
 				$restrictview=false;
 				$restrictqueryarray=array();
-				
+
 				if (!empty($_SESSION['opac_view'])) {
 				    $query = pmb_mysql_query('SELECT opac_view_query FROM opac_views WHERE opac_view_id = '.intval($_SESSION['opac_view']));
 				    $result = pmb_mysql_fetch_row($query);
@@ -1320,7 +1338,7 @@ class search {
 			            $restrictviewquery = str_replace('!!opac_view!!', intval($_SESSION['opac_view']), $ff["INPUT_OPTIONS"]["RESTRICTVIEW"][0]["value"]);
 				    }
 		            $query = str_replace('!!restrictview!!', $restrictviewquery, $query);
-					
+
 					$restrictquery=pmb_mysql_query($query);
 					if ($restrictqueryrow=pmb_mysql_fetch_row($restrictquery)) {
 						if ($restrictqueryrow[0]) {
@@ -1329,9 +1347,9 @@ class search {
 						}
 					}
 				}
-				
+
 				foreach ($options->table as $key => $val) {
-					if (!$start || strtolower(substr($val,0,strlen($start)))==strtolower($start)) {
+				    if (!$start || strtolower(substr($val,0,strlen($start)))==strtolower($start) || (strpos(strtolower($val), strtolower($start)) !== false)) {
 						if ((!$existrestrict) || (array_search($key,$restrictqueryarray)!==false)) {
 							$list[$key] = $val;
 						}
@@ -1344,14 +1362,14 @@ class search {
 		}
 		return $list;
 	}
-	
+
 	protected function get_variable_field($var_field,$n,$search,$var_table,$fieldvar) {
 		global $charset, $msg;
 		if (empty($fieldvar)) {
     		$fieldvar = array();
 		}
 		$variable_field = '';
-		
+
 		if ($var_field["TYPE"]=="input") {
 			$varname=$var_field["NAME"];
 			$visibility=1;
@@ -1370,7 +1388,7 @@ class search {
 					}
 				}
 			}
-			$vdefault=[];	
+			$vdefault=[];
 			//Recherche de la valeur par defaut
 			if(isset($var_field["OPTIONS"]["DEFAULT"][0])) {
 				$vdefault=$var_field["OPTIONS"]["DEFAULT"][0];
@@ -1385,7 +1403,7 @@ class search {
 						$default=$vdefault["value"];
 				}
 			} else $default="";
-	
+
 			if ($visibility) {
 				$variable_field.="<span class='ui-panel-display'>";
 				$variable_field.="&nbsp;";
@@ -1465,7 +1483,7 @@ class search {
 						break;
 					case "hidden":
 						if ((!isset($fieldvar[$varname]) || !$fieldvar[$varname])&&($default)) $fieldvar[$varname][0]=$default;
-						if(is_array($input["VALUE"][0])) $hidden_value=$input["VALUE"][0]["value"];
+						if(isset($input["VALUE"][0]) && is_array($input["VALUE"][0])) $hidden_value=$input["VALUE"][0]["value"];
 						else $hidden_value=$fieldvar[$varname][0];
 						$variable_field.="<input type='hidden' id=\"fieldvar_".$n."_".$search."[".$varname."][]\" name=\"fieldvar_".$n."_".$search."[".$varname."][]\" value=\"".htmlentities($hidden_value,ENT_QUOTES,$charset)."\"/>";
 						if (isset($var_field["OPTIONS"]["INPUT"][0]["CLASS"]) && $var_field["OPTIONS"]["INPUT"][0]["CLASS"]) {
@@ -1491,10 +1509,10 @@ class search {
 					$variable_field.="<input type='hidden' name=\"fieldvar_".$n."_".$search."[".$varname."][]\" value=\"".htmlentities($default,ENT_QUOTES,$charset)."\"/>";
 			}
 		}
-		
+
 		return $variable_field;
 	}
-	
+
 	public function get_field($i,$n,$search,$pp) {
 		global $charset;
 		global $aff_list_empr_search;
@@ -1504,20 +1522,20 @@ class search {
 		global $opac_map_base_layer_type;
 		global $opac_map_base_layer_params;
 		global $opac_map_size_search_edition, $opac_map_bounding_box;
-		
+
 		$r="";
 		$s=explode("_",$search);
-			
+
 		//Champ
 		$v=$this->get_global_value("field_".$i."_".$search);
 		if ($v=="") $v=array();
 
 		$v1=$this->get_global_value("field_".$i."_".$search.'_1');
 		if ($v1=="") $v1=array();
- 
+
 		//Variables
 		$fieldvar=$this->get_global_value("fieldvar_".$i."_".$search);
-		
+
 		if ($s[0]=="f" || $s[0]=="u") {
 			//Champs fixes
 			$ff=$this->fixedfields[$s[1]];
@@ -1526,6 +1544,8 @@ class search {
 			}
 
 			//Variables globales et input
+			$vvar=array();
+			$var_table=array();
 			if (!empty($ff["VAR"])) {
     			for ($j=0; $j<count($ff["VAR"]); $j++) {
     				switch ($ff["VAR"][$j]["TYPE"]) {
@@ -1558,10 +1578,10 @@ class search {
     				}
                 }
 			}
-			
+
 			//Affichage des variables ayant l'attribut place='top'
 			$r.=$r_top;
-			
+
 			switch ($ff["INPUT_TYPE"]) {
 				case "authoritie_external":
 					$op = "op_".$i."_".$search;
@@ -1634,7 +1654,7 @@ class search {
 									if (($as!==null)&&($as!==false)) $r.=" selected";
 									$r.=">".htmlentities($sub_value,ENT_QUOTES,$charset)."</option>";
 								}
-								$r.="</optgroup>"; 
+								$r.="</optgroup>";
 							} else {
 								$r.="<option value='".htmlentities($key,ENT_QUOTES,$charset)."' ";
 								$as=array_search($key,$v);
@@ -1677,6 +1697,7 @@ class search {
 				    $r.="</span>";
 				    break;
 				case "date":
+					$field = array();
 					$op = "op_".$i."_".$search;
 					global ${$op};
 					$field['OP'] = ${$op};
@@ -1687,9 +1708,9 @@ class search {
 					$r.="<span class='search_value'>".$aff_list_empr_search['date_box']($field, $check_scripts, "field_".$n."_".$search)."</span>";
 					break;
 				case "map" :
-				    $baselayer =  "baseLayerType: dojox.geo.openlayers.BaseLayerType.".$opac_map_base_layer_type;	
+				    $baselayer =  "baseLayerType: dojox.geo.openlayers.BaseLayerType.".$opac_map_base_layer_type;
 				    if ($opac_map_base_layer_params) {
-				        $layer_params = json_decode($opac_map_base_layer_params,true);	
+				        $layer_params = json_decode($opac_map_base_layer_params,true);
     					if (count($layer_params)) {
     						if($layer_params['name']) $baselayer.=",baseLayerName:\"".$layer_params['name']."\"";
     						if($layer_params['url']) $baselayer.=",baseLayerUrl:\"".$layer_params['url']."\"";
@@ -1780,11 +1801,12 @@ class search {
 		global $include_path;
 		global $class_path;
 		global $opac_stemming_active;
-        global $search_previous_table;
-        
+		global $tsearched_sources;
+		global $default_tmp_storage_engine;
+
         // Traitement pour les segments de recherche
         $first_time = true;
-        
+
 		$this->error_message="";
 		$main="";
 		$last_table="";
@@ -1795,24 +1817,24 @@ class search {
 			for ($i=0; $i<count($search); $i++) {
 				//construction de la requete
 				$s=explode("_",$search[$i]);
-	
+
 				//Recuperation de l'operateur
 				$op="op_".$i."_".$search[$i];
 				global ${$op};
-	
+
 				//Recuperation du contenu de la recherche
 				$field_="field_".$i."_".$search[$i];
 				global ${$field_};
 				$field=${$field_};
-				
+
 				$field1_="field_".$i."_".$search[$i].'_1';
 				global ${$field1_};
 				$field1=${$field1_};
-						
+
 				//Recuperation de l'operateur inter-champ
 				$inter="inter_".$i."_".$search[$i];
 				global ${$inter};
-	
+
 				//Recuperation des variables auxiliaires
 				$fieldvar_="fieldvar_".$i."_".$search[$i];
 				global ${$fieldvar_};
@@ -1824,16 +1846,18 @@ class search {
 					if ($this->memory_engine_allowed && !$ff['MEMORYENGINEFORBIDDEN'] ) {
 						$this->current_engine = 'MEMORY';
 					} else {
-						$this->current_engine = 'MyISAM';
+					    $this->current_engine = $default_tmp_storage_engine;
 					}
-	
+
 					//Calcul des variables
 					$var_table=array();
 					if(is_array($ff["VAR"]) && count($ff["VAR"])){
 						for ($j=0; $j<count($ff["VAR"]); $j++) {
 							switch ($ff["VAR"][$j]["TYPE"]) {
 								case "input":
-									$var_table[$ff["VAR"][$j]["NAME"]]=@implode(",",$fieldvar[$ff["VAR"][$j]["NAME"]]);
+								    if( !empty($fieldvar[$ff["VAR"][$j]["NAME"]]) && is_array($fieldvar[$ff["VAR"][$j]["NAME"]]) ) {
+									   $var_table[$ff["VAR"][$j]["NAME"]]=@implode(",",$fieldvar[$ff["VAR"][$j]["NAME"]]);
+								    }
 									break;
 								case "global":
 									$global_name=$ff["VAR"][$j]["NAME"];
@@ -1873,7 +1897,7 @@ class search {
 						$q_temp[0] = $q[$k];
 						$q= $q_temp;
 					}
-	
+
 					//Remplacement par les variables eventuelles pour chaque requete
 					if(is_array($q) && count($q)){
 						for ($k=0; $k<count($q)-1; $k++) {
@@ -1885,13 +1909,13 @@ class search {
 						}
 					}
 					$last_main_table="";
-					
+
 					// pour les listes, si un opérateur permet une valeur vide, il en faut une...
-					if($this->op_empty[${$op}] && !is_array($field) ){
+					if(isset($this->op_empty[${$op}]) && $this->op_empty[${$op}] && !is_array($field) ){
 						$field = array();
 						$field[0] = "";
 					}
-					if (!$this->op_empty[${$op}]) {
+					if (isset($this->op_empty[${$op}]) && !$this->op_empty[${$op}]) {
 						// nettoyage des valeurs
 						if (${$op}=='AUTHORITY') {
 							$field = $this->clean_completion_empty_values($field);
@@ -1993,20 +2017,20 @@ class search {
     								}else if ($q[$z]["WORD"]){
     									//Pour savoir si la recherche tous champs inclut les docnum
     									global $multi_crit_indexation_docnum_allfields;
-    									
+
     									$multi_crit_indexation_docnum_allfields = -1;
     									if (!empty($var_table["is_num"])) {
     									    $multi_crit_indexation_docnum_allfields = 1;
     									}
-    									
+
     									//Pour savoir si la recherche inclut les oeuvres
     		    						global $multi_crit_indexation_oeuvre_title;
-    		    						
+
 									    $multi_crit_indexation_oeuvre_title = -1;
     									if (!empty($var_table["oeuvre_query"])) {
     									    $multi_crit_indexation_oeuvre_title = 1;
     									}
-    		
+
     									if(isset($q[$z]['TYPE']) && $q[$z]['TYPE']){
     		    							$mode = '';
     		    							if(isset($q[$z]['MODE'])){
@@ -2017,7 +2041,7 @@ class search {
     		    							}else{
     		    								$searcher = searcher_factory::get_searcher($q[$z]['TYPE'], $mode, $field[$j]);
     		    							}
-    		    						}else{    						
+    		    						}else{
     										//recherche par terme...
     										if($q[$z]["FIELDS"]){
     											$searcher = new $q[$z]['CLASS']($field[$j],$q[$z]["FIELDS"]);
@@ -2033,7 +2057,7 @@ class search {
     									}
     									$main = $searcher->get_full_query();
     								}elseif ($q[$z]['CUSTOM_SEARCH']) {
-    								    if ($this->op_special[${$op}]) {
+    								    if (isset($this->op_special[${$op}]) && $this->op_special[${$op}]) {
     								        $table_tempo = $this->custom_search_op_special($ff, ${$op}, $i, $search[$i]);
     								    }
     								    if (!empty($table_tempo)) {
@@ -2062,7 +2086,7 @@ class search {
     								if ($z<(count($q)-2)) pmb_mysql_query($main);
     							}
 							}
-							
+
 							if(isset($fieldvar["operator_between_multiple_authorities"])){
 								$operator=$fieldvar["operator_between_multiple_authorities"][0];
 							} elseif(isset($q["DEFAULT_OPERATOR"])){
@@ -2079,7 +2103,7 @@ class search {
 									} else {
 										$this->gen_temporary_table("mf_".$suffixe, $main);
 									}
-		
+
 									if ($last_main_table) {
 										if ($prefixe) {
 											$requete="insert ignore into ".$prefixe."mf_".$suffixe." select ".$last_main_table.".* from ".$last_main_table;
@@ -2102,7 +2126,7 @@ class search {
 									} else {
 										$this->gen_temporary_table("mf_".$suffixe, $main);
 									}
-		
+
 									if ($last_main_table) {
 										if($j>1){
 											$search_table=$last_main_table;
@@ -2116,7 +2140,7 @@ class search {
 										}
 										pmb_mysql_query($requete);
 										pmb_mysql_query("drop table if exists ".$last_tables);
-		
+
 									}
 									if ($prefixe) {
 										$last_tables=$prefixe."mf_".$suffixe;
@@ -2134,22 +2158,20 @@ class search {
 					}
 					if ($last_main_table){
 						$main="select * from ".$last_main_table;
-						
 					}
-					
 				} elseif (array_key_exists($s[0],$this->pp)) {
 					$datatype=$this->pp[$s[0]]->t_fields[$s[1]]["DATATYPE"];
 					$df=$this->dynamicfields[$s[0]]["FIELD"][$this->get_id_from_datatype($datatype,$s[0])];
 					$q_index=$df["QUERIES_INDEX"];
 					$q=$df["QUERIES"][$q_index[${$op}]];
-					
+
 					//Choix du moteur
 					if ($this->memory_engine_allowed && !$df['MEMORYENGINEFORBIDDEN'] ) {
 						$this->current_engine = 'MEMORY';
 					} else {
-						$this->current_engine = 'MyISAM';
+					    $this->current_engine = $default_tmp_storage_engine;
 					}
-					
+
 					//Pour chaque valeur du champ
 					$last_main_table="";
 					if (count($field)==0) $field[0]="";
@@ -2203,10 +2225,10 @@ class search {
 							} else {
 								$field[$j]=str_replace('*', '%', $field[$j]);
 								$main=str_replace("!!p!!",addslashes($field[$j]),$main);
-								$main=str_replace("!!p1!!",(isset($field1[$j]) ? addslashes($field1[$j]) : ''),$main);								
+								$main=str_replace("!!p1!!",(isset($field1[$j]) ? addslashes($field1[$j]) : ''),$main);
 							}
 							$main=str_replace("!!field!!",$s[1],$main);
-	
+
 						}
 						//Choix de l'operateur dans la liste
 						if(isset($q["DEFAULT_OPERATOR"])){
@@ -2223,7 +2245,7 @@ class search {
 								} else {
 									$this->gen_temporary_table("mf_".$suffixe, $main);
 								}
-	
+
 								if ($last_main_table) {
 									if ($prefixe) {
 										$requete="insert ignore into ".$prefixe."mf_".$suffixe." select ".$last_main_table.".* from ".$last_main_table;
@@ -2246,7 +2268,7 @@ class search {
 								} else {
 									$this->gen_temporary_table("mf_".$suffixe, $main);
 								}
-	
+
 								if ($last_main_table) {
 									if($j>1){
 										$search_table=$last_main_table;
@@ -2260,7 +2282,7 @@ class search {
 									}
 									pmb_mysql_query($requete);
 									pmb_mysql_query("drop table if exists ".$last_tables);
-									
+
 								}
 								if ($prefixe) {
 									$last_tables=$prefixe."mf_".$suffixe;
@@ -2275,7 +2297,7 @@ class search {
 							}
 						} //else print $main;
 					}
-					
+
 					if ($last_main_table) {
 						$main="select * from ".$last_main_table;
 					}
@@ -2285,8 +2307,15 @@ class search {
                     if ($type=="facette") {
                     	//Traitement final
                         if (!empty($search_previous_table)) {
-                        	$requete="insert ignore into $last_table (notice_id,idiot,pert) select notice_id,1,pert from $search_previous_table";
-                            pmb_mysql_query($requete);
+                        	if(!empty($tsearched_sources)) {
+                        		for ($i=0; $i<count($tsearched_sources); $i++) {
+                        			$requete = "delete $last_table from $last_table join entrepot_source_".$tsearched_sources[$i]." on recid = notice_id where notice_id NOT IN (SELECT notice_id FROM $search_previous_table)";
+                        			pmb_mysql_query($requete);
+                        		}
+                        	} else {
+                        		$requete="insert ignore into $last_table (notice_id,pert) select notice_id,pert from $search_previous_table where notice_id NOT IN (SELECT notice_id FROM $last_table)";
+                        		pmb_mysql_query($requete);
+                        	}
                             $search_previous_table="";
                             //print pmb_mysql_error();
 						}
@@ -2307,6 +2336,10 @@ class search {
 					}
 					if (!empty($last_main_table)) {
 						$main="select * from ".$last_main_table;
+					} else {
+					    if (empty($main)) {
+					        continue;
+					    }
 					}
 				} elseif ($s[0]=="authperso") {
 					//on est sur le cas de la recherche "Tous les champs" de l'autorité perso
@@ -2314,14 +2347,14 @@ class search {
 	    			$df=$this->dynamicfields["a"]["FIELD"]["10"];
 	    			$q_index=$df["QUERIES_INDEX"];
 	    			$q=$df["QUERIES"][$q_index[${$op}]];
-					
+
 					//Choix du moteur
 					if ($this->memory_engine_allowed && !$df['MEMORYENGINEFORBIDDEN'] ) {
 						$this->current_engine = 'MEMORY';
 					} else {
-						$this->current_engine = 'MyISAM';
+					    $this->current_engine = $default_tmp_storage_engine;
 					}
-						
+
 					//Pour chaque valeur du champ
 					$last_main_table="";
 					if (count($field)==0) $field[0]="";
@@ -2375,7 +2408,7 @@ class search {
 								} else {
 									$this->gen_temporary_table("mf_".$suffixe, $main);
 								}
-	
+
 								if ($last_main_table) {
 									if ($prefixe) {
 										$requete="insert ignore into ".$prefixe."mf_".$suffixe." select ".$last_main_table.".* from ".$last_main_table;
@@ -2398,7 +2431,7 @@ class search {
 								} else {
 									$this->gen_temporary_table("mf_".$suffixe, $main);
 								}
-	
+
 								if ($last_main_table) {
 									if($j>1){
 										$search_table=$last_main_table;
@@ -2412,7 +2445,7 @@ class search {
 									}
 									pmb_mysql_query($requete);
 									pmb_mysql_query("drop table if exists ".$last_tables);
-										
+
 								}
 								if ($prefixe) {
 									$last_tables=$prefixe."mf_".$suffixe;
@@ -2443,20 +2476,20 @@ class search {
 				        $temp_field1 = ${$field1_};
 				        $temp_inter = ${$inter};
 				        $temp_fieldvar = ${$fieldvar_};
-				        
+
 				        if ($segment->get_type() == TYPE_EXTERNAL) {
 				            $search[$i] = $uf["SEGMENTS"][$segment->get_id()]["field"];
-				            
+
 				            $this->set_global_value("op_" . $i . "_".$search[$i], $temp_op);
 				            $this->set_global_value("field_" . $i . "_".$search[$i], $temp_field);
 				            $this->set_global_value("field_" . $i . "_".$search[$i]."_1", $temp_field1);
 				            $this->set_global_value("inter_" . $i . "_".$search[$i], $temp_inter);
 				            $this->set_global_value("fieldvar_" . $i . "_".$search[$i], $temp_fieldvar);
-				            
+
 				            $i--;
 				            continue;
 				        }
-				        
+
 				        $temp_user_rmc = search_universe::$start_search["query"];
 				        $this->push();
 				        search_universe::$start_search["query"] = "";
@@ -2480,7 +2513,7 @@ class search {
 				        $main="select * from ".$last_main_table;
 				    }
 				}
-				
+
 				if ($prefixe) {
 	    			$table = $prefixe."t_".$i."_".$search[$i];
 	    			$this->gen_temporary_table($table, $main, true);
@@ -2492,14 +2525,14 @@ class search {
 					$requete = "drop table if exists ".$last_main_table;
 					pmb_mysql_query($requete);
 				}
-	
+
 				//On supprime la table temporaire si elle existe (exemple : DSI multiples via le planificateur)
 				if ($prefixe) {
 					pmb_mysql_query("drop table if exists ".$prefixe."t".$i);
 				} else {
 					pmb_mysql_query("drop table if exists t".$i);
 				}
-				
+
 				if ($prefixe) {
 					$requete = "create temporary table ".$prefixe."t".$i." ENGINE=".$this->current_engine." ";
 				} else {
@@ -2512,7 +2545,7 @@ class search {
 				    $first_time = false;
 				    ${$inter} = "";
 				}
-				
+
 				$isfirst_criteria=false;
 				switch (${$inter}) {
 					case "and":
@@ -2539,19 +2572,9 @@ class search {
 							$requete.="select * from ".$table;
 		    				pmb_mysql_query($requete);
 							if ($prefixe) {
-								$requete="alter table ".$prefixe."t".$i." add idiot int(1)";
-								pmb_mysql_query($requete);
-								$requete="alter table ".$prefixe."t".$i." add unique($field_keyName)";
-								pmb_mysql_query($requete);
-		    					$requete="alter table ".$prefixe."t".$i." add pert decimal(16,1) default 1";
-		    					pmb_mysql_query($requete);
+								$this->upgrade_columns_temporary_table($prefixe."t".$i, $field_keyName, true);
 							} else {
-								$requete="alter table t".$i." add idiot int(1)";
-								pmb_mysql_query($requete);
-								$requete="alter table t".$i." add unique($field_keyName)";
-								pmb_mysql_query($requete);
-		    					$requete="alter table t".$i." add pert decimal(16,1) default 1";
-		    					pmb_mysql_query($requete);
+								$this->upgrade_columns_temporary_table("t".$i, $field_keyName, true);
 							}
 							if ($prefixe) {
 								$requete="insert into ".$prefixe."t".$i." ($field_keyName,idiot,pert) select distinct ".$last_table.".".$field_keyName.",".$last_table.".idiot, ".$last_table.".pert AS pert from ".$last_table." left join ".$table." on ".$last_table.".$field_keyName=".$table.".$field_keyName where ".$table.".$field_keyName is null";
@@ -2572,19 +2595,9 @@ class search {
 						//$requete="drop table if exists ".$table."_b";
 						//pmb_mysql_query($requete);
 						if ($prefixe) {
-							$requete="alter table ".$prefixe."t".$i." add idiot int(1)";
-							pmb_mysql_query($requete);
-							$requete="alter table ".$prefixe."t".$i." add unique(".$field_keyName.")";
-							pmb_mysql_query($requete);
-		    				$requete="alter table ".$prefixe."t".$i." add pert decimal(16,1) default 1";
-	    					pmb_mysql_query($requete);
+							$this->upgrade_columns_temporary_table($prefixe."t".$i, $field_keyName, true);
 						} else {
-							$requete="alter table t".$i." add idiot int(1)";
-							pmb_mysql_query($requete);
-							$requete="alter table t".$i." add unique(".$field_keyName.")";
-							pmb_mysql_query($requete);
-	    					$requete="alter table ".$prefixe."t".$i." add pert decimal(16,1) default 1";
-	    					pmb_mysql_query($requete);
+							$this->upgrade_columns_temporary_table("t".$i, $field_keyName, true);
 						}
 						break;
 					default:
@@ -2629,25 +2642,31 @@ class search {
 			}
 		}
         //Traitement final
-        if (!empty($search_previous_table)) {
-        	$requete="insert ignore into $last_table (notice_id,pert) select notice_id,pert from $search_previous_table";
-            pmb_mysql_query($requete);
+		if (!empty($search_previous_table)) {
+			if(!empty($tsearched_sources)) {
+				for ($i=0; $i<count($tsearched_sources); $i++) {
+					$requete = "delete $last_table from $last_table join entrepot_source_".$tsearched_sources[$i]." on recid = notice_id where notice_id NOT IN (SELECT notice_id FROM $search_previous_table)";
+					pmb_mysql_query($requete);
+				}
+			} else {
+				$requete="insert ignore into $last_table (notice_id,pert) select notice_id,pert from $search_previous_table where notice_id NOT IN (SELECT notice_id FROM $last_table)";
+				pmb_mysql_query($requete);
+			}
 		}
-		$requete_c="select count(*) from ".$last_table;
 		return $last_table;
 	}
 
 	public function make_hidden_search_form($url,$form_name="search_form",$target="",$close_form=true) {
-		
+
 		$r="<form name='$form_name' action='$url' style='display:none' method='post'";
 		if ($target) $r.=" target='$target'";
 		$r.=">\n";
-		 
+
 		$r.=$this->make_hidden_form_content();
 		if ($close_form) $r.="</form>";
 		return $r;
 	}
-	
+
 	public function make_hidden_search_segment_form($url, array $values=[], $form_name="search_form",$target="") {
 	    $r="<form name='$form_name' action='$url' style='display:none' method='post' ".(!empty($target) ? "target='$target'" : "").">";
 	    foreach ($values as $name => $value) {
@@ -2656,14 +2675,14 @@ class search {
         $r.="</form>";
 		return $r;
 	}
-	
+
 	public function make_hidden_form_content() {
 		global $search;
 		global $charset;
 		global $page;
 		global $count;
 		global $nb_per_page_custom;
-			
+
 		$r='';
 		if (!empty($search)) {
     		for ($i=0; $i<count($search); $i++) {
@@ -2671,37 +2690,37 @@ class search {
     			global ${$inter};
     			$op="op_".$i."_".$search[$i];
     			global ${$op};
-    			
+
     			$field_="field_".$i."_".$search[$i];
     			$field=$this->get_global_value($field_);
-    			
+
     			$field1_="field_".$i."_".$search[$i]."_1";
     			$field1=$this->get_global_value($field1_);
-    			
+
     			$s=explode("_",$search[$i]);
     			$type='';
     			if ($s[0]=="s") {
     				//instancier la classe de traitement du champ special
     				$type=$this->specialfields[$s[1]]["TYPE"];
     			}
-    
+
     			//Recuperation des variables auxiliaires
     			$fieldvar_="fieldvar_".$i."_".$search[$i];
     			$fieldvar=$this->get_global_value($fieldvar_);
-    
+
     			if (!is_array($fieldvar)) $fieldvar=array();
-    
+
     			// si sélection d'autorité et champ vide : on ne doit pas le prendre en compte
     			if(${$op}=='AUTHORITY'){
     				$field = $this->clean_completion_empty_values($field);
     			}elseif(${$op}=='EQ'){
     				$field = $this->clean_empty_values($field);
     			}
-    			
-    			$r.="<input type='hidden' name='search[]' value='".htmlentities($search[$i],ENT_QUOTES,$charset)."'/>";
-    			$r.="<input type='hidden' name='".$inter."' value='".htmlentities(${$inter},ENT_QUOTES,$charset)."'/>";
-    			$r.="<input type='hidden' name='".$op."' value='".htmlentities(${$op},ENT_QUOTES,$charset)."'/>";
-    
+
+    			$r.="<input type='hidden' name='search[]' value='".htmlentities($search[$i] ?? "",ENT_QUOTES,$charset)."'/>";
+    			$r.="<input type='hidden' name='".$inter."' value='".htmlentities(${$inter} ?? "",ENT_QUOTES,$charset)."'/>";
+    			$r.="<input type='hidden' name='".$op."' value='".htmlentities(${$op} ?? "",ENT_QUOTES,$charset)."'/>";
+
     			if ($type=='facette') {
     				$r.="<input type='hidden' name='".$field_."[]' value='".htmlentities(serialize($field),ENT_QUOTES,$charset)."'/>\n";
     			} elseif(is_array($field) && count($field)) {
@@ -2728,35 +2747,37 @@ class search {
     			}
     			reset($fieldvar);
     			foreach ($fieldvar as $var_name => $var_value) {
-    				for ($j=0; $j<count($var_value); $j++) {
-    					if(isset($var_value[$j]) && is_array($var_value[$j])) {
-        					foreach ($var_value[$j] as $key=>$value) {
-        						$r.="<input type='hidden' name='".$fieldvar_."[".$j."][".$key."]' value='".htmlentities($value,ENT_QUOTES,$charset)."'/>";
-        					}
-        				} else {
-        					$r.="<input type='hidden' name='".$fieldvar_."[".$var_name."][]' value='".(isset($var_value[$j]) ? htmlentities($var_value[$j],ENT_QUOTES,$charset) : '')."'/>";
-        				}
-        			}
+    			    if (is_countable($var_value)) {
+        				for ($j=0; $j<count($var_value); $j++) {
+        					if(isset($var_value[$j]) && is_array($var_value[$j])) {
+            					foreach ($var_value[$j] as $key=>$value) {
+            						$r.="<input type='hidden' name='".$fieldvar_."[".$j."][".$key."]' value='".htmlentities($value,ENT_QUOTES,$charset)."'/>";
+            					}
+            				} else {
+            					$r.="<input type='hidden' name='".$fieldvar_."[".$var_name."][]' value='".(isset($var_value[$j]) ? htmlentities($var_value[$j],ENT_QUOTES,$charset) : '')."'/>";
+            				}
+            			}
+    			    }
     			}
     		}
 		}
 		if($count){
 			$r.="<input type='hidden' name='count' value='".htmlentities($count, ENT_QUOTES, $charset)."'/>";
 		}
-		$r.="<input type='hidden' name='page' value='".htmlentities($page, ENT_QUOTES, $charset)."'/>
-			<input type=\"hidden\" name=\"nb_per_page_custom\" value=\"".htmlentities($nb_per_page_custom, ENT_QUOTES, $charset)."\">\n";
+		$r.="<input type='hidden' name='page' value='".htmlentities($page ?? "", ENT_QUOTES, $charset)."'/>
+			<input type=\"hidden\" name=\"nb_per_page_custom\" value=\"".htmlentities($nb_per_page_custom ?? "", ENT_QUOTES, $charset)."\">\n";
 		return $r;
 	}
 
 	public function make_hidden_opac_view_form_content() {
 	    global $charset;
 	    global $search;
-	    
+
 	    $r = '';
 	    if (isset($_SESSION['opac_view']) && $_SESSION['opac_view']) {
 	        $query = "select opac_view_query from opac_views where opac_view_id = ".$_SESSION['opac_view'];
 	        $result = pmb_mysql_query($query);
-	        
+
 	        if ($result && pmb_mysql_num_rows($result)) {
 	            $row = pmb_mysql_fetch_object($result);
 	            $serialized = $row->opac_view_query;
@@ -2775,21 +2796,20 @@ class search {
 	    }
 	    return $r;
 	}
-	
+
 	public function make_human_query() {
 		global $search;
 		global $msg;
 		global $charset;
 		global $include_path;
 		global $lang;
-		global $thesaurus_classement_mode_pmb;
-		
+
 		$r="";
 		if(is_array($search) && count($search)){
 			for ($i=0; $i<count($search); $i++) {
 				$s=explode("_",$search[$i]);
+				$title = '';
 				if ($s[0]=="f") {
-					$title = '';
 				    if (isset($this->fixedfields[$s[1]]["TITLE"])) {
 				        $title = $this->fixedfields[$s[1]]["TITLE"];
 				    }
@@ -2811,326 +2831,22 @@ class search {
 					$operator="";
 				}
 				$field=$this->get_global_value("field_".$i."_".$search[$i]);
-	
+
 				$field1=$this->get_global_value("field_".$i."_".$search[$i]."_1");
-				
+
 				//Recuperation des variables auxiliaires
 				$fieldvar_="fieldvar_".$i."_".$search[$i];
 				global ${$fieldvar_};
 				$fieldvar=${$fieldvar_};
 				if (!is_array($fieldvar)) $fieldvar=array();
-	
-				$field_aff=array();
-				$fieldvar_aff=array();
-				$operator_multi = ($this->get_multi_search_operator()?$this->get_multi_search_operator():"or");
-				if (array_key_exists($s[0],$this->pp)) {
-					$datatype=$this->pp[$s[0]]->t_fields[$s[1]]["DATATYPE"];
-					$df=$this->dynamicfields[$s[0]]["FIELD"][$this->get_id_from_datatype($datatype,$s[0])];
-					$q_index=$df["QUERIES_INDEX"];
-					if(${$op}) {
-						$q=$df["QUERIES"][$q_index[${$op}]];
-					} else {
-						$q=array();
-					}
-					if (isset($q["DEFAULT_OPERATOR"]))
-						$operator_multi=$q["DEFAULT_OPERATOR"];
-					for ($j=0; $j<count($field); $j++) {
-						//appel de la classe dynamique associée au type de champ s'il y en a une
-						if(file_exists($include_path."/search_queries/dynamics/dynamic_search_".$this->pp[$s[0]]->t_fields[$s[1]]['TYPE'].".class.php")) {
-							require_once($include_path."/search_queries/dynamics/dynamic_search_".$this->pp[$s[0]]->t_fields[$s[1]]['TYPE'].".class.php");
-							$dynamic_class_name = "dynamic_search_".$this->pp[$s[0]]->t_fields[$s[1]]['TYPE'];
-							$dynamic_class = new $dynamic_class_name($s[1],$s[0], $i,$df,$this);
-							$field_aff[$j] = $dynamic_class->make_human_query($field[$j], $field1[$j]);
-						} else {
-							$field_aff[$j]=$this->pp[$s[0]]->get_formatted_output(array(0=>$field[$j]),$s[1]);
-		    				if($q['OPERATOR'] == 'BETWEEN' && $field1[$j]) {
-		    					$field_aff[$j].= ' - '.$this->pp[$s[0]]->get_formatted_output(array(0=>$field1[$j]),$s[1]);
-		    				}
-						}
-					}
-				} elseif ($s[0]=="f" && !empty($this->fixedfields[$s[1]])) {
-					$ff=$this->fixedfields[$s[1]];
-					$q_index=$ff["QUERIES_INDEX"];
-					if(${$op}) {
-						$q=$ff["QUERIES"][$q_index[${$op}]];
-					} else {
-						$q=array();
-					}
-					if(isset($fieldvar["operator_between_multiple_authorities"])){
-		 				$operator_multi=$fieldvar["operator_between_multiple_authorities"][0];
-		 			} else {
-			 			if (isset($q["DEFAULT_OPERATOR"]))
-			    			$operator_multi=$q["DEFAULT_OPERATOR"];
-		 			}
-					switch ($this->fixedfields[$s[1]]["INPUT_TYPE"]) {
-						case "list":
-							if(${$op} == 'EQ') {
-								$field_aff = self::get_list_display($this->fixedfields[$s[1]], $field);
-							} else {
-								$field_aff = $this->clean_empty_values($field);
-							}
-							break;
-						case "checkbox_list":
-						    if(${$op} == 'EQ') {
-						        $field_aff = self::get_checkbox_list_display($this->fixedfields[$s[1]], $field);
-						    } else {
-						        $field_aff = $this->clean_empty_values($field);
-						    }
-						    break;
-						case "checkbox_query_list":
-						case "query_list":
-							if(${$op} == 'EQ') {
-								$field_aff = $this->get_query_list_display($this->fixedfields[$s[1]], $field);
-							} else {
-								$field_aff = $this->clean_empty_values($field);
-							}
-							break;
-						case "checkbox_marc_list":
-						case "marc_list":
-							if(${$op} == 'EQ') {
-								$field_aff = self::get_marc_list_display($this->fixedfields[$s[1]], $field);
-							} else {
-								$field_aff = $this->clean_empty_values($field);
-							}
-							break;
-						case "date":
-							switch ($q['OPERATOR']) {
-								case 'LESS_THAN_DAYS':
-								case 'MORE_THAN_DAYS':
-									$field_aff[0]=$field[0]." ".htmlentities($msg['days'], ENT_QUOTES, $charset);
-									break;
-								default:
-									$field_aff[0]=format_date($field[0]);
-									break;
-							}
-	    					if($q['OPERATOR'] == 'BETWEEN' && $field1[0]) {
-	    						$field_aff[0].= ' - '.format_date($field1[0]);
-	    					}
-							break;
-						case "authoritie":
-							if (is_array($field)) {
-								$tmp_size = sizeof($field);
-								for($j=0 ; $j<$tmp_size; $j++){
-									if((${$op} == "AUTHORITY") && (($field[$j] === "") || ($field[$j] === "0"))){
-										unset($field[$j]);
-							    	} else if ($ff['INPUT_OPTIONS']['SELECTOR'] == "instruments" && is_numeric($field[$j])) {
-							        	$field[$j] = nomenclature_instrument::get_instrument_name_from_id($field[$j]);
-									}elseif(is_numeric($field[$j]) && ((${$op} == "AUTHORITY") || (${$op} == "EQ"))){
-										$field[$j] = self::get_authoritie_display($field[$j], $ff['INPUT_OPTIONS']['SELECTOR']);
-										
-										if($ff['INPUT_OPTIONS']['SELECTOR'] == "categorie") {
-											if(isset($fieldvar["id_thesaurus"])){
-												unset($fieldvar["id_thesaurus"]);
-											}
-										} elseif($ff['INPUT_OPTIONS']['SELECTOR'] == "onto") {
-											if(isset($fieldvar["id_scheme"])){
-												unset($fieldvar["id_scheme"]);
-											}
-										} elseif($ff['INPUT_OPTIONS']['SELECTOR'] == "vedette") {
-											if(isset($fieldvar["grammars"])){
-												unset($fieldvar["grammars"]);
-											}
-										}
-									}
-								}
-							}
-							$field_aff = $this->clean_empty_values($field);
-							break;
-						default:
-							$field_aff = $this->clean_empty_values($field);
-							break;
-					}
-					
-					// Opérateur spécial on fait donc appel à la class
-					if ($this->op_special[${$op}]) {
-					    $field_aff[0] = $this->make_human_query_special_op($ff, ${$op}, $field);
-					}
-					
-					//Ajout des variables si necessaire
-					reset($fieldvar);
-					$fieldvar_aff=array();
-					foreach ($fieldvar as $var_name => $var_value) {
-						//Recherche de la variable par son nom
-						$vvar=$this->fixedfields[$s[1]]["VAR"];
-						for ($j=0; $j<count($vvar); $j++) {
-							if (($vvar[$j]["TYPE"]=="input")&&($vvar[$j]["NAME"]==$var_name)) {
-	
-								//Calcul de la visibilite
-								$varname=$vvar[$j]["NAME"];
-								$visibility=1;
-								if(isset($vvar[$j]["OPTIONS"]["VAR"][0])) {
-									$vis=$vvar[$j]["OPTIONS"]["VAR"][0];
-									if ($vis["NAME"]) {
-										$vis_name=$vis["NAME"];
-										global ${$vis_name};
-										if ($vis["VISIBILITY"]=="no") $visibility=0;
-										for ($k=0; $k<count($vis["VALUE"]); $k++) {
-											if ($vis["VALUE"][$k]["value"]==${$vis_name}) {
-												if ($vis["VALUE"][$k]["VISIBILITY"]=="no") $sub_vis=0; else $sub_vis=1;
-												if ($vis["VISIBILITY"]=="no") $visibility|=$sub_vis; else $visibility&=$sub_vis;
-												break;
-											}
-										}
-									}
-								}
-								
-								$var_list_aff=array();
-								$flag_aff = false;
-	
-								if ($visibility) {
-									switch ($vvar[$j]["OPTIONS"]["INPUT"][0]["TYPE"]) {
-										case "query_list":
-											$query_list=$vvar[$j]["OPTIONS"]["INPUT"][0]["QUERY"][0]["value"];
-											$r_list=pmb_mysql_query($query_list);
-											while ($line=pmb_mysql_fetch_array($r_list)) {
-												$as=array_search($line[0],$var_value);
-												if (($as!==false)&&($as!==NULL)) {
-													$var_list_aff[]=$line[1];
-												}
-											}
-											if($vvar[$j]["OPTIONS"]["INPUT"][0]["QUERY"][0]["ALLCHOICE"] == "yes" && count($var_list_aff) == 0){
-												$var_list_aff[]=$msg[substr($vvar[$j]["OPTIONS"]["INPUT"][0]["QUERY"][0]["TITLEALLCHOICE"],4,strlen($vvar[$j]["OPTIONS"]["INPUT"][0]["QUERY"][0]["TITLEALLCHOICE"])-4)];
-											}
-											$fieldvar_aff[]=implode(" ".$msg["search_or"]." ",$var_list_aff);
-											$flag_aff=true;
-											break;
-										case "checkbox":
-											$value = $var_value[1];
-											$label_list = $vvar[$j]["OPTIONS"]["INPUT"][0]["COMMENTS"][0]["LABEL"];
-											
-											$libelle = '';
-											$nb_label = count($label_list);
-											for ($indice = 0; $indice < $nb_label; $indice++) {
-												if ($value == $label_list[$indice]["VALUE"]) {
-													$libelle = $label_list[$indice]["value"];
-													if (substr($libelle, 0, 4) == "msg:") {
-														$libelle = $msg[substr($libelle, 4, strlen($libelle) - 4)];
-													}
-													break;
-												}
-											}
-	
-											if ($libelle) {
-												$fieldvar_aff[] = $libelle;
-												$flag_aff = true;
-											}
-											break;
-									}
-									if($flag_aff) $fieldvar_aff[count($fieldvar_aff)-1]=$vvar[$j]["COMMENT"]." : ".$fieldvar_aff[count($fieldvar_aff)-1];
-								}
-							}
-						}
-					}
-				} elseif ($s[0]=="s") {
-					//appel de la fonction make_human_query de la classe du champ special
-					//Recherche du type
-					$type=$this->specialfields[$s[1]]["TYPE"];
-					if(!empty($this->tableau_speciaux['TYPE'])) {
-    					for ($is=0; $is<count($this->tableau_speciaux["TYPE"]); $is++) {
-    						if ($this->tableau_speciaux["TYPE"][$is]["NAME"]==$type) {
-    							$sf=$this->specialfields[$s[1]];
-    							require_once($include_path."/search_queries/specials/".$this->tableau_speciaux["TYPE"][$is]["PATH"]."/search.class.php");
-    							$specialclass= new $this->tableau_speciaux["TYPE"][$is]["CLASS"]($s[1],$i,$sf,$this);
-    							$field_aff=$specialclass->make_human_query();
-    							$field_aff[0]=html_entity_decode(strip_tags($field_aff[0]),ENT_QUOTES,$charset);
-    							break;
-    						}
-    					}
-					}
-				}elseif ($s[0]=="authperso") {
-					if(isset($fieldvar["operator_between_multiple_authorities"])){
-						$operator_multi=$fieldvar["operator_between_multiple_authorities"][0];
-					} else {
-						if (isset($q["DEFAULT_OPERATOR"]))
-							$operator_multi=$q["DEFAULT_OPERATOR"];
-					}
-					if (is_array($field)) {
-						$tmpsize = sizeof($field);
-						for($j=0 ; $j<$tmpsize; $j++){
-							if((${$op} == "AUTHORITY") && (($field[$j] === "") || ($field[$j] === "0"))){
-								unset($field[$j]);
-							}elseif(is_numeric($field[$j]) && (${$op} == "AUTHORITY")){
-								$field[$j] = authperso::get_isbd($field[$j]);
-							}
-						}
-					}
-	    			$field_aff= $field;
-				} elseif ($s[0]=="u") {
-				    $search_universes_fields = static::get_instance("search_universes_fields");
-				    $uf= $search_universes_fields->universesfields[$s[1]];
-				    $q_index=$uf["QUERIES_INDEX"];
-				    if(${$op}) {
-				        $q=$uf["QUERIES"][$q_index[${$op}]];
-				    } else {
-				        $q=array();
-				    }
-				    if(isset($fieldvar["operator_between_multiple_authorities"])){
-				        $operator_multi=$fieldvar["operator_between_multiple_authorities"][0];
-				    } else {
-				        if (isset($q["DEFAULT_OPERATOR"]))
-				            $operator_multi=$q["DEFAULT_OPERATOR"];
-				    }
-				    //switch a completer avec les differents operateurs
-				    switch ($search_universes_fields->universesfields[$s[1]]["INPUT_TYPE"]) {
-				        case "list":
-				            if(${$op} == 'EQ') {
-				                $field_aff = self::get_list_display($search_universes_fields->universesfields[$s[1]], $field);
-				            } else {
-				                $field_aff = $this->clean_empty_values($field);
-				            }
-				            break;
-				        case "authoritie":
-				            if (is_array($field)) {
-				                $tmp_size = sizeof($field);
-				                for($j=0 ; $j<$tmp_size; $j++){
-				                    if((${$op} == "AUTHORITY") && (($field[$j] === "") || ($field[$j] === "0"))){
-				                        unset($field[$j]);
-				                    } else if ($uf['INPUT_OPTIONS']['SELECTOR'] == "instruments" && is_numeric($field[$j])) {
-				                        $field[$j] = nomenclature_instrument::get_instrument_name_from_id($field[$j]);
-				                    }elseif(is_numeric($field[$j]) && ((${$op} == "AUTHORITY") || (${$op} == "EQ"))){
-				                        $field[$j] = self::get_authoritie_display($field[$j], $uf['INPUT_OPTIONS']['SELECTOR']);
-				                        
-				                        if($uf['INPUT_OPTIONS']['SELECTOR'] == "categorie") {
-				                            if(isset($fieldvar["id_thesaurus"])){
-				                                unset($fieldvar["id_thesaurus"]);
-				                            }
-				                        } elseif($uf['INPUT_OPTIONS']['SELECTOR'] == "onto") {
-				                            if(isset($fieldvar["id_scheme"])){
-				                                unset($fieldvar["id_scheme"]);
-				                            }
-				                        } elseif($uf['INPUT_OPTIONS']['SELECTOR'] == "vedette") {
-				                            if(isset($fieldvar["grammars"])){
-				                                unset($fieldvar["grammars"]);
-				                            }
-				                        }
-				                    }
-				                }
-				            }
-				            $field_aff = $this->clean_empty_values($field);
-				            break;
-				        case "date":
-				            switch ($q['OPERATOR']) {
-				                case 'LESS_THAN_DAYS':
-				                case 'MORE_THAN_DAYS':
-				                    $field_aff[0] = $field[0]." ".htmlentities($msg['days'], ENT_QUOTES, $charset);
-				                    break;
-				                default:
-				                    $field_aff[0] = format_date($field[0]);
-				                    break;
-				            }
-				            
-				            if($q['OPERATOR'] == 'BETWEEN' && $field1[0]) {
-				                $field_aff[0] .= ' - '.format_date($field1[0]);
-				            }
-				            
-				            $field_aff = $this->clean_empty_values($field_aff);
-				            break;
-				        default:
-				            $field_aff = $this->clean_empty_values($field);
-				            break;
-				    }
-				}
-	
+
+				$result = $this->make_field_aff($s, $field, $field1, $fieldvar, $i);
+
+				$field_aff = $result[0] ?? "";
+				$fieldvar_aff = $result[1] ?? [];
+				$operator_multi = $result[2] ?? "";
+				$ff = $result[3] ?? "";
+
 				switch ($operator_multi) {
 					case "and":
 						$op_list=$msg["search_and"];
@@ -3165,7 +2881,7 @@ class search {
 						break;
 				}
 				if ($inter_op) $inter_op="<strong>".htmlentities($inter_op,ENT_QUOTES,$charset)."</strong>";
-				if ($this->op_special[${$op}]) {
+				if (!empty($this->op_special[${$op}]) && $this->op_special[${$op}]) {
 				    $r.= $inter_op." <i><strong>".htmlentities($title,ENT_QUOTES,$charset)."</strong> ".htmlentities($operator,ENT_QUOTES,$charset)." (".$texte.")</i> ";
 				} elseif ((isset($ff['INPUT_OPTIONS']['SELECTOR']) && $ff['INPUT_OPTIONS']['SELECTOR'] == 'instruments') && (!empty($fieldvar))) {
                     $r.= $inter_op." <i><strong>".htmlentities($title,ENT_QUOTES,$charset)."</strong> (".nomenclature_instrument::get_instrument_name_from_id($field[0]) . ' ' .$operator.' '.$fieldvar['number_instruments'][0] . ') ';
@@ -3180,6 +2896,339 @@ class search {
 			$r="<span class='search-human-query'>".$r."</span>";
 		}
 		return $r;
+	}
+
+	public function make_field_aff($s, $field, $field1, $fieldvar, $n) {
+	    global $search, $include_path, $charset, $msg;
+
+	    $op="op_".$n."_".$search[$n];
+	    global ${$op};
+
+	    $field_aff=array();
+	    $fieldvar_aff=array();
+	    $ff=array();
+	    $operator_multi = ($this->get_multi_search_operator()?$this->get_multi_search_operator():"or");
+	    if (array_key_exists($s[0],$this->pp)) {
+	        $datatype=$this->pp[$s[0]]->t_fields[$s[1]]["DATATYPE"];
+	        $df=$this->dynamicfields[$s[0]]["FIELD"][$this->get_id_from_datatype($datatype,$s[0])];
+	        $q_index=$df["QUERIES_INDEX"];
+	        if(${$op}) {
+	            $q=$df["QUERIES"][$q_index[${$op}]];
+	        } else {
+	            $q=array();
+	        }
+	        if (isset($q["DEFAULT_OPERATOR"]))
+	            $operator_multi=$q["DEFAULT_OPERATOR"];
+	            if (is_countable($field)) {
+    	            for ($j=0; $j<count($field); $j++) {
+    	                //appel de la classe dynamique associée au type de champ s'il y en a une
+    	                if(file_exists($include_path."/search_queries/dynamics/dynamic_search_".$this->pp[$s[0]]->t_fields[$s[1]]['TYPE'].".class.php")) {
+    	                    require_once($include_path."/search_queries/dynamics/dynamic_search_".$this->pp[$s[0]]->t_fields[$s[1]]['TYPE'].".class.php");
+    	                    $dynamic_class_name = "dynamic_search_".$this->pp[$s[0]]->t_fields[$s[1]]['TYPE'];
+    	                    $dynamic_class = new $dynamic_class_name($s[1],$s[0], $n,$df,$this);
+    	                    $field_aff[$j] = $dynamic_class->make_human_query($field[$j], $field1[$j]);
+    	                } else {
+    	                    $field_aff[$j]=$this->pp[$s[0]]->get_formatted_output(array(0=>$field[$j]),$s[1]);
+    	                    if($q['OPERATOR'] == 'BETWEEN' && $field1[$j]) {
+    	                        $field_aff[$j].= ' - '.$this->pp[$s[0]]->get_formatted_output(array(0=>$field1[$j]),$s[1]);
+    	                    }
+    	                }
+    	            }
+	            }
+	    } elseif ($s[0]=="f" && !empty($this->fixedfields[$s[1]])) {
+	        $ff=$this->fixedfields[$s[1]];
+	        $q_index=$ff["QUERIES_INDEX"];
+	        if(${$op}) {
+	            $q=$ff["QUERIES"][$q_index[${$op}]];
+	        } else {
+	            $q=array();
+	        }
+	        if(isset($fieldvar["operator_between_multiple_authorities"])){
+	            $operator_multi=$fieldvar["operator_between_multiple_authorities"][0];
+	        } else {
+	            if (isset($q["DEFAULT_OPERATOR"]))
+	                $operator_multi=$q["DEFAULT_OPERATOR"];
+	        }
+	        switch ($this->fixedfields[$s[1]]["INPUT_TYPE"]) {
+	            case "list":
+	                if(${$op} == 'EQ') {
+	                    $field_aff = self::get_list_display($this->fixedfields[$s[1]], $field);
+	                } else {
+	                    $field_aff = $this->clean_empty_values($field);
+	                }
+	                break;
+	            case "checkbox_list":
+	                if(${$op} == 'EQ') {
+	                    $field_aff = self::get_checkbox_list_display($this->fixedfields[$s[1]], $field);
+	                } else {
+	                    $field_aff = $this->clean_empty_values($field);
+	                }
+	                break;
+	            case "checkbox_query_list":
+	            case "query_list":
+	                if(${$op} == 'EQ') {
+	                    $field_aff = $this->get_query_list_display($this->fixedfields[$s[1]], $field);
+	                } else {
+	                    $field_aff = $this->clean_empty_values($field);
+	                }
+	                break;
+	            case "checkbox_marc_list":
+	            case "marc_list":
+	                if(${$op} == 'EQ') {
+	                    $field_aff = self::get_marc_list_display($this->fixedfields[$s[1]], $field);
+	                } else {
+	                    $field_aff = $this->clean_empty_values($field);
+	                }
+	                break;
+	            case "date":
+	                switch ($q['OPERATOR']) {
+	                    case 'LESS_THAN_DAYS':
+	                    case 'MORE_THAN_DAYS':
+	                        $field_aff[0]=$field[0]." ".htmlentities($msg['days'], ENT_QUOTES, $charset);
+	                        break;
+	                    default:
+	                        $field_aff[0]=format_date($field[0]);
+	                        break;
+	                }
+	                if($q['OPERATOR'] == 'BETWEEN' && $field1[0]) {
+	                    $field_aff[0].= ' - '.format_date($field1[0]);
+	                }
+	                break;
+	            case "authoritie":
+	                if (is_array($field)) {
+	                    $tmp_size = sizeof($field);
+	                    for($j=0 ; $j<$tmp_size; $j++){
+	                        if((${$op} == "AUTHORITY") && (($field[$j] === "") || ($field[$j] === "0"))){
+	                            unset($field[$j]);
+	                        } else if ($ff['INPUT_OPTIONS']['SELECTOR'] == "instruments" && is_numeric($field[$j])) {
+	                            $field[$j] = nomenclature_instrument::get_instrument_name_from_id($field[$j]);
+	                        }elseif(is_numeric($field[$j]) && ((${$op} == "AUTHORITY") || (${$op} == "EQ"))){
+	                            $field[$j] = self::get_authoritie_display($field[$j], $ff['INPUT_OPTIONS']['SELECTOR']);
+
+	                            if($ff['INPUT_OPTIONS']['SELECTOR'] == "categorie") {
+	                                if(isset($fieldvar["id_thesaurus"])){
+	                                    unset($fieldvar["id_thesaurus"]);
+	                                }
+	                            } elseif($ff['INPUT_OPTIONS']['SELECTOR'] == "onto") {
+	                                if(isset($fieldvar["id_scheme"])){
+	                                    unset($fieldvar["id_scheme"]);
+	                                }
+	                            } elseif($ff['INPUT_OPTIONS']['SELECTOR'] == "vedette") {
+	                                if(isset($fieldvar["grammars"])){
+	                                    unset($fieldvar["grammars"]);
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	                $field_aff = $this->clean_empty_values($field);
+	                break;
+	            default:
+	                $field_aff = $this->clean_empty_values($field);
+	                break;
+	        }
+
+	        // Opérateur spécial on fait donc appel à la class
+	        if ($this->op_special[${$op}]) {
+	            $field_aff[0] = $this->make_human_query_special_op($ff, ${$op}, $field);
+	        }
+
+	        //Ajout des variables si necessaire
+	        reset($fieldvar);
+	        $fieldvar_aff=array();
+	        foreach ($fieldvar as $var_name => $var_value) {
+	            //Recherche de la variable par son nom
+	            $vvar=$this->fixedfields[$s[1]]["VAR"];
+	            for ($j=0; $j<count($vvar); $j++) {
+	                if (($vvar[$j]["TYPE"]=="input")&&($vvar[$j]["NAME"]==$var_name)) {
+
+	                    //Calcul de la visibilite
+	                    $varname=$vvar[$j]["NAME"];
+	                    $visibility=1;
+	                    if(isset($vvar[$j]["OPTIONS"]["VAR"][0])) {
+	                        $vis=$vvar[$j]["OPTIONS"]["VAR"][0];
+	                        if ($vis["NAME"]) {
+	                            $vis_name=$vis["NAME"];
+	                            global ${$vis_name};
+	                            if ($vis["VISIBILITY"]=="no") $visibility=0;
+	                            for ($k=0; $k<count($vis["VALUE"]); $k++) {
+	                                if ($vis["VALUE"][$k]["value"]==${$vis_name}) {
+	                                    if ($vis["VALUE"][$k]["VISIBILITY"]=="no") $sub_vis=0; else $sub_vis=1;
+	                                    if ($vis["VISIBILITY"]=="no") $visibility|=$sub_vis; else $visibility&=$sub_vis;
+	                                    break;
+	                                }
+	                            }
+	                        }
+	                    }
+
+	                    $var_list_aff=array();
+	                    $flag_aff = false;
+
+	                    if ($visibility) {
+	                        switch ($vvar[$j]["OPTIONS"]["INPUT"][0]["TYPE"]) {
+	                            case "query_list":
+	                                $query_list=$vvar[$j]["OPTIONS"]["INPUT"][0]["QUERY"][0]["value"];
+	                                $r_list=pmb_mysql_query($query_list);
+	                                while ($line=pmb_mysql_fetch_array($r_list)) {
+	                                    $as=array_search($line[0],$var_value);
+	                                    if (($as!==false)&&($as!==NULL)) {
+	                                        $var_list_aff[]=$line[1];
+	                                    }
+	                                }
+	                                if($vvar[$j]["OPTIONS"]["INPUT"][0]["QUERY"][0]["ALLCHOICE"] == "yes" && count($var_list_aff) == 0){
+	                                    $var_list_aff[]=$msg[substr($vvar[$j]["OPTIONS"]["INPUT"][0]["QUERY"][0]["TITLEALLCHOICE"],4,strlen($vvar[$j]["OPTIONS"]["INPUT"][0]["QUERY"][0]["TITLEALLCHOICE"])-4)];
+	                                }
+	                                $fieldvar_aff[]=implode(" ".$msg["search_or"]." ",$var_list_aff);
+	                                $flag_aff=true;
+	                                break;
+	                            case "checkbox":
+	                                $value = $var_value[1] ?? "";
+	                                $label_list = $vvar[$j]["OPTIONS"]["INPUT"][0]["COMMENTS"][0]["LABEL"];
+
+	                                $libelle = '';
+	                                $nb_label = count($label_list);
+	                                for ($indice = 0; $indice < $nb_label; $indice++) {
+	                                    if ($value == $label_list[$indice]["VALUE"]) {
+	                                        $libelle = $label_list[$indice]["value"];
+	                                        if (substr($libelle, 0, 4) == "msg:") {
+	                                            $libelle = $msg[substr($libelle, 4, strlen($libelle) - 4)];
+	                                        }
+	                                        break;
+	                                    }
+	                                }
+
+	                                if ($libelle) {
+	                                    $fieldvar_aff[] = $libelle;
+	                                    $flag_aff = true;
+	                                }
+	                                break;
+	                        }
+	                        if($flag_aff) $fieldvar_aff[count($fieldvar_aff)-1]=$vvar[$j]["COMMENT"]." : ".$fieldvar_aff[count($fieldvar_aff)-1];
+	                    }
+	                }
+	            }
+	        }
+	    } elseif ($s[0]=="s") {
+	        //appel de la fonction make_human_query de la classe du champ special
+	        //Recherche du type
+	        $type=$this->specialfields[$s[1]]["TYPE"];
+	        if(!empty($this->tableau_speciaux['TYPE'])) {
+	            for ($is=0; $is<count($this->tableau_speciaux["TYPE"]); $is++) {
+	                if ($this->tableau_speciaux["TYPE"][$is]["NAME"]==$type) {
+	                    $sf=$this->specialfields[$s[1]];
+	                    require_once($include_path."/search_queries/specials/".$this->tableau_speciaux["TYPE"][$is]["PATH"]."/search.class.php");
+	                    $specialclass= new $this->tableau_speciaux["TYPE"][$is]["CLASS"]($s[1],$n,$sf,$this);
+	                    $field_aff=$specialclass->make_human_query();
+	                    $field_aff[0]=html_entity_decode(strip_tags($field_aff[0]),ENT_QUOTES,$charset);
+	                    break;
+	                }
+	            }
+	        }
+	    }elseif ($s[0]=="authperso") {
+	        if(isset($fieldvar["operator_between_multiple_authorities"])){
+	            $operator_multi=$fieldvar["operator_between_multiple_authorities"][0];
+	        } else {
+	            if (isset($q["DEFAULT_OPERATOR"]))
+	                $operator_multi=$q["DEFAULT_OPERATOR"];
+	        }
+	        if (is_array($field)) {
+	            $tmpsize = sizeof($field);
+	            for($j=0 ; $j<$tmpsize; $j++){
+	                if((${$op} == "AUTHORITY") && (($field[$j] === "") || ($field[$j] === "0"))){
+	                    unset($field[$j]);
+	                }elseif(is_numeric($field[$j]) && (${$op} == "AUTHORITY")){
+	                    $field[$j] = authperso::get_isbd($field[$j]);
+	                }
+	            }
+	        }
+	        $field_aff= $field;
+	    } elseif ($s[0]=="u") {
+	        $search_universes_fields = static::get_instance("search_universes_fields");
+	        $uf= $search_universes_fields->universesfields[$s[1]];
+	        $q_index=$uf["QUERIES_INDEX"];
+	        if(${$op}) {
+	            $q=$uf["QUERIES"][$q_index[${$op}]];
+	        } else {
+	            $q=array();
+	        }
+	        if(isset($fieldvar["operator_between_multiple_authorities"])){
+	            $operator_multi=$fieldvar["operator_between_multiple_authorities"][0];
+	        } else {
+	            if (isset($q["DEFAULT_OPERATOR"]))
+	                $operator_multi=$q["DEFAULT_OPERATOR"];
+	        }
+	        //switch a completer avec les differents operateurs
+	        switch ($search_universes_fields->universesfields[$s[1]]["INPUT_TYPE"]) {
+	            case "list":
+	                if(${$op} == 'EQ') {
+	                    $field_aff = self::get_list_display($search_universes_fields->universesfields[$s[1]], $field);
+	                } else {
+	                    $field_aff = $this->clean_empty_values($field);
+	                }
+	                break;
+	            case "authoritie":
+	                if (is_array($field)) {
+	                    $tmp_size = sizeof($field);
+	                    for($j=0 ; $j<$tmp_size; $j++){
+	                        if((${$op} == "AUTHORITY") && (($field[$j] === "") || ($field[$j] === "0"))){
+	                            unset($field[$j]);
+	                        } else if ($uf['INPUT_OPTIONS']['SELECTOR'] == "instruments" && is_numeric($field[$j])) {
+	                            $field[$j] = nomenclature_instrument::get_instrument_name_from_id($field[$j]);
+	                        }elseif(is_numeric($field[$j]) && ((${$op} == "AUTHORITY") || (${$op} == "EQ"))){
+	                            $field[$j] = self::get_authoritie_display($field[$j], $uf['INPUT_OPTIONS']['SELECTOR']);
+
+	                            if($uf['INPUT_OPTIONS']['SELECTOR'] == "categorie") {
+	                                if(isset($fieldvar["id_thesaurus"])){
+	                                    unset($fieldvar["id_thesaurus"]);
+	                                }
+	                            } elseif($uf['INPUT_OPTIONS']['SELECTOR'] == "onto") {
+	                                if(isset($fieldvar["id_scheme"])){
+	                                    unset($fieldvar["id_scheme"]);
+	                                }
+	                            } elseif($uf['INPUT_OPTIONS']['SELECTOR'] == "vedette") {
+	                                if(isset($fieldvar["grammars"])){
+	                                    unset($fieldvar["grammars"]);
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+	                $field_aff = $this->clean_empty_values($field);
+	                break;
+	            case "date":
+	                switch ($q['OPERATOR']) {
+	                    case 'LESS_THAN_DAYS':
+	                    case 'MORE_THAN_DAYS':
+	                        $field_aff[0] = $field[0]." ".htmlentities($msg['days'], ENT_QUOTES, $charset);
+	                        break;
+	                    default:
+	                        $field_aff[0] = format_date($field[0]);
+	                        break;
+	                }
+
+	                if($q['OPERATOR'] == 'BETWEEN' && $field1[0]) {
+	                    $field_aff[0] .= ' - '.format_date($field1[0]);
+	                }
+
+	                $field_aff = $this->clean_empty_values($field_aff);
+	                break;
+	                // Dans les univers de recherche, on peut avoir un champ texte contenant une date ou un intervalle de dates
+	            case "text":
+	                switch ($q['OPERATOR']) {
+	                    case 'BETWEEN':
+	                        $field_aff[0] = $field[0] . ' - ' . $field1[0];
+	                        break;
+	                    default:
+	                        $field_aff = $this->clean_empty_values($field);
+	                        break;
+	                }
+	                break;
+	            default:
+	                $field_aff = $this->clean_empty_values($field);
+	                break;
+	        }
+	    }
+	    return [$field_aff, $fieldvar_aff, $operator_multi, $ff];
 	}
 
 	public function make_serialized_human_query($serialized) {
@@ -3198,25 +3247,25 @@ class search {
 		    $op="op_".$i."_".$search[$i];
 		    global ${$op};
 			${$op}=$to_unserialize[$i]["OP"];
-			
+
 			$field_="field_".$i."_".$search[$i];
 			global ${$field_};
 			${$field_}=$to_unserialize[$i]["FIELD"];
-			
+
 			$field1_="field_".$i."_".$search[$i]."_1";
 			global ${$field1_};
 			${$field1_}=(isset($to_unserialize[$i]["FIELD1"]) ? $to_unserialize[$i]["FIELD1"] : '');
-			
+
 			$inter="inter_".$i."_".$search[$i];
 			global ${$inter};
 			${$inter}=$to_unserialize[$i]["INTER"];
-			
+
 			$fieldvar_="fieldvar_".$i."_".$search[$i];
 			global ${$fieldvar_};
 			${$fieldvar_}=$to_unserialize[$i]["FIELDVAR"];
-			
+
 		}
-        
+
 		$r="";
 		for ($i=0; $i<count($search); $i++) {
 			$s=explode("_",$search[$i]);
@@ -3232,15 +3281,15 @@ class search {
 			$op="op_".$i."_".$search[$i];
 			global ${$op};
 			if(${$op}) {
-				$operator=$this->operators[${$op}];
+				$operator=$this->operators[${$op}] ?? "";
 			} else {
 				$operator='';
 			}
-				
+
 			$field_="field_".$i."_".$search[$i];
 			global ${$field_};
 			$field=${$field_};
-	
+
 			$field1_="field_".$i."_".$search[$i]."_1";
 			global ${$field1_};
 			$field1=${$field1_};
@@ -3250,7 +3299,7 @@ class search {
 			global ${$fieldvar_};
 			$fieldvar=${$fieldvar_};
 			if (!is_array($fieldvar)) $fieldvar=array();
-	
+
 			$operator_multi = '';
 			$field_aff=array();
 			if (array_key_exists($s[0],$this->pp)) {
@@ -3340,12 +3389,12 @@ class search {
 						$field_aff = $this->clean_empty_values($field);
 						break;
 				}
-				
+
 				// Opérateur spécial on fait donc appel à la class
-				if ($this->op_special[${$op}]) {
+				if (isset($this->op_special[${$op}]) && $this->op_special[${$op}]) {
 				    $field_aff[0] = $this->make_human_query_special_op($ff, ${$op}, $field);
 				}
-				
+
 			} elseif ($s[0]=="s") {
 				//appel de la fonction make_human_query de la classe du champ special
 				//Recherche du type
@@ -3363,7 +3412,7 @@ class search {
 			} elseif ($s[0]=="authperso") {
 				$field_aff[0]=$field[0];
 			}
-	
+
 			//Ajout des variables si necessaire
 			reset($fieldvar);
 			$fieldvar_aff=array();
@@ -3430,7 +3479,7 @@ class search {
 					}
 				}
 			}
-	
+
 			switch ($operator_multi) {
 				case "and":
 					$op_list=$msg["search_and"];
@@ -3448,7 +3497,7 @@ class search {
 				$texte="";
 			}
 			if (count($fieldvar_aff)) $texte.=" [".implode(" ; ",$fieldvar_aff)."]";
-	
+
 			$inter="inter_".$i."_".$search[$i];
 			global ${$inter};
 			switch (${$inter}) {
@@ -3466,29 +3515,29 @@ class search {
 					break;
 			}
 			if ($inter_op) $inter_op="<strong>".htmlentities($inter_op,ENT_QUOTES,$charset)."</strong>";
-			
-			if ($this->op_special[${$op}]) {
+
+			if (isset($this->op_special[${$op}]) && $this->op_special[${$op}]) {
 			    $r.= $inter_op." <i><strong>".htmlentities($title,ENT_QUOTES,$charset)."</strong> ".htmlentities($operator,ENT_QUOTES,$charset)." (".$texte.")</i> ";
 			} else {
     			$r.=$inter_op." <i><strong>".htmlentities($title,ENT_QUOTES,$charset)."</strong> ".htmlentities($operator,ENT_QUOTES,$charset)." (".htmlentities($texte,ENT_QUOTES,$charset).")</i> ";
     		}
-			
+
 		}
 		return $r;
 	}
-	
+
 	public function make_unimarc_query() {
 		global $search;
 		global $msg;
 		global $charset;
 		global $include_path;
-			
+
 		$mt=array();
-			
+
 		//Récupération du type de recherche
 		$sc_type = $this->fichier_xml;
 		$sc_type = substr($sc_type,0,strlen($sc_type)-8);
-		
+
 		for ($i=0; $i<count($search); $i++) {
             $flag_insert=true;
 			$sub="";
@@ -3509,7 +3558,7 @@ class search {
 			$field=$this->get_global_value("field_".$i."_".$search[$i]);
 
 			$field1=$this->get_global_value("field_".$i."_".$search[$i]."_1");
-			
+
 			//Recuperation des variables auxiliaires
 			$fieldvar_="fieldvar_".$i."_".$search[$i];
 			global ${$fieldvar_};
@@ -3518,7 +3567,7 @@ class search {
 
 			$field_aff=array();
 			$fieldvar_aff=array();
-			
+
 			if(array_key_exists($s[0],$this->pp)){
 				for ($j=0; $j<count($field); $j++) {
 					$field_aff[$j]=$this->pp[$s[0]]->get_formatted_output(array(0=>$field[$j]),$s[1]);
@@ -3567,13 +3616,13 @@ class search {
 						}
     					if($q['OPERATOR'] == 'BETWEEN' && $field1[0]) {
     						$field_aff[0].= ' - '.format_date($field1[0]);
-    					}   	
+    					}
 						break;
 					default:
 						$field_aff=$this->clean_empty_values($field);
 						break;
 				}
-					
+
 				//Ajout des variables si necessaire
 				reset($fieldvar);
 				foreach ($fieldvar as $var_name => $var_value) {
@@ -3658,15 +3707,17 @@ class search {
 	// fonction de calcul de visibilite d'un champ de recherche selon les droits d'accès
 	public function access_rights() {
 		global $gestion_acces_active,$gestion_acces_empr_notice;
-			
+
 		if(!isset($this->tableau_access_rights)) {
 			//droits d'acces emprunteur/notice
+
+		    $dom_2 = null;
 			if ($gestion_acces_active==1 && $gestion_acces_empr_notice==1) {
 				$ac= new acces();
 				$dom_2= $ac->setDomain(2);
 				$rights= $dom_2->getRights($_SESSION['id_empr_session'], $id);
 			}
-			
+
 			if (is_null($dom_2)) {
 				$this->tableau_access_rights["acces_j"] = '';
 				$this->tableau_access_rights["statut_j"] = ',notice_statut';
@@ -3678,7 +3729,7 @@ class search {
 			}
 		}
 	}
-	
+
 	// fonction de calcul de la visibilite d'un champ de recherche
 	public function visibility($ff) {
 
@@ -3699,7 +3750,7 @@ class search {
 		// aucune condition verifiee : on retourne la valeur par defaut
 		return $ff["VISIBILITY"] ;
 	}
-	
+
 	protected function sort_list_criteria() {
 		$sort_list_criteria_by_groups = array();
 		foreach($this->groups as $group_id => $group){
@@ -3712,21 +3763,21 @@ class search {
 		}
 		$this->list_criteria = $sort_list_criteria_by_groups;
 	}
-	
+
 	protected function add_criteria($group_name, $id, $label) {
 		$this->list_criteria[$group_name][] = array('id' => $id, 'label' => $label);
 	}
-	
+
 	public function get_list_criteria() {
 		global $msg, $charset;
 		global $include_path;
-	
+
 		if(!empty($this->list_criteria)) {
 			return $this->list_criteria;
 		}
 		$this->list_criteria = array();
 		$group_name = '';
-		
+
 		/**
 		 * if else, si il n'y a pas de groupe défini, on conserve le traitement de base
 		 * Sinon, ordonnancement via les IDs de groupes
@@ -3743,11 +3794,13 @@ class search {
 				}
 			}
 			//Champs universes
-			reset($this->universesfields);
-			foreach ($this->universesfields as $id => $uf) {
-			    if (search_universe::is_segments_in_current_universe($uf["SEGMENTS"])) {
-			        $this->add_criteria($group_name, "u_".$id, $uf["TITLE"]);
-			    }
+			if (isset($this->universesfields)) {
+			    reset($this->universesfields);
+    			foreach ($this->universesfields as $id => $uf) {
+    			    if (search_universe::is_segments_in_current_universe($uf["SEGMENTS"])) {
+    			        $this->add_criteria($group_name, "u_".$id, $uf["TITLE"]);
+    			    }
+    			}
 			}
 			//Champs dynamiques
 			if(!$this->dynamics_not_visible){
@@ -3758,7 +3811,7 @@ class search {
 						$array_dyn_tmp=array();
 						//liste des champs persos à cacher par type
 						$hide_customfields_array = array();
-						if ($this->dynamicfields_hidebycustomname[$value["TYPE"]]) {
+						if (isset($this->dynamicfields_hidebycustomname[$value["TYPE"]])) {
 							$hide_customfields_array = explode(",",$this->dynamicfields_hidebycustomname[$value["TYPE"]]);
 						}
 						foreach ($this->pp[$key]->t_fields as $id => $df) {
@@ -3816,7 +3869,7 @@ class search {
     			reset($this->fixedfields);
     			foreach ($this->fixedfields as $id => $ff) {
     				if ($this->visibility($ff)) {
-    					if (isset($ff["GROUP"])) {
+    				    if (isset($ff["GROUP"]) && isset($this->groups[$ff["GROUP"]]['label'])) {
     						$this->add_criteria($this->groups[$ff["GROUP"]]['label'], "f_".$id, $ff["TITLE"]);
     					} else {
     						$this->add_criteria($msg["search_extended_lonely_fields"], "f_".$id, $ff["TITLE"]);
@@ -3900,7 +3953,7 @@ class search {
 			 * groupes ordonnés selon l'ordre défini dans le XML
 			 */
 			$this->sort_list_criteria();
-	
+
 			//Traitement des autorités persos (le champs doit être généré dynamiquement
 			$r_authperso="";
 			global $authperso_id;
@@ -3909,7 +3962,7 @@ class search {
 					if(!$authperso['opac_multi_search'])continue;
 					$this->add_criteria($msg["authperso_multi_search_by_field_title"]." : ".$authperso['name'], "authperso_".$authperso['id'], $msg["authperso_multi_search_tous_champs_title"]);
 					if ($authperso['responsability_authperso']) {
-					    $this->add_criteria($msg["authperso_multi_search_by_field_title"]." : ".$authperso['name'], "f_2000", $msg['aut_responsability_form_responsability_authperso'], $authperso['id']);
+					    $this->add_criteria($msg["authperso_multi_search_by_field_title"]." : ".$authperso['name'], "f_2000_".$authperso['id'], $msg['aut_responsability_form_responsability_authperso'], $authperso['id']);
 					}
 					foreach($authperso['fields'] as $field){
 						// On vérifie la visibilité en OPAC grâce à la propriété
@@ -3924,7 +3977,7 @@ class search {
 	}
 	protected function get_formated_criterias(){
 	    global $search, $include_path, $msg ;
-	    
+
 	    if(!$this->full_path) {
 	        $full_path = $include_path."/search_queries";
 	    } else {
@@ -3935,7 +3988,7 @@ class search {
 	    $result = [];
 	    $result['visible'] = [];
 	    $result['hidden'] = [];
-	    
+
 	    foreach($this->list_criteria as $typeName => $type){
 	        foreach ($type as $field){
 	            $field_id = explode("_", $field['id']);
@@ -3943,7 +3996,7 @@ class search {
 	            $field_id = $field_id[1];
 	            $input_options = [];
 	            $content = [];
-	            
+
 	            if(isset($this->pp[$field_type]->t_fields[$field_id]["TYPE"])) {
 	                $input_type = $this->pp[$field_type]->t_fields[$field_id]["TYPE"];
     	            switch($input_type){
@@ -3973,7 +4026,7 @@ class search {
     	                    break;
     	            }
 	            }
-	            
+
 	            switch($field_type){
 	                case "f":
 	                    $content = isset($this->fixedfields[$field_id]) ? $this->fixedfields[$field_id] : array();
@@ -3989,7 +4042,7 @@ class search {
                             if ($input_type == "date_box") {
                                 $input_type = "date";
                             }
-	                        
+
 	                        $queries = $this->dynamicfields[$field_type]["FIELD"][$this->get_id_from_datatype($datatype, $field_type)]["QUERIES"];
 	                        $queries_index = $this->dynamicfields[$field_type]["FIELD"][$this->get_id_from_datatype($datatype, $field_type)]["QUERIES_INDEX"];
 	                        if (isset($this->pp[$field_type]->t_fields[$field_id])) {
@@ -4042,7 +4095,7 @@ class search {
 	                            "P2"=> $p2,
 	                            "value"=>""
 	                        ];
-	                        
+
 	                        $content["INPUT_TYPE"] = "authoritie";
 	                        $content["QUERIES"] = $queries;
 	                        $content["QUERIES_INDEX"] = $queries_index;
@@ -4050,8 +4103,8 @@ class search {
 	                        $content["VAR"] = "";
 	                        $content["VARVIS"] = "";
 	                        $content["VISIBLE"] = $this->authpersos[$field_id]["opac_multi_search"] ?? 0;
-	                    
-	                    
+
+
 	                    break;
 	                default:
                         break;
@@ -4059,17 +4112,17 @@ class search {
 	            if (empty($content)) {
 	                continue;
 	            }
-	            
+
 	            if(!isset($result[$typeName])){
                     $result[$typeName] = [];
                 }
-                
+
                 if ($content['INPUT_TYPE'] == "map") {
                     $content["VISIBLE"] = false;
                 }
-                
+
                 $format_field = $this->format_field($content, $field['id']);
-                
+
                 if (isset($content["VISIBLE"]) && !$content["VISIBLE"]) {
                     $result['hidden']["fields"][] = $field['id'];
                     if(!isset($result['hidden'][$typeName])){
@@ -4080,15 +4133,15 @@ class search {
                     if(!isset($result['visible'][$typeName])){
                         $result['visible'][$typeName] = [];
                     }
-                    $result['visible'][$typeName][$field['id']] = $format_field;                    
+                    $result['visible'][$typeName][$field['id']] = $format_field;
                 }
             }
        }
 	    return $result;
 	}
-	
+
 	protected function get_custom_list_options($field) {
-	    $field_type = explode("_", $field)[0]; 
+	    $field_type = explode("_", $field)[0];
 	    $field_id = explode("_", $field)[1];
 	    $options_values = [];
 	    switch ($field_type) {
@@ -4107,18 +4160,24 @@ class search {
 	        default :
 	            return $options_values;
 	    }
-	    
-	    $requete = "select ".$prefix."_custom_list_value, ".$prefix."_custom_list_lib from ".$prefix."_custom_lists where ".$prefix."_custom_champ=".$field_id." order by ordre";
+
+	    $requete = "select ".$prefix."_custom_list_value, ".$prefix."_custom_list_lib, ordre from ".$prefix."_custom_lists where ".$prefix."_custom_champ=".$field_id." order by ordre";
 	    $resultat = pmb_mysql_query($requete);
 	    while ($r=pmb_mysql_fetch_array($resultat)) {
-	        $options_values[$r[$prefix."_custom_list_value"]] = $r[$prefix."_custom_list_lib"];
+	        $options_values[] = [
+	            "id" => $r[$prefix."_custom_list_value"],
+	            "order" => $r['ordre'],
+	            "value" => $r[$prefix."_custom_list_lib"]
+	        ];
 	    }
 	    return $options_values;
 	}
-	
+
 	protected function format_field($field, $field_id=""){
 	    global $search;
-	    $values = array(0 => "");
+	    global $opac_rmc_responsive;
+
+	    $values = array(0 => []);
 	    $operator = array();
 	    $operator[] = $field["QUERIES"][0]['OPERATOR'] ?? "";
 	    $index_in_search = 0;
@@ -4129,7 +4188,7 @@ class search {
 	            if ($search[$i] == $field_id) {
 	                $values[$i]["value"] = $this->get_global_value("field_".$i."_".$field_id);
 	                if ("authoritie" == $field["INPUT_TYPE"]) {
-	                    $label = self::get_authoritie_display($values[$i][0], $field["INPUT_OPTIONS"]["SELECTOR"]);
+	                    $label = self::get_authoritie_display(($values[$i][0] ?? ""), $field["INPUT_OPTIONS"]["SELECTOR"]);
 	                    $values[$i]["label"] = $label;
 	                }
 	                $operator[$i] = $this->get_global_value("op_".$i."_".$field_id);
@@ -4140,15 +4199,15 @@ class search {
 	            }
 	        }
 	    }
-	    
+
 	    $formated_field = [
 	        "ID" => $field["ID"] ?? $field_id,
 	        "GROUP" => $field["GROUP"],
-	        "INPUT_OPTIONS" => $field["INPUT_OPTIONS"],
+	        "INPUT_OPTIONS" => $field["INPUT_OPTIONS"] ?? [],
 	        "INPUT_TYPE" => $field["INPUT_TYPE"],
-	        "TYPE" => $field["TYPE"],
-	        "QUERIES" => $field["QUERIES"],
-	        "QUERIES_INDEX" => $field["QUERIES_INDEX"],
+	        "TYPE" => $field["TYPE"] ?? "",
+	        "QUERIES" => $field["QUERIES"] ?? [],
+	        "QUERIES_INDEX" => $field["QUERIES_INDEX"] ?? [],
 	        "TITLE" => $field["TITLE"],
 	        "VAR" => $this->format_fieldvar($field["VAR"] ?? [], $field_id, $index_in_search),
 	        "VARVIS" => $field["VARVIS"] ?? "",
@@ -4158,7 +4217,7 @@ class search {
 	        "RESPONSIVE" => isset($field["RESPONSIVE"]) ? $field["RESPONSIVE"] : true,
 	        "FIELD_ID" => $field_id ?? 0,
 	    ];
-	    
+
 	    switch($field['INPUT_TYPE']){
 	        case 'marc_list':
 	        case 'list':
@@ -4166,14 +4225,28 @@ class search {
 	        case 'checkbox_list':
 	        case 'checkbox_marc_list':
 	        case 'query_list':
-	            
+
 	        case 'checkbox_query_list':
 	            if (!isset($formated_field['INPUT_OPTIONS']['VALUES'])) {
-    	            $formated_field['INPUT_OPTIONS']['VALUES'] = $this->get_options_list_field($field);
+	                $options_list = $this->get_options_list_field($field);
+	                if ($opac_rmc_responsive) {
+	                    $new_tab = [];
+	                    $i = 0;
+	                    foreach ($options_list as $id => $value) {
+	                        $new_tab[$i] = [
+	                            "id" => $id,
+	                            "value" => $value,
+	                            "order" => $i,
+	                        ];
+	                        $i++;
+	                    }
+	                    $options_list = $new_tab;
+	                }
+	                $formated_field['INPUT_OPTIONS']['VALUES'] = $options_list;
 	            }
 	            break;
-	            
-	            
+
+
 	        case "authoritie_external":
 	        case "authoritie":
 	        case "text":
@@ -4187,19 +4260,19 @@ class search {
 	            $formated_field['QUERIES'][$i]['LABEL'] = $this->operators[$formated_field['QUERIES'][$i]['OPERATOR']];
 	        }
 	    }
-	    
+
 	    return $formated_field;
 	}
-	
+
 	protected function format_fieldvar($fieldsvar, $field_id = "", $index_in_search = 0) {
 	    global $msg;
-	    
+
 	    $fieldvar = array();
 	    if (!isset($fieldsvar)) {
 	        $fieldsvar = array();
 	    }
-	    
-	    $index = count($fieldsvar);
+
+	    $index = is_countable($fieldsvar) ? count($fieldsvar) : 0;
 	    $globl_fieldvar = $this->get_global_value("fieldvar".$index_in_search."".$field_id);
 	    if (empty($globl_fieldvar)) {
 	        $globl_fieldvar = array();
@@ -4216,37 +4289,41 @@ class search {
 	                break;
 	        }
 	    }
-	    
+
 	    for ($i = 0; $i < $index; $i++) {
 	        $var_field = $fieldsvar[$i];
 	        if ($var_field["TYPE"]=="input") {
 	            $visibility = 1;
-	            
+
 	            if(isset($var_field["OPTIONS"]["VAR"][0])) {
 	                $var = $var_field["OPTIONS"]["VAR"][0];
 	                if ($var["NAME"]) {
 	                    $varname = $var["NAME"];
 	                    global ${$varname};
-	                    
+
 	                    if (isset($var_field["VISIBILITY"]) && $var_field["VISIBILITY"] == "no") {
 	                        $visibility=0;
 	                    }
-	                    
+
 	                    $index_value = count($var["VALUE"]);
 	                    for ($j=0; $j < $index_value; $j++) {
 	                        if ($var["VALUE"][$j]["value"] == ${$varname}) {
-	                            
+
 	                            $sub_vis=1;
-	                            if ($var_field["VALUE"][$j]["VISIBILITY"]=="no") {
+	                            if (
+	                                !empty($var_field["VALUE"]) &&
+	                                !empty($var_field["VALUE"][$j]) &&
+	                                $var_field["VALUE"][$j]["VISIBILITY"] == "no"
+	                            ) {
 	                                $sub_vis=0;
 	                            }
-	                            
-	                            if ($var_field["VISIBILITY"]=="no") {
-	                                $visibility |= $sub_vis; 
+
+	                            if (!empty($var_field["VISIBILITY"]) && $var_field["VISIBILITY"] == "no") {
+	                                $visibility |= $sub_vis;
 	                            } else {
 	                                $visibility &= $sub_vis;
 	                            }
-	                            
+
 	                            break;
 	                        }
 	                    }
@@ -4259,7 +4336,7 @@ class search {
 	                if (!empty($default) && count($default)) {
 	                    switch ($default["TYPE"]) {
     	                    case "var":
-    	                        $default_value = $var_table[$default["value"]];
+    	                        $default_value = $var_table[$default["value"]] ?? "";
     	                        break;
     	                    case "value":
     	                    default:
@@ -4267,38 +4344,38 @@ class search {
     	                }
     	            };
 	            }
-	            
+
 	            if ($visibility) {
 	                $input = $var_field["OPTIONS"]["INPUT"][0];
 	                $key = count($fieldvar);
 	                $fieldvar[$key] = $fieldsvar[$i];
 	                $fieldvar[$key]["VALUE"] = "";
-	                
+
 	                $fieldvar[$key]["INPUT_TYPE"] = $input["TYPE"];
 	                switch ($input["TYPE"]) {
 	                    case "query_list":
-	                        
+
 	                        $fieldvar[$key]["VALUES"] = array();
-	                        
+
 	                        $result = pmb_mysql_query($input["QUERY"][0]["value"]);
 	                        if (pmb_mysql_num_rows($result)) {
 	                            if($input["QUERY"][0]["ALLCHOICE"] == "yes") {
 	                                $all_choice = true;
 	                                $all_value = "";
 	                            }
-	                            
+
 	                            while($row = pmb_mysql_fetch_assoc($result)) {
-	                                
+
 	                                if ($all_choice) {
 	                                    if (!empty($all_value)) {
 	                                        $all_value .= ",";
 	                                    }
-	                                    $all_value .= $row[0];
+	                                    $all_value .= $row[0] ?? "";
 	                                }
-	                                
+
 	                                $fieldvar[$key]["OPTIONS"][] = [
-	                                    "VALUE" => $row[0],
-	                                    "LABEL" => $row[1] // TODO utilisé translation::get_translated_text
+	                                    "VALUE" => $row[0] ?? "",
+	                                    "LABEL" => $row[1] ?? "" // TODO utilisé translation::get_translated_text
 	                                ];
 	                            }
 	                            if ($all_choice) {
@@ -4321,7 +4398,7 @@ class search {
 	                                "VALUE" => $radio_value["VALUE"],
 	                                "LABEL" => $msg[substr($radio_value["value"], 4, strlen($radio_value["value"])-4)]
 	                            ];
-	                            if($radio_value["VALUE"] == $fieldvar[$varname][0]) {
+	                            if ((isset($varname) && isset($fieldvar[$varname])) && $radio_value["VALUE"] == $fieldvar[$varname][0]) {
 	                                $fieldvar[$key]["VALUE"] = $radio_value["VALUE"];
 	                            }
 	                        }
@@ -4342,17 +4419,29 @@ class search {
 	            }
 	        }
 	    }
-	    
+
 	    return $fieldvar;
 	}
-	
+
 	public function get_responsive_form($form_url) {
-	    global $msg;
-	    
-	    
+	    global $msg, $search;
+
+	    /**
+	     * On nettoie la global search des champs speciaux
+	     * la rmc responsive ne les gere pas pour l'instant
+	     * TODO a faire
+	     */
+
+	    for ($i = 0; $i < count($search); $i++) {
+	        $s = explode("_", $search[$i]);
+	        if ($s[0] == "s") {
+	            $this->delete_search($i);
+	        }
+	    }
+
 	    // Ici on va recupere les infos de notre fichier xml et on construit les données pour les redonner a la vue
 	    $criterias = $this->get_formated_criterias();
-	    
+
 	    // TODO : penser a modifier le no_search pour le passer a 1 ou 0
 	    $searchView = new SearchformView("searchform/searchform", [
 	        "form_url" => $form_url,
@@ -4363,7 +4452,7 @@ class search {
 	            "and" => $msg['search_and'],
 	            "or" => $msg['search_or'],
 	            "ex" => $msg['search_exept'],
-	            
+
 	        ],
 	        "hidden" => [
 	            "explicit_search" => "1",
@@ -4378,7 +4467,7 @@ class search {
 	    ]);
 	    return $searchView->render();
 	}
-	
+
 	/**
 	 * Templates des listes d'operateurs
 	 * @param string $url
@@ -4401,7 +4490,7 @@ class search {
         global $module;
         global $no_search;
         global $opac_rmc_responsive;
-        
+
         //pour les segments de recherche
         global $lvl, $rmc_tab, $what;
 		if (($add_field)&&(($delete_field==="")&&(!$launch_search))) {
@@ -4410,17 +4499,17 @@ class search {
 			}
 			$search[]=$add_field;
 		}
-	
+
 		//On sécurise l'input PAGE
 		$page = intval($page);
 		if ($opac_rmc_responsive) {
 		    $search_form = "<script src=\"".$base_path."/includes/javascript/ajax.js\"></script>";
     		$search_form .= $this->get_responsive_form($url);
 		} else {
-    		$search_form .= search_view::get_display_extended_search_form();
+    		$search_form = search_view::get_display_extended_search_form();
 		}
 		$search_form=str_replace("!!url!!",$url,$search_form);
-		
+
 		//fonction de postage du form appelée dans le onchange du select plus bas
 		$r=" <script type='text/javascript'>
             function verify(){
@@ -4437,11 +4526,11 @@ class search {
                 }
             }
         </script>";
-		
+
 		if($opac_extended_search_dnd_interface){
     		$r .="<input type='text' id='input_filter'/>";
 		}
-		
+
 		if ($no_search) {
 		    global $class_name, $method, $entity_type, $entity_id, $id_champ;
 		    $r .="<input type='hidden' name='no_search' value='".intval($no_search)."'/>";
@@ -4450,9 +4539,9 @@ class search {
 		    $r .="<input type='hidden' name='entity_type' value='".htmlentities($entity_type,ENT_QUOTES,$charset)."'/>";
 		    $r .="<input type='hidden' name='entity_id' value='".htmlentities($entity_id,ENT_QUOTES,$charset)."'/>";
 		    $r .="<input type='hidden' name='id_champ' value='".htmlentities($id_champ,ENT_QUOTES,$charset)."'/>";
-		    
+
 		}
-		
+
 		//Generation de la liste des champs possibles
 // 		if ($opac_extended_search_auto) $r.="<select data-dojo-type='dijit/form/FilteringSelect' name='add_field' id='add_field' onChange=\"if (this.form.add_field.value!='') { enable_operators();this.form.action='$url'; this.form.target=''; if(this.form.launch_search)this.form.launch_search.value=0; this.form.submit();} else { alert('".htmlentities($msg["multi_select_champ"],ENT_QUOTES,$charset)."'); }\" >\n";
 // 		else $r.="<select name='add_field' id='add_field'>\n";
@@ -4479,12 +4568,12 @@ class search {
 	       	$r.=" <script type='text/javascript' src='".$include_path."/javascript/select_filter.js'></script>";
 		}
 		$search_form=str_replace("!!field_list!!",$r,$search_form);
-	
+
 		$search_form=str_replace("!!already_selected_fields!!", $this->get_already_selected_fields($url), $search_form);
-	
+
 		$search_form .= "\n\n
 		<script type=\"text/javascript\" >
-	
+
 			function valid_form_extented_search() {
 				document.search_form.launch_search.value=1;
 				document.search_form.action='!!result_url!!';
@@ -4494,7 +4583,7 @@ class search {
 				//active_autocomplete();
 				document.search_form.submit();
 			}
-	
+
 			function change_source_checkbox(changing_control, source_id) {
 				var i=0; var count=0;
 				onoff = changing_control.checked;
@@ -4505,7 +4594,7 @@ class search {
 					}
 				}
 			}
-		
+
 			function date_flottante_type_onchange(varname, operator) {
 				if(!document.getElementById(varname + '_date_begin_zone_label')) return;
 				switch(operator) {
@@ -4527,7 +4616,7 @@ class search {
 						break;
 				}
 			}
-				
+
 			function getFieldDate(field_name, field_value) {
 				var field = document.createElement('input');
 				field.setAttribute('type', 'text');
@@ -4540,7 +4629,7 @@ class search {
 				field.setAttribute('required','false');
 				return field;
 			}
-				
+
 			function getFieldDateNumber(field_name, field_value) {
 				var field = document.createElement('input');
 				field.setAttribute('type', 'text');
@@ -4550,7 +4639,7 @@ class search {
 				field.setAttribute('value',field_value);
 				return field;
 			}
-						
+
 			//callback du selecteur d'opérateur
 			function operatorChanged(field,operator,datatype) {
 				if(datatype == 'small_text') {
@@ -4571,7 +4660,7 @@ class search {
 							}
 							break;
 						case 'ISEMPTY':
-						case 'ISNOTEMPTY': 
+						case 'ISNOTEMPTY':
 						case 'THIS_WEEK':
 						case 'LAST_WEEK':
 						case 'THIS_MONTH':
@@ -4619,7 +4708,7 @@ class search {
 					}
 				}
 			}
-	
+
 			//callback du selecteur AJAX
 			function selectionSelected(infield) {
 				//on enlève le dernier _X
@@ -4630,7 +4719,7 @@ class search {
 				infield = tmp_infield.join('_');
 				//pour assurer la compatibilité avec le selecteur AJAX
 				infield=infield.replace('_lib','');
-				
+
 				var op_name =infield.replace('field','op');
 				var op_selector = document.forms['search_form'][op_name];
 				//on passe le champ en selecteur simple !
@@ -4643,7 +4732,7 @@ class search {
 					var searchField = document.getElementById(infield+'_'+i);
 					var f_lib = document.getElementById(infield+'_lib'+'_'+i);
 					var f_id = document.getElementById(infield+'_id'+'_'+i);
-			
+
 					if(f_lib) {
                         f_lib.setAttribute('class','ext_search_txt');
                     }
@@ -4661,7 +4750,7 @@ class search {
 					add_line(infield, 'EQ');
 				}
 			}
-										
+
 			//callback du selecteur AJAX pour les autorités
 			function authoritySelected(infield) {
 				//on enlève le dernier _X
@@ -4673,7 +4762,7 @@ class search {
 				//pour assurer la compatibilité avec le selecteur AJAX
 				infield=infield.replace('_lib','');
 				infield=infield.replace('_authority_label','');
-				
+
 				var op_name =infield.replace('field','op');
 				var op_selector = document.forms['search_form'][op_name];
 				//on passe le champ en selecteur d'autorité !
@@ -4691,7 +4780,7 @@ class search {
 						var f_lib = document.getElementById(infield+'_lib'+'_'+i);
 						var f_id = document.getElementById(infield+'_id'+'_'+i);
 						var authority_id = document.getElementById(infield.replace('field','fieldvar')+'_authority_id'+'_'+i);
-			
+
 						if(f_lib) {
                             f_lib.setAttribute('class','authorities ext_search_txt');
                         }
@@ -4711,7 +4800,7 @@ class search {
 					}
 				}
 			}
-	
+
 			//callback sur la saisie libre
 			function fieldChanged(id,inc,value,e) {
 				var ma_touche;
@@ -4746,8 +4835,25 @@ class search {
 				}
 			}
 
+			function raz_line(fnamesans, inc) {
+                var fname_id=fnamesans+'_id';
+				var fnamesanslib=fnamesans+'_lib';
+                if(document.getElementById(fnamesanslib+'_'+inc)) {
+                    document.getElementById(fnamesanslib+'_'+inc).value = '';
+                }
+                if(document.getElementById(fname_id+'_'+inc)) {
+                    document.getElementById(fname_id+'_'+inc).value = '0';
+                }
+                if(document.getElementById('fieldvar_'+fname_id+'_authority_id')) {
+                    document.getElementById('fieldvar_'+fname_id+'_authority_id').value = '0';
+                }
+                if(document.getElementById(fnamesans+'_'+inc)) {
+                    document.getElementById(fnamesans+'_'+inc).value = '0';
+                }
+            }
+
 			function add_line(fnamesans, type) {
-	
+
 				var fname=fnamesans+'[]';
 				var fname_id=fnamesans+'_id';
 				var fnamesanslib=fnamesans+'_lib';
@@ -4755,19 +4861,19 @@ class search {
 				var op=fnamesans.replace('field','op');
 				var tmp_fnamesans = fnamesans.split('_');
 				var search_field_id=tmp_fnamesans[2]+'_'+tmp_fnamesans[3];
-	
+
 				var template = document.getElementById('el'+fnamesans);
 				var inc=document.getElementById(fnamesans+'_max_aut').value;
 				inc++;
 		        var line=document.createElement('div');
 				line.setAttribute('class', 'search_group');
-	
+
 				var f_id = document.createElement('input');
 				f_id.setAttribute('id',fnamesans+'_'+inc);
 				f_id.setAttribute('name',fname);
 				f_id.setAttribute('value','');
 				f_id.setAttribute('type','hidden');
-	
+
 				var f_lib = document.createElement('input');
 				f_lib.setAttribute('autfield',fname_id+'_'+inc);
 				f_lib.setAttribute('onkeyup','fieldChanged(\''+fnamesans+'\',\''+inc+'\',this.value,event)');
@@ -4783,7 +4889,7 @@ class search {
 						var fname_name_aut_id=fnamesans+'[authority_id][]';
 						var fname_name_aut_id=fname_name_aut_id.replace('field','fieldvar');
 						var fname_aut_id=fnamesans+'_authority_id';
-						var fname_aut_id=fname_aut_id.replace('field','fieldvar');				
+						var fname_aut_id=fname_aut_id.replace('field','fieldvar');
 						var f_aut = document.createElement('input');
 						f_aut.setAttribute('type','hidden');
 						f_aut.setAttribute('value','');
@@ -4804,7 +4910,7 @@ class search {
 				if(document.getElementById(fnamesanslib+'_0').getAttribute('linkfield')){
 					f_lib.setAttribute('linkfield',document.getElementById(fnamesanslib+'_0').getAttribute('linkfield'));
 				}
-				var op_selected = document.getElementById(op).options[document.getElementById(op).selectedIndex].value; 
+				var op_selected = document.getElementById(op).options[document.getElementById(op).selectedIndex].value;
 				if (op_selected == 'AUTHORITY'){
 					f_lib.setAttribute('class','authorities ext_search_txt');
 				} else if(f_lib.getAttribute('completion') && (op_selected == 'EQ')) {
@@ -4814,7 +4920,7 @@ class search {
 			    var f_search_span = document.createElement('span');
 				f_search_span.setAttribute('class','search_value');
 			    f_search_span.appendChild(f_lib);
-	
+
 				f_dico_img = document.createElement('img');
 				f_dico_img.setAttribute('src','".get_url_icon("dictionnaire.png")."');
 				f_dico_img.setAttribute('align','middle');
@@ -4822,19 +4928,19 @@ class search {
 				f_dico_span = document.createElement('span');
 				f_dico_span.setAttribute('class','search_dico');
 				f_dico_span.appendChild(f_dico_img);
-										
+
 				var f_del = document.createElement('input');
 				f_del.setAttribute('class','bouton vider');
 				f_del.setAttribute('type','button');
-				f_del.setAttribute('onclick','document.getElementById(\''+fnamesanslib+'_'+inc+'\').value=\'\';document.getElementById(\''+fname_id+'_'+inc+'\').value=\'0\';');
-				f_del.setAttribute('value','X');
-	
+				f_del.setAttribute('onclick','raz_line(\''+fnamesans+'\', \''+inc+'\');');
+				f_del.setAttribute('value','".htmlentities($msg['raz'], ENT_QUOTES, $charset)."');
+
 				var f_id2 = document.createElement('input');
 				f_id2.setAttribute('type','hidden');
 				f_id2.setAttribute('value','');
 				f_id2.setAttribute('id',fname_id+'_'+inc);
 				f_id2.setAttribute('name',fname_id);
-		        
+
 		        line.appendChild(f_id);
 		        line.appendChild(f_search_span);
 		        line.appendChild(f_dico_span);
@@ -4843,14 +4949,14 @@ class search {
 					line.appendChild(f_aut);
 				}
 		        line.appendChild(f_id2);
-	
+
 		        template.appendChild(line);
-	
+
 				ajax_pack_element(f_lib);
 				f_lib.focus();
 
 		        document.getElementById(fnamesans+'_max_aut').value=inc;
-	
+
 				//Plus d'un champ : on bloque
 				var selector = document.getElementById(op);
 				selector.disabled=true;
@@ -4858,7 +4964,7 @@ class search {
 					operators_to_enable.push(op);
 				}
 			}
-	
+
 			function enable_operators() {
 				if(operators_to_enable.length>0){
 					for	(index = operators_to_enable.length; index >= 0; index--) {
@@ -4870,7 +4976,7 @@ class search {
 					}
 				}
 			}
-			
+
 			function enable_operator(fnamesans, index) {
 				var empty = true;
 				var max = document.getElementById(fnamesans+'_max_aut').value;
@@ -4886,13 +4992,13 @@ class search {
 			}
 			".$this->script_window_onload."
 		</script>";
-	
+
 		$search_form=str_replace("!!page!!",$page,$search_form);
 		$search_form=str_replace("!!result_url!!",$result_url,$search_form);
-	
+
 		if ($result_target) $r="document.search_form.target='$result_target';"; else $r="";
 		$search_form=str_replace("!!target_js!!",$r,$search_form);
-	
+
 		if (empty($opac_rmc_responsive)) {
     		if ($opac_extended_search_dnd_interface || $module == "selectors") {
     		    switch (true) {
@@ -4912,7 +5018,7 @@ class search {
 		}
 		return $search_form;
 	}
-	
+
 	public function get_already_selected_fields($url='') {
 		global $add_field;
 		global $delete_field;
@@ -4924,7 +5030,7 @@ class search {
 		global $search_type;
 		global $limitsearch;
 		global $no_search;
-		
+
 		//Affichage des champs deja saisis
 		$r="";
 		$n=0;
@@ -4989,7 +5095,7 @@ class search {
 						$r.="</select></span>";
 					} else $r.="&nbsp;";
 					$r.="</td>";
-	
+
 					$r.="<td ".(in_array("3",$notdisplaycol)?"style='display:none;'":"")."><span class='search_critere'>";//Colonne 3
 					if ($f[0]=="f") {
 						$r.=htmlentities($this->fixedfields[$f[1]]["TITLE"],ENT_QUOTES,$charset);
@@ -5018,10 +5124,10 @@ class search {
 						}
 						$onchange =" onchange='operatorChanged(\"".$n."_".$search[$i]."\",this.value, \"".$this->fixedfields[$f[1]]['INPUT_TYPE']."\");' ";
 						$r.="$onchange>\n";
-						
+
 						//Personnalisation des opérateurs par l'interface
 						$this->fixedfields[$f[1]]["QUERIES"] = $this->get_misc_search_fields()->apply_operators_substitution($search[$i], $this->fixedfields[$f[1]]["QUERIES"]);
-						
+
 						for ($j=0; $j<count($this->fixedfields[$f[1]]["QUERIES"]); $j++) {
 							$q=$this->fixedfields[$f[1]]["QUERIES"][$j];
 							$r.="<option value='".$q["OPERATOR"]."' ";
@@ -5029,18 +5135,18 @@ class search {
 							$r.=">".htmlentities($this->operators[$q["OPERATOR"]],ENT_QUOTES,$charset)."</option>\n";
 						}
 						$r.="</select></span>";
-						$this->script_window_onload.=" operatorChanged('".$n."_".$search[$i]."', document.getElementById('op_".$n."_".$search[$i]."').value,'".$this->fixedfields[$f[1]]['INPUT_TYPE']."'); ";
+						$this->script_window_onload.=" operatorChanged('".$n."_".$search[$i]."', document.getElementById('op_".$n."_".$search[$i]."') ? document.getElementById('op_".$n."_".$search[$i]."').value : null,'".$this->fixedfields[$f[1]]['INPUT_TYPE']."'); ";
 					} elseif (array_key_exists($f[0],$this->pp)) {
 						$datatype=$this->pp[$f[0]]->t_fields[$f[1]]["DATATYPE"];
 						$type=$this->pp[$f[0]]->t_fields[$f[1]]["TYPE"];
 						$df=$this->get_id_from_datatype($datatype, $f[0]);
 						$onchange =" onchange=\"operatorChanged('".$n."_".$search[$i]."', this.value,'".$datatype."');\" ";
-		
+
 						$r.="<span class='search_sous_critere'><select name='op_".$n."_".$search[$i]."'  id='op_".$n."_".$search[$i]."' ".$onchange.">\n";
-						
+
 						//Personnalisation des opérateurs par l'interface
 						$this->dynamicfields[$f[0]]["FIELD"][$df]["QUERIES"] = $this->get_misc_search_fields()->apply_operators_substitution($search[$i], $this->dynamicfields[$f[0]]["FIELD"][$df]["QUERIES"]);
-						
+
 						for ($j=0; $j<count($this->dynamicfields[$f[0]]["FIELD"][$df]["QUERIES"]); $j++) {
 							$q=$this->dynamicfields[$f[0]]["FIELD"][$df]["QUERIES"][$j];
 							$as=array_search($type,$q["NOT_ALLOWED_FOR"]);
@@ -5053,7 +5159,7 @@ class search {
 							}
 						}
 						$r.="</select></span>&nbsp;";
-						$this->script_window_onload.=" operatorChanged('".$n."_".$search[$i]."', document.getElementById('op_".$n."_".$search[$i]."').value,'".$datatype."'); ";
+						$this->script_window_onload.=" operatorChanged('".$n."_".$search[$i]."', document.getElementById('op_".$n."_".$search[$i]."') ? document.getElementById('op_".$n."_".$search[$i]."').value : null,'".$datatype."'); ";
 					} elseif ($f[0]=="s") {
 						//appel de la fonction get_input_box de la classe du champ special
 						$type=$this->specialfields[$f[1]]["TYPE"];
@@ -5089,10 +5195,10 @@ class search {
 							$onchange =" onchange='operatorChanged(\"".$n."_".$search[$i]."\",this.value);' ";
 						}
 						$r.="$onchange>\n";
-						
+
 						//Personnalisation des opérateurs par l'interface
 						$this->dynamicfields["a"]["FIELD"][$df]["QUERIES"] = $this->get_misc_search_fields()->apply_operators_substitution($search[$i], $this->dynamicfields["a"]["FIELD"][$df]["QUERIES"]);
-						
+
 						for ($j=0; $j<count($this->dynamicfields["a"]["FIELD"][$df]["QUERIES"]); $j++) {
 							$q=$this->dynamicfields["a"]["FIELD"][$df]["QUERIES"][$j];
 							$r.="<option value='".$q["OPERATOR"]."' ";
@@ -5111,10 +5217,10 @@ class search {
 					    }
 					    $onchange =" onchange='operatorChanged(\"".$n."_".$search[$i]."\",this.value, \"".$this->universesfields[$f[1]]['INPUT_TYPE']."\");' ";
 					    $r.="$onchange>\n";
-					    
+
 					    //Personnalisation des opérateurs par l'interface
 					    $this->universesfields[$f[1]]["QUERIES"] = $this->get_misc_search_fields()->apply_operators_substitution($search[$i], $this->universesfields[$f[1]]["QUERIES"]);
-					    
+
 					    for ($j=0; $j<count($this->universesfields[$f[1]]["QUERIES"]); $j++) {
 					        $q=$this->universesfields[$f[1]]["QUERIES"][$j];
 					        $r.="<option value='".$q["OPERATOR"]."' ";
@@ -5135,7 +5241,7 @@ class search {
 					} else {
 					   $r.=$this->get_field($i,$n,$search[$i],$this->pp);
 					}
-					
+
 					$r.="</td>";
 					$delnotallowed=false;
 					if ($f[0]=="f") {
@@ -5173,7 +5279,7 @@ class search {
 		$r.="<input type='hidden' name='search_xml_file' value='".$this->fichier_xml."'/>\n";
 		return $r;
 	}
-	
+
 	/**
 	 * Génération du formulaire en drag'n'drop
 	 */
@@ -5185,7 +5291,7 @@ class search {
 	    global $rmc_tab;
 	    $form = "";
 	    $tpl_name = "";
-	    
+
 	    if (isset($rmc_tab) && $rmc_tab == 'false') {
 	        $tpl_name = "extended_search_dnd_tpl";
 	    } else {
@@ -5197,10 +5303,10 @@ class search {
 	    $form = ${$tpl_name};
 	    return $form;
 	}
-	
+
 	public function make_encoding_array($value){
 		global $charset;
-	
+
 		//htmlentities récursif car les facette sont des tableaux de tableaux
 		if (is_array($value)) {
 			foreach ($value as $k=>$v) {
@@ -5208,15 +5314,15 @@ class search {
 			}
 			return $value;
 		} else {
-			return htmlentities($value,ENT_COMPAT,$charset);
+			return htmlentities($value ?? "", ENT_COMPAT, $charset);
 			//return htmlspecialchars($value, ENT_NOQUOTES, $charset);
 		}
 	}
-	
+
 	// pour la gestion avec la DSI, recopiee de la partie gestion
 	public function serialize_search($recurse_history=false, $need_htmlentities=false) {
 		global $search;
-		
+
 		$to_serialize=array();
 		$to_serialize["SEARCH"]= $search ?? [];
 		if(is_array($search) && count($search)){
@@ -5234,17 +5340,17 @@ class search {
 				}
 			}
 		}
-				
+
 		if($need_htmlentities){
 			$to_serialize = $this->make_encoding_array($to_serialize);
 		}
-		
+
 		return serialize($to_serialize);
 	}
-	
+
 	public function make_decode_array($value){
 		global $charset;
-	
+
 		//html_entity_decode récursif car les facette sont des tableaux de tableaux
 		if (is_array($value)) {
 			foreach ($value as $k=>$v) {
@@ -5259,22 +5365,22 @@ class search {
 			}
 		}
 	}
-	
+
 	public function unserialize_search($serialized, $concat_search = false) {
 		global $search;
-		
-		$to_unserialize=unserialize($serialized);
+
+		$to_unserialize = unserialize($serialized);
 		$to_unserialize = $this->make_decode_array($to_unserialize);
-		
+
 		// Si on veut combiner plusieurs recherches a plat (Utile pour les notices externe)
 		$start_index = 0;
 		if ($concat_search) {
 		    $start_index = count($search);
 		    $search = array_merge($search, $to_unserialize["SEARCH"]);
 		} else {
-    		$search=$to_unserialize["SEARCH"];
+    		$search=$to_unserialize["SEARCH"] ?? [];
 		}
-		
+
 		if(is_array($search) && count($search)){
 		    $j = 0;
 		    for ($i=$start_index; $i<count($search); $i++) {
@@ -5296,7 +5402,7 @@ class search {
 			}
 		}
 	}
-	
+
 	public function push() {
 		global $search;
 		global $pile_search;
@@ -5312,7 +5418,7 @@ class search {
 		}
 		$search=array();
 	}
-	
+
 	public function pull() {
 		global $pile_search;
 		$this->unserialize_search($pile_search[count($pile_search)-1]);
@@ -5322,29 +5428,32 @@ class search {
 		}
 		$pile_search=$t;
 	}
-	
+
 	public function destroy_global_env(){
 		global $search;
-		for ($i=0; $i<count($search); $i++) {
-			$op="op_".$i."_".$search[$i];
-			$field_="field_".$i."_".$search[$i];
-			$field1_="field_".$i."_".$search[$i]."_1";
-			$inter="inter_".$i."_".$search[$i];
-			$fieldvar="fieldvar_".$i."_".$search[$i];
-			global ${$op};
-			global ${$field_};
-			global ${$field1_};
-			global ${$inter};
-			global ${$fieldvar};
-			unset($GLOBALS[$op]);
-			unset($GLOBALS[$field_]);
-			unset($GLOBALS[$field1_]);
-			unset($GLOBALS[$inter]);
-			unset($GLOBALS[$fieldvar]);
+		if(is_countable($search)) {
+			for ($i=0; $i<count($search); $i++) {
+				$op="op_".$i."_".$search[$i];
+				$field_="field_".$i."_".$search[$i];
+				$field1_="field_".$i."_".$search[$i]."_1";
+				$inter="inter_".$i."_".$search[$i];
+				$fieldvar="fieldvar_".$i."_".$search[$i];
+				global ${$op};
+				global ${$field_};
+				global ${$field1_};
+				global ${$inter};
+				global ${$fieldvar};
+				unset($GLOBALS[$op]);
+				unset($GLOBALS[$field_]);
+				unset($GLOBALS[$field1_]);
+				unset($GLOBALS[$inter]);
+				unset($GLOBALS[$fieldvar]);
+			}
 		}
-		unset($search);
+
+		$search = [];
 	}
-	
+
 	public function reduct_search() {
 		global $search;
 
@@ -5356,11 +5465,11 @@ class search {
 			$field_="field_".$i."_".$search[$i];
 			global ${$field_};
 			$field=${$field_};
-			
+
 			$field1_="field_".$i."_".$search[$i]."_1";
 			global ${$field1_};
 			$field1=${$field1_};
-			
+
 			switch ($search[$i]) {
 			    case 's_1':
 			        if (((isset($field[0]) && (string)$field[0]!="" && (string)$field[0]!="-1") || (isset($field1[0]) && (string)$field1[0]!="" && (string)$field1[0]!="-1")) || ($this->op_empty[${$op}])) {
@@ -5376,7 +5485,7 @@ class search {
 			        break;
 			}
 		}
-	
+
 		//Décalage des critères
 		//1) copie des critères valides
 		for ($i=0; $i<count($tt); $i++) {
@@ -5390,6 +5499,7 @@ class search {
 		}
 		//On nettoie et on reconstruit
 		$this->destroy_global_env();
+		global $search;
 		$search=array();
 		for ($i=0; $i<count($tt); $i++) {
 			$search[$i]=$fieldt[$i]["search"];
@@ -5400,29 +5510,32 @@ class search {
 			$this->set_global_value("fieldvar_".$i."_".$search[$i], $fieldt[$i]["fieldvar"]);
 		}
 	}
-	
+
 	//suppression des champs de recherche marqués FORBIDDEN pour recherche externe
 	public function remove_forbidden_fields() {
 		global $search;
-		$old_search=array();
-		$old_search['search']=$search;
-		for ($i=0; $i<count($search); $i++) {
-	
-			$inter="inter_".$i."_".$search[$i];
-			$old_search[$inter]=$this->get_global_value($inter);
-	
-			$op="op_".$i."_".$search[$i];
-			$old_search[$op]=$this->get_global_value($op);
-	
-			$field="field_".$i."_".$search[$i];
-			$old_search[$field]=$this->get_global_value($field);
-	
-			$fieldvar="fieldvar_".$i."_".$search[$i];
-			$old_search[$fieldvar]=$this->get_global_value($fieldvar);
-	
+
+		if(is_countable($search)){
+			$old_search=array();
+			$old_search['search']=$search;
+			for ($i=0; $i<count($search); $i++) {
+
+				$inter="inter_".$i."_".$search[$i];
+				$old_search[$inter]=$this->get_global_value($inter);
+
+				$op="op_".$i."_".$search[$i];
+				$old_search[$op]=$this->get_global_value($op);
+
+				$field="field_".$i."_".$search[$i];
+				$old_search[$field]=$this->get_global_value($field);
+
+				$fieldvar="fieldvar_".$i."_".$search[$i];
+				$old_search[$fieldvar]=$this->get_global_value($fieldvar);
+
+			}
 		}
 		$saved_search=array();
-		if(count($search)){
+		if(is_countable($search) && count($search)){
 			foreach($search as $k=>$s) {
 				if ($s[0]=="f") {
 					if ($this->fixedfields[substr($s,2)] && ($this->fixedfields[substr($s,2)]['UNIMARCFIELD']!='FORBIDDEN')) {
@@ -5439,28 +5552,28 @@ class search {
 				}
 			}
 		}
-	
+
 		$new_search=array();
 		$i=0;
 		foreach($saved_search as $k=>$v) {
 			$new_search['search'][$i]=$v;
-	
+
 			$old_inter="inter_".$k."_".$v;
 			$new_inter="inter_".$i."_".$v;
 			$new_search[$new_inter]=$this->get_global_value($old_inter);
-	
+
 			$old_op="op_".$k."_".$v;
 			$new_op="op_".$i."_".$v;
 			$new_search[$new_op]=$this->get_global_value($old_op);
-	
+
 			$old_field="field_".$k."_".$v;
 			$new_field="field_".$i."_".$v;
 			$new_search[$new_field]=$this->get_global_value($old_field);
-	
+
 			$old_fieldvar="fieldvar_".$k."_".$v;
 			$new_fieldvar="fieldvar_".$i."_".$v;
 			$new_search[$new_fieldvar]=$this->get_global_value($old_fieldvar);
-	
+
 			$i++;
 		}
 		$this->destroy_global_env();
@@ -5469,16 +5582,16 @@ class search {
 			${$k}=$va;
 		}
 	}
-	
+
 	protected function get_global_value($name) {
 		global ${$name};
 		return ${$name};
 	}
-	
+
 	protected function set_global_value($name, $value='') {
 		global ${$name};
 		if (is_array($value) || is_object($value)) {
-	        $tmp = []; 
+	        $tmp = [];
 		    foreach ($value as $key => $val) {
 		        if (is_string($val) && strpos($val, "u0022") !== false) {
 		            $tmp[$key] = str_replace("u0022", '"', $val);
@@ -5487,12 +5600,12 @@ class search {
                 }
 		    }
 		    $value = $tmp;
-		} else if (strpos($value, "u0022") !== false) {
+		} else if (!empty($value) && strpos($value ?? "", "u0022") !== false) {
 		    $value = str_replace("u0022", '"', $value);
 		}
 		${$name} = $value;
 	}
-	
+
 	protected function clean_completion_empty_values($values) {
 		$suppr = false;
 		if(is_array($values)) {
@@ -5508,7 +5621,7 @@ class search {
 		}
 		return $values;
 	}
-	
+
 	protected function clean_empty_values($values) {
 		$suppr = false;
 		if(is_array($values)) {
@@ -5524,18 +5637,17 @@ class search {
 		}
 		return $values;
 	}
-	
+
 	protected function sort_groups($a, $b){
 		if($a['order'] == $b['order']){
 			return 0;
 		}
 		return ($a['order'] > $b['order'] ? 1 : -1);
 	}
-	
+
 	public static function get_authoritie_display($id, $type) {
-		global $thesaurus_classement_mode_pmb;
 		global $lang;
-	
+
 		$libelle = '';
 		switch ($type){
 			case "auteur":
@@ -5602,10 +5714,10 @@ class search {
 		}
 		return $libelle;
 	}
-	
+
 	public function get_selector_display($id, $type, $search) {
 		global $msg;
-		
+
 		$display = '';
 		$p = explode('_', $search);
 		switch ($type){
@@ -5654,12 +5766,12 @@ class search {
 		}
 		return $display;
 	}
-	
+
 	public static function get_list_display($fixedfield, $field) {
 		global $msg;
-	
+
 		$field_aff = array();
-	
+
 		$options=$fixedfield["INPUT_OPTIONS"]["OPTIONS"][0];
 		$opt=array();
 		for ($j=0; $j<count($options["OPTION"]); $j++) {
@@ -5676,14 +5788,14 @@ class search {
 		}
 		return $field_aff;
 	}
-	
+
 	public static function get_checkbox_list_display($fixedfield, $field) {
 	    return static::get_list_display($fixedfield, $field);
 	}
-	
+
 	public function get_query_list_display($fixedfield, $field) {
 		$field_aff = array();
-	
+
 		$requete=$fixedfield["INPUT_OPTIONS"]["QUERY"][0]["value"];
 		if(isset($fixedfield["INPUT_OPTIONS"]["FILTERING"])) {
 			if ($fixedfield["INPUT_OPTIONS"]["FILTERING"] == "yes") {
@@ -5724,18 +5836,20 @@ class search {
 		}
 		return $field_aff;
 	}
-	
+
 	public static function get_marc_list_display($fixedfield, $field) {
 		$field_aff = array();
-	
+
 		$opt = marc_list_collection::get_instance($fixedfield["INPUT_OPTIONS"]["NAME"][0]["value"]);
-		
+
 		$tmp = array();
 		if (count($opt->inverse_of)) {
 		    // sous tableau genre ascendant descendant...
 		    foreach ($opt->table as $table) {
-		        $tmp = array_merge($tmp, $table);
-		    }
+				foreach($table as $code => $label) {
+					$tmp[$code] = $label;
+				}
+			}
 		} else {
 		    $tmp = $opt->table;
 		}
@@ -5749,7 +5863,7 @@ class search {
 		}
 		return $field_aff;
 	}
-	
+
 	public function get_current_search_map($mode_search=0){
 		global $opac_map_activate;
 		global $opac_map_max_holds;
@@ -5760,13 +5874,13 @@ class search {
 		$map = "";
 		if($opac_map_activate==1 || $opac_map_activate==2){
 			$map_hold = null;
-	
+
 			$current_search=$_SESSION["nb_queries"];
-	
+
 			if($current_search<=0) $current_search = 0;
 			$map_search_controler = new map_search_controler($map_hold, $current_search, $opac_map_max_holds,true);
 			$map_search_controler->set_mode($current_search);
-	
+
 			$size=explode("*",$opac_map_size_search_result);
 			if(count($size)!=2) {
 				$map_size="width:800px; height:480px;";
@@ -5775,16 +5889,16 @@ class search {
 				if (is_numeric($size[1])) $size[1].= 'px';
 				$map_size= "width:".$size[0]."; height:".$size[1].";";
 			}
-	
+
 			$map_search_controler->ajax = true;
 			$map = "
 			<div id='map_search' data-dojo-type='apps/map/map_controler' style='$map_size' data-dojo-props='".$map_search_controler->get_json_informations()."'></div>
 					";
-	
+
 		}
 		return $map;
 	}
-	
+
 	public function get_unimarc_fields() {
 		$r=array();
 		foreach($this->fixedfields as $id=>$values) {
@@ -5797,16 +5911,16 @@ class search {
 		}
 		return $r;
 	}
-	
+
 	protected function gen_temporary_table($table_name, $main='', $with_pert=false) {
 		if(!$main) {
 			$this->is_created_temporary_table = false;
 			return;
 		}
-		$query = "create temporary table ".$table_name." ENGINE=".$this->current_engine." ".$main;
+		$query = "create temporary table if not exists ".$table_name." ENGINE=".$this->current_engine." ".$main;
 		$result = pmb_mysql_query($query);
-		if($result) {	
-			if (!pmb_mysql_num_rows(pmb_mysql_query("show columns from ".$table_name." like 'idiot'"))) {		
+		if($result) {
+			if (!pmb_mysql_num_rows(pmb_mysql_query("show columns from ".$table_name." like 'idiot'"))) {
 				$query = "alter table ".$table_name." add idiot int(1)";
 				pmb_mysql_query($query);
 			}
@@ -5821,12 +5935,30 @@ class search {
 			$this->is_created_temporary_table = true;
 		}
 	}
-	
+
 	public function is_created_temporary_table($table_name) {
 		return $this->is_created_temporary_table;
 	}
-	
+
+	protected function upgrade_columns_temporary_table($table_name, $field_keyName, $with_pert=false) {
+		if (!pmb_mysql_num_rows(pmb_mysql_query("show columns from ".$table_name." like 'idiot'"))) {
+			$query="alter table ".$table_name." add idiot int(1)";
+			pmb_mysql_query($query);
+		}
+		$query="alter table ".$table_name." add unique($field_keyName)";
+		pmb_mysql_query($query);
+		if($with_pert) {
+			if (!pmb_mysql_num_rows(pmb_mysql_query("show columns from ".$table_name." like 'pert'"))) {
+				$query="alter table ".$table_name." add pert decimal(16,1) default 1";
+				pmb_mysql_query($query);
+			}
+		}
+	}
+
 	protected function is_empty($field, $field_name) {
+		if (empty($field) && !is_countable($field)) {
+			return true;
+		}
 		if ((!count($field))||((count($field)==1)&&((string)$field[0]==""))) {
 			return true;
 		}
@@ -5845,7 +5977,7 @@ class search {
 		}
 		return false;
 	}
-	
+
 	public function show_results($url,$url_to_search_form,$hidden_form=true,$search_target="") {
 		global $begin_result_liste;
 		global $opac_search_results_per_page;
@@ -5857,17 +5989,17 @@ class search {
 		global $debug;
 
 		$start_page=$nb_per_page_search*$page;
-			
+
 		//Y-a-t-il des champs ?
 		if (count($search)==0) {
 			error_message_history($msg["search_empty_field"], $msg["search_no_fields"], 1);
 			exit();
 		}
-			
+
 		//Verification des champs vides
 		for ($i=0; $i<count($search); $i++) {
 			$op=$this->get_global_value("op_".$i."_".$search[$i]);
-			
+
 			$field=$this->get_global_value("field_".$i."_".$search[$i]);
 
 			$field1=$this->get_global_value("field_".$i."_".$search[$i]."_1");
@@ -5902,7 +6034,7 @@ class search {
 					}
 				}
 			}elseif (substr($s,0,9)=="authperso") {
-					
+
 			}
 			if (($bool)&&(!$this->op_empty[$op])) {
 				error_message_history($msg["search_empty_field"], sprintf($msg["search_empty_error_message"],$champ), 1);
@@ -5916,7 +6048,7 @@ class search {
 			error_message_history("", $this->error_message, 1);
 			exit();
 		}
-			
+
 		if ($hidden_form)
 			print $this->make_hidden_search_form($url);
 		$requete="select count(1) from $table";
@@ -5928,7 +6060,7 @@ class search {
 			if ($opac_notices_depliable) print $begin_result_liste;
 		} else print "<br />".$msg["no_result"]." ";
 		print "<input type='button' class='bouton' onClick=\"document.search_form.action='$url_to_search_form'; document.search_form.target='$search_target'; document.search_form.submit(); return false;\" value=\"".$msg["search_back"]."\"/>";
-		
+
 		//Gestion de la pagination
 		if ($nb_results) {
 
@@ -5954,7 +6086,7 @@ class search {
 			echo "</div>";
 		}
 	}
-	
+
 	public function show_results_unimarc($url,$url_to_search_form,$hidden_form=true,$search_target="") {
 		global $begin_result_liste;
 		global $opac_notices_depliable;
@@ -5968,21 +6100,21 @@ class search {
 		global $add_cart_link;
 		global $filtre_compare, $reinit_compare;
 		global $sort;
-		
+
 		$start_page=$nb_per_page_search*($page-1);
-			
+
 		//Y-a-t-il des champs ?
 		if (count($search)==0) {
 			return;
 		}
-        
+
 		$_SESSION['last_unimarc_search'] = $this->json_encode_search();
-		
+
 		$table=$this->make_search();
 		$requete="select count(1) from $table";
 		$nb_results=pmb_mysql_result(pmb_mysql_query($requete),0,0);
 		$count=$nb_results;
-			
+
 		$requete = "select * from $table";
 		$objects = "";
 		$resultat=pmb_mysql_query($requete);
@@ -5993,7 +6125,7 @@ class search {
 			$objects.= $row->notice_id;
 		}
 		$_SESSION['tab_result_external'] = $objects;
-        
+
 		//tri
 		if (!isset($_SESSION['last_sortexternal'])) {
 		    $_SESSION['last_sortexternal'] = "default";
@@ -6001,12 +6133,12 @@ class search {
 		if (isset($sort)) {
 		    $_SESSION['last_sortexternal'] = $sort;
 		}
-		
+
 		$sort_external = new sort_external("external","session");
 		$requete = $sort_external->appliquer_tri($_SESSION['last_sortexternal'],$requete,"notice_id");
-		
+
         $requete .= " limit ".$start_page.",".$nb_per_page_search;
-		
+
 		$resultat=pmb_mysql_query($requete);
 
 		print "	<div id=\"resultatrech\"><h3>$msg[resultat_recherche]</h3>\n
@@ -6035,7 +6167,7 @@ class search {
 		}
 
 		print $add_cart_link;
-		
+
 		print "<br/>".sort::show_tris_in_result_list($nb_results, "external");
 
 		print "	</div>\n
@@ -6073,7 +6205,7 @@ class search {
 	public function has_forbidden_fields() {
 		global $search;
 		$saved_search=array();
-		
+
 		foreach($search as $k=>$s) {
 			if ($s[0]=="f") {
 			    if (!empty($this->fixedfields[substr($s,2)]) && $this->fixedfields[substr($s,2)] && ($this->fixedfields[substr($s,2)]['UNIMARCFIELD']!='FORBIDDEN')) {
@@ -6089,17 +6221,17 @@ class search {
 				$saved_search[$k]=$s;
 			}
 		}
-			
+
 		if(count($search) != count($saved_search)){
 			return true;
 		}else{
 			return false;
 		}
 	}
-	
+
 	public function unhistorize_search(){
 		global $include_path,$search;
-		
+
 		$search_type = 'extended';
 		$es=new search();
 		$trouveHistoriqueDansCriteres=true;
@@ -6127,7 +6259,7 @@ class search {
 						$field="field_".$i."_s_4";
 						$op="op_".$i."_s_4";
 						$fieldvar="fieldvar_".$i."_s_4";
-						$inter="inter_".$i."_s_4";						
+						$inter="inter_".$i."_s_4";
 						global ${$field},${$op},${$fieldvar},${$inter};
 						${$field}=array(
 								serialize(
@@ -6190,7 +6322,7 @@ class search {
 		}
 		return $search_type;
 	}
-	
+
 	public static function get_join_and_clause_from_equation($type = 0, $equation='') {
 		$notice_clause = '';
 		$notice_ids = array();
@@ -6202,7 +6334,7 @@ class search {
 			$resultat=pmb_mysql_query($req);
 			while($r=pmb_mysql_fetch_object($resultat)) {
 				$notice_ids[]=$r->notice_id;
-			}			
+			}
 			if (count($notice_ids)) {
 				$notice_clause = ' and notices.notice_id IN ('.implode(',',$notice_ids).') ';
 			}else {
@@ -6217,22 +6349,22 @@ class search {
 	public function get_script_window_onload() {
 		return $this->script_window_onload;
 	}
-	
+
 	public function get_multi_search_operator() {
 		global $opac_multi_search_operator;
 		return $opac_multi_search_operator;
 	}
-	
+
 	public function set_filtered_objects_types($filtered_objects_types=array()) {
 		$this->filtered_objects_types = $filtered_objects_types;
 	}
-	
+
 	public function json_encode_search() {
 	    global $search;
-	    
+
 	    $to_json=array();
 	    $to_json["SEARCH"]=$search;
-	    
+
 	    for ($i=0; $i<count($search); $i++) {
 	        $to_json[$i]["SEARCH"]=$search[$i];
 	        $to_json[$i]["OP"]=$this->get_global_value("op_".$i."_".$search[$i]);
@@ -6245,7 +6377,7 @@ class search {
 	    }
 	    return encoding_normalize::json_encode($to_json);
 	}
-	
+
 	private function addslashes_field($field) {
 	    for ($j = 0; $j < count($field); $j++) {
 	        if (is_string($field[$j])){
@@ -6259,7 +6391,7 @@ class search {
 	    }
 	    return $field;
 	}
-	
+
 	private function stripslashes_field($field) {
 	    for ($j = 0; $j < count($field); $j++) {
 	        if (is_string($field[$j])){
@@ -6271,40 +6403,48 @@ class search {
 	    }
 	    return $field;
 	}
-	
-	public function json_decode_search($json_encoded) {
+
+	public function json_decode_search($json_encoded, $concat_search = false) {
 	    global $search;
 	    $from_json = encoding_normalize::json_decode($json_encoded, true);
 	    if (!is_array($from_json)){
 	        $from_json = encoding_normalize::json_decode(stripslashes($json_encoded), true);
 	    }
 	    if (is_array($from_json)) {
-    	    $search = $from_json["SEARCH"];
-    	    for ($i=0; $i<count($search); $i++) {
-    	        $this->set_global_value("op_".$i."_".$search[$i], $from_json[$i]["OP"]);
-    	        $this->set_global_value("field_".$i."_".$search[$i], $this->stripslashes_field($from_json[$i]["FIELD"]));
-    	        if(isset($from_json[$i]["FIELD1"])) {
-    	            $this->set_global_value("field_".$i."_".$search[$i]."_1", $from_json[$i]["FIELD1"]);
+	        $start_index = 0;
+	        if ($concat_search) {
+	            $start_index = count($search);
+	            $search = array_merge($search, $from_json["SEARCH"]);
+	        } else {
+	            $search=$from_json["SEARCH"];
+	        }
+	        $k = 0;
+	        for ($i=$start_index; $i<count($search); $i++) {
+	            $this->set_global_value("op_".$i."_".$search[$i], $from_json[$k]["OP"]);
+	            $this->set_global_value("field_".$i."_".$search[$i], $this->stripslashes_field($from_json[$k]["FIELD"]));
+	            if(isset($from_json[$k]["FIELD1"])) {
+	                $this->set_global_value("field_".$i."_".$search[$i]."_1", $from_json[$k]["FIELD1"]);
     	        } else {
     	            $this->set_global_value("field_".$i."_".$search[$i]."_1");
     	        }
-    	        $this->set_global_value("inter_".$i."_".$search[$i], $from_json[$i]["INTER"]);
-    	        $this->set_global_value("fieldvar_".$i."_".$search[$i], $from_json[$i]["FIELDVAR"]);
+    	        $this->set_global_value("inter_".$i."_".$search[$i], $from_json[$k]["INTER"]);
+    	        $this->set_global_value("fieldvar_".$i."_".$search[$i], $from_json[$k]["FIELDVAR"]);
+    	        $k++;
     	    }
 	    }
 	}
-	
+
 	public function make_segment_search_form($url,$form_name="search_form",$target="",$close_form=true, $undisplayed_index = []) {
-	
+
 	    $r="<form name='$form_name' action='$url' method='post'";
 	    if ($target) $r.=" target='$target'";
 	    $r.=">\n";
-	    	
+
 	    $r.=$this->make_segment_form_content($undisplayed_index);
 	    if ($close_form) $r.="</form>";
 	    return $r;
 	}
-	
+
 	public function make_segment_form_content($undisplayed_index = []) {
 	    global $search;
 	    global $charset;
@@ -6312,9 +6452,9 @@ class search {
 	    global $nb_per_page_custom;
 	    global $msg;
 	    global $search_index;
-	    	
+
 	    $r = "<h3>".htmlentities($msg['facette_active'],ENT_QUOTES,$charset)."</h3>";
-	    
+
 	    $r.= "<div id='segment_searches'>";
 	    $is_first = true;
 	    for ($i=0; $i<count($search); $i++) {
@@ -6322,43 +6462,43 @@ class search {
 	        global ${$inter};
 	        $op="op_".$i."_".$search[$i];
 	        global ${$op};
-	        	
+
 	        $field_="field_".$i."_".$search[$i];
 	        $field = $this->get_global_value($field_);
-	        	
+
 	        $field1_="field_".$i."_".$search[$i]."_1";
 	        $field1=$this->get_global_value($field1_);
-	        	
+
 	        $s=explode("_",$search[$i]);
 	        $type='';
 	        if ($s[0]=="s") {
 	            //instancier la classe de traitement du champ special
 	            $type=$this->specialfields[$s[1]]["TYPE"];
 	        }
-	
+
 	        //Recuperation des variables auxiliaires
 	        $fieldvar_="fieldvar_".$i."_".$search[$i];
 	        $fieldvar=$this->get_global_value($fieldvar_);
-	
+
 	        if (!is_array($fieldvar)) $fieldvar=array();
-	
+
 	        // si sélection d'autorité et champ vide : on ne doit pas le prendre en compte
 	        if(${$op}=='AUTHORITY'){
 	            $field = $this->clean_completion_empty_values($field);
 	        }elseif(${$op}=='EQ'){
 	            $field = $this->clean_empty_values($field);
 	        }
-	        
-	        
+
+
 	        if ($is_first && (!empty(search_universe::$start_search["human_query"])) && (!empty(search_universe::$start_search["external"]))) {
 	            $r.="<div id='segment_search_".$i."'>";
-	            $r.= "  <input type='hidden' name='search_nb' value='".$i."'/>"; 
+	            $r.= "  <input type='hidden' name='search_nb' value='".$i."'/>";
 	            $r.= "  <span>" . search_universe::$start_search["human_query"] . "</span>";
 	            $r.= "</div>";
                 $is_first = false;
                 continue;
 	        }
-	        
+
 	        //on stocke l'indice de la recherche
 	        if ($search[$i] != 's_2' && $search[$i] != 's_10' && !in_array($i, $undisplayed_index)) {
     	        $r.="<div id='segment_search_".$i."'>";
@@ -6379,22 +6519,22 @@ class search {
 	    $r.= " <input type='hidden' name='search_index' id='search_index' value='".$search_index."'/>";
 	    $r.= " <input type='hidden' name='serialized_search' id='serialized_search' value='".$this->serialize_search()."'/>";
 	    $r.= "</div>";
-	    
+
 	    // On reset la page pour l'utilisation des facettes
         $r.="<input type='hidden' name='page' id='page_number' value='1'/>
     	     <input type=\"hidden\" name=\"nb_per_page_custom\" value=\"$nb_per_page_custom\">\n";
 	    return $r;
 	}
-	
+
 	public function make_segment_human_field($n) {
 	    global $search;
 	    global $charset;
 	    global $msg;
 	    global $include_path;
-	    
+
 	    if (isset($search[$n])) {
 	        $s=explode("_",$search[$n]);
-	        
+
 	        if ($s[0]=="f") {
 	            $title=$this->fixedfields[$s[1]]["TITLE"];
 	        } elseif(array_key_exists($s[0],$this->pp)){
@@ -6407,7 +6547,7 @@ class search {
 	        } elseif ($s[0]=="authperso") {
 	            $title=$this->authpersos[$s[1]]['name'];
 	        }
-	        
+
 	        $op="op_".$n."_".$search[$n];
 	        global ${$op};
 	        if(${$op}) {
@@ -6415,10 +6555,17 @@ class search {
 	        } else {
 	            $operator="";
 	        }
-	        
+
 	        $field_ = "field_".$n."_".$search[$n];
-	        $field = $this->get_global_value($field_);	
-            
+	        $field = $this->get_global_value($field_);
+	        $field1=$this->get_global_value("field_".$n."_".$search[$n]."_1");
+
+	        //Recuperation des variables auxiliaires
+	        $fieldvar_="fieldvar_".$n."_".$search[$n];
+	        global ${$fieldvar_};
+	        $fieldvar=${$fieldvar_};
+	        if (!is_array($fieldvar)) $fieldvar=array();
+
 	        $s = explode("_",$search[$n]);
 	        $texte = "";
 	        //cas particulier pour les facettes
@@ -6448,36 +6595,45 @@ class search {
 	                }
 	            }
 	        } else {
-	            $texte = (is_array($field) ? implode(' / ', $field) : "");
+	            $field_aff = $this->make_field_aff($s, $field, $field1, $fieldvar, $n);
+	            if (is_array($field_aff)) {
+	                $field_aff = $field_aff[0];
+	            }
+	            if(is_array($field_aff)){
+	                $texte=implode(" - ",$field_aff);
+	            }else{
+	                $texte="";
+	            }
+	            //$texte = (is_array($field) ? implode(' / ', $field) : "");
 	        }
 	        return "<i><strong>".htmlentities($title,ENT_QUOTES,$charset)."</strong> ".htmlentities($operator,ENT_QUOTES,$charset)." (".htmlentities($texte,ENT_QUOTES,$charset).")</i>";
 	    }
 	    return "";
 	}
-	
+
 	public function delete_search($i){
 	    global $search;
-	    
+
 	    if (isset($i) && $search[$i]) {
 	        $field ="field_".$i."_".$search[$i];
 	        global ${$field};
 	        ${$field} = array();
 	        $this->reduct_search();
 	    }
-	    
+
 	}
-	
+
 	public function get_elements_list_ui_class_name() {
 	    if(!isset($this->elements_list_ui_class_name)) {
 	        $this->elements_list_ui_class_name = "elements_records_list_ui";
 	    }
 	    return $this->elements_list_ui_class_name;
 	}
-	
+
 	public function set_elements_list_ui_class_name($class_name) {
 	    $this->elements_list_ui_class_name = $class_name;
 	}
-	
+
 	public function get_navbar($nb_results, $hidden_form){
 	    global $nb_per_page, $page, $msg;
 	    if ($nb_results) {
@@ -6486,10 +6642,10 @@ class search {
 	            $n_max_page = ceil($nb_results/$nb_per_page);
 	        }
 	        $etendue=10;
-	        
+
 	        if (!$page) $page_en_cours=0 ;
 	        else $page_en_cours=$page ;
-	        
+
 	        $nav_bar = '';
 	        //Première
 	        if(($page_en_cours+1)-$etendue > 1) {
@@ -6497,7 +6653,7 @@ class search {
 	            if (!$hidden_form) $nav_bar .= "document.".$this->get_hidden_form_name().".launch_search.value=1; ";
 	            $nav_bar .= "document.".$this->get_hidden_form_name().".submit(); return false;\"><img src='".get_url_icon('first.gif')."' style='border:0px; margin:3px 3px' alt='".$msg['first_page']."' hspace='6' class='align_middle' title='".$msg['first_page']."' /></a>";
 	        }
-	        
+
 	        // affichage du lien precedent si necessaire
 	        if ($page>0) {
 	            $nav_bar .= "<a href='#' onClick='document.".$this->get_hidden_form_name().".page.value-=1; ";
@@ -6506,7 +6662,7 @@ class search {
 	            $nav_bar .= "<img src='".get_url_icon('left.gif')."' style='border:0px'  title='".$msg['prec_page']."' alt='[".$msg['prec_page']."]' hspace='3' class='align_middle'/>";
 	            $nav_bar .= "</a>";
 	        }
-	        
+
 	        $deb = $page_en_cours - 10 ;
 	        if ($deb<0) $deb=0;
 	        for($i = $deb; ($i < $n_max_page) && ($i<$page_en_cours+10); $i++) {
@@ -6520,7 +6676,7 @@ class search {
 	            }
 	            if($i<$n_max_page) $nav_bar .= " ";
 	        }
-	        
+
 	        if(($page+1)<$n_max_page) {
 	            $nav_bar .= "<a href='#' onClick=\"if ((isNaN(document.".$this->get_hidden_form_name().".page.value))||(document.".$this->get_hidden_form_name().".page.value=='')) document.".$this->get_hidden_form_name().".page.value=1; else document.".$this->get_hidden_form_name().".page.value=parseInt(document.".$this->get_hidden_form_name().".page.value)+parseInt(1); ";
 	            if (!$hidden_form) $nav_bar .= "document.".$this->get_hidden_form_name().".launch_search.value=1; ";
@@ -6528,38 +6684,38 @@ class search {
 	            $nav_bar .= "<img src='".get_url_icon('right.gif')."' style='border:0px; margin:3px 3px' title='".$msg['next_page']."' alt='[".$msg['next_page']."]' class='align_middle'>";
 	            $nav_bar .= "</a>";
 	        } else 	$nav_bar .= "";
-	        
+
 	        //Dernière
 	        if((($page_en_cours+1)+$etendue)<$n_max_page){
 	            $nav_bar .= "<a href='#' onClick=\"document.".$this->get_hidden_form_name().".page.value=".($n_max_page-1).";";
 	            if (!$hidden_form) $nav_bar .= "document.".$this->get_hidden_form_name().".launch_search.value=1; ";
 	            $nav_bar .= "document.".$this->get_hidden_form_name().".submit(); return false;\"><img src='".get_url_icon('last.gif')."' style='border:0px; margin:6px 6px' alt='".$msg['last_page']."' class='align_middle' title='".$msg['last_page']."' /></a>";
 	        }
-	        
+
 	        $nav_bar = "<div class='center'>$nav_bar</div>";
 	        echo $nav_bar ;
 	    }
 	}
-	
+
 	public function get_context_parameters() {
 	    return $this->context_parameters;
 	}
-	
+
 	public function set_context_parameters($context_parameters=array()) {
 	    $this->context_parameters = $context_parameters;
 	}
-	
+
 	public function add_context_parameter($key, $value) {
 	    $this->context_parameters[$key] = $value;
 	}
-	
+
 	public function delete_context_parameter($key) {
 	    unset($this->context_parameters[$key]);
 	}
-	
+
 	public function get_misc_search_fields() {
 		global $include_path;
-		
+
 		if(!isset($this->misc_file_search_fields)) {
 			if(!$this->full_path) {
 				$full_path = $include_path."/search_queries";
@@ -6570,7 +6726,7 @@ class search {
 		}
 		return $this->misc_file_search_fields;
 	}
-	
+
 	public function generate_query_op_and($prefixe = "", $suffixe = "", $search_table = "") {
 	    if ($prefixe) {
 	        return "create temporary table ".$prefixe."and_result_".$suffixe." ENGINE=".$this->current_engine." select ".$search_table.".* from ".$search_table." where exists ( select ".$prefixe."mf_".$suffixe.".* from ".$prefixe."mf_".$suffixe." where ".$search_table.".notice_id=".$prefixe."mf_".$suffixe.".notice_id)";
@@ -6578,64 +6734,64 @@ class search {
 	        return "create temporary table and_result_".$suffixe." ENGINE=".$this->current_engine." select ".$search_table.".* from ".$search_table." where exists ( select mf_".$suffixe.".* from mf_".$suffixe." where ".$search_table.".notice_id=mf_".$suffixe.".notice_id)";
 	    }
 	}
-	
+
 	public function get_field_op_special($op, $Fixedfield, $i, $n, $search, $pp)
 	{
 	    $class = $this->get_class_op_special($Fixedfield, $op);
 	    return $class->get_field($i, $n, $search, $pp);
 	}
-	
+
 	public function is_empty_op_special($Fixedfield, $op,  $i, $search)
 	{
 	    $class = $this->get_class_op_special($Fixedfield, $op);
 	    return $class->is_empty($i, $search);
 	}
-	
+
 	public function custom_search_op_special($Fixedfield, $op,  $i, $search)
 	{
 	    $class = $this->get_class_op_special($Fixedfield, $op);
 	    return $class->make_search($i, $search);
 	}
-	
+
 	public function make_human_query_special_op($Fixedfield, $op, $field)
 	{
 	    $class = $this->get_class_op_special($Fixedfield, $op);
 	    return $class->make_human_query($field);
 	}
-	
+
 	private function get_class_op_special($Fixedfield, $op)
 	{
 	    global $include_path;
-	    
+
 	    $class = null;
 	    $operator_index = $Fixedfield['QUERIES_INDEX'][$op];
 	    $operator = $Fixedfield['QUERIES'][$operator_index];
 	    $classname = $operator[0]['SPECIAL']['CLASS'];
 	    require_once($include_path."/search_queries/operators/".$classname.".class.php");
-	    
+
 	    $params = array();
 	    $params['search'] = $this;
 	    if (!empty($operator[0]['SPECIAL']['PARAMS'])) {
 	        $length = count($operator[0]['SPECIAL']['PARAMS']);
 	        for ($i = 0; $i < $length; $i++) {
 	            $param = $operator[0]['SPECIAL']['PARAMS'][$i];
-	            
+
 	            $value = "";
 	            if (!empty($param['DEFAULT']['value'])) {
 	                $value = $param['DEFAULT']['value'];
 	            }
-	            
+
 	            switch ($param['TYPE']) {
-	                
+
 	                case 'global':
 	                    global ${$param['NAME']};
 	                    if (!empty(${$param['NAME']})) {
 	                        $value=${$param['NAME']};
 	                    }
-	                    
+
 	                    $params[$param['NAME']] = $value;
 	                    break;
-	                    
+
 	                case 'const':
 	                    if (defined(strtoupper($param['NAME']))) {
 	                        $params[strtoupper($param['NAME'])] = constant(strtoupper($param['NAME']));
@@ -6643,20 +6799,20 @@ class search {
 	                        $params[strtoupper($param['NAME'])] = $value;
 	                    }
 	                    break;
-	                    
+
 	                case "text":
 	                default:
 	                    $params[$param['NAME']] = $value;
 	                    break;
-	                    
+
 	            }
 	        }
 	    }
 	    $class = new $classname($params);
-	    
+
 	    return $class;
 	}
-	
+
 	public static function get_instance($xml_file) {
 	    if (!isset(static::$instances[$xml_file])) {
 	        switch ($xml_file) {
@@ -6672,15 +6828,15 @@ class search {
 	    }
 	    return static::$instances[$xml_file];
 	}
-	
+
 	public function get_special_field($type, $n) {
 	    global $include_path;
 	    global $opac_rmc_responsive;
-	    
+
 	    $html = "";
 	    $special_field = array();
 	    $id_field = 0;
-	    
+
 	    foreach ($this->specialfields as $id => $specialfield) {
 	        if ($specialfield['TYPE'] == $type) {
 	            $special_field = $specialfield;
@@ -6688,7 +6844,7 @@ class search {
 	            break;
 	        }
 	    }
-	    
+
 	    $class_infos = $this->get_special_class_infos($type);
 	    if (!empty($class_infos)) {
 	        if (!class_exists($class_infos["CLASS"])) {
@@ -6706,7 +6862,7 @@ class search {
 	    }
 	    return $html;
 	}
-	
+
 	private function get_special_class_infos($name)
 	{
 	    if (!isset(static::$tableau_speciaux_by_name[$name])) {
@@ -6721,11 +6877,11 @@ class search {
 	    }
 	    return static::$tableau_speciaux_by_name[$name];
 	}
-	
+
 	private function is_special_responsive($name)
 	{
 	    global $include_path;
-	    
+
 	    $class_infos = $this->get_special_class_infos($name);
 	    if (!empty($class_infos)) {
 	        if (!class_exists($class_infos["CLASS"])) {

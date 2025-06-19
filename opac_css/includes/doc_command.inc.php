@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: doc_command.inc.php,v 1.7 2017/11/07 15:44:52 ngantier Exp $
+// $Id: doc_command.inc.php,v 1.7.12.1 2023/07/13 12:47:04 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -49,7 +49,7 @@ $form_mailing="
 		</tr>
 	</table>
 </form>";
-
+$id_empr = intval($id_empr);
 if ($nom) {
 	$corps="";
 	if ($id_empr) {

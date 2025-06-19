@@ -2,11 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestions.class.php,v 1.48.2.3 2021/12/22 15:08:51 dgoron Exp $
+// $Id: suggestions.class.php,v 1.52.4.1 2023/09/28 09:07:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path;
+require_once($class_path.'/suggestions_map.class.php');
 require_once($class_path.'/z3950_notice.class.php');
 
 class suggestions{
@@ -117,7 +118,7 @@ class suggestions{
 			$this->id_suggestion = pmb_mysql_insert_id();
 		}
 		
-		if($explnum_doc) {
+		if(!empty($explnum_doc)){
 			$explnum_doc->save();
 			$req = "insert into explnum_doc_sugg set 
 				num_explnum_doc='".$explnum_doc->explnum_doc_id."',
@@ -128,22 +129,22 @@ class suggestions{
 
 	//Vérifie si une suggestion existe déjà en base
 	public static function exists($origine, $titre, $auteur, $editeur, $isbn) {
-		$q = "select count(1) from suggestions_origine, suggestions where origine = '".$origine."' and titre = '".$titre."' and id_suggestion = num_suggestion and auteur='".$auteur."' and editeur = '".$editeur."' and code = '".$isbn."' ";
+		$q = "select count(1) from suggestions_origine, suggestions where origine = '".addslashes($origine)."' and titre = '".$titre."' and id_suggestion = num_suggestion and auteur='".$auteur."' and editeur = '".$editeur."' and code = '".$isbn."' ";
 		$q.= "and statut in (1,2,8) ";
 		$r = pmb_mysql_query($q);
 		return pmb_mysql_result($r, 0, 0);
 	}
 
 	//supprime une suggestion de la base
-	public function delete($id_suggestion= 0) {
+	public static function delete($id_suggestion= 0) {
 		$id_suggestion = intval($id_suggestion);
-		if(!$id_suggestion) $id_suggestion = $this->id_suggestion; 	
-
-		$q = "delete from suggestions where id_suggestion = '".$id_suggestion."' ";
-		pmb_mysql_query($q);
-		
-		$q = "delete ed,eds from explnum_doc ed join explnum_doc_sugg eds on ed.id_explnum_doc=eds.num_explnum_doc where eds.num_suggestion=$id_suggestion";
-		pmb_mysql_query($q);
+		if($id_suggestion) {
+    		$q = "delete from suggestions where id_suggestion = '".$id_suggestion."' ";
+    		pmb_mysql_query($q);
+    		
+    		$q = "delete ed,eds from explnum_doc ed join explnum_doc_sugg eds on ed.id_explnum_doc=eds.num_explnum_doc where eds.num_suggestion=$id_suggestion";
+    		pmb_mysql_query($q);
+		}
 	}
 
 	//Compte le nb de suggestion par statut pour une bibliothèque
@@ -470,8 +471,8 @@ class suggestions{
 	
 	//Retourne  une requete pour liste des suggestions par origine 
 	//type_origine: 0=utilisateur, 1=lecteur, 2=visiteur
-	public static function listSuggestionsByOrigine($id_origine, $type_origine='1') { 
-		$q = "select * from suggestions_origine, suggestions where origine = '".$id_origine."' ";
+	public static function listSuggestionsByOrigine($origine, $type_origine='1') {
+		$q = "select * from suggestions_origine, suggestions where origine = '".addslashes($origine)."' ";
 		if ($type_origine != '-1') $q.= "and type_origine = '".$type_origine."' ";
 		$q.= "and id_suggestion=num_suggestion order by date_suggestion ";		
 		return $q;				
@@ -480,6 +481,7 @@ class suggestions{
 	//Retourne un tableau des origines pour une suggestion
 	public function getOrigines($id_suggestion=0) {
 		$tab_orig=array();
+		$id_suggestion = intval($id_suggestion);
 		if (!$id_suggestion) $id_suggestion = $this->id_suggestion;
 		$q = "select * from suggestions_origine where num_suggestion=$id_suggestion order by date_suggestion, type_origine ";
 		$r = pmb_mysql_query($q);
@@ -494,7 +496,6 @@ class suggestions{
 	public function optimize() {
 		$opt = pmb_mysql_query('OPTIMIZE TABLE suggestions');
 		return $opt;
-				
 	}
 	
 	//Récupération du docnum associé

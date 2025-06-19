@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_ontopmb_item.tpl.php,v 1.4 2020/02/14 14:44:02 ngantier Exp $
+// $Id: onto_ontopmb_item.tpl.php,v 1.6 2022/10/31 11:18:17 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -10,6 +10,11 @@ global $ontology_tpl,$msg,$base_path,$ontology_id;
 
 $ontology_tpl['form_scripts'] = '
 <script type="text/javascript">
+	require(["dojo/ready", "apps/pmb/form/FormController"], function(ready, FormController){
+	     ready(function(){
+	     	new FormController();
+	     });
+	});
 	!!onto_datasource_validation!!
 	function submit_onto_form() {		
 		if (check_onto_form()) {
@@ -178,6 +183,46 @@ $ontology_tpl['form_scripts'] = '
 		new_container.appendChild(input_value);
 		new_container.appendChild(document.createTextNode(" "));
 		new_container.appendChild(select);
+		new_container.appendChild(document.createTextNode(" "));
+		new_container.appendChild(input_type);
+		new_container.appendChild(del_button);
+		
+		parent.appendChild(new_container);
+		return true;
+	}
+
+    function onto_add_flag(element_name,element_order){
+		var new_order=parseInt(document.getElementById(element_name+"_new_order").value)+1;
+		document.getElementById(element_name+"_new_order").value=new_order;
+		
+		var parent = document.getElementById(element_name);
+		
+		//div container
+		var new_container = document.createElement("div");
+		new_container.setAttribute("id",element_name+"_"+new_order);
+		new_container.setAttribute("class","row");
+		
+		//input pour la valeur
+		var input_value = document.getElementById(element_name+"_"+element_order+"_value").cloneNode(false);
+		input_value.setAttribute("id",element_name+"_"+new_order+"_value");
+		input_value.setAttribute("name",element_name+"["+new_order+"][value]");
+		input_value.value = "";
+		
+
+		
+		// input de type
+		var input_type = document.getElementById(element_name+"_"+element_order+"_type").cloneNode(false);
+		input_type.setAttribute("id",element_name+"_"+new_order+"_type");
+		input_type.setAttribute("name",element_name+"["+new_order+"][type]");
+		
+		// bouton de suppression
+		var del_button = document.createElement("input");
+		del_button.setAttribute("type","button");
+		del_button.setAttribute("class","bouton_small");
+		del_button.setAttribute("onclick","onto_del(\'"+element_name+"\',"+new_order+")");
+		del_button.setAttribute("value","X");
+		
+		new_container.appendChild(input_value);
 		new_container.appendChild(document.createTextNode(" "));
 		new_container.appendChild(input_type);
 		new_container.appendChild(del_button);

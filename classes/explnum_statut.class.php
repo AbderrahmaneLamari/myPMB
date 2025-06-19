@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum_statut.class.php,v 1.3 2021/01/07 14:25:37 dgoron Exp $
+// $Id: explnum_statut.class.php,v 1.3.6.1 2023/08/30 07:19:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -65,13 +65,46 @@ class explnum_statut {
 		$this->thumbnail_visible_opac_override = $data->explnum_thumbnail_visible_opac_override;
 	}
 
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_gestion_libelle', 'docnum_statut_libelle')
+		->add_input_node('text', $this->gestion_libelle);
+		$interface_content_form->add_inherited_element('display_colors', 'form_class_html', 'noti_statut_class_html')
+		->init_nodes([$this->class_html]);
+		
+		$interface_content_form->add_element('form_opac_libelle', 'docnum_statut_libelle')
+		->add_input_node('text', $this->opac_libelle);
+		
+		$interface_content_form->add_element('form_visible_opac', 'docnum_statut_visu_opac_form', 'flat')
+		->add_input_node('boolean', $this->visible_opac);
+		$interface_content_form->add_element('form_visible_opac_abon', 'docnum_statut_visu_opac_abon', 'flat')
+		->add_input_node('boolean', $this->visible_opac_abon);
+		$interface_content_form->add_element('form_consult_opac', 'docnum_statut_cons_opac_form', 'flat')
+		->add_input_node('boolean', $this->consult_opac);
+		$interface_content_form->add_element('form_consult_opac_abon', 'docnum_statut_cons_opac_abon', 'flat')
+		->add_input_node('boolean', $this->consult_opac_abon);
+		$interface_content_form->add_element('form_download_opac', 'docnum_statut_down_opac_form', 'flat')
+		->add_input_node('boolean', $this->download_opac);
+		$interface_content_form->add_element('form_download_opac_abon', 'docnum_statut_down_opac_abon', 'flat')
+		->add_input_node('boolean', $this->download_opac_abon);
+		$interface_content_form->add_element('form_thumbnail_visible_opac_override', 'docnum_statut_thumbnail_visible_opac_override', 'flat')
+		->add_input_node('boolean', $this->thumbnail_visible_opac_override);
+		
+		$interface_content_form->add_zone('gestion', 'noti_statut_gestion',
+				['form_gestion_libelle', 'form_class_html']
+		);
+		$interface_content_form->add_zone('opac', 'noti_statut_opac', ['form_opac_libelle']);
+		$interface_content_form->add_zone('visibilite_generale', 'docnum_statut_visibilite_generale',
+				['form_visible_opac', 'form_consult_opac', 'form_download_opac', 'form_thumbnail_visible_opac_override']
+		)->set_class('colonne2');
+		$interface_content_form->add_zone('visibilite_restrict', 'docnum_statut_visibilite_restrict',
+				['form_visible_opac_abon', 'form_consult_opac_abon', 'form_download_opac_abon']
+		)->set_class('colonne_suite');
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_docnum_statut_content_form;
-		global $charset;
-		
-		$content_form = $admin_docnum_statut_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('statutform');
 		if(!$this->id){
@@ -79,47 +112,9 @@ class explnum_statut {
 		}else{
 			$interface_form->set_label($msg['118']);
 		}
-		$content_form = str_replace('!!gestion_libelle!!', htmlentities($this->gestion_libelle,ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!libelle_suppr!!', addslashes($this->gestion_libelle), $content_form);
-		
-		$content_form = str_replace('!!opac_libelle!!', htmlentities($this->opac_libelle,ENT_QUOTES, $charset), $content_form);
-		if ($this->visible_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_visible_opac!!', $checkbox, $content_form);
-		
-		if ($this->consult_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_consult_opac!!', $checkbox, $content_form);
-		
-		if ($this->download_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_download_opac!!', $checkbox, $content_form);
-		
-		if ($this->visible_opac_abon) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_visible_opac_abon!!', $checkbox, $content_form);
-		
-		if ($this->consult_opac_abon) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_consult_opac_abon!!', $checkbox, $content_form);
-		
-		if ($this->download_opac_abon) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_download_opac_abon!!', $checkbox, $content_form);
-		
-		if ($this->thumbnail_visible_opac_override) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_thumbnail_visible_opac_override!!', $checkbox, $content_form);
-		
-		$couleur=array();
-		for ($i=1;$i<=20; $i++) {
-			if ($this->class_html=="statutnot".$i) $checked = "checked";
-			else $checked = "";
-			$couleur[$i]="<span for='statutnot".$i."' class='statutnot".$i."' style='margin: 7px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' />
-					<input id='statutnot".$i."' type=radio name='form_class_html' value='statutnot".$i."' $checked class='checkbox' /></span>";
-			if ($i==10) $couleur[10].="<br />";
-			elseif ($i!=20) $couleur[$i].="<b>|</b>";
-		}
-		
-		$couleurs=implode("",$couleur);
-		$content_form = str_replace('!!class_html!!', $couleurs, $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->gestion_libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('explnum_statut')
 		->set_field_focus('form_gestion_libelle');
 		return $interface_form->get_display();

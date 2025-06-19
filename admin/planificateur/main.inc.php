@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.4 2021/02/08 10:30:10 dgoron Exp $
+// $Id: main.inc.php,v 1.4.6.1 2023/03/16 14:18:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $sub, $include_path, $lang;
 
 switch($sub) {
 	case 'manager':

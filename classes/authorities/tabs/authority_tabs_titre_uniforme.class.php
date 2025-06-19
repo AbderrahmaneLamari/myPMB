@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authority_tabs_titre_uniforme.class.php,v 1.10.8.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: authority_tabs_titre_uniforme.class.php,v 1.11 2021/12/28 08:46:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_search_view_search.class.php,v 1.36.2.3 2021/07/08 12:22:36 dgoron Exp $
+// $Id: cms_module_search_view_search.class.php,v 1.44 2022/12/23 08:46:51 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -26,6 +26,7 @@ class cms_module_search_view_search extends cms_module_common_view{
 	    if(!isset($this->parameters['others_links'])) $this->parameters['others_links'] = [];
 	    if(!isset($this->parameters['nofill'])) $this->parameters['nofill'] = 0;
 	    if(!isset($this->parameters['limit_completion'])) $this->parameters['limit_completion'] = 1;
+	    if(!isset($this->parameters['selector_aff_input_search'])) $this->parameters['selector_aff_input_search'] = "radio";
 	}
 	
 	public function get_form(){
@@ -93,6 +94,19 @@ class cms_module_search_view_search extends cms_module_common_view{
 					&nbsp;<input type='radio' name='cms_module_search_view_limit_completion' value='0' ".(!$this->parameters['limit_completion'] ? "checked='checked'" : "")."/>&nbsp;".$this->format_text($this->msg['cms_module_search_view_no'])."
 				</div>
 			</div>";
+		
+    		// Permet de choisir l'affichage des types de recherche soit en checkbox ou en dropdown
+    		$form .= "
+    			<div class='row'>
+    				<div class='colonne3'>
+    					<label for='".$this->get_form_value_name('selector_aff_input_search')."'>".$this->format_text($this->msg['cms_module_search_selector_aff_input_search'])."</label>
+    				</div>
+    				<div class='colonne-suite'>
+    					<input type='radio' name='".$this->get_form_value_name('selector_aff_input_search')."' value='radio' ".($this->parameters['selector_aff_input_search'] == 'radio' ? "checked='checked'" : "")."/>&nbsp;".$this->format_text($this->msg['cms_module_search_selector_aff_input_radio'])."
+    					&nbsp;
+                        <input type='radio' name='".$this->get_form_value_name('selector_aff_input_search')."' value='dropdown' ".($this->parameters['selector_aff_input_search'] == 'dropdown' ? "checked='checked'" : "")."/>&nbsp;".$this->format_text($this->msg['cms_module_search_selector_aff_input_dropdown'])."
+    				</div>
+    			</div>";
 		
 		$advanced_parameters = "
 		<script type='text/javascript'>
@@ -287,6 +301,7 @@ class cms_module_search_view_search extends cms_module_common_view{
 		$this->parameters['input_placeholder'] = stripslashes($cms_module_search_view_input_placeholder);
 		$this->parameters['nofill'] = (int) $cms_module_search_view_nofill;
 		$this->parameters['limit_completion'] = (int) $cms_module_search_view_limit_completion;
+		$this->parameters["selector_aff_input_search"] = $this->get_value_from_form("selector_aff_input_search");
 		
 		$others_links = array();
 		$nb_others_link = 0;
@@ -347,7 +362,7 @@ class cms_module_search_view_search extends cms_module_common_view{
 		global $opac_modules_search_title,$opac_modules_search_author,$opac_modules_search_publisher,$opac_modules_search_titre_uniforme;
 		global $opac_modules_search_collection,$opac_modules_search_subcollection,$opac_modules_search_category,$opac_modules_search_indexint;
 		global $opac_modules_search_keywords,$opac_modules_search_abstract,$opac_modules_search_concept,$opac_modules_search_docnum,$opac_simple_search_suggestions;
-		global $dest,$user_query,$charset;
+		global $user_query,$charset;
 		
 		$onsubmit = "if (".$this->get_module_dom_id()."_searchbox.user_query.value.length == 0) { ".$this->get_module_dom_id()."_searchbox.user_query.value='*';}";
 		
@@ -359,7 +374,7 @@ class cms_module_search_view_search extends cms_module_common_view{
 		
 		//juste une searchbox...
 		if(count($datas) == 1){
-			if ($datas[0]['universe']) {
+			if (!empty($datas[0]['universe'])) {
 				if($datas[0]['default_segment'] != 0){
 					$action = $base_path."/index.php?lvl=search_segment&action=segment_results&id=".$datas[0]['default_segment'];
 				}else{
@@ -372,7 +387,8 @@ class cms_module_search_view_search extends cms_module_common_view{
 				$action.= "&opac_view=".substr($datas[0]['page'], 5);
 			}
 		}else{
-			$onsubmit.= $this->get_module_dom_id()."_change_dest();";
+		    $func = $this->get_module_dom_id()."_change_dest";
+		    $onsubmit .= "if (typeof {$func} == 'function') { {$func}(); }";
 		}
 		if ($opac_modules_search_title==2) $look["look_TITLE"]=1;
 		if ($opac_modules_search_author==2) $look["look_AUTHOR"]=1 ;
@@ -387,9 +403,16 @@ class cms_module_search_view_search extends cms_module_common_view{
 		if ($opac_modules_search_concept==2) $look["look_CONCEPT"] = 1 ;
 		
 		$look["look_ALL"] = 1 ;
-		if ($opac_modules_search_docnum==2) $look["look_DOCNUM"] = 1;
+		if ($opac_modules_search_docnum==2) {
+		    $look["look_DOCNUM"] = 1;
+		}
+		
+		$searchbox_aff_select = "";
+		if ('radio' != $this->parameters['selector_aff_input_search']) {
+		    $searchbox_aff_select = "searchbox_aff_input_search";
+		}
 		$html = "
-			<form method='post' class='searchbox' action='".$action."' name='".$this->get_module_dom_id()."_searchbox' ".($onsubmit!= "" ? "onsubmit=\"".$onsubmit."\"" : "").">
+			<form method='post' class='searchbox " . $searchbox_aff_select . "' action='".$action."' name='".$this->get_module_dom_id()."_searchbox' ".($onsubmit!= "" ? "onsubmit=\"".$onsubmit."\"" : "").">
 				";
 		foreach($look as $looktype => $lookflag) { 
 			$html.="
@@ -424,7 +447,7 @@ class cms_module_search_view_search extends cms_module_common_view{
 							document.getElementById('".$this->get_module_dom_id()."_user_query_lib').setAttribute('disableCompletion','false');
 						}
 					}
-					ajax_parse_dom();
+					ajax_pack_element(document.getElementById('".$this->get_module_dom_id()."_user_query_lib'));
 				</script>";
 		}else{
 			$html.="
@@ -440,22 +463,10 @@ class cms_module_search_view_search extends cms_module_common_view{
 		$html.="</span>";
 		if(count($datas) >1){
 			$html.= "<br/>";
-			for($i=0 ; $i<count($datas) ; $i++){
-				$checked ="";
-				if($dest){
-					if($datas[$i]['page'] == $dest){
-						$checked= " checked='checked'";
-					}
-				}else if($i == 0){
-					$checked= " checked='checked'";
-				}
-				if($opac_simple_search_suggestions){
-					$html.="
-						<span class='search_radio_button' id='search_radio_button_".$i."'><input type='radio' name='dest' value='".$datas[$i]['page']."' default_segment='".(!empty($datas[$i]['default_segment'])?$datas[$i]['default_segment']:"0")."' universe='".(!empty($datas[$i]['universe'])?$datas[$i]['universe']:"")."'".$checked." onClick='".$this->get_module_dom_id()."_toggleCompletion(this.value);' />&nbsp;".$this->format_text($datas[$i]['name'])."</span>";
-				}else{
-					$html.="
-						<span class='search_radio_button' id='search_radio_button_".$i."'><input type='radio' name='dest' value='".$datas[$i]['page']."' default_segment='".(!empty($datas[$i]['default_segment'])?$datas[$i]['default_segment']:"0")."' universe='".(!empty($datas[$i]['universe'])?$datas[$i]['universe']:"")."'".$checked."/>&nbsp;".$this->format_text($datas[$i]['name'])."</span>";
-				}
+			if ('radio' == $this->parameters['selector_aff_input_search']) {
+			    $html .= $this->gen_search_radio_button($datas);
+			}else{
+			    $html .= $this->gen_search_dropdown_button($datas);
 			}
 		}
 		if ($this->parameters['link_search_advanced']) {
@@ -491,8 +502,8 @@ class cms_module_search_view_search extends cms_module_common_view{
 				if(document.forms['".$this->get_module_dom_id()."_searchbox'].dest) {
 					var dests = document.forms['".$this->get_module_dom_id()."_searchbox'].dest;
 					for(var i = 0; i < dests.length; i++){
-						if(dests[i].checked){
-							page = dests[i].value;
+    					if(dests[i].checked || dests[i].selected ){
+    						page = dests[i].getAttribute('page');
 	                        universe = dests[i].getAttribute('universe');
 	                        default_segment = dests[i].getAttribute('default_segment');
 							break;
@@ -508,12 +519,84 @@ class cms_module_search_view_search extends cms_module_common_view{
                 } else if(page>0){
 					document.forms['".$this->get_module_dom_id()."_searchbox'].action = '".$base_path."/index.php?lvl=cmspage&pageid='+page;
 				}
-				if (page.indexOf('view_') != -1) {
+                if (page.toString().indexOf('view_') != -1) {
 					var view_id = page.substr(5);
 				    document.forms['".$this->get_module_dom_id()."_searchbox'].action += '&opac_view='+view_id;
 				}
 			}
 		</script>";
-		return $headers;
+		return $headers;	
+	}
+	
+	public function gen_search_radio_button($data) {
+	    global $opac_simple_search_suggestions;
+	    global $dest;
+	    
+	    $html = "";
+	    for($i=0 ; $i<count($data) ; $i++){
+	        $checked ="";
+	        $dest_i = "dest_" . $i;
+	        if (!isset($dest)) {
+	            $dest = $dest_i;
+	            $checked= " checked='checked'";
+	        } else if ($dest_i == $dest) {
+	            $checked= " checked='checked'";
+	        }
+	        
+	        if($opac_simple_search_suggestions){
+	            $html.="
+					<span class='search_radio_button' id='search_radio_button_".$i."'><input type='radio' name='dest' value='dest_" . $i . "' default_segment='".(!empty($data[$i]['default_segment'])?$data[$i]['default_segment']:"0")."' page='" . $data[$i]['page'] . "' universe='".(!empty($data[$i]['universe'])?$data[$i]['universe']:"")."'".$checked." onClick='".$this->get_module_dom_id()."_toggleCompletion(this.value);' />&nbsp;".$this->format_text($data[$i]['name'])."</span>";
+	        }else{
+	            $html.="
+					<span class='search_radio_button' id='search_radio_button_".$i."'><input type='radio' name='dest' value='dest_" . $i . "' default_segment='".(!empty($data[$i]['default_segment'])?$data[$i]['default_segment']:"0")."' page='" . $data[$i]['page'] . "' universe='".(!empty($data[$i]['universe'])?$data[$i]['universe']:"")."'".$checked."/>&nbsp;".$this->format_text($data[$i]['name'])."</span>";
+	        }
+	    }
+	    return $html;
+	}
+
+	public function gen_search_dropdown_button($data) {
+	    global $opac_simple_search_suggestions;
+	    global $dest;
+	    
+	    $html = "";
+	    $html .= "<select id='search_dropdown_button' class='search_dropdown_select' name='dest'>";
+	    for($i=0 ; $i<count($data) ; $i++){
+	        $selected = "";
+	        $dest_i = "dest_" . $i;
+	        if (!isset($dest)) {
+	            $dest = $dest_i;
+	            $selected = " selected='selected'";
+	        } else if ($dest_i == $dest) {
+	            $selected = " selected='selected'";
+	        }
+	        if($opac_simple_search_suggestions){
+	            $html.="
+                    <option
+                        class='search_dropdown_option'
+                        value='dest_" . $i . "' 
+                        default_segment='".(!empty($data[$i]['default_segment'])?$data[$i]['default_segment']:"0")."' 
+                        page='" . $data[$i]['page'] . "' 
+                        universe='".(!empty($data[$i]['universe'])?$data[$i]['universe']:"")."'".$selected." 
+                        onClick='".$this->get_module_dom_id()."_toggleCompletion(this.value);' 
+                    >
+                        ".$this->format_text($data[$i]['name'])."
+                    </option>";
+	        }else{
+	            $html.="
+                    <option 
+                        class='search_dropdown_option'
+                        value='dest_" . $i . "' 
+                        default_segment='".(!empty($data[$i]['default_segment'])?$data[$i]['default_segment']:"0")."' 
+                        page='" . $data[$i]['page'] . "' 
+                        universe='".(!empty($data[$i]['universe'])?$data[$i]['universe']:"")."'".$selected."
+                    >
+                        ".$this->format_text($data[$i]['name'])."
+                    </option>";
+	        }
+	    }
+	    $html .= "</select>";
+	    
+	    return $html;
+	    
 	}
 }

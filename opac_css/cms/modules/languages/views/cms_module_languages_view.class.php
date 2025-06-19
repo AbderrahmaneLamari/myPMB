@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_languages_view.class.php,v 1.1.2.4 2022/01/07 09:05:15 moble Exp $
+// $Id: cms_module_languages_view.class.php,v 1.6 2022/09/09 15:07:39 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -41,19 +41,28 @@ class cms_module_languages_view extends cms_module_common_view{
 	}
 	
 	public function generate_list($datas) {
-	    global $include_path;
+	    global $include_path,$charset;
 	    
 	    $langues = new XMLlist("$include_path/messages/languages.xml");
 	    $langues->analyser();
 	    $clang = $langues->table;
-
+	    
 	    if ($datas['display_type']) {//type abrégé
 	        $options = $clang;
 	    } else {
+	        $this->init_abbreviations();
 	        $options = $this->abreviations;
 	    }
-	    
-        $action = substr($_SERVER['REQUEST_URI'], strrpos($_SERVER['REQUEST_URI'], '/')+1);
+	    $method="GET";
+	    switch($_REQUEST['REQUEST_METHOD']){
+	        case "GET":
+	            $action=substr($_SERVER['SCRIPT_NAME'], strrpos($_SERVER['SCRIPT_NAME'], '/')+1);
+	            break;
+	        case "POST":
+	            $action=substr($_SERVER['REQUEST_URI'], strrpos($_SERVER['REQUEST_URI'], '/')+1);
+	            $method='POST';
+	            break;
+	    }
         $form = '';
         $form .= "<div id='lang_options_wrapper'>";
         $form .= '<script>
@@ -65,10 +74,10 @@ class cms_module_languages_view extends cms_module_common_view{
                     }
                     
                 </script>';
-        $form .= "<form id='change_lang_form' method=\"post\" action=\"".$action."\" >
-                  <input type='hidden' id='change_lang_input' value=''  name=\"lang_sel\"/>";
-        //on récupère ce qui a été posté pour rejouer les recherches 
+        $form .= "<form id='change_lang_form' method=\"".htmlentities($method,ENT_QUOTES,$charset)."\" action=\"".htmlentities($action,ENT_QUOTES,$charset)."\" >";
+        //on récupère ce qui a été posté pour rejouer les recherches
         $form .= $this->get_hidden_form();
+        $form .= "         <input type='hidden' id='change_lang_input' value=''  name=\"lang_sel\"/>";
         
         if ($datas["input_type"]==0) {
             $form .= $this->get_display_list($datas, $options);
@@ -84,16 +93,38 @@ class cms_module_languages_view extends cms_module_common_view{
 	
 	private function get_hidden_form() {
 	    global $charset;
-	    
 	    $form = '';
 	    if(count($_POST)) {
 	        foreach ($_POST as $name=>$value) {
 	            if(is_string($value) && $name !="lang_sel") {
-	                $form .= "<input type='hidden' name=\"".$name."\" value=\"".htmlentities($value, ENT_QUOTES, $charset)."\" />";
+	            	$form .= sprintf("<input type='hidden' name='%s' value='%s' />",
+	            		htmlentities($name, ENT_QUOTES, $charset),
+	            		htmlentities($value, ENT_QUOTES, $charset));
+	            } elseif(is_array($value)) {
+	                foreach ($value as $sub_key=>$sub_value) {
+	                	if(is_string($sub_value)) {
+	                		$form .= sprintf("<input type='hidden' name='%s[%s]' value='%s' />",
+	                			htmlentities($name, ENT_QUOTES, $charset),
+	                			htmlentities($sub_key, ENT_QUOTES, $charset),
+	                			htmlentities($sub_value, ENT_QUOTES, $charset));
+	                    }
+	                }
+	            }
+	        }
+	    } 
+	    if(count($_GET)) {
+	        foreach ($_GET as $name=>$value) {
+	            if(is_string($value) && $name !="lang_sel") {
+	                $form .= sprintf("<input type='hidden' name='%s' value='%s' />",
+	                    htmlentities($name, ENT_QUOTES, $charset),
+	                    htmlentities($value, ENT_QUOTES, $charset));
 	            } elseif(is_array($value)) {
 	                foreach ($value as $sub_key=>$sub_value) {
 	                    if(is_string($sub_value)) {
-	                        $form .= "<input type='hidden' name=\"".$name."[".$sub_key."]\" value=\"".htmlentities($sub_value, ENT_QUOTES, $charset)."\" />";
+	                        $form .= sprintf("<input type='hidden' name='%s[%s]' value='%s' />",
+	                            htmlentities($name, ENT_QUOTES, $charset),
+	                            htmlentities($sub_key, ENT_QUOTES, $charset),
+	                            htmlentities($sub_value, ENT_QUOTES, $charset));
 	                    }
 	                }
 	            }
@@ -136,5 +167,14 @@ class cms_module_languages_view extends cms_module_common_view{
 	    }
 	    $form .= "</ul>";
 	    return $form;
+	}
+	
+	private function init_abbreviations() {
+	    global $msg;
+	    foreach ($this->abreviations as $code => $abr) {
+	        if (isset($msg["language_code_".$code])) {
+	            $this->abreviations[$code] = $msg["language_code_".$code];
+	        }
+	    }
 	}
 }

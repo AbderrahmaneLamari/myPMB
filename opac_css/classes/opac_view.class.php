@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: opac_view.class.php,v 1.22.2.5 2021/09/09 13:50:22 qvarin Exp $
+// $Id: opac_view.class.php,v 1.27 2022/03/15 09:50:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -67,7 +67,7 @@ class opac_view {
 		} elseif ($this->id === 0) {
 		    // Vue activé par défaut
 		    $this->id = $this->view_list_empr_default ?? 0;
-		}		
+		}
 		
 		if (!$this->check_right()) {
 			$this->id = $this->view_list_empr_default;
@@ -90,6 +90,7 @@ class opac_view {
 				}*/
 				$this->set_parameters();
 				$this->load_classes();
+				$this->load_search_other_function();
 				$this->opac_filters=new opac_filters($this->id);
 				if (!$this->requete) {
 					$this->opac_view_wo_query=1;
@@ -115,6 +116,16 @@ class opac_view {
 			require_once($class_path."/search.class.php");
 			require_once($class_path."/quotas.class.php");
 			$this->loaded_classes = true;
+		}
+	}
+	
+	/*
+	 * Chargement
+	 */
+	protected function load_search_other_function() {
+		global $include_path, $opac_search_other_function;
+		if($opac_search_other_function){
+			require_once($include_path."/".$opac_search_other_function);
 		}
 	}
 	

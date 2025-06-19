@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: common.tpl.php,v 1.275.2.2 2021/07/27 13:44:31 dgoron Exp $
+// $Id: common.tpl.php,v 1.278.4.6 2024/01/02 11:25:57 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "tpl.php")) die("no access");
+
+use Pmb\Common\Helper\UrlEntities;
 
 global $class_path, $include_path, $msg, $cms_active_toolkits, $css, $opac_ie_reload_on_resize, $opac_default_style_addon;
 global $opac_show_social_network, $pmb_logs_activate, $std_header, $charset;
@@ -49,7 +51,7 @@ require_once("$include_path/javascript/surligner.inc.php");
 //		#connexion
 //		#meteo
 //		#addresse
-//		
+//
 //Partie droite (principale)
 //	#intro (tout le bloc incluant pmb, nom de la bibli, message d'accueil)
 //		#intro_pmb : pmb
@@ -57,12 +59,12 @@ require_once("$include_path/javascript/surligner.inc.php");
 //		#intro_bibli
 //			h3 : nom de la bibli
 //			p .intro_bibli_presentation_1 : texte de présentation de la bibli
-//	
+//
 //	#main : contient les différents blocs d'affichage et de recherches (browsers)
 //		div
 //			h3 : nom du bloc
 //			contenu du bloc
-					
+
 
 //Récupération du login
 if (!$_SESSION["user_code"]) {
@@ -117,13 +119,13 @@ $std_header.="
 	".common::get_js_function_encode_url()."
 	<script type='text/javascript'>
 	  	if (!document.getElementsByClassName){ // pour ie
-			document.getElementsByClassName = 
+			document.getElementsByClassName =
 			function(nom_class){
 				var items=new Array();
 				var count=0;
-				for (var i=0; i<document.getElementsByTagName('*').length; i++) {  
+				for (var i=0; i<document.getElementsByTagName('*').length; i++) {
 					if (document.getElementsByTagName('*').item(i).className == nom_class) {
-						items[count++] = document.getElementsByTagName('*').item(i); 
+						items[count++] = document.getElementsByTagName('*').item(i);
 				    }
 				 }
 				return items;
@@ -196,19 +198,19 @@ $std_header.="
 	<div id=\"container\"><div id=\"main\"><div id='main_header'>!!main_header!!</div><div id=\"main_hors_footer\">!!home_on_top!!
 						\n";
 $std_header.="
-<script type='text/javascript' src='".$include_path."/javascript/auth_popup.js'></script>	
+<script type='text/javascript' src='".$include_path."/javascript/auth_popup.js'></script>
 <script type='text/javascript' src='".$include_path."/javascript/pnb.js'></script>";
 
 $inclus_header = "
 !!liens_rss!!
 !!enrichment_headers!!
-".$toolkits_scripts_html.$stylescsscodehtml.$css_addon."	
+".$toolkits_scripts_html.$stylescsscodehtml.$css_addon."
 <script type='text/javascript'>
 	var pmb_img_patience = '".get_url_icon('patience.gif')."';
 </script>";
 if($opac_notice_enrichment == 0){
 	$inclus_header.= common::get_js_function_record_display();
-} 	
+}
 $inclus_header.= "
 <script type='text/javascript' src='".$include_path."/javascript/http_request.js'></script>
 <script type='text/javascript' src='".$include_path."/javascript/tablist_ajax.js'></script>
@@ -219,13 +221,13 @@ $inclus_header.= "
 ".common::get_js_function_encode_url()."
 <script type='text/javascript'>
   	if (!document.getElementsByClassName){ // pour ie
-		document.getElementsByClassName = 
+		document.getElementsByClassName =
 		function(nom_class){
 			var items=new Array();
 			var count=0;
-			for (var i=0; i<document.getElementsByTagName('*').length; i++) {  
+			for (var i=0; i<document.getElementsByTagName('*').length; i++) {
 				if (document.getElementsByTagName('*').item(i).className == nom_class) {
-					items[count++] = document.getElementsByTagName('*').item(i); 
+					items[count++] = document.getElementsByTagName('*').item(i);
 			    }
 			 }
 			return items;
@@ -260,7 +262,7 @@ if (!cookies_consent::is_opposed_pmb_logs_service() && $pmb_logs_activate) {
 $inclus_header.="
 
 ".(isset($inclure_recherche) ? $inclure_recherche : '')."
-		
+
 <div id='att' style='z-Index:1000'></div>
 	<div id=\"container\"><div id=\"main\"><div id='main_header'>!!main_header!!</div><div id=\"main_hors_footer\">!!home_on_top!!
 						\n";
@@ -325,19 +327,19 @@ $liens_bas = "</div><!-- fin DIV main_hors_footer --><div id=\"footer\">
 <span id=\"footer_link_sup\">
 		$opac_lien_bas_supplementaire &nbsp;
 </span>
-";	
-	
+";
+
 if ($opac_biblio_website)	$liens_bas .= "
 <span id=\"footer_link_website\">
 	<a class=\"footer_biblio_name\" href=\"$opac_biblio_website\" title=\"$opac_biblio_name\">$opac_biblio_name</a> &nbsp;
-</span>	
+</span>
 ";
 $liens_bas .= "
 <span id=\"footer_link_pmb\">
 $opac_lien_moteur_recherche &nbsp;
-		<a class=\"lien_pmb_footer\" href=\"https://www.sigb.net\" title=\"".$msg['common_tpl_motto']."\" target='_blank'>".$msg['common_tpl_motto_pmb']."</a> 	
-</span>		
-		
+		<a class=\"lien_pmb_footer\" href=\"https://www.sigb.net\" title=\"".$msg['common_tpl_motto']."\" target='_blank'>".$msg['common_tpl_motto_pmb']."</a>
+</span>
+
 </div>" ;
 
 // liens du bas de la page
@@ -345,15 +347,29 @@ $liens_bas_disabled = "</div><!-- fin DIV main_hors_footer --><div id=\"footer\"
 
 // ACCESSIBILITE
 if ($opac_accessibility) {
-	$accessibility="<div id='accessibility'>\n
-		<ul class='accessibility_font_size'>
-			<li class='accessibility_font_size_small'><a href='javascript:set_font_size(-1);' title='".$msg["accessibility_font_size_small"]."'>A-</a></li>
-			<li class='accessibility_font_size_normal'><a href='javascript:set_font_size(0);' title='".$msg["accessibility_font_size_normal"]."'>A</a></li>
-			<li class='accessibility_font_size_big'><a href='javascript:set_font_size(1);' title='".$msg["accessibility_font_size_big"]."'>A+</a></li>
-		</ul>
-		</div>\n";
-	if(isset($_SESSION["pmbopac_fontSize"])) {
-		$accessibility.="<script type='text/javascript'>set_value_style('pmbopac', 'fontSize', '".$_SESSION["pmbopac_fontSize"]."');</script>";
+
+	if (!class_exists("H2o_collection")) {
+		require_once "{$include_path}/h2o/pmb_h2o.inc.php";
+	}
+
+	$template_path = "{$include_path}/templates/accessibility.tpl.html";
+	if(file_exists("{$include_path}/templates/accessibility_subst.tpl.html")){
+		$template_path = "{$include_path}/templates/accessibility_subst.tpl.html";
+	}
+
+	if (file_exists($template_path)) {
+
+		// Compatibilite avec l'ancien mecanisme
+		if (!empty($_SESSION["pmbopac_fontSize"])) {
+			$_SESSION["accessibility"] = $_SESSION["pmbopac_fontSize"];
+			unset($_SESSION["pmbopac_fontSize"]);
+		}
+
+		//$accessibility = '<input type="hidden" id="opacAccessibility" name="opacAccessibility" value="'.$opac_accessibility.'" />';
+		$h2o = H2o_collection::get_instance($template_path);
+		$accessibility = $h2o->render([
+			"fontSize" => isset($_SESSION["accessibility"]) ? $_SESSION["accessibility"] : false,
+		]);
 	}
 }
 
@@ -363,8 +379,8 @@ $home_on_left = "<div id=\"accueil\">\n
 
 if ($opac_logosmall<>"") $home_on_left .= "<p class=\"centered\"><a href='./index.php?'><img src='".$opac_logosmall."' alt='".$msg["welcome_page"]."'  style='border:0px' class='center'/></a></p>\n";
 else $home_on_left .= "<p class=\"centered\"><a href='./index.php?'><img src='".get_url_icon('home.jpg')."' alt='".$msg["welcome_page"]."' style='border:0px' class='center'/></a></p>\n";
-	
-// affichage du choix de langue  
+
+// affichage du choix de langue
 $common_tpl_lang_select="<div id='lang_select'><h3 ><span>!!msg_lang_select!!</span></h3>!!lang_select!!</div>\n";
 
 $home_on_left.="!!common_tpl_lang_select!!
@@ -419,7 +435,7 @@ $adresse.="
 if ($opac_biblio_post_adress){
 	$adresse .= "<div id=\"post_adress\">\n
 		<span>".$opac_biblio_post_adress."
-		</span>	
+		</span>
 	    </div><!-- fermeture #post_adress -->" ;
 }
 
@@ -431,6 +447,8 @@ if ($opac_facettes_ajax && ($opac_map_activate == 1 || $opac_map_activate == 3) 
 	$map_location_search = "";
 }
 
+$facette = "";
+$lvl1 = "";
 if ($lvl == "more_results" || strpos($lvl, "_see") !== false) {
 	$facette = "
 			<div id='facette'>
@@ -447,25 +465,25 @@ if ($lvl == "search_segment") {
 				" . $map_location_search . "
 				!!lst_facette!!
 			</div>";
-	$lvl1 = "<div id='lvl1'>!!lst_lvl1!!</div>";    
+	$lvl1 = "<div id='lvl1'>!!lst_lvl1!!</div>";
 }
 
 // le footer clos le <div id=\"supportingText\"><span>, reste ouvert le <div id=\"container\">
-$footer = "	
+$footer = "
 		!!div_liens_bas!! \n
 		</div><!-- /div id=main -->\n
 		<div id=\"intro\">\n";
 
-$inclus_footer = "	
+$inclus_footer = "
 		</span>
 		!!div_liens_bas!! \n
 		</div><!-- /div id=main -->\n
 		<div id=\"intro\">\n";
-		
+
 // Si $opac_biblio_important_p1 est renseigné, alors intro_message est affiché
 // Ceci permet plus de liberté avec la CSS
 $std_header_suite="<div id=\"intro_message\">";
-if ($opac_biblio_important_p1) 	
+if ($opac_biblio_important_p1)
 		 $std_header_suite.="<div class=\"p1\">$opac_biblio_important_p1</div>";
 // si $opac_biblio_important_p2 est renseigné alors suite d'intro_message
 if ($opac_biblio_important_p2 && !$std_header_suite)
@@ -473,7 +491,7 @@ if ($opac_biblio_important_p2 && !$std_header_suite)
 else $std_header_suite.="<div class=\"p2\">$opac_biblio_important_p2</div>";
 // fin intro_message
 $std_header_suite.="</div>";
-	
+
 $std_header.=$std_header_suite ;
 $inclus_header.=$std_header_suite;
 
@@ -491,13 +509,13 @@ $footer_suite ="<div id=\"intro_bibli\">
 
 $footer.= $footer_suite ;
 $inclus_footer.= $footer_suite ;
-		
-$footer .="		
+
+$footer .="
 		!!contenu_bandeau!!";
 
 $footer .="</div><!-- /div id=container -->
 		!!cms_build_info!!
-		<script type='text/javascript'>init_drag();	//rechercher!!</script> 
+		<script type='text/javascript'>init_drag();	//rechercher!!</script>
 		".$script_analytics_html."
 		</body>
 		</html>
@@ -512,30 +530,8 @@ $inclus_footer .="
 
 $inclus_footer .= $script_analytics_html;
 
-function format_lien_rech($url) {
-	global $base_path;
-	global $use_opac_url_base, $opac_url_base;
-	
-	if($use_opac_url_base) return $opac_url_base.$url;
-	else return $base_path.'/'.$url;
-}
 
-$liens_opac['lien_rech_notice'] 		= format_lien_rech("index.php?lvl=notice_display&id=!!id!!");
-$liens_opac['lien_rech_auteur'] 		= format_lien_rech("index.php?lvl=author_see&id=!!id!!");
-$liens_opac['lien_rech_editeur'] 		= format_lien_rech("index.php?lvl=publisher_see&id=!!id!!");
-$liens_opac['lien_rech_titre_uniforme']	= format_lien_rech("index.php?lvl=titre_uniforme_see&id=!!id!!");
-$liens_opac['lien_rech_serie'] 			= format_lien_rech("index.php?lvl=serie_see&id=!!id!!");
-$liens_opac['lien_rech_collection'] 	= format_lien_rech("index.php?lvl=coll_see&id=!!id!!");
-$liens_opac['lien_rech_subcollection'] 	= format_lien_rech("index.php?lvl=subcoll_see&id=!!id!!");
-$liens_opac['lien_rech_indexint'] 		= format_lien_rech("index.php?lvl=indexint_see&id=!!id!!");
-//$liens_opac['lien_rech_motcle'] 		= format_lien_rech("index.php?lvl=search_result&mode=keyword&auto_submit=1&user_query=!!mot!!");
-$liens_opac['lien_rech_motcle'] 		= format_lien_rech("index.php?lvl=more_results&mode=keyword&user_query=!!mot!!&tags=ok");
-$liens_opac['lien_rech_categ'] 			= format_lien_rech("index.php?lvl=categ_see&id=!!id!!");
-$liens_opac['lien_rech_perio'] 			= format_lien_rech("index.php?lvl=notice_display&id=!!id!!");
-$liens_opac['lien_rech_bulletin'] 		= format_lien_rech("index.php?lvl=bulletin_display&id=!!id!!");
-$liens_opac['lien_rech_concept'] 		= format_lien_rech("index.php?lvl=concept_see&id=!!id!!");
-$liens_opac['lien_rech_authperso'] 		= format_lien_rech("index.php?lvl=authperso_see&id=!!id!!");
-
+$liens_opac = UrlEntities::getOPACLink();
 
 switch($opac_allow_simili_search){
 	case "1" :

@@ -2,11 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: id_notice.inc.php,v 1.6.2.1 2021/06/29 08:25:48 dgoron Exp $
+// $Id: id_notice.inc.php,v 1.7.4.2 2023/09/06 07:04:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $base_path, $include_path;
 global $acces_j, $gestion_acces_active, $gestion_acces_user_notice, $class_path, $PMBuserid, $pmb_show_notice_id, $f_notice_id, $msg;
+
+require_once($include_path."/templates/serials.tpl.php");
 
 //droits d'acces lecture notice
 $acces_j='';
@@ -23,6 +26,7 @@ if($prefix_id){
 	$f_notice_id = str_replace($prefix_id,"",$f_notice_id);
 }
 
+$f_notice_id = intval($f_notice_id);
 $rqt = "select * from notices where notice_id='".$f_notice_id."'";
 $res = pmb_mysql_query($rqt);
 
@@ -38,8 +42,11 @@ if(pmb_mysql_num_rows($res)){
 			print "<script type=\"text/javascript\">";
 			print "document.location = \"".analysis::get_permalink($ident->notice_id, $ident_bull)."\"";
 			print "</script>";
+		} else {
+		    print "<script type=\"text/javascript\">";
+		    print "document.location = \"".$base_path."/catalog.php?categ=serials&sub=analysis&action=analysis_orphan_form&analysis_id=".$f_notice_id."\"";
+		    print "</script>";
 		}
-	
 	//C'est une notice de periodique
 	} elseif ($ident->niveau_biblio == 's' && $ident->niveau_hierar == '1'){
 		print "<script type=\"text/javascript\">";

@@ -2,19 +2,20 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.3 2021/02/08 10:30:13 dgoron Exp $
+// $Id: main.inc.php,v 1.3.6.1 2023/12/14 11:52:17 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+use Pmb\Harvest\Controller\HarvestController;
 
+$controller = new HarvestController();
 switch($sub) {
 	case 'profil':
-		include("./admin/harvest/build.inc.php");		
+		$controller->proceedProfile($action);
 		break;
 	case 'profil_import':
-		include("./admin/harvest/profil.inc.php");		
+		$controller->proceedProfileImport($action);
 		break;
 	default:
 		include("$include_path/messages/help/$lang/admin_harvest.txt");
 		break;
 }
-?>

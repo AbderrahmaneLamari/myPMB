@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_demandes_actions_demande_ui.class.php,v 1.1.4.1 2021/08/12 13:36:41 dgoron Exp $
+// $Id: list_demandes_actions_demande_ui.class.php,v 1.3.4.1 2023/11/16 09:17:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -20,7 +20,7 @@ class list_demandes_actions_demande_ui extends list_demandes_actions_ui {
 		return $msg['demandes_action_liste'];
 	}
 		
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array();
 	}
 	
@@ -42,6 +42,11 @@ class list_demandes_actions_demande_ui extends list_demandes_actions_ui {
 	protected function init_default_settings() {
 		parent::init_default_settings();
 		$this->set_setting_display('pager', 'visible', false);
+	}
+	
+	protected function init_default_pager() {
+	    parent::init_default_pager();
+	    $this->pager['all_on_page'] = true;
 	}
 	
 	public function get_error_message_empty_list() {
@@ -96,5 +101,16 @@ class list_demandes_actions_demande_ui extends list_demandes_actions_ui {
 				break;
 		}
 		return $content;
+	}
+	
+	protected function get_button_add() {
+	    global $msg, $charset;
+	    global $base_path;
+	    
+	    return "<input type='button' class='bouton' name='demandes_action_add' value='".htmlentities($msg["demandes_action_add"], ENT_QUOTES, $charset)."' onclick=\"document.location='".$base_path."/demandes.php?categ=action&act=add_action&iddemande=".$this->filters['id_demande']."'\" />";
+	}
+	
+	protected function get_display_left_actions() {
+	    return $this->get_button_add();
 	}
 }

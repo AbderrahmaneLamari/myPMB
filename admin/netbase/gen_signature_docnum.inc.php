@@ -2,12 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: gen_signature_docnum.inc.php,v 1.7.8.1 2021/12/13 15:31:05 dgoron Exp $
+// $Id: gen_signature_docnum.inc.php,v 1.9 2022/03/04 13:29:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $msg, $charset;
 global $start, $v_state, $spec, $count;
+global $pmb_set_time_limit;
 
 require_once($class_path."/explnum.class.php");
 
@@ -40,6 +41,12 @@ if(pmb_mysql_num_rows($result)) {
 	$spec = $spec - GEN_SIGNATURE_DOCNUM;
 	$v_state .= "<br /><img src='".get_url_icon('d.gif')."' hspace='3'>".htmlentities($msg["gen_signature_docnum_status"], ENT_QUOTES, $charset);
 	$v_state .= $count." ".htmlentities($msg["gen_signature_docnum_status_end"], ENT_QUOTES, $charset);
+	
+	$max_execution_time = intval(ini_get('max_execution_time'));
+	// Don't bother if unlimited
+	if (0 != $max_execution_time and $pmb_set_time_limit > $max_execution_time) {
+		@set_time_limit($pmb_set_time_limit);
+	}
 	pmb_mysql_query('OPTIMIZE TABLE explnum');
 	// mise à jour de l'affichage de la jauge
 	print netbase::get_display_final_progress();

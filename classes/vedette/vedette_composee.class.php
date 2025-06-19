@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: vedette_composee.class.php,v 1.46 2021/05/21 07:06:00 gneveu Exp $
+// $Id: vedette_composee.class.php,v 1.50 2022/12/02 09:30:41 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/authperso.class.php");
 require_once($class_path."/vedette/vedette_link.class.php");
 require_once($class_path.'/indexation_stack.class.php');
@@ -49,7 +50,7 @@ class vedette_composee {
 	private static $configs = array();
 	
 	public function __construct($id = 0, $config_filename = "rameau"){
-		$this->id=$id+0;
+		$this->id=intval($id);
 		if($this->id){
 			$this->read();
 		} else {
@@ -86,7 +87,7 @@ class vedette_composee {
 	 * @access public
 	 */
 	public function get_at_available_field_num($num){
-		foreach(self::$configs[$this->config_filename]['available_fields'] as $key=>$field){
+		foreach(self::$configs[$this->config_filename]['available_fields'] as $field){
 			if($field['num']==$num){
 				return $field;
 			}
@@ -109,7 +110,7 @@ class vedette_composee {
 				$id_authperso=$r->authperso_authority_authperso_num;
 			}
 		}
-		foreach(self::$configs[$this->config_filename]['available_fields'] as $key=>$field){
+		foreach(self::$configs[$this->config_filename]['available_fields'] as $field){
 			if($field['class_name']==$class_name){
 				if($id_authperso){
 					if($field['num']==($id_authperso+1000)){
@@ -130,7 +131,7 @@ class vedette_composee {
 	 * @access public
 	 */
 	public function get_at_available_field_type($type){
-		foreach(self::$configs[$this->config_filename]['available_fields'] as $key=>$field){
+		foreach(self::$configs[$this->config_filename]['available_fields'] as $field){
 			if($field['type']==$type){
 				return $field;
 			}
@@ -222,10 +223,12 @@ class vedette_composee {
 		$query = "select label, grammar from vedette where id_vedette = ".$this->id;
 		$result = pmb_mysql_query($query);
 		if ($result && pmb_mysql_num_rows($result)) {
-			if ($vedette = pmb_mysql_fetch_object($result)) {
+			$vedette = pmb_mysql_fetch_object($result);
+			if (!empty($vedette)) {
 				$this->label = $vedette->label;
 				$this->config_filename = $vedette->grammar;
 			}
+			pmb_mysql_free_result($result);
 		}
 		
 		$this->set_config();
@@ -246,7 +249,8 @@ class vedette_composee {
 					$element = new $vedette_element_class_name($field["num"], $element_from_database->object_id, '', $field['params']);
 					$this->add_element($element, $element_from_database->subdivision, $element_from_database->position);
 		        }
-			}
+		    }
+		    pmb_mysql_free_result($result);
 		}
 	}
 	
@@ -569,7 +573,7 @@ class vedette_composee {
 						$query = "select num_object from index_concept where type_object = 1 and num_concept = ".$responsability['id'];
 						$result = pmb_mysql_query($query);
 						if($result && pmb_mysql_num_rows($result)){
-							while($row = pmb_mysql_fetch_object($result)){
+							while($r = pmb_mysql_fetch_object($result)){
 								$diplay.= notice::get_notice_view_link($r->num_object)."<br>";
 							}
 						}
@@ -612,10 +616,13 @@ class vedette_composee {
 		if($element_type>1000){	// authperso
 			$element_type_num = $element_type;
 		}else{
-			foreach($vedette->get_available_fields() as $key=>$field){
-			    if($field["type"] == $element_type){
-					$element_type_num = $field["num"];
-					break;
+			$available_fields = $vedette->get_available_fields();
+			if(!empty($available_fields) && is_array($available_fields)) {
+				foreach($available_fields as $field){
+				    if($field["type"] == $element_type){
+						$element_type_num = $field["num"];
+						break;
+					}
 				}
 			}
 		}
@@ -704,9 +711,9 @@ class vedette_composee {
 		
 		$label = "";
 		
-		foreach ($this->vedette_elements as $subdivision=>$elements){
+		foreach ($this->vedette_elements as $elements){
 			/* @var $element vedette_element */
-			foreach ($elements as $position=>$element){
+			foreach ($elements as $element){
 				if ($label) $label .= self::$configs[$this->config_filename]['separator'];
 				$label .= $element->get_isbd();
 			}
@@ -743,17 +750,17 @@ class vedette_composee {
 				$authpersos=authpersos::get_instance();
 				foreach($authpersos->info as $authority){
 				    if (empty($infos['exclude_auth_num']) || (!empty($infos['exclude_auth_num']) && !in_array($authority['id'], explode(',',$infos['exclude_auth_num'])))) {
-    					$authorities[] = array(
-    						'num' => (string)($infos['num']+$authority['id']),
-    						'name' => $authority['name'],
-    						'class_name' => "vedette_authpersos",
-    						'type' => "authperso".$authority['id'],
-    						'params' => array(
-    							'id_authority'=> $authority['id'],
-    							'label' => $authority['name']
-    						)
-    					);
-				    }
+						$authorities[] = array(
+							'num' => (string)($infos['num']+$authority['id']),
+							'name' => $authority['name'],
+							'class_name' => "vedette_authpersos",
+							'type' => "authperso".$authority['id'],
+							'params' => array(
+								'id_authority'=> $authority['id'],
+								'label' => $authority['name']
+							)
+					);
+				}
 				}
 				break;
 			}
@@ -796,7 +803,7 @@ class vedette_composee {
 	 * @return int Identifiant de la vedette liée
 	 */
 	public static function get_vedette_id_from_object($object_id, $object_type) {
-		$object_id += 0;
+		$object_id = intval($object_id);
 		if ($object_id) {
 			$query = "select num_vedette from vedette_link where num_object = ".$object_id." and type_object = ".$object_type;
 			$result = pmb_mysql_query($query);
@@ -904,5 +911,9 @@ class vedette_composee {
 	            }
     	    }
 	    }
+	}
+	
+	public function get_vedette_elements() {
+		return $this->vedette_elements;
 	}
 }

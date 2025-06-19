@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: groups_controller.class.php,v 1.1.2.3 2021/11/22 08:06:04 dgoron Exp $
+// $Id: groups_controller.class.php,v 1.2 2021/11/22 08:01:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

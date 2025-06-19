@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_bannettes_abon_pub_ui.class.php,v 1.1.2.2 2021/11/19 14:05:42 dgoron Exp $
+// $Id: list_bannettes_abon_pub_ui.class.php,v 1.2 2022/03/22 11:02:21 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,6 +54,7 @@ class list_bannettes_abon_pub_ui extends list_bannettes_abon_ui {
 							});
 							domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
 							dom.byId('".$this->objects_type."_selected_objects_form').submit();
+							domConstruct.destroy(dom.byId('".$this->objects_type."_selected_objects_form'));
 							"
 								: "")."
 						".(isset($action['link']['openPopUp']) && $action['link']['openPopUp'] ? "openPopUp('".$action['link']['openPopUp']."&selected_objects='+selection.join(','), '".$action['link']['openPopUpTitle']."'); return false;" : "")."

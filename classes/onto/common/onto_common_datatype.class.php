@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype.class.php,v 1.24.2.6 2021/08/23 10:04:21 gneveu Exp $
+// $Id: onto_common_datatype.class.php,v 1.31 2022/11/22 11:07:00 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -50,6 +50,18 @@ abstract class onto_common_datatype {
 	protected $datatype_ui_class_name;
 	
 	protected $formated_value;
+	
+	/**
+	 * Le type d'erreur au controle de la saisie.
+	 * @var string
+	 */
+	protected $error_type="unvalid datas";
+	/**
+	* Le message d'erreur au controle de la saisie.
+	* @var string
+	*/
+	protected $error_message="";
+	
 	
 	/**
 	 * 
@@ -208,5 +220,13 @@ abstract class onto_common_datatype {
 	public static function get_properties_from_uri($uri) {
 	    $contribution_area_store = new contribution_area_store();
 	    return $contribution_area_store->get_properties_from_uri($uri);
+	}
+	
+	public function get_error_type(){
+	    return $this->error_type;
+	}
+	
+	public function get_error_message(){
+	    return $this->error_message;
 	}
 } // end of onto_common_datatype

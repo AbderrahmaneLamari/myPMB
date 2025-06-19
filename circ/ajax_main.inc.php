@@ -2,14 +2,14 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.28.2.1 2021/10/21 13:17:01 dgoron Exp $
+// $Id: ajax_main.inc.php,v 1.30 2022/02/01 07:57:50 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path;
 global $categ, $sub, $action, $plugin, $object_type;
 global $msg, $search_xml_file, $search_xml_file_full_path;
-global $filters;
+global $filters, $datas;
 //En fonction de $categ, il inclut les fichiers correspondants
 
 switch($categ):
@@ -27,6 +27,15 @@ switch($categ):
 		break;			
 	case 'periocirc':
 		include("./circ/serialcirc/serialcirc_ajax.inc.php");
+		break;
+	case 'serialcirc' :
+		switch($action) {
+			case "list":
+				require_once($class_path.'/serialcirc/serialcirc_controller.class.php');
+				serialcirc_controller::set_list_ui_class_name('list_serialcirc_ui');
+				serialcirc_controller::proceed_ajax($object_type, 'serialcirc');
+				break;
+		}
 		break;
 	case 'resa' :
 		switch($action) {

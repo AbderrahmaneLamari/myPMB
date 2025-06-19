@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: chklnk.class.php,v 1.13.2.1 2021/08/04 12:44:31 dgoron Exp $
+// $Id: chklnk.class.php,v 1.16.4.1 2023/07/05 08:59:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -93,7 +93,11 @@ class chklnk {
     	@set_time_limit(0) ;
     	static::$curl = new Curl();
     	
-    	$chkcurltimeout += 0;
+    	if(!isset(static::$curl_timeout)) {
+    		static::init_curl_timeout();
+    	}
+    	
+    	$chkcurltimeout = intval($chkcurltimeout);
     	if($chkcurltimeout) {
     		static::$curl->timeout = $chkcurltimeout;
     	} elseif(static::$curl_timeout) {
@@ -120,8 +124,8 @@ class chklnk {
     	
     	$requete_notice ="select notice_id as id, lien as link from notices !!JOIN!! where lien!='' and lien is not null";
     	$requete_vign ="select notice_id as id, thumbnail_url as link from notices !!JOIN!! where thumbnail_url!='' and thumbnail_url is not null";
-    	$requete_explnum_noti = "select notice_id, explnum_url as link, explnum_id from notices !!JOIN!! join explnum on explnum_notice=notice_id and explnum_notice != 0 where explnum_mimetype = 'URL'";
-    	$requete_explnum_bull = "select bulletin_id, concat(notices.tit1,' ',bulletin_numero,' ',date_date) as tit, explnum_url as link, explnum_id, notices.notice_id from notices join bulletins on notices.notice_id=bulletin_notice !!JOIN!! join explnum on explnum_bulletin=bulletin_id and explnum_bulletin != 0 where explnum_mimetype = 'URL'";
+    	$requete_explnum_noti = "select notice_id as id, notice_id, explnum_url as link, explnum_id from notices !!JOIN!! join explnum on explnum_notice=notice_id and explnum_notice != 0 where explnum_mimetype = 'URL'";
+    	$requete_explnum_bull = "select bulletin_id as id, bulletin_id, concat(notices.tit1,' ',bulletin_numero,' ',date_date) as tit, explnum_url as link, explnum_id, notices.notice_id from notices join bulletins on notices.notice_id=bulletin_notice !!JOIN!! join explnum on explnum_bulletin=bulletin_id and explnum_bulletin != 0 where explnum_mimetype = 'URL'";
     	$requete_cp = "select distinct notice_id as id from notices join notices_custom_values on notice_id = notices_custom_origine join notices_custom on idchamp = notices_custom_champ !!JOIN!! where type in ('url','resolve')";
     	$requete_cp_etatcoll = "select distinct notice_id, collstate_id from notices join collections_state on id_serial = notice_id join collstate_custom_values on collstate_id = collstate_custom_origine join collstate_custom on idchamp = collstate_custom_champ !!JOIN!! where type in ('url','resolve')";
     	

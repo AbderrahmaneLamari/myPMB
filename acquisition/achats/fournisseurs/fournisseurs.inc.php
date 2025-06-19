@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: fournisseurs.inc.php,v 1.50.2.2 2021/12/22 11:24:52 dgoron Exp $
+// $Id: fournisseurs.inc.php,v 1.52 2021/12/22 11:22:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "fournisseurs.inc.php")) die("no access");
 

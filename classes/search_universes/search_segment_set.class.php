@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_set.class.php,v 1.9 2020/03/13 09:06:22 qvarin Exp $
+// $Id: search_segment_set.class.php,v 1.10.4.5 2023/09/07 13:46:41 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -39,7 +39,8 @@ class search_segment_set {
 			$result = pmb_mysql_query($query);
 			if (pmb_mysql_num_rows($result)) {
 				$row = pmb_mysql_fetch_assoc($result);
-				$this->data_set = stripslashes($row['search_segment_set']);
+
+				$this->data_set = $row['search_segment_set'] ?? "";
 				$this->type = $row['search_segment_type'];
 			}
 		}
@@ -67,6 +68,8 @@ class search_segment_set {
 	    global $search_segment_set_form;
 
 	    $authperso_id = 0;
+	    $class_id = 0;
+	    $ontology_id = 0;
 	    if (empty($search_segment_set_form))  {
 	        return '';
 	    }
@@ -76,11 +79,17 @@ class search_segment_set {
 	    $search_segment_set_form = str_replace('!!segment_set_human_query!!', $this->get_human_query(), $search_segment_set_form);	    
 	    $search_segment_set_form = str_replace('!!segment_set_data_set!!', $this->get_data_set(), $search_segment_set_form);	
 
-	    if ((int) $this->type > 1000) {
+	    if ((int) $this->type > 10000) {
+	        $class_id = intval($this->type) - 10000;
+	        $uri = onto_common_uri::get_uri($class_id);
+	        $ontology_id=ontologies::get_ontology_id_from_class_uri($uri);
+	    }else if ((int) $this->type > 1000) {
 	        $authperso_id = intval($this->type) - 1000;
 	    }
 	    
-	    $search_segment_set_form = str_replace('!!authperso_id!!', $authperso_id, $search_segment_set_form);
+	    $search_segment_set_form = str_replace('!!authperso_id!!', $authperso_id, $search_segment_set_form); 
+	    $search_segment_set_form = str_replace('!!class_id!!', $class_id, $search_segment_set_form); 
+	    $search_segment_set_form = str_replace('!!ontology_id!!', $ontology_id, $search_segment_set_form);
 	    return $search_segment_set_form;
 	}
 		
@@ -106,6 +115,7 @@ class search_segment_set {
 	}
 	
 	public function get_search_instance() {
+	    global $ontology_id;
 		if (isset($this->search_instance)) {
 			return $this->search_instance;
 		}
@@ -117,9 +127,20 @@ class search_segment_set {
 	            case TYPE_EXTERNAL :
 	                $this->search_instance = new search(false, "search_fields_unimarc");
 	                break;
-	            default :
-                    $this->search_instance = new search_authorities(false, 'search_fields_authorities');
+	            case TYPE_ANIMATION :
+	                $this->search_instance = new search(false, "search_fields_animations");
 	                break;
+				case TYPE_CMS_EDITORIAL :
+					$this->search_instance = new search(false, "search_fields_cms_editorial");
+					break;
+	            default :
+	                if($this->type > 10000){    
+	                    $ontology = new ontology(ontologies::get_ontology_id_from_class_uri(onto_common_uri::get_uri($this->type-10000)));
+	                    $this->search_instance = new search_ontology(false, 'search_fields_ontology','',$ontology->get_handler()->get_ontology());
+	                }else {
+                        $this->search_instance = new search_authorities(false, 'search_fields_authorities');
+	                }
+                    break;
 	        }
 	        return $this->search_instance;
 	    }
@@ -152,7 +173,16 @@ class search_segment_set {
 	                return 'titre_uniforme';
 	            case TYPE_EXTERNAL :
 	                return 'external_notice';
+	            case TYPE_ANIMATION :
+	                return 'animations';
+	            case TYPE_CMS_EDITORIAL :
+	                return 'cms_editorial';
 	            default :
+	                if ((int) $this->type > 10000) {
+	                    $type = $this->type - 10000;
+	                    $uri = onto_common_uri::get_uri($type);
+	                    return 'ontologies&ontology_id='.ontologies::get_ontology_id_from_class_uri($uri);
+	                }
 	                if ((int) $this->type > 1000) {
 	                    return 'authperso';
 	                }
@@ -178,5 +208,10 @@ class search_segment_set {
 	public function delete_data_set(){
 	    $this->data_set = "";
 	    $this->human_query = "";
+	}
+
+	public function set_data_set($dataset)
+	{
+		$this->data_set = $dataset;
 	}
 }

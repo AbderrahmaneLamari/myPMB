@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cart.inc.php,v 1.114 2020/11/05 12:56:21 dgoron Exp $
+// $Id: cart.inc.php,v 1.114.6.3 2023/09/04 14:27:41 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -58,7 +58,9 @@ function aff_paniers($item=0, $object_type="NOTI", $lien_origine="./cart.php?", 
 	print $list_caddies_ui->get_display_list();
 	$script_submit = $list_caddies_ui->get_script_submit();
 	if ($lien_creation) {
-		print "<script src='./javascript/classementGen.js' type='text/javascript'></script>";
+		print "<script type='text/javascript'>
+            pmb_include('./javascript/classementGen.js');
+        </script>";
 	}
 
 	if (!$nocheck) {
@@ -126,19 +128,19 @@ function aff_cart_unique_object ($item, $caddie_type, $url_base="./catalog.php?c
 			$elements_records_caddie_list_ui->set_show_resa_planning(0);
 			$elements_records_caddie_list_ui->set_draggable(0);
 			elements_records_caddie_list_ui::set_url_base($url_base);
-			print $elements_records_caddie_list_ui->get_elements_list();
+			$aff_retour .= $elements_records_caddie_list_ui->get_elements_list();
 			
-			print $end_result_list;
+			$aff_retour .= $end_result_list;
 		} // fin si NOTI
 		// si EXPL
 		if ($caddie_type=="EXPL") {
 			// boucle de parcours des exemplaires trouvés
 			// inclusion du javascript de gestion des listes dépliables
 			// début de liste
-		    foreach ($liste as $cle => $expl) {
+		    foreach ($liste as $expl) {
 				if (!$expl['content'])
 					if($stuff = get_expl_info($expl['object_id'])) {
-						$stuff->lien_suppr_cart = "<a href='$url_base&action=del_item&object_type=EXPL&item=$expl&page=$page_suppr&nbr_lignes=$nb_after_suppr&nb_per_page=$nb_per_page'><img src='".get_url_icon('basket_empty_20x20.gif')."' alt='basket' title=\"".$msg['caddie_icone_suppr_elt']."\" /></a>";
+						$stuff->lien_suppr_cart = "<a href='$url_base&action=del_item&object_type=EXPL&item=".$expl['object_id']."&page=$page_suppr&nbr_lignes=$nb_after_suppr&nb_per_page=$nb_per_page'><img src='".get_url_icon('basket_empty_20x20.gif')."' alt='basket' title=\"".$msg['caddie_icone_suppr_elt']."\" /></a>";
 						$stuff = check_pret($stuff);
 						$aff_retour .= print_info($stuff,0,1);
 					} else {
@@ -154,13 +156,13 @@ function aff_cart_unique_object ($item, $caddie_type, $url_base="./catalog.php?c
 					$aff_retour .= $cb_display;
 				}
 			} // fin de liste
-			print $end_result_list;
+			$aff_retour .= $end_result_list;
 		} // fin si EXPL
 		if ($caddie_type=="BULL") {
 			// boucle de parcours des bulletins trouvés
 			// inclusion du javascript de gestion des listes dépliables
 			// début de liste
-		    foreach ($liste as $cle => $expl) {
+		    foreach ($liste as $expl) {
 				global $url_base_suppr_cart; 
 				$url_base_suppr_cart = $url_base ;
 				if ($bull_aff = show_bulletinage_info($expl["object_id"],0,1)) {
@@ -169,7 +171,7 @@ function aff_cart_unique_object ($item, $caddie_type, $url_base="./catalog.php?c
 					$aff_retour .= "<strong>$form_cb_expl&nbsp;: ${msg[395]}</strong><br />";
 				}
 			} // fin de liste
-			print $end_result_list;
+			$aff_retour .= $end_result_list;
 		} // fin si BULL
 	}
 	return $aff_retour ;

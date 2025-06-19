@@ -2,7 +2,7 @@
 // +--------------------------------------------------------------------------+
 // | PMB est sous licence GPL, la réutilisation du code est cadrée            |
 // +--------------------------------------------------------------------------+
-// $Id: print.php,v 1.64 2019/10/23 07:09:42 dgoron Exp $
+// $Id: print.php,v 1.67.4.3 2023/12/27 16:26:39 rtigero Exp $
 
 //Impression
 
@@ -14,20 +14,26 @@ $base_title = "\$msg[print_title]";
 $base_nobody=1;
 $base_noheader=1;
 
-
+use Spipu\Html2Pdf\Html2Pdf;
 require($base_path."/includes/init.inc.php");
 
-if(!isset($action_print)) $action_print = '';
+global $class_path, $include_path, $msg, $charset;
+global $pmb_print_expl_default, $pmb_opac_url, $opac_url_base;
+global $action_print, $sort_id, $pager, $permalink, $current_print;
+global $short, $ex, $exnum, $output, $emailobj, $emaildest, $emaildest_id, $emailcontent;
+global $notice_id, $header, $vignette, $notice_tpl;
+
+if(!isset($sort_id)) $sort_id = 0;
 
 if (($action_print=="")&&($_SESSION["PRINT"])) {
 	if ($_SESSION["PRINT"]["output"]=="tt") {
+	    //Le Format de cache WebP n'est pas compatible en sortie traitement de texte
+	    global $pmb_img_cache_type;
+        $pmb_img_cache_type = 'png';
 		header("Content-Type: application/word");
 		header("Content-Disposition: attachement; filename=liste.doc");
 	}
 }
-if(!isset($sort_id)) $sort_id = 0;
-if(!isset($pager)) $pager = '';
-if(!isset($permalink)) $permalink = '';
 
 require_once($class_path."/mono_display.class.php");
 require_once($include_path."/notice_authors.inc.php");
@@ -73,11 +79,15 @@ if ($action_print=="print_prepare") {
 				document.getElementById('mail_part').style.display='block';
 				ajax_resize_elements();
 			}
+			if(document.getElementById('outpdf').checked){
+				document.getElementById('mail_part').style.display='none';
+				ajax_resize_elements();
+			}
 		}
 	</script>";
 	print "<form name='print_options' action='print.php?action_print=print' method='post'>
 	<b>".$msg["print_size"]."</b>";
-	if(!isset($notice_id) || !$notice_id) 
+	if(!isset($notice_id) || !$notice_id)
 	print"
 	<blockquote>
 		<input type='radio' name='pager' id='selected_elements' value='2' ".($print_options['selected_elements'] ? ' checked ' : '')."/><label for='selected_elements'>&nbsp;".$msg["print_size_selected_elements"]."</label><br />
@@ -86,7 +96,7 @@ if ($action_print=="print_prepare") {
 	</blockquote>";
 
 	$sort_info = $sort_id ? '<input type="hidden" name="sort_id" value="'.$sort_id.'">' : '';
-	
+
 	$onchange="
 		var div_sel=document.getElementById('sel_notice_tpl');
 		var div_sel2=document.getElementById('sel_notice_tpl2');
@@ -95,15 +105,15 @@ if ($action_print=="print_prepare") {
 	    if(sel>0){
 	    	div_sel.style.display='none';
 	    	div_sel2.style.display='none';
-	    }else { 
+	    }else {
 	    	div_sel.style.display='block';
 	    	div_sel2.style.display='block';
-	    }		    
+	    }
 	";
 	$sel_notice_tpl=notice_tpl_gen::gen_tpl_select("notice_tpl",0,$onchange);
-	
+
 	print"
-	<b>".$msg["print_format_title"]."</b>
+	<label for='notice_tpl'><b>".$msg["print_format_title"]."</b></label>
 	<blockquote>
 		$sel_notice_tpl
 		<div id='sel_notice_tpl'>
@@ -112,7 +122,7 @@ if ($action_print=="print_prepare") {
 			<input type='checkbox' name='header' id='header' value='1' ".($print_options['header'] ? ' checked ' : '')."/><label for='header'>&nbsp;".$msg["print_header"]."</label><br/>
 			<input type='checkbox' name='permalink' id='permalink' value='1' ".($print_options['permalink'] ? ' checked ' : '')."/><label for='permalink'>&nbsp;".$msg["print_permalink"]."</label><br />
 			<input type='checkbox' name='vignette' id='vignette' value='1' ".($print_options['vignette'] ? ' checked ' : '')."/><label for='vignette'>&nbsp;".$msg["print_vignette"]."</label><br />
-		</div>	
+		</div>
 	</blockquote>
 	<div id='sel_notice_tpl2'>
 	<b>".$msg["print_ex_title"]."</b>
@@ -139,23 +149,25 @@ if ($action_print=="print_prepare") {
 		<input type='radio' name='output' id='outp' onClick =\"sel_part_gestion();\" value='printer' ".($print_options['outp'] ? ' checked ' : '')."/><label for='outp'>&nbsp;".$msg["print_output_printer"]."</label><br />
 		<input type='radio' name='output' id='outt' onClick =\"sel_part_gestion();\" value='tt' ".($print_options['outt'] ? ' checked ' : '')."/><label for='outt'>&nbsp;".$msg["print_output_writer"]."</label><br />
 		<input type='radio' name='output' id='oute' onClick =\"sel_part_gestion();\" value='email' ".($print_options['oute'] ? ' checked ' : '')."/><label for='oute'>&nbsp;".$msg["print_output_email"]."</label><br />
+		<input type='radio' name='output' id='outpdf' onClick =\"sel_part_gestion();\" value='pdf' ".($print_options['outpdf'] ? ' checked ' : '')."/><label for='outpdf'>&nbsp;".$msg["print_output_outpdf"]."</label><br />
 	</blockquote>
 	<div id='mail_part'>
 		<div class='row'>
-			<div>".$msg["print_emaildest"]."</div>
+			<div><label for='emaildest_0'>".$msg["print_emaildest"]."</label></div>
 			<input type='text' id='emaildest_0' class='saisie-20emr' completion='empr_mail' name='emaildest[]' autfield='emaildest_id_0' value='' autocomplete='off'/>
 			<input type='button' class='bouton' value='X' onclick=\"document.getElementById('emaildest_0').value=''; document.getElementById('emaildest_id_0').value='';\">
 			<input class='bouton' value='+' onclick='add_dest_field(this);' counter='0' type='button'>
 			<input type='hidden' name='emaildest_id[]' id='emaildest_id_0'/>
 		</div>
 		<div id='emailObj' class='row'>
-			<div>".$msg["print_emailobj_label"]."</div>
-			<input type='text' size='40' name='emailobj' value='".htmlentities(trim($msg["print_emailobj"]." ".$opac_biblio_name." - ".formatdate(today())), ENT_QUOTES, $charset)."' />
+			<div><label for='emailobj'>".$msg["print_emailobj_label"]."</label></div>
+			<input type='text' size='40' id='emailobj' name='emailobj' value='".htmlentities(trim($msg["print_emailobj"]." ".$opac_biblio_name." - ".formatdate(today())), ENT_QUOTES, $charset)."' />
 		</div>
 		<div id='emailContent' class='row'>
-			<div>".$msg["523"]."</div><textarea rows='4' cols='45' name='emailcontent' value=''></textarea>
+			<div><label for='emailcontent'>".$msg["523"]."</label></div>
+            <textarea rows='4' cols='45' id='emailcontent' name='emailcontent' value=''></textarea>
 		</div>
-		
+
 	</div>
 	<input type='hidden' name='current_print' value='$current_print'/>
 	<input type='hidden' name='selected_objects' value='$selected_objects'/>
@@ -167,49 +179,49 @@ if ($action_print=="print_prepare") {
 		function add_dest_field(buttonClicked){
 			var currentCounter = buttonClicked.getAttribute('counter');
 			currentCounter++;
-			
+
 			var newLine = document.createElement('div');
 			newLine.setAttribute('class', 'row');
-			
+
 			var newInput = document.createElement('input');
 			newInput.setAttribute('class','saisie-20emr');
-			newInput.setAttribute('id', 'emaildest_'+currentCounter); 
+			newInput.setAttribute('id', 'emaildest_'+currentCounter);
 			newInput.setAttribute('completion','empr_mail');
 			newInput.setAttribute('name','emaildest[]');
 			newInput.setAttribute('autfield', 'emaildest_id_'+currentCounter);
 			newInput.setAttribute('value', '');
 			newInput.setAttribute('autocomplete', 'off');
 			newInput.setAttribute('type', 'text');
-			
+
 			var newInputId = document.createElement('input');
 			newInputId.setAttribute('id','emaildest_id_'+currentCounter);
 			newInputId.setAttribute('type','hidden');
 			newInputId.setAttribute('name','emaildest_id[]');
-			
-			
+
+
 			var newPurge = document.createElement('input');
 			newPurge.setAttribute('value','X');
 			newPurge.setAttribute('type','button');
 			newPurge.setAttribute('class','bouton');
 			newPurge.addEventListener('click', function(){
-				newInput.value=''; 
-				newInputId.value=''; 
+				newInput.value='';
+				newInputId.value='';
 			});
-			
+
 			newLine.appendChild(newInput);
 			newLine.appendChild(newInputId);
 			newLine.appendChild(newPurge);
-			
+
 			buttonClicked.setAttribute('counter', currentCounter);
-			buttonClicked.parentElement.parentElement.insertBefore(newLine, document.getElementById('emailObj')); 
+			buttonClicked.parentElement.parentElement.insertBefore(newLine, document.getElementById('emailObj'));
 			ajax_pack_element(newInput);
 		}
-			
+
 		sel_part_gestion();
 		if(getSelectedObjects('opener')) {
 			document.getElementById('selected_elements').checked = 'checked';
 		}
-		ajax_parse_dom(); 
+		ajax_parse_dom();
 	</script></body></html>";
 }
 
@@ -250,7 +262,7 @@ if ($action_print=="print") {
 		$_SESSION["PRINT"]["vignette"]=$vignette;
 		$_SESSION["PRINT"]["header"]=$header;
 		$_SESSION["PRINT"]["notice_tpl"]=$notice_tpl;
-		echo "<script>document.location='./print.php'</script>";		
+		echo "<script>document.location='./print.php'</script>";
 	} else {
 		echo "<script>alert(\"".$msg["print_no_search"]."\"); self.close();</script>";
 	}
@@ -260,9 +272,12 @@ $prefix_url_image=$opac_url_base;
 $no_aff_doc_num_image=1;
 
 if (($action_print=="")&&($_SESSION["PRINT"])) {
-
-	
 	$environement=$_SESSION["PRINT"];
+	switch($environement['output']) {
+		case 'email': // on n'utilise pas le cache des images dans le contenu de l'email
+			$no_use_img_cache = 1;
+			break;
+	}
 	$limit='';
 	if($environement["notice_id"]){
 		$requete="select notice_id from notices where notice_id=".$environement["notice_id"];
@@ -294,7 +309,7 @@ if (($action_print=="")&&($_SESSION["PRINT"])) {
 		$start = 0;
 		$nbLimit = -1;
 	}
-	
+
 	if (!empty($environement["sort_id"])) {
 		$sort = new sort('notices','base');
 		$requete = $sort->appliquer_tri($environement["sort_id"] , $requete, "notice_id", $start, $nbLimit);
@@ -313,50 +328,52 @@ if (($action_print=="")&&($_SESSION["PRINT"])) {
 			$pheader.= $msg['523'].$environement['emailcontent'].'<br />';
 		}
 	}
-	
+
 	if($_SESSION["PRINT"]["notice_tpl"])	$noti_tpl=new notice_tpl_gen($_SESSION["PRINT"]["notice_tpl"]);
 	else $noti_tpl=0;
-	
-	$pheader.= '<style type="text/css">
-		body { 	
-			font-size: 10pt;
-			font-family: verdana, geneva, helvetica, arial;
-			color:#000000;
-			background:#FFFFFF;
-		}
-		td {
-			font-size: 10pt;
-			font-family: verdana, geneva, helvetica, arial;
-			color:#000000;
-		}
-		th {
-			font-size: 10pt;
-			font-family: verdana, geneva, helvetica, arial;
-			font-weight:bold;
-			color:#000000;
-			background:#DDDDDD;
-			text-align:left;
-		}
-		hr {
-			border:none;
-			border-bottom:1px solid #000000;
-		}
-		h3 {
-			font-size: 12pt;
-			color:#000000;
-		}
-		.vignetteimg {
-		    max-width: 140px;
-		    max-height: 200px;
-		    -moz-box-shadow: 1px 1px 5px #666666;
-		    -webkit-box-shadow: 1px 1px 5px #666666;
-		    box-shadow: 1px 1px 5px #666666;
-		}
-		.img_notice {
-			max-width: 140px;
-			max-height: 200px;
-		}
-		</style>';
+	//Probleme d'inclusion de polices avec Html2pdf donc on enleve
+	$pheader.= "<style type=\"text/css\">
+	body {
+		font-size: 10pt;
+		".($environement['output'] != "pdf" ? "font-family: verdana, geneva, helvetica, arial;" : "").
+		"color:#000000;
+		background:#FFFFFF;
+	}
+	td {
+		font-size: 10pt;
+		".($environement['output'] != "pdf" ? "font-family: verdana, geneva, helvetica, arial;" : "").
+		"color:#000000;
+	}
+	th {
+		font-size: 10pt;
+		".($environement['output'] != "pdf" ? "font-family: verdana, geneva, helvetica, arial;" : "").
+		"color:#000000;
+		font-weight:bold;
+		color:#000000;
+		background:#DDDDDD;
+		text-align:left;
+	}
+	hr {
+		border:none;
+		border-bottom:1px solid #000000;
+	}
+	h3 {
+		font-size: 12pt;
+		color:#000000;
+	}
+	.vignetteimg {
+		max-width: 140px;
+		max-height: 200px;
+		-moz-box-shadow: 1px 1px 5px #666666;
+		-webkit-box-shadow: 1px 1px 5px #666666;
+		box-shadow: 1px 1px 5px #666666;
+	}
+	.img_notice {
+		max-width: 140px;
+		max-height: 200px;
+	}
+	</style>";
+
 	if($noti_tpl) {
 		$pheader.=$noti_tpl->get_print_css_style();
 	}
@@ -395,22 +412,20 @@ if (($action_print=="")&&($_SESSION["PRINT"])) {
 						$output_final.= '<b>'.$serial->header.'</b><br /><br />';
 					}
 					$output_final.= $serial->isbd;
-				}		
+				}
 				if($environement['permalink']) {
 					$output_final .= "<br /><a href='".$pmb_opac_url."index.php?lvl=notice_display&id=".$r->notice_id."'>".substr($pmb_opac_url."index.php?lvl=notice_display&id=".$r->notice_id,0,80)."</a><br />";
 				}
 				$output_final.= "<hr />";
-			}	
+			}
 		}
 	}
 	if ($charset!='utf-8') {
 		$output_final=cp1252Toiso88591($output_final);
 	}
 	switch($environement['output']) {
-		
+
 		case 'email':
-			$headers  = "MIME-Version: 1.0\n";
-			$headers .= "Content-type: text/html; charset=".$charset."\n";
 			$mail_addresses = array();
 			foreach($environement['emaildest'] as $i => $email){
 				if(isset($environement['emaildest_id'][$i]) && $environement['emaildest_id'][$i]){
@@ -424,30 +439,37 @@ if (($action_print=="")&&($_SESSION["PRINT"])) {
 					}
 				}
 			}
-			$emailobj=$_SESSION['PRINT']['emailobj'];
-			$f_objet_mail = trim(stripslashes($emailobj));
-			if (!$f_objet_mail) {
-				$f_objet_mail=$msg['print_emailobj'].' '.$opac_biblio_name.' - '.$date_today;
-			}
 			$f_message_to_send = $output_final.'<br /><br />'.mail_bloc_adresse().'</body></html>';
-			$emaildest=$_SESSION['PRINT']['emaildest'];
-			$res_envoi=mailpmb('', implode(';',$mail_addresses), $f_objet_mail, $f_message_to_send, $PMBuserprenom.' '.$PMBusernom, $PMBuseremail, $headers, '', $PMBuseremailbcc);
+
+			$mail_print = new mail_print();
+			$mail_print->set_mail_to_mail(implode(';',$mail_addresses))
+					->set_mail_content($f_message_to_send);
+			$res_envoi = $mail_print->send_mail();
 			if ($res_envoi) {
 				print $pheader."<br /><br /><h3>".sprintf($msg["print_emailsucceed"],implode(', ',$mail_addresses))."</h3><br /><a href=\"\" onClick=\"self.close(); return false;\">".$msg["print_emailclose"]."</a></body></html>" ;
 			} else {
 				print $pheader."<br /><br /><h3>".sprintf($msg["print_emailfailed"],implode(', ',$mail_addresses))."</h3><br /><a href=\"\" onClick=\"self.close(); return false;\">".$msg["print_emailclose"]."</a></body></html>" ;
 			}
-			break;	
+			break;
 		case 'printer':
 			$output_final.= '<script type="text/javascript">self.print();</script>';
 			$output_final.= '</body></html>';
 			print pmb_bidi($output_final);
-			break; 					
+			break;
 		case 'tt':
 			$output_final.= '</body></html>';
 			print pmb_bidi($output_final);
-			break; 					
+			break;
+		case 'pdf':
+			//Petite modification du style pour les vignettes sinon elles apparaissent coupees
+			//Pb connu de Html2pdf avec les tables
+			//TODO vérifier dans les templates sans tables
+			$output_final.= "<style>td {width:350px;}</style>";
+			$output_final.= "</body></html>";
+			$html2pdf = new Html2Pdf();
+			$html2pdf->writeHTML(pmb_bidi($output_final));
+			$html2pdf->output('impression.pdf', 'I');
+			break;
 	}
 	$_SESSION["PRINT"]=false;
 }
-?>

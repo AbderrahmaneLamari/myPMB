@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestions_categ.class.php,v 1.9 2021/01/18 12:58:01 dgoron Exp $
+// $Id: suggestions_categ.class.php,v 1.9.6.1 2023/06/28 07:57:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -31,12 +31,15 @@ class suggestions_categ{
 		$this->libelle_categ = $obj->libelle_categ;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle_categ);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $msg, $charset;
-		global $categ_content_form;
-		
-		$content_form = $categ_content_form;
-		$content_form = str_replace('!!id!!', $this->id_categ, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('categform');
 		if(!$this->id_categ){
@@ -44,11 +47,9 @@ class suggestions_categ{
 		}else{
 			$interface_form->set_label($msg['acquisition_modif_categ']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle_categ, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id_categ)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle_categ." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('suggestions_categ')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();

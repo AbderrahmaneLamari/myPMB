@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: proc_planning.class.php,v 1.3.8.1 2022/01/03 10:28:29 dgoron Exp $
+// $Id: proc_planning.class.php,v 1.4 2022/01/03 10:20:18 dgoron Exp $
 
 global $class_path, $include_path;
 require_once($include_path.'/fields.inc.php');

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authperso.class.php,v 1.33.2.1 2022/01/03 10:54:54 dgoron Exp $
+// $Id: authperso.class.php,v 1.34.4.1 2023/11/15 07:54:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -19,7 +19,7 @@ class authperso {
 	public static $antiloop = [];
 	
 	public function __construct($id=0) {
-		$this->id=$id+0;
+		$this->id = intval($id);
 		$this->fetch_data();
 	}
 	
@@ -32,17 +32,19 @@ class authperso {
 		$req="select * from authperso where id_authperso=". $this->id." order by authperso_name";		
 		$resultat=pmb_mysql_query($req);	
 		if (pmb_mysql_num_rows($resultat)) {
-			$r=pmb_mysql_fetch_object($resultat);		
-			$this->info['id']= $r->id_authperso;	
-			$this->info['name']= $r->authperso_name;
-			$this->info['onglet_num']= $r->authperso_notice_onglet_num;			
-			$this->info['isbd_script']= $r->authperso_isbd_script;			
-			$this->info['opac_search']= $r->authperso_opac_search;			
-			$this->info['opac_multi_search']= $r->authperso_opac_multi_search;
-			$this->info['comment']= $r->authperso_comment;
-			$this->info['event'] = $r->authperso_oeuvre_event;
-			$this->info['responsability_authperso']= $r->authperso_responsability_authperso;
-			$this->info['onglet_name']="";
+			$r=pmb_mysql_fetch_object($resultat);
+			$this->info=array(
+			    'id' => $r->id_authperso,
+			    'name' => translation::get_translated_text($r->id_authperso, 'authperso', 'authperso_name', $r->authperso_name),
+			    'onglet_num' => $r->authperso_notice_onglet_num,
+			    'isbd_script' => $r->authperso_isbd_script,
+			    'opac_search' => $r->authperso_opac_search,
+			    'opac_multi_search' => $r->authperso_opac_multi_search,
+			    'comment' => $r->authperso_comment,
+			    'event' => $r->authperso_oeuvre_event,
+			    'responsability_authperso' => $r->authperso_responsability_authperso,
+			    'onglet_name' => ''
+			);
 			$req="SELECT * FROM notice_onglet where id_onglet=".$r->authperso_notice_onglet_num;
 			$resultat=pmb_mysql_query($req);
 			if (pmb_mysql_num_rows($resultat)) {
@@ -55,6 +57,7 @@ class authperso {
 		$i = 0;
 		if (pmb_mysql_num_rows($resultat)) {
 			while ($r = pmb_mysql_fetch_object($resultat)) {
+			    $this->info['fields'][$i]= array();
 			    $this->info['fields'][$i]['id'] = (int) $r->idchamp;
 				$this->info['fields'][$i]['custom_prefixe'] = $r->custom_prefixe;
 				$this->info['fields'][$i]['name'] = $r->name;
@@ -94,6 +97,7 @@ class authperso {
 			}
 		}
 		foreach($this->info['fields'] as $field){
+		    $info[$field['id']]= array();
 			$info[$field['id']]['id']= $field['id'];
 			$info[$field['id']]['name']= $field['name'];
 			$info[$field['id']]['label']= $field['label'];

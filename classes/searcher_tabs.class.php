@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_tabs.class.php,v 1.87.2.6 2021/10/14 13:06:08 gneveu Exp $
+// $Id: searcher_tabs.class.php,v 1.95 2022/12/22 10:57:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -808,7 +808,7 @@ class searcher_tabs {
     }
     
     protected function search() {
-    	global $page, $nb_per_page_search;
+    	global $page;
     	global $pmb_show_authority_id, $mode, $msg;
     	
     	$values = $this->get_values_from_form();
@@ -838,8 +838,11 @@ class searcher_tabs {
     	}
     	
     	if (!$this->search_failed) {    
-        	$searcher_entities_tab = $this->get_instance_entities_tab($values);
-        	$this->objects_ids = $searcher_entities_tab->get_sorted_result("default",$page*$nb_per_page_search,$nb_per_page_search);
+    		$searcher_entities_tab = $this->get_instance_entities_tab($values);
+    		if(static::class == 'searcher_selectors_tabs' && method_exists($searcher_entities_tab, 'add_context_parameter')) {
+        		$searcher_entities_tab->add_context_parameter('in_selector', true);
+        	}
+        	$this->objects_ids = $searcher_entities_tab->get_sorted_result("default",$page*$this->get_nb_per_page(),$this->get_nb_per_page());
         	$this->search_nb_results = $searcher_entities_tab->get_nb_results();
     	}
     }
@@ -1075,14 +1078,21 @@ class searcher_tabs {
     	return "<div class='othersearchinfo'>".$research."</div>";
     }
     	
+    protected function get_nb_per_page() {
+    	global $nb_per_page_search;
+    	
+    	$nb_per_page_search = intval($nb_per_page_search);
+    	return $nb_per_page_search;
+    }
+    
     protected function pager() {
     	global $msg;
-    	global $page, $nb_per_page_search;
+    	global $page;
     
     	if (!$this->search_nb_results) return;
     	
     	if($page) $this->page = $page;
-    	$this->nbepage=ceil($this->search_nb_results/$nb_per_page_search);
+    	$this->nbepage=ceil($this->search_nb_results/$this->get_nb_per_page());
     	$suivante = $this->page+1;
     	$precedente = $this->page-1;
     	if (!$this->page) $page_en_cours=0 ;

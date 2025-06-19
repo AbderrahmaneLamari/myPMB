@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: out.inc.php,v 1.11 2021/03/08 16:58:52 dbellamy Exp $
+// $Id: out.inc.php,v 1.13 2022/05/04 12:34:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -18,30 +18,22 @@ function list_connectors_out() {
 
 function show_connector_out_form($connector_id) {
 	global $msg;
-	print '<form method="POST" action="admin.php?categ=connecteurs&sub=out&action=update" name="form_connectorout">';
-	print '<h3>'.$msg['connector_out_edit'].'</h3>';
-		
-	print '<div class="form-contenu">';
 	
-	//id
-	print '<input type="hidden" name="id" value="'.$connector_id.'" />';
-	
+	$content_form = '';
 	$daconn = instantiate_connecteur_out($connector_id);
 	if ($daconn) {
-		echo $daconn->get_config_form();		
+		$content_form .= $daconn->get_config_form();		
 	}
 	
-	//buttons
-	print "</div><div class='row'>
-	<div class='left'>";
-	print "<input class='bouton' type='button' value=' $msg[76] ' onClick=\"document.location='./admin.php?categ=connecteurs&sub=out'\" />&nbsp;";
-	print '<input class="bouton" type="submit" value="'.$msg[77].'" />';	
-	print "</div></div>&nbsp;";
-	print '</form>';
+	$interface_form = new interface_admin_form('form_connectorout');
+	$interface_form->set_label($msg['connector_out_edit']);
+	$interface_form->set_object_id($connector_id)
+					->set_content_form($content_form);
+	print $interface_form->get_display_parameters();
 	
 }
 
-function show_sourceout_form($source_id=0, $connector_id, $name="", $comment="", $config_form=NULL) {
+function show_sourceout_form($source_id=0, $connector_id=0, $name="", $comment="", $config_form=NULL) {
 	
 	global $msg;
 	print '<form method="POST" action="admin.php?categ=connecteurs&sub=out&action=source_update" name="form_connectorout" enctype="multipart/form-data">';

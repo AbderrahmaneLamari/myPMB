@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_url.class.php,v 1.1.2.2 2021/07/29 10:41:34 rtigero Exp $
+// $Id: onto_common_datatype_url.class.php,v 1.3 2021/07/29 10:48:00 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -25,7 +25,7 @@ class onto_common_datatype_url extends onto_common_datatype {
 	
 	public function check_value(){
 		if (is_string($this->value)) {
-			if(filter_var($this->value, FILTER_VALIDATE_URL) || empty($this->value)){
+		    if(filter_var($this->value, FILTER_VALIDATE_URL) || empty($this->value)){
 				return true;
 			}
 		}

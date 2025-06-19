@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docbnf.class.php,v 1.5 2019/06/06 09:56:19 btafforeau Exp $
+// $Id: docbnf.class.php,v 1.6 2022/09/09 08:11:19 dgoron Exp $
 
 
 if (stristr ($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
@@ -746,17 +746,17 @@ class fpdf_bnf extends fpdf{
 		$this->_out('endobj');
 	}
 
-	public function _putresources(){
+	protected function _putresources(){
 		parent::_putresources();
 		$this->_putbookmarks();
 	}
 
-	public function _putcatalog(){
+	protected function _putcatalog(){
 		parent::_putcatalog();
 		if(count($this->outlines)>0)
 		{
-			$this->_out('/Outlines '.$this->OutlineRoot.' 0 R');
-			$this->_out('/PageMode /UseOutlines');
+			$this->_put('/Outlines '.$this->OutlineRoot.' 0 R');
+			$this->_put('/PageMode /UseOutlines');
 		}
 	}
 

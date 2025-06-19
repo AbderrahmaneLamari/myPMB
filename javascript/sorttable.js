@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sorttable.js,v 1.9 2019/10/14 09:28:44 btafforeau Exp $
+// $Id: sorttable.js,v 1.10 2022/11/30 10:26:14 tsamson Exp $
 
 /*
   SortTable
@@ -225,6 +225,9 @@ if(typeof sorttable == "undefined"){
 	
 	    if (node.getAttribute && node.getAttribute("sorttable_customkey") != null) {
 	      return node.getAttribute("sorttable_customkey");
+	    }// a hack just a little dirty but it makes coffee (passage des input dojo a des input date)
+	    else if (node.nodeName.toLowerCase() == 'input' && node.getAttribute("type") == "date" && !hasInputs) {
+	      return node.value.replace(/^\s+|\s+$/g, '');
 	    }
 	    else if (typeof node.textContent != 'undefined' && !hasInputs) {
 	      return node.textContent.replace(/^\s+|\s+$/g, '');

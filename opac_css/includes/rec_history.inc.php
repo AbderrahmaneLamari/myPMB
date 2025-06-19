@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rec_history.inc.php,v 1.62.2.1 2021/10/21 14:54:57 rtigero Exp $
+// $Id: rec_history.inc.php,v 1.64.4.1 2023/10/17 14:03:22 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $base_path,$include_path,$class_path,$msg;
+global $base_path,$include_path,$msg;
 require_once($base_path."/classes/search.class.php");
 require_once($base_path."/classes/authperso.class.php");
 require_once($base_path."/classes/search_universes/search_universes_history.class.php");
@@ -117,18 +117,18 @@ function rec_history() {
 			global $search_term;
 			global $term_click;
 			global $page_search;
-			$_SESSION["nb_queries"]=$_SESSION["nb_queries"]+1;
+			$_SESSION["nb_queries"]=intval($_SESSION["nb_queries"])+1;
 			$n=$_SESSION["nb_queries"];
 			$_SESSION["search_type".$n]=$search_type;
 			$_SESSION["search_term".$n]=stripslashes($search_term);
 			$_SESSION["term_click".$n]=stripslashes($term_click);
-			$_SESSION["page_search".$n]=$page_search;    
+			$_SESSION["page_search".$n]=intval($page_search);    
 			$_SESSION["l_typdoc".$n]=$l_typdoc;
 			break;
 		case "tags_search":
 			global $user_query;
 			
-			$_SESSION["nb_queries"]=$_SESSION["nb_queries"]+1;
+			$_SESSION["nb_queries"]=intval($_SESSION["nb_queries"])+1;
 			$n=$_SESSION["nb_queries"];
 			$_SESSION["user_query".$n]=$user_query;
 			$_SESSION["search_type".$n]="simple_search";
@@ -292,7 +292,7 @@ function get_human_query($n) {
 			break;
 		case "term_search":
 			if ($_SESSION["search_term".$n]=="") $r1="(tous les termes)"; else $r1=stripslashes($_SESSION["search_term".$n]);
-			$r=sprintf($msg["term_search_history"],$r1,($_SESSION["page_search".$n]+1),$_SESSION["term_click".$n]);
+			$r=sprintf($msg["term_search_history"],$r1,(intval($_SESSION["page_search".$n])+1),$_SESSION["term_click".$n]);
 			break;
 		case "module":
 			$r=sprintf($msg["navigation_search_libelle"],stripslashes($_SESSION["human_query".$n]));

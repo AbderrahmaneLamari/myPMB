@@ -2,40 +2,53 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pdf_factory.class.php,v 1.6 2019/07/05 13:25:14 btafforeau Exp $
+// $Id: pdf_factory.class.php,v 1.9 2022/10/14 12:13:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once("$class_path/fpdf.class.php");
 require_once("$class_path/ufpdf.class.php");
 
 class pmb2FPDF extends FPDF {
 
 	public $footer_type=0;
-	public $y_footer;
+	public $y_footer; //Distance footer / bas de page
+	public $h_footer;
 	public $fs_footer;
 	public $msg_footer = '';
+	public $align_footer = 'C';
 	public $npage = 1;
+	public $display_npage = true; 
 	
 	public function Footer() {
-		
-		global $msg;
-
+		if(empty($this->y_footer)) {
+			$this->y_footer = 1.5;
+		}
+		if(empty($this->h_footer)) {
+			if(!empty($this->fs_footer)) {
+				$this->h_footer = $this->fs_footer;
+			} else {
+				$this->h_footer = 0;
+			}
+		}
+		if(!empty($this->fs_footer)) {
+			$this->SetFont($this->FontFamily, '', $this->fs_footer);
+		}
 		switch ($this->footer_type) {
-			
 			case '1' :
 	    		$this->SetY(-$this->y_footer);
-	    		$this->Cell(0,$this->fs_footer,$this->msg_footer.$this->PageNo().' / '.$this->AliasNbPages,0,0,'C');
+	    		$this->Cell(0,$this->h_footer,$this->msg_footer.($this->display_npage ?? $this->PageNo().' / '.$this->AliasNbPages),0,0,$this->align_footer);
 	    		$this->npage++;
 				break;
 			case '2' :
 	    		$this->SetY(-$this->y_footer);
-	    		$this->Cell(0,$this->fs_footer,$this->msg_footer.$this->npage,0,0,'C');
+	    		$this->Cell(0,$this->h_footer,$this->msg_footer.($this->display_npage ?? $this->npage),0,0,$this->align_footer);
 	    		$this->npage++;
 				break;
 			case '3' :
 	    		$this->SetY(-$this->y_footer);
-	    		$this->MultiCell(0,$this->fs_footer,$this->msg_footer.$this->PageNo().' / '.$this->AliasNbPages,0,'C');
+	    		$this->MultiCell(0,$this->h_footer,$this->msg_footer.($this->display_npage ?? $this->PageNo().' / '.$this->AliasNbPages),0,$this->align_footer);
 	    		$this->npage++;
 				break;
 			default :
@@ -49,29 +62,41 @@ class pmb2UFPDF extends UFPDF {
 	
 	public $footer_type=0;
 	public $y_footer;
+	public $h_footer;
 	public $fs_footer;
 	public $msg_footer = '';
+	public $align_footer = 'C';
 	public $npage = 1;
+	public $display_npage = true;
 	
 	public function Footer() {
-		
-		global $msg;
-
+		if(empty($this->y_footer)) {
+			$this->y_footer = 1.5;
+		}
+		if(empty($this->h_footer)) {
+			if(!empty($this->fs_footer)) {
+				$this->h_footer = $this->fs_footer;
+			} else {
+				$this->h_footer = 0;
+			}
+		}
+		if(!empty($this->fs_footer)) {
+			$this->SetFont($this->FontFamily, '', $this->fs_footer);
+		}
 		switch ($this->footer_type) {
-			
 			case '1' :
-	    		$this->SetY(-$this->y_footer);
-	    		$this->Cell(0,$this->fs_footer,$this->msg_footer.$this->npage,0,0,'C');
+				$this->SetY(-$this->y_footer);
+	    		$this->Cell(0,$this->h_footer,$this->msg_footer.($this->display_npage ?? $this->npage),0,0,$this->align_footer);
 	    		$this->npage++;
 				break;
 			case '2' :
 	    		$this->SetY(-$this->y_footer);
-	    		$this->Cell(0,$this->fs_footer,$this->msg_footer.$this->npage,0,0,'C');
+	    		$this->Cell(0,$this->h_footer,$this->msg_footer.($this->display_npage ?? $this->npage),0,0,$this->align_footer);
 	    		$this->npage++;
 				break;
 			case '3' :
 	    		$this->SetY(-$this->y_footer);
-	    		$this->MultiCell(0,$this->fs_footer,$this->msg_footer.$this->npage,0,'C');
+	    		$this->MultiCell(0,$this->h_footer,$this->msg_footer.($this->display_npage ?? $this->npage),0,$this->align_footer);
 	    		$this->npage++;
 				break;
 			default :

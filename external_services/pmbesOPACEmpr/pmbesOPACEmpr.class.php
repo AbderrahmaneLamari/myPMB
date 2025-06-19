@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesOPACEmpr.class.php,v 1.65.2.2 2021/10/13 11:53:33 rtigero Exp $
+// $Id: pmbesOPACEmpr.class.php,v 1.69.4.3 2023/09/28 09:07:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -31,18 +31,6 @@ define("LIST_LOAN_PRECEDENT",2);
 
 class pmbesOPACEmpr extends external_services_api_class{
 	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
-	
 	public function check_auth(&$empr_login, &$empr_password, &$empr_id) {
 		
 		global $charset;
@@ -61,7 +49,7 @@ class pmbesOPACEmpr extends external_services_api_class{
 						FROM empr 
 						WHERE empr_login='".addslashes($empr_login)."'";
 		$verif_result = pmb_mysql_query($verif_query);
-		if (!$verif_result) {
+		if (!$verif_result || !pmb_mysql_num_rows($verif_result)) {
 			return false;
 		}
 		// récupération des valeurs MySQL du lecteur et injection dans les variables
@@ -979,7 +967,7 @@ class pmbesOPACEmpr extends external_services_api_class{
 			}
 			$su->sugg_location=$sugg_location;
 			try {
-				$su->save();
+			    $su->save();
 			} catch(Exception $e){
 			    return 0;
 			}
@@ -987,7 +975,7 @@ class pmbesOPACEmpr extends external_services_api_class{
 			$orig = new suggestions_origine($empr_id, $su->id_suggestion);
 			$orig->type_origine = 1;
 			try {
-				$orig->save();
+			    $orig->save();
 			} catch(Exception $e){
 			    return 0;
 			}
@@ -1185,8 +1173,8 @@ class pmbesOPACEmpr extends external_services_api_class{
 		$sugg = new suggestions($suggestion_id);
 		if (!($sugg->sugg_origine_type == 1) && ($sugg->sugg_origine == $empr_id))
 			return FALSE;
-			
-		$sugg->delete($suggestion_id);
+		
+		suggestions::delete($suggestion_id);
 		return TRUE;
 	}
 	
@@ -1242,10 +1230,8 @@ class pmbesOPACEmpr extends external_services_api_class{
 			];
 			return $results;
 		}	
-		
 		$results=array();
 		$resa= new reservation($empr_id, $id_notice, $id_bulletin);
-		
 		$ral = $resa->add($location);
 		if($ral == false) {
 			$results = [
@@ -1254,8 +1240,11 @@ class pmbesOPACEmpr extends external_services_api_class{
 					"message" => utf8_normalize($resa->service->message),
 			];
 		} else {
+			reservation::alert_mail_users_pmb($id_notice, $id_bulletin, $empr_id);
 			$results = [
-				"success" => true
+					"success" => true,
+					"error" => "",
+					"message" => "",
 			];
 		}
 		return $results;
@@ -1268,12 +1257,11 @@ class pmbesOPACEmpr extends external_services_api_class{
 		if (!$empr_id) {
 			return [];
 		}
-		$empr = new emprunteur($empr_id);
-
 		$results = [];
 		
-		$tableau_bannette_pub = tableau_gerer_bannette($empr_id, $empr->categ, "PUB");
-		$tableau_bannette_priv = tableau_gerer_bannette($empr_id, $empr->categ, "PRI");
+		$bannette_abon = new bannette_abon(0, $empr_id);
+		$tableau_bannette_pub = $bannette_abon->tableau_gerer_bannette("PUB");
+		$tableau_bannette_priv = $bannette_abon->tableau_gerer_bannette("PRI");
 		$tableau_bannettes = array_merge($tableau_bannette_pub, $tableau_bannette_priv);
 		$search = new search();
 		foreach ($tableau_bannettes as $abanette) {

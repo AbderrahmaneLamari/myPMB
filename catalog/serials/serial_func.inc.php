@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serial_func.inc.php,v 1.103.2.3 2022/01/20 15:28:21 dgoron Exp $
+// $Id: serial_func.inc.php,v 1.110 2022/03/11 09:56:39 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -101,7 +101,11 @@ function show_serial_info($serial_id, $page, $nbr_lignes) {
 			case "collstate":
 				$base_url = serial::get_permalink($serial_id)."&view=collstate".$url_suffix;
 				
-				$list_collstate_ui = new list_collstate_ui(array('serial_id' => $serial_id, 'location' => $location));
+				if($pmb_etat_collections_localise) {
+					$list_collstate_ui = new list_collstate_ui(array('serial_id' => $serial_id, 'bulletin_id' => 0, 'location' => $location));
+				} else {
+					$list_collstate_ui = new list_collstate_ui(array('serial_id' => $serial_id, 'bulletin_id' => 0));
+				}
 				$bulletins = $list_collstate_ui->get_display_list();
 				
 				$pages_display = $list_collstate_ui->get_collstate_pagination();
@@ -172,7 +176,7 @@ function show_serial_info($serial_id, $page, $nbr_lignes) {
 	  	$serial_action_bar = str_replace('!!nb_abo!!', $isbd->serial_nb_abo_actif, $serial_action_bar);
 
 	  	// Titre de la page
-	  	print '<script type="text/javascript">document.title = "'.addslashes(pmb_bidi(htmlentities($isbd->notice->tit1, ENT_QUOTES, $charset))).'";</script>';
+	  	print '<script type="text/javascript">document.title = "'.addslashes(pmb_bidi(strip_tags($isbd->notice->tit1))).'";</script>';
 	  	
 	    // titre général du périodique
 	  	print pmb_bidi("

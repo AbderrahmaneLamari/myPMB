@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ButtonFunctions.js,v 1.25.2.2 2021/07/02 13:34:25 tsamson Exp $
+// $Id: ButtonFunctions.js,v 1.30 2022/10/28 09:05:49 tsamson Exp $
 
 define([
     'dojo/_base/declare',
@@ -222,7 +222,9 @@ define([
 					"data-linked_scenario": domAttr.get(old_button, "data-linked_scenario"),
 					"data-form_property": domAttr.get(old_button, "data-form_property"),
 				}, new_container);
-				old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				if (old_button.value != domAttr.get(old_button, "data-edit_label")) {
+					old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				}
 				topic.publish('ButtonFunction', 'addEventOnButton', {node: dom.byId(new_id)});
 			}
 			
@@ -362,6 +364,16 @@ define([
 				value : domAttr.get(dom.byId(element_name+"_0_type"), 'value')
 			}, new_container);
 			
+			// Input hidden is_draft
+			if (dom.byId(element_name+"_"+old_order+"_is_draft")){
+				domConstruct.create("input", {
+					type : "hidden",
+					id : element_name+"_"+new_order+"_is_draft",
+					name : element_name+"["+new_order+"][is_draft]",
+					value :"0"
+				}, new_container);
+			}
+			
 			// Button delete
 			var old_button = dom.byId(element_name+"_"+old_order+"_del");
 			if (old_button) {
@@ -398,7 +410,9 @@ define([
 					"data-linked_scenario": domAttr.get(old_button, "data-linked_scenario"),
 					"data-form_property": domAttr.get(old_button, "data-form_property"),
 				}, new_container);
-				old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				if (old_button.value != domAttr.get(old_button, "data-edit_label")) {
+					old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				}
 				topic.publish('ButtonFunction', 'addEventOnButton', {node: dom.byId(new_id)});
 			}
 			
@@ -411,6 +425,16 @@ define([
 				add_button.id = new_id;
 				new_container.appendChild(add_button);
 				topic.publish('ButtonFunction', 'addEventOnButton', {node: add_button});
+			}
+			
+			// Input hidden json_data
+			if (dom.byId(element_name+"_"+old_order+"_json_data")){
+				domConstruct.create("input", {
+					type : "hidden",
+					id : element_name+"_"+new_order+"_json_data",
+					name : element_name+"["+new_order+"][json_data]",
+					value : domAttr.get(dom.byId(element_name+"_0_json_data"), 'value')
+				}, new_container);
 			}
 			
 			domConstruct.place(myWidget.domNode, new_container);
@@ -468,6 +492,8 @@ define([
 				handleAs : "json"
 			}, input_value);
 			
+		    show_add_buttons();
+			
 		},
 		
 		onto_add_selector : function(myWidget, responsability = false) {
@@ -483,12 +509,29 @@ define([
 			var new_child="";
 			
 			const firstContainer = dom.byId(element_name+"_"+old_order);
-
-			// Div container
-			var new_container = domConstruct.create("div",{
-				id : element_name + "_" + new_order, 
-				"class" : "row"
-			}, parent);
+			
+			if(responsability === true){
+				// Div container
+//				var new_container_responsability = domConstruct.create("div",{
+//					"class" : "onto_rows_responsability"
+//				}, parent);
+				var new_container_responsability = document.querySelector("div[id='"+element_name+"'] div.onto_rows_responsability");
+				if (!new_container_responsability) {
+					new_container_responsability = parent;
+				}
+				var new_container = domConstruct.create("div",{
+					id : element_name + "_" + new_order, 
+					"class" : "row"
+				}, new_container_responsability);
+				
+				            
+			} else {
+				// Div container
+				var new_container = domConstruct.create("div",{
+					id : element_name + "_" + new_order, 
+					"class" : "row"
+				}, parent);
+			}
 
 			// Div container flex
 			if (firstContainer.hasChildNodes()) {
@@ -654,7 +697,8 @@ define([
     	        	var row = document.createElement('div');
     				row.className = 'row contribution_area_flex';
     				
-    				var title = document.getElementById('contribution_vedette_title');
+    				var title = lang.clone(document.getElementById('contribution_vedette_title'));
+    				//var title = document.getElementById('contribution_vedette_title');
     				
     				var img_plus = document.createElement('img');
     				img_plus.name = 'img_plus' + new_order;
@@ -682,6 +726,8 @@ define([
     					del_vedette.setAttribute('onclick', 'del_vedette(\"' + element_name + '\", ' + new_order + ')');
     				}
     				
+    				row.appendChild(title);
+    				row.appendChild(document.createTextNode(' '));
     				row.appendChild(img_plus);
     				row.appendChild(document.createTextNode(' '));
     				row.appendChild(apercu);
@@ -689,12 +735,10 @@ define([
     				row.appendChild(del_vedette);
     				row.appendChild(document.createTextNode(' '));
     				
-    				new_container.after(title, row, row_vedette);
+    				new_container.after( row, row_vedette);
     				eval(document.getElementById('vedette_script_' + pmb_name + '_composed_' + new_order).innerHTML);
     			}
             }
-			
-			domConstruct.place(myWidget, new_container);
 			
 			// Resource Template
 			var container = new_container;
@@ -715,8 +759,15 @@ define([
 				autexclude : lastElement.autexclude,
 				param1 : lastElement.param1,
 				param2 : lastElement.param2,
+				placeholder : lastElement.placeholder ? lastElement.placeholder : "",
 				handleAs : "json"
 			}, input_value);
+			
+			if(responsability === true){
+				domConstruct.place(myWidget, old_container);
+			} else {
+				domConstruct.place(myWidget, new_container);
+			}
 		},
 		
 		onto_add_item : function(myWidget) {
@@ -816,7 +867,9 @@ define([
 					"data-linked_scenario": domAttr.get(old_button, "data-linked_scenario"),
 					"data-form_property": domAttr.get(old_button, "data-form_property"),
 				}, new_container);
-				old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				if (old_button.value != domAttr.get(old_button, "data-edit_label")) {
+					old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				}
 				topic.publish('ButtonFunction', 'addEventOnButton', {node: dom.byId(new_id)});
 			}
 
@@ -837,7 +890,9 @@ define([
 					"data-form_url": domAttr.get(old_button, "data-form_url"),
 					"data-form_property": domAttr.get(old_button, "data-form_property"),
 				}, new_container);
-				old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				if (old_button.value != domAttr.get(old_button, "data-edit_label")) {
+					old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				}
 				topic.publish('ButtonFunction', 'addEventOnButton', {node: dom.byId(new_id)});
 			}
 			
@@ -917,7 +972,9 @@ define([
 					"data-linked_scenario": domAttr.get(old_button, "data-linked_scenario"),
 					"data-form_property": domAttr.get(old_button, "data-form_property"),
 				}, new_container);
-				old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				if (old_button.value != domAttr.get(old_button, "data-edit_label")) {
+					old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				}
 				topic.publish('ButtonFunction', 'addEventOnButton', {node: dom.byId(new_id)});
 			}
 
@@ -1027,7 +1084,9 @@ define([
 					"data-linked_scenario": domAttr.get(old_button, "data-linked_scenario"),
 					"data-form_property": domAttr.get(old_button, "data-form_property"),
 				}, new_container);
-				old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				if (old_button.value != domAttr.get(old_button, "data-edit_label")) {
+					old_button.value += " / "+domAttr.get(old_button, "data-edit_label");
+				}
 				topic.publish('ButtonFunction', 'addEventOnButton', {node: dom.byId(new_id)});
 			}
 

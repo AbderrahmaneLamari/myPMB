@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestions_display.inc.php,v 1.63.4.2 2021/12/24 08:55:18 dgoron Exp $
+// $Id: suggestions_display.inc.php,v 1.65 2021/12/24 08:48:38 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

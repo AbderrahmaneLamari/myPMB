@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docs_type.class.php,v 1.18.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: docs_type.class.php,v 1.19.4.3 2023/08/29 08:31:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -60,13 +60,50 @@ class docs_type {
 		$this->short_loan_duration = $data->short_loan_duration;
 	}
 
-	public function get_form() {
-		global $admin_typdoc_content_form, $msg, $charset;
+	public function get_content_form() {
+		global $msg;
 		global $pmb_quotas_avances, $pmb_short_loan_management;
 		global $pmb_gestion_financiere, $pmb_gestion_tarif_prets;
 		
-		$content_form = $admin_typdoc_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		$interface_content_form = new interface_content_form(static::class);
+		
+		$interface_content_form->add_element('form_libelle', '103')
+		->add_input_node('text', $this->libelle)
+		->set_attributes(array('data-translation-fieldname' => 'tdoc_libelle'));
+		if (!$pmb_quotas_avances) {
+			$interface_content_form->add_element('form_pret', '123')
+			->add_input_node('integer', $this->duree_pret)
+			->set_attributes(array('maxlength' => 10));
+		}
+		if (!$pmb_quotas_avances && $pmb_short_loan_management) {
+			$interface_content_form->add_element('form_short_loan_duration', 'short_loan_duration_wdays')
+			->add_input_node('integer', $this->short_loan_duration)
+			->set_attributes(array('maxlength' => 10));
+		}
+		if (!$pmb_quotas_avances) {
+			$interface_content_form->add_element('form_resa', 'duree_resa')
+			->add_input_node('integer', $this->duree_resa)
+			->set_attributes(array('maxlength' => 10));
+		}
+		if (($pmb_gestion_financiere)&&($pmb_gestion_tarif_prets==1)) {
+			$interface_content_form->add_element('form_tarif_pret', 'typ_doc_tarif')
+			->add_input_node('integer', $this->tarif_pret)
+			->set_attributes(array('maxlength' => 10));
+		}
+		$interface_content_form->add_element('form_tdoc_codage_import', 'proprio_codage_interne')
+		->add_input_node('integer', $this->tdoc_codage_import)
+		->set_class('saisie-20em');
+		$interface_content_form->add_element('form_tdoc_owner', 'proprio_codage_proprio')
+		->add_query_node('select', "select idlender, lender_libelle from lenders order by lender_libelle ", $this->tdoc_owner)
+		->set_empty_option(0, $msg[556])
+		->set_first_option(0, $msg["proprio_generique_biblio"])
+		->set_class('saisie-20em');
+		
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+	    global $admin_typdoc_js_content_form, $msg;
 		
 		$interface_form = new interface_admin_form('typdocform');
 		if(!$this->id){
@@ -74,60 +111,7 @@ class docs_type {
 		}else{
 			$interface_form->set_label($msg['124']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		
-		$form_pret='';
-		if (!$pmb_quotas_avances) {
-			$form_pret = "
-			<div class='row' >
-				<label class='etiquette' for='form_pret'>".$msg[123]."</label>
-			</div>
-			<div class='row' >
-				<input type='text' id='form_pret' name='form_pret' value='".$this->duree_pret."' maxlength='10' class='saisie-10em' />
-			</div>";
-		}
-		$content_form = str_replace('<!-- form_pret -->', $form_pret, $content_form);
-		
-		$form_short_loan_duration='';
-		if (!$pmb_quotas_avances && $pmb_short_loan_management) {
-			$form_short_loan_duration = "
-			<div class='row' >
-				<label class='etiquette' for='form_short_loan_duration'>".$msg['short_loan_duration_wdays']."</label>
-			</div>
-			<div class='row' >
-				<input type='text' id='form_short_loan_duration' name='form_short_loan_duration' value='".$this->short_loan_duration."' maxlength='10' class='saisie-10em' />
-			</div>";
-		}
-		$content_form = str_replace('<!-- form_short_loan_duration -->', $form_short_loan_duration, $content_form);
-		
-		$form_resa='';
-		if (!$pmb_quotas_avances) {
-			$form_resa = "
-			<div class='row' >
-				<label class='etiquette' for='form_resa'>".$msg['duree_resa']."</label>
-			</div>
-			<div class='row' >
-				<input type='text' id='form_resa' name='form_resa' value='".$this->duree_resa."' maxlength='10' class='saisie-10em' />
-			</div>";
-		}
-		$content_form = str_replace('<!-- form_resa -->', $form_resa, $content_form);
-		
-		$content_form = str_replace('!!tdoc_codage_import!!', $this->tdoc_codage_import, $content_form);
-		$combo_lender= gen_liste ("select idlender, lender_libelle from lenders order by lender_libelle ", "idlender", "lender_libelle", "form_tdoc_owner", "", $this->tdoc_owner, 0, $msg[556],0,$msg["proprio_generique_biblio"]);
-		$content_form = str_replace('<!-- lender -->', $combo_lender, $content_form);
-		
-		$tarif_pret='';
-		if (($pmb_gestion_financiere)&&($pmb_gestion_tarif_prets==1)) {
-			$tarif_pret="
-			<div class='row'>
-				<label class='etiquette' for='form_tarif_pret'>".$msg['typ_doc_tarif']."</label>
-			</div>
-			<div class='row'>
-				<input type='text' id='form_tarif_pret' name='form_tarif_pret' value='".$this->tarif_pret."' maxlength='10' class='saisie-5em' />
-			</div>";
-		}
-		$content_form = str_replace('<!-- tarif_pret -->', $tarif_pret, $content_form);
-		
+		$content_form = $this->get_content_form().$admin_typdoc_js_content_form;
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
 		->set_content_form($content_form)

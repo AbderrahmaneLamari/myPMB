@@ -2,36 +2,38 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: isbn.inc.php,v 1.24.4.1 2022/01/18 07:41:57 dgoron Exp $
+// $Id: isbn.inc.php,v 1.26.2.1 2023/07/12 14:02:38 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $class_path, $include_path, $array_isbn_ranges;
+global $class_path, $include_path;
+global $array_isbn_ranges;
 
 require_once($class_path."/cache_factory.class.php");
 
 if ((!isset($array_isbn_ranges))||(!is_array($array_isbn_ranges))||(!count($array_isbn_ranges))) {
-	require_once ($include_path.'/parser.inc.php') ;
+	require_once $include_path."/parser.inc.php" ;
 	$array_isbn_ranges = load_isbn_ranges();
 }
 
 // fonctions pour gérer les ISBN
 
 function isISBN($isbn) {
+	if(empty($isbn)) return false;
     
-    if (empty($isbn)) return false;
-	$checksum=0;
 	// s'il y a des lettres, ce n'est pas un ISBN
-	if(preg_match('/[A-WY-Z]/i', $isbn)) return FALSE;
+	if(preg_match('/[A-WY-Z]/i', $isbn)) return false;
 
+	$checksum=0;
 	$isbn = preg_replace('/-|\.| /', '', $isbn);
 	
-	$key = $isbn[strlen($isbn) - 1];
+	$strlen_isbn = strlen($isbn);
+	$key = $isbn[$strlen_isbn - 1];
 	
-	if (strlen($isbn)==10) {
+	if ($strlen_isbn==10) {
 		if($key == 'X')
 			$key = 10;
-		$isbn = substr($isbn, 0, strlen($isbn) - 1);
+		$isbn = substr($isbn, 0, $strlen_isbn - 1);
 	
 		// vérification de la clé
 		for($i = 0; $i < strlen($isbn) ; $i++) {
@@ -41,7 +43,7 @@ function isISBN($isbn) {
 		
 		if (($checksum%11) == 0) return TRUE ;
 			else return FALSE ;
-	} else if (strlen($isbn)==13) {
+	} else if ($strlen_isbn==13) {
 		if ((substr($isbn,0,3)=="978")||(substr($isbn,0,3)=="979")) {
 			//Vérification de la clé
 			$p=1;
@@ -235,9 +237,11 @@ function load_isbn_ranges() {
 				$cache_php->setInCache($key_file_content, $array_isbn_ranges);
 				$cache_php->setInCache($key_file,$key_file_content);
 			}else{
-				$tmp = fopen($tempFile, "wb");
-				fwrite($tmp,serialize($array_isbn_ranges));
-				fclose($tmp);
+			    if (file_exists($tempFile)) {
+    				$tmp = fopen($tempFile, "wb");
+    				fwrite($tmp,serialize($array_isbn_ranges));
+    				fclose($tmp);
+			    }
 			}
 	} else if (file_exists($tempFile)){
 		$tmp = fopen($tempFile, "r");
@@ -355,8 +359,21 @@ function EANtoISBN($ean) {
 	// on contrôle si cela la conversion est applicable
 	if (!isEAN($ean))
 		return '';
+	$isbn = formatISBN($ean);
+	// si échec de formatage (se termine par --), on prend l'EAN comme il vient
+	if(strpos($isbn, '--') !== false) {
+		return $ean;
+	}
+	return $isbn;
+}
+
+
+function z_EANtoISBN($ean) {
+	// on contrôle si cela la conversion est applicable
+	if (!isEAN($ean))
+		return '';
 	
-	return formatISBN($ean);
+	return z_formatISBN($ean);
 }
 
 function traite_code_isbn ($saisieISBN="") {
@@ -380,4 +397,45 @@ function traite_code_isbn ($saisieISBN="") {
 		return $code ;
 	}
 	return "";
+}
+//Pour vérifier un ISSN 
+function isISSN($issn) {
+	
+	$checksum=0;
+	
+	// s'il y a des lettres, pas un ISSN
+	if(preg_match('/[A-WY-Z]/i', $issn)) return FALSE;
+	$issn = preg_replace('/-|\.| /', '', $issn);
+	
+	//Plus de 8 digits, pas un ISSN
+	if (strlen($issn)!=8) return FALSE;
+	
+	$key = $issn[strlen($issn) - 1];
+	
+	if(strtoupper($key) == 'X') $key = 10;
+	$issn = substr($issn, 0, strlen($issn) - 1);
+	
+	// vérification de la clé
+	for($i = 0; $i < strlen($issn) ; $i++) {
+		$checksum += (8 - $i) * $issn[$i];
+	}
+	
+	$checksum += $key;
+	
+	if (($checksum%11) == 0) return TRUE ;
+		else return FALSE ;
+
+}
+
+//retourne un code issn formate correctement ou le code saisi si ce n'est pas un issn  
+function traite_code_ISSN($issn) {
+	if ($issn) {
+		if (isISSN($issn)) {
+			$issn = preg_replace("/[^0-9|X]/i", '', $issn);
+			$issn = str_replace('x','X',$issn);
+			$issn=substr($issn,0,4).'-'.substr($issn,4,4);
+			return $issn;
+		} else return $issn;
+	}
+	return '';
 }

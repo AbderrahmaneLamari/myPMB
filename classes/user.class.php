@@ -2,9 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: user.class.php,v 1.45.2.3 2022/01/21 08:46:17 dgoron Exp $
+// $Id: user.class.php,v 1.54.2.5 2024/01/05 11:19:04 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Animations\Models\AnimationTypesModel;
+use Pmb\Animations\Models\MailingTypeModel;
+use Pmb\Common\Helper\MySQL;
 
 global $base_path, $class_path;
 require_once ($class_path."/marc_table.class.php");
@@ -38,6 +42,7 @@ class user {
 	protected $explr_visible_unmod = 0;
 	
 	protected $user_email = '';
+	protected $user_email_recipient = '';
 	
 	protected $user_alert_resamail = 0;
 	protected $user_alert_contribmail = 0;
@@ -45,7 +50,7 @@ class user {
 	protected $user_alert_subscribemail = 0;
 	protected $user_alert_serialcircmail = 0;
 	protected $user_alert_suggmail = 0;
-	
+	protected $user_alert_animation_mail = 0;
 	protected $grp_num = FALSE;
 	
 	protected $duplicate_from_userid = 0;
@@ -62,7 +67,7 @@ class user {
 			nb_per_page_search, nb_per_page_select, nb_per_page_gestion,
 			param_popup_ticket, param_sounds, user_email,
 			user_alert_resamail, user_alert_contribmail, user_alert_demandesmail, user_alert_subscribemail, user_alert_serialcircmail, user_alert_suggmail, 
-			explr_invisible, explr_visible_mod, explr_visible_unmod, grp_num 
+			explr_invisible, explr_visible_mod, explr_visible_unmod, grp_num, user_alert_animation_mail, user_email_recipient 
 			FROM users WHERE userid='".$this->userid."' LIMIT 1 ";
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)) {
@@ -76,11 +81,13 @@ class user {
 			$this->nb_per_page_select = $row->nb_per_page_select;
 			$this->nb_per_page_gestion = $row->nb_per_page_gestion;
 			$this->user_email = $row->user_email;
+			$this->user_email_recipient = $row->user_email_recipient;
 			$this->user_alert_resamail = $row->user_alert_resamail;
 			$this->user_alert_contribmail = $row->user_alert_contribmail;
 			$this->user_alert_demandesmail = $row->user_alert_demandesmail;
 			$this->user_alert_subscribemail = $row->user_alert_subscribemail;
 			$this->user_alert_serialcircmail = $row->user_alert_serialcircmail;
+			$this->user_alert_animation_mail = $row->user_alert_animation_mail;
 			$this->user_alert_suggmail = $row->user_alert_suggmail;
 			$this->explr_invisible = $row->explr_invisible;
 			$this->explr_visible_mod = $row->explr_visible_mod;
@@ -110,11 +117,35 @@ class user {
 	public function set_user_email($user_email = '') {
 	    $this->user_email = $user_email;
 	}
+
+	public function set_user_email_recipient($user_email_recipient = '') {
+	    $this->user_email_recipient = $user_email_recipient;
+	}
+	
+	public function get_id() {
+		return $this->userid;
+	}
 	
 	public function get_username() {
 	    return $this->username;
 	}
 	
+	public function get_nom() {
+		return $this->nom;
+	}
+	
+	public function get_prenom() {
+		return $this->prenom;
+	}
+	
+	public function get_user_email() {
+		return $this->user_email;
+	}
+
+	public function get_user_email_recipient() {
+	    return $this->user_email_recipient;
+	}
+
 	public function set_duplicate_from_userid($duplicate_from_userid=0) {
 		$this->duplicate_from_userid = intval($duplicate_from_userid);
 	}
@@ -128,8 +159,8 @@ class user {
 		global $include_path ;
 		global $opac_websubscribe_show,$opac_serialcirc_active;
 		global $acquisition_active, $dsi_active, $demandes_active, $cms_active, $frbr_active, $modelling_active;
-		global $fiches_active, $pmb_extension_tab, $pmb_transferts_actif, $thesaurus_concepts_active, $semantic_active, $animations_active;
-		global $pmb_contribution_area_activate;
+		global $fiches_active, $pmb_extension_tab, $pmb_transferts_actif, $thesaurus_concepts_active, $semantic_active;
+		global $animations_active, $pmb_contribution_area_activate;
 		
 		$user_encours=$_COOKIE["PhpMyBibli-LOGIN"];
 		if(!$this->userid) $admin_user_form =str_replace('!!button_duplicate!!', "", $admin_user_form);
@@ -318,6 +349,11 @@ class user {
     		else $alert_contrib_mail="";
     		$admin_user_form = str_replace('!!alert_contrib_mail!!', $alert_contrib_mail, $admin_user_form);
 		}
+		if ($animations_active) {
+		    if ($this->user_alert_animation_mail==1) $alert_animations_mail=" checked";
+		    else $alert_animations_mail="";
+		    $admin_user_form = str_replace('!!alert_user_alert_animation_mail!!', $alert_animations_mail, $admin_user_form);
+		}
 		if ($demandes_active) {
 			if ($this->user_alert_demandesmail==1) $alert_demandes_mail=" checked";
 			else $alert_demandes_mail="";
@@ -339,6 +375,7 @@ class user {
 			$admin_user_form = str_replace('!!alert_sugg_mail!!', $alert_sugg_mail, $admin_user_form);
 		}
 		$admin_user_form = str_replace('!!user_email!!', $this->user_email, $admin_user_form);
+		$admin_user_form = str_replace('!!user_email_recipient!!', $this->user_email_recipient, $admin_user_form);
 	
 		if(!$this->userid) $form_type = '1';
 		else $form_type = '0';
@@ -379,7 +416,7 @@ class user {
 		//TODO : Tester les deux points finaux du $msg
 		return 
 		"<div class='row userParam-row'>
-			<div class='colonne60'>".$msg[$field]."&nbsp;:&nbsp;</div>
+			<div class='colonne60'><label for='form_".$field."' style='all:unset'>".$msg[$field]."&nbsp;:&nbsp;</label></div>
 			<div class='colonne_suite'>".$selector."</div>
 		</div>\n";
 	}
@@ -390,8 +427,9 @@ class user {
 		global $form_nb_per_page_search, $form_nb_per_page_select, $form_nb_per_page_gestion;
 		global $form_expl_visibilite;
 		global $sel_group;
-		global $form_user_email;
+		global $form_user_email, $form_user_email_recipient;
 		global $form_user_alert_resamail, $form_user_alert_contribmail, $form_user_alert_demandesmail, $form_user_alert_subscribemail, $form_user_alert_suggmail, $form_user_alert_serialcircmail;
+		global $form_alert_user_alert_animation_mail;
 		
 		$form_login = stripslashes($form_login);
 		if($this->username != $form_login && !empty($form_login)) {
@@ -416,6 +454,7 @@ class user {
 		}
 		
 		$this->user_email = stripslashes($form_user_email);
+		$this->user_email_recipient = stripslashes($form_user_email_recipient);
 		
 		$this->user_alert_resamail = intval($form_user_alert_resamail);
 		$this->user_alert_contribmail = intval($form_user_alert_contribmail);
@@ -423,6 +462,7 @@ class user {
 		$this->user_alert_subscribemail = intval($form_user_alert_subscribemail);
 		$this->user_alert_suggmail = intval($form_user_alert_suggmail);
 		$this->user_alert_serialcircmail = intval($form_user_alert_serialcircmail);
+		$this->user_alert_animation_mail = intval($form_alert_user_alert_animation_mail);
 		
 	}
 	
@@ -510,16 +550,18 @@ class user {
 		}
 		
 		$dummy[] = "user_email='".addslashes($this->user_email)."'";
+		$dummy[] = "user_email_recipient='".addslashes($this->user_email_recipient)."'";
 		$dummy[] = "user_alert_resamail='".$this->user_alert_resamail."'";
 		$dummy[] = "user_alert_contribmail='".$this->user_alert_contribmail."'";
 		$dummy[] = "user_alert_demandesmail='".$this->user_alert_demandesmail."'";
 		$dummy[] = "user_alert_subscribemail='".$this->user_alert_subscribemail."'";
 		$dummy[] = "user_alert_suggmail='".$this->user_alert_suggmail."'";
 		$dummy[] = "user_alert_serialcircmail='".$this->user_alert_serialcircmail."'";
+		$dummy[] = "user_alert_animation_mail='".$this->user_alert_animation_mail."'";
 		
 		if(!$this->userid && $this->pwd) {
 			if(!$this->pwd_encrypted) {
-				$dummy[] = "pwd=password('".addslashes($this->pwd)."')";
+				$dummy[] = "pwd='".MySQL::password(addslashes($this->pwd))."'";
 			} else {
 				$dummy[] = "pwd='".addslashes($this->pwd)."'";
 			}
@@ -568,7 +610,7 @@ class user {
 	        $query = "SELECT username, nom, prenom, rights, userid, user_lang, ";
 	        $query .="nb_per_page_search, nb_per_page_select, nb_per_page_gestion, ";
 	        $query .="param_popup_ticket, param_sounds, ";
-	        $query .="user_email, user_alert_resamail, user_alert_contribmail, user_alert_demandesmail, user_alert_subscribemail, user_alert_serialcircmail, user_alert_suggmail, explr_invisible, explr_visible_mod, explr_visible_unmod, grp_num ";
+	        $query .="user_email, user_alert_resamail, user_alert_contribmail, user_alert_demandesmail, user_alert_subscribemail, user_alert_serialcircmail, user_alert_suggmail, explr_invisible, explr_visible_mod, explr_visible_unmod, grp_num, user_alert_animation_mail, user_email_recipient ";
 	    }
 	    $query .="FROM users WHERE userid='$id' LIMIT 1 ";
 	    return $query;
@@ -580,8 +622,8 @@ class user {
 		"<div class='row userParam-row'>
 			<div class='colonne60'>".$msg[$field]."</div>\n
 			<div class='colonne_suite'>
-				".$msg[39]." <input type='radio' name='form_$field' value='0' ".(!$selected ? "checked='checked'" : "")." />
-				".$msg[40]." <input type='radio' name='form_$field' value='1' ".($selected ? "checked='checked'" : "")." />
+				<label for='form_".$field."_0' style='all:unset'>".$msg[39]."</label> <input type='radio' id='form_".$field."_0' name='form_$field' value='0' ".(!$selected ? "checked='checked'" : "")." />
+				<label for='form_".$field."_1' style='all:unset'>".$msg[40]."</label> <input type='radio' id='form_".$field."_1' name='form_$field' value='1' ".($selected ? "checked='checked'" : "")." />
 			</div>
 		</div>\n";
 	}
@@ -590,9 +632,9 @@ class user {
 		global $msg;
 		return 
 		"<div class='row userParam-row'>
-			<div class='colonne60'>".$msg[$field]."</div>\n
+			<div class='colonne60'><label for='form_$field' style='all:unset'>".$msg[$field]."</label></div>\n
 			<div class='colonne_suite'>
-				<input type='checkbox' class='checkbox' ".($checked==1 ? "checked='checked'" : "")." value='1' name='form_$field' />
+				<input type='checkbox' class='checkbox' ".($checked==1 ? "checked='checked'" : "")." value='1' id='form_$field' name='form_$field' />
 			</div>
 		</div>\n";
 	}
@@ -678,6 +720,16 @@ class user {
     						$deflt_user_array['other'][] = static::get_field_selector($field, $selector);
 				            break;
 				            
+				        case 'deflt_animation_calendar':
+    						$selector = gen_liste("select distinct id_calendar, name from anim_calendar", "id_calendar", "name", 'form_'.$field, "", $field_values[$i], "", "", "0", "", 0);
+    						$deflt_user_array['animation'][] = static::get_field_selector($field, $selector);
+				            break;
+				            
+				        case 'deflt_animation_communication_type':
+    						$selector = gen_liste("select id_mailing_type, name from anim_mailing_types where periodicity = " . MailingTypeModel::MAILING_BEFORE . " or periodicity = " . MailingTypeModel::MAILING_AFTER . "", "id_mailing_type", "name", 'form_'.$field, "", $field_values[$i], "", "", "0", "", 0);
+    						$deflt_user_array['animation'][] = static::get_field_selector($field, $selector);
+				            break;
+				            
 				        case 'deflt_docs_section':
     						// Calcul des sections
     						$selector = '';
@@ -719,7 +771,7 @@ class user {
 				            $requpload = "select repertoire_id, repertoire_nom from upload_repertoire";
 				            $resupload = pmb_mysql_query($requpload);
 				            $selector .=  "<div id='upload_section'>";
-				            $selector .= "<select name='form_deflt_upload_repertoire'>";
+				            $selector .= "<select id='form_deflt_upload_repertoire' name='form_deflt_upload_repertoire'>";
 				            if ($pmb_docnum_in_database_allow) {
 				                $selector .= "<option value='0'>".$msg['upload_repertoire_sql']."</option>";
 				            }
@@ -740,7 +792,7 @@ class user {
     						$resultat_liste = pmb_mysql_query($requete);
     						$nb_liste = pmb_mysql_num_rows($resultat_liste);
     						if ($nb_liste) {
-    							$selector = "<select class='saisie-30em' name=\"form_".$field."\">";
+    							$selector = "<select class='saisie-30em' id=\"form_".$field."\" name=\"form_".$field."\">";
     							$j = 0;
     							while ($j < $nb_liste) {
     								$liste_values = pmb_mysql_fetch_row( $resultat_liste );
@@ -765,7 +817,7 @@ class user {
     						$resultat_liste = pmb_mysql_query($requete);
     						$nb_liste = pmb_mysql_num_rows($resultat_liste);
     						if ($nb_liste) {
-    							$selector = "<select class='saisie-30em' name=\"form_".$field."\">";
+    							$selector = "<select class='saisie-30em' id=\"form_".$field."\" name=\"form_".$field."\">";
     							if(empty($field_values[$i])) {
     								$selector .= "<option value='0'>--</option>";
     							}
@@ -787,7 +839,7 @@ class user {
 				        case 'deflt_notice_replace_keep_categories':
 				            $deflt_user_array['records'][] = static::get_field_radio($field, $field_values[$i]);
 				            break;
-				            
+
 				        case 'deflt_notice_is_new':
 				            $deflt_user_array['records'][] = static::get_field_radio($field, $field_values[$i]);
 				            break;
@@ -804,7 +856,7 @@ class user {
 				        case 'deflt_agnostic_warehouse':
 				            $conn = new agnostic($base_path.'/admin/connecteurs/in/agnostic');
 				            $conn->get_sources();
-				            $selector = "<select name=\"form_".$field."\">
+				            $selector = "<select id=\"form_".$field."\" name=\"form_".$field."\">
 						<option value='0' ".(!$field_values[$i] ? "selected='selected'" : "").">".$msg['caddie_save_to_warehouse_none']."</option>";
 				            if (is_array($conn->sources)) {
 				                foreach ($conn->sources as $key_source => $source) {
@@ -819,7 +871,7 @@ class user {
 				            if ($cms_active && (SESSrights & CMS_AUTH)) {
 				                $publications_states = new cms_editorial_publications_states();
 				                $selector = "
-							<select name=\"form_".$field."\">
+							<select id=\"form_".$field."\" name=\"form_".$field."\">
 								".$publications_states->get_selector_options($field_values[$i])."
 							</select>";
 				                $deflt_user_array['cms'][] = static::get_field_selector($field, $selector);
@@ -831,7 +883,7 @@ class user {
 				                $types = new cms_editorial_types('article');
 				                $types->get_types();
 				                $selector = "
-							<select name=\"form_".$field."\">
+							<select id=\"form_".$field."\" name=\"form_".$field."\">
 								".$types->get_selector_options($field_values[$i])."
 							</select>";
 				                $deflt_user_array['cms'][] = static::get_field_selector($field, $selector);
@@ -843,7 +895,7 @@ class user {
 				                $types = new cms_editorial_types('section');
 				                $types->get_types();
 				                $selector = "
-							<select name=\"form_".$field."\">
+							<select id=\"form_".$field."\" name=\"form_".$field."\">
 								".$types->get_selector_options($field_values[$i])."
 							</select>";
 				                $deflt_user_array['cms'][] = static::get_field_selector($field, $selector);
@@ -854,7 +906,7 @@ class user {
 				            if ($pmb_scan_request_activate) {
 				                $request_status_instance = new scan_request_admin_status();
 				                $selector = "
-							<select name=\"form_".$field."\">
+							<select id=\"form_".$field."\" name=\"form_".$field."\">
 								".$request_status_instance->get_selector_options($field_values[$i])."
 							</select>";
 				                $deflt_user_array['other'][] = static::get_field_selector($field, $selector);
@@ -866,16 +918,16 @@ class user {
 				            break;
 				            
 				        case 'deflt_notice_replace_links':
-				            $selector = "<input type='radio' name='form_".$field."' value='0' ".($field_values[$i]==0?"checked='checked'":"")." /> ".$msg['notice_replace_links_option_keep_all']."
-							<br /><input type='radio' name='form_".$field."' value='1' ".($field_values[$i]==1?"checked='checked'":"")." /> ".$msg['notice_replace_links_option_keep_replacing']."
-							<br /><input type='radio' name='form_".$field."' value='2' ".($field_values[$i]==2?"checked='checked'":"")." /> ".$msg['notice_replace_links_option_keep_replaced'];
+				            $selector = "<input type='radio' id='form_".$field."_0' name='form_".$field."' value='0' ".($field_values[$i]==0?"checked='checked'":"")." /> <label for='form_".$field."_0' style='all:unset'>".$msg['notice_replace_links_option_keep_all']."</label>
+							<br /><input type='radio' id='form_".$field."_1' name='form_".$field."' value='1' ".($field_values[$i]==1?"checked='checked'":"")." /> <label for='form_".$field."_1' style='all:unset'>".$msg['notice_replace_links_option_keep_replacing']."</label>
+							<br /><input type='radio' id='form_".$field."_2' name='form_".$field."' value='2' ".($field_values[$i]==2?"checked='checked'":"")." /> <label for='form_".$field."_2' style='all:unset'>".$msg['notice_replace_links_option_keep_replaced']."</label>";
 				            $deflt_user_array['records'][] = static::get_field_selector($field, $selector);
 				            break;
 				            
 				        case 'deflt_printer':
 				            if (substr($pmb_printer_name, 0, 9) == 'raspberry') {
 				                $selector = "
-								<select name=\"form_".$field."\">
+								<select id=\"form_".$field."\" name=\"form_".$field."\">
 									".raspberry::get_selector_options($field_values[$i])."
 								</select>";
 				                $deflt_user_array['other'][] = static::get_field_selector($field, $selector);
@@ -903,6 +955,18 @@ class user {
 				        	
 				        case 'deflt_bypass_isbn_page':
 				            $deflt_user_array['records'][] = static::get_field_checkbox($field, $field_values[$i]);
+				            break;
+				            
+				        case 'deflt_animation_waiting_list':
+				            $deflt_user_array['animation'][] = static::get_field_radio($field, $field_values[$i]);
+				            break;
+				            
+				        case 'deflt_animation_automatic_registration':
+				            $deflt_user_array['animation'][] = static::get_field_radio($field, $field_values[$i]);
+				            break;
+				            
+				        case 'deflt_animation_unique_registration':
+				            $deflt_user_array['animation'][] = static::get_field_radio($field, $field_values[$i]);
 				            break;
 				            
 				        default:
@@ -939,19 +1003,7 @@ class user {
 				                    'max_errors' => 100,
 				                    'store_strip_mb_comp_str' => 0
 				                );
-				                
-				                $tab_namespaces = array(
-				                    "skos"	=> "http://www.w3.org/2004/02/skos/core#",
-				                    "dc"	=> "http://purl.org/dc/elements/1.1",
-				                    "dct"	=> "http://purl.org/dc/terms/",
-				                    "owl"	=> "http://www.w3.org/2002/07/owl#",
-				                    "rdf"	=> "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-				                    "rdfs"	=> "http://www.w3.org/2000/01/rdf-schema#",
-				                    "xsd"	=> "http://www.w3.org/2001/XMLSchema#",
-				                    "pmb"	=> "http://www.pmbservices.fr/ontology#"
-				                );
-				                
-				                $onto_handler = new onto_handler($class_path."/rdf/skos_pmb.rdf", "arc2", $onto_store_config, "arc2", $data_store_config, $tab_namespaces, 'http://www.w3.org/2004/02/skos/core#prefLabel', 'http://www.w3.org/2004/02/skos/core#ConceptScheme');
+				                $onto_handler = new onto_handler($class_path."/rdf/skos_pmb.rdf", "arc2", $onto_store_config, "arc2", $data_store_config, ONTOLOGY_NAMESPACE, 'http://www.w3.org/2004/02/skos/core#prefLabel', 'http://www.w3.org/2004/02/skos/core#ConceptScheme');
 				                $params = new onto_param();
 				                $params->concept_scheme = [$deflt_concept_scheme];
 				                $onto_controler = new onto_skos_controler($onto_handler, $params);
@@ -995,7 +1047,10 @@ class user {
 				                	$requete = "select * from lenders order by 2";
 				                	break;
 				                default :
-				                    $requete = "select * from ".$deflt_table." order by 2";
+				                    $requete = "SELECT 1 WHERE 0>1";//résultat vide mais qui ne provoque pas d'erreur
+				                    if (pmb_mysql_num_rows(pmb_mysql_query("SHOW TABLES LIKE '$deflt_table'"))) {
+				                        $requete = "select * from ".$deflt_table." order by 2";
+				                    }
 				                    break;
 				            }
 				            
@@ -1003,7 +1058,7 @@ class user {
 				            $nb_liste = pmb_mysql_num_rows($resultat_liste);
 				            if ($nb_liste) {
 				                $selector = "
-							<select class='saisie-30em' name=\"form_".$field."\">";
+							<select class='saisie-30em' id=\"form_".$field."\" name=\"form_".$field."\">";
 				                $j = 0;
 				                while ($j < $nb_liste) {
 				                    $liste_values = pmb_mysql_fetch_row($resultat_liste);
@@ -1032,9 +1087,9 @@ class user {
     						
     						$param_user_allloc = "
     						    <div class='row userParam-row'>
-    						        <div class='colonne60'>".$msg[$field]."</div>\n
+    						        <div class='colonne60'><label for='form_$field' style='all: unset'>".$msg[$field]."</label></div>\n
 						            <div class='colonne_suite'>
-    						            <input type='checkbox' class='checkbox' $checked value='1' name='form_$field'>
+    						            <input type='checkbox' class='checkbox' $checked value='1' id='form_$field' name='form_$field'>
 						            </div>
 					            </div>\n";
     						break;
@@ -1046,8 +1101,8 @@ class user {
 				            
     						$param_user .= "
     						    <div class='row'>
-    						        <input type='checkbox' class='checkbox' $checked value='1' name='form_$field'>\n
-    						        $msg[$field]
+    						        <input type='checkbox' class='checkbox' $checked value='1' id='form_$field' name='form_$field'>\n
+    						        <label for='form_$field' style='all: unset'>$msg[$field]</label>
 						        </div>\n";
 				            break;
 				    }
@@ -1061,7 +1116,7 @@ class user {
 							$selector = "
     							<div class='row userParam-row'>
     							    <div class='colonne60'>
-    							        $msg[$field]&nbsp;:&nbsp;
+    							        <label for='form_value_deflt_fonction_libelle' style='all: unset'>$msg[$field]&nbsp;:&nbsp;</label>
 							        </div>\n
 							        <div class='colonne_suite'>
             							<input type='text' class='saisie-30emr' id='form_value_deflt_fonction_libelle' name='form_value_deflt_fonction_libelle' completion='fonction' value='".htmlentities($f,ENT_QUOTES, $charset)."' />
@@ -1082,7 +1137,7 @@ class user {
 							$selector = "
 							    <div class='row userParam-row'>
 							        <div class='colonne60'>
-							            $msg[$field]&nbsp;:&nbsp;
+							            <label for='form_value_deflt_lang_libelle' style='all: unset'>$msg[$field]&nbsp;:&nbsp;</label>
 						            </div>\n
 						            <div class='colonne_suite'>
             							<input type='text' class='saisie-30emr' id='form_value_deflt_lang_libelle' name='form_value_deflt_lang_libelle' completion='lang' value='".htmlentities($l,ENT_QUOTES, $charset)."' />
@@ -1114,7 +1169,7 @@ class user {
     							'account' => $msg['933'],
     							'fiches' => $msg['onglet_fichier']
 							);
-							$temp_selector = "<select name='form_$field'>";
+							$temp_selector = "<select id='form_$field' name='form_$field'>";
 							foreach ($arrayModules as $k => $v) {
 							    $temp_selector .= "<option value='$k'";
 								if ($k == $field_values[$i]) {
@@ -1129,10 +1184,10 @@ class user {
 						    $selector = "
 						        <div class='row userParam-row'>
 						            <div class='colonne60'>
-						                $msg[$field]&nbsp;:&nbsp;
+						                <label for='form_$field' style='all: unset'>$msg[$field]&nbsp;:&nbsp;</label>
 					                </div>\n
         							<div class='colonne_suite'>
-        							    <input type='text' class='saisie-20em' name='form_$field' value='".htmlentities($field_values[$i],ENT_QUOTES, $charset)."' />
+        							    <input type='text' class='saisie-20em' id='form_$field' name='form_$field' value='".htmlentities($field_values[$i],ENT_QUOTES, $charset)."' />
 							        </div>
 						        </div>
 						        <br />";
@@ -1150,8 +1205,8 @@ class user {
     						$resultat_liste = pmb_mysql_query($requete);
     						$nb_liste = pmb_mysql_num_rows($resultat_liste);
     						if (!empty($nb_liste)) {
-    						    $selector = "<div class='row userParam-row'><div class='colonne60'>".$msg[$field]."&nbsp;:&nbsp;</div>\n";
-    						    $selector .= "<div class='colonne_suite'><select class='saisie-30em' name=\"form_".$field."\">";
+    						    $selector = "<div class='row userParam-row'><div class='colonne60'><label for='form_".$field."' style='all:unset'>".$msg[$field]."&nbsp;:&nbsp;</label></div>\n";
+    						    $selector .= "<div class='colonne_suite'><select class='saisie-30em' id=\"form_".$field."\" name=\"form_".$field."\">";
     							
     							$j = 0;
     							while ($j < $nb_liste) {
@@ -1273,8 +1328,8 @@ class user {
     					}
     					
     					if (count($t)) {
-    						$deflt3user = "<div class='row userParam-row'><div class='colonne60'>".$msg[$field]."&nbsp;:&nbsp;</div>\n";
-    						$deflt3user .= "<div class='colonne_suite'><select class='saisie-30em' name='form_$field'>";
+    						$deflt3user = "<div class='row userParam-row'><div class='colonne60'><label for='form_$field' style='all:unset'>".$msg[$field]."&nbsp;:&nbsp;</label></div>\n";
+    						$deflt3user .= "<div class='colonne_suite'><select class='saisie-30em' id='form_$field' name='form_$field'>";
     						foreach ($t as $k => $v) {
     							$deflt3user .= "<option value='$k'";
     							if ($field_values[$i] == $k) {
@@ -1427,7 +1482,7 @@ class user {
 	}
 	
 	public static function get_param($id, $field) {
-		$id += 0;
+		$id = intval($id);
 		$param = '';
 		if($id) {
 			$query = "SELECT ".$field." FROM users WHERE userid='".$id."' ";
@@ -1438,7 +1493,7 @@ class user {
 	}
 	
 	public static function get_name($id) {
-		$id += 0;
+		$id = intval($id);
 		$name = '';
 		if($id) {
 			$query = "SELECT nom, prenom FROM users WHERE userid='".$id."' ";
@@ -1450,6 +1505,16 @@ class user {
 			}
 		}
 		return $name;
+	}
+	
+	public static function get_grp_num($id) {
+		$id = intval($id);
+		if($id) {
+			$query = "SELECT grp_num FROM users WHERE userid='".$id."' ";
+			$result = pmb_mysql_query($query);
+			return pmb_mysql_result($result, 0, 'grp_num');
+		}
+		return 0;
 	}
 	
 	public static function get_header_from_type($type) {
@@ -1486,6 +1551,9 @@ class user {
 	            break;
 	        case 'acquisition':
 	            $header = $msg['acquisition_menu_title'];
+	            break;
+	        case 'animation':
+	            $header = $msg['admin_menu_animation'];
 	            break;
 	        default:
 	            $header = 'Automatique';

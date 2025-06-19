@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lib_func_customfields.inc.php,v 1.2 2015/09/25 15:22:11 jpermanne Exp $
+// $Id: lib_func_customfields.inc.php,v 1.3 2022/04/25 14:43:37 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -19,7 +19,6 @@ function func_customfields_recup_noticeunimarc_suite($notice) {
 } // fin recup_noticeunimarc_suite 
 	
 function func_customfields_import_new_notice_suite() {
-	global $dbh ;
 	global $notice_id ;
 	
 	global $info_900;
@@ -27,7 +26,7 @@ function func_customfields_import_new_notice_suite() {
 	for($i=0;$i<count($info_900);$i++){		
 		
 		$req = " select idchamp, type, datatype from notices_custom where name='".$info_900[$i]['n']."'";
-		$res = pmb_mysql_query($req,$dbh);
+		$res = pmb_mysql_query($req);
 		if(pmb_mysql_num_rows($res)){
 			$perso = pmb_mysql_fetch_object($res);
 			if($perso->idchamp){						
@@ -39,7 +38,7 @@ function func_customfields_import_new_notice_suite() {
 					} else {
 						$requete="select max(notices_custom_list_value*1) from notices_custom_lists where notices_custom_champ=$perso->idchamp";
 						$resultat=pmb_mysql_query($requete);
-						$max=@pmb_mysql_result($resultat,0,0);
+						$max=pmb_mysql_result($resultat,0,0);
 						$n=$max+1;
 						$requete="insert into notices_custom_lists (notices_custom_champ,notices_custom_list_value,notices_custom_list_lib) values($perso->idchamp,$n,'".addslashes($info_900[$i]['a'])."')";
 						pmb_mysql_query($requete);

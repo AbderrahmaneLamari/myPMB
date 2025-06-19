@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_view_record.class.php,v 1.8 2017/07/26 07:57:50 dgoron Exp $
+// $Id: cms_module_common_view_record.class.php,v 1.8.12.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,8 +13,8 @@ class cms_module_common_view_record extends cms_module_common_view_django{
 		parent::__construct($id);
 		
 		$this->default_template = "
-<p>{{record.header}}</p>
-<blockquote>{{record.content}}</blockquote>
+<div>{{record.header}}</div>
+<div>{{record.content}}</div>
 ";
 	}
 	
@@ -50,7 +50,7 @@ class cms_module_common_view_record extends cms_module_common_view_django{
 		global $opac_notices_format, $opac_notices_format_django_directory;
 		global $record_css_already_included; // Pour pas inclure la css 10 fois
 	
-		if(!$opac_notice_affichage_class){
+		if(empty($opac_notice_affichage_class)){
 			$opac_notice_affichage_class ="notice_affichage";
 		}
 		// $datas => id de la notice

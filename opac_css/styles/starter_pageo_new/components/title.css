@@ -1,0 +1,28 @@
+.pmb_title {
+    font: var(--font-title);
+    color: var(--c-black);
+}
+
+.pmb_subtitle,
+.searchbox_title {
+    font: var(--font-subtitle);
+    color: var(--c-black);
+}
+
+.pmb_subtitle_variant {
+    font: var(--font-subtitle-variant);
+    color: var(--c-black);
+    margin: 24px 0 8px;
+}
+
+@media (max-width: 960px) {
+    .pmb_title {
+        font-size: 3.2rem;
+        line-height: 3.6rem;
+    }
+
+    .pmb_subtitle {
+        font-size: 2rem;
+        line-height: 2.2rem;
+    }
+}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesDocwatches.class.php,v 1.3.10.1 2022/01/04 08:48:17 dgoron Exp $
+// $Id: pmbesDocwatches.class.php,v 1.4.4.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,18 +12,6 @@ require_once($class_path."/docwatch/docwatch_watch.class.php");
 
 class pmbesDocwatches extends external_services_api_class {
 
-	public function restore_general_config() {
-
-	}
-
-	public function form_general_config() {
-		return false;
-	}
-
-	public function save_general_config() {
-
-	}
-	
 	public function update(){		
 		$docwatchesUpdated = array();
 		$query = "select id_watch from docwatch_watches";
@@ -38,5 +26,4 @@ class pmbesDocwatches extends external_services_api_class {
 		}
 		return $docwatchesUpdated;		
 	}
-	
 }

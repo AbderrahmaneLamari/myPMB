@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.104.2.2 2022/01/07 14:25:11 dgoron Exp $
+// $Id: main.inc.php,v 1.106.4.1 2023/09/04 14:36:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -281,7 +281,9 @@ switch($categ) {
 	case 'empr_saisie':
 		if($pmb_javascript_office_editor){
 			print $pmb_javascript_office_editor;
-			print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+			print "<script type='text/javascript'>
+                pmb_include('$base_path/javascript/tinyMCE_interface.js');
+            </script>";
 		}
 		// affichage formulaire de saisie d'un emprunteur
 		include("./circ/empr/empr_saisie.inc.php");
@@ -316,7 +318,9 @@ switch($categ) {
 		} else $cb_a_creer="";
 		if($pmb_javascript_office_editor){
 			print $pmb_javascript_office_editor;
-			print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+			print "<script type='text/javascript'>
+                pmb_include('$base_path/javascript/tinyMCE_interface.js');
+            </script>";
 		}
 		show_empr_form("./circ.php?categ=empr_update","./circ.php?categ=empr_create", $id, (string)$cb_a_creer,(string)$id_a_creer);
 		break;

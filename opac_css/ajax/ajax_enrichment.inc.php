@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_enrichment.inc.php,v 1.7 2019/06/05 09:45:45 ngantier Exp $
+// $Id: ajax_enrichment.inc.php,v 1.8 2023/02/08 11:17:42 dbellamy Exp $
 
 require_once($class_path."/enrichment.class.php");
 require_once($class_path."/parametres_perso.class.php");
@@ -45,28 +45,11 @@ if(!$id){
 }
 
 //On renvoie du JSON dans le charset de PMB...
-if(!isset($debug) || !$debug){
+if( empty($debug) ) {
 	header("Content-Type:application/json; charset=$charset");
 	$return = charset_pmb_normalize($return);
 	print json_encode($return);
 }
-
-//function json_pmb_encode($mixed,$lvl=0){
-//	$json ="";
-//	foreach ($mixed as $key => $value){
-//		if($json!="")$json.=",";
-//		
-//		if(!is_int($key))$json.= "\"$key\":";
-//		if(is_array($value) || is_object($value)){
-//			$json.=json_pmb_encode($value,$lvl++);
-//		}else{
-//			$json.="\"".$value."\"";
-//		} 
-//	}
-//	if(is_array($mixed) && is_int($key)) $json = "[".$json."]";
-//	else $json = "{".$json."}";
-//	return $json;
-//}
 
 function charset_pmb_normalize($mixed){
 	global $charset;
@@ -82,4 +65,3 @@ function charset_pmb_normalize($mixed){
 	} 
 	return $mixed;
 }
-?>

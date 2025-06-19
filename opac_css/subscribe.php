@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: subscribe.php,v 1.57 2021/02/12 08:54:36 dgoron Exp $
+// $Id: subscribe.php,v 1.57.6.1 2023/10/17 14:03:22 tsamson Exp $
 
 global $msg;
 global $opac_websubscribe_show, $opac_show_homeontop, $opac_biblio_main_header;
@@ -185,7 +185,7 @@ if ($opac_show_bandeaugauche==0) {
 		$loginform__ = genere_form_connexion_empr();
 	} else {
 		$loginform=str_replace('<!-- common_tpl_login_invite -->','',$loginform);
-		$loginform__.="<b class='logged_user_name'>".$empr_prenom." ".$empr_nom."</b><br />\n";
+		$loginform__ ="<b class='logged_user_name'>".$empr_prenom." ".$empr_nom."</b><br />\n";
 		if($opac_quick_access) {
 			$loginform__.= quick_access::get_selector();
 			$loginform__.="<br />";

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ascodocpsy2xmluni.inc.php,v 1.10 2018/06/27 08:45:13 plmrozowski Exp $
+// $Id: ascodocpsy2xmluni.inc.php,v 1.10.12.1 2023/05/25 09:54:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $class_path;
 require_once("$class_path/marc_table.class.php");
 
 function convert_ascodocpsy($notice, $s, $islast, $isfirst, $param_path) {
@@ -55,7 +56,7 @@ function convert_ascodocpsy($notice, $s, $islast, $isfirst, $param_path) {
 		$error.="Pas le bon nombre de champs<br />\n";
 		$data="";
 	}
-	
+	$ntable=array();
 	for ($i=0; $i<count($fields); $i++) {
 		$ntable[$cols[$i]]=trim($fields[$i]);
 	}
@@ -285,8 +286,8 @@ function convert_ascodocpsy($notice, $s, $islast, $isfirst, $param_path) {
 				//preg_match_all('~\b[[:upper:]]+\b~', trim($auteurs[$i]),$matches);
 				$fonction = "";
 				$func_author = "";
-				if (pmb_substr($auteurs[$i], strlen($auteurs[$i])-1,strlen($auteurs[$i])) == ".") {
-					$func_author = trim(pmb_substr($auteurs[$i], strrpos($auteurs[$i], " "),strlen($auteurs[$i])));
+				if (pmb_substr($auteurs[$i], pmb_strlen($auteurs[$i])-1,pmb_strlen($auteurs[$i])) == ".") {
+					$func_author = trim(pmb_substr($auteurs[$i], strrpos($auteurs[$i], " "),pmb_strlen($auteurs[$i])));
 				}
 				
 				$entree=trim(str_replace($func_author, "", $auteurs[$i]));
@@ -592,6 +593,7 @@ function convert_ascodocpsy($notice, $s, $islast, $isfirst, $param_path) {
 		
 	}
 	
+	$r = array();
 	if(!$error) {
 		$r['VALID'] = true; 
 	}else {

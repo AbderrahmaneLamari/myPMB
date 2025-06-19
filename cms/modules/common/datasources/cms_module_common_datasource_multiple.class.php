@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_multiple.class.php,v 1.7.2.1 2022/01/03 14:13:07 dgoron Exp $
+// $Id: cms_module_common_datasource_multiple.class.php,v 1.8 2022/01/03 14:10:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

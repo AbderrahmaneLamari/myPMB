@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scheduler_planning.class.php,v 1.14 2020/12/16 07:35:12 dgoron Exp $
+// $Id: scheduler_planning.class.php,v 1.17.4.3 2023/05/26 14:07:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 	
+global $class_path;
 require_once($class_path."/scheduler/scheduler_task_calendar.class.php");
 require_once($class_path."/scheduler/scheduler_tasks.class.php");
 
@@ -50,7 +51,7 @@ class scheduler_planning {
 	protected $msg;
 	
 	public function __construct($id=0) {
-		$this->id = $id += 0;
+		$this->id = intval($id);
 		if(static::class != 'scheduler_planning') {
 			$this->get_messages();
 		}
@@ -74,7 +75,7 @@ class scheduler_planning {
 	}
 	
 	//recherche les informations de la tâche planifiée si elles est existante, dans le cas d'une modif...
-	protected function get_property_task_bdd() {
+	public function get_property_task_bdd() {
 		$query = "SELECT id_planificateur, num_type_tache, libelle_tache, desc_tache, num_user, param, statut, rep_upload, path_upload, perio_heure, perio_minute,
 			perio_jour_mois, perio_jour, perio_mois, calc_next_heure_deb, calc_next_date_deb,repertoire_nom, repertoire_path
 			 FROM planificateur left join upload_repertoire on rep_upload=repertoire_id
@@ -104,7 +105,7 @@ class scheduler_planning {
 			$this->desc_tache ="";
 			$this->num_user ="";
 			$scheduler_tasks_type = new scheduler_tasks_type($this->id_type);
-			$scheduler_tasks_type->fetch_default_global_values();
+			$scheduler_tasks_type->fetch_global_properties();
 			$this->param  = $scheduler_tasks_type->get_params(); 
 			$this->statut  = "1";
 			$this->rep_upload  = "0";
@@ -125,17 +126,18 @@ class scheduler_planning {
 		global $msg;
 		
 		$result = pmb_mysql_query("select esuser_id, esuser_username from es_esusers");
-		$selector = "<select name='form_users'>";
-		while ($row = pmb_mysql_fetch_object($result)) {
-			if ($row->esuser_id == $this->num_user) {
-				$selector .="<option value='".$row->esuser_id."' selected>".$row->esuser_username."</option>";
-			} else {
-				$selector .="<option value='".$row->esuser_id."'>".$row->esuser_username."</option>";
+		if (pmb_mysql_num_rows($result)) {
+			$selector = "<select name='form_users'>";
+			while ($row = pmb_mysql_fetch_object($result)) {
+				if ($row->esuser_id == $this->num_user) {
+					$selector .="<option value='".$row->esuser_id."' selected>".$row->esuser_username."</option>";
+				} else {
+					$selector .="<option value='".$row->esuser_id."'>".$row->esuser_username."</option>";
+				}
 			}
-		}
-		$selector .= "</select>";
-		if (pmb_mysql_num_rows($result) == 0) {
-			$selector .= "* ".$msg["planificateur_task_users_unknown"];
+			$selector .= "</select>";
+		} else {
+			$selector = "* ".$msg["planificateur_task_users_unknown"];
 		}
 		return $selector;
 	}
@@ -190,8 +192,8 @@ class scheduler_planning {
 	}
 	// affichage du formulaire de la tâche
 	public function get_form() {
-		global $charset, $base_path, $msg;
-		global $planificateur_form, $act, $subaction;
+		global $charset, $msg;
+		global $planificateur_form, $action, $subaction;
 		
 		$dir_upload_boolean = 0;
 		
@@ -268,15 +270,17 @@ class scheduler_planning {
 		//Inclusion du formulaire spécifique au type de tâche
 		$form=str_replace("!!specific_form!!", $this->show_form($this->param),$form);
 		
-		if ($act == "task_duplicate") $this->id = 0;
+		if ($action == "duplicate") {
+			$this->id = 0;
+		}
 		if (!$this->id) {
-			$bt_save=$base_path."/admin.php?categ=planificateur&sub=manager&act=task&type_task_id=".$this->id_type;
+			$bt_save=static::format_url("&action=edit&type_id=".$this->id_type);
 			$bt_duplicate="";
 			$bt_suppr="";
 		} else {
-			$bt_save=$base_path."/admin.php?categ=planificateur&sub=manager&act=task&type_task_id=".$this->id_type."&planificateur_id=".$this->id;
-			$bt_duplicate="<input type='button' class='bouton' value='".$msg["tache_duplicate_bouton"]."' onclick='document.location=\"./admin.php?categ=planificateur&sub=manager&act=task_duplicate&type_task_id=".$this->id_type."&planificateur_id=".$this->id."\"' />";
-			$bt_suppr="<input type='button' class='bouton' value='".$msg["63"]."' onClick='location.href=\"$base_path/admin.php?categ=planificateur&sub=manager&act=task_del&type_task_id=".$this->id_type."&planificateur_id=".$this->id."\"'/>";
+			$bt_save=static::format_url("&action=edit&type_id=".$this->id_type."&id=".$this->id);
+			$bt_duplicate="<input type='button' class='bouton' value='".$msg["tache_duplicate_bouton"]."' onclick='document.location=\"".static::format_url("&action=duplicate&type_id=".$this->id_type."&id=".$this->id)."\"' />";
+			$bt_suppr="<input type='button' class='bouton' value='".$msg["63"]."' onClick='location.href=\"".static::format_url("&action=delete&type_id=".$this->id_type."&id=".$this->id)."\"'/>";
 		}
 		$form=str_replace("!!bt_save!!",$bt_save,$form);
 		$form=str_replace("!!bt_duplicate!!",$bt_duplicate,$form);
@@ -292,10 +296,11 @@ class scheduler_planning {
 	public function make_serialized_task_params() {
 		global $timeout, $histo_day, $histo_number, $restart_on_failure, $alert_mail_on_failure, $mail_on_failure;
 	
+		$t = array();
 		$t["timeout"] = ($timeout != "0" ? stripslashes($timeout) : "");
 		$t["histo_day"] = ($histo_day != "0" ? stripslashes($histo_day) : "");
 		$t["histo_number"] = ($histo_number != "0" ? stripslashes($histo_number) : "");
-		$t["restart_on_failure"] = ($restart_on_failure+0 ? "1" : "0");
+		$t["restart_on_failure"] = (intval($restart_on_failure) ? "1" : "0");
 		$t["alert_mail_on_failure"] = $alert_mail_on_failure.($mail_on_failure ? ",".$mail_on_failure : "");
 	
 		return $t;
@@ -321,13 +326,13 @@ class scheduler_planning {
 		
 		$this->libelle_tache = stripslashes($task_name);
 		$this->desc_tache = stripslashes($task_desc);
-		$this->num_user = $form_users+0;
+		$this->num_user = intval($form_users);
 		
 		$this->param = $this->make_serialized_task_params();
 
-		$this->statut = $task_active+0;
+		$this->statut = intval($task_active);
 		
-		$this->rep_upload = $id_rep+0;
+		$this->rep_upload = intval($id_rep);
 		if ($this->rep_upload && $path) {
 			$up = new upload_folder($this->rep_upload);
 			$this->path_upload = $up->formate_path_to_save($up->formate_path_to_nom(stripslashes($path)));
@@ -345,12 +350,10 @@ class scheduler_planning {
 	
 	//sauvegarde des données du formulaire,
 	public function save_property_form() {
-		global $base_path;
-	
 		$this->set_properties_from_form();
 		
 		// est-ce une nouvelle tâche ??
-		if ($this->id == '') {
+		if (!$this->id) {
 			//Nouvelle planification
 			$requete="insert into planificateur (num_type_tache, libelle_tache, desc_tache, num_user, param, statut, rep_upload, path_upload, perio_heure,
 				perio_minute, perio_jour_mois, perio_jour, perio_mois)
@@ -389,18 +392,19 @@ class scheduler_planning {
 	
 	//Suppression d'une planification de tâche associée à un type de tâche
 	public function delete() {
-		global $msg, $base_path;
+		global $msg;
 		global $template_result, $confirm, $disabled;
 	
 		//disabled == 1 then statut = 0
-		if ($disabled == "1") {
+		$disabled = intval($disabled);
+		if ($disabled) {
 			if ($this->id) {
 				$query = "update planificateur set statut=0 where id_planificateur=".$this->id;
 				pmb_mysql_query($query);
 			}
 		}
-	
-		$template_result=str_replace("!!libelle_type_task!!",scheduler_tasks::get_catalog_element($this->id_type, 'COMMENT'),$template_result);
+		$template_result=str_replace("!!id!!", $this->id,$template_result);
+		$template_result=str_replace("!!libelle_type_task!!", scheduler_tasks::get_catalog_element($this->id_type, 'COMMENT'),$template_result);
 			
 		//on vérifie tout d'abord que la tâche soit désactivée
 		$query_active = "select statut from planificateur where id_planificateur=".$this->id;
@@ -408,23 +412,23 @@ class scheduler_planning {
 		if (pmb_mysql_num_rows($result)) {
 			$value_statut = pmb_mysql_result($result, 0, "statut");
 		} else {
-			$value_statut = "";
+			$value_statut = 0;
 		}
 	
-		if ($value_statut == "0") {
+		if (!$value_statut) {
 			$body = "<div class='center'>".$msg["planificateur_confirm_phrase"]."<br />
-			<a href='$base_path/admin.php?categ=planificateur&sub=manager&act=task_del&type_task_id=".$this->id_type."&planificateur_id=".$this->id."&confirm=1'>
+			<a href='".static::format_url("&action=delete&type_id=".$this->id_type."&id=".$this->id."&confirm=1")."'>
 			".$msg["40"]."
-			</a> - <a href='$base_path/admin.php?categ=planificateur&sub=manager&type_task_id=".$this->id_type."&planificateur_id=".$this->id."&confirm=0'>
+			</a> - <a href='".static::format_url("&type_id=".$this->id_type."&id=".$this->id."&confirm=0")."'>
 			".$msg["39"]."
 				</a>
 				</div>
 			";
 		} else {
 			$body = "<div class='center'>".$msg["planificateur_error_active"]."<br />
-			<a href='$base_path/admin.php?categ=planificateur&sub=manager&act=task_del&type_task_id=".$this->id_type."&planificateur_id=".$this->id."&disabled=1'>
+			<a href='".static::format_url("&action=delete&type_id=".$this->id_type."&id=".$this->id."&disabled=1")."'>
 			".$msg["40"]."
-			</a> - <a href='$base_path/admin.php?categ=planificateur&sub=manager&type_task_id=".$this->id_type."&planificateur_id=".$this->id."&disabled=0'>
+			</a> - <a href='".static::format_url("&type_id=".$this->id_type."&id=".$this->id."&disabled=0")."'>
 			".$msg["39"]."
 				</a>
 				</div>
@@ -434,13 +438,16 @@ class scheduler_planning {
 		$template_result=str_replace("!!BODY!!",$body,$template_result);
 	
 		//Confirmation de suppression
-		if ($confirm == "1") {
+		$confirm = intval($confirm);
+		if ($confirm) {
 			//Vérifie si une tâche est en cours sur cette planification
 			$query_check = "select id_tache from taches where num_planificateur=".$this->id." and status <> 3";
 			$result = pmb_mysql_query($query_check);
 			if (pmb_mysql_num_rows($result) == '1') {
 				// ne pas la supprimer !
 				$ident_tache = pmb_mysql_result($result, 0,"id_tache");
+			} else {
+				$ident_tache = 0;
 			}
 			//suppression des tâches à l'exclusion de celle en cours
 			$query="select id_tache from taches where num_planificateur=".$this->id."
@@ -461,7 +468,7 @@ class scheduler_planning {
 	
 			//et les documents numériques qu'en fait-on???
 	
-			print "<script>document.location.href='$base_path/admin.php?categ=planificateur&sub=manager';</script>";
+			print "<script>document.location.href='".static::format_url()."';</script>";
 		}
 		return $template_result;
 	}
@@ -556,8 +563,9 @@ class scheduler_planning {
 		}
 	}
 	
-	public function insertOfTask($active ='') {
-		if ($active == '') {
+	public function insertOfTask($active = 0) {
+		$active = intval($active);
+		if ($active == 0) {
 			//statut de la tâche
 			$query_state = "select statut from planificateur where id_planificateur=".$this->id;
 			$result_query_state = pmb_mysql_query($query_state);
@@ -573,23 +581,13 @@ class scheduler_planning {
 		$result_query = pmb_mysql_query($query);
 	
 		// nouvelle planification && planification activée
-		if ((pmb_mysql_num_rows($result_query) == 0) && ($active == '1')) {
-			$insertok=false;
-			$cmpt=0;//Pour éviter une boucle infini... au cas où
-			while ((!$insertok) && ($cmpt < 10000)){//MB: Comme des tâches peuvent être executées en parallèle et que id_tache est unique on peut tenter d'insérer avec le même id
-				$cmpt++;
-				//valeur maximale d'identifiant de tâche
-				$reqMaxId = pmb_mysql_query("select max(id_tache) as maxId from taches");
-				$rowMaxId = pmb_mysql_fetch_row($reqMaxId);
-				$id_tache = $rowMaxId[0] + 1;
-	
-				//insertion de la tâche planifiée
-				$requete="insert into taches (id_tache, num_planificateur, status, commande, indicat_progress,id_process)
-					values(".$id_tache.",'".$this->id."',1,0,0,0)";
-				$insertok = pmb_mysql_query($requete);
-			}
+		if ((pmb_mysql_num_rows($result_query) == 0) && ($active == 1)) {
+			//insertion de la tâche planifiée
+			$requete="insert into taches (num_planificateur, status, commande, indicat_progress,id_process)
+					values('".$this->id."',1,0,0,0)";
+			pmb_mysql_query($requete);
 			// modification planification && planification désactivée
-		} else if ((pmb_mysql_num_rows($result_query) == 1) && ($active == '0')) {
+		} else if ((pmb_mysql_num_rows($result_query) == 1) && ($active == 0)) {
 			//il faut vérifier que la tâche ne soit pas déjà planifiée, si oui on la supprime
 			if (pmb_mysql_num_rows($result_query) >= 1) {
 				$requete="delete from taches where start_at='0000-00-00 00:00:00' and num_planificateur='".$this->id."'";
@@ -598,7 +596,84 @@ class scheduler_planning {
 		}
 	}
 	
+	public function get_formatted_setting($name, $label, $value) {
+		return array(
+				'name' => $name,
+				'label' => $label,
+				'value' => $value
+		);
+	}
+	
+	public function get_formatted_settings() {
+		$formatted_settings = [];
+		return $formatted_settings;
+	}
+	
+	public function get_id() {
+		return $this->id;
+	}
+	
+	public function get_id_type() {
+		return $this->id_type;
+	}
+	
+	public function get_libelle_tache() {
+		return $this->libelle_tache;
+	}
+	
+	public function get_desc_tache() {
+		return $this->desc_tache;
+	}
+	
+	public function get_param() {
+		return $this->param;
+	}
+	
+	public function get_statut() {
+		return $this->statut;
+	}
+	
+	public function get_perio_heure() {
+		return $this->perio_heure;
+	}
+	
+	public function get_perio_minute() {
+		return $this->perio_minute;
+	}
+	
+	public function get_perio_jour_mois() {
+		return $this->perio_jour_mois;
+	}
+	
+	public function get_perio_jour() {
+		return $this->perio_jour;
+	}
+	
+	public function get_perio_mois() {
+		return $this->perio_mois;
+	}
+	
+	public function get_next_execution() {
+		if($this->statut){
+			return formatdate($this->calc_next_date_deb)." ".$this->calc_next_heure_deb;
+		}
+		return '';
+	}
+	
 	public function set_id_type($id_type=0) {
-		$this->id_type = $id_type+0;
+		$this->id_type = intval($id_type);
+	}
+	
+	public static function is_already_in_progress($num_planificateur) {
+		$num_planificateur = intval($num_planificateur);
+		$query = "SELECT count(*) FROM taches WHERE num_planificateur = ".$num_planificateur." AND status=".RUNNING;
+		$result = pmb_mysql_query($query);
+		return pmb_mysql_result($result, 0);
+	}
+	
+	protected static function format_url($url='') {
+		global $base_path;
+		
+		return $base_path.'/admin.php?categ=planificateur&sub=manager'.$url;
 	}
 }

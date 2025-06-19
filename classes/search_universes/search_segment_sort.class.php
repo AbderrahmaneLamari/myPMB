@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_sort.class.php,v 1.8.2.4 2022/01/03 10:21:11 tsamson Exp $
+// $Id: search_segment_sort.class.php,v 1.15 2023/02/17 13:45:41 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path.'/templates/search_universes/search_segment_sort.tpl.php');
 require_once "$class_path/fields/sort_fields.class.php";
 
@@ -30,7 +31,7 @@ class search_segment_sort {
 	protected $default_sort;
 		
 	public function __construct($num_segment = 0){
-		$this->num_segment = $num_segment+0;
+		$this->num_segment = intval($num_segment);
 		$this->fetch_data();
 	}
 	
@@ -84,12 +85,11 @@ class search_segment_sort {
 	}
 	
 	public function get_form() {
-	    global $search_segment_sort_form, $msg, $charset, $current_module;
+	    global $search_segment_sort_form, $msg, $charset;
 	    $i = 0;
 	    $select_fields = '<table id="sort_table"><tbody><tr><th style="width: 15%;">'.$msg['segment_sort_label_default_sort'].'</th><th style="width: 65%;">'.$msg['nom_tri'].'</th><th style="width: 10%;">'.$msg['segment_sort_label_edit_sort'].'</th><th style="width: 10%;">'.$msg['63'].'</th></tr>';
 	    $sorts = explode('||', $this->get_sort());
-	    $nb_sorts = count($sorts);
-	    foreach ($sorts as $key => $sort) {
+	    foreach ($sorts as $sort) {
 	        $exploded_sort = explode('|', $sort);
             $sort_name = '';
 	        if (!empty($exploded_sort[1])) {
@@ -559,14 +559,16 @@ class search_segment_sort {
                        <img style='display:none; cursor:pointer;' src='".get_url_icon('b_edit.png')."' alt=\"".htmlentities($msg['modif_tri'],ENT_QUOTES,$charset)."\" title=\"".htmlentities($msg['modif_tri'],ENT_QUOTES,$charset)."\"' />
                     </td>
                    <td>
-                       <input style='display:none;' id='segment_sort_delete_default' class='bouton' type='button' value='X' onclick='document.getElementById(\"segment_sort_name_default\").value = \"\";document.getElementById(\"segment_sort_list_$i\").value = \"\"' />
+                       <input style='display:none;' id='segment_sort_delete_default' class='bouton' type='button' value='X' onclick='document.getElementById(\"segment_sort_name_default\").value = \"\";document.getElementById(\"segment_sort_list_0\").value = \"\"' />
                     </td>
         	   </tr>";
 	}
 	
 	private function get_sort_param() {
 	    $sort_param = "";
-	    if ($this->type > 1000) {
+	    if($this->type > 10000){
+	        // Nothing to do
+	    }else if ($this->type > 1000) {
 	        $sort_param = "&id_authperso=".($this->type - 1000);
 	    }
 	    return $sort_param;

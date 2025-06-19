@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_titres_uniformes_controller.class.php,v 1.13.2.1 2021/08/12 07:08:07 dgoron Exp $
+// $Id: entities_titres_uniformes_controller.class.php,v 1.14 2021/08/12 07:02:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: aligastore.class.php,v 1.22.2.1 2022/01/05 08:13:43 dgoron Exp $
+// $Id: aligastore.class.php,v 1.23 2022/01/05 08:12:06 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

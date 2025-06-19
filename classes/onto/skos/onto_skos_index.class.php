@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_skos_index.class.php,v 1.8 2020/09/11 07:12:39 dbellamy Exp $
+// $Id: onto_skos_index.class.php,v 1.9 2022/10/28 13:42:11 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -118,6 +118,7 @@ class onto_skos_index extends onto_common_index {
 
 	public function maj($object_id, $object_uri="",$datatype="all"){
 	    global $thesaurus_concepts_autopostage;
+	    global $sphinx_active;
 
 	    if($object_id == 0 && $object_uri != ""){
 	        $object_id = onto_common_uri::get_id($object_uri);
@@ -144,9 +145,9 @@ class onto_skos_index extends onto_common_index {
                 $old_narowers_id = static::$onto_skos_autoposting->get_ids_from_paths(static::$onto_skos_autoposting->get_paths(true));
             }
         }
-        //indexation du conept
+        //indexation du concept
         parent::maj($object_id,$object_uri,$datatype);
-
+        $this->index_cp($object_id);
         if ($thesaurus_concepts_autopostage) {
             $this->update_paths($object_id);
 
@@ -163,6 +164,16 @@ class onto_skos_index extends onto_common_index {
                         indexation_stack::push($narrower_id, TYPE_CONCEPT, 'autoposting');
                     }
                 }
+            }
+        }
+        
+        //SPHINX
+        if($sphinx_active){
+            if(!isset(self::$sphinx_indexer)){
+                self::$sphinx_indexer = new sphinx_concepts_indexer();
+            }
+            if(is_object(self::$sphinx_indexer)) {
+                self::$sphinx_indexer->fillIndex($object_id);
             }
         }
 	    return true;
@@ -202,6 +213,51 @@ class onto_skos_index extends onto_common_index {
 	    }
 	}
 
+	protected function index_cp($object_id)
+	{
+	    // Champs persos
+	    $p_perso=$this->get_parametres_perso_class('skos');
+	    $data=$p_perso->get_fields_recherche_mot_array($object_id);
+	    $j=0;
+	    $order_fields=1;
+	    foreach ( $data as $code_ss_champ => $value ) {
+	        $tab_mots=array();
+	        //la table pour les recherche exacte
+	        $infos = array(
+	            'champ' => '1100',
+	            'ss_champ' => $code_ss_champ,
+	            'pond' => $p_perso->get_pond($code_ss_champ)
+	        );
+	        foreach($value as $val) {
+	            $val = strip_empty_words($val);
+	            if($val != ''){
+	                $tab_tmp=explode(' ',$val);
+	                
+	                $tab_fields_insert[] = $this->get_tab_field_insert($object_id, $infos, $j, $val);
+	                $j++;
+	                foreach($tab_tmp as $mot) {
+	                    if(trim($mot)){
+	                        $tab_mots[$mot]= "";
+	                    }
+	                }
+	            }
+	        }
+	        $pos=1;
+	        foreach ( $tab_mots as $mot => $langage ) {
+	            $num_word = indexation::add_word($mot, $langage);
+	            $infos = array(
+	                'champ' => '1100',
+	                'ss_champ' => $code_ss_champ,
+	                'pond' => $p_perso->get_pond($code_ss_champ)
+	            );
+	            $tab_words_insert[] = $this->get_tab_insert($object_id, $infos, $num_word, $order_fields, $pos);
+	            $pos++;
+	        }
+	        $order_fields++;
+	    }
+	    $this->save_elements($tab_words_insert,$tab_fields_insert);
+	}
+	
 	public function get_tab_code_champ() {
 	    if(empty($this->tab_code_champ)) {
 	        $this->init();

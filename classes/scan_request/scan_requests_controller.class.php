@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scan_requests_controller.class.php,v 1.1.2.3 2021/11/29 13:09:23 dgoron Exp $
+// $Id: scan_requests_controller.class.php,v 1.2 2021/11/29 13:07:11 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

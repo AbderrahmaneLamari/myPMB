@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: show_cart.inc.php,v 1.84 2021/01/22 15:04:12 gneveu Exp $
+// $Id: show_cart.inc.php,v 1.86.4.2 2023/11/08 07:51:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -388,9 +388,8 @@ if (!empty($cart_)) {
 		$sql = substr($sql, 0, strlen($sql) - 1) .")";
 		$sql = $sort->appliquer_tri($_SESSION['last_sortnotices'], $sql, 'notice_id', 0, 0);
 	} else {
-		$sql = "select notice_id from notices where notice_id in ('".implode("','", $cart_)."') order by tit1";
+		$sql = "select notice_id from notices where notice_id in ('".implode("','", $cart_)."') order by index_serie, tnvol, index_sew";
 	}
-
 	$res = pmb_mysql_query($sql);
 	$cart_ = array();
 	while ($r = pmb_mysql_fetch_object($res)) {
@@ -406,18 +405,23 @@ if (!empty($cart_)) {
 		$nb_fiche_total = count($cart_);
 
 		for ($z = 0; $z < $nb_fiche_total; $z++) {
+			$sql = "";
 			if (substr($cart_[$z], 0, 2) != "es") {
 				// Exclure de l'export (opac, panier) les fiches interdites de diffusion dans administration, Notices > Origines des notices NG72
 				$sql = "select 1 from origine_notice,notices where notice_id = '$cart_[$z]' and origine_catalogage = orinot_id and orinot_diffusion='1'";
 			} else {
 				$requete = "SELECT source_id FROM external_count WHERE rid=".addslashes(substr($cart_[$z], 2));
 				$myQuery = pmb_mysql_query($requete);
-				$source_id = pmb_mysql_result($myQuery, 0, 0);
-				$sql = "select 1 from entrepot_source_$source_id where recid='".addslashes(substr($cart_[$z], 2))."' group by ufield,usubfield,field_order,subfield_order,value";
+				if(pmb_mysql_num_rows($myQuery)) {
+					$source_id = pmb_mysql_result($myQuery, 0, 0);
+					$sql = "select 1 from entrepot_source_$source_id where recid='".addslashes(substr($cart_[$z], 2))."' group by ufield,usubfield,field_order,subfield_order,value";
+				}
 			}
-			$res = pmb_mysql_query($sql);
-			if (!empty(pmb_mysql_fetch_array($res))) {
-				$nb_fiche++;
+			if($sql) {
+				$res = pmb_mysql_query($sql);
+				if (!empty(pmb_mysql_fetch_array($res))) {
+					$nb_fiche++;
+				}
 			}
 		}
 		if ($nb_fiche != $nb_fiche_total) {
@@ -468,7 +472,7 @@ if (!empty($cart_)) {
 				return true;
 			}
 		</script>";
-		print "<span class=\"espaceCartAction\">&nbsp;</span><input type='button' class='bouton' value=\"".$msg['show_cart_export_ok']."\" onClick=\"$js_export_partiel if(getNoticeSelected()){ document.location='./export.php?action=export&typeexport='+document.export_form.typeexport.options[top.document.export_form.typeexport.selectedIndex].value+getNoticeSelected();}}\" />";
+		print "<span class=\"espaceCartAction\">&nbsp;</span><input type='button' class='bouton' value=\"".$msg['show_cart_export_ok']."\" onClick=\"$js_export_partiel if(getNoticeSelected()){ document.location='./export.php?action=export&typeexport='+document.export_form.typeexport.options[top.document.export_form.typeexport.selectedIndex].value+(typeof getNoticeSelected() != 'boolean' ? getNoticeSelected() : '');}}\" />";
 		print '</form>';
 		}
 	}
@@ -489,7 +493,7 @@ if (!empty($cart_)) {
 
 	if (count($cart_) <= $opac_nb_max_tri) {
 		$affich_tris_result_liste = sort::show_tris_selector();
-		$affich_tris_result_liste = str_replace('!!page_en_cours!!', 'lvl=show_cart', $affich_tris_result_liste);
+		$affich_tris_result_liste = str_replace('!!page_en_cours!!', urlencode('lvl=show_cart'), $affich_tris_result_liste);
 		$affich_tris_result_liste = str_replace('!!page_en_cours1!!', 'lvl=show_cart', $affich_tris_result_liste);
 		print $affich_tris_result_liste;
 	}

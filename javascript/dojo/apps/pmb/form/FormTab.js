@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormTab.js,v 1.3.2.1 2021/06/23 08:52:45 dgoron Exp $
+// $Id: FormTab.js,v 1.4 2021/06/23 08:51:32 dgoron Exp $
 
 
 define([

@@ -2,13 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette_creer.inc.php,v 1.35.8.1 2021/11/19 09:23:44 dgoron Exp $
+// $Id: bannette_creer.inc.php,v 1.37 2022/08/17 13:19:55 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $base_path, $class_path, $msg;
 global $opac_allow_bannette_priv, $id_empr, $instance_equation;
 global $enregistrer, $nom_bannette;
+
+global $serialized_search, $segment_json_search;
 
 if (!$opac_allow_bannette_priv) die ("Accès interdit") ; 
 
@@ -27,7 +29,11 @@ if (isset($enregistrer) && $enregistrer==1 && !$nom_bannette) $enregistrer = 2 ;
 $bannette = new bannette();
 print "<h3><span>".$msg['dsi_bt_bannette_priv']."</span></h3>\n";
 $s = new search() ;
-if (!isset($enregistrer) || !$enregistrer) {
+if ($serialized_search) {
+    $equation = $serialized_search;
+}
+
+if ((!isset($enregistrer) || !$enregistrer) && !$serialized_search) {
 	$s->unhistorize_search();
 	$s->strip_slashes();
 	$equation = $s->serialize_search();

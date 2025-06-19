@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_family.class.php,v 1.9 2021/01/27 10:46:30 dgoron Exp $
+// $Id: nomenclature_family.class.php,v 1.9.6.2 2023/07/21 12:59:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,6 +54,12 @@ class nomenclature_family{
 	protected $order;
 	
 	/**
+	 * Tableau d'instances
+	 * @var array
+	 */
+	protected static $instances = array();
+	
+	/**
 	 * Constructeur
 	 *
 	 * @param string name Nom de la famille
@@ -81,7 +87,7 @@ class nomenclature_family{
 				$result = pmb_mysql_query($query);
 				if(pmb_mysql_num_rows($result)){
 					while($row = pmb_mysql_fetch_object($result)){
-						$this->add_musicstand(new nomenclature_musicstand($row->id_musicstand));
+						$this->add_musicstand(nomenclature_musicstand::get_instance($row->id_musicstand));
 					}
 				}
 			}
@@ -92,19 +98,12 @@ class nomenclature_family{
 		}
 	}
 	
-	public function get_form() {
-		global $nomenclature_family_content_form_tpl,$msg,$charset;
+	public function get_content_form() {
+		global $msg;
 		
-		$content_form = $nomenclature_family_content_form_tpl;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
-		
-		$interface_form = new interface_admin_nomenclature_form('nomenclature_family_form');
-		if(!$this->id){
-			$interface_form->set_label($msg['admin_nomenclature_family_form_add']);
-		}else{
-			$interface_form->set_label($msg['admin_nomenclature_family_form_edit']);
-		}
-		$content_form = str_replace('!!name!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('name', 'admin_nomenclature_family_form_name')
+		->add_input_node('text', $this->name);
 		
 		$tpl_musicstands="
 		<script type='text/javascript' src='./javascript/sorttable.js'></script>
@@ -131,12 +130,24 @@ class nomenclature_family{
 		}
 		$tpl_musicstands.="
 		</table>";
-		$content_form=str_replace('!!musicstands!!',$tpl_musicstands,$content_form);
+		$interface_content_form->add_element('musicstands', 'admin_nomenclature_family_pupitres')
+		->add_html_node($tpl_musicstands);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
+		$interface_form = new interface_admin_nomenclature_form('nomenclature_family_form');
+		if(!$this->id){
+			$interface_form->set_label($msg['admin_nomenclature_family_form_add']);
+		}else{
+			$interface_form->set_label($msg['admin_nomenclature_family_form_edit']);
+		}
 		$interface_form->set_object_id($this->id)
 		->set_object_type('family')
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('nomenclature_families')
 		->set_field_focus('name');
 		return $interface_form->get_display();
@@ -298,12 +309,19 @@ class nomenclature_family{
 		$tmusicstands = array();
 		if(is_array($this->musicstands)) {
 			foreach ($this->musicstands as $musicstand) {
-				$nomenclature_musicstand = new nomenclature_musicstand($musicstand->get_id());
+				$nomenclature_musicstand = nomenclature_musicstand::get_instance($musicstand->get_id());
 				$nomenclature_musicstand->calc_abbreviation();
 				$tmusicstands[] = $nomenclature_musicstand->get_abbreviation();
 			}
 		}
 		$this->set_abbreviation(implode(".", $tmusicstands));
 	} // end of member function calc_abbreviation
+	
+	public static function get_instance($id) {
+		if(!isset(static::$instances[$id])) {
+			static::$instances[$id] = new nomenclature_family($id);
+		}
+		return static::$instances[$id];
+	}
 	
 } // end of nomenclature_family

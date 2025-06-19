@@ -31,14 +31,14 @@ require_once($base_path."/classes/encoding_normalize.class.php");
  * @author sergio <jsonrpcphp@inservibile.org>
  */
 class jsonRPCClient {
-	
+
 	/**
 	 * Debug state
 	 *
 	 * @var boolean
 	 */
 	private $debug;
-	
+
 	/**
 	 * The server URL
 	 *
@@ -57,13 +57,13 @@ class jsonRPCClient {
 	 * @var boolean
 	 */
 	private $notification = false;
-	
+
 	private $user;
-	
+
 	private $password;
-	
+
 	private $salt;
-	
+
 	/**
 	 * Takes the connection parameters
 	 *
@@ -80,19 +80,19 @@ class jsonRPCClient {
 		// message id
 		$this->id = 1;
 	}
-	
+
 	public function setUser($user) {
 		$this->user=$user;
 	}
-	
+
 	public function setPwd($pwd) {
 		$this->password=$pwd;
 	}
-	
+
 	public function setSalt($salt) {
 		$this->salt=$salt;
 	}
-	
+
 	public function getId() {
 		return $this->id;
 	}
@@ -107,7 +107,7 @@ class jsonRPCClient {
 							:
 							$this->notification = true;
 	}
-	
+
 	/**
 	 * Performs a jsonRCP request and gets the results as an array
 	 *
@@ -116,12 +116,12 @@ class jsonRPCClient {
 	 * @return array
 	 */
 	public function __call($method,$params) {
-		
+
 		// check
 		if (!is_scalar($method)) {
 			throw new Exception('Method name has no scalar value');
 		}
-		
+
 		// check
 		if (is_array($params)) {
 			// no keys
@@ -129,14 +129,14 @@ class jsonRPCClient {
 		} else {
 			throw new Exception('Params must be given as array');
 		}
-		
+
 		// sets notification or request task
 		if ($this->notification) {
 			$currentId = NULL;
 		} else {
 			$currentId = $this->id;
 		}
-		
+
 		// prepares the request
 		$request = array(
 						'method' => $method,
@@ -149,7 +149,7 @@ class jsonRPCClient {
 		}
 		$request = encoding_normalize::json_encode($request);
 		$this->debug && $debug.='***** Request *****'."\n".$request."\n".'***** End Of request *****'."\n\n";
-		
+
 		// performs the HTTP POST
 		$opts = array ('http' => array (
 							'method'  => 'POST',
@@ -163,17 +163,18 @@ class jsonRPCClient {
 			while($row = fgets($fp)) {
 				$response.= trim($row)."\n";
 			}
+			fclose($fp);
 			$this->debug && $debug.='***** Server response *****'."\n".$response.'***** End of server response *****'."\n";
 			$response_array = json_decode($response,true);
 		} else {
 			throw new Exception('Unable to connect to '.$this->url);
 		}
-		
+
 		// debug output
 		if ($this->debug) {
 			echo nl2br($debug);
 		}
-		
+
 		// final checks and return
 		if (!$this->notification) {
 			// check
@@ -183,9 +184,9 @@ class jsonRPCClient {
 			if (!is_null($response_array["error"])) {
 			    throw new Exception('Request error: '.$response_array["error"]);
 			}
-			
+
 			return $response_array["result"];
-			
+
 		} else {
 			return true;
 		}

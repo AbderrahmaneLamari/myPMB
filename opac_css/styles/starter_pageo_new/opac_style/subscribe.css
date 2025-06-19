@@ -1,0 +1,98 @@
+#websubscribe h2 {
+    margin-top: 24px;
+}
+
+#empr_form tbody {
+    display: flex;
+    column-gap: 44px;
+    row-gap: 32px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+}
+
+#empr_form tbody tr {
+    width: calc(42% - 44px);
+}
+
+#empr_form tr td {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+#empr_form tr td input{
+    width: 72%;
+}
+
+#empr_year {
+    height: 57px;
+    border-radius: var(--border-radius);
+    padding: 24px;
+    border: 1px solid var(--c-primary);
+}
+
+#empr_form tbody tr td:first-of-type {
+    width: 200px;
+}
+
+#empr_form #captcha_container {
+    width: 100%;
+}
+
+#empr_form #captcha_image {
+    padding-right: 16px !important;
+}
+
+ #change-profil-container #empr_form >div {
+    text-align: left;
+    margin-top: 24px;
+}
+
+#change-profil-container .bouton {
+    font: var(--font-link);
+    padding: 11px 24px 10px 24px;
+    border-radius: var(--border-radius);
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    transition: var(--transition);
+    text-align: center;
+    margin-top: 16px;
+}
+
+#empr_verifcode {
+    width: 20rem!important;
+}
+
+@media screen and (max-width: 1200px) {
+    #empr_form tr td input{
+        width: 92%;
+    }
+   
+}
+
+
+@media screen and (max-width: 960px) {
+    #empr_form tr td input{
+        width: 100%;
+    }
+
+    #empr_form tbody tr {
+        width: calc(50% - 44px);
+    }
+   
+}
+
+
+
+@media screen and (max-width: 768px) {
+    #empr_form tbody {
+            flex-direction: column;
+    }
+
+    #empr_form tbody tr,
+    #empr_form table {
+        width:100%;
+    }
+}

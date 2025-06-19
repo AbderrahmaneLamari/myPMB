@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: select.php,v 1.54.2.1 2021/09/18 12:50:12 dgoron Exp $
+// $Id: select.php,v 1.56 2022/04/15 12:16:06 dbellamy Exp $
 
 // définition du minimum nécéssaire 
 $base_path=".";                            
@@ -53,13 +53,6 @@ require_once($class_path."/user.class.php");
 if(!$nb_per_page) {
 	$nb_per_page = user::get_param($PMBuserid, 'nb_per_page_select');
 }
-
-// classes pour la gestion des sélecteurs
-if(!isset($autoloader) || !is_object($autoloader)){
-	require_once($class_path."/autoloader.class.php");
-	$autoloader = new autoloader();
-}
-$autoloader->add_register("selectors_class",true);
 
 print "<script type='text/javascript'>
 	 		self.focus();

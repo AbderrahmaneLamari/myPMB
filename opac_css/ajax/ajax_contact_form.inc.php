@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_contact_form.inc.php,v 1.12 2021/03/23 16:22:47 qvarin Exp $
+// $Id: ajax_contact_form.inc.php,v 1.13 2022/09/02 08:36:41 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -75,7 +75,7 @@ switch($sub){
 				if($pmb_logs_activate && $contact_form->is_sended()) {
 					generate_log();
 				}
-				print encoding_normalize::json_encode(array('sended' => $contact_form->is_sended(), 'messages' => $contact_form->get_messages()));
+				print encoding_normalize::json_encode(array('sended' => $contact_form->is_sended(), 'errors_messages' => $contact_form->get_messages(), 'fields_errors' => $contact_form->get_fields_errors()));
 				break;
 		}
 		break;

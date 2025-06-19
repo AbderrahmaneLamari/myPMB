@@ -1,0 +1,19 @@
+.pmb_anchor a {
+    position: relative;
+}
+
+.pmb_anchor a::before {
+    position: fixed;
+    content: url("../../images/ancre.png");
+    display: block;
+    right: 44px;
+    bottom: 26%;
+}
+
+
+@media (max-width: 960px) {
+    .pmb_anchor a::before {
+        right: 8px;
+        bottom: 72px;
+    }
+}

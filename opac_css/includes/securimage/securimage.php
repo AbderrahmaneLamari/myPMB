@@ -1360,7 +1360,9 @@ class Securimage
         $refresh_icon_url  = (isset($options['refresh_icon_url'])) ? $options['refresh_icon_url'] : null;
         $audio_but_bg_col  = (isset($options['audio_button_bgcol'])) ? $options['audio_button_bgcol'] : '#ffffff';
         $audio_icon_url    = (isset($options['audio_icon_url'])) ? $options['audio_icon_url'] : null;
+        $audio_icon_alt    = (isset($options['audio_icon_alt'])) ? $options['audio_icon_alt'] : "Play CAPTCHA Audio";
         $loading_icon_url  = (isset($options['loading_icon_url'])) ? $options['loading_icon_url'] : null;
+        $loading_icon_alt  = (isset($options['loading_icon_alt'])) ? $options['loading_icon_alt'] : "Loading audio";
         $icon_size         = (isset($options['icon_size'])) ? $options['icon_size'] : 32;
         $audio_play_url    = (isset($options['audio_play_url'])) ? $options['audio_play_url'] : null;
         $audio_swf_url     = (isset($options['audio_swf_url'])) ? $options['audio_swf_url'] : null;
@@ -1482,8 +1484,8 @@ class Securimage
                      sprintf('<a tabindex="-1" class="captcha_play_button" href="%sid=%s" onclick="return false">',
                              $play_path, uniqid()
                      ) . "\n" .
-                     sprintf('<img class="captcha_play_image" height="%d" width="%d" src="%s" alt="Play CAPTCHA Audio" style="border: 0px">', $icon_size, $icon_size, htmlspecialchars($icon_path)) . "\n" .
-                     sprintf('<img class="captcha_loading_image rotating" height="%d" width="%d" src="%s" alt="Loading audio" style="display: none">', $icon_size, $icon_size, htmlspecialchars($load_path)) . "\n" .
+                     sprintf('<img class="captcha_play_image" height="%d" width="%d" src="%s" alt="%s" style="border: 0px">', $icon_size, $icon_size, htmlspecialchars($icon_path), htmlspecialchars($audio_icon_alt)) . "\n" .
+                     sprintf('<img class="captcha_loading_image rotating" height="%d" width="%d" src="%s" alt="%s" style="display: none">', $icon_size, $icon_size, htmlspecialchars($load_path), htmlspecialchars($loading_icon_alt)) . "\n" .
                      "</a>\n<noscript>Enable Javascript for audio controls</noscript>\n" .
                      "</div>\n";
 

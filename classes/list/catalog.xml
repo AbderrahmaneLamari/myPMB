@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: catalog.xml,v 1.5.2.5 2021/11/23 09:58:08 dgoron Exp $ -->
+$Id: catalog.xml,v 1.11.2.1 2023/03/29 13:09:54 dgoron Exp $ -->
 
 <lists>
 	<directory>
@@ -170,6 +170,13 @@ $Id: catalog.xml,v 1.5.2.5 2021/11/23 09:58:08 dgoron Exp $ -->
 		<list name="recouvr_reader" />
 	</directory>
 	<directory>
+		<path>resa_planning</path>
+		<label>msg:resa_menu_planning</label>
+		<list name="resa_planning_circ_reader" />
+		<list name="resa_planning_circ" />
+		<list name="resa_planning_edition" />
+	</directory>
+	<directory>
 		<path>reservations</path>
 		<label>msg:350</label>
 		<list name="reservations_circ" />
@@ -181,6 +188,13 @@ $Id: catalog.xml,v 1.5.2.5 2021/11/23 09:58:08 dgoron Exp $ -->
 		<path>scan_requests</path>
 		<label>msg:admin_menu_scan_request</label>
 		<list name="scan_requests" />
+	</directory>
+	<directory>
+		<path>serialcirc</path>
+		<label>msg:serialcirc_circ_title</label>
+		<list name="serialcirc_ask" />
+		<list name="serialcirc_expl" />
+		<list name="serialcirc_state" />
 	</directory>
 	<directory>
 		<path>statopac</path>

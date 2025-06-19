@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pubmed_analyse_query.class.php,v 1.3.10.1 2021/07/22 12:24:51 dgoron Exp $
+// $Id: pubmed_analyse_query.class.php,v 1.6 2022/07/22 10:40:08 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/analyse_query.class.php");
 
 class pubmed_analyse_query extends analyse_query{
@@ -39,11 +40,14 @@ class pubmed_analyse_query extends analyse_query{
 	
 	//Affichage sous forme mathématique logique du résultat de l'analyse
 	public function show_analyse($tree="") {
+		$r ="";
 		if ($tree=="") $tree=$this->tree;
+		$i = 0;
 		foreach($tree as $elem){
-			if($elem->start_with == 0){
-				//PubMed veut ses opérateurs en MAJ
-				if ($elem->operator) $r.=" ".strtoupper($elem->operator)." ";
+		    // Cas particulier pour le DIO qui est un identifiant comprennant des caracteres spéciaux
+		    if(($this->field != "[DOI]" && $elem->start_with == 0) || ($this->field == "[DOI]" && $elem->start_with == 1)){
+				//PubMed veut ses operateurs en MAJ
+		        if ($elem->operator && $i) $r.=" ".strtoupper($elem->operator)." ";
 				$r.="(";
 				if ($elem->not) $r.="not";
 				if ($elem->sub==null) {
@@ -56,6 +60,7 @@ class pubmed_analyse_query extends analyse_query{
 					$r.="( ".$this->show_analyse($elem->sub).") ";
 				}		
 				$r.=")";				
+    			$i++;
 			}
 		}
 		return $r;

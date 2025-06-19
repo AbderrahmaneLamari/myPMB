@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc_file_list.class.php,v 1.5 2018/11/26 09:20:57 dgoron Exp $
+// $Id: misc_file_list.class.php,v 1.6 2022/06/28 06:14:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -44,7 +44,7 @@ class misc_file_list extends misc_file {
 			<th>".htmlentities($msg['misc_file_code'], ENT_QUOTES, $charset)."</th>
 			<th>".htmlentities($msg['misc_file_label'], ENT_QUOTES, $charset)."</th>
 			<th>".htmlentities($msg['misc_file_visible'], ENT_QUOTES, $charset)."</th>
-			<th></th>
+			<!--<th></th>-->
 		</tr>";
 		return $display;
 	}
@@ -60,7 +60,7 @@ class misc_file_list extends misc_file {
 				</td>
 				<td>".$value."</td>
 				<td>".$this->get_visible_checkbox($key)."</td>
-				<td>".$this->get_substituted_icon($key)."</td>
+				<!--<td>".$this->get_substituted_icon($key)."</td>-->
 			</tr>";
 		}
 		return $display;

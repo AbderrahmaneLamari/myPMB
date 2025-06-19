@@ -2,9 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_voice.class.php,v 1.2.6.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: nomenclature_voice.class.php,v 1.4.4.2 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+global $include_path;
+require_once($include_path."/templates/nomenclature/nomenclature_voice.tpl.php");
 
 /**
  * class nomenclature_voice
@@ -32,6 +35,12 @@ class nomenclature_voice{
 	protected $code;
 	protected $order;
 
+	/**
+	 * Tableau d'instances
+	 * @var array
+	 */
+	protected static $instances = array();
+	
 	/**
 	 * Constructeur
 	 *
@@ -62,6 +71,69 @@ class nomenclature_voice{
 		}
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('code', 'admin_nomenclature_voice_form_code')
+		->add_input_node('text', $this->code);
+		$interface_content_form->add_element('name', 'admin_nomenclature_voice_form_name')
+		->add_input_node('text', $this->name);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
+		
+		$interface_form = new interface_admin_nomenclature_form('nomenclature_voice_form');
+		if(!$this->id){
+			$interface_form->set_label($msg['admin_nomenclature_voice_form_add']);
+		}else{
+			$interface_form->set_label($msg['admin_nomenclature_voice_form_edit']);
+		}
+		$interface_form->set_object_id($this->id)
+		->set_object_type('voice')
+		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
+		->set_content_form($this->get_content_form())
+		->set_table_name('nomenclature_voices')
+		->set_field_focus('code');
+		return $interface_form->get_display();
+	}
+	
+	public function set_properties_from_form() {
+		global $name, $code;
+		
+		$this->name = stripslashes($name);
+		$this->code = stripslashes($code);
+	}
+	
+	public function save() {
+		global $msg;
+		
+		$fields="
+			voice_name='".addslashes($this->name)."', voice_code='".addslashes($this->code)."'
+		";
+		if(!$this->id){ // Ajout
+			$requete="select max(voice_order) as ordre from nomenclature_voices";
+			$resultat=pmb_mysql_query($requete);
+			$ordre_max=@pmb_mysql_result($resultat,0,0);
+			$req="INSERT INTO nomenclature_voices SET $fields, voice_order=".($ordre_max+1);
+			pmb_mysql_query($req);
+			$this->id = pmb_mysql_insert_id();
+		} else {
+			$req="UPDATE nomenclature_voices SET $fields where id_voice=".$this->id;
+			pmb_mysql_query($req);
+		}
+		print display_notification($msg['account_types_success_saved']);
+	}
+	
+	public static function delete($id) {
+		$id = intval($id);
+		if($id) {
+			$req="DELETE from nomenclature_voices WHERE id_voice=".$id;
+			pmb_mysql_query($req);
+		}
+		return true;
+	}
+	
 	public function get_data(){
 		
 		return(
@@ -73,7 +145,6 @@ class nomenclature_voice{
 			)
 		);	
 	}
-	
 
 	public function get_name( ) {
 		return $this->name;
@@ -113,6 +184,13 @@ class nomenclature_voice{
 	        $voice_name = $row->voice_name;
 	    }
 	    return $voice_name;
+	}
+	
+	public static function get_instance($id) {
+		if(!isset(static::$instances[$id])) {
+			static::$instances[$id] = new nomenclature_voice($id);
+		}
+		return static::$instances[$id];
 	}
 	
 } // end of nomenclature_voice

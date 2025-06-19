@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_nomenclatures_instruments_ui.class.php,v 1.3 2021/04/19 07:10:28 dgoron Exp $
+// $Id: list_configuration_nomenclatures_instruments_ui.class.php,v 1.3.6.1 2023/05/05 13:45:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -61,11 +61,11 @@ class list_configuration_nomenclatures_instruments_ui extends list_configuration
 		$content = '';
 		switch($property) {
 			case 'musicstand':
-				$nomenclature_musicstand = new nomenclature_musicstand($object->get_musicstand_num());
+				$nomenclature_musicstand = nomenclature_musicstand::get_instance($object->get_musicstand_num());
 				$content .= "<a href='".static::get_musicstands_url_base()."&action=form&id=".$nomenclature_musicstand->get_id()."'>".$nomenclature_musicstand->get_name()."</a>";
 				break;
 			case 'musicstand_family':
-				$nomenclature_musicstand = new nomenclature_musicstand($object->get_musicstand_num());
+				$nomenclature_musicstand = nomenclature_musicstand::get_instance($object->get_musicstand_num());
 				$family = $nomenclature_musicstand->get_family();
 				if(is_object($family)) {
 					$content .= "<a href='".static::get_families_url_base()."&action=form&id=".$family->get_id()."'>".$family->get_name()."</a>";

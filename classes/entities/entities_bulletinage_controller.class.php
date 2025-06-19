@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_bulletinage_controller.class.php,v 1.6 2019/06/13 15:26:51 btafforeau Exp $
+// $Id: entities_bulletinage_controller.class.php,v 1.8.4.1 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -126,11 +126,40 @@ class entities_bulletinage_controller extends entities_records_controller {
 	}
 	
 	protected function get_permalink($id=0) {
-		if(!$id) $id = $this->id;
-		return $this->url_base."&action=view&bul_id=".$id;
+	    if(!$id) {
+	        $id = $this->id;
+	    }
+		return $this->url_base."&action=view&bul_id=" . intval($id);
 	}
 	
 	public function set_serial_id($serial_id=0) {
 	    $this->serial_id = (int) $serial_id;
+	}
+	
+	public function proceed_update() {
+	    global $create_notice_bul;
+	    if(!isset($this->serial_id)){
+	        global $serial_id;
+	        $this->serial_id = $serial_id;
+	    }
+	    $myBull = $this->get_object_instance();
+	    $myBull->set_properties_from_form();
+	    if($create_notice_bul){
+    	    $sign = new notice_doublon();
+	        $myBull->signature = $sign->gen_signature();
+	    }
+	    $myBull->save();
+	    return $myBull->bulletin_id;
+	}
+	public function get_display_view($saved="") {
+	    global $msg, $current_module, $id_form;
+	    $return = "<div class='row'><div class='msg-perio'>".$msg["maj_encours"]."</div></div>";
+	    $retour = bulletinage::get_permalink($saved);
+	    $return .= "
+                <form class='form-$current_module' name=\"dummy\" method=\"post\" action=\"$retour\" style=\"display:none\">
+    				<input type=\"hidden\" name=\"id_form\" value=\"$id_form\">
+    			</form>
+    			<script type=\"text/javascript\">document.dummy.submit();</script>";
+	    return $return;
 	}
 }

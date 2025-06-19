@@ -2,7 +2,7 @@
 // +--------------------------------------------------------------------------+
 // | PMB est sous licence GPL, la réutilisation du code est cadrée            |
 // +--------------------------------------------------------------------------+
-// $Id: download.php,v 1.7.8.1 2022/01/05 09:00:58 dgoron Exp $
+// $Id: download.php,v 1.8 2022/01/05 08:50:29 dgoron Exp $
 
 //Impression
 

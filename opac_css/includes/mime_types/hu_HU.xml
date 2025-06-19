@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: hu_HU.xml,v 1.8 2020/10/09 15:25:30 dgoron Exp $ -->
+<!-- $Id: hu_HU.xml,v 1.9.4.1 2023/05/12 10:09:47 dgoron Exp $ -->
 <!DOCTYPE mimeTypeList SYSTEM "./mimes_types.dtd">
 <mimeTypeList>
 	
@@ -189,6 +189,10 @@
 	<extension>cgm</extension>
 	</mimeType>
 
+<mimeType name="image/svg" label="Scalable Vector Graphics" icon="svg-dist.png" embeded="no" plugin="">
+	<extension>svg</extension>
+	</mimeType>
+	
 <mimeType name="drawing/x-dwf" label="Autocad WHIP vector drawings" icon="image.gif" embeded="yes" plugin="">
 	<extension>dwf</extension>
 	</mimeType>
@@ -407,6 +411,10 @@
 	
 <mimeType name="video/x-flv" label="Fichier flv" icon="flv-dist.png" embeded="no" plugin="">
 	<extension>flv</extension>
+	</mimeType>
+			
+<mimeType name="audio/mp3" label="Fichier son mp3" icon="mp3-dist.png" embeded="yes" plugin="LiveAudio">
+	<extension>mp3</extension>
 	</mimeType>
 	
 </mimeTypeList>

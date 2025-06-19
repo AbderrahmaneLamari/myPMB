@@ -1,3 +1,7 @@
+/* +--------------------------------------------------------------------------+
+// ? 2002-2013 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// +-------------------------------------------------+
+// $Id: contrib.css,v 1.10 2023/01/09 15:03:38 gneveu Exp $ */
 #empr_contribution_area {
 	background: #f7f9f9;
 	margin: 0;
@@ -109,4 +113,16 @@
 
 .contributon_datalist_option {
 	padding-left: 2px;
+}
+
+.field_container_loader {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width : 100%;
+}
+
+.field_container_loader .loading_img {
+	position: absolute;
+	right: 10px;
 }

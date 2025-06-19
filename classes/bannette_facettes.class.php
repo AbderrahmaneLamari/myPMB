@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette_facettes.class.php,v 1.48.2.2 2022/01/03 15:49:26 dgoron Exp $
+// $Id: bannette_facettes.class.php,v 1.51 2022/07/08 09:28:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -485,7 +485,9 @@ class bannette_facettes{
 		if(count($res_notice_ids["notfound"])){
 			//$this->sommaires[$this->index]['level']=$rang;
 			foreach($res_notice_ids["notfound"] as $notice_id){
-			    $this->sommaires[$this->index]['title'] = $msg['dsi_record_not_classified'];
+				if($rang == 1) {
+			    	$this->sommaires[$this->index]['title'] = $msg['dsi_record_not_classified'];
+				}
 			    if( !in_array($notice_id, $notfound) )	{
 					$this->sommaires[$this->index]['records'][]['render']=$this->build_notice($notice_id);				
 			    }

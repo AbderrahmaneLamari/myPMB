@@ -2,13 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: import_aix.inc.php,v 1.4.4.1 2021/12/27 14:05:14 dgoron Exp $
+// $Id: import_aix.inc.php,v 1.6 2022/09/07 15:13:30 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $include_path;
-require_once("$class_path/emprunteur.class.php");
-require_once("$include_path/misc.inc.php");
+global $action, $type_import;
+
+require_once "$class_path/emprunteur.class.php";
+require_once "$include_path/misc.inc.php";
 
 function show_import_choix_fichier() {
 	
@@ -604,4 +606,3 @@ switch($action) {
         show_import_choix_fichier();
         break;
 }
-?>

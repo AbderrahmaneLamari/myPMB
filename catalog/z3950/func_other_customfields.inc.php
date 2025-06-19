@@ -4,10 +4,11 @@
 // | creator : Eric ROBERT                                                    |
 // | modified : ...                                                           |
 // +-------------------------------------------------+
-// $Id: func_other_customfields.inc.php,v 1.9 2019/08/01 13:16:34 btafforeau Exp $
+// $Id: func_other_customfields.inc.php,v 1.10.4.1 2023/10/11 10:11:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $base_path;
 include_once $base_path.'/admin/import/lib_func_customfields.inc.php';
 
 function z_recup_noticeunimarc_suite($notice) {
@@ -27,13 +28,12 @@ function param_perso_prepare($record) {
 }
 
 function param_perso_form(&$p_perso) {
-	global $dbh;
 	global $param_perso_900;
 
 	for($i=0;$i<count($param_perso_900);$i++){
 	
 		$req = " select idchamp, type, datatype from notices_custom where name='".$param_perso_900[$i]['n']."'";
-		$res = pmb_mysql_query($req,$dbh);
+		$res = pmb_mysql_query($req);
 		if(pmb_mysql_num_rows($res)){
 			$perso = pmb_mysql_fetch_object($res);
 
@@ -64,6 +64,7 @@ function param_perso_form(&$p_perso) {
 }
 
 function dateFrToMysql($value){
+	$out = array();
 	if(preg_match('`^(\d{2})\/(\d{2})\/(\d{4})$`',$value,$out)){
 		return $out[3]."-".$out[2]."-".$out[1];
 	}else{
@@ -73,27 +74,11 @@ function dateFrToMysql($value){
 
 // enregistrement de la notices dans les catégories
 function traite_categories_enreg($notice_retour, $categories, $thesaurus_traite = 0) {
-	// si $thesaurus_traite fourni, on ne delete que les catégories de ce thesaurus, sinon on efface toutes
-	//  les indexations de la notice sans distinction de thesaurus
-    if (empty($thesaurus_traite)) {
-        $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' ";
-    } else {
-        $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' and num_noeud in (select id_noeud from noeuds where num_thesaurus='$thesaurus_traite' and id_noeud=notices_categories.num_noeud) ";
-    }
-	$res_del = @pmb_mysql_query($rqt_del);
-	$rqt_ins = "insert into notices_categories (notcateg_notice, num_noeud, ordre_categorie) VALUES ";
-	$nb_categories = count($categories);
-	for ($i = 0; $i < $nb_categories; $i++) {
-		$id_categ = $categories[$i]['categ_id'];
-		if (!empty($id_categ)) {
-			$rqt = $rqt_ins . " ('$notice_retour','$id_categ', $i) "; 
-			$res_ins = @pmb_mysql_query($rqt);
-		}
-	}
+	z3950_notice::traite_categories_enreg($notice_retour, $categories, $thesaurus_traite);
 }
 
 function traite_categories_for_form($tableau_600 = array(), $tableau_601 = array(), $tableau_602 = array(), $tableau_605 = array(), $tableau_606 = array(), $tableau_607 = array(), $tableau_608 = array()) {
-	global $charset, $msg, $pmb_keyword_sep, $rameau;
+	global $charset, $msg, $rameau;
 	$rameau = "" ;
 	$info_606_a = $tableau_606["info_606_a"] ;
 	$info_606_j = $tableau_606["info_606_j"] ;
@@ -132,19 +117,11 @@ function traite_categories_for_form($tableau_600 = array(), $tableau_601 = array
 
 
 function traite_categories_from_form() {
-	global $max_categ ;
-	$categories = array () ;
-	for ($i=0; $i< $max_categ ; $i++) {
-		$var_categ = "f_categ_id$i" ;
-		global ${$var_categ} ;
-		if (${$var_categ}) 
-			$categories[] = array('categ_id' => ${$var_categ} );
-		}
-	return $categories ;
+	return z3950_notice::traite_categories_from_form();
 }
 
 function traite_concepts_for_form($tableau_606 = array()) {
-	global $charset, $msg, $pmb_keyword_sep, $rameau;
+	global $charset, $rameau;
 	$rameau = "" ;
 	$info_606_a = $tableau_606["info_606_a"] ;
 	$info_606_j = $tableau_606["info_606_j"] ;

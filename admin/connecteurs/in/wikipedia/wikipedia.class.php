@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: wikipedia.class.php,v 1.14 2019/12/30 15:58:51 btafforeau Exp $
+// $Id: wikipedia.class.php,v 1.15 2022/02/16 13:33:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $class_path,$base_path, $include_path;
+global $class_path;
 require_once($class_path."/connecteurs.class.php");
 require_once($class_path."/curl.class.php");
 
@@ -40,7 +40,6 @@ class wikipedia extends connector {
 	}
 	
 	public function getEnrichmentHeader(){
-		global $lang;
 		$header= array();
 		$header[]= "<!-- Script d'enrichissement pour wikipedia-->";
 		$header[]= "<script type='text/javascript'>
@@ -60,6 +59,7 @@ class wikipedia extends connector {
 	}
 	
 	public function getTypeOfEnrichment($source_id){
+		$type = array();
 		$type['type'] = array(
 			array( 
 				'code' => "wiki",
@@ -90,7 +90,8 @@ class wikipedia extends connector {
 	public function get_author_page($notice_id,$enrich_params){
 		global $lang;
 		global $charset;
-		if($enrich_params['label']!=""){
+		
+		if(isset($enrich_params['label']) && $enrich_params['label']!=""){
 			$author = $enrich_params['label'];
 		}else{
 			//on va chercher l'auteur principal...
@@ -156,7 +157,7 @@ class wikipedia extends connector {
 		}else{
 			$html_to_return = $this->msg['wikipedia_no_informations'];
 		}
-//		print $html_to_return;
+
 		return $html_to_return; 
 	}
 	

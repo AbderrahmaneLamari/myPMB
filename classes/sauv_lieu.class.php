@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sauv_lieu.class.php,v 1.13.8.1 2022/01/12 07:57:53 dgoron Exp $
+// $Id: sauv_lieu.class.php,v 1.14 2022/01/12 07:49:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

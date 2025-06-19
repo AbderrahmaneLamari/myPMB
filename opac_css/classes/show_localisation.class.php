@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: show_localisation.class.php,v 1.1.6.1 2021/06/23 12:28:06 dgoron Exp $
+// $Id: show_localisation.class.php,v 1.3.4.1 2023/11/29 16:39:44 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -85,81 +85,28 @@ class show_localisation {
      * @return string
      */
     public static function get_display_list() {
-        global $opac_nb_sections_per_line, $opac_nb_localisations_per_line;
         global $opac_view_filter_class;
-        global $back_section_see;
-        
-        if (!$opac_nb_sections_per_line) $opac_nb_sections_per_line=6;
         
         $display = '';
         if($opac_view_filter_class){
-            $requete="select idlocation, location_libelle, location_pic, css_style from docs_location where location_visible_opac=1
-		  and idlocation in(". implode(",",$opac_view_filter_class->params["nav_sections"]).")  order by location_libelle ";
+        	if(!empty($opac_view_filter_class->params["nav_sections"])) {
+	            $requete="select idlocation, location_libelle, location_pic, css_style from docs_location where location_visible_opac=1
+			  and idlocation in(". implode(",",$opac_view_filter_class->params["nav_sections"]).")  order by location_libelle ";
+        	} else {
+        		return "";
+        	}
         }
         else {
             $requete="select idlocation, location_libelle, location_pic from docs_location where location_visible_opac=1 order by location_libelle ";
         }
         $resultat=pmb_mysql_query($requete);
         if (pmb_mysql_num_rows($resultat)>1) {
-            $display .= "<table class='center' style='width:100%'>";
-            $npl=0;
-            while ($r=pmb_mysql_fetch_object($resultat)) {
-                if ($npl==0) $display .= "<tr>";
-                if ($r->location_pic) $image_src = $r->location_pic ;
-                else  $image_src = "images/bibli-small.png" ;
-                if ($back_section_see) $param_section_see="&back_section_see=".$back_section_see;
-                else $param_section_see="";
-                $display .= "<td class='center'>
-				<a href='./index.php?lvl=section_see&location=".$r->idlocation."".$param_section_see."'><img src='$image_src' style='border:0px' alt='".$r->location_libelle."' title='".$r->location_libelle."'/></a>
-				<br /><a href='./index.php?lvl=section_see&location=".$r->idlocation."'><b>".$r->location_libelle."</b></a></td>";
-                $npl++;
-                if ($npl==$opac_nb_localisations_per_line) {
-                    $display .= "</tr>";
-                    $npl=0;
-                }
-            }
-            if ($npl!=0) {
-                while ($npl<$opac_nb_localisations_per_line) {
-                    $display .= "<td></td>";
-                    $npl++;
-                }
-                $display .= "</tr>";
-            }
-            $display .= "</table>";
+            $display .= list_opac_locations_ui::get_instance()->get_display_list();
         } else {
             // zéro ou une seule localisation
             if (pmb_mysql_num_rows($resultat)) {
                 $location=pmb_mysql_result($resultat,0,0);
-                $requete="select idsection, section_libelle, section_libelle_opac, section_pic from docs_section, exemplaires where expl_location=$location and section_visible_opac=1 and expl_section=idsection group by idsection order by section_libelle_opac, section_libelle ";
-                $resultat=pmb_mysql_query($requete);
-                $display .= "<table class='center' style='width:100%'>";
-                $npl=0;
-                while ($r=pmb_mysql_fetch_object($resultat)) {
-                    if ($npl==0) $display .= "<tr>";
-                    if ($r->section_libelle_opac) {
-                    	$section_label = translation::get_translated_text($r->idsection, 'docs_section', 'section_libelle_opac', $r->section_libelle_opac);
-                    } else {
-                    	$section_label = translation::get_translated_text($r->idsection, 'docs_section', 'section_libelle', $r->section_libelle);
-                    }
-                    if ($r->section_pic) $image_src = $r->section_pic ;
-                    else  $image_src = get_url_icon("rayonnage-small.png") ;
-                    $display .= "<td class='center'>
-						<a href='./index.php?lvl=section_see&location=".$location."&id=".$r->idsection."'><img src='$image_src' style='border:0px' alt='".$section_label."' title='".$section_label."'/></a>
-						<br /><a href='./index.php?lvl=section_see&location=".$location."&id=".$r->idsection."'><b>".$section_label."</b></a></td>";
-                    $npl++;
-                    if ($npl==$opac_nb_localisations_per_line) {
-                        $display .= "</tr>";
-                        $npl=0;
-                    }
-                }
-                if ($npl!=0) {
-                    while ($npl<$opac_nb_localisations_per_line) {
-                        $display .= "<td></td>";
-                        $npl++;
-                    }
-                    $display .= "</tr>";
-                }
-                $display .= "</table>";
+                $display .= list_opac_sections_ui::get_instance(array('location' => intval($location)))->get_display_list();
             }
         }
         return $display;
@@ -195,39 +142,10 @@ class show_localisation {
      * Liste des sections
      */
     public static function get_display_sections_list() {
-        global $msg, $charset;
-        global $opac_nb_sections_per_line;
-        global $back_section_see, $back_surloc, $url_loc;
-        
-        if (!$opac_nb_sections_per_line) $opac_nb_sections_per_line=6;
+        global $msg;
         
         $display = "<b>".sprintf($msg["l_title_search"],"<a href='index.php?'>","</a>")."</b><br /><br />";
-        $display .= "<table class='center' style='width:100%'>";
-        $n=0;
-        $sections = static::get_sections();
-        foreach ($sections as $section) {
-            if ($n==0) $display .= "<tr>";
-            if (isset($back_section_see) && $back_section_see) $param_section_see = "&back_section_see=index.php";
-            else $param_section_see = "";
-            if (isset($back_surloc) && $back_surloc) {
-            	$url = "./index.php?lvl=section_see&location=".static::$num_location."&id=".$section['id']."&back_surloc=".rawurlencode($back_surloc)."&back_loc=".rawurlencode($url_loc).$param_section_see;
-            } else {
-            	$url = "./index.php?lvl=section_see&location=".static::$num_location."&id=".$section['id'];
-            }
-            $display .= "<td class='center' style='width:120px'>
-					<a href='".$url."'><img src='".$section['pic']."' style='border:0px' alt='".htmlentities($section['label'],ENT_QUOTES,$charset)."' title='".htmlentities($section['label'],ENT_QUOTES,$charset)."'/></a>
-					<br /><a href='".$url."'><b>".htmlentities($section['label'],ENT_QUOTES,$charset)."</b></a></td>";
-            $n++;
-            if ($n==$opac_nb_sections_per_line) { $display .= "</tr>"; $n=0; }
-        }
-        if ($n!=0) {
-            while ($n<$opac_nb_sections_per_line) {
-                $display .= "<td></td>";
-                $n++;
-            }
-            $display .= "</tr>";
-        }
-        $display .= "</table>";
+        $display .= list_opac_sections_ui::get_instance(array('location' => static::$num_location))->get_display_list();
         return $display;
     }
 	

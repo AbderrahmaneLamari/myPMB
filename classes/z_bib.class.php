@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: z_bib.class.php,v 1.3 2021/03/12 13:21:14 dgoron Exp $
+// $Id: z_bib.class.php,v 1.3.6.1 2023/07/07 07:05:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,12 +54,36 @@ class z_bib {
 		$this->fichier_func = $data->fichier_func;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->set_grid_model('flat_column_4_right');
+		$interface_content_form->add_element('form_nom', 'admin_Nom')
+		->add_input_node('text', $this->nom);
+		$interface_content_form->add_element('form_search_type', 'admin_Utilisation')
+		->add_input_node('text', $this->search_type);
+		$interface_content_form->add_element('form_base', 'admin_Base')
+		->add_input_node('text', $this->base);
+		$interface_content_form->add_element('form_url', 'admin_URL')
+		->add_input_node('text', $this->url);
+		$interface_content_form->add_element('form_port', 'admin_NumPort')
+		->add_input_node('integer', $this->port);
+		$interface_content_form->add_element('form_base', 'admin_Base')
+		->add_input_node('text', $this->base);
+		$interface_content_form->add_element('form_format', 'admin_Format')
+		->add_input_node('text', $this->format);
+		$interface_content_form->add_element('form_sutrs', 'z3950_sutrs')
+		->add_input_node('text', $this->sutrs_lang);
+		$interface_content_form->add_element('form_user', 'admin_user')
+		->add_input_node('text', $this->auth_user);
+		$interface_content_form->add_element('form_password', 'admin_password')
+		->add_input_node('text', $this->auth_pass);
+		$interface_content_form->add_element('form_zfunc', 'zbib_zfunc')
+		->add_input_node('text', $this->fichier_func);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_zbib_content_form;
-		
-		$content_form = $admin_zbib_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('zbibform');
 		if(!$this->id){
@@ -67,21 +91,9 @@ class z_bib {
 		}else{
 			$interface_form->set_label($msg['zbib_modifier_serveur']);
 		}
-		$content_form = str_replace('!!nom!!',         $this->nom,         $content_form);
-		$content_form = str_replace('!!base!!',        $this->base,        $content_form);
-		$content_form = str_replace('!!search_type!!', $this->search_type, $content_form);
-		$content_form = str_replace('!!url!!',         $this->url,         $content_form);
-		$content_form = str_replace('!!port!!',        $this->port,        $content_form);
-		$content_form = str_replace('!!format!!',      $this->format,      $content_form);
-		$content_form = str_replace('!!user!!',        $this->auth_user,        $content_form);
-		$content_form = str_replace('!!password!!',    $this->auth_pass,    $content_form);
-		$content_form = str_replace('!!sutrs!!',  	  $this->sutrs_lang,       $content_form);
-		$content_form = str_replace('!!zfunc!!',  	  $this->fichier_func,        $content_form);
-		$content_form = str_replace('!!nom_script!!',  	  addslashes($this->nom),        $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->nom." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('z_bib')
 		->set_field_focus('form_nom');
 		$interface_form->add_action_extension('attributs_button', $msg['admin_Attributs'], './admin.php?categ=z3950&sub=zattr&action=edit&bib_id='.$this->id);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_audit_ui.class.php,v 1.1.4.2 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_audit_ui.class.php,v 1.5.4.2 2023/08/02 06:43:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -40,6 +40,7 @@ class list_audit_ui extends list_ui {
 		
 		$this->filters = array(
 				'types' => array(),
+		        'objects' => array(),
 				'users' => array(),
 				'quand_start' => '',
 				'quand_end' => '',
@@ -69,7 +70,8 @@ class list_audit_ui extends list_ui {
 					'user_name' => 'audit_col_username',
 					'action' => 'audit_col_type_action',
 					'quand' => 'audit_col_date_heure',
-					'info' => 'audit_comment'
+					'info' => 'audit_comment',
+			        'applicant' => 'demandes_demandeur'
 			)
 		);
 	}
@@ -130,6 +132,7 @@ class list_audit_ui extends list_ui {
 	
 	protected function init_default_settings() {
 		parent::init_default_settings();
+		$this->set_setting_filter('action', 'selection_type', 'flat');
 		$this->set_setting_column('quand', 'datatype', 'datetime');
 	}
 	
@@ -149,7 +152,7 @@ class list_audit_ui extends list_ui {
 				'AUDIT_AUTHOR', 'AUDIT_COLLECTION', 'AUDIT_SUB_COLLECTION', 'AUDIT_INDEXINT', 'AUDIT_PUBLISHER', 'AUDIT_SERIE', 'AUDIT_CATEG', 'AUDIT_TITRE_UNIFORME',
 				'AUDIT_DEMANDE', 'AUDIT_ACTION', 'AUDIT_NOTE',
 				'AUDIT_EDITORIAL_ARTICLE', 'AUDIT_EDITORIAL_SECTION',
-				'AUDIT_EXPLNUM', 'AUDIT_CONCEPT'
+				'AUDIT_EXPLNUM', 'AUDIT_CONCEPT', 'AUDIT_BANNETTE'
 		);
 	}
 	protected function get_search_filter_types() {
@@ -183,49 +186,30 @@ class list_audit_ui extends list_ui {
 	protected function get_search_filter_action() {
 		global $msg;
 		
-		return "
-			<input type='radio' id='".$this->objects_type."_action_0' name='".$this->objects_type."_action' value='0' ".(!$this->filters['action'] ? "checked='checked'" : "")." />
-			<label for='".$this->objects_type."_action'>".$msg['all']."</label>
-			<input type='radio' id='".$this->objects_type."_action_1' name='".$this->objects_type."_action' value='1' ".($this->filters['action'] == 1 ? "checked='checked'" : "")." />
-			<label for='".$this->objects_type."_action_1'>".$msg['audit_type1']."</label>
-			<input type='radio' id='".$this->objects_type."_action_2' name='".$this->objects_type."_action' value='2' ".($this->filters['action'] == 2 ? "checked='checked'" : "")." />
-			<label for='".$this->objects_type."_action_2'>".$msg['audit_type2']."</label>
-			<input type='radio' id='".$this->objects_type."_action_3' name='".$this->objects_type."_action' value='3' ".($this->filters['action'] == 3 ? "checked='checked'" : "")." />
-			<label for='".$this->objects_type."_action_3'>".$msg['audit_type3']."</label>";
+		$options = array(
+		    1 => $msg['audit_type1'],
+		    2 => $msg['audit_type2'],
+		    3 => $msg['audit_type3'],
+		);
+		return $this->get_search_filter_simple_selection('', 'action', $msg['all'], $options);
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+	protected function _add_query_filters() {
+	    $this->_add_query_filter_multiple_restriction('objects', 'object_id');
 		if(is_array($this->filters['types']) && count($this->filters['types'])) {
-			$consts = array();
+		    $consts = array();
 			foreach ($this->filters['types'] as $type) {
-				$consts[] = constant($type);
+			    if(intval($type)) {
+			        $consts[] = $type;
+			    } else {
+			        $consts[] = constant($type);
+			    }
 			}
-			$filters [] = 'type_obj IN ("'.implode('","', $consts).'")';
+			$this->query_filters [] = 'type_obj IN ("'.implode('","', $consts).'")';
 		}
-		if(is_array($this->filters['users']) && count($this->filters['users'])) {
-			$filters [] = 'user_id IN ("'.implode('","', addslashes_array($this->filters['users'])).'")';
-		}
-		if($this->filters['quand_start']) {
-			$filters [] = 'quand >= "'.$this->filters['quand_start'].'"';
-		}
-		if($this->filters['quand_end']) {
-			$filters [] = 'quand <= "'.$this->filters['quand_end'].' 23:59:59"';
-		}
-		if($this->filters['action']) {
-			$filters [] = 'type_modif = "'.$this->filters['action'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+		$this->_add_query_filter_multiple_restriction('users', 'user_id');
+		$this->_add_query_filter_interval_restriction('quand', 'quand', 'datetime');
+		$this->_add_query_filter_simple_restriction('action', 'type_modif');
 	}
 	
 	protected function _get_object_property_type($object) {
@@ -276,6 +260,18 @@ class list_audit_ui extends list_ui {
 			$display = $object->info;
 		}
 		return $display;
+	}
+	
+	protected function _get_object_property_applicant($object) {
+	    global $msg;
+	    
+	    $type_user_libelle='';
+	    if($object->type_user == 1) {
+	        $type_user_libelle = $msg['empr_nom_prenom'];
+	    }else {
+	        $type_user_libelle = $msg[86];
+	    }
+	    return $type_user_libelle." (".$object->user_id.")";
 	}
 	
 	protected function _get_query_human_types() {

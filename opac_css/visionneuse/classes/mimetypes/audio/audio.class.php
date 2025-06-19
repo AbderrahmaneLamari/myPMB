@@ -2,8 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: audio.class.php,v 1.6 2018/10/04 15:24:44 dgoron Exp $
+// $Id: audio.class.php,v 1.7 2022/03/07 14:35:10 dgoron Exp $
 
+global $visionneuse_path;
 require_once($visionneuse_path."/classes/mimetypes/affichage.class.php");
 
 class audio extends affichage{
@@ -24,8 +25,6 @@ class audio extends affichage{
     }
     
     public function fetchDisplay(){
-    	global $base_path;
-    	global $visionneuse_path;
      	//le titre
     	$this->toDisplay["titre"] = $this->doc->titre;
     	
@@ -46,7 +45,7 @@ class audio extends affichage{
     }
     
     public function getTabParam(){
-
+    	if(!isset($this->parameters['size_x'])) $this->parameters['size_x'] = '';
     	$this->tabParam = array(
 			"size_x"=>array("type"=>"text","name"=>"size_x","value"=>$this->parameters['size_x'],"desc"=>"Largeur du lecteur")
 		);

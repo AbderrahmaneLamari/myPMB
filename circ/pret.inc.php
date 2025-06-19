@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pret.inc.php,v 1.163.2.4 2021/12/27 11:15:09 dgoron Exp $
+// $Id: pret.inc.php,v 1.169 2022/04/12 08:36:14 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -275,52 +275,87 @@ if($confirm_pret && $id_empr){
 									$serious = TRUE;
 								}
 								//récupération des reservations liées aux groupes de l'emprunteur
+								$multi_resa_tpl = "";
+								$confirm = $statut->flag;
 								$liste_resa = array();
-								$confirm = $statut -> flag ;
-								$groupe_empr = $empr_temp->get_liste_empr_groupe();
-								$reservation = new reservation($id_empr, 0, 0, $cb_doc);
-								$id_notice = exemplaire::get_expl_notice_from_id(exemplaire::get_expl_id_from_cb($cb_doc));
-								$liste_resa = $reservation->get_multi_empr_resa($id_notice, $groupe_empr);
-								$liste_resa_id = array();
-								$bouton = "";
+								$group_empr_ids = $empr_temp->get_liste_empr_groupe();
+								
 								$erreur_affichage = "<hr />
-									<div class='row' >
+									<div class='row'>
 									$information_text
 									</div>
-									<div class='row' >
+									<div class='row'>
 									<div class='colonne10' ><img src='".get_url_icon('quest.png')."' /></div>
 									<div class='colonne-suite'>$titre_prete : <span class='erreur' >$warning_text</span><br />";
-								if (count($liste_resa)>0) {
-								    foreach ($liste_resa as $resa_id =>$name) {
-								        $liste_resa_id[] = $resa_id;
+								
+								
+								// le document est réservé & validé pour un autre lecteur
+								// On regarde si le lecteur est dans le même groupe
+								$same_group = true;
+								if ($statut->flag & HAS_RESA_FALSE) {
+								    global $reservataire_empr_cb;
+								    $reservataire_empr_id = emprunteur::get_id_empr_by_cb($reservataire_empr_cb);
+								    if ($reservataire_empr_id && !in_array($reservataire_empr_id, $group_empr_ids)) {
+								        // Emprunteur qui a réservé le document n'est pas dans le même groupe
+								        $same_group = false;
 								    }
-								    $bouton = "&nbsp;<input type='button' class='bouton' value='${msg['do_loan_and_delete_hold']} {$name['prenom']} {$name['nom']}' onClick=\"document.location='./circ.php?categ=pret&id_empr=$id_empr&cb_doc=$cb_doc&expl_todo=$expl_todo&confirm=$confirm&quota=$quota&pret_arc=$pret_arc".(($pmb_short_loan_management==1) ? "&short_loan=$short_loan" : "")."&resa_id=".$liste_resa_id[0]."'\" />";
-    								//si plusieurs reservations, selecteur
-    								if (count($liste_resa)>1) {
-    								    $i=0;
-    								    $bouton = "&nbsp;<input id='del_resa_list_button' type='button' class='bouton' value='${msg['do_loan_and_delete_hold']}' onClick=\"document.location='./circ.php?categ=pret&id_empr=$id_empr&cb_doc=$cb_doc&expl_todo=$expl_todo&confirm=$confirm&quota=$quota&pret_arc=$pret_arc".(($pmb_short_loan_management==1) ? "&short_loan=$short_loan" : "")."&resa_id=".$liste_resa_id[0]."'\" />";
-    								    $bouton .= "&nbsp;<select id='resa_list_selector' multiple name='' onchange='change_del_resa_list_button()'>";
-    								    foreach ($liste_resa as $resa_id =>$name) {
-    								        $bouton .= "<option value='$resa_id' ".($i==0?'selected':'').">{$name['prenom']} {$name['nom']}</option>";
-    								        $i++;
-    								    }
-    								    $bouton .= "</select>";
+								}
+								
+								if ($same_group) {								    
+    								$reservation = new reservation($id_empr, 0, 0, $cb_doc);
+    								$id_notice = exemplaire::get_expl_notice_from_id(exemplaire::get_expl_id_from_cb($cb_doc));
+    								if (empty($id_notice)) {
+    								    // On est sur un bulletin qui n'a pas de notice
+        								$id_issue = exemplaire::get_expl_bulletin_from_id(exemplaire::get_expl_id_from_cb($cb_doc));
+        								$liste_resa = $reservation->get_multi_empr_resa_by_id_issue($id_issue, $group_empr_ids);
+    								} else {
+    								    $liste_resa = $reservation->get_multi_empr_resa_by_id_record($id_notice, $group_empr_ids);
     								}
-    								$bouton .= "<script>
-                                                    function change_del_resa_list_button() {
-                                                        let selector = document.getElementById('resa_list_selector');
-                                                        let selected = [];
-                                                        for (var option of selector.options) {
-                                                            if (option.selected) {
-                                                                selected.push(option.value);
-                                                            }
+								}
+								
+								// l'exemplaire a été réservé avec des emprunteurs du même groupe
+								if ($same_group && !empty($liste_resa) && is_countable($liste_resa)) {
+								    
+								    $count_resa = count($liste_resa) ?? 0;
+								    $link_btn = "./circ.php?categ=pret&id_empr=$id_empr&cb_doc=$cb_doc&expl_todo=$expl_todo&confirm=$confirm&quota=$quota&pret_arc=$pret_arc".(($pmb_short_loan_management==1) ? "&short_loan=$short_loan" : "")."&resa_id=".$liste_resa[0]['id_resa'];
+								    if ($count_resa == 1) {
+								        $multi_resa_tpl = "&nbsp;
+                                            <input id='del_resa_list_button' type='button' class='bouton' 
+                                                value='${msg['do_loan_and_delete_hold']} {$liste_resa[0]['empr_prenom']} {$liste_resa[0]['empr_nom']}' 
+                                                onClick=\"document.location='{$link_btn}'\" />";
+								    } else {
+								        $multi_resa_tpl = "&nbsp;
+                                            <input id='del_resa_list_button' type='button' class='bouton' 
+                                                value='${msg['do_loan_and_delete_hold']}' 
+                                                onClick=\"document.location='{$link_btn}'\" />";
+								        
+								        $selected = "selected";	
+								        $multi_resa_tpl .= "&nbsp;<select id='resa_list_selector' multiple name='' onchange='change_del_resa_list_button()'>";
+								        for ($i = 0; $i < $count_resa; $i++) {
+								            $multi_resa_tpl .= "<option value='{$liste_resa[$i]['id_resa']}' {$selected}>";
+								            $multi_resa_tpl .= "{$liste_resa[$i]['empr_prenom']} {$liste_resa[$i]['empr_nom']}";
+								            $multi_resa_tpl .= "</option>";
+								            $selected = "";
+								        }
+								        $multi_resa_tpl .= "</select>";
+								        $multi_resa_tpl .= "<script>
+                                                function change_del_resa_list_button() {
+                                                    let selector = document.getElementById('resa_list_selector');
+                                                    let selected = [];
+                                                    for (var option of selector.options) {
+                                                        if (option.selected) {
+                                                            selected.push(option.value);
                                                         }
-                                                        selected = selected.join(',');
-                                                        let button = document.getElementById('del_resa_list_button');
+                                                    }
+                                                    selected = selected.join(',');
+                                                    let button = document.getElementById('del_resa_list_button');
+                                                    if (button) {
                                                         button.removeAttribute('onClick');
                                                         button.setAttribute('onclick', 'document.location=\'./circ.php?categ=pret&id_empr=$id_empr&cb_doc=$cb_doc&expl_todo=$expl_todo&confirm=$confirm&quota=$quota&pret_arc=$pret_arc".(($pmb_short_loan_management==1) ? "&short_loan=$short_loan" : "")."&resa_id='+selected+'\'');
                                                     }
-                                    </script>";
+                                                }
+                                        </script>";
+								    }
                                 }
 								pret::add_alert_sound_list('question');
 								$erreur_affichage.= "<input type='button' class='bouton' value='${msg[76]}' onClick=\"document.location='./circ.php?categ=pret&id_empr=$id_empr".(($pmb_short_loan_management==1) ? "&short_loan=$short_loan" : "")."'\" />";
@@ -328,7 +363,7 @@ if($confirm_pret && $id_empr){
 								$erreur_affichage.= "&nbsp;<input type='button' class='bouton' value='${msg[389]}' onClick=\"document.location='./circ.php?categ=pret&id_empr=$id_empr&cb_doc=$cb_doc&expl_todo=$expl_todo&confirm=$confirm&quota=$quota&pret_arc=$pret_arc".(($pmb_short_loan_management==1) ? "&short_loan=$short_loan" : "")."'\" />";
 								$erreur_affichage.= "&nbsp;<input class='bouton' type='button' value=\"".$msg[375]."\" onClick=\"document.location='circ.php?categ=visu_ex&form_cb_expl=".$cb_doc."';\" />";
 								
-								$erreur_affichage.= $bouton;
+								$erreur_affichage.= $multi_resa_tpl;
 								$erreur_affichage.= "</div></div><br />";
 								$affichage = emprunteur::get_display_card($id_empr, $erreur_affichage);
 							} else { // else if !confirm
@@ -360,22 +395,22 @@ if($confirm_pret && $id_empr){
 									            $reservation->delete();
 									        }
 									    }else {
-											// dévalider la resa correspondante
-											if ($statut->resa_cb == $statut->expl_cb) {
-												// la résa prioritaire avait déjà un CB identique : il suffit de la dévalider
-												$rqt_invalide_resa = "update resa set resa_date_debut='0000-00-00', resa_date_fin='0000-00-00', resa_cb='' where id_resa = '".$statut->id_resa."' " ;
-												pmb_mysql_query($rqt_invalide_resa) ;
-											} // sinon rien à faire, la résa était validée avec autre chose, elle le reste
-    										$resa_id = $statut->id_resa;
-											// archivage resa
-    									    $rqt_arch = "UPDATE resa_archive, resa SET resarc_pretee = 2 WHERE id_resa = '".$resa_id."' AND resa_arc = resarc_id ";
-											pmb_mysql_query($rqt_arch);
-    										$rqt_arch = "select resarc_id from resa_archive, resa WHERE id_resa = '".$resa_id."' AND resa_arc = resarc_id ";
-											$resarc_res=pmb_mysql_query($rqt_arch);
-											$resarc = pmb_mysql_fetch_object($resarc_res);
-											$resarc_id = $resarc->resarc_id;
-											del_resa($id_empr, $statut -> idnotice, $statut -> idbulletin, $statut -> expl_cb);
-									    }
+    										// dévalider la resa correspondante
+    										if ($statut->resa_cb == $statut->expl_cb) {
+    											// la résa prioritaire avait déjà un CB identique : il suffit de la dévalider
+    											$rqt_invalide_resa = "update resa set resa_date_debut='0000-00-00', resa_date_fin='0000-00-00', resa_cb='' where id_resa = '".$statut->id_resa."' " ;
+    											pmb_mysql_query($rqt_invalide_resa) ;
+    										} // sinon rien à faire, la résa était validée avec autre chose, elle le reste
+        										$resa_id = $statut->id_resa;
+    										// archivage resa
+        									    $rqt_arch = "UPDATE resa_archive, resa SET resarc_pretee = 2 WHERE id_resa = '".$resa_id."' AND resa_arc = resarc_id ";
+    										pmb_mysql_query($rqt_arch);
+        										$rqt_arch = "select resarc_id from resa_archive, resa WHERE id_resa = '".$resa_id."' AND resa_arc = resarc_id ";
+    										$resarc_res=pmb_mysql_query($rqt_arch);
+    										$resarc = pmb_mysql_fetch_object($resarc_res);
+    										$resarc_id = $resarc->resarc_id;
+    										del_resa($id_empr, $statut -> idnotice, $statut -> idbulletin, $statut -> expl_cb);
+    									}
 									}
 									del_resa($id_empr, $statut -> idnotice, $statut -> idbulletin, $statut -> expl_cb);
 									add_pret($id_empr, $id_expl, $cb_doc, $resarc_id, $short_loan);
@@ -702,7 +737,7 @@ function add_pret($id_empr, $id_expl, $cb_doc,$resarc_id=0,$short_loan=0) {
 	global $pmb_transferts_actif;
 	global $pmb_resa_planning;
 	
-	$resarc_id+=0;
+	$resarc_id = intval($resarc_id);
 	
 	/* on prépare la date de début*/
 	$pret_date = today();
@@ -956,8 +991,8 @@ function del_resa($id_empr, $id_notice, $id_bulletin, $cb_encours_de_pret) {
 	if (!$id_empr || (!$id_notice && !$id_bulletin))
 		return FALSE;
 
-	$id_notice += 0;
-	$id_bulletin += 0;
+	$id_notice = intval($id_notice);
+	$id_bulletin = intval($id_bulletin);
 	$rqt = "select resa_cb, id_resa, resa_planning_id_resa from resa where resa_idnotice='".$id_notice."' and resa_idbulletin='".$id_bulletin."'  and resa_idempr='".$id_empr."' ";
 	$res = pmb_mysql_query($rqt);
 	if(pmb_mysql_num_rows($res)) {

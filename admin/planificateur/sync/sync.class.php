@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sync.class.php,v 1.16.2.1 2021/12/07 10:49:11 dgoron Exp $
+// $Id: sync.class.php,v 1.17.4.1 2023/09/22 07:37:04 dgoron Exp $
 
 global $class_path;
 require_once($class_path."/scheduler/scheduler_task.class.php");
@@ -97,7 +97,9 @@ class sync extends scheduler_task {
     										}
     									}
     								}
-    								$this->update_progression(100);
+    								if(!$this->proxy->pmbesSync_doSync_hasError()) {
+    								    $this->update_progression(100);
+    								}
     							} else {
     								$this->add_function_rights_report("doSync","pmbesSync");
     							}	

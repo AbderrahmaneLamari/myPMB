@@ -2,17 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: genes.inc.php,v 1.16 2019/10/15 10:10:42 btafforeau Exp $
+// $Id: genes.inc.php,v 1.17 2022/03/14 12:46:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 function search_other_function_filters() {
-	global $typ_notice, $charset, $annee_parution, $cnl_bibli, $dbh;
+	global $typ_notice, $cnl_bibli;
 	
 	$r.="<select name='cnl_bibli'>";
 	$r.="<option value=''>tous les sites</option>";
 	$requete="select location_libelle,idlocation from docs_location where location_visible_opac=1";
-	$result = pmb_mysql_query($requete, $dbh);
+	$result = pmb_mysql_query($requete);
 	if (pmb_mysql_num_rows($result)){
 		while ($loc = pmb_mysql_fetch_object($result)) {
 			$selected="";
@@ -84,7 +84,6 @@ function search_other_function_get_history($n) {
 }
 
 function search_other_function_human_query($n) {
-	global $dbh;
 	global $typ_notice,$annee_parution;
 	global $cnl_bibli;
 	$r="";
@@ -93,7 +92,7 @@ function search_other_function_human_query($n) {
 		$r="bibliotheque : ";
 		$requete="select location_libelle from docs_location where id_location='".$cnl_bibli."' limit 1";
 		$res=pmb_mysql_query($requete);
-		$r.=@pmb_mysql_result($res,0,0);
+		$r.=pmb_mysql_result($res,0,0);
 		$r=" ";
 	}
 	$notices_t=array("m"=>"Monographies","s"=>"Périodiques","a"=>"Articles");

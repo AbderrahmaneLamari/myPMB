@@ -2,19 +2,25 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: alert_see.inc.php,v 1.8 2019/01/16 16:57:14 dgoron Exp $
+// $Id: alert_see.inc.php,v 1.9 2022/02/11 10:19:11 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $include_path;
+global $include_path, $lvl, $search_type, $id;
 global $search;
 global $es;
 
 // fonctions de conversion simple2mc
 require_once($include_path."/search_queries/specials/combine/search.class.php");
 
-// Gestion des alertes à partir de la recherche simple
-$mc=combine_search::simple2mc($_SESSION['last_query']);
+if($lvl == 'etagere_see') {
+	// Gestion des alertes à partir d'une étagère
+	$mc=combine_search::etagere2mc($id);
+} else {
+	// Gestion des alertes à partir de la recherche simple
+	$mc=combine_search::simple2mc($_SESSION['last_query']);
+}
+
 global $field_0_s_4;
 $field_0_s_4[]=serialize(array(
 		'serialized_search' => $mc['serialized_search'],

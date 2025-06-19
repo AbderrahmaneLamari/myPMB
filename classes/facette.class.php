@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facette.class.php,v 1.14.2.2 2022/01/20 15:28:33 dgoron Exp $
+// $Id: facette.class.php,v 1.16 2022/01/20 15:25:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sphinx_concepts_indexer.class.php,v 1.12.2.1 2021/06/18 13:33:48 btafforeau Exp $
+// $Id: sphinx_concepts_indexer.class.php,v 1.14 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -74,10 +74,7 @@ class sphinx_concepts_indexer extends sphinx_authorities_indexer {
 				"xsd"	=> "http://www.w3.org/2001/XMLSchema#",
 				"pmb"	=> "http://www.pmbservices.fr/ontology#"
 		);
-		
-		$autoloader = new autoloader();
-		$autoloader->add_register("onto_class", true);
-		
+				
 		$onto_index = onto_index::get_instance("skos");	
 		$onto_index->load_handler($base_path."/classes/rdf/skos_pmb.rdf", "arc2", $onto_store_config, "arc2", $data_store_config,$tab_namespaces,'http://www.w3.org/2004/02/skos/core#prefLabel');
 		$onto_index->init();

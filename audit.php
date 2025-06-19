@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: audit.php,v 1.15.2.1 2022/01/05 09:00:58 dgoron Exp $
+// $Id: audit.php,v 1.16.4.1 2023/08/02 06:43:48 dgoron Exp $
 
 // définition du minimum nécéssaire 
 $base_path=".";                            
@@ -17,68 +17,13 @@ require_once($class_path.'/audit.class.php');
 
 $type_obj = intval($type_obj);
 $object_id = intval($object_id);
-$all = array();
-switch($pmb_type_audit) {
-	case '1':
-		$audit = new audit($type_obj, $object_id) ;
-		$audit->get_all();
-		if(count($audit->all_audit) == 1){
-			$all[0] =  $audit->get_creation() ;
-        } elseif(count($audit->all_audit) > 1){
-			$all[0] =  $audit->get_creation() ;
-			$all[1] =  $audit->get_last() ;
-		}		
-		break;
-	case '2':
-		$audit = new audit($type_obj, $object_id) ;
-		$audit->get_all() ;
-		$all = $audit->all_audit ;
-		break;
-	default:
-	case '0':
-		echo "<script> self.close(); </script>" ;
-		break;
-	}
-
-$audit_list = "<script type='text/javascript' src='./javascript/sorttable.js'></script>
-<table class='sortable' ><tr><th>".$msg['demandes_demandeur']."<th>".$msg['audit_col_nom']."</th><th>".$msg['audit_col_username'].
-"</th><th>".$msg['audit_col_type_action']."</th><th>".$msg['audit_col_date_heure']."</th><th>".$msg['audit_comment']."</th></tr>";
-if(count($all)){
-    foreach ($all as $valeur) {
-    	//user_id, user_name, type_modif, quand, concat(prenom, ' ', nom) as prenom_nom
-    	$info=json_decode($valeur->info);
-    	$info_display="";
-    	if(is_object($info)){
-    		if(!empty($info->comment))$info_display.=$info->comment."<br>";
-    		if(!empty($info->fields)){
-    			foreach($info->fields as $fieldname => $values){
-    				if(is_object($values)){
-    					$info_display.=$fieldname." : ".$values->old." => ".$values->new."<br>";
-    				}
-    			}
-    		}
-    	}else $info_display=$valeur->info;
-    	
-    	$type_user_libelle='';
-    	if($valeur->type_user == 1) {
-    		$type_user_libelle = $msg['empr_nom_prenom'];
-    	}else {
-    		$type_user_libelle = $msg[86];
-    	}
-    	$audit_list .= "
-    		<tr>
-    			<td>".$type_user_libelle." (".$valeur->user_id.")</td>
-    			<td>$valeur->prenom_nom</td>
-    			<td>$valeur->user_name</td>
-    			<td>".$msg['audit_type'.$valeur->type_modif]."</td>
-    			<td>$valeur->aff_quand</td>
-    			<td>".$info_display."</td>
-    			</tr>";
-	}
+if(empty($pmb_type_audit)) {
+    echo "<script> self.close(); </script>" ;
 }
-$audit_list .= "</table>";
-
-echo $audit_list ;
+if(!empty($type_obj) && !empty($object_id)) {
+    $filters = array('types' => array($type_obj), 'objects' => array($object_id));
+    echo list_audit_type_ui::get_instance($filters)->get_display_list();
+}
 
 if ($type_obj == 1 || $type_obj == 3) { //Audit notices/notices de bulletin
 	if ($type_obj == 1) {

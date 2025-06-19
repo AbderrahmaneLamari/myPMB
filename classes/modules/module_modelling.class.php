@@ -2,13 +2,12 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: module_modelling.class.php,v 1.26.2.1 2021/06/30 07:01:30 qvarin Exp $
+// $Id: module_modelling.class.php,v 1.30 2022/09/13 12:23:35 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path, $include_path;
 require_once($class_path.'/modules/module.class.php');
-require_once($class_path.'/autoloader.class.php');
 require_once($class_path.'/contribution_area/contribution_area_status.class.php');
 require_once($class_path.'/contribution_area/contribution_area.class.php');
 require_once($class_path.'/contribution_area/contribution_area_forms_controller.class.php');
@@ -28,10 +27,7 @@ class module_modelling extends module{
 	
 	public function proceed_ontologies(){
 		global $sub, $act, $ontology_id;
-		
-		$autoloader = new autoloader();
-		$autoloader->add_register("onto_class",true);
-		
+				
 		switch($sub){
 		 	case 'general':
 		 		$ontologies = new ontologies();
@@ -61,9 +57,6 @@ class module_modelling extends module{
 		global $msg;
 		global $database_window_title;
 		global $include_path, $lang;
-		
-		$autoloader = new autoloader();
-		$autoloader->add_register("onto_class",true);
 		
 		switch($sub) {
 			case 'area':
@@ -327,9 +320,6 @@ class module_modelling extends module{
 		global $form_id;
 		global $action;
 
-		$autoloader = new autoloader();
-		$autoloader->add_register("onto_class",true);
-		
 		switch($sub) {
 			case 'area':
 				switch($action){
@@ -442,6 +432,10 @@ class module_modelling extends module{
 				$computed_field = new computed_field($computed_field_id);
 				$computed_field->set_from_form();
 				$computed_field->save();
+				$return = [
+				    "id" => $computed_field->get_id()
+				];
+				print encoding_normalize::json_encode($return);
 				break;
 			case 'get_data':
 				$computed_field = computed_field::get_computed_field_from_field_num($field_num);
@@ -503,5 +497,14 @@ class module_modelling extends module{
 			return 1;
 		}
 		return 0;
+	}
+	
+	// AR - 13/09/22 j'aime pas trop cette idée de faire ça comme ça, mais pour le moment, l'objet n'est pas de refaire le framework !
+	public function get_display_subtabs() {
+	    global $ontology_id;
+	    global $sub;
+	    if(!isset($ontology_id) || $sub == "general"){
+	        return parent::get_display_subtabs();
+	    }
 	}
 } // end of concept

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: PHP_log.class.php,v 1.1.2.2 2021/10/08 09:38:22 dgoron Exp $
+// $Id: PHP_log.class.php,v 1.1 2021/10/08 09:31:53 dgoron Exp $
 
 global $class_path;
 require_once ($class_path."/log.class.php");

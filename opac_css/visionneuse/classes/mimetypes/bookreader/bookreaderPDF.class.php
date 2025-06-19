@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bookreaderPDF.class.php,v 1.27 2021/01/27 14:49:21 dgoron Exp $
+// $Id: bookreaderPDF.class.php,v 1.31 2022/09/02 12:52:37 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $visionneuse_path;
 require_once($visionneuse_path."/classes/mimetypes/bookreader/PDFMetadata.class.php");
 
 class bookreaderPDF {
@@ -51,7 +52,7 @@ class bookreaderPDF {
 		if (!file_exists($file_name)) {
 			$resolution = $this->parameters['resolution_image'];
 			if ($format == "imagick") {
-				exec("pdftoppm -f $page -l $page -r ".$resolution." ".$this->doc->driver->get_cached_filename($this->doc->id)." ".$this->doc->driver->get_cached_filename("page_".$this->doc->id));
+				exec("pdftoppm -f $page -l $page -r ".$resolution." -cropbox ".$this->doc->driver->get_cached_filename($this->doc->id)." ".$this->doc->driver->get_cached_filename("page_".$this->doc->id));
 				$imagick = new Imagick();
 				$imagick->setResolution($resolution,$resolution);
 				$source_file=$this->doc->driver->get_cached_filename("page_".$this->doc->id)."-".str_pad($page, $len, "0", STR_PAD_LEFT).".ppm";
@@ -68,12 +69,15 @@ class bookreaderPDF {
 				if (stripos($_SERVER['SERVER_SOFTWARE'], "win")!==false || stripos(PHP_OS, "win")!==false ) {
 					exec("pdftopng -f $page -l $page -r ".$resolution." ".$this->doc->driver->get_cached_filename($this->doc->id)." ".$this->doc->driver->get_cached_filename("page_".$this->doc->id));
 				}else{
-					exec("pdftoppm -f $page -l $page -r ".$resolution." -".$format." ".$this->doc->driver->get_cached_filename($this->doc->id)." ".$this->doc->driver->get_cached_filename("page_".$this->doc->id));
+					exec("pdftoppm -f $page -l $page -r ".$resolution." -".$format." -cropbox ".$this->doc->driver->get_cached_filename($this->doc->id)." ".$this->doc->driver->get_cached_filename("page_".$this->doc->id));
 				}	
 			}
 		}
 		if (file_exists($file_name)) {
 			header("Content-Type: ".$content_type);
+			if(!empty($this->doc->path)) {
+				header('Content-disposition: inline; filename="'.basename($this->doc->path).'"');
+			}
 			print file_get_contents($file_name);
 		}
 	}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: coordonnees.class.php,v 1.11.8.1 2021/12/22 11:24:52 dgoron Exp $
+// $Id: coordonnees.class.php,v 1.12 2021/12/22 11:22:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

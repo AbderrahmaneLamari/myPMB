@@ -5,7 +5,7 @@
 ****************************************************************************************
 © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: fr_FR.xml,v 1.5.2.1 2022/01/18 09:12:46 qvarin Exp $ -->
+$Id: fr_FR.xml,v 1.6.4.3 2023/12/06 15:39:58 qvarin Exp $ -->
 
 <XMLlist>
 	<entry code="animation_menu_title">Animations</entry>
@@ -35,4 +35,12 @@ $Id: fr_FR.xml,v 1.5.2.1 2022/01/18 09:12:46 qvarin Exp $ -->
 	<entry code="animation_type_not_configurate">Le type d'animation n'est pas configuré</entry>
 	<entry code="animation_not_activate">Les animations ne sont pas activées</entry>
 	<entry code="animation_type">Type d'évènement</entry>
+	<entry code="animation_init_cms_article">Initialisation du contenu éditorial</entry>
+	<entry code="animation_conf_init_manuel">Initialisation</entry>
+	<entry code="animation_conf_init_done">Initialisation terminée</entry>
+	<entry code="animation_yes">Oui</entry>
+	<entry code="animation_no">Non</entry>
+	<entry code="animation_enddate_article">Remplir la date de fin de l'article</entry>
+	<entry code="audit_create_article">[Plugin animation] Création</entry>
+	<entry code="audit_update_article">[Plugin animation] Mise à jour</entry>
 </XMLlist>

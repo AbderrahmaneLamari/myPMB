@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_tabs.class.php,v 1.21 2021/06/11 08:49:40 arenou Exp $
+// $Id: searcher_tabs.class.php,v 1.22 2022/03/17 13:55:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/searcher/searcher_authorities_tab.class.php");
 require_once($class_path."/searcher/searcher_records_tab.class.php");
 require_once($class_path."/search.class.php");
@@ -798,8 +799,9 @@ class searcher_tabs {
     }
     
     protected function get_human_field($field, $values) {
-    	global $msg, $charset;
+    	global $msg;
     	
+    	$field_aff = array();
 		switch ($field["INPUT_TYPE"]) {
 			case "list":
 				$options=$field["INPUT_OPTIONS"]["OPTIONS"][0];

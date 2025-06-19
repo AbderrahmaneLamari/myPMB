@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: transferts_popup.php,v 1.14.6.1 2022/01/03 14:13:07 dgoron Exp $
+// $Id: transferts_popup.php,v 1.15 2022/01/03 14:10:34 dgoron Exp $
 
 global $id_notice, $id_bulletin, $hook_tansfert_popup_result, $selecteur;
 

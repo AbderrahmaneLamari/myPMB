@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: parametres_perso.class.php,v 1.133.2.5 2022/01/03 10:21:11 tsamson Exp $
+// $Id: parametres_perso.class.php,v 1.140.2.4 2023/11/17 10:04:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -70,6 +70,8 @@ class parametres_perso {
 					self::$st_fields[$this->prefix][$r->idchamp]["COMMENT"]=$r->comment;
 					self::$st_fields[$this->prefix][$r->idchamp]["NUM_TYPE"]=$r->num_type ?? 0;
 				}
+				
+				pmb_mysql_free_result($resultat);
 			}
 		}
 		if(self::$st_fields[$this->prefix] == false){
@@ -589,22 +591,24 @@ class parametres_perso {
 	
 	//Récupération des valeurs stockées dans les base pour un emprunteur ou autre
 	public function get_values($id) {
+	    $id = intval($id);
 		//Récupération des valeurs stockées
-		$this->values=$this->list_values=array();
+		$this->values = $this->list_values = array();
 		
 		if ((!$this->no_special_fields)&&($id)) {
 			$requete="select ".$this->prefix."_custom_champ,".$this->prefix."_custom_origine,".$this->prefix."_custom_small_text, ".$this->prefix."_custom_text, ".$this->prefix."_custom_integer, ".$this->prefix."_custom_date, ".$this->prefix."_custom_float, ".$this->prefix."_custom_order from ".$this->prefix."_custom_values where ".$this->prefix."_custom_origine=".$id;
 			$resultat=pmb_mysql_query($requete);
-			if(pmb_mysql_num_rows($resultat)) {
+			if (pmb_mysql_num_rows($resultat)) {
 				$values = array();
 				while ($r=pmb_mysql_fetch_array($resultat)) {
-					$values[$r[$this->prefix."_custom_champ"]][]=array(
-						'value' => $r[$this->prefix."_custom_".$this->t_fields[$r[$this->prefix."_custom_champ"]]["DATATYPE"]],
-						'format_value' => $this->get_formatted_output(array($r[$this->prefix."_custom_".$this->t_fields[$r[$this->prefix."_custom_champ"]]["DATATYPE"]]),$r[$this->prefix."_custom_champ"],true),
-						'order' => $r[$this->prefix."_custom_order"]
-					);
-					$this->list_values[]=$r[$this->prefix."_custom_".$this->t_fields[$r[$this->prefix."_custom_champ"]]["DATATYPE"]];
+				    $values[$r[$this->prefix."_custom_champ"]][]=array(
+				        'value' => $r[$this->prefix."_custom_".$this->t_fields[$r[$this->prefix."_custom_champ"]]["DATATYPE"]],
+				        'format_value' => $this->get_formatted_output(array($r[$this->prefix."_custom_".$this->t_fields[$r[$this->prefix."_custom_champ"]]["DATATYPE"]]),$r[$this->prefix."_custom_champ"],true),
+				        'order' => $r[$this->prefix."_custom_order"]
+				    );
+				    $this->list_values[]=$r[$this->prefix."_custom_".$this->t_fields[$r[$this->prefix."_custom_champ"]]["DATATYPE"]];
 				}
+				pmb_mysql_free_result($resultat);
 				$this->values = $this->sort_values($values);
 			}
 		}
@@ -665,54 +669,59 @@ class parametres_perso {
 		return $perso;
 	}
 	
+	public function show_field($key, $val) {
+	    global $val_list_empr;
+	    global $charset;
+	    
+	    $field=array();
+	    $field['TITRE']='<b>'.htmlentities($val['TITRE'],ENT_QUOTES,$charset).' : </b>';
+	    $field['TITRE_CLEAN']=htmlentities($val['TITRE'],ENT_QUOTES,$charset);
+	    $field['OPAC_SHOW']=$val['OPAC_SHOW'];
+	    if(!isset($this->values[$key])) $this->values[$key] = array();
+	    if(!isset(static::$fields[$this->prefix][$key])){
+	        static::$fields[$this->prefix][$key]=array();
+	        static::$fields[$this->prefix][$key]['ID']=$key;
+	        static::$fields[$this->prefix][$key]['NAME']=$this->t_fields[$key]['NAME'];
+	        static::$fields[$this->prefix][$key]['MANDATORY']=$this->t_fields[$key]['MANDATORY'];
+	        static::$fields[$this->prefix][$key]['SEARCH']=$this->t_fields[$key]['SEARCH'];
+	        static::$fields[$this->prefix][$key]['EXPORT']=$this->t_fields[$key]['EXPORT'];
+	        static::$fields[$this->prefix][$key]["FILTERS"]=$this->t_fields[$key]["FILTERS"];
+	        static::$fields[$this->prefix][$key]['EXCLUSION']=$this->t_fields[$key]['EXCLUSION'];
+	        static::$fields[$this->prefix][$key]['OPAC_SORT']=$this->t_fields[$key]['OPAC_SORT'];
+	        static::$fields[$this->prefix][$key]['COMMENT']=$this->t_fields[$key]['COMMENT'];
+	        static::$fields[$this->prefix][$key]['ALIAS']=$this->t_fields[$key]['TITRE'];
+	        static::$fields[$this->prefix][$key]['DATATYPE']=$this->t_fields[$key]['DATATYPE'];
+	        static::$fields[$this->prefix][$key]['OPTIONS']=$this->t_fields[$key]['OPTIONS'];
+	        static::$fields[$this->prefix][$key]['VALUES']=$this->values[$key];
+	        static::$fields[$this->prefix][$key]['PREFIX']=$this->prefix;
+	    }
+	    $field['TYPE']=$this->t_fields[$key]['TYPE'];
+	    $aff=$val_list_empr[$this->t_fields[$key]['TYPE']](static::$fields[$this->prefix][$key],$this->values[$key]);
+	    
+	    if(is_array($aff) && $aff['ishtml'] == true){
+	        $field['AFF'] = $aff['value'];
+	        if(isset($aff['details'])) {
+	            $field['DETAILS'] = $aff['details'];
+	        }
+	    } else {
+	        $field['AFF'] = htmlentities($aff,ENT_QUOTES,$charset);
+	    }
+	    $field['NAME'] = static::$fields[$this->prefix][$key]['NAME'];
+	    $field['ID'] = static::$fields[$this->prefix][$key]['ID'];
+	    return $field;
+	}
+	
 	//Affichage des champs en lecture seule pour visualisation d'un fiche emprunteur ou autre...
 	public function show_fields($id) {
-		global $val_list_empr;
-		global $charset;
 		$perso=array();
 		$perso["FIELDS"] = array();
 		//Récupération des valeurs stockées pour l'emprunteur
 		$this->get_values($id);
 		if (!$this->no_special_fields) {
 			//Affichage champs persos
-			$c=0;
 			reset($this->t_fields);
 			foreach ($this->t_fields as $key => $val) {
-				$t=array();				
-				$t['TITRE']='<b>'.htmlentities($val['TITRE'],ENT_QUOTES,$charset).' : </b>';
-				$t['TITRE_CLEAN']=htmlentities($val['TITRE'],ENT_QUOTES,$charset);
-				$t['OPAC_SHOW']=$val['OPAC_SHOW'];
-				if(!isset($this->values[$key])) $this->values[$key] = array();
-				if(!isset(static::$fields[$this->prefix][$key])){
-					static::$fields[$this->prefix][$key]=array();
-					static::$fields[$this->prefix][$key]['ID']=$key;
-					static::$fields[$this->prefix][$key]['NAME']=$this->t_fields[$key]['NAME'];
-					static::$fields[$this->prefix][$key]['MANDATORY']=$this->t_fields[$key]['MANDATORY'];
-					static::$fields[$this->prefix][$key]['SEARCH']=$this->t_fields[$key]['SEARCH'];
-					static::$fields[$this->prefix][$key]['EXPORT']=$this->t_fields[$key]['EXPORT'];
-					static::$fields[$this->prefix][$key]["FILTERS"]=$this->t_fields[$key]["FILTERS"];
-					static::$fields[$this->prefix][$key]['EXCLUSION']=$this->t_fields[$key]['EXCLUSION'];
-					static::$fields[$this->prefix][$key]['OPAC_SORT']=$this->t_fields[$key]['OPAC_SORT'];
-					static::$fields[$this->prefix][$key]['COMMENT']=$this->t_fields[$key]['COMMENT'];
-					static::$fields[$this->prefix][$key]['ALIAS']=$this->t_fields[$key]['TITRE'];
-					static::$fields[$this->prefix][$key]['DATATYPE']=$this->t_fields[$key]['DATATYPE'];
-					static::$fields[$this->prefix][$key]['OPTIONS']=$this->t_fields[$key]['OPTIONS'];
-					static::$fields[$this->prefix][$key]['VALUES']=$this->values[$key];
-					static::$fields[$this->prefix][$key]['PREFIX']=$this->prefix;
-				}
-				$t['TYPE']=$this->t_fields[$key]['TYPE'];
-				$aff=$val_list_empr[$this->t_fields[$key]['TYPE']](static::$fields[$this->prefix][$key],$this->values[$key]);
-				
-				if(is_array($aff) && $aff['ishtml'] == true){
-					$t['AFF'] = $aff['value'];
-					if(isset($aff['details'])) {
-						$t['DETAILS'] = $aff['details'];
-					}
-				} else {											
-				    $t['AFF'] = htmlentities($aff,ENT_QUOTES,$charset);
-				}
-				$t['NAME'] = static::$fields[$this->prefix][$key]['NAME'];
-				$t['ID'] = static::$fields[$this->prefix][$key]['ID'];
+			    $t = $this->show_field($key, $val);
 				$perso['FIELDS'][] = $t;
 			}
 		}
@@ -735,32 +744,32 @@ class parametres_perso {
 		global $val_list_empr,$charset;
 		
 		if(!isset(static::$fields[$this->prefix][$field_id])){
-		    if(!empty($this->t_fields[$field_id])){
-    			static::$fields[$this->prefix][$field_id]=array();
-    			static::$fields[$this->prefix][$field_id]["ID"]=$field_id;
-    			static::$fields[$this->prefix][$field_id]["NAME"]=$this->t_fields[$field_id]["NAME"];
-    			static::$fields[$this->prefix][$field_id]["MANDATORY"]=$this->t_fields[$field_id]["MANDATORY"];
-    			static::$fields[$this->prefix][$field_id]["SEARCH"]=$this->t_fields[$field_id]["SEARCH"];
-    			static::$fields[$this->prefix][$field_id]["EXPORT"]=$this->t_fields[$field_id]["EXPORT"];
-    			static::$fields[$this->prefix][$field_id]["FILTERS"]=$this->t_fields[$field_id]["FILTERS"];
-    			static::$fields[$this->prefix][$field_id]["EXCLUSION"]=$this->t_fields[$field_id]["EXCLUSION"];
-    			static::$fields[$this->prefix][$field_id]["OPAC_SORT"]=$this->t_fields[$field_id]["OPAC_SORT"];
-    			static::$fields[$this->prefix][$field_id]["COMMENT"]=$this->t_fields[$field_id]["COMMENT"];
-    			static::$fields[$this->prefix][$field_id]["ALIAS"]=$this->t_fields[$field_id]["TITRE"];
-    			static::$fields[$this->prefix][$field_id]["DATATYPE"]=$this->t_fields[$field_id]["DATATYPE"];
-    			static::$fields[$this->prefix][$field_id]["OPTIONS"]=$this->t_fields[$field_id]["OPTIONS"];
-    			static::$fields[$this->prefix][$field_id]["VALUES"]=$values;
-    			static::$fields[$this->prefix][$field_id]["PREFIX"]=$this->prefix;
-    		}
+			if(!empty($this->t_fields[$field_id])){
+				static::$fields[$this->prefix][$field_id]=array();
+				static::$fields[$this->prefix][$field_id]["ID"]=$field_id;
+				static::$fields[$this->prefix][$field_id]["NAME"]=$this->t_fields[$field_id]["NAME"];
+				static::$fields[$this->prefix][$field_id]["MANDATORY"]=$this->t_fields[$field_id]["MANDATORY"];
+				static::$fields[$this->prefix][$field_id]["SEARCH"]=$this->t_fields[$field_id]["SEARCH"];
+				static::$fields[$this->prefix][$field_id]["EXPORT"]=$this->t_fields[$field_id]["EXPORT"];
+				static::$fields[$this->prefix][$field_id]["FILTERS"]=$this->t_fields[$field_id]["FILTERS"];
+				static::$fields[$this->prefix][$field_id]["EXCLUSION"]=$this->t_fields[$field_id]["EXCLUSION"];
+				static::$fields[$this->prefix][$field_id]["OPAC_SORT"]=$this->t_fields[$field_id]["OPAC_SORT"];
+				static::$fields[$this->prefix][$field_id]["COMMENT"]=$this->t_fields[$field_id]["COMMENT"];
+				static::$fields[$this->prefix][$field_id]["ALIAS"]=$this->t_fields[$field_id]["TITRE"];
+				static::$fields[$this->prefix][$field_id]["DATATYPE"]=$this->t_fields[$field_id]["DATATYPE"];
+				static::$fields[$this->prefix][$field_id]["OPTIONS"]=$this->t_fields[$field_id]["OPTIONS"];
+				static::$fields[$this->prefix][$field_id]["VALUES"]=$values;
+				static::$fields[$this->prefix][$field_id]["PREFIX"]=$this->prefix;
+			}
 		}
 		if (!empty($this->t_fields[$field_id])) {
-    		$aff = $val_list_empr[$this->t_fields[$field_id]["TYPE"]](static::$fields[$this->prefix][$field_id],$values);
+			$aff = $val_list_empr[$this->t_fields[$field_id]["TYPE"]](static::$fields[$this->prefix][$field_id],$values);
 		}
 		if (isset($aff)) {
-    		if (is_array($aff)) {
-    		    return $aff['withoutHTML']; 
-    		}
-    		return $aff;
+			if (is_array($aff)) {
+				return $aff['withoutHTML'];
+			}
+			return $aff;
 		}
 		return '';
 	}
@@ -819,6 +828,7 @@ class parametres_perso {
 	
 	//Suppression de la base des valeurs d'un emprunteur ou autre...
 	public function delete_values($id) {
+	    $id = intval($id);
 		$requete = "DELETE FROM ".$this->prefix."_custom_values where ".$this->prefix."_custom_origine=$id";
 		$res = pmb_mysql_query($requete);
 		$requete = "DELETE FROM ".$this->prefix."_custom_dates where ".$this->prefix."_custom_origine=$id";
@@ -952,8 +962,6 @@ class parametres_perso {
 	}
 	
 	public function get_ajax_list($name, $start) {
-		global $charset,$dbh;
-
 		$values=array();
 		reset($this->t_fields);
 		foreach ($this->t_fields as $key => $val) {
@@ -961,7 +969,7 @@ class parametres_perso {
 				switch ($val['TYPE']) {
 					case 'list' :
 						$q="select ".$this->prefix."_custom_list_value, ".$this->prefix."_custom_list_lib from ".$this->prefix."_custom_lists where ".$this->prefix."_custom_champ=".$key." order by ordre";
-						$r=pmb_mysql_query($q,$dbh);	
+						$r=pmb_mysql_query($q);	
 						if(pmb_mysql_num_rows($r)) {
 							while ($row=pmb_mysql_fetch_row($r)) {
 								$values[$row[0]]=$row[1];
@@ -969,9 +977,10 @@ class parametres_perso {
 						}
 						break;
 					case 'query_list' :
+						$field=array();
 						$field['OPTIONS']=$val['OPTIONS'];
 						$q=$field['OPTIONS'][0]['QUERY'][0]['value'];
-						$r = pmb_mysql_query($q,$dbh);
+						$r = pmb_mysql_query($q);
 						if(pmb_mysql_num_rows($r)) {
 							while ($row=pmb_mysql_fetch_row($r)) {
 								$values[$row[0]]=$row[1];
@@ -1188,13 +1197,15 @@ class parametres_perso {
 				$name = $this->t_fields[$key]["NAME"];
 				$values = array();
 				if($val["NAME"] == $name) {
-					global ${$name};
-					$value=${$name};
-					for ($i=0; $i<count($value); $i++) {
-						if($value[$i]) {
-							$values[] = $value[$i];
-						}
-					}
+				    global ${$name};
+				    $value=${$name};
+				    if(is_array($value)) {
+				        for ($i=0; $i<count($value); $i++) {
+				            if($value[$i]) {
+				                $values[] = $value[$i];
+				            }
+				        }
+				    }
 				}
 				$t["VALUE"]=$values;
 				$perso["FIELDS"][]=$t;
@@ -1326,5 +1337,28 @@ class parametres_perso {
 	            return 'authperso';
 	    }
 	}
+
+	public function get_field_list($msg_no_select = '') {
+	    global $msg;
+
+		$field_list = array();
+
+	    $query = "SELECT idchamp, titre FROM {$this->prefix}_custom ORDER BY ordre";
+        $result = pmb_mysql_query($query);
+
+		if (pmb_mysql_num_rows($result)) {
+			$field_list[] = [
+				"value" => 0,
+				"label" => $msg_no_select,
+			];
+
+            while($row = pmb_mysql_fetch_assoc($result)) {
+				$field_list[] = [
+					"value" => intval($row['idchamp']),
+					"label" => $row['titre'],
+				];
+            }
+        }
+		return $field_list;
+	}
 }
-?>

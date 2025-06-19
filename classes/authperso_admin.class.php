@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authperso_admin.class.php,v 1.19 2021/03/05 08:38:15 dgoron Exp $
+// $Id: authperso_admin.class.php,v 1.20.4.1 2023/11/15 07:54:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,6 +10,7 @@ global $class_path, $include_path;
 require_once($include_path."/templates/authperso_admin.tpl.php");
 require_once($include_path."/templates/parametres_perso.tpl.php");
 require_once($class_path."/custom_parametres_perso.class.php");
+require_once("$class_path/interface/admin/interface_admin_authorities_authperso_form.class.php");
 
 class authperso_admin {
 	public $id=0;
@@ -49,7 +50,7 @@ class authperso_admin {
 			$this->info['isbd_script']= $r->authperso_isbd_script;			
 			$this->info['view_script']= $r->authperso_view_script;			
 			$this->info['opac_search']= $r->authperso_opac_search;			
-			$this->info['opac_multi_search']= $r->authperso_gestion_multi_search;			
+			$this->info['opac_multi_search']= $r->authperso_opac_multi_search;			
 			$this->info['gestion_search']= $r->authperso_gestion_search;			
 			$this->info['gestion_multi_search']= $r->authperso_gestion_multi_search;	
 			$this->info['oeuvre_event']= $r->authperso_oeuvre_event;				
@@ -67,76 +68,105 @@ class authperso_admin {
 		}
 	}
  
-	public function get_form() {
-		global $authperso_form_tpl,$msg,$charset;		
+	protected function get_js_form() {
+		global $authperso_js_form_tpl;
 		
-		$tpl=$authperso_form_tpl;
-		if($this->id){
-			$tpl=str_replace('!!msg_title!!',$msg['admin_authperso_form_edit'],$tpl);
-			//bouton supprimer
-			$req="select * from authperso_authorities where authperso_authority_authperso_num=". $this->id;
-			$res = pmb_mysql_query($req);
-			if((pmb_mysql_num_rows($res))) {
-				$tpl=str_replace('!!delete!!','', $tpl);
-			} else {
-				$tpl=str_replace('!!delete!!',"<input type='button' class='bouton' value='".$msg['admin_authperso_delete']."'  onclick=\"document.getElementById('auth_action').value='delete';this.form.submit();\"  />", $tpl);
-			}
-		}else{ 
-			$tpl=str_replace('!!msg_title!!',$msg['admin_authperso_form_add'],$tpl);
-			$tpl=str_replace('!!delete!!',"",$tpl);
-		}
-		$notice_onglet_list=gen_liste ("SELECT * FROM notice_onglet", 
-				"id_onglet", "onglet_name", "notice_onglet", "", $this->info['onglet_num'], 0, $msg["admin_authperso_notice_onglet_no"],0,$msg["admin_authperso_notice_onglet_sel"]);
-		
-		if($this->info['opac_multi_search']) $search_multi_checked= " checked='checked' ";
-		else $search_multi_checked= "";
-		$search_simple_checked=array();
-		$search_simple_checked[$this->info['opac_search']+0]= " checked='checked' ";
-		$search_tpl="
+		return $authperso_js_form_tpl;
+	}
+	
+	public function get_content_form() {
+	    global $msg;
+	    
+	    $interface_content_form = new interface_content_form(static::class);
+	    $interface_content_form->add_element('name', 'admin_authperso_form_name')
+	    ->add_input_node('text', $this->info['name'])
+	    ->set_attributes(array('data-translation-fieldname' => 'authperso_name'));
+	    
+	    $notice_onglet_list=gen_liste ("SELECT * FROM notice_onglet",
+	        "id_onglet", "onglet_name", "notice_onglet", "", $this->info['onglet_num'], 0, $msg["admin_authperso_notice_onglet_no"],0,$msg["admin_authperso_notice_onglet_sel"]);
+	    $interface_content_form->add_element('notice_onglet', 'admin_authperso_notice_onglet')
+	    ->add_html_node($notice_onglet_list." <a href='./admin.php?categ=notices&sub=onglet' target='_blank'>".$msg['admin_authperso_notice_onglet_see']."</a>");
+	    
+	    $fields_options="<select id='fields_options' name='fields_options'>";
+	    $fields_options.=$this->get_fields_options();
+	    $fields_options.="</select>";
+	    $button_isbd_script = "<input class='bouton' type='button' onclick=\"insert_vars(document.getElementById('fields_options'), document.getElementById('isbd_script')); return false; \" value=' ".$msg['admin_authperso_insert_field']." ' />";
+	    $element = $interface_content_form->add_element('isbd_script', 'admin_authperso_form_isbd_script');
+	    $element->add_html_node($fields_options.$button_isbd_script);
+		$element->add_textarea_node($this->info['isbd_script'], 50, 4);
+	    
+	    $fields_options_view="<select id='fields_options_view' name='fields'>";
+	    $fields_options_view.=$this->get_fields_options();
+	    $fields_options_view.="</select>";
+	    $button_view_script = "<input class='bouton' type='button' onclick=\"insert_vars(document.getElementById('fields_options_view'), document.getElementById('view_script')); return false; \" value=' ".$msg['admin_authperso_insert_field']." ' />";
+	    $element = $interface_content_form->add_element('view_script', 'admin_authperso_form_view_script');
+	    $element->add_html_node($fields_options_view.$button_view_script);
+		$element->add_textarea_node($this->info['view_script'], 50, 4);
+	    
+	    $interface_content_form->add_element('responsability_authperso')
+	    ->add_input_node('boolean', $this->info['responsability_authperso'])
+	    ->set_label_code('admin_responsability_authperso_yes');
+	    
+	    $search_simple_checked=array();
+	    $search_simple_checked[$this->info['opac_search']+0]= " checked='checked' ";
+	    $search_tpl="
 			<input type='radio' ".(isset($search_simple_checked[0]) ? $search_simple_checked[0] : '')." name='search_simple' value='0' >".$msg["admin_authperso_opac_search_no"]."
 			<input type='radio' ".(isset($search_simple_checked[1]) ? $search_simple_checked[1] : '')." name='search_simple' value='1' >".$msg["admin_authperso_opac_search_yes"]."
 			<input type='radio' ".(isset($search_simple_checked[2]) ? $search_simple_checked[2] : '')." name='search_simple' value='2' >".$msg["admin_authperso_opac_search_yes_active"]."
-		";		
-		if($this->info['gestion_multi_search']) $search_multi_checked_gestion= " checked='checked' ";
-		else $search_multi_checked_gestion= "";
-		$search_simple_checked_gestion=array();
-		$search_simple_checked_gestion[$this->info['gestion_search']+0]= " checked='checked' ";
-		$search_tpl_gestion="
+		";
+	    $element = $interface_content_form->add_element('search_multi', 'admin_authperso_opac_search');
+	    $element->add_html_node($search_tpl);
+	    $element->add_input_node('boolean', $this->info['opac_multi_search'])
+	    ->set_label_code('admin_authperso_opac_search_multi_critere');
+	        
+	    $search_simple_checked_gestion=array();
+	    $search_simple_checked_gestion[$this->info['gestion_search']+0]= " checked='checked' ";
+	    $search_tpl_gestion="
 			<input type='radio' ".(isset($search_simple_checked_gestion[0]) ? $search_simple_checked_gestion[0] : '')." name='gestion_search_simple' value='0' >".$msg["admin_authperso_gestion_search_no"]."
 			<input type='radio' ".(isset($search_simple_checked_gestion[1]) ? $search_simple_checked_gestion[1] : '')." name='gestion_search_simple' value='1' >".$msg["admin_authperso_gestion_search_yes"]."
 			<input type='radio' ".(isset($search_simple_checked_gestion[2]) ? $search_simple_checked_gestion[2] : '')." name='gestion_search_simple' value='2' >".$msg["admin_authperso_gestion_search_yes_active"]."
 		";
-		$fields_options="<select id='fields_options' name='fields_options'>";
-		$fields_options.=$this->get_fields_options();
-		$fields_options.="</select>";
+	    $element = $interface_content_form->add_element('gestion_search_multi', 'admin_authperso_gestion_search');
+	    $element->add_html_node($search_tpl_gestion);
+	    $element->add_input_node('boolean', $this->info['gestion_multi_search'])
+	    ->set_label_code('admin_authperso_gestion_search_multi');
+	    
+	    $interface_content_form->add_element('oeuvre_event', 'admin_authperso_form_oeuvre_event')
+	    ->add_input_node('boolean', $this->info['oeuvre_event'])
+	    ->set_label_code('admin_authperso_form_oeuvre_event_yes');
+	    
+	    $interface_content_form->add_element('comment', 'admin_authperso_form_comment')
+	    ->add_textarea_node($this->info['comment'], 50, 4);
+	    
+	    return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
-		$fields_options_view="<select id='fields_options_view' name='fields'>";
-		$fields_options_view.=$this->get_fields_options();
-		$fields_options_view.="</select>";
-		if($this->info['oeuvre_event']){
-			$tpl=str_replace('!!oeuvre_event!!'," checked='checked' ",$tpl);
-		}else{
-			$tpl=str_replace('!!oeuvre_event!!',"",$tpl);
+		$interface_form = new interface_admin_authorities_authperso_form('authperso');
+		if($this->id){
+			$interface_form->set_label($msg['admin_authperso_form_edit']);
+		} else {
+			$interface_form->set_label($msg['admin_authperso_form_add']);
 		}
-		if($this->info['responsability_authperso']){
-			$tpl=str_replace('!!responsability_authperso!!'," checked='checked' ",$tpl);
-		}else{
-			$tpl=str_replace('!!responsability_authperso!!',"",$tpl);
+		
+		if($this->id){
+			//bouton supprimer
+			$req="select * from authperso_authorities where authperso_authority_authperso_num=". $this->id;
+			$res = pmb_mysql_query($req);
+			if((pmb_mysql_num_rows($res))) {
+				$interface_form->set_no_deletable(true);
+			}
 		}
-		$tpl=str_replace('!!name!!',htmlentities($this->info['name'], ENT_QUOTES, $charset),$tpl);
-		$tpl=str_replace('!!notice_onglet_list!!',$notice_onglet_list,$tpl);
-		$tpl=str_replace('!!fields_options!!',$fields_options,$tpl);
-		$tpl=str_replace('!!isbd_script!!',htmlentities($this->info['isbd_script'], ENT_QUOTES, $charset),$tpl);
-		$tpl=str_replace('!!fields_options_view!!',$fields_options_view,$tpl);
-		$tpl=str_replace('!!view_script!!',htmlentities($this->info['view_script'], ENT_QUOTES, $charset),$tpl);
-		$tpl=str_replace('!!search_simple!!',$search_tpl,$tpl);
-		$tpl=str_replace('!!search_multi!!',$search_multi_checked,$tpl);
-		$tpl=str_replace('!!search_simple_gestion!!',$search_tpl_gestion,$tpl);
-		$tpl=str_replace('!!search_multi_gestion!!',$search_multi_checked_gestion,$tpl);
-		$tpl=str_replace('!!comment!!',htmlentities($this->info['comment'], ENT_QUOTES, $charset),$tpl);
-		$tpl=str_replace('!!id_authperso!!',$this->id,$tpl);
-		 
-		return $tpl;
+		$interface_form->set_object_id($this->id)
+		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->info['name']." ?")
+		->set_content_form($this->get_content_form())
+		->set_table_name('authperso')
+		->set_field_focus('name');
+		$display = $this->get_js_form();
+		$display .= $interface_form->get_display();
+		return $display;
 	}
 
 	public function set_properties_from_form() {
@@ -189,7 +219,9 @@ class authperso_admin {
 			if(file_exists($view_template_path)){
 				unlink($view_template_path);
 			}
-		}	
+		}
+		$translation = new translation($this->id, "authperso");
+		$translation->update("authperso_name", "name");
 		$this->fetch_data();
 	}	
 	
@@ -204,6 +236,8 @@ class authperso_admin {
 				
 				$query = "delete from authperso_authorities where  authperso_authority_authperso_num = '".$id."' ";
 				pmb_mysql_query($query);
+				
+				translation::delete($id, "authperso");
 				
 				$req="DELETE from authperso WHERE id_authperso=".$id;
 				pmb_mysql_query($req);

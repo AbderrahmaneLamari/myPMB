@@ -5,7 +5,7 @@
 ****************************************************************************************
 © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: de_DE.xml,v 1.1279.2.51 2022/01/25 08:14:18 gneveu Exp $ -->
+$Id: de_DE.xml,v 1.1453.2.138 2024/01/08 15:37:48 dbellamy Exp $ -->
 
 <XMLlist>
 <entry code="demo">Demo</entry>
@@ -5177,17 +5177,17 @@ $Id: de_DE.xml,v 1.1279.2.51 2022/01/25 08:14:18 gneveu Exp $ -->
 <entry code="planificateur_etat_exec">Etat</entry>
 <entry code="planificateur_state_1">En attente</entry>
 <entry code="planificateur_state_2">En cours</entry>
-<entry code="planificateur_state_3">Terminé</entry>
-<entry code="planificateur_state_4">Suspendu</entry>
-<entry code="planificateur_state_5">Arrêté</entry>
-<entry code="planificateur_state_6">Echec</entry>
+<entry code="planificateur_state_3">Terminée</entry>
+<entry code="planificateur_state_4">Suspendue</entry>
+<entry code="planificateur_state_5">Arrêtée</entry>
+<entry code="planificateur_state_6">Echouée</entry>
 <entry code="planificateur_state_7">Annulée</entry>
-<entry code="planificateur_command_1">En cours de lancement ...</entry>
-<entry code="planificateur_command_2">En cours de suspension ...</entry>
-<entry code="planificateur_command_3">En cours d'arrêt ...</entry>
-<entry code="planificateur_command_4">Nouvelle tentative ...</entry>
-<entry code="planificateur_command_5">En cours d'annulation ...</entry>
-<entry code="planificateur_command_6">La tâche va s'arrêter ...</entry>
+<entry code="planificateur_command_1">Reprise demandée</entry>
+<entry code="planificateur_command_2">Suspension demandée</entry>
+<entry code="planificateur_command_3">Arrêt demandé</entry>
+<entry code="planificateur_command_4">Nouvelle tentative demandée</entry>
+<entry code="planificateur_command_5">Annulation demandée</entry>
+<entry code="planificateur_command_6">Arrêt demandé</entry>
 <entry code="planificateur_commande_exec">Commandes</entry>
 <entry code="planificateur_commande_default">Ne rien faire</entry>
 <entry code="task_resume">Reprendre</entry>
@@ -5741,7 +5741,9 @@ $Id: de_DE.xml,v 1.1279.2.51 2022/01/25 08:14:18 gneveu Exp $ -->
 <entry code="admin_harvest_build_code">Champ utilisé pour la recherche</entry>
 <entry code="admin_harvest_profil_form_sel">Profil utilisé</entry>
 <entry code="admin_harvest_form_sel">Récolteur utilisé</entry>
-<entry code="harvest_notice_sel_notice">Sélectionner le profil d'import</entry>
+<entry code="harvest_notice_sel_notice">Sélectionner le récolteur et le profil d'import à utiliser</entry>
+<entry code="harvest_notice_error_no_harvest">Aucun récolteur n'est défini</entry>
+<entry code="harvest_notice_error_no_import_profile">Aucun profil d'import n'est défini</entry>
 <entry code="harvest_notice_build">Continuer</entry>
 <entry code="harvest_notice_build_title">Mis à jour de la notice %s par la notice récoltée %s</entry>
 <entry code="harvest_unimarc_field_710">Auteur collectif principal</entry>
@@ -6429,7 +6431,6 @@ $Id: de_DE.xml,v 1.1279.2.51 2022/01/25 08:14:18 gneveu Exp $ -->
 <entry code="connecteurs_sync_nbtotal">Nb total</entry>
 <entry code="connecteurs_sync_annulation">Annulation en cours...</entry>
 
-<entry code="harvest_notice_error">Cette notice n'a pas un ISBN valide. L'utilisation du recolteur n'est donc pas possible</entry>
 <entry code="func_category_auto_reprise"><![CDATA[ -> Catégorie reprise uniquement si elle existe dans le thésaurus (pas de création)]]></entry>
 <entry code="func_category_auto_reprise_suivante">Les catégories seront reprises de la façon suivante: </entry>
 <entry code="serialcirc_error_delete_abt">Un exemplaire de cet abonnement est en cours de circulation</entry>
@@ -9220,9 +9221,9 @@ $Id: de_DE.xml,v 1.1279.2.51 2022/01/25 08:14:18 gneveu Exp $ -->
 <entry code="admin_contribution_area_form_readonly">Lecture seule</entry>
 
 <entry code="scan_request_creation_mail_title">Nouvelle demande de numérisation</entry>
-<entry code="scan_request_creation_mail_content"><![CDATA[Une demande de numérisation a été créée :<br><br><b>Titre :</b> !!scan_title!!<br><b>Description :</b> !!scan_desc!!<br><b>Destinataire :</b> !!scan_dest!!]]></entry>
+<entry code="scan_request_creation_mail_content"><![CDATA[Une demande de numérisation a été créée :<br><br><b>Titre :</b> !!scan_title!!<br><b>Description :</b> !!scan_desc!!<br><b>Destinataire :</b> !!scan_dest!!<br><b>Permalien(s) :</b> !!permalink!!]]></entry>
 <entry code="scan_request_update_mail_title">Demande de numérisation mise à jour</entry>
-<entry code="scan_request_update_mail_content"><![CDATA[Une demande de numérisation a été mise à jour :<br><br><b>Titre :</b> !!scan_title!!<br><b>Description :</b> !!scan_desc!!<br><b>Statut :</b> !!scan_status!!<br><b>Commentaire :</b> !!scan_comment!!]]></entry>
+<entry code="scan_request_update_mail_content"><![CDATA[Une demande de numérisation a été mise à jour :<br><br><b>Titre :</b> !!scan_title!!<br><b>Description :</b> !!scan_desc!!<br><b>Statut :</b> !!scan_status!!<br><b>Commentaire :</b> !!scan_comment!!<br><b>Permalien(s) :</b> !!permalink!!]]></entry>
 <entry code="scan_request_workflow_send_mail_status">Envoi d'email au destinataire sur passage de la demande à ces statuts :</entry>
 <entry code="entity_graph_work_which_use_event">Oeuvres associées à l'événement</entry>
 <entry code="entity_graph_record_which_use_authperso">Notices associées à l'autorité personnalisée</entry>
@@ -9706,10 +9707,10 @@ $Id: de_DE.xml,v 1.1279.2.51 2022/01/25 08:14:18 gneveu Exp $ -->
 <entry code="campaigns_delete_confirm">Voulez-vous vraiment supprimer cette(ces) campagne(s) de mail ?</entry>
 <entry code="campaigns_view_opening_and_clicks">Taux d'ouvertures et de clics</entry>
 <entry code="campaign_view_opening_and_clicks_by_hours">Nombre d'ouvertures et de clics par heure</entry>
-<entry code="campaign_view_opening_by_recipients_location">Clics par localisation</entry>
-<entry code="campaign_view_opening_by_recipients_categ">Clics par catégorie</entry>
-<entry code="campaign_view_opening_by_recipients_statut">Clics par statut</entry>
-<entry code="campaign_view_opening_by_recipients_codestat">Clics par code statistique</entry>
+<entry code="campaign_view_opening_by_recipients_location">Taux d'ouverture par localisation</entry>
+<entry code="campaign_view_opening_by_recipients_categ">Taux d'ouverture par catégorie</entry>
+<entry code="campaign_view_opening_by_recipients_statut">Taux d'ouverture par statut</entry>
+<entry code="campaign_view_opening_by_recipients_codestat">Taux d'ouverture par code statistique</entry>
 <entry code="campaigns_view_opening_by_recipients_location">Taux d'ouverture par localisation</entry>
 <entry code="campaigns_view_opening_by_recipients_categ">Taux d'ouverture par catégorie</entry>
 <entry code="campaigns_view_opening_by_recipients_statut">Taux d'ouverture par statut</entry>
@@ -10096,7 +10097,7 @@ $Id: de_DE.xml,v 1.1279.2.51 2022/01/25 08:14:18 gneveu Exp $ -->
 <entry code="expl_header_nb_prets">Nombre de prêts</entry>
 <entry code="acquisition_action_unsaved_lines">Certaines lignes ne sont pas enregistrées !</entry>
 <entry code="acquisition_action_transfer_not_all_lines">Il n'est pas possible de transférer l'ensemble des lignes !</entry>
-<entry code="expl_price">Prix</entry>
+<entry code="expl_price">Prix de l'exemplaire</entry>
 <entry code="print_concepts_option_alter_hidden">Imprimer les libellés alternatifs et cachés</entry>
 <entry  code="acquisition_act_apply_budget_to_checked">Affecter le budget :</entry>
 <entry  code="acquisition_act_apply_type_to_checked">Affecter le type de produit : </entry>
@@ -10566,7 +10567,7 @@ $Id: de_DE.xml,v 1.1279.2.51 2022/01/25 08:14:18 gneveu Exp $ -->
 <entry js="animation" code="animation_description">Description</entry>
 <entry js="animation" code="animation_type">Tarif</entry>
 <entry js="animation" code="animation_notes">Notes</entry>
-<entry js="animation" code="animation_date">Déroulement de l'animation du</entry>
+<entry js="animation" code="animation_date">Déroulement de l'animation</entry>
 <entry js="animation" code="animation_au">au</entry>
 <entry code="list_animation_dndAnimation">Organisation des animations</entry>
 <entry js="animation" code="list_animation_dndAnimation">Organisation des animations</entry>
@@ -10663,7 +10664,7 @@ $Id: de_DE.xml,v 1.1279.2.51 2022/01/25 08:14:18 gneveu Exp $ -->
 <entry code='editions_datasource_expl_types'>Supports d'exemplaires</entry>
 <entry code="deflt_pclassement">Plan de classement par défaut</entry>
 <entry code="deflt_associated_campaign">Campagne de mails associée par défaut ?</entry>
-<entry code="empr_pwd_need_update">Le mot de passe lecteur doit être redéfini.</entry>
+<entry code="empr_pwd_need_update">Le lecteur doit redéfinir son mot de passe.</entry>
 <entry code="transfert_location_source">Localisation source</entry>
 <entry code="admin_empr_password_rules_sub_menu">Mots de passe</entry>
 <entry code="admin_empr_password_rules_sub_menu_title">Mots de passe</entry>
@@ -11294,4 +11295,1339 @@ Cela peut poser problème si les lignes de commandes associées sont encore valabl
 <entry code="circ_empr_empr_password_add">Un mot de passe est déjà défini</entry>
 <entry code="circ_empr_send_pwd_mail_ok">Envoi par mail réussi</entry>
 <entry code="circ_empr_send_pwd_mail_ko">Echec envoi par mail</entry>
+<entry code="statut">Statut</entry>
+<entry code="serialcirc_multiple_expl_confirm_delete_circ">Confirmez-vous la suppression de la circulation des exemplaires sélectionnés ?</entry>
+<entry code="serialcirc_multiple_expl_delete_circ_no_selected">Aucun exemplaire sélectionné pour la suppression de la circulation.</entry>
+<entry code="serialcirc_circ_list_bull_circulation_delete_circ_multiple_bt">Supprimer les sans retour sélectionnés</entry>
+<entry code="caddie_menu_action_transfert_to_location_in_loan">Nombre d'exemplaires en cours de prêt</entry>
+<entry code="etagere_query">Etagère virtuelle</entry>
+<entry code="search_universe_perio_enabled">Activer la recherche sur les périodiques</entry>
+<entry code="portal_default_label">Portail par défaut</entry>
+<entry code="portal_default_gabarit_label">Modèle par défaut</entry>
+<entry code="portal_default_page_label">Page par défaut</entry>
+<entry js="portal" code="banner_title_pages">Pages</entry>
+<entry js="portal" code="banner_title_frame">Cadres</entry>
+<entry js="portal" code="banner_title_gabarit">Modèles</entry>
+<entry js="portal" code="is_edited">Mise en page modifiée</entry>
+<entry js="portal" code="list_frames">Liste des cadres :</entry>
+<entry js="portal" code="list_pages">Liste des pages :</entry>
+<entry js="portal" code="list_gabarit">Liste des modèles :</entry>
+<entry code="admin_menu_ark">ARK</entry>
+<entry code="ark_base_title">ARK</entry>
+<entry code="ark_manage_naan">NAAN</entry>
+<entry js="ark" code="admin_ark_cancel">Annuler</entry>
+<entry js="ark" code="admin_ark_save">Enregistrer</entry>
+<entry js="ark" code="admin_ark_naan_label">NAAN (Numéro d'autorité nommante)</entry>
+<entry js="ark" code="admin_ark_naan_management">Gestion des NAAN</entry>
+<entry js="portal" code="nav_prop_frame">Propriétés du cadre</entry>
+<entry js="portal" code="nav_prop_page">Propriétés de la page</entry>
+<entry js="portal" code="nav_prop_gabarit">Propriétés du modèle</entry>
+<entry js="portal" code="nav_layout">Mise en page</entry>
+<entry js="portal" code="nav_prev">Prévisualisation</entry>
+<entry code="pager_position">Position :</entry>
+<entry code="list_ui_settings_display_pager_position_bottom">En bas</entry>
+<entry code="list_ui_settings_display_pager_position_top">En haut</entry>
+<entry code="list_ui_settings_display_pager_position_top_bottom">En haut et en bas</entry>
+<entry js="portal" code="filter_all">Tous</entry>
+<entry js="portal" code="page_name">Nom :</entry>
+<entry js="portal" code="page_type">Type :</entry>
+<entry js="portal" code="page_sub_type">Sous-type :</entry>
+<entry js="portal" code="page_conditions">Conditions :</entry>
+<entry js="portal" code="page_heritage">Héritage :</entry>
+<entry js="portal" code="save">Enregistrer</entry>
+<entry js="portal" code="gabarit_name">Nom :</entry>
+<entry js="portal" code="gabarit_default">Utiliser ce gabarit par défaut :</entry>
+<entry js="portal" code="delete">Supprimer</entry>
+<entry js="portal" code="gabarit_page">Ajouter des pages :</entry>
+<entry js="portal" code="gabarit_page_list">Liste des pages :</entry>
+<entry js="portal" code="accordion_add">Ajouter</entry>
+<entry js="portal" code="gabarit_no_data_set">Aucune donnée du formulaire n'a été récupérée</entry>
+<entry js="portal" code="gabarit_no_name_set">Un nom doit-être défini pour le modèle</entry>
+<entry js="portal" code="gabarit_no_pagetype_set">Un type de page doit-être défini pour le modèle</entry>
+<entry js="portal" code="gabarit_no_pagesubtype_set">Un sous-type de page doit-être défini pour le modèle</entry>
+<entry js="portal" code="gabarit_confirm_delete">Êtes-vous sûr de vouloir supprimer le modèle</entry>
+<entry js="portal" code="gabarit_confirm_delete_pages">Des pages sont liées au modèle, confirmez-vous la suppression des liens ?</entry>
+<entry js="portal" code="no_pages_with_same_type">Aucune page avec le même type/sous-type</entry>
+<entry js="portal" code="loading">Chargement...</entry>
+<entry js="portal" code="heritage_label">Layout hérite de :</entry>
+<entry js="portal" code="heritage_label_group_page">Pages</entry>
+<entry js="portal" code="heritage_label_group_model">Modèles</entry>
+<entry js="portal" code="heritage_no_frame">Aucun cadre</entry>
+<entry js="portal" code="page_no_data_set">Aucune donnée du formulaire n'a été récupérée</entry>
+<entry js="portal" code="page_no_name_set">Un nom doit-être défini pour la page</entry>
+<entry js="portal" code="page_no_pagetype_set">Un type de page doit-être défini pour la page</entry>
+<entry js="portal" code="page_no_pagesubtype_set">Un sous-type de page doit-être défini pour la page</entry>
+<entry js="portal" code="page_confirm_delete">Êtes-vous sur de vouloir supprimer la page ?</entry>
+<entry js="portal" code="frame_module">Modules :</entry>
+<entry js="portal" code="cms_build_modules">Modules</entry>
+<entry js="contribution_area" code="contribution_area_order_response_label">Ordre d'affichage des réponses</entry>
+<entry js="portal" code="gabarit_used">Modèle utilisé</entry>
+<entry js="portal" code="frame_filter_placeholder">Filtre rapide</entry>
+<entry js="portal" code="no_frame">Aucun cadre</entry>
+<entry code="caddie_choix_deldocnum">Choisissez les éléments ayant des documents numériques à supprimer</entry>
+<entry code="caddie_deldocnum_delete">Supprimer</entry>
+<entry code="caddie_confirm_delete">Confirmez-vous la suppression des documents numériques de ces éléments ?</entry>
+<entry code="caddie_select_deldocnum">Sélectionnez un panier contenant les documents numériques à supprimer</entry>
+<entry code="caddie_situation_deletedocnum">Suppression des documents numériques des éléments du panier</entry>
+<entry code="caddie_res_deldocnum">Résultat de la suppression des documents numériques :</entry>
+<entry code="caddie_res_deldocnum_nodocnum">Aucun document numérique à supprimer.</entry>
+<entry code="caddie_deldocnum_w">Résultat du traitement :</entry>
+<entry code="caddie_deldocnum_wtrue">Fichier supprimé :</entry>
+<entry code="caddie_deldocnum_wfalse">Impossible de supprimer le fichier :</entry>
+<entry code="caddie_menu_action_export_docnum">Export de documents numériques</entry>
+<entry code="caddie_menu_action_delete_docnum">Suppression de documents numériques</entry>
+<entry code="caddie_de_EXPLNUM">Panier de documents numériques</entry>
+<entry code="caddie_nb_EXPLNUM">documents numériques</entry>
+<entry code="caddie_add_EXPLNUM">Choisissez un panier où ajouter votre document numérique :</entry>
+<entry code="caddie_EXPLNUM_added">Document numérique ajouté :</entry>
+<entry code="caddie_EXPLNUM_pointe">Document numérique pointé :</entry>
+<entry code="caddie_fast_access_explnum_no_selected">Vous n'avez sélectionné aucun panier de documents numériques en accès rapide.</entry>
+<entry js="portal" code="cms_clean_cache_done">Le cache des cadres a été vidé</entry>
+<entry js="portal" code="cms_clean_cache_img_done">Le cache des images a été vidé</entry>
+<entry js="portal" code="page_clean_cache">Vider le cache des cadres</entry>
+<entry js="portal" code="frame_clean_cache">Vider le cache</entry>
+<entry code="page_clean_cache_done">Le cache des cadres a été vidé</entry>
+<entry code="frame_clean_cache_done">Le cache a été vidé</entry>
+<entry js="portal" code="default_classement">Aucun classement</entry>
+<entry js="portal" code="add_zone">+ Zone</entry>
+<entry js="portal" code="add_frame">+ cadre</entry>
+<entry js="portal" code="add_classes_css">Ajouter une classe CSS</entry>
+<entry js="portal" code="classe_css">classe CSS (%s)</entry>
+<entry js="portal" code="show_hidden">Afficher les éléments cachés</entry>
+<entry js="portal" code="layout_element_confirm_delete">Êtes-vous sûr de vouloir supprimer l'élément de sa mise page ?</entry>
+<entry js="portal" code="title_select_parent">Zone parente</entry>
+<entry js="portal" code="title_select_order">Position dans la zone</entry>
+<entry js="portal" code="placing_before">Avant %s</entry>
+<entry js="portal" code="put_in_last">En dernier</entry>
+<entry js="portal" code="zone_form_title">Ajout d'une zone</entry>
+<entry js="portal" code="zone_name">Nom :</entry>
+<entry js="portal" code="zone_parent">Parent :</entry>
+<entry js="portal" code="zone_class_semantic">Type de sémantique :</entry>
+<entry js="portal" code="zone_semantic">Sémantique :</entry>
+<entry js="portal" code="frame_form_title">Ajout d'un cadre</entry>
+<entry js="portal" code="frame_name">Nom :</entry>
+<entry js="portal" code="frame_parent">Parent :</entry>
+<entry js="portal" code="frame_class_semantic">Type de sémantique :</entry>
+<entry js="portal" code="frame_semantic">Sémantique :</entry>
+<entry js="portal" code="frame_parent_heritage">Cadre :</entry>
+<entry code="frame_already_exist">Le cadre existe déjà dans dans la page</entry>
+<entry code="portal_condition_global">Présence d'une variable globale</entry>
+<entry js="portal" code="portal_conditions_label">Conditions :</entry>
+<entry js="portal" code="portal_condition_default_option">Sélectionner une condition</entry>
+<entry js="portal" code="portal_condition_global_label">Nom de la variable globale</entry>
+<entry code="transferts_circ_retour_lbl_transfert_direct"><![CDATA[<br/>ATTENTION : document envoyé à !!source_location!!.<br/><br/>]]></entry>
+<entry js="portal" code="portal_url_preview">URL :</entry>
+<entry js="portal" code="portal_send_preview">Envoyer</entry>
+<entry js="portal" code="portal_reload_preview">Actualiser</entry>
+<entry code="admin_empr_password_no_rules_ext_auth">Attention : présence d'une authentification externe</entry>
+<entry code="portal_semantic_html">Html</entry>
+<entry code="export_csv">Export CSV</entry>
+<entry code="list_ui_settings_columns_exportable">Exportable</entry>
+<entry code="list_ui_settings_columns_exportable_0">Non</entry>
+<entry code="list_ui_settings_columns_exportable_1">Oui</entry>
+<entry js="portal" code="infopage_title_infopage">Nom de la page :</entry>
+<entry js="portal" code="cms_page_description">Contenu de la page :</entry>
+<entry js="portal" code="cms_page_variables">Variables d'environnement :</entry>
+<entry js="portal" code="cms_page_var_name">Nom</entry>
+<entry js="portal" code="cms_page_var_summary">Commentaire</entry>
+<entry js="portal" code="cms_page_title">Ajout d'une page de portail</entry>
+<entry js="portal" code="cms_page_add">Ajouter</entry>
+<entry js="portal" code="nav_prop_page_type">Type de page</entry>
+<entry js="portal" code="pages_list">Pages :</entry>
+<entry js="portal" code="apply_in_checkbox">Appliquer sur les éléments cochés</entry>
+<entry js="portal" code="check_all">Tout cocher</entry>
+<entry js="portal" code="uncheck_all">Tout décocher</entry>
+<entry js="portal" code="change_page_layout">Changer le layout de la page "%s"</entry>
+<entry js="portal" code="no_subpages_created">Aucune sous-page créée</entry>
+<entry js="portal" code="no_pages_using_frame">Aucune page n'utilise ce cadre</entry>
+<entry js="portal" code="no_gabraits_using_frame">Aucun modèle n'utilise ce cadre</entry>
+<entry js="portal" code="gabarits_list">Modèles :</entry>
+<entry js="portal" code="confirm_remove_frame_in_layout">Êtes-vous sûr de vouloir retirer le cadre de "%s" ?</entry>
+<entry js="portal" code="cms_page_edit">Modifier</entry>
+<entry js="portal" code="confirm_remove_cms_page">Êtes-vous sûr de vouloir supprimer la page ?</entry>
+<entry js="portal" code="add_page">+ Page</entry>
+<entry js="portal" code="add_gabarit">+ Modèle</entry>
+<entry js="portal" code="add_frame_page">Ajouter le cadre à une page</entry>
+<entry js="portal" code="add_frame_gabarit">Ajouter le cadre à un modèle</entry>
+<entry js="portal" code="confirm_remove_zone_has_children">Attention les enfants de cette zone seront également supprimés</entry>
+<entry js="portal" code="confirm_remove_zone_has_element_opac">Impossible de supprimer cette zone, car elle possède des éléments non supprimables</entry>
+<entry js="portal" code="preview_default_context">Sélectionner un contexte</entry>
+<entry js="portal" code="context_name">Nom du contexte</entry>
+<entry js="portal" code="context_save">Enregistrer le contexte</entry>
+<entry js="portal" code="preview_confirm_apply_context">Êtes-vous sûr de vouloir appliquer ce contexte ?</entry>
+<entry js="portal" code="context_form_title">Contextes</entry>
+<entry js="portal" code="context_manage_title">Gestion des contextes</entry>
+<entry js="portal" code="confirm_remove_context">Êtes-vous sûr de vouloir supprimer le contexte de la page ?</entry>
+<entry js="portal" code="cms_edit_page_title">Modification d'une page de portail</entry>
+<entry js="portal" code="cms_page_add_subtype">Ajouter une page de portail</entry>
+<entry code="portal_condition_view">Vues OPAC</entry>
+<entry js="portal" code="portal_condition_view_label">Choisissez une vue</entry>
+<entry js="portal" code="portal_condition_view_default_option">Sélectionner une vue OPAC</entry>
+<entry js="portal" code="portal_condition_view_no_view">Aucune vue disponible</entry>
+<entry js="portal" code="gabarit_page_add">Ajouter une page</entry>
+<entry js="portal" code="gabarit_page_label">Page</entry>
+<entry code="notice_prix">Prix de la notice</entry>
+<entry js="ark" code="admin_ark_generate">Générer</entry>
+<entry js="ark" code="admin_ark_generate_management">Génération ARK</entry>
+<entry js="ark" code="admin_ark_entities_generated">identifiants ARK ont été générés.</entry>
+<entry code="ark_manage_generate">Génération ARK</entry>
+<entry code="orphan_parent_category">Catégorie parente orpheline :</entry>
+<entry code="categ_update_error_parent_daughter">Erreur : une catégorie fille de celle-ci ne peut être sa catégorie parente.</entry>
+<entry code="blocage_retard_pret_is_up">Il n'y a plus de document en retard, le blocage du prêt est levé</entry>
+<entry code="blocage_retard_pret_last_late">Il n'y a plus de document en retard, le prêt n'est pas bloqué</entry>
+<entry code="digital_signature">Signature électronique</entry>
+<entry code="digital_signature_base_title">Signature électronique</entry>
+<entry code="digital_signature_manage_certificat">Certificat</entry>
+<entry code="digital_signature_manage_signature">Signature</entry>
+<entry js="digital_signature" code="digital_signature_add_certificate">Ajouter</entry>
+<entry js="digital_signature" code="admin_certifate_edit_management">Édition d'un certificat</entry>
+<entry js="digital_signature" code="admin_certifate_label">Nom du certificat :</entry>
+<entry js="digital_signature" code="admin_certifate_cert">Certificat :</entry>
+<entry js="digital_signature" code="admin_certifate_private_key">Clé privée :</entry>
+<entry js="digital_signature" code="admin_certifate_ask_del">Voulez-vous supprimer ce certificat ?</entry>
+<entry js="digital_signature" code="admin_digital_signature_cancel">Annuler</entry>
+<entry js="digital_signature" code="admin_digital_signature_save">Sauvegarder</entry>
+<entry js="digital_signature" code="admin_digital_signature_delete">Supprimer</entry>
+<entry js="digital_signature" code="admin_digital_signature_no_response">Le service est inaccessible</entry>
+<entry js="digital_signature" code="admin_digital_signature_error_fetch">Erreur de réseau</entry>
+<entry js="digital_signature" code="admin_signature_edit_management">Édition d'une signature</entry>
+<entry js="digital_signature" code="admin_signature_label">Nom de la signature :</entry>
+<entry js="digital_signature" code="admin_signature_cert">Certificat :</entry>
+<entry js="digital_signature" code="admin_signature_upload_folder">Répertoire :</entry>
+<entry js="digital_signature" code="admin_signature_type">Type :</entry>
+<entry js="digital_signature" code="admin_signature_fields">Champs :</entry>
+<entry js="digital_signature" code="admin_signature_sub_fields">Sous-Champs :</entry>
+<entry js="digital_signature" code="admin_signature_list_fields">Liste des champs et sous-champs :</entry>
+<entry js="digital_signature" code="admin_digital_signature_ask_del">Voulez-vous supprimer cette signature ?</entry>
+<entry code="explnum_digital_signature_confirm">Le document va être signé, voulez-vous continuer ?</entry>
+<entry code="explnum_digital_signature_ck_sign">Signer le document numérique</entry>
+<entry js="digital_signature" code="admin_digital_signature_erreur_folder">Aucun répertoire n'est défini, pensez à renseigner le paramètre (pmb_digital_signature_folder_id)</entry>
+<entry code="caddie_menu_action_sign_docnum">Signature électronique de documents numériques</entry>
+<entry code="caddie_choix_signdocnum">Choisissez les éléments ayant des documents numériques à signer</entry>
+<entry code="caddie_expdocnum_sign">Signer</entry>
+<entry code="caddie_confirm_sign">Confirmer la signature des documents numériques de ces éléments ?</entry>
+<entry code="caddie_sign_list">Liste des signatures : </entry>
+<entry code="caddie_signed_docnum">document signé</entry>
+<entry code="caddie_not_signed_docnum">document non signé</entry>
+<entry code="caddie_already_signed_docnum">document déjà signé</entry>
+<entry code="digital_signature_already_signed_docnum">Ce document a été signé électroniquement et ne peut être modifié</entry>
+<entry code="digital_signature_metadata">Métadonnées</entry>
+<entry code="digital_signature_delete_confirm_button_catal">Confirmer la suppression de la signature du document numérique ?</entry>
+<entry code="digital_signature_delete_button_catal">Supprimer la signature</entry>
+<entry code="digital_signature_download_button">Télécharger la signature</entry>
+<entry code="digital_signature_date_metadata">Date de signature : </entry>
+<entry code="digital_signature_publish_date_metadata">Date de publication : </entry>
+<entry code="digital_signature_signer_metadata">Signataire : </entry>
+<entry code="admin_certifate_error">Erreur dans la suppression : </entry>
+<entry code="admin_certifate_error_no_supp">Suppression impossible, des signatures sont enregistrées avec ce certificat.</entry>
+<entry code="digital_signature_docnum_title">Signatures électroniques</entry>
+<entry code="dynamic_value_field">Valeur dynamique d'un champ</entry>
+<entry code="variable_type">Type de variable</entry>
+<entry code="variable_name">Nom de la variable</entry>
+<entry code="global_variable">Variable globale</entry>
+<entry js="portal" code="preview_url_not_valid">L'url ne correspond pas à la page en cours d'édition</entry>
+<entry js="portal" code="context_save_unavailable">Impossible d'enregistrer tant qu'une page n'est pas créée pour ce contexte</entry>
+<entry js="portal" code="duplicate">Dupliquer</entry>
+<entry code="duplicated_of">Copie de %s</entry>
+<entry js="portal" code="duplicate_successfully">Modèle dupliqué avec succès</entry>
+<entry js="portal" code="duplicate_failed">Echec lors de la duplication du modèle</entry>
+<entry js="portal" code="attributes">Attributs</entry>
+<entry js="portal" code="attribute">Attribut</entry>
+<entry js="portal" code="value">Valeur</entry>
+<entry code="digital_signature_error_delete_notice">Impossible de supprimer cette notice car des documents numériques sont signés</entry>
+<entry code="digital_signature_already_signed_docnum_del">Ce document a été signé électroniquement et ne peut être supprimé</entry>
+<entry code="nomenclature_js_explnum_confirm">Un document numérique est associé à cette notice, il sera également supprimé. Poursuivre la suppression ?</entry>
+<entry code="planificateur_signatures">Signature électronique</entry>
+<entry code="planificateur_signature_list_choice">Choix de la signature</entry>
+<entry code="planificateur_signature_clear_caddie">Vider le panier après la signature</entry>
+<entry code="planificateur_signature_not_signed">Aucun document signé</entry>
+<entry code="planificateur_signature_need_activate">Le paramètre 'digital_signature_activate' doit être activé</entry>
+<entry code="caddie_menu_action_signature">Signature</entry>
+<entry code="admin_files_gestion_thumbnail">Vignette</entry>
+<entry code="admin_files_gestion_weight">Poids</entry>
+<entry js="portal" code="attributes_on_item">Attribut(s) ajouté(s)</entry>
+<entry js="portal" code="no_heritage">Aucun héritage possible</entry>
+<entry js="portal" code="make_no_heritage">Ne faire aucun héritage</entry>
+<entry js="portal" code="alert_heritage_remove">Attention, si vous retirez l'héritage, une fusion avec les layouts parents sera effectuée.</entry>
+<entry js="portal" code="gabarit_legacy_heritage">Liste des modèles qui en héritent :</entry>
+<entry js="portal" code="gabarit_no_legacy_heritage">Aucun modèle n'hérite de celui-ci</entry>
+<entry js="portal" code="tree_classement">Classement par héritage</entry>
+<entry js="portal" code="radio_tree">Héritage</entry>
+<entry js="portal" code="radio_classement">Classement</entry>
+<entry js="portal" code="show_unused_gabarit">Afficher les modèles non utilisés</entry>
+<entry code="tab">Menu</entry>
+<entry code="subtab">Sous-Menu</entry>
+<entry code="interface">Interface</entry>
+<entry code="mails_logs">Journal</entry>
+<entry code="mails_waiting">File d'attente</entry>
+<entry code="forms">Formulaires</entry>
+<entry code="form_form_edit">Paramétrage du formulaire</entry>
+<entry code="form_label">Libellé</entry>
+<entry code="form_autorisations_all">Visible pour tous ?</entry>
+<entry code="form_autorisations">Restreint aux utilisateurs suivants :</entry>
+<entry code="form_duplicable">Duplication autorisée ?</entry>
+
+<entry code="mails_configuration">Serveurs sortants (SMTP)</entry>
+<entry code="mail_configuration_edit">Configuration du serveur sortant (SMTP)</entry>
+<entry code="mail_configuration_address">Adresse</entry>
+<entry code="mail_configuration_protocol">Protocole</entry>
+<entry code="mail_configuration_hote">Hote</entry>
+<entry code="mail_configuration_port">Port</entry>
+<entry code="mail_configuration_authentification">Authentification</entry>
+<entry code="mail_configuration_user">Utilisateur</entry>
+<entry code="mail_configuration_password">Mot de passe</entry>
+<entry code="mail_configuration_secure_protocol">Protocole de sécurité</entry>
+<entry code="mail_configuration_authentification_type">Type d'authentification</entry>
+<entry code="mail_configuration_actions">Action(s)</entry>
+<entry code="mail_configuration_action_edit">Modifier</entry>
+<entry code="mail_configuration_action_edit_locked">Modification réservée à l'utilisateur propriétaire de cette adresse</entry>
+<entry code="mail_configuration_domain">Domaine</entry>
+<entry code="mails_settings">Paramétrage</entry>
+<entry code="mail_setting_edit">Paramétrage d'un type de mail</entry>
+<entry code="mail_setting_group">Groupe</entry>
+<entry code="mail_setting_classname">Libellé</entry>
+<entry code="mail_setting_sender">Expéditeur</entry>
+<entry code="mail_setting_copy_cc">Copie</entry>
+<entry code="mail_setting_copy_bcc">Copie cachée</entry>
+<entry code="mail_setting_reply">Réponse à</entry>
+<entry code="mail_setting_reply_unspecified">= Expéditeur</entry>
+<entry code="mail_setting_associated_campaign">Campagne de mail</entry>
+<entry code="mail_setting_actions">Action(s)</entry>
+<entry code="mail_setting_action_edit">Modifier</entry>
+<entry code="mail_setting_action_edit_locked">Modification réservée à l'utilisateur ayant les droits</entry>
+<entry code="mail_types">Types</entry>
+<entry code="mail_type">Type</entry>
+<entry code="mail_campaigns">Campagnes de mails</entry>
+<entry code="mail_campaign">Campagne de mails</entry>
+<entry code="portal_heritage_layout_default">Mise en page sans héritage</entry>
+<entry code="portal_heritage_layout">Mise en page avec %s</entry>
+<entry js="portal" code="layouts_list">Liste des héritages</entry>
+<entry code="search_segment">Segment de recherche</entry>
+<entry code="admin_opac_contact_form_parameter_display_fields_errors">Affichage des erreurs de saisie sous chaque champ</entry>
+<entry code="mail_configuration_allowed_hote_override">Définition de l'hote par adresse mail autorisée ?</entry>
+<entry code="mail_configuration_allowed_authentification_override">Définition de l'authentification par adresse mail autorisée ?</entry>
+<entry code="ark_netbase_generate">Générer ARK</entry>
+<entry code="portal_zone_required">Seule une zone peut être reportée</entry>
+<entry code="portal_zone_parent_not_zone_opac">Impossible de reporter, la zone parente doit être une zone OPAC</entry>
+<entry js="portal" code="share_layout_detail">Rapport dans chaque mise en page</entry>
+<entry code="fpdf_objet">Objet :</entry>
+<entry code="supervision_mails">Hist. de mails</entry>
+<entry code="supervision_logs">Hist. de logs</entry>
+<entry code="mail_configuration">Serveur sortant (SMTP)</entry>
+<entry code="relance_recouvrement_expl_type">Support de l'exemplaire</entry>
+<entry code="relance_recouvrement_expl_statut">Statut de l'exemplaire</entry>
+<entry code="relance_recouvrement_expl_location">Localisation de l'exemplaire</entry>
+<entry code="relance_recouvrement_expl_section">Section de l'exemplaire</entry>
+<entry code="relance_recouvrement_expl_codestat">Code statistique de l'exemplaire</entry>
+<entry code="relance_recouvrement_expl_lender">Propriétaire de l'exemplaire</entry>
+<entry code="relance_export_expl_cote">Cote exemplaire</entry>
+<entry code="relance_export_expl_section">Section exemplaire</entry>
+<entry code="relance_export_expl_codestat">Code statistique exemplaire</entry>
+<entry js="animation" code="admin_calendar">Calendrier</entry>
+<entry js="animation" code="admin_calendar_name">Libellé</entry>
+<entry js="animation" code="admin_add_calendar">Ajouter un calendrier</entry>
+<entry js="animation" code="admin_edit_calendar">Modifier un calendrier</entry>
+<entry js="animation" code="view_animation_calendar">Calendrier</entry>
+<entry js="animation" code="list_animation_calendar">Calendrier</entry>
+<entry js="animation" code="admin_calendar_color">Couleur du calendrier</entry>
+<entry js="animation" code="admin_calendar_cancel">Annuler</entry>
+<entry js="animation" code="admin_calendar_save">Sauvegarder</entry>
+<entry js="animation" code="admin_calendar_delete">Supprimer</entry>
+<entry js="animation" code="admin_animation_confirm_del_calendar">Confirmez-vous la suppression de ce calendrier ?</entry>
+<entry js="animation" code="update_add_animation_calendar">Calendrier</entry>
+<entry code="animation_manage_calendar">Calendrier</entry>
+<entry code="deflt_animation_calendar">Choix du calendrier par défaut pour les animations</entry>
+<entry code="my_home_location">Ma localisation</entry>
+<entry code="search_avis">Avis de notice</entry>
+<entry code="dsi_diffusions">Diffusions</entry>
+<entry code="dsi_items">Items</entry>
+<entry code="dsi_views">Vues</entry>
+<entry code="dsi_triggers">Déclencheurs</entry>
+<entry code="dsi_subscriber_list">Listes d'abonnés</entry>
+<entry code="dsi_products">Produits</entry>
+<entry code="dsi_sources_items">Sources d'items</entry>
+<entry code="dsi_sources_subscriber">Sources d'abonnés</entry>
+<entry code="expl_date_creation_query">Date de création de l'exemplaire</entry>
+<entry code="resa_waiting_already_loaned">Réservation : ce document a été rendu par ce lecteur depuis moins de !!nb_days!! jours.</entry>
+<entry code="mail_obj_resa_added">Nouvelle réservation ajoutée dans l'OPAC</entry>
+<entry code="mail_obj_resa_canceled">Réservation supprimée dans l'OPAC</entry>
+<entry code="mail_obj_resa_reaffected">Réservation supprimée et réaffectée au rang suivant dans l'OPAC</entry>
+<entry code="resa_empr_location">Localisation du lecteur</entry>
+<entry code="search_extended_author_creation_date">Date de création de l'auteur</entry>
+<entry code="search_extended_author_modify_date">Date de modification de l'auteur</entry>
+<entry code="search_extended_category_creation_date">Date de création du sujet</entry>
+<entry code="search_extended_category_modify_date">Date de modification du sujet</entry>
+<entry code="search_extended_contributor_creation_date">Date de création de l'éditeur</entry>
+<entry code="search_extended_contributor_modify_date">Date de modification de l'éditeur</entry>
+<entry code="search_extended_coll_creation_date">Date de création de la collection</entry>
+<entry code="search_extended_coll_modify_date">Date de modification de la collection</entry>
+<entry code="search_extended_subcoll_creation_date">Date de création de la sous-collection</entry>
+<entry code="search_extended_subcoll_modify_date">Date de modification de la sous-collection</entry>
+<entry code="search_extended_serie_creation_date">Date de création de la série</entry>
+<entry code="search_extended_serie_modify_date">Date de modification de la série</entry>
+<entry code="search_extended_tu_creation_date">Date de création de l'oeuvre</entry>
+<entry code="search_extended_tu_modify_date">Date de modification de l'oeuvre</entry>
+<entry code="search_extended_indexint_creation_date">Date de création de l'indexation décimale</entry>
+<entry code="search_extended_indexint_modify_date">Date de modification de l'indexation décimale</entry>
+<entry code="breadcrumb_separator"><![CDATA[ > ]]></entry>
+<entry js="onto" code="onto_ontopmb_pmbname_exists">Le nom PMB (nom machine) existe déjà !</entry>
+<entry code="onto_ontopmb_pmbname_exists">Le nom PMB (nom machine) existe déjà !</entry>
+<entry js="animation" code="animation_logo">Logo</entry>
+<entry js="animation" code="update_add_animation_logo">Logo</entry>
+<entry js="animation" code="update_add_animation_logo_choice">Sélectionner un répertoire</entry>
+<entry js="animation" code="update_add_animation_logo_file">Sélectionner un fichier</entry>
+<entry js="animation" code="animation_error_type">Votre animation doit avoir un type</entry>
+<entry js="animation" code="animation_check_logo_filename">Logo</entry>
+<entry js="animation" code="update_add_animation_logo_alt">Choix du texte alternatif de l'image</entry>
+<entry code="admin_thumbnail_sources">Sources de vignettes</entry>
+<entry js="thumbnail" code="thumbnail_sources">Sources de vignettes</entry>
+<entry js="thumbnail" code="record">Notices</entry>
+<entry js="common" code="cancel">Annuler</entry>
+<entry js="common" code="submit">Enregistrer</entry>
+<entry js="common" code="remove">Supprimer</entry>
+<entry js="common" code="wait">Chargement...</entry>
+<entry js="common" code="more">+</entry>
+<entry js="common" code="remove_short">X</entry>
+<entry js="common" code="success_save">Enregistré avec succès</entry>
+<entry js="common" code="failed_save">Erreur lors de l'enregistrement</entry>
+<entry code="common_failed_save">Erreur lors de l'enregistrement</entry>
+<entry js="thumbnail" code="thumbnail_pivots">Gestion des pivots par entité</entry>
+<entry code="admin_thumbnail_entity_record">Notices</entry>
+<entry js="common" code="up">Monter</entry>
+<entry js="common" code="down">Descendre</entry>
+<entry code="clean_autoload_files">Vider l'autoload</entry>
+<entry code="cleaning_autoload_files">Purge des fichiers d'autoload</entry>
+<entry code="storage_used_in_cms_collections">Impossible de supprimer ce stockage car il est utilisé dans des collections numériques.</entry>
+<entry code="storage_used_in_cms_documents">Impossible de supprimer ce stockage car il est utilisé dans des documents de collection numérique.</entry>
+<entry code="serialcirc_circ_list_bull_circulation_repair_bt">Réparer la liste de circulation</entry>
+<entry code="serialcirc_circ_list_repair_bt">Réparer les listes des bulletins cochés</entry>
+<entry code="serialcirc_diff_title_form">Gestion de la diffusion</entry>
+<entry code="serialcirc_diff_empr_name">Nom du destinataire</entry>
+<entry code="serialcirc_diff_order">Ordre dans la diffusion</entry>
+<entry code="selector_tab_pager">Pagination</entry>
+<entry code="users_groups">Groupes d'utilisateurs</entry>
+<entry code="users_groups_all">Tous les groupes</entry>
+<entry code="list_serialcirc_expl_ui_dataset_title">Gestion de la circulation</entry>
+<entry code="list_serialcirc_ask_ui_dataset_title">Gestion des demandes d'inscriptions</entry>
+<entry code="list_serialcirc_state_ui_dataset_title">Etat des circulations</entry>
+<entry code="serialcirc_circ_list_bull_circulation_classement">Classement</entry>
+<entry code="animation_mail_registration_waiting"><![CDATA[- %s, inscrit sur liste d'attente.<br>]]></entry>
+<entry code="animation_mail_registration_pending_validation"><![CDATA[- %s, inscription en attente de validation.<br>]]></entry>
+<entry code="animation_mail_registration_validate"><![CDATA[- %s, inscription validée.<br>]]></entry>
+<entry code="external_search_analysis_id">Identifiant d'article (PMID, DOI, ...) </entry>
+<entry code="mail_configuration_authentification_none">Non</entry>
+<entry code="mail_configuration_authentification_domain_reserved">Oui, toutes les adresses mails de ce domaine utiliseront l'utilisateur et le mot de passe définis ci-dessous</entry>
+<entry code="mail_configuration_authentification_mail_reserved">Oui, toutes les adresses mails de ce domaine ont un accès personnalisé et doivent être définies avec un utilisateur et un mot de passe</entry>
+<entry code="mail_configuration_authentification_type_settings">Paramétrage du type d'authentification</entry>
+<entry code="mail_configuration_validated">Validé</entry>
+<entry code="mail_configuration_unvalidated">Non validé</entry>
+<entry code="domains">Domaines</entry>
+<entry code="check_configuration">Tester les configurations</entry>
+<entry code="check_configuration_confirm">Confirmez-vous la vérification des configurations de la sélection ?</entry>
+<entry js="animation" code="update_add_animation_during_day">Ne pas indiquer une date de fin</entry>
+<entry js="animation" code="form_event_during_day">Animation sur la journée</entry>
+<entry code="mail_configuration_myself_is_validated">La configuration de votre serveur sortant pour les envois de mails est paramétrée</entry>
+<entry code="mail_configuration_myself_is_not_validated">ATTENTION : veuillez configurer votre serveur sortant pour que les envois de mails fonctionnent</entry>
+<entry code="mail_configuration_other_is_validated">La configuration du serveur sortant pour ce profil est paramétrée</entry>
+<entry code="mail_configuration_other_is_not_validated">ATTENTION : l'envoi de mails n'est pas paramétré pour ce profil. Cela doit être configuré depuis le compte utilisateur concerné</entry>
+<entry code="selfservice_resa_ici_todo_valid">Le document est réservé, ignorer la validité de la réservation:</entry>
+<entry code="selfservice_resa_ici_todo_valid_yes">Oui</entry>
+<entry code="selfservice_resa_ici_todo_valid_no">Non</entry>
+<entry code="mail_configuration_uses">Utilisations</entry>
+<entry js="animation" code="anim_only_contact_registred">Limiter l'inscription à la personne de contact</entry>
+<entry js="animation" code="animation_registration_error_contact_mail">Merci de renseigner un mail valide pour la personne de contact</entry>
+<entry js="animation" code="mailing_attachment_mail">Pièce jointe</entry>
+<entry js="animation" code="animation_registration_error_barcode">Merci de renseigner un code barre valide</entry>
+<entry js="animation" code="animation_registration_error_contact_barcode">Merci de renseigner un code barre valide pour la personne de contact</entry>
+<entry code="deflt_animation_waiting_list">Autoriser l'inscription en liste d'attente</entry>
+<entry code="deflt_animation_automatic_registration">Valider l'inscription automatiquement à l'OPAC</entry>
+<entry code="deflt_animation_communication_type">Choix du types de communications</entry>
+<entry code="deflt_animation_unique_registration">Limiter l'inscription à la personne de contact</entry>
+<entry code="admin_menu_animation">Animations</entry>
+<entry js="animation" code="animation_export_excel">export excel de la liste des inscriptions</entry>
+<entry code="animation_export_title">Liste des inscrits pour cette animation : %s</entry>
+<entry code="animation_export_name">Nom du participant</entry>
+<entry code="animation_export_email">Email du participant</entry>
+<entry code="animation_export_phone">Téléphone du participant</entry>
+<entry code="animation_export_date_registration">Date inscription</entry>
+<entry code="animation_export_barcode">Code Barre</entry>
+<entry code="animation_export_no_barcode">Pas de CB</entry>
+<entry code="animation_export_no_email">Pas de mail</entry>
+<entry code="animation_export_no_phone">Pas de téléphone</entry>
+<entry code="list_authorities_authors_ui_ui_dataset_title">Liste des auteurs</entry>
+<entry code="list_authorities_categories_ui_dataset_title">Liste des catégories</entry>
+<entry code="list_authorities_collections_ui_dataset_title">Liste des collections</entry>
+<entry code="list_authorities_indexint_ui_dataset_title">Liste des indexations décimales</entry>
+<entry code="list_authorities_publishers_ui_dataset_title">Liste des éditeurs</entry>
+<entry code="list_authorities_series_ui_dataset_title">Liste des titres de série</entry>
+<entry code="list_authorities_subcollections_ui_dataset_title">Liste des sous-collections</entry>
+<entry code="list_authorities_titres_uniformes_ui_dataset_title">Liste des oeuvres/expressions</entry>
+<entry code="list_authorities_ui_dataset_title">Liste des autorités</entry>
+<entry code="list_recouvr_ui_dataset_title">Liste des recouvrements</entry>
+<entry code="list_readers_ui_dataset_title">Liste des lecteurs</entry>
+<entry code="list_reservations_ui_dataset_title">Liste des réservations</entry>
+<entry code="lists_datasets">Jeux de données</entry>
+<entry code="lists_dataset_add">Ajouter un jeu de données</entry>
+<entry code="list_dataset_edit">Edition d'un jeu de données</entry>
+<entry code="list_datasources">Sources de données</entry>
+<entry code='list_datasource_choice'>Choisissez une source de données</entry>
+<entry code="list_dataset_delete_confirm">Confirmez-vous la suppression de ce jeu de données ?</entry>
+<entry code="list_ui_settings_display_search_form_operators_filters">Affichage des opérateurs sous les filtres ?</entry>
+<entry code="list_ui_operator_filter_exactly_like_abbr">T =</entry>
+<entry code="list_ui_operator_filter_exactly_like_label">Exactement comme</entry>
+<entry code="list_ui_operator_filter_contains_abbr">&#8592; T &#8594;</entry>
+<entry code="list_ui_operator_filter_contains_label">Contient</entry>
+<entry code="list_ui_operator_filter_starts_with_abbr">T &#8594;</entry>
+<entry code="list_ui_operator_filter_starts_with_label">Commence par</entry>
+<entry code="list_ui_operator_filter_ends_with_abbr">&#8592; T</entry>
+<entry code="list_ui_operator_filter_ends_with_label">Finit par</entry>
+<entry code="list_ranking">Classer ce jeu de données dans :</entry>
+<entry code="dsi_menu_dif_history">Historique</entry>
+<entry code="dsi_diffusions_history">Historiser les diffusions dans le module de gestion</entry>
+<entry code="bannette_diffusion_detail">Détail de la diffusion</entry>
+<entry code="bannette_diffusion_mail_object">Objet du mail (anonyme) :</entry>
+<entry code="bannette_diffusion_mail_content">Contenu du mail (anonyme) :</entry>
+<entry code="bannette_diffusion_date">Date de diffusion</entry>
+<entry code="bannette_diffusion_number_records">Nombre de notices diffusées</entry>
+<entry code="bannette_diffusion_number_recipients">Nombre d'abonnés</entry>
+<entry code="bannette_diffusion_recipients">Liste des abonnés</entry>
+<entry code="bannette_diffusion_number_sent_mail">Nombre de mails envoyés</entry>
+<entry code="bannette_diffusion_state">Etat de la diffusion</entry>
+<entry code="bannette_diffusion_state_sent">Mail envoyé</entry>
+<entry code="bannette_diffusion_state_no_sent">Mail non envoyé</entry>
+<entry code="bannette_diffusion_number_deleted_records">Nombre de notices vidées de la bannette</entry>
+<entry code="bannette_diffusion_deleted_records">Liste des notices vidées de la bannette</entry>
+<entry code="bannette_diffusion_deleted_records_access_rights">Notices n'étant plus accessibles par les droits d'accès</entry>
+<entry code="bannette_diffusion_deleted_records_equations">Notices ne répondant plus aux équations de recherche</entry>
+<entry code="bannette_diffusion_deleted_records_cumulative_limit">Notices ne répondant plus à la limite cumulative</entry>
+<entry code="audit_bannette">Bannette</entry>
+<entry js="animation" code="calendar_repetition_animation">Répétition</entry>
+<entry js="animation" code="calendar_repetition_choice_localisation">Localisation : </entry>
+<entry js="animation" code="calendar_repetition_during_day">Animation sur la journée</entry>
+<entry js="animation" code="calendar_repetition_animation_parent">Reprendre les informations de l'animation parente</entry>
+<entry js="animation" code="calendar_repetition_animation_choice">Choix de la répétition</entry>
+<entry js="animation" code="calendar_repetition_animation_repeat">Répétition</entry>
+<entry js="animation" code="calendar_repetition_animation_daily">Quotidienne</entry>
+<entry js="animation" code="calendar_repetition_animation_weekly">Hebdomadaire</entry>
+<entry js="animation" code="calendar_repetition_animation_monthly">Mensuelle</entry>
+<entry js="animation" code="animation_repeating_animation">Répéter</entry>
+<entry js="animation" code="calendar_repetition_animation_name">Nom</entry>
+<entry js="animation" code="calendar_repetition_animation_no_repeat">Aucune répétition sélectionnée</entry>
+<entry js="animation" code="update_add_animation_startHour">Heure de début</entry>
+<entry js="animation" code="update_add_animation_endHour">Heure de fin</entry>
+<entry js="animation" code="animation_delete_in_lot">Supprimer</entry>
+<entry js="calendar" code="calendar_start_date">Date de début</entry>
+<entry js="calendar" code="calendar_end_date">Date de fin</entry>
+<entry js="calendar" code="calendar_pref_repet">Préférence des répétitions</entry>
+<entry js="calendar" code="calendar_nb_day">Nombre de jour(s)</entry>
+<entry js="calendar" code="calendar_weekly_day">Sélectionner les jours concernés</entry>
+<entry js="calendar" code="calendar_weekly_each">Chaque</entry>
+<entry js="calendar" code="calendar_daily_day">jour(s)</entry>
+<entry js="calendar" code="calendar_weekly_week">semaine(s)</entry>
+<entry js="calendar" code="calendar_mothly_month">mois</entry>
+<entry js="calendar" code="calendar_annual_year">année(s)</entry>
+<entry js="calendar" code="calendar_month_1">janvier</entry>
+<entry js="calendar" code="calendar_month_2">février</entry>
+<entry js="calendar" code="calendar_month_3">mars</entry>
+<entry js="calendar" code="calendar_month_4">avril</entry>
+<entry js="calendar" code="calendar_month_5">mai</entry>
+<entry js="calendar" code="calendar_month_6">juin</entry>
+<entry js="calendar" code="calendar_month_7">juillet</entry>
+<entry js="calendar" code="calendar_month_8">août</entry>
+<entry js="calendar" code="calendar_month_9">septembre</entry>
+<entry js="calendar" code="calendar_month_10">octobre</entry>
+<entry js="calendar" code="calendar_month_11">novembre</entry>
+<entry js="calendar" code="calendar_month_12">décembre</entry>
+<entry js="calendar" code="calendar_repeatDay_mon">Lundi</entry>
+<entry js="calendar" code="calendar_repeatDay_tue">Mardi</entry>
+<entry js="calendar" code="calendar_repeatDay_wes">Mercredi</entry>
+<entry js="calendar" code="calendar_repeatDay_thu">Jeudi</entry>
+<entry js="calendar" code="calendar_repeatDay_fri">Vendredi</entry>
+<entry js="calendar" code="calendar_repeatDay_sat">Samedi</entry>
+<entry js="calendar" code="calendar_repeatDay_sun">Dimanche</entry>
+<entry js="calendar" code="calendar_frequencyDay_evey">Chaque</entry>
+<entry js="calendar" code="calendar_frequencyDay_first">Le premier</entry>
+<entry js="calendar" code="calendar_frequencyDay_second">Le deuxiéme</entry>
+<entry js="calendar" code="calendar_frequencyDay_third">Le troisiéme</entry>
+<entry js="calendar" code="calendar_frequencyDay_fourth">Le quatriéme</entry>
+<entry js="calendar" code="calendar_frequencyDay_fifth">Le cinquiéme</entry>
+<entry js="calendar" code="calendar_frequencyDay_last">Le dernier</entry>
+<entry js="paginator" code="paginator_found_results">Résultats trouvés =></entry>
+<entry js="paginator" code="paginator_filter_field">Filtre</entry>
+<entry js="paginator" code="paginator_filter_select_field">Sélectionner un champ</entry>
+<entry js="paginator" code="animation_paginator_field_search_name">Nom</entry>
+<entry js="paginator" code="animation_paginator_field_search_location">Localisation</entry>
+<entry code="menu_separator"><![CDATA[>]]></entry>
+<entry code="dsi_diffusions">Diffusions</entry>
+<entry code="dsi_statutes">Statuts</entry>
+<entry code="dsi_items">Données</entry>
+<entry code="dsi_models">Modèles</entry>
+<entry code="dsi_channels">Canaux</entry>
+<entry code="dsi_views">Vues</entry>
+<entry code="dsi_triggers">Déclencheurs</entry>
+<entry code="dsi_subscriber_list">Listes d'abonnés</entry>
+<entry code="dsi_products">Produits</entry>
+<entry code="dsi_sources_items">Sources d'items</entry>
+<entry code="dsi_sources_subscribers">Sources d'abonnés</entry>
+<entry code="dsi_subscribers">Abonnés</entry>
+<entry code="dsi_diffusion">Diffusion</entry>
+<entry code="dsi_product">Produit</entry>
+<entry js="dsi" code="dsi_diffusions">Diffusions</entry>
+<entry js="dsi" code="dsi_statutes">Statuts</entry>
+<entry js="dsi" code="dsi_items">Données</entry>
+<entry js="dsi" code="dsi_models">Modèles</entry>
+<entry js="dsi" code="dsi_channels">Canaux</entry>
+<entry js="dsi" code="dsi_views">Vues</entry>
+<entry js="dsi" code="dsi_triggers">Déclencheurs</entry>
+<entry js="dsi" code="dsi_subscriber_list">Listes d'abonnés</entry>
+<entry js="dsi" code="dsi_products">Produits</entry>
+<entry js="dsi" code="dsi_sources_items">Sources d'items</entry>
+<entry js="dsi" code="dsi_sources_subscribers">Sources d'abonnés</entry>
+<entry js="dsi" code="dsi_subscribers">Abonnés</entry>
+<entry js="dsi" code="dsi_loading">Chargement...</entry>
+<entry js="dsi" code="diffusions">Diffusions</entry>
+<entry js="dsi" code="diffusion">Diffusion</entry>
+<entry js="dsi" code="diffusion_name">Nom</entry>
+<entry js="dsi" code="diffusion_channel">Canal de diffusion</entry>
+<entry js="dsi" code="diffusion_channel_mail">Corps du mail</entry>
+<entry js="dsi" code="diffusion_content">Contenu</entry>
+<entry js="dsi" code="diffusion_total_subscribers">Nb d'abonnés</entry>
+<entry js="dsi" code="diffusion_last">Dernière diffusion</entry>
+<entry js="dsi" code="diffusion_last_send">Dernière diffusion : %s</entry>
+<entry js="dsi" code="diffusion_never_send">Jamais</entry>
+<entry js="dsi" code="diffusion_status">Statut</entry>
+<entry js="dsi" code="diffusion_recipients">Destinataires</entry>
+<entry js="dsi" code="diffusion_triggers">Déclencheurs</entry>
+<entry js="dsi" code="diffusion_form_name">Nom :</entry>
+<entry js="dsi" code="diffusion_form_channel">Canal de diffusion :</entry>
+<entry js="dsi" code="diffusion_form_status">Statut de diffusion :</entry>
+<entry js="dsi" code="diffusion_form_products">Produits :</entry>
+<entry js="dsi" code="diffusion_form_choose_channel">Sélectionner un canal</entry>
+<entry js="dsi" code="diffusion_form_choose_status">Sélectionner un statut de diffusion</entry>
+<entry js="dsi" code="diffusion_form_empty_products">La diffusion n'appartient à aucun produit</entry>
+<entry js="dsi" code="diffusion_duplicated">Ce nom de diffusion existe déjà</entry>
+<entry js="dsi" code="diffusion_channel">Canal</entry>
+<entry js="dsi" code="diffusion_form_subscriber_list_success">Sauvegarde de la liste d'abonnés réussie</entry>
+<entry js="dsi" code="triggers">Déclencheurs</entry>
+<entry js="dsi" code="statutes">Statuts</entry>
+<entry js="dsi" code="status">Statut</entry>
+<entry js="dsi" code="status_name">Nom</entry>
+<entry js="dsi" code="status_form_name">Nom :</entry>
+<entry js="dsi" code="status_form_active">Activé :</entry>
+<entry js="dsi" code="status_duplicated">Ce nom de statut existe déjà</entry>
+<entry js="dsi" code="status_unable_to_delete">Impossible de supprimer ce statut</entry>
+<entry js="dsi" code="add">Ajouter</entry>
+<entry js="dsi" code="add_model">Ajouter un modèle</entry>
+<entry js="dsi" code="submit_model">Créer le modèle</entry>
+<entry js="dsi" code="create_model">Création d'un modèle</entry>
+<entry js="dsi" code="del">Supprimer</entry>
+<entry js="dsi" code="confirm_del">Confirmez-vous la suppression ?</entry>
+<entry js="dsi" code="data_errors">Données incorrectes</entry>
+<entry js="dsi" code="dsi_found_results"> Résultats trouvés =></entry>
+<entry js="dsi" code="items_form_type">Type d'item :</entry>
+<entry js="dsi" code="items_form_choose_type">Sélectionner une donnée</entry>
+<entry js="dsi" code="items_form_model">Modèle :</entry>
+<entry js="dsi" code="items_form_name">Nom :</entry>
+<entry js="dsi" code="item_model">Modèle</entry>
+<entry js="dsi" code="item_type">Type</entry>
+<entry js="dsi" code="item_name">Nom</entry>
+<entry js="dsi" code="item_label">Donnée :</entry>
+<entry js="dsi" code="item_agregator">Agrégé</entry>
+<entry js="dsi" code="item_simple">Simple</entry>
+<entry js="dsi" code="item_associated_label">Donnée associée :</entry>
+<entry js="dsi" code="items_form_parent">Parent</entry>
+<entry js="dsi" code="item_duplicated">Ce nom de donnée existe déjà</entry>
+<entry js="dsi" code="items_form_agregator">Agréger plusieurs données : </entry>
+<entry js="dsi" code="items_form_agregator_name">Nom</entry>
+<entry js="dsi" code="items_form_agregator_data">Données agrégées</entry>
+<entry js="dsi" code="items_form_agregator_with_model">À partir d'un modèle :</entry>
+<entry js="dsi" code="items_form_agregator_with_new">À partir de nouvelles données :</entry>
+<entry js="dsi" code="items_form_agregator_children_error">Impossible d'enregistrer, aucune donnée n'est présente</entry>
+<entry js="dsi" code="source_name">Nom</entry>
+<entry js="dsi" code="source_type">Type</entry>
+<entry js="dsi" code="source_form_name">Nom :</entry>
+<entry js="dsi" code="source_form_selector">Sélecteur :</entry>
+<entry js="dsi" code="source_form_default_selector">Choisir un sélecteur</entry>
+<entry js="dsi" code="source_form_subselector">Sous-sélecteur :</entry>
+<entry js="dsi" code="source_form_default_subselector">Choisir un sous-sélecteur</entry>
+<entry js="dsi" code="source_form_source">Source :</entry>
+<entry js="dsi" code="source_form_default_source">Sélectionner une source</entry>
+<entry js="dsi" code="source_form_type">Type :</entry>
+<entry js="dsi" code="source_form_default_type">Sélectionner un type</entry>
+<entry js="dsi" code="source_form_label_articles_by_parent_section">Rubrique :</entry>
+<entry js="dsi" code="source_form_selector_articles_by_parent_section">Sélectionner une rubrique parente</entry>
+<entry js="dsi" code="source_form_label_item_watch_by_watch">Veille :</entry>
+<entry js="dsi" code="source_form_selector_item_watch_by_watch">Sélectionner une veille</entry>
+<entry js="dsi" code="search_rmc_title">Recherche avancée</entry>
+<entry js="dsi" code="product_diffusion_activate">Paramètres</entry>
+<entry js="dsi" code="product_diffusion_delete">Supprimer</entry>
+<entry js="dsi" code="products_form_add_diffusion">Diffusions :</entry>
+<entry js="dsi" code="products_form_choose_add_diffusion">Sélectionner une diffusion</entry>
+<entry js="dsi" code="products_form_name">Nom :</entry>
+<entry js="dsi" code="products_form_status">Statut :</entry>
+<entry js="dsi" code="products_form_choose_status">Sélectionner un statut de produit</entry>
+<entry js="dsi" code="products_form_no_diffusions">Aucune diffusion associée à ce produit</entry>
+<entry js="dsi" code="product_diffusion_never_active">Jamais</entry>
+<entry js="dsi" code="product_diffusion_diffusion_name">Nom</entry>
+<entry js="dsi" code="product_diffusion_active">Active</entry>
+<entry js="dsi" code="product_diffusion_last_activation">Dernier déclenchement</entry>
+<entry js="dsi" code="product_diffusion_create_diffusion">Ajouter une diffusion</entry>
+<entry js="dsi" code="product_diffusion_confirm_delete">Retirer la diffusion du produit ?</entry>
+<entry js="dsi" code="recipient">Destinataires</entry>
+<entry js="dsi" code="triggers">Déclencheurs</entry>
+<entry js="dsi" code="product_duplicated">Ce nom de produit existe déjà</entry>
+<entry js="dsi" code="channel_name">Nom</entry>
+<entry js="dsi" code="channel_type">Type</entry>
+<entry js="dsi" code="channel_form_name">Nom :</entry>
+<entry js="dsi" code="channel_form_type">Type :</entry>
+<entry js="dsi" code="channel_form_settings">Paramétrage</entry>
+<entry js="dsi" code="channel_form_default_type">Sélectionner un type de canal</entry>
+<entry js="dsi" code="channel_form_mail_adr">Serveur sortant :</entry>
+<entry js="dsi" code="channel_form_mail_obj">Objet :</entry>
+<entry js="dsi" code="channel_form_mail_simple_choice">Mail simple : </entry>
+<entry js="dsi" code="channel_form_mail_attachments_choice">Mail + Pièce(s) jointe(s) : </entry>
+<entry js="dsi" code="channel_form_mail_attachments_max_size">Fichier(s) trop volumineux (25Mo maximum)</entry>
+<entry js="dsi" code="channel_form_mail_attachments_label">Pièce(s) jointe(s) :</entry>
+<entry js="dsi" code="channel_form_mail_attachments_selected">Pièce(s) jointe(s) sélectionnée(s)</entry>
+<entry js="dsi" code="channel_form_default_mail_adr">Sélectionner une adresse mail</entry>
+<entry js="dsi" code="channel_portal_page">Page de portail :</entry>
+<entry js="dsi" code="view_form_name">Nom :</entry>
+<entry js="dsi" code="view_form_type">Type :</entry>
+<entry js="dsi" code="view_form_default_type">Sélectionner un type de vue</entry>
+<entry js="dsi" code="view_form_default">Sélectionner une vue</entry>
+<entry js="dsi" code="view_form_entity_type">Type d'entité :</entry>
+<entry js="dsi" code="view_form_default_entity_type">Sélectionner un type d'entité</entry>
+<entry js="dsi" code="view_form_accordion_data">Données</entry>
+<entry js="dsi" code="view_form_accordion_edit">Édition</entry>
+<entry js="dsi" code="view_form_entity_tree">Contenu du template</entry>
+<entry js="dsi" code="view_form_template_directory">Répertoire de template :</entry>
+<entry js="dsi" code="view_form_default_template_directory">Sélectionner le répertoire</entry>
+<entry js="dsi" code="view_form_filter">Filtre :</entry>
+<entry js="dsi" code="view_form_filter_default_value">Sélectionner un filtre</entry>
+<entry js="dsi" code="view_form_limit">Limiter le nombre de résultats :</entry>
+<entry js="dsi" code="view_wysiwyg_add_element">Ajouter un élément</entry>
+<entry js="dsi" code="view_wysiwyg_modal_sections">Mise en page</entry>
+<entry js="dsi" code="view_wysiwyg_modal_elements">Mise en forme</entry>
+<entry js="dsi" code="view_no_html">Ne pas utiliser de HTML ici, il sera ignoré</entry>
+<entry js="dsi" code="view_wysiwyg_build">Construction</entry>
+<entry js="dsi" code="view_wysiwyg_preview">Prévisualisation</entry>
+<entry js="dsi" code="view_wysiwyg_tree">Structure</entry>
+<entry js="dsi" code="view_wysiwyg_properties">Propriétés globales</entry>
+<entry js="dsi" code="view_wysiwyg_fullscreen">Plein écran</entry>
+<entry js="dsi" code="view_wysiwyg_input_image_alt">Titre alternatif</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_rich">Texte riche</entry>
+<entry js="dsi" code="view_wysiwyg_input_text">Texte</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style">Style</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_align">Alignement</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_align_right">Droite</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_align_left">Gauche</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_align_center">Centrer</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_color">Couleur du texte</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_size">Taille de la police</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_line_height">Hauteur de la ligne</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_letter_space">Espacement des lettres</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_weight">Epaisseur des lettres </entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_font">Style de la police</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_font_decoration">Décoration de la police</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_font_decoration_default">Défaut</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_font_decoration_underline">Souligner</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_font_decoration_wavy">Ondulée</entry>
+<entry js="dsi" code="view_wysiwyg_input_text_style_font_decoration_overline">Surligner</entry>
+<entry js="dsi" code="view_wysiwyg_input_list">Liste</entry>
+<entry js="dsi" code="view_wysiwyg_input_list_elements">Élements</entry>
+<entry js="dsi" code="view_wysiwyg_input_list_style_bullete">Style des puces</entry>
+<entry js="dsi" code="view_wysiwyg_input_list_style_bullete_disc">Cercle</entry>
+<entry js="dsi" code="view_wysiwyg_input_list_style_bullete_circle">Cercle vide</entry>
+<entry js="dsi" code="view_wysiwyg_input_list_style_bullete_square">Carré</entry>
+<entry js="dsi" code="view_wysiwyg_input_list_style_bullete_decimal">Décimal</entry>
+<entry js="dsi" code="view_wysiwyg_input_list_style_bullete_none">Aucune</entry>
+<entry js="dsi" code="view_wysiwyg_input_file">Fichier</entry>
+<entry js="dsi" code="view_wysiwyg_input_url">URL</entry>
+<entry js="dsi" code="view_wysiwyg_input_image">Image</entry>
+<entry js="dsi" code="view_wysiwyg_position_left">A gauche</entry>
+<entry js="dsi" code="view_wysiwyg_position_centered">Centrée</entry>
+<entry js="dsi" code="view_wysiwyg_position_right">A droite</entry>
+<entry js="dsi" code="view_wysiwyg_input_image_position">Position de l'image</entry>
+<entry js="dsi" code="view_wysiwyg_input_image_height">Hauteur de l'image</entry>
+<entry js="dsi" code="view_wysiwyg_input_image_width">Largeur de l'image</entry>
+<entry js="dsi" code="view_wysiwyg_input_image_size">Taille de l'image</entry>
+<entry js="dsi" code="view_wysiwyg_input_image_keep_ratio">Conserver le ratio de l'image</entry>
+<entry js="dsi" code="view_wysiwyg_input_video">Vidéo</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_autoplay">Lecture automatique</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_muted">Silencieux</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_controls">Contrôle du flux</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_loop">Lire en boucle</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_keep_ratio">Conserver le ratio de la vidéo</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_height">Hauteur de la vidéo</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_width">Largeur de la vidéo</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_size">Taille de la vidéo</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_position">Position de la vidéo</entry>
+<entry js="dsi" code="view_wysiwyg_modal_choice">Choisissez un élement</entry>
+<entry js="dsi" code="view-wysiwyg-placement">Placement</entry>
+<entry js="dsi" code="view-wysiwyg-placement-direction">Orientation</entry>
+<entry js="dsi" code="view-wysiwyg-placement-row">Horizontal</entry>
+<entry js="dsi" code="view-wysiwyg-placement-column">Vertical</entry>
+<entry js="dsi" code="view-wysiwyg-placement-height">Hauteur</entry>
+<entry js="dsi" code="view-wysiwyg-placement-width">Largeur</entry>
+<entry js="dsi" code="view-wysiwyg-bg">Arrière plan</entry>
+<entry js="dsi" code="view-wysiwyg-bg-color">Couleur</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img">Image</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img-repeat">Répétition</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img-repeat-repeat">Répéter</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img-repeat-norepeat">Aucun répétition</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img-size">Taille</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img-size-auto">Automatique</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img-size-cover">Adaptée</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img-size-contain">Adaptée, conserver les proportions</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img-size-default">Défaut</entry>
+<entry js="dsi" code="view-wysiwyg-bg-img-size-custom">Personnalisée</entry>
+<entry js="dsi" code="view-wysiwyg-mg">Marges extérieures</entry>
+<entry js="dsi" code="view-wysiwyg-pd">Marges intérieures</entry>
+<entry js="dsi" code="view-wysiwyg-mg-left">Gauche</entry>
+<entry js="dsi" code="view-wysiwyg-mg-right">Droite</entry>
+<entry js="dsi" code="view-wysiwyg-mg-top">Haut</entry>
+<entry js="dsi" code="view-wysiwyg-mg-bottom">Bas</entry>
+<entry js="dsi" code="view_wysiwyg_view_unable_to_save">Impossible de charger une vue sans avoir enregistré la vue actuelle</entry>
+<entry js="dsi" code="view_wysiwyg_delete_view">Supprimer la vue</entry>
+<entry js="dsi" code="view_wysiwyg_select_view">Sélectionner une vue</entry>
+<entry js="dsi" code="view_wysiwyg_import_view">Importer</entry>
+<entry js="dsi" code="view_wysiwyg_views">Vues</entry>
+<entry js="dsi" code="view_wysiwyg_view_wysiwyg">Vue WYSIWYG</entry>
+<entry js="dsi" code="view_wysiwyg_view">Vue</entry>
+<entry js="dsi" code="view_wysiwyg_block">Bloc</entry>
+<entry js="dsi" code="view_wysiwyg_load_simple_view">Charger la vue</entry>
+<entry js="dsi" code="view_wysiwyg_load_view">À partir d'une nouvelle vue : </entry>
+<entry js="dsi" code="view_wysiwyg_close_tab">Fermer</entry>
+<entry js="dsi" code="view_wysiwyg_associated_view_label">Vue associée :</entry>
+<entry js="dsi" code="view_wysiwyg_associated_edit_view_title">Éditer la vue</entry>
+<entry js="dsi" code="view_wysiwyg_associated_remove_view_title">Supprimer la vue</entry>
+<entry js="dsi" code="subscriber_list_subscribers">Abonnés</entry>
+<entry js="dsi" code="subscriber_list_search">Recherche</entry>
+<entry js="dsi" code="subscriber_list_name">Nom</entry>
+<entry js="dsi" code="subscriber_list_id_empr">ID emprunteur</entry>
+<entry js="dsi" code="subscriber_list_cb">Code barres</entry>
+<entry js="dsi" code="subscriber_list_form_name">Nom :</entry>
+<entry js="dsi" code="subscriber_list_type">Type :</entry>
+<entry js="dsi" code="subscriber_list_type_default_value">Type de liste</entry>
+<entry js="dsi" code="subscriber_list_source">Source :</entry>
+<entry js="dsi" code="subscriber_list_source_default_value">Sélectionner la source</entry>
+<entry js="dsi" code="subscriber_list_selector">Sélecteur :</entry>
+<entry js="dsi" code="subscriber_list_selector_default_value">Choisir le sélecteur :</entry>
+<entry js="dsi" code="subscriber_list_selector_simple_search">Nom, prénom ou code barre</entry>
+<entry js="dsi" code="subscriber_list_email">Email</entry>
+<entry js="dsi" code="subscriber_list_unsubscriber">Désinscrire</entry>
+<entry js="dsi" code="subscriber_list_actions">Actions</entry>
+<entry js="dsi" code="subscriber_name">Nom :</entry>
+<entry js="dsi" code="subscriber_email">Mail :</entry>
+<entry js="dsi" code="subscriber_phone">Téléphone :</entry>
+<entry js="dsi" code="subscriber_accordion_subscriber_list">Liste des abonnés</entry>
+<entry js="dsi" code="subscriber_accordion_manual_add">Ajout manuel</entry>
+<entry js="dsi" code="subscriber_accordion_unsubscribers">Désinscrits</entry>
+<entry js="dsi" code="dsi_subscriber_edited">Abonné édité avec succès</entry>
+<entry js="dsi" code="dsi_subscriber_created">Abonné ajouté avec succès</entry>
+<entry js="dsi" code="subscriber_list_import_subscribers">Importer des abonnés</entry>
+<entry js="dsi" code="subscribers_import">Importer</entry>
+<entry js="dsi" code="subscriber_selected">Sélectionner</entry>
+<entry js="dsi" code="subscriber_tabs_list">Liste</entry>
+<entry js="dsi" code="subscriber_tabs_edit">Editer</entry>
+<entry js="dsi" code="subscriber_tabs_add">Saisir</entry>
+<entry js="dsi" code="subscriber_tabs_import">Rechercher</entry>
+<entry js="dsi" code="subscriber_duplicated">Un ou plusieurs champs de dédoublonnage des abonnés existent déjà</entry>
+<entry js="dsi" code="subscribers_no_selected">Aucun abonné sélectionné</entry>
+<entry js="dsi" code="subscriber_type">Type</entry>
+<entry js="dsi" code="subscriber_label_empr">Emprunteur(s)</entry>
+<entry js="dsi" code="event_form_name">Nom :</entry>
+<entry js="dsi" code="event_form_type">Type :</entry>
+<entry js="dsi" code="event_form_settings">Paramétrage</entry>
+<entry js="dsi" code="event_form_default_type">Sélectionner un type de déclencheur</entry>
+<entry js="dsi" code="event_form_triggers_list">Liste des déclencheurs</entry>
+<entry js="dsi" code="event_form_triggers_add">Editer / Ajouter un déclencheur</entry>
+<entry js="dsi" code="event_form_triggers_empty">Aucun déclencheur enregistré</entry>
+<entry js="dsi" code="event_form_periodical">Périodicité</entry>
+<entry js="dsi" code="event_form_periodical_days">Jours</entry>
+<entry js="dsi" code="event_form_periodical_daily">Journalière</entry>
+<entry js="dsi" code="event_form_periodical_weekly">Hebdomadaire</entry>
+<entry js="dsi" code="event_form_periodical_monthly">Mensuelle</entry>
+<entry js="dsi" code="event_form_periodical_yearly">Annuelle</entry>
+<entry js="dsi" code="event_form_periodical_monday">Lundi</entry>
+<entry js="dsi" code="event_form_periodical_tuesday">Mardi</entry>
+<entry js="dsi" code="event_form_periodical_wednesday">Mercredi</entry>
+<entry js="dsi" code="event_form_periodical_thursday">Jeudi</entry>
+<entry js="dsi" code="event_form_periodical_friday">Vendredi</entry>
+<entry js="dsi" code="event_form_periodical_saturday">Samedi</entry>
+<entry js="dsi" code="event_form_periodical_sunday">Dimanche</entry>
+<entry js="dsi" code="event_form_periodical_months">Mois</entry>
+<entry js="dsi" code="event_form_periodical_january">Janvier</entry>
+<entry js="dsi" code="event_form_periodical_february">Février</entry>
+<entry js="dsi" code="event_form_periodical_march">Mars</entry>
+<entry js="dsi" code="event_form_periodical_april">Avril</entry>
+<entry js="dsi" code="event_form_periodical_may">Mai</entry>
+<entry js="dsi" code="event_form_periodical_june">Juin</entry>
+<entry js="dsi" code="event_form_periodical_july">Juillet</entry>
+<entry js="dsi" code="event_form_periodical_august">Août</entry>
+<entry js="dsi" code="event_form_periodical_september">Septembre</entry>
+<entry js="dsi" code="event_form_periodical_october">Octobre</entry>
+<entry js="dsi" code="event_form_periodical_november">Novembre</entry>
+<entry js="dsi" code="event_form_periodical_december">Décembre</entry>
+<entry js="dsi" code="event_form_periodical_weeks">Semaines</entry>
+<entry js="dsi" code="event_form_periodical_years">Années</entry>
+<entry js="dsi" code="rmc_form_edit">Editer la recherche</entry>
+<entry js="dsi" code="rmc_form_del">Effacer la recherche</entry>
+<entry js="dsi" code="selector_form_test">Tester la recherche :</entry>
+<entry js="dsi" code="model_selector_default_value">Sélectionner un modèle</entry>
+<entry js="dsi" code="model_heritage_form">Hérite du modèle : </entry>
+<entry js="dsi" code="model_is_modified_form">Le modèle a été modifié</entry>
+<entry js="dsi" code="model_selector_reset">Supprimer l'héritage</entry>
+<entry js="dsi" code="model_check_use">Impossible de supprimer car le modèle est utilisé</entry>
+<entry js="dsi" code="dsi_form_optional">facultatif</entry>
+<entry js="dsi" code="dsi_filter_field">Filtres de recherche</entry>
+<entry js="dsi" code="dsi_filter_select_field">Sélectionner un champ</entry>
+<entry js="dsi" code="dsi_tag">Étiquette :</entry>
+<entry js="dsi" code="dsi_tag_list">Étiquette</entry>
+<entry js="dsi" code="dsi_tag_delete_alert">Supprimer ce tag ? Il n'est lié à aucun élément.</entry>
+<entry js="dsi" code="tag_already_linked">Étiquette déjà reliée</entry>
+<entry js="dsi" code="tag_duplicated">Etiquette déjà existante</entry>
+<entry js="dsi" code="dsi_tag_warning">Attention, cette étiquette est utilisée</entry>
+<entry js="dsi" code="dsi_tag_delete_confirm">Supprimer</entry>
+<entry js="dsi" code="dsi_tag_unnamed_entity">[ Sans nom ]</entry>
+<entry js="dsi" code="dsi_send_diffusion_manually">Envoi manuel</entry>
+<entry js="dsi" code="dsi_send_diffusion_manually_alert">Voulez-vous vraiment déclencher la diffusion ?</entry>
+<entry js="dsi" code="dsi_diffusion_sent">Diffusion envoyée avec succès</entry>
+<entry js="dsi" code="diffusion_error_mail">Echec de l'envoi. Veuillez vérifier votre configuration d'envoi de mails ou consulter les logs</entry>
+<entry code="item_docwatch">Item de veille</entry>
+<entry code="transactype_empr_animation">Solde animation</entry>
+<entry code="finance_cmpte_animation">Compte animation</entry>
+<entry code="animation_comment_cmpte_subscribe_animation">inscription à l'animation</entry>
+<entry code="animation_comment_cmpte_unsubscribe_animation">désinscription à l'animation</entry>
+<entry code="animation_comment_cmpte_animation_of">du</entry>
+<entry code="dsi_history_dashboard">Tableau de bord</entry>
+<entry js="dsi" code="dsi_history_dashboard">Tableau de bord</entry>
+<entry js="dsi" code="filter_empty_option">Choisissez une valeur</entry>
+<entry js="dsi" code="filter_date_start">Du :</entry>
+<entry js="dsi" code="filter_date_end">au :</entry>
+<entry js="dsi" code="filter_diffusion">Diffusion :</entry>
+<entry js="dsi" code="filter_diffusion_placeholder">Diffusion...</entry>
+<entry js="dsi" code="filter_destinataire">Destinataire :</entry>
+<entry js="dsi" code="filter_destinataire_placeholder">Destinataire...</entry>
+<entry js="dsi" code="filter_content">Contenu :</entry>
+<entry js="dsi" code="filter_content_placeholder">Recherche...</entry>
+<entry js="dsi" code="diffusion_date">Date de diffusion</entry>
+<entry js="dsi" code="statistique">Statistiques</entry>
+<entry js="dsi" code="rapport">Rapport</entry>
+<entry js="dsi" code="preview">Aperçu</entry>
+<entry js="dsi" code="edite">Éditer</entry>
+<entry js="dsi" code="actions">Actions</entry>
+<entry js="dsi" code="preview_date">Envoi du %s</entry>
+<entry js="dsi" code="diffusion_list_not_concerned">N.C.</entry>
+<entry js="dsi" code="list_search">Recherche</entry>
+<entry js="dsi" code="dsi_duplicate">Dupliquer</entry>
+<entry code="dsi_ban_purger">Purger</entry>
+<entry code="planificateur_msg_statut">Message</entry>
+<entry code="supervision_indexation">Pile d'indexation</entry>
+<entry code="manual_indexation">Indexation manuelle</entry>
+<entry code="indexation_stack_entity_types">Types d'entités</entry>
+<entry code="indexation_stack_informations">Informations</entry>
+<entry code="indexation_stack_entity_id">Identifiant de l'entité</entry>
+<entry code="indexation_stack_entity_isbd">ISBD de l'entité</entry>
+<entry code="indexation_stack_entity_type">Type d'entité</entry>
+<entry code="indexation_stack_datatype">Type de données</entry>
+<entry code="indexation_stack_timestamp">Timestamp</entry>
+<entry code="indexation_stack_informations">Informations</entry>
+<entry code="deflt_notice_catalog_categories_auto">Catégorisation automatique pour l'import Z3950</entry>
+<entry code="list_resa_planning_circ_reader_ui_dataset_title">Circulation : liste des prévisions par lecteur</entry>
+<entry code="list_resa_planning_circ_ui_dataset_title">Circulation : liste des prévisions</entry>
+<entry code="list_resa_planning_edition_ui_dataset_title">Éditions : liste des prévisions</entry>
+<entry code="dsi_format_date">d/m/Y H:i:s</entry>
+<entry code="dsi_diffusion_channel">Canal</entry>
+<entry code="dsi_diffusion_total_subscribers">Nb d'abonnés</entry>
+<entry code="dsi_diffusion_last">Dernière diffusion</entry>
+<entry code="dsi_status">Statut</entry>
+<entry code="dsi_diffusion_never_send">Jamais</entry>
+<entry js="dsi" code="dsi_preview_loading">Chargement...</entry>
+<entry js="dsi" code="dsi_activated_history">Activer l'historique :</entry>
+<entry code="dsi_sending_pending">Envoi en attente</entry>
+<entry js="dsi" code="dsi_django_view_aggregated">Merci d'ajouter des items à votre item agrégateur</entry>
+<entry js="dsi" code="diffusion_pending_modify">Modification</entry>
+<entry js="dsi" code="diffusion_pending_status">Statut de validation</entry>
+<entry js="dsi" code="diffusion_pending_to_init">À initialiser</entry>
+<entry js="dsi" code="diffusion_pending_to_validate">À valider</entry>
+<entry js="dsi" code="diffusion_pending_validate">Validée</entry>
+<entry js="dsi" code="diffusion_pending_action_validate">Valider</entry>
+<entry js="dsi" code="diffusion_pending_action_to_validate">À valider</entry>
+<entry js="dsi" code="diffusion_pending_action_send">Envoyer</entry>
+<entry js="dsi" code="diffusion_pending_action_init">Initialiser</entry>
+<entry js="dsi" code="diffusion_pending_action_reset">Réinitialiser</entry>
+<entry js="dsi" code="diffusion_pending_view">Vue</entry>
+<entry js="dsi" code="diffusion_pending_item">Données</entry>
+<entry js="dsi" code="diffusion_pending_subscriber">Destinataires</entry>
+<entry js="dsi" code="item_update_view_type">Mettre à jour la vue avec le nouveau type d'item ?</entry>
+<entry js="dsi" code="source_not_available">Aucune source disponible pour ce type</entry>
+<entry code="caddie_supprbase_no_deletion_rights">Impossible de supprimer les éléments suivants, vous ne disposez pas des droits suffisants :</entry>
+<entry code="search_custom_animations">Personnalisables des animations</entry>
+<entry code="search_custom_cms_editorial">Personnalisables</entry>
+<entry code="search_universe_cms_global_fields">Champs communs</entry>
+<entry code="search_universe_article_global_fields">Champs d'article</entry>
+<entry code="search_universe_section_global_fields">Champs de rubrique</entry>
+<entry code="search_universe_cms_title">Titre</entry>
+<entry code="search_universe_cms_type">Type de contenu</entry>
+<entry code="search_universe_cms_status">Statut de publication</entry>
+<entry code="search_universe_cms_section_title">Titre de la rubrique</entry>
+<entry code="dsi_sending_pending">Envoi en attente</entry>
+<entry js="dsi" code="diffusion_pending_add_by_id">Identifiant :</entry>
+<entry code="search_universe_cms_article_num_section">Rubrique parente</entry>
+<entry code="search_universe_cms_article_status">Statut de publication</entry>
+<entry code="search_universe_cms_section_num_section">Rubrique parente</entry>
+<entry code="search_universe_cms_section_type">Type de contenu</entry>
+<entry js="dsi" code="diffusion_automatic_send">Envoi automatique :</entry>
+<entry code="cms_editorial_link_constructor_page">Choisissez une page</entry>
+<entry code="cms_editorial_link_constructor_page_var">Variable à utiliser :</entry>
+<entry code="cms_editorial_link_constructor_page_articles_link_select">Construction du lien pour les articles</entry>
+<entry code="cms_editorial_link_constructor_page_sections_link_select">Construction du lien pour les rubriques</entry>
+<entry code="champs_principaux_query_article">Champs principaux d'article</entry>
+<entry code="champs_principaux_query_section">Champs principaux de rubriques</entry>
+<entry js="dsi" code="show_preview">Afficher la prévisualisation</entry>
+<entry js="dsi" code="hidden_preview">Masquer la prévisualisation</entry>
+<entry js="dsi" code="refresh_preview">Actualiser la prévisualisation</entry>
+<entry js="dsi" code="unknow_item">Aucune donnée trouvée</entry>
+<entry code="dsi_opening_rate">%s d'ouverture</entry>
+<entry code="dsi_clicks_rate">%s de clics</entry>
+<entry js="dsi" code="confirm_reset">Confirmez-vous la réinitialisation ?</entry>
+<entry js="dsi" code="parser_html_template">Template pour les notices :</entry>
+<entry js="dsi" code="parser_html_default_template">Template par défaut</entry>
+<entry js="dsi" code="view_no_compatible_entity_type">Aucun type d'entité compatible</entry>
+<entry js="dsi" code="view_wysiwyg_position_top">En haut</entry>
+<entry js="dsi" code="view_wysiwyg_position_bottom">En bas</entry>
+<entry js="dsi" code="view_wysiwyg_input_image_position_x">Positionnement horizontal</entry>
+<entry js="dsi" code="view_wysiwyg_input_image_position_y">Positionnement vertical</entry>
+<entry code="date_to_come">"À venir</entry>
+<entry code="tree_subscriber_desc">Variables de l'abonné</entry>
+<entry code="dsi_subscriber_name">Nom</entry>
+<entry code="dsi_subscriber_sexe">Civilité</entry>
+<entry code="dsi_subscriber_login">Login</entry>
+<entry code="dsi_subscriber_mail">Mail</entry>
+<entry code="dsi_subscriber_phone">Téléphone</entry>
+<entry code="dsi_subscriber_auth_code">Code pour la connexion automatique à l'OPAC</entry>
+<entry code="dsi_subscriber_date_auth_code">Date pour la connexion automatique à l'OPAC</entry>
+<entry code="dsi_subscriber_auto_connection_link">Lien de connexion automatique à l'OPAC</entry>
+<entry js="common" code="more_label">Ajouter</entry>
+<entry js="dsi" code="dsi_form_desc">Descripteurs :</entry>
+<entry js="dsi" code="channel_page_link">Lien :</entry>
+<entry js="dsi" code="cms_page">Page de portail à utiliser :</entry>
+<entry js="dsi" code="cms_page_var">Variable à utiliser :</entry>
+<entry js="dsi" code="channel_form_attachments">Pièce(s) jointe(s)</entry>
+<entry js="dsi" code="channel_form_label_attachment">Pièce jointe</entry>
+<entry js="dsi" code="channel_form_add_attachment">Ajouter une pièce jointe</entry>
+<entry js="common" code="parameters">Paramétrage :</entry>
+<entry js="dsi" code="view_wysiwyg_display">Mode d'affichage :</entry>
+<entry js="dsi" code="view_wysiwyg_display_default">Défaut</entry>
+<entry js="dsi" code="view_wysiwyg_display_HTML3">Compatibilité HTML3</entry>
+<entry js="dsi" code="view_wysiwyg_display_HTML3_compatibility">Information : les vidéos ne sont pas compatibles et seront supprimées lors de l'envoi.</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_position_x">Positionnement horizontal</entry>
+<entry js="dsi" code="view_wysiwyg_input_video_position_y">Positionnement vertical</entry>
+<entry js="dsi" code="channel_form_edit_name_attachment">Éditer le nom</entry>
+<entry js="dsi" code="channel_form_save_name_attachment">Enregistrer</entry>
+<entry js="dsi" code="channel_form_del_attachment">Supprimer</entry>
+<entry js="dsi" code="dsi_list_check_all">Tout sélectionner</entry>
+<entry js="dsi" code="dsi_list_check_all_actions">Pour la sélection :</entry>
+<entry js="dsi" code="dsi_list_check_all_action_delete">Supprimer</entry>
+<entry code="circ_empr_password_no_rules_ext_auth">Attention : présence d'une authentification externe</entry>
+<entry code="supervision_indexation">Indexation</entry>
+<entry code="indexation_entity_type">Type d'entité</entry>
+<entry code="indexation_id">Identifiant de l'entité</entry>
+<entry code="indexation_entity_isbd">ISBD de l'entité</entry>
+<entry code="indexation_field">Champ principal</entry>
+<entry code="indexation_sub_field">Sous-champ</entry>
+<entry code="indexation_i_value">Valeur de l'indexation</entry>
+<entry code="indexation_pond">Pondération</entry>
+<entry code="periodicity">Périodicité</entry>
+<entry js="dsi" code="view-wysiwyg-condition-display">Conditions d'affichage</entry>
+<entry js="dsi" code="view-wysiwyg-condition-blocs">Données :</entry>
+<entry js="dsi" code="view-wysiwyg-no-condition">Aucune donnée</entry>
+<entry js="dsi" code="view-wysiwyg-condition-display-summary">Permet de ne pas afficher un bloc si les données associées sont vides.</entry>
+<entry code="dsi_send_diffusion">Envoi de la diffusion</entry>
+<entry code="dsi_diffusion_not_diffusable">La diffusion ne peut être envoyée (voir les envois en attente)</entry>
+<entry code="dsi_diffusion_no_triggers_activated">Aucun déclencheur n'a été activé</entry>
+<entry js="dsi" code="channel_sms_parameter">Paramétrage : </entry>
+<entry js="dsi" code="channel_sms_parameter_description">Pour paramétrer votre service de SMS, modifiez le paramètre : sms_config</entry>
+<entry js="dsi" code="diffusion_error_sms">Échec de l'envoi.</entry>
+<entry js="dsi" code="dsi_nb_history_saved">Nombre d'historiques à conserver :</entry>
+<entry code="search_universe_autocomplete">Activer la recherche simple autocomplétée</entry>
+<entry js="search_autocomplete" code="see_entity">Voir</entry>
+<entry js="dsi" code="view_form_group">Groupement :</entry>
+<entry js="dsi" code="view_form_group_default_value">Sélectionner un groupement</entry>
+<entry code="logs_clean">Effacer les logs</entry>
+<entry code="bannette_diffusion_equations">Alimentation de la bannette</entry>
+<entry js="dsi" code="view_wysiwyg_edit_element">Modifier l'élément (%s)</entry>
+<entry js="dsi" code="view_wysiwyg_delete_element">Supprimer l'élément (%s)</entry>
+<entry js="dsi" code="view_wysiwyg_copy_element">Copier le bloc</entry>
+<entry js="dsi" code="view_wysiwyg_paste_element">Coller à l'intérieur du bloc</entry>
+<entry js="dsi" code="view_wysiwyg_move_up">Déplacer l'élément (%s) en haut</entry>
+<entry js="dsi" code="view_wysiwyg_move_down">Déplacer l'élément (%s) en bas</entry>
+<entry js="dsi" code="view_wysiwyg_move_left">Déplacer l'élément (%s) à gauche</entry>
+<entry js="dsi" code="view_wysiwyg_move_right">Déplacer l'élément (%s) à droite</entry>
+<entry js="dsi" code="model_locked">Verrouiller le modèle</entry>
+<entry js="dsi" code="model_unlocked">Déverrouiller le modèle</entry>
+<entry js="dsi" code="dsi_filter_show">Afficher les filtres de recherche</entry>
+<entry js="dsi" code="dsi_filter_hidden">Masquer les filtres de recherche</entry>
+<entry js="dsi" code="subscriber_from_bdd">Abonné issu de la source</entry>
+<entry js="dsi" code="subscriber_add_manually">Abonné ajouté manuellement</entry>
+<entry js="dsi" code="subscriber_imported">Abonné importé manuellement</entry>
+<entry js="dsi" code="subscriber_edit">Modifier l'abonné</entry>
+<entry js="dsi" code="subscriber_remove">Supprimer l'abonné</entry>
+<entry js="dsi" code="subscriber_unsubscribe">Désinscrire l'abonné</entry>
+<entry js="dsi" code="subscriber_undo_unsubscribe">Résinscrire l'abonné</entry>
+<entry js="dsi" code="agregator_edit_item">Modifier l'item</entry>
+<entry js="dsi" code="agregator_edit_remove">Supprimer l'item</entry>
+<entry js="dsi" code="diffusion_opac_name">Nom OPAC :</entry>
+<entry js="dsi" code="diffusion_pending_no_init">non initialisé</entry>
+<entry js="dsi" code="diffusion_edit_desc">Les éléments ci-dessous sont en rouge s'ils sont modifiés</entry>
+<entry js="common" code="common_insert_pattern">Insérer</entry>
+<entry js="common" code="common_default_select">Sélectionner une valeur</entry>
+<entry js="dsi" code="label_pattern">Informations</entry>
+<entry code="label_subscriber_pattern">Abonné</entry>
+<entry code="label_diffusion_pattern">Diffusion</entry>
+<entry code="list_ui_user_preference"><![CDATA[<< Préférence utilisateur >>]]></entry>
+<entry js="dsi" code="dsi_wysiwyg_image_redirect">Redirection :</entry>
+<entry code="misc_file_pond">Pondération</entry>
+<entry js="misc" code="misc_file_edit_pond">Modification de la pondération</entry>
+<entry js="misc" code="misc_file_code">Code</entry>
+<entry js="misc" code="misc_file_label">Libellé</entry>
+<entry js="misc" code="misc_file_pond">Pondération</entry>
+<entry js="dsi" code="subscriber_unsubscriber_type">Désinscription par l'abonné</entry>
+<entry js="dsi" code="subscriber_unsubscriber_type_yes">Oui</entry>
+<entry js="dsi" code="subscriber_unsubscriber_type_no">Non</entry>
+<entry code="notice_id_orphan_analysis">Cet article de périodique qui a pour identifiant %s est orphelin. Souhaitez-vous le supprimer ?</entry>
+<entry code="cms_toolkit_dsfr_data_version">Version :</entry>
+<entry code="cms_toolkit_dsfr_information">Le sigle DSFR désigne le système de design de l'État, mis en place pour assurer une cohérence graphique pour tous les sites web de l'État et ainsi offrir aux citoyens utilisateurs une meilleure expérience de navigation sur ces sites.</entry>
+<entry js="search_universes" code="universe_required">Merci de sélectionner au moins un univers pour la duplication du segment</entry>
+<entry code="search_segment_duplication_select_universe">Dupliquer le segment vers :</entry>
+<entry code="mail_setting_reply_description">Réponse à (si différente de l'expéditeur)</entry>
+<entry code="mail_setting_copy_bcc_description">Copie cachée (utilise la préférence "Email destinataire en copie cachée, BCC" associée à mon compte)</entry>
+<entry js="portal" code="banner_title_version">Versions</entry>
+<entry js="portal" code ="resfresh_versions">Rafraichir les versions</entry>
+<entry js="portal" code ="confirm_change_version">Voulez-vous vraiment changer de version ?</entry>
+<entry code="portal_format_date">d/m/Y H:i:s</entry>
+<entry code="cms_editorial_filter_by_title">Titre</entry>
+<entry code="cms_editorial_filter_by_id">Identifiant</entry>
+<entry code="gen_docnum_thumbnail">Générer les vignettes de documents numériques</entry>
+<entry code="gen_docnum_thumbnail_in_progress">Génération des vignettes de documents numériques manquantes</entry>
+<entry code="gen_docnum_thumbnail_end">vignette(s) générée(s)</entry>
+<entry code="readers_all_relances_print">Imprimer toutes les relances d'adhésion</entry>
+<entry code="readers_all_relances_send">Envoyer toutes les relances d'adhésion</entry>
+<entry code="readers_all_relances_print_confirm">Confirmez-vous l'impression des relances d'adhésion ?</entry>
+<entry code="readers_all_relances_send_confirm">Confirmez-vous l'envoi par mail des relances d'adhésion ? (à défaut par lettre)</entry>
+<entry code="readers_relances_print">Imprimer les relances d'adhésion</entry>
+<entry code="readers_relances_print_confirm">Confirmez-vous l'impression des relances d'adhésion ?</entry>
+<entry code="readers_relances_send">Envoyer les relances d'adhésion</entry>
+<entry code="readers_relances_send_confirm">Confirmez-vous l'envoi des relances d'adhésion ?</entry>
+<entry code="loans_all_relances_print_mail_confirm">Confirmez-vous l'impression/mail de toutes les relances ?</entry>
+<entry code="loans_relances_print_mail">Impression/Mail des relances</entry>
+<entry code="loans_relances_print_mail_confirm">Confirmez-vous l'impression/mail des relances ?</entry>
+<entry js="dsi" code="view_wysiwyg_bg_opacity">Opacité</entry>
+<entry js="dsi" code="view_wysiwyg_choice_alt">Ajouter un élément composé de </entry>
+<entry js="dsi" code="view_wysiwyg_choice_row_alt"> lignes</entry>
+<entry js="dsi" code="view_wysiwyg_choice_column_alt"> colonnes</entry>
+<entry js="dsi" code="diffusion_opac_visibility">Visible dans les alertes OPAC :</entry>
+<entry code="mail_configuration_authentification_type_none">Aucun type</entry>
+<entry code="encoding_quoted_printable">Activer l'encodage "Quoted-Printable" :</entry>
+<entry code="xoauth2_provider">Fournisseur :</entry>
+<entry code="xoauth2_tenant_id">Identifiant locataire (seulement pour Azure) :</entry>
+<entry code="xoauth2_client_id">Identifiant client :</entry>
+<entry code="xoauth2_secret_value">Secret client :</entry>
+<entry code="xoauth2_refresh_token">Jeton de rafraîchissement :</entry>
+<entry code="xoauth2_refresh_token_validity">Date de validité du jeton de rafraîchissement :</entry>
+<entry code="mail_configuration_is_valid">Configuration valide</entry>
+<entry js="dsi" code="view_wysiwyg_associated_add_item">Ajouter une donnée</entry>
+<entry js="dsi" code="view_wysiwyg_associated_empty_item_name">Sans nom</entry>
+<entry code="dsi_private">Alertes privées</entry>
+<entry js="dsi" code="dsi_private_form_diffusion_model">Diffusion modèle à utiliser dans les alertes privées :</entry>
+<entry js="dsi" code="dsi_private_form_diffusion_model_default_value">Sélectionner une diffusion</entry>
+<entry js="dsi" code="dsi_private_form_selected_item">Sélectionner l'item à remplacer par le contenu de la D.S.I. privée :</entry>
+<entry js="dsi" code="dsi_private_form_saved">Paramétrage enregistré</entry>
+<entry js="dsi" code="dsi_private_nb_max_results">Nombre maximum d'éléments à diffuser :</entry>
+<entry js="dsi" code="event_form_periodical_settings">Configuration</entry>
+<entry js="dsi" code="event_form_periodical_choice">Choisir une périodicité</entry>
+<entry js="dsi" code="event_form_periodical_start_date">Date de début</entry>
+<entry js="dsi" code="event_form_periodical_end_date">Date de fin</entry>
+<entry js="dsi" code="event_form_periodical_time">Heure du déclenchement</entry>
+<entry js="dsi" code="event_form_periodical_plus_calendar">Voir plus</entry>
+<entry js="dsi" code="event_form_periodical_minus_calendar">Voir moins</entry>
+<entry js="dsi" code="event_form_periodical_reset_calendar">Réinitialiser</entry>
+<entry js="calendar" code="calendar_last_day">Dernier</entry>
+<entry js="dsi" code="subscriber_source_empr_by_id">Identifiant de l'emprunteur</entry>
+<entry code="admin_thumbnail_cache">Cache</entry>
+<entry js="thumbnail" code="admin_cache">Gestion du cache</entry>
+<entry js="thumbnail" code="img_cache_folder">Répertoire de cache</entry>
+<entry js="thumbnail" code="img_cache_url">URL d'accès au répertoire de cache</entry>
+<entry js="thumbnail" code="img_cache_size">Taille maximale du cache (en Mo)</entry>
+<entry js="thumbnail" code="img_cache_clean_size">Pourcentage de fichiers à supprimer en cas de saturation du cache</entry>
+<entry js="common" code="gestion">Gestion</entry>
+<entry js="common" code="opac">OPAC</entry>
+<entry js="thumbnail" code="img_cache_type">Type d'image à stocker dans le cache</entry>
+<entry js="common" code="clean_cache">Vider le cache</entry>
+<entry js="common" code="clean_cache_confirm">Êtes-vous sûr de vouloir vider le cache ?</entry>
+<entry js="common" code="successful_operation">Opération réussie</entry>
+<entry js="common" code="failed_operation">Opération échouée</entry>
+<entry js="thumbnail" code="remove_pivot_confirm">Êtes-vous sûr de vouloir supprimer ce pivot ?</entry>
+<entry js="dsi" code="view_form_image">Image</entry>
+<entry js="dsi" code="view_form_image_max_size">Fichier trop volumineux</entry>
+<entry js="dsi" code="view_wysiwyg_associated_add_view_model">Choisissez un modèle de vue</entry>
+<entry js="dsi" code="view_wysiwyg_form_with_model">À partir d'un modèle de vue : </entry>
+<entry js="dsi" code="view_wysiwyg_form_with_model_btn">Choisir un modèle</entry>
+<entry js="dsi" code="form_diffusions_private_no_item">Aucun item sélectionné</entry>
+<entry js="dsi" code="form_diffusions_opac_visibility_categ">Masquer pour les catégories de lecteurs :</entry>
+<entry code="caddie_has_used_by_scheduler">Le panier a été utilisé par le gestionnaire de tâches pour l'envoi d'un mailing.</entry>
+<entry code="caddie_has_one_flag_not_sended">1 lecteur a été pointé mais n'a pas reçu le mail</entry>
+<entry code="caddie_has_several_flag_not_sended">!!number!! lecteur(s) ont été pointés mais n'ont pas reçu le mail</entry>
+<entry code="caddie_item_marque_not_sended">Mails non envoyés</entry>
+<entry code="selector_authperso">Sélection d'une autorité personnalisée</entry>
+<entry js="dsi" code="view_form_current_filter">Filtre appliqué : </entry>
+<entry js="dsi" code="view_form_select_another_filter">Sélectionner un nouveau filtre</entry>
+<entry js="dsi" code="view_form_add_filter">Ajouter un filtre</entry>
+<entry js="dsi" code="view_form_remove_filter">Supprimer ce filtre</entry>
+<entry code="search_universe_rmc_explication">Si la RMC est activée, il faut créer un fichier : ./opac_css/includes/search_queries/search_universes_fields.xml</entry>
+<entry js="dsi" code="model_export">Exporter</entry>
+<entry js="dsi" code="model_import">Importer un modèle</entry>
+<entry code="dsi_model_import_error">Erreur lors de l'importation du modèle</entry>
+<entry js="dsi" code="form_item_sort">Tri :</entry>
+<entry js="dsi" code="form_item_sort_default_value">Sélectionner un tri</entry>
+<entry js="dsi" code="form_item_sort_asc">Croissant</entry>
+<entry js="dsi" code="form_item_sort_desc">Décroissant</entry>
+<entry js="dsi" code="view_wysiwyg_display_HTML5">Compatibilité HTML5</entry>
+<entry js="dsi" code="form_item_order_default_value">Ordre</entry>
+<entry js="dsi" code="customizable_fields_title">Paramètres personnalisables</entry>
+<entry js="dsi" code="customizable_fields_template_name">Nom du template</entry>
+<entry js="dsi" code="customizable_fields_edition_name">Nom</entry>
+<entry js="dsi" code="customizable_fields_type">Type</entry>
+<entry js="dsi" code="customizable_fields_selector_type">Sélectionner un type</entry>
+<entry js="dsi" code="customizable_fields_text">Texte</entry>
+<entry js="dsi" code="customizable_fields_selector">Sélecteur</entry>
+<entry js="dsi" code="customizable_fields_list">Liste</entry>
+<entry js="dsi" code="customizable_fields_color">Couleur</entry>
+<entry js="dsi" code="customizable_fields_dimension">Dimension</entry>
+<entry code="alert_animation_user_mail">Alerter par mail des nouvelles inscriptions aux animations OPAC ?</entry>
+<entry code="email_user">Email</entry>
+<entry code="email_recipient">Email destinataire</entry>
+<entry code="email_recipient_info">Email à renseigner si jamais on ne peut pas consulter les emails sur la boite mail</entry>
+<entry js="animation" code="animation_mailing_sendtobibli">Alerter par mail des nouvelles inscriptions aux animations OPAC</entry>
+<entry js="dsi" code="customizable_fields_selector_default">Sélectionner une option</entry>
+<entry js="dsi" code="customizable_fields_selector_default_multiple">Sélectionner une ou plusieurs options</entry>
+<entry js="dsi" code="customizable_fields_selector_form_multiple">Sélecteur multiple :</entry>
+<entry js="dsi" code="customizable_fields_selector_form_add_option">Ajouter une option</entry>
+<entry js="dsi" code="customizable_fields_selector_form_option_name">Nom de l'option :</entry>
+<entry js="dsi" code="customizable_fields_selector_form_option_value">Valeur de l'option :</entry>
+<entry js="dsi" code="customizable_fields_selector_form_remove_option">Supprimer l'option</entry>
+<entry js="dsi" code="customizable_fields_dimension_form_label">Dimensions :</entry>
+<entry js="dsi" code="customizable_fields_dimension_default">Sélectionner une dimension</entry>
+<entry js="dsi" code="customizable_fields_dimension_form_name">Nom de l'unité :</entry>
+<entry js="dsi" code="customizable_fields_dimension_form_value">Unité de mesure CSS :</entry>
+<entry js="dsi" code="customizable_fields_add">Ajouter un paramètre</entry>
+<entry js="dsi" code="customizable_fields_remove">Supprimer le paramètre</entry>
+<entry js="dsi" code="customizable_fields_options_multiple">Cocher la case pour pouvoir sélectionner plusieurs options dans l'édition</entry>
+<entry js="dsi" code="customizable_fields_template_name_desc">Renseigner le nom du paramètre tel qu'il s'affichera dans le template django</entry>
+<entry js="dsi" code="customizable_fields_edition_name_desc">Renseigner le nom du paramètre tel qu'il s'affichera dans l'édition</entry>
+<entry js="dsi" code="customizable_fields_selector_type_desc">Sélectionner le type du paramètre</entry>
+<entry js="dsi" code="customizable_fields_selector_form_option_name_desc">Renseigner le nom de l'option tel qu'il s'affichera dans l'édition</entry>
+<entry js="dsi" code="customizable_fields_selector_form_option_value_desc">Renseigner la valeur que l'option retournera dans le template django</entry>
+<entry js="dsi" code="customizable_fields_template_name_validator">Seuls les caractères de l'alphabet sont autorisés.</entry>
+<entry js="dsi" code="customizable_fields_dimension_form_name_desc">Renseigner le nom de l'unité CSS tel qu'il s'affichera dans l'édition</entry>
+<entry js="dsi" code="customizable_fields_dimension_form_value_desc">Renseigner l'unité CSS qui sera retournée dans le template django</entry>
+<entry code="customizable_fields_data_structure">Paramètres personnalisables</entry>
+<entry code="customizable_fields_data_structure_desc">Variables des paramètres personnalisables</entry>
+<entry js="dsi" code="form_filter_no_filters">Aucun filtre disponible</entry>
+<entry js="dsi" code="customizable_fields_title_edition">Paramètres personnalisés :</entry>
+<entry code="expl_import_on_article">Expl rejeté : Notice d'article</entry>
+<entry js="dsi" code="form_diffusions_opac_visibility_groups">N'afficher que pour le(s) groupe(s) de lecteurs suivant(s):</entry>
+<entry js="dsi" code="customizable_fields_move_top_arrow">Déplacer vers le haut</entry>
+<entry js="dsi" code="customizable_fields_move_bottom_arrow">Déplacer vers le bas</entry>
+<entry js="dsi" code="view_wysiwyg_associated_edit_item_title">Éditer l'item</entry>
+<entry js="dsi" code="tags_import_model_tags">Importer les étiquettes</entry>
+<entry js="dsi" code="tags_import_model_tags_confirm">Voulez-vous continuer ? Cela supprimera les éventuelles étiquettes déjà existantes.</entry>
+<entry code="dsi_subscriber_unsubscribe_link">Lien de désinscription</entry>
+<entry code="iptools_ip">Adresse IP </entry>
+<entry code="iptools_authorized_ip">Adresse IP autorisée</entry>
+<entry code="iptools_unauthorized_ip">Adresse IP interdite</entry>
+<entry js="dsi" code="view_wysiwyg_placement_width_enabled">Définir une largeur</entry>
+<entry js="dsi" code="view_wysiwyg_placement_width">Largeur</entry>
+<entry code="relance_actions">Action(s)</entry>
+<entry code="items_actions">Action(s)</entry>
+<entry code="portal_diffusion_link_label">Diffusion :</entry>
+<entry code="portal_diffusion_link_desc">Lien vers une diffusion de portail</entry>
+<entry code="portal_diffusion_link_default">Sélectionner une diffusion</entry>
+<entry code="portal_migration">Migration %s</entry>
+<entry code="cms_migrate_portal">Migration du portail</entry>
+<entry code="cms_migrate_portal_ok">Migration du portail, réalisée avec succès.</entry>
+<entry code="cms_migrate_portal_ko">Échec de la migration du portail.</entry>
+<entry code="cms_migrate_portal_title">Informations :</entry>
+<entry code="cms_migrate_portal_explain">Cette action a pour but de passer à la version 2 de la contruction du portail.\nCe changement reprend l'affichage de l'OPAC au maximum.\nVous pouvez à tout moment revenir en arrière en passant le paramètre cms_active à la valeur 1.</entry>
+<entry code="cms_migrate_portal_chain_explain">Si vous souhaitez vérifier l'ordre des cadres, nous avons mis à disposition une page qui génère un aperçu du résultat.</entry>
+<entry code="cms_migrate_portal_chain_link">Vérifier l'ordre des cadres</entry>
+<entry code="cms_migrate_portal_button">Migrer</entry>
+<entry code="cms_migrate_portal_confirm">Il est possible que certains éléments de l'OPAC ne soient plus au même endroit, êtes-vous sur de vouloir continuer ?</entry>
+<entry js="dsi" code="event_condition_trigger">Conditions de déclenchement</entry>
+<entry js="dsi" code="event_condition_associated_view_summary">Permet de ne pas déclencher la diffusion si les données associées aux vues sont vides.</entry>
+<entry js="dsi" code="wysiwyg_condition_associated_view_summary">Permet de ne pas afficher un bloc si les données associées aux vues sont vides.</entry>
+<entry js="dsi" code="condition_empty_associated_view_label">Vues :</entry>
+<entry js="dsi" code="condition_empty_associated_simple_view_label">Activer :</entry>
+<entry code="dsi_diffusion_conditions_not_allowed">Déclenchement de la diffusion impossible, les conditions de déclenchement ne sont pas respectées</entry>
+<entry js="dsi" code="import_subscribers_detail">Sélectionner les abonnés à importer puis cliquer sur importer</entry>
+<entry code="groupexpl_actions">Action(s)</entry>
+<entry code="scan_request_actions">Action(s)</entry>
+<entry js="dsi" code="view_configuration_modal_title">Sélectionner un type ou un modèle de vue</entry>
+<entry js="dsi" code="view_configuration_existing_model">Utiliser un modèle de vue</entry>
+<entry js="dsi" code="view_configuration_new">Créer une nouvelle vue</entry>
+<entry js="dsi" code="view_configuration_no_model_title">Aucun modèle de vue n'est disponible</entry>
+<entry js="dsi" code="view_configuration_empty_selector">Aucune vue disponible</entry>
+<entry js="dsi" code="view_configuration_select_btn">Sélectionner</entry>
+<entry code="dsi_view_level_1_simple">Vues simple</entry>
+<entry code="dsi_view_level_1_aggregator">Vues aggrégées</entry>
+<entry code="dsi_view_level_2_basic">Basiques</entry>
+<entry code="dsi_view_level_2_expert">Expertes</entry>
+<entry code="dsi_view_level_3_enriched">Enrichies</entry>
+<entry code="dsi_view_level_3_plain_text">Texte brut</entry>
+<entry code="dsi_view_level_3_other_format">Autres formats</entry>
+<entry code="dsi_view_level_4_all_type">Tous les types de données</entry>
+<entry js="dsi" code="view_configuration_level_1_simple_desc">Une seule liste d'un type de données peut être rendue par la vue</entry>
+<entry js="dsi" code="view_configuration_level_1_aggregator_desc">Plusieurs listes de plusieurs types de données peuvent être rendues par la vue (ex : une liste de notices, une liste d'articles/rubriques)</entry>
+<entry js="dsi" code="view_configuration_level_2_basic_desc">Vue paramétrable dans la diffusion</entry>
+<entry js="dsi" code="view_configuration_level_2_expert_desc">Vue nécessitant des capacités techniques pour les mettre en oeuvre</entry>
+<entry js="dsi" code="view_configuration_level_3_enriched_desc">Mise en forme possible (gras, italique, texte couleur, image ...)</entry>
+<entry js="dsi" code="view_configuration_level_3_plain_text_desc">Vue sans mise en forme utilisable pour certains réseaux sociaux</entry>
+<entry js="dsi" code="view_configuration_level_3_other_format_desc">XML, RSS, export dans d'autres formats de données ...</entry>
+<entry js="dsi" code="view_form_change_type_title">Choisir un type</entry>
+<entry js="dsi" code="view_form_change_model_title">Choisir un modèle</entry>
+<entry js="dsi" code="view_form_change_type_empty">Aucun type</entry>
+<entry js="dsi" code="view_form_change_model_empty">Aucun modèle</entry>
+<entry code="search_extended_group_art">Articles</entry>
+<entry code="search_extended_serial_id">Articles issus du périodique</entry>
+<entry js="harvest" code="harvest_profil_name">Nom du profil :</entry>
+<entry js="harvest" code="source_selector_label">Aucune source</entry>
+<entry js="harvest" code="prec_flag_checkbox">Uniquement si le précédent non trouvé</entry>
+<entry js="harvest" code="harvest_list_profile_caption">Nom du profil</entry>
+<entry js="harvest" code="harvest_import_flag_no_modify">Ne pas modifier</entry>
+<entry js="harvest" code="harvest_import_flag_replace">Remplacer le champ</entry>
+<entry js="harvest" code="harvest_import_flag_add">Ajouter</entry>
+<entry js="harvest" code="harvest_profil_import_name">Nom du profil d'import :</entry>
+<entry js="harvest" code="harvest_list_profile_import_caption">Nom du profil d'import</entry>
+<entry js="harvest" code="harvest_profil_field_flag_first">Prendre le premier trouvé :</entry>
+<entry js="harvest" code="source_field_selector_label">Aucun</entry>
+<entry js="harvest" code="source_field_selector_legend">Définition du champ de recherche à utiliser pour chaque source</entry>
+<entry js="harvest" code="confirm_profil_delete">Confirmez-vous la suppression de ce profil ?</entry>
+<entry js="harvest" code="confirm_profil_import_delete">Confirmez-vous la suppression de ce profil d'import ?</entry>
+<entry code="mail_configuration_uses_none">Aucune</entry>
+<entry code="mail_configuration_action_delete">Supprimer</entry>
+<entry code="mail_configuration_action_delete_confirm">Confirmez-vous la suppression de la configuration associée à cette adresse qui n'est plus utilisée ?</entry>
+<entry code="print_output_outpdf">PDF</entry>
+<entry js="payment" code="admin_payment_organanization_edit">Modification d'un organisme</entry>
+<entry js="payment" code="admin_payment_organanization_add">Ajout d'un organisme</entry>
+<entry js="payment" code="update_add_payment_general_informations">Informations générales</entry>
+<entry js="payment" code="admin_oraganization_name">Nom de l'organisme</entry>
+<entry js="payment" code="admin_payment_oarganization_add">Ajouter un organisme</entry>
+<entry code="organization_account_admin">Organisme de paiement</entry>
+<entry js="payment" code="admin_payment_cancel">Annuler</entry>
+<entry js="payment" code="admin_payment_save">Enregistrer</entry>
+<entry js="payment" code="admin_payment_organization_choice">Choix de l'organisme</entry>
+<entry js="payment" code="admin_payment_choice">Choisir un organisme</entry>
+<entry js="payment" code="admin_payment_name">Nom de l'organisme</entry>
+<entry js="payment" code="admin_payment_payfip_numclient">Numéro client</entry>
 </XMLlist>

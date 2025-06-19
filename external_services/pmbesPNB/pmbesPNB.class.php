@@ -2,14 +2,13 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesPNB.class.php,v 1.4 2021/02/09 15:30:46 jlaurent Exp $
+// $Id: pmbesPNB.class.php,v 1.4.6.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/external_services.class.php");
 require_once($class_path."/pnb/dilicom.class.php");
-
-
 
 class pmbesPNB extends external_services_api_class {
 	
@@ -72,5 +71,3 @@ class pmbesPNB extends external_services_api_class {
 	    return encoding_normalize::utf8_normalize($responsePmb);
 	}
 }
-
-?>

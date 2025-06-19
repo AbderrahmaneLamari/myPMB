@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_search_segment.class.php,v 1.1.4.7 2021/11/03 15:48:48 tsamson Exp $
+// $Id: selector_search_segment.class.php,v 1.7 2021/11/03 15:59:23 tsamson Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

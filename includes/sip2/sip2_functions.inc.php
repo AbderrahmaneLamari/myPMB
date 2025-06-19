@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sip2_functions.inc.php,v 1.30.2.1 2022/01/10 10:35:58 dgoron Exp $
+// $Id: sip2_functions.inc.php,v 1.33 2023/02/07 08:19:46 qvarin Exp $
 
 global $class_path;
 require_once($class_path."/emprunteur.class.php");
@@ -566,6 +566,12 @@ function _checkout_response_($values) {
 	return $ret;
 }
 
+/**
+ * Permet de faire le retour d'un document
+ *
+ * @param array $values
+ * @return array
+ */
 function _checkin_response_($values) {
 	global $pmb_antivol,$protocol_prolonge;
 	global $selfservice_pret_expl_inconnu_msg;
@@ -585,10 +591,11 @@ function _checkin_response_($values) {
 	if (!$resultat) {
 		$ok=0;
 		$error=true;
-		$ret["SCREEN_MESSAGE"][0]=$selfservice_pret_expl_inconnu_msg;	
+		$ret["SCREEN_MESSAGE"][0]=$selfservice_pret_expl_inconnu_msg;
 	} else {
 		$expl=pmb_mysql_fetch_object($resultat);
 		$empr_cb=$expl->empr_cb;
+		
 		if ($expl->expl_bulletin) {
 			$isbd = new bulletinage_display($expl->expl_bulletin);
 			$titre=pmb_substr($isbd->display,0,150);
@@ -597,8 +604,8 @@ function _checkin_response_($values) {
 			$titre=pmb_substr($isbd->header_texte,0,150);
 		}
 		
-		if ($pmb_antivol) {
-			if ($expl->type_antivol==2) $magnetic="Y";
+		if ($pmb_antivol && $expl->type_antivol==2) {
+		    $magnetic="Y";
 		}
 		
 		$retour = new expl_to_do($expl_cb);
@@ -607,46 +614,49 @@ function _checkin_response_($values) {
 
  		if ($retour->status==-1) {
  			//Problème
- 			$ok=0; 			
+ 			$ok=0;
  		} else {
  			//Pas de problème
  			$ok=1;
  			$resensitize="Y";
- 		}	 		
- 		/*		
+ 		}
+
+ 		/*
 		$ret["SCREEN_MESSAGE"][0]=$retour->message_loc;
 		$ret["SCREEN_MESSAGE"][1]=$retour->message_resa;
 		$ret["SCREEN_MESSAGE"][2]=$retour->message_retard;
 		$ret["SCREEN_MESSAGE"][3]=$retour->message_amende;
-		*/		
+		*/
+
  		if($retour->message_loc || $retour->message_resa || $retour->message_retard || $retour->message_amende || $retour->message_blocage || $retour->expl->expl_note){
 			$ret["SCREEN_MESSAGE"][0]=trim($retour->message_loc." ".$retour->message_resa." ".$retour->message_retard." ".$retour->message_amende." ".$retour->message_blocage." ".$retour->expl->expl_note);
  			//$ok=0;
 			//Attention, pour les deux lignes suivantes, cela dépend d'un paramètre NEDAP ou IDENT
-			if($protocol_prolonge == "3M" || $protocol_prolonge == "Ident"){
+			if ($protocol_prolonge == "3M" || $protocol_prolonge == "Ident") {
 				//On ne change pas le statut
-			}elseif($protocol_prolonge){
+			} elseif ($protocol_prolonge) {
 				$ok=0;
 			}
  		}
  		
- 		if($retour->message_loc){
+ 		if ($retour->message_loc) {
  			$ret["SORT_BIN"][0]=1;
- 		}elseif($retour->message_resa){//Attention il peut n'y avoir qu'un espace dans ce champ pour passer ici mais sans message
+ 		} elseif ($retour->message_resa) {//Attention il peut n'y avoir qu'un espace dans ce champ pour passer ici mais sans message
  			$ret["SORT_BIN"][0]=2;
- 		}elseif($retour->message_retard){
+ 		} elseif ($retour->message_retard) {
  			$ret["SORT_BIN"][0]=3;
- 		}elseif($retour->message_amende){
+ 		} elseif ($retour->message_amende) {
  			$ret["SORT_BIN"][0]=4;
- 		}else{
+ 		} else {
  			$ret["SORT_BIN"][0]=0;
  		}
 	}
+	
 	$ret["OK"]=$ok;
 	$ret["RESENSITIZE"]=$resensitize;
 	$ret["MAGNETIC_MEDIA"]=$magnetic;
 	$ret["ALERT"]="N";
-	$ret["TRANSACTION_DATE"]=date("Ymd    His",time());
+	$ret["TRANSACTION_DATE"]=date("Ymd    His", time());
 	$ret["INSTITUTION_ID"][0]=$localisation;
 	$ret["ITEM_IDENTIFIER"][0]=$expl_cb;
 	$ret["PERMANENT_LOCATION"][0]=$localisation;
@@ -661,151 +671,58 @@ function _request_sc_resend_($values) {
 	return array();
 }
 
-
+/**
+ * Permet de prolonger un pret
+ *
+ * @param array $values
+ * @return array
+ */
 function _renew_response_($values) {
-	global $opac_pret_prolongation, $opac_pret_duree_prolongation,$pmb_pret_restriction_prolongation,$pmb_pret_nombre_prolongation,$msg;
-	global $selfservice_pret_prolonge_non_msg;
-	global $protocol_prolonge;
-	
-	$ret = array();
-	$struct = array();
-	$empr_cb=$values["PATRON_IDENTIFIER"][0];
-	$expl_cb=$values["ITEM_IDENTIFIER"][0];
 
-	$localisation=$values["INSTITUTION_ID"][0];	
-	$magnetic="N";
-	$desensitize="N";
-	$titre=$expl_cb;
-	
-	$due_date="";	
-	$ok=1;
-	$prolonge="Y";
-	
-	if($opac_pret_prolongation){		
-		$prolongation = TRUE;
-		$requete="select expl_id,id_empr, expl_bulletin,expl_notice,type_antivol,empr_cb from exemplaires join pret on (expl_id=pret_idexpl) join empr on (pret_idempr=id_empr) where expl_cb='".addslashes($expl_cb)."'";
-		$resultat=pmb_mysql_query($requete);
-		if (!$resultat) {
-			$error_message="Le document n'existe pas ou n'est pas en prêt!";	
-		} else {	
-			$expl=pmb_mysql_fetch_object($resultat);
-			$expl_id=$expl->expl_id;
-			$id_empr=$expl->id_empr;	
-			
-			//On récupère le titre
-			if ($expl->expl_bulletin) {
-				$isbd = new bulletinage_display($expl->expl_bulletin);
-				$titre=pmb_substr($isbd->display,0,150);
-			} else {
-				$isbd= new mono_display($expl->expl_notice, 1);
-				$titre=pmb_substr($isbd->header_texte,0,150);
-			}
-					
-			//on recupere les informations du pret 
-			$query = "select cpt_prolongation, retour_initial, pret_date, pret_retour from pret where pret_idexpl=".$expl_id." limit 1";
-			$result = pmb_mysql_query($query);
-			$data = pmb_mysql_fetch_array($result);
-			$cpt_prolongation = $data['cpt_prolongation']; 
-			$retour_initial =  $data['retour_initial'];
-			$cpt_prolongation++;
-			
-			$duree_prolongation=$opac_pret_duree_prolongation;	
-			$today=sql_value("SELECT CURRENT_DATE()");
-			if ($pmb_pret_restriction_prolongation==0) {
-				// Aucune limitation des prolongations
-				$prolongation=true;
-				$duree_prolongation=$opac_pret_duree_prolongation;	
-			} else if ($pmb_pret_restriction_prolongation>0) {
-				$pret_nombre_prolongation=$pmb_pret_nombre_prolongation;
-				if(($pmb_pret_restriction_prolongation==1) && ($cpt_prolongation>$pret_nombre_prolongation)) {
-					// Limitation simple de la prolongation
-					$prolongation=FALSE;
-				} else if($pmb_pret_restriction_prolongation==2) {
-					// Limitation du pret par les quotas
-					//Initialisation des quotas pour nombre de prolongations
-					$qt = new quota("PROLONG_NMBR_QUOTA");
-					//Tableau de passage des paramètres
-					$struct["READER"] = $id_empr;
-					$struct["EXPL"] = $expl_id;
-					$struct["NOTI"] = exemplaire::get_expl_notice_from_id($expl_id);
-					$struct["BULL"] = exemplaire::get_expl_bulletin_from_id($expl_id);
-					$pret_nombre_prolongation=$qt -> get_quota_value($struct);		
+    $explCb = $values["ITEM_IDENTIFIER"][0];
 
-					if($cpt_prolongation>$pret_nombre_prolongation){
-						$prolongation=FALSE;
-					}
+    $result = exemplaire::self_renew($explCb, 0, 1);
+    $title = $result["title"] ?? $explCb;
 
-					//Initialisation des quotas la durée de prolongations
-					$qt = new quota("PROLONG_TIME_QUOTA");
-					$struct["READER"] = $id_empr;
-					$struct["EXPL"] = $expl_id;
-					$struct["NOTI"] = exemplaire::get_expl_notice_from_id($expl_id);
-					$struct["BULL"] = exemplaire::get_expl_bulletin_from_id($expl_id);
-					$duree_prolongation=$qt -> get_quota_value($struct);	
-				} // fin if gestion par quotas
-			} 
+    $ok = $result["status"] ?? 0;
+    $screenMessage = [];
 
-			$date_prolongation=sql_value("SELECT DATE_ADD('$retour_initial', INTERVAL $duree_prolongation DAY)");
-			$diff=sql_value("SELECT DATEDIFF('$retour_initial','$today')");
-			if($diff<-$duree_prolongation || $diff>$duree_prolongation) {
-				$prolongation=FALSE;
-			}
-			// Recherche de la nouvelle date de retour
-			$req_date_calendrier = "select date_ouverture from ouvertures where ouvert=1 and num_location='".$data['expl_location']."' order by date_ouverture asc";
-			$res_date_calendrier = pmb_mysql_query($req_date_calendrier);
-			while(($date_calendrier = pmb_mysql_fetch_object($res_date_calendrier))){
-				$ecart = sql_value("SELECT DATEDIFF('$date_calendrier->date_ouverture','$date_prolongation')");
-				if($ecart >= 0 ){
-					$date_prolongation = $date_calendrier->date_ouverture;
-					break; 
-				}
-			}
-									
-			if($prolongation==TRUE)	{					
-				// Memorisation de la nouvelle date de prolongation	
-				$query = "update pret set cpt_prolongation='".$cpt_prolongation."', pret_retour='".$date_prolongation."' where pret_idexpl=".$expl_id;
-				$result = pmb_mysql_query($query);
-				$due_date=$date_prolongation;
-				$due_date=sql_value("select date_format('".$date_prolongation."', '".$msg["format_date"]."')");
-				//$due_date=@pmb_mysql_result($resultat,0,0);
-				// Memorisation de la nouvelle date de prolongation dans la table d'archive
-				$res_arc=pmb_mysql_query("select pret_arc_id from pret where pret_idexpl=".$expl_id."");
-				if($res_arc && pmb_mysql_num_rows($res_arc)){
-					$query = "update pret_archive set arc_cpt_prolongation='".$cpt_prolongation."', arc_fin='".$date_prolongation."' where arc_id = ".pmb_mysql_result($res_arc,0,0);
-					pmb_mysql_query($query);
-				}
-			} else {
-				$error_message="$selfservice_pret_prolonge_non_msg";						
-			}
-		}	
-	
-	} else{		
-		$error_message="Prolongation non activée";					
-	}
-	if ($error_message) {
-		//Attention, pour les deux lignes suivantes, cela dépend d'un paramètre NEDAP ou IDENT ou 3M
-		//Vu pour 3M et Ident (Bibliotheca): il faut ok=0 pour avoir le message et indiquer l'échec de la prolongation
-		if($protocol_prolonge == "3M" || $protocol_prolonge == "Ident"){
-			$ok=0;
-			$prolonge="N";
-		}elseif($protocol_prolonge){
-			$ok=0;
-			$prolonge="N";
-		}
-		$ret["SCREEN_MESSAGE"][0]=$error_message;
-	}	
-	$ret["OK"]=$ok;
-	$ret["RENEWAL_OK"]=$prolonge;
-	$ret["MAGNETIC_MEDIA"]=$magnetic;
-	$ret["DESENSITIZE"]=$desensitize;
-	$ret["TRANSACTION_DATE"]=date("Ymd    His",time());	
-	$ret["INSTITUTION_ID"][0]=$localisation;
-	$ret["PATRON_IDENTIFIER"][0]=$empr_cb;	
-	$ret["ITEM_IDENTIFIER"][0]=$expl_cb;	
-	$ret["TITLE_IDENTIFIER"][0]=$titre;	
-	$ret["DUE_DATE"][0]=$due_date;
-	return $ret;
+    // Attention : exemplaire::self_renew(), retourne un message si la prolongation a ete effectuee
+    // Il ne faut pas tester l'entree "message" du retour de la fonction
+    if (! $ok) {
+        global $selfservice_pret_prolonge_non_msg;
+
+        $ok = 0;
+        $screenMessage = [
+            $result["message"] ?? $selfservice_pret_prolonge_non_msg
+        ];
+    }
+
+    return [
+        "SCREEN_MESSAGE" => $screenMessage,
+        "OK" => $ok,
+        "RENEWAL_OK" => $ok == 1 ? "Y" : "N",
+        "MAGNETIC_MEDIA" => "N",
+        "DESENSITIZE" => "N",
+        "TRANSACTION_DATE" => date("Ymd    His", time()),
+        "INSTITUTION_ID" => [
+            $values["INSTITUTION_ID"][0]
+        ],
+        "PATRON_IDENTIFIER" => [
+            $values["PATRON_IDENTIFIER"][0]
+        ],
+        "ITEM_IDENTIFIER" => [
+            $explCb
+        ],
+        "TITLE_IDENTIFIER" => [
+            $title
+        ],
+        "DUE_DATE" => [
+            $result["due_date"] ?? ""
+        ]
+    ];
 }
+
 function sql_value($rqt) {
 	if(($result=pmb_mysql_query($rqt))) {
 		if(($row = pmb_mysql_fetch_row($result)))	return $row[0];

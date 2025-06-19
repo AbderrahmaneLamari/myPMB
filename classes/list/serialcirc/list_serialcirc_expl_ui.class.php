@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_serialcirc_expl_ui.class.php,v 1.1.2.6 2022/01/17 13:28:03 dgoron Exp $
+// $Id: list_serialcirc_expl_ui.class.php,v 1.18 2023/01/09 14:44:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,14 +13,14 @@ require_once($class_path."/expl.class.php");
 class list_serialcirc_expl_ui extends list_serialcirc_ui {
 	
 	protected function _get_query_base() {
-		$query = 'SELECT * FROM serialcirc_expl 
+		$query = 'SELECT * FROM serialcirc_expl
 				JOIN exemplaires ON serialcirc_expl.num_serialcirc_expl_id = exemplaires.expl_id
 				JOIN bulletins ON exemplaires.expl_bulletin = bulletins.bulletin_id
 				JOIN serialcirc ON serialcirc_expl.num_serialcirc_expl_serialcirc = serialcirc.id_serialcirc
 				left JOIN abts_abts ON exemplaires.expl_abt_num = abts_abts.abt_id ';
 		return $query;
 	}
-		
+	
 	protected function get_object_instance($row) {
 		$object_instance = new serialcirc_expl($row->id_serialcirc_expl);
 		
@@ -78,6 +78,7 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 						'expl_cb' => 'serialcirc_circ_list_bull_circulation_cb',
 						'destinataire' => 'serialcirc_circ_list_bull_circulation_destinataire',
 						'actions' => 'serialcirc_circ_list_bull_circulation_actions',
+						'classement' => 'serialcirc_circ_list_bull_circulation_classement'
 				)
 		);
 		$this->available_columns['custom_fields'] = array();
@@ -111,11 +112,18 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 	
 	protected function init_default_settings() {
 		parent::init_default_settings();
+		if(empty($this->available_filters['main_fields']) && empty($this->available_filters['custom_fields'])) {
+			$this->set_setting_display('search_form', 'visible', false);
+		}
 		$this->set_setting_display('search_form', 'unfolded_filters', true);
+		$this->set_setting_display('search_form', 'sorts', false);
 		$this->set_setting_display('grouped_objects', 'display_counter', true);
 		$this->set_setting_display('query', 'human', false);
 		$this->set_setting_display('pager', 'visible', false);
+		$this->set_setting_filter('abts_abts', 'selection_type', 'selector');
+		$this->set_setting_filter('serials', 'selection_type', 'selector');
 		$this->set_setting_column('default', 'align', 'left');
+		$this->set_setting_selection_actions('repair_diffusion', 'visible', false);
 		$this->settings['objects']['default']['display_mode'] = 'expandable_table';
 		$this->settings['grouped_objects']['level_1']['display_mode'] = 'expandable_table';
 	}
@@ -135,7 +143,9 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 		$this->available_filters =
 		array('main_fields' =>
 				array(
-						'no_ret' => 'serialcirc_no_ret_circ',
+						'abts_abts' => 'abts_onglet_abt',
+						'serials' => 'serials_query',
+// 						'no_ret' => 'serialcirc_no_ret_circ',
 				)
 		);
 		if($pmb_lecteurs_localises){
@@ -152,13 +162,15 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 		
 		$this->filters = array(
 				'location' => ($pmb_lecteurs_localises ? $deflt_docs_location : 0),
+				'abts_abts' => array(),
+				'serials' => array(),
 				'no_ret' => -1,
 				'point_expl_id' => 0
 		);
 		parent::init_filters($filters);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'classement');
 	}
 	
@@ -168,7 +180,8 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 		if($pmb_lecteurs_localises){
 			$this->add_selected_filter('location');
 		}
-		$this->add_selected_filter('no_ret');
+		$this->add_selected_filter('abts_abts');
+		$this->add_selected_filter('serials');
 	}
 	
 	protected function init_default_selection_actions() {
@@ -178,16 +191,29 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 		$print_link = array(
 				'onClick' => "my_serialcirc_print_all_sel_list_diff",
 				'confirm' => '',
-				'classement' => 'to_be_circ'
+				'classements' => 'to_be_circ|in_circ|no_ret_circ'
 		);
 		$this->add_selection_action('print', $msg['serialcirc_circ_list_imprimer_bt'], '', $print_link);
 		
 		$comeback_link = array(
 				'onClick' => "my_serialcirc_comeback_multiple_expl",
 				'confirm' => '',
-				'classement' => 'in_circ'
+				'classements' => 'in_circ'
 		);
 		$this->add_selection_action('comeback', $msg['serialcirc_circ_list_bull_circulation_comeback_multiple_bt'], '', $comeback_link);
+		
+		$delete_circ_link = array(
+				'onClick' => "my_serialcirc_delete_circ_multiple_expl",
+				'confirm' => '',
+				'classements' => 'no_ret_circ'
+		);
+		$this->add_selection_action('delete_circ', $msg['serialcirc_circ_list_bull_circulation_delete_circ_multiple_bt'], '', $delete_circ_link);
+		$repair_link = array(
+				'href' => static::get_controller_url_base()."&action=list_repair_diffusion",
+				'confirm' => '',
+				'classements' => 'no_ret_circ'
+		);
+		$this->add_selection_action('repair_diffusion', $msg['serialcirc_circ_list_repair_bt'], '', $repair_link);
 	}
 	
 	/**
@@ -195,12 +221,42 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 	 */
 	public function set_filters_from_form() {
 		$this->set_filter_from_form('location', 'integer');
+		$this->set_filter_from_form('abts_abts', 'integer');
+		$this->set_filter_from_form('serials', 'integer');
 		$this->set_filter_from_form('no_ret', 'integer');
 		parent::set_filters_from_form();
 	}
 	
+	protected function get_selection_query($type) {
+		$query = '';
+		switch ($type) {
+			case 'locations':
+				$query = 'SELECT distinct idlocation as id, location_libelle as label FROM docs_location, docsloc_section WHERE num_location=idlocation ORDER BY label';
+				break;
+			case 'abts_abts':
+				$statuses = abts_status::get_ids_bulletinage_active();
+				$query = 'SELECT abt_id as id, abt_name as label FROM abts_abts WHERE statut_id IN ('.implode(',', $statuses).') ORDER BY label';
+				break;
+			case 'serials':
+				$query = 'SELECT distinct notice_id as id, tit1 as label FROM notices JOIN abts_abts ON num_notice = notice_id ORDER BY label';
+				break;
+		}
+		return $query;
+	}
+	
 	protected function get_search_filter_location() {
-		return gen_liste("select distinct idlocation, location_libelle from docs_location, docsloc_section where num_location=idlocation order by 2 ", "idlocation", "location_libelle", $this->objects_type.'_location', "", $this->filters['location'], "", "", 0, "");
+		global $msg;
+		return $this->get_search_filter_simple_selection($this->get_selection_query('locations'), 'location', $msg["all_location"]);
+	}
+	
+	protected function get_search_filter_abts_abts() {
+		global $msg;
+		return $this->get_search_filter_multiple_selection($this->get_selection_query('abts_abts'), 'abts_abts', $msg["all"]);
+	}
+	
+	protected function get_search_filter_serials() {
+		global $msg;
+		return $this->get_search_filter_multiple_selection($this->get_selection_query('serials'), 'serials', $msg["all"]);
 	}
 	
 	protected function get_search_filter_no_ret() {
@@ -214,30 +270,16 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 		return $this->get_search_filter_simple_selection('', 'no_ret', '', $options);
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['location']) {
-			$filters [] = 'expl_location = "'.$this->filters['location'].'"';
-		}
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('location', 'expl_location', 'integer');
+		$this->_add_query_filter_multiple_restriction('abts_abts', 'abts_abts.abt_id', 'integer');
+		$this->_add_query_filter_multiple_restriction('serials', 'bulletin_notice', 'integer');
 		if($this->filters['no_ret'] !== -1) {
-			$filters [] = 'serialcirc_no_ret = "'.$this->filters['no_ret'].'"';
+			$this->query_filters [] = 'serialcirc_no_ret = "'.$this->filters['no_ret'].'"';
 		}
-		if($this->filters['point_expl_id']) {
-			$filters [] = 'expl_id = "'.$this->filters['point_expl_id'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+		$this->_add_query_filter_simple_restriction('point_expl_id', 'expl_id', 'integer');
 	}
-
+	
 	protected function _get_object_property_classement($object) {
 		global $msg;
 		
@@ -250,6 +292,8 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 				return $msg["serialcirc_circ_list_bull_circulation"];
 			case 'in_late':
 				return $msg["serialcirc_circ_list_bull_retards"];
+			case 'no_ret_circ':
+				return $msg['serialcirc_no_ret_circ'];
 		}
 		return $object->get_classement();
 	}
@@ -274,8 +318,14 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 		return $object->get_exemplaire()->cb;
 	}
 	
+	protected function _get_object_property_actions_button($label, $function_name, $object) {
+		global $charset;
+		
+		return "<input type=\"button\" class='bouton' value='".htmlentities($label, ENT_QUOTES, $charset)."' onClick=\"".$function_name."('".$object->get_classement()."','".$object->get_expl_id()."'); return false;\"/>&nbsp;";
+	}
+	
 	protected function get_cell_content($object, $property) {
-	    global $msg, $charset;
+		global $msg, $charset;
 		
 		$content = '';
 		switch($property) {
@@ -305,7 +355,7 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 						break;
 					case 'in_circ':
 						if($content != "") {
-							$content .= "<img src='".get_url_icon('plus.gif')."' class='img_plus' name='imEx' id='".$object->get_expl_id().""."Img' title='".$msg['plus_detail']."' border='0' onClick=\" expandBase('circ_detail_in_circ_".$object->get_expl_id()."', true); return false;\" hspace='3'>";
+							$content .= "<img src='".get_url_icon('plus.gif')."' class='img_plus' name='imEx' id='circ_detail_in_circ_".$object->get_expl_id()."Img' title='".$msg['plus_detail']."' border='0' onClick=\" expandBase('circ_detail_in_circ_".$object->get_expl_id()."', true); return false;\" hspace='3'>";
 							$content .= "<div id='circ_detail_in_circ_".$object->get_expl_id()."Child' style='display:none;'>";
 							$content .= $object->build_empr_list();
 							$content .= "</div>";
@@ -313,7 +363,7 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 						break;
 					case 'in_late':
 						if($content != "") {
-							$content .= "<img src='".get_url_icon('plus.gif')."' class='img_plus' name='imEx' id='".$object->get_expl_id().""."Img' title='".$msg['plus_detail']."' border='0' onClick=\" expandBase('circ_detail_in_late_".$object->get_expl_id()."', true); return false;\" hspace='3'>";
+							$content .= "<img src='".get_url_icon('plus.gif')."' class='img_plus' name='imEx' id='circ_detail_in_late_".$object->get_expl_id()."Img' title='".$msg['plus_detail']."' border='0' onClick=\" expandBase('circ_detail_in_late_".$object->get_expl_id()."', true); return false;\" hspace='3'>";
 							$content .= "<div id='circ_detail_in_late_".$object->get_expl_id()."Child' style='display:none;'>";
 							$content .= $object->build_empr_list();
 							$content .= "</div>";
@@ -324,49 +374,43 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 			case 'actions':
 				switch ($object->get_classement()) {
 					case 'alert':
-						if($object->is_alerted()) {
-							$content .= "
-								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_ajouter_sommaire_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_circ_list_bull_ajouter_sommaire('alert','".$object->get_bulletin_id()."'); return false;\"/>&nbsp;
-							";
-						} else {
-							$content .= "
-								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_ajouter_sommaire_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_circ_list_bull_ajouter_sommaire('alert','".$object->get_bulletin_id()."'); return false;\"/>&nbsp;
-								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_envoyer_alert_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_circ_list_bull_envoyer_alert('alert','".$object->get_expl_id()."'); return false;\"/>&nbsp;
-							";
+						$content .= "
+							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_ajouter_sommaire_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_circ_list_bull_ajouter_sommaire('alert','".$object->get_bulletin_id()."'); return false;\"/>&nbsp;
+						";
+						if(!$object->is_alerted()) {
+							$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_envoyer_alert_bt"], "my_serialcirc_circ_list_bull_envoyer_alert", $object);
 						}
 						break;
 					case 'to_be_circ':
-						$content .= "
-							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_imprimer_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_print_list_circ('to_be_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
-							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_annuler_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_delete_circ('to_be_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
-						";
+						$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_imprimer_bt"], "my_serialcirc_print_list_circ",  $object);
+						$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_annuler_bt"], "my_serialcirc_delete_circ", $object);
 						break;
 					case 'in_circ':
 						if ($object->get_serialcirc_checked()) {
-							$content .= "<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_call_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_call_expl('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;";
-							$content .= "<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_go_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_do_trans('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;";
+							$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_call_bt"], "my_serialcirc_call_expl", $object);
+							$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_go_bt"], "my_serialcirc_do_trans", $object);
 						}
-						$content .= "
-							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_annuler_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_delete_circ('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
-							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_comeback_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_comeback_expl('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
-							<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_imprimer_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_print_list_circ('in_circ','".$object->get_expl_id()."'); return false;\"/>&nbsp;
-						";
+						$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_annuler_bt"], "my_serialcirc_delete_circ", $object);
+						$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_comeback_bt"], "my_serialcirc_comeback_expl", $object);
+						$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_imprimer_bt"], "my_serialcirc_print_list_circ",  $object);
 						$content .= "<div id='circ_actions_in_circ_".$object->get_expl_id()."' class='erreur'></div>";
 						break;
 					case 'in_late':
-						$content .= "
-								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_call_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_call_expl('in_late','".$object->get_expl_id()."'); return false;\"/>&nbsp;
-						";
+						$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_call_bt"], "my_serialcirc_call_expl", $object);
 						if($object->get_serialcirc_type() == SERIALCIRC_TYPE_rotative){
-							$content .= "
-								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_go_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_do_trans('in_late','".$object->get_expl_id()."'); return false;\"/>&nbsp;
-							";
+							$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_go_bt"], "my_serialcirc_do_trans", $object);
 						}else{
-							$content .= "
-								<input type=\"button\" class='bouton' value='".htmlentities($msg["serialcirc_circ_list_bull_circulation_go_return_bt"],ENT_QUOTES,$charset)."' onClick=\"my_serialcirc_callinsist_expl('in_late','".$object->get_expl_id()."'); return false;\"/>&nbsp;
-							";
+							$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_go_return_bt"], "my_serialcirc_callinsist_expl", $object);
 						}
 						$content .= "<div id='circ_actions_in_late_".$object->get_expl_id()."' class='erreur'></div>";
+						break;
+					case 'no_ret_circ':
+						$content .= $this->_get_object_property_actions_button($msg["63"], "my_serialcirc_delete_circ", $object);
+						if($object->is_lost_num_serialcirc_abt()) {
+							$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_repair_bt"], "my_serialcirc_repair_list_circ", $object);
+						} else {
+							$content .= $this->_get_object_property_actions_button($msg["serialcirc_circ_list_bull_circulation_imprimer_bt"], "my_serialcirc_print_list_circ",  $object);
+						}
 						break;
 				}
 				break;
@@ -383,6 +427,28 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 			return $docs_location->libelle;
 		}
 		return '';
+	}
+	
+	protected function _get_query_human_abts_abts() {
+		if(!empty($this->filters['abts_abts'])) {
+			$labels = array();
+			foreach ($this->filters['abts_abts'] as $abt_id) {
+				$abts_abonnement = new abts_abonnement($abt_id);
+				$labels[] = $abts_abonnement->abt_name;
+			}
+			return implode(', ', $labels);
+		}
+		return '';
+	}
+	
+	protected function _get_query_human_serials() {
+		if(!empty($this->filters['serials'])) {
+			$labels = array();
+			foreach ($this->filters['serials'] as $serial_id) {
+				$labels[] = notice::get_notice_title($serial_id);
+			}
+			return implode(', ', $labels);
+		}
 	}
 	
 	protected function _get_query_human_no_ret() {
@@ -421,7 +487,7 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 								
 				function my_serialcirc_print_list_circ(zone,expl_id){
 					var start_diff_id=0;
-					if(document.getElementById(zone + '_group_circ_select_' + expl_id)) {		
+					if(document.getElementById(zone + '_group_circ_select_' + expl_id)) {
 						var  obj=document.getElementById(zone + '_group_circ_select_' + expl_id);
 						for(var i=0 ; i<obj.options.length; i++){
 							if(obj.options[i].selected){
@@ -431,7 +497,11 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 					}
 					serialcirc_print_list_circ(expl_id,start_diff_id);
 				}
-								
+					
+				function my_serialcirc_repair_list_circ(zone,expl_id){
+					serialcirc_repair_list_circ(expl_id);
+				}
+			
 				function my_serialcirc_comeback_expl(zone,expl_id){
 					if (confirm('".addslashes($msg["serialcirc_confirm_retour"])."')){
 						var info = serialcirc_comeback_expl(expl_id);
@@ -445,20 +515,48 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 				function my_serialcirc_comeback_multiple_expl(selection){
 					if (selection.length > 0) {
 						if (confirm('".addslashes($msg["serialcirc_multiple_expl_confirm_retour"])."')){
-							document.getElementById('bt_retour_expl_multiple').disabled=true;
+							if(document.getElementById('".$this->objects_type."_selection_action_comeback_link')) {
+								document.getElementById('".$this->objects_type."_selection_action_comeback_link').disabled=true;
+							}
 							for (var i = 0; i < selection.length; i++) {
 								var info = serialcirc_comeback_expl(selection[i]);
-								var obj=document.getElementById('circ_actions_'+ zone + '_' + selection[i]);
+								var obj=document.getElementById('circ_actions_in_circ_' + selection[i]);
 								if(obj){
 									obj.innerHTML=info;
 								}
 							}
-							document.getElementById('bt_retour_expl_multiple').disabled=false;
+							if(document.getElementById('".$this->objects_type."_selection_action_comeback_link')) {
+								document.getElementById('".$this->objects_type."_selection_action_comeback_link').disabled=false;
+							}
 						}else{
-								
+										
 						}
 					} else {
 						alert('".addslashes($msg["serialcirc_multiple_expl_retour_no_selected"])."');
+					}
+				}
+								
+				function my_serialcirc_delete_circ_multiple_expl(selection){
+					if (selection.length > 0) {
+						if (confirm('".addslashes($msg["serialcirc_multiple_expl_confirm_delete_circ"])."')){
+							if(document.getElementById('".$this->objects_type."_selection_action_delete_circ_link')) {
+								document.getElementById('".$this->objects_type."_selection_action_delete_circ_link').disabled=true;
+							}
+							for (var i = 0; i < selection.length; i++) {
+								var info = serialcirc_delete_circ(selection[i]);
+								var obj=document.getElementById('circ_actions_no_ret_circ_' + selection[i]);
+								if(obj){
+									obj.innerHTML=info;
+								}
+							}
+							if(document.getElementById('".$this->objects_type."_selection_action_delete_circ_link')) {
+								document.getElementById('".$this->objects_type."_selection_action_delete_circ_link').disabled=false;
+							}
+						}else{
+										
+						}
+					} else {
+						alert('".addslashes($msg["serialcirc_multiple_expl_delete_circ_no_selected"])."');
 					}
 				}
 								
@@ -486,7 +584,9 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 								
 					if (confirm('".addslashes($msg["serialcirc_confirm_delete"])."')){
 						serialcirc_delete_circ(expl_id);
-						if(document.getElementById('tr_'+zone+'_'+expl_id))document.getElementById('tr_'+zone+'_'+expl_id).parentNode.removeChild(document.getElementById('tr_'+zone+'_'+expl_id));
+						if(document.getElementById('tr_'+zone+'_'+expl_id)) {
+							document.getElementById('tr_'+zone+'_'+expl_id).parentNode.removeChild(document.getElementById('tr_'+zone+'_'+expl_id));
+						}
 					}else{
 							
 					}
@@ -583,7 +683,12 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 			on(dom.byId('".$this->objects_type."_selection_action_".$action['name']."_link'), 'click', function(event) {
 				var selection = new Array();
 				query('.".$this->objects_type."_selection:checked').forEach(function(node) {
-					if(node.getAttribute('data-classement') == '".$action['link']['classement']."') {
+					".(isset($action['link']['classements']) && $action['link']['classements'] ? "
+						var classements = '".$action['link']['classements']."';
+					" : "
+						var classements = '';
+					")."
+					if(classements && classements.includes(node.getAttribute('data-classement'))) {
 						selection.push(node.value);
 					}
 				});
@@ -607,6 +712,7 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 							});
 							domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
 							dom.byId('".$this->objects_type."_selected_objects_form').submit();
+							domConstruct.destroy(dom.byId('".$this->objects_type."_selected_objects_form'));
 							"
 								: "")."
 						".(isset($action['link']['openPopUp']) && $action['link']['openPopUp'] ? "openPopUp('".$action['link']['openPopUp']."&selected_objects='+selection.join(','), '".$action['link']['openPopUpTitle']."'); return false;" : "")."
@@ -621,6 +727,22 @@ class list_serialcirc_expl_ui extends list_serialcirc_ui {
 			});
 		";
 		return $display;
+	}
+	
+	public static function repair_diffusion() {
+		global $location_id, $serialcirc_expl_ui_location;
+		
+		
+		$selected_objects = static::get_selected_objects();
+		if(is_array($selected_objects) && count($selected_objects)) {
+			if(empty($location_id) && !empty($serialcirc_expl_ui_location)) {
+				$location_id = $serialcirc_expl_ui_location;
+			}
+			foreach ($selected_objects as $id) {
+				$serialcirc = new serialcirc($location_id);
+				$serialcirc->repair_diffusion($id);
+			}
+		}
 	}
 	
 	public static function get_controller_url_base() {

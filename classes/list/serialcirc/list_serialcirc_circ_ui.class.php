@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_serialcirc_circ_ui.class.php,v 1.1.2.4 2022/01/17 08:26:05 dgoron Exp $
+// $Id: list_serialcirc_circ_ui.class.php,v 1.6 2022/10/06 11:57:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -66,6 +66,7 @@ class list_serialcirc_circ_ui extends list_serialcirc_ui {
 	
 	protected function init_no_sortable_columns() {
 		$this->no_sortable_columns = array(
+				'serial', 'bulletin_numero', 'empr',
 				'actions'
 		);
 	}
@@ -80,26 +81,12 @@ class list_serialcirc_circ_ui extends list_serialcirc_ui {
 		parent::init_filters($filters);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'classement');
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['hold_asked']) {
-			$filters [] = 'serialcirc_circ_hold_asked = "'.$this->filters['hold_asked'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('hold_asked', 'serialcirc_circ_hold_asked');
 	}
 	
 	protected function _get_object_property_serial($object) {

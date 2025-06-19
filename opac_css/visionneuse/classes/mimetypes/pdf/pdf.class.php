@@ -2,8 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pdf.class.php,v 1.13 2019/08/08 06:42:15 jlaurent Exp $
+// $Id: pdf.class.php,v 1.15 2022/03/21 13:40:41 dgoron Exp $
 
+global $visionneuse_path;
 require_once($visionneuse_path."/classes/mimetypes/affichage.class.php");
 
 class pdf extends affichage{
@@ -24,7 +25,7 @@ class pdf extends affichage{
     }
     
     public function fetchDisplay(){
-    	global $visionneuse_path,$base_path;
+    	global $visionneuse_path;
      	//le titre
     	$this->toDisplay["titre"] = $this->doc->titre;
     	//le pdf
@@ -58,6 +59,9 @@ class pdf extends affichage{
     
     public function render(){
     	header("Content-Type: application/pdf");
+    	if(!empty($this->doc->path)) {
+    		header('Content-disposition: inline; filename="'.basename($this->doc->path).'"');
+    	}
     	print $this->driver->openCurrentDoc();
     }
     

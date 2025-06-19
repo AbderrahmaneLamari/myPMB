@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: resa_func.inc.php,v 1.158.2.2 2021/08/04 07:16:26 dgoron Exp $
+// $Id: resa_func.inc.php,v 1.162.4.1 2023/10/24 10:10:51 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -36,7 +36,7 @@ function resa_list_get_column_title($resa_idnotice=0, $resa_idbulletin=0, $typdo
 			$link = "<a href='./catalog.php?categ=isbd&id=".$resa_idnotice."' $type_doc_aff>".$mono_display->header."</a>";
 		} elseif ($resa_idbulletin) {
 			$bulletinage_display = new bulletinage_display($resa_idbulletin);
-			$link = "<a href='./catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=".$resa_idbulletin."' $type_doc_aff>".$bulletinage_display->header."</a>";
+			$link = "<a href='./catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=" . intval($resa_idbulletin) . "' $type_doc_aff>".$bulletinage_display->header."</a>";
 		}
 	} else {
 		$link = reservation::get_notice_title($resa_idnotice, $resa_idbulletin);
@@ -335,6 +335,7 @@ function resa_list ($idnotice=0, $idbulletin=0, $idempr=0, $order="", $where = "
 		$resa_situation->set_resa($resa)
 				->set_resa_cb($data['resa_cb'])
 				->set_idlocation($data['idlocation'])
+				->set_my_home_location($deflt_resas_location)
 				->set_rank($rank)
 				->set_no_aff($no_aff)
 				->set_lien_deja_affiche($lien_deja_affiche);
@@ -1000,31 +1001,26 @@ function desaffecte_cb ($cb,$id_resa=0) {
 
 //   calcul du rang d'un emprunteur sur une réservation
 function recupere_rang($id_empr, $id_notice, $id_bulletin,$loc=0) {
-	global $pmb_lecteurs_localises, $pmb_location_reservation;
 	$rank = 1;
-	if (!$id_notice) $id_notice=0;
-	if (!$id_bulletin) $id_bulletin=0 ;
-	if($pmb_lecteurs_localises){
-		if($pmb_location_reservation && $loc) {
-			$query = "SELECT resa_idempr
-				FROM resa, empr, resa_loc
-				WHERE
-				resa_idnotice='".$id_notice."' AND resa_idbulletin='".$id_bulletin."'
-				and id_empr=resa_idempr
-				and empr_location=resa_emprloc and resa_loc=$loc
-				ORDER BY resa_date";
-		} else {
-			$query = "SELECT resa_idempr FROM resa WHERE resa_idnotice='".$id_notice."' AND resa_idbulletin='".$id_bulletin."' ORDER BY resa_date";
-		}
-	} else{
-		$query = "SELECT resa_idempr FROM resa WHERE resa_idnotice='".$id_notice."' AND resa_idbulletin='".$id_bulletin."' ORDER BY resa_date";
-	}
+	$query = reservation::get_query_rank($id_notice, $id_bulletin, $loc);
 	$result = pmb_mysql_query($query);
 	while($resa=pmb_mysql_fetch_object($result)) {
 		if($resa->resa_idempr == $id_empr) break;
 		$rank++;
 	}
 	return $rank;
+}
+
+function recupere_rangs($id_notice, $id_bulletin,$loc=0) {
+	$ranks = array();
+	$query = reservation::get_query_rank($id_notice, $id_bulletin, $loc);
+	$result = pmb_mysql_query($query);
+	$rank = 1;
+	while($resa=pmb_mysql_fetch_object($result)) {
+		$ranks[$resa->id_resa] = $rank;
+		$rank++;
+	}
+	return $ranks;
 }
 
 // retourne un tableau constitué des exemplaires disponibles pour une résa donnée

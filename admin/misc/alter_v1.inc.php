@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: alter_v1.inc.php,v 1.13.16.1 2021/12/23 08:07:31 dgoron Exp $
+// $Id: alter_v1.inc.php,v 1.14 2021/12/23 08:02:50 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -243,7 +243,7 @@ switch ($action) {
 		echo traite_rqt($rqt,"tdoc_codage_import");
 		
 		// +-------------------------------------------------+
-		// $Id: alter_v1.inc.php,v 1.13.16.1 2021/12/23 08:07:31 dgoron Exp $
+		// $Id: alter_v1.inc.php,v 1.14 2021/12/23 08:02:50 dgoron Exp $
 		$rqt = "ALTER TABLE exemplaires ADD expl_id MEDIUMINT( 8 ) UNSIGNED AUTO_INCREMENT PRIMARY KEY FIRST " ;
 		echo traite_rqt($rqt,"expl_id");
 		$rqt = "alter table exemplaires drop index expl_id ";

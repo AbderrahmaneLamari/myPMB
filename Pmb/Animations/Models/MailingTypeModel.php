@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: MailingTypeModel.php,v 1.13 2021/03/18 16:44:54 jlaurent Exp $
+// $Id: MailingTypeModel.php,v 1.13.6.1 2023/11/09 07:58:34 gneveu Exp $
 
 namespace Pmb\Animations\Models;
 
@@ -18,6 +18,7 @@ class MailingTypeModel extends Model
     Const MAILING_REGISTRATION = 3;
     Const MAILING_CONFIRMATION = 4;
     Const MAILING_ANNULATION = 5;
+    Const MAILING_SEND_TO_BIBLI = 6;
     
     protected $ormName = "\Pmb\Animations\Orm\MailingTypeOrm";
     
@@ -133,11 +134,13 @@ class MailingTypeModel extends Model
         $registration = MailingTypeOrm::find("periodicity", self::MAILING_REGISTRATION);
         $confirmation = MailingTypeOrm::find("periodicity", self::MAILING_CONFIRMATION);
         $annulation = MailingTypeOrm::find("periodicity", self::MAILING_ANNULATION);
-        
+        $sendToBibli = MailingTypeOrm::find("periodicity", self::MAILING_SEND_TO_BIBLI);
+
         return [
             "registration" => count($registration),
             "confirmation" => count($confirmation),
-            "annulation" => count($annulation)
+            "annulation" => count($annulation),
+            "sendtobibli" => count($sendToBibli)
         ];
     }
 }

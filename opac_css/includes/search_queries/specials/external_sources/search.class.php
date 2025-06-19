@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.31.2.2 2021/10/06 10:10:21 arenou Exp $
+// $Id: search.class.php,v 1.35 2022/10/27 10:10:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $class_path,$include_path,$base_path;
+global $class_path,$base_path;
 require_once($class_path."/connecteurs.class.php");
 
 //Classe de gestion de la recherche spécial "combine"
@@ -77,20 +77,38 @@ class external_sources {
     public function transform_input() {
     }
     
+    protected function has_search_exists($source_id, $search_id) {
+    	$requete="select count(1) from entrepot_source_$source_id where search_id='".addslashes($search_id)."'";
+    	$resultat=pmb_mysql_query($requete);
+    	if(pmb_mysql_result($resultat,0,0)) {
+    		return true;
+    	}
+    	return false;
+    }
+    
+    protected function has_search_outdated($source_id, $search_id, $ttl) {
+    	$requete="select count(1) from entrepot_source_$source_id where search_id='".addslashes($search_id)."' and unix_timestamp(now())-unix_timestamp(date_import)>".$ttl;
+    	$resultat=pmb_mysql_query($requete);
+    	if(pmb_mysql_result($resultat,0,0)) {
+    		return true;
+    	}
+    	return false;
+    }
+    
     /**
      * Fonction de création de la requête (retourne une table temporaire)
      * @return string
      */
-    public function make_search() 
-    {	
+    public function make_search() {	
     	global $search;
     	global $selected_sources;
         global $search_dont_check;
+        global $tsearched_sources;
         
-    	//On modifie l'opérateur suivant !!
-    	$inter_next = "inter_".($this->n_ligne+1)."_".$search[$this->n_ligne+1];
-    	global ${$inter_next};
-    	if (${$inter_next}) ${$inter_next} = "or";
+        //On modifie l'opérateur suivant !!
+		$inter_next = "inter_".($this->n_ligne+1)."_".$search[$this->n_ligne+1];
+		global ${$inter_next};
+		if (${$inter_next}) ${$inter_next} = "or";
 
     	//Récupération de la valeur de saisie
     	$valeur_="field_".$this->n_ligne."_s_".$this->id;
@@ -111,13 +129,13 @@ class external_sources {
         $tselected_sources=[];
         
     	for ($i=0; $i<count($valeur); $i++) {
-    	    
+    		if(!$valeur[$i]) continue;
     		//Recherche de la source
     		$source = connecteurs::get_class_name($valeur[$i]);
     		if ($source && file_exists($base_path."/admin/connecteurs/in/$source/$source.class.php")) {
-        		require_once($base_path."/admin/connecteurs/in/$source/$source.class.php");
-        		eval("\$src=new $source(\"".$base_path."/admin/connecteurs/in/".$source."\");");
-        		$params = $src->get_source_params($valeur[$i]);
+				require_once($base_path."/admin/connecteurs/in/$source/$source.class.php");
+				eval("\$src=new $source(\"".$base_path."/admin/connecteurs/in/".$source."\");");
+				$params = $src->get_source_params($valeur[$i]);
     		}
     		/**
     		 * On vérifie si le connecteur est asynchrone ou synchrone
@@ -132,16 +150,14 @@ class external_sources {
 				//Vérification du ttl
 				$ttl=$params["TTL"];
 				$requete="delete from entrepot_source_$source_id where unix_timestamp(now())-unix_timestamp(date_import)>".$ttl;
-
-                if (empty($search_dont_check)) {
-                	$requete="select count(1) from entrepot_source_$source_id where search_id='".addslashes($search_id)."'";
-                    $resultat=pmb_mysql_query($requete);
-                    $search_exists=pmb_mysql_result($resultat,0,0);
+				pmb_mysql_query($requete);
+				
+				if (empty($search_dont_check)) {
+					$search_exists = $this->has_search_exists($source_id, $search_id);
 				} else $search_exists=false;
-				$requete="select count(1) from entrepot_source_$source_id where search_id='".addslashes($search_id)."' and unix_timestamp(now())-unix_timestamp(date_import)>".$ttl;
-                $resultat=pmb_mysql_query($requete);
-				if ((pmb_mysql_result($resultat,0,0))||((!pmb_mysql_result($resultat,0,0))&&(!$search_exists))) {
-					if (pmb_mysql_result($resultat,0,0)) {
+				$search_outdated = $this->has_search_outdated($source_id, $search_id, $ttl);
+				if ($search_outdated || (!$search_outdated && !$search_exists)) {
+					if ($search_outdated) {
 						//Suppression des notices
 						$requete="delete from entrepot_source_$source_id where search_id='".addslashes($search_id)."'";
 						pmb_mysql_query($requete);
@@ -159,7 +175,11 @@ class external_sources {
 						$flag_error=false;
 						for ($j=0; $j<$params["RETRY"]; $j++) {
 							$src->search($valeur[$i],$unimarc_query,$search_id);
-							if (!$src->error) break; else $flag_error=true;
+							if (!$src->error) {
+								break;
+							} else {
+								$flag_error=true;
+							}
 						}
 						//Il y a eu trois essais infructueux, on désactive pendant 5 min !!
 						if ($flag_error) {
@@ -180,20 +200,23 @@ class external_sources {
        		$tvaleur[]=$valeur[$i];
        	}
        	$selected_sources=implode(",",$tvaleur);
-//      $selected_sources=implode(",",$tselected_sources);
-    	$t_table="t_sources_".$this->n_ligne;
-    	$requete="create temporary table ".$t_table." (notice_id integer unsigned not null)";
-    	pmb_mysql_query($requete);
-        global $search_previous_table;
-        $search_previous_table=$t_table."_save";
-        $requete="create temporary table ".$search_previous_table." (notice_id integer unsigned not null, i_value varchar(255), idiot int(1), pert decimal(16,1) default 1)";
-        pmb_mysql_query($requete);
-        for ($i=0; $i<count($tsearched_sources); $i++) {
-            $requete="insert into $search_previous_table select distinct recid as notice_id,'',1,1 from entrepot_source_".$tsearched_sources[$i]." where search_id='".$search_id."'";
-            pmb_mysql_query($requete);
-        }
-        
-        return $t_table; 
+		$t_table="t_sources_".$this->n_ligne;
+		
+		pmb_mysql_query("drop table if exists $t_table");
+		$requete="create temporary table ".$t_table." (notice_id integer unsigned not null)";
+		pmb_mysql_query($requete);
+		global $search_previous_table;
+		$search_previous_table=$t_table."_save";
+		pmb_mysql_query("drop table if exists $search_previous_table");
+		$requete="create temporary table ".$search_previous_table." (notice_id integer unsigned not null, i_value varchar(255), idiot int(1), pert decimal(16,1) default 1)";
+		pmb_mysql_query($requete);
+		$query = "alter table ".$search_previous_table." add unique(notice_id)";
+		pmb_mysql_query($query);
+		for ($i=0; $i<count($tsearched_sources); $i++) {
+			$requete="insert into $search_previous_table select distinct recid as notice_id,'',1,1 from entrepot_source_".$tsearched_sources[$i]." where search_id='".$search_id."'";
+			pmb_mysql_query($requete);
+		}
+		return $t_table;
     }
     
     /**
@@ -201,9 +224,6 @@ class external_sources {
      * @return array
      */
     public function make_human_query() {
-    	global $msg;
-    	global $include_path;
-    	
     	$litteral=array();
     	
     	//Récupération de la valeur de saisie 

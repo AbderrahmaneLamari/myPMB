@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_records_controller.class.php,v 1.16.6.1 2022/01/07 14:25:11 dgoron Exp $
+// $Id: entities_records_controller.class.php,v 1.17.4.1 2023/04/07 09:15:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Digitalsignature\Models\DocnumCertifier;
 
 global $class_path;
 require_once ($class_path."/entities/entities_controller.class.php");
@@ -40,6 +42,8 @@ class entities_records_controller extends entities_controller {
 	}
 	
 	public function proceed() {
+		global $PMBuserid;
+		
 		//verification des droits de modification notice
 		if($this->has_rights()) {
 			switch($this->action) {
@@ -67,7 +71,20 @@ class entities_records_controller extends entities_controller {
 				        print $entity_locking->get_locked_form();
 				        break;
 				    }
-				    $this->proceed_delete();
+				    if($this->is_deletable()) {
+				    	// On déclenche un événement sur la supression
+				    	$evt_handler = events_handler::get_instance();
+				    	$event = new event_entity("entity", "has_deletion_rights");
+				    	$event->set_entity_id($this->id);
+				    	$event->set_entity_type(TYPE_NOTICE);
+				    	$event->set_user_id($PMBuserid);
+				    	$evt_handler->send($event);
+				    	if($event->get_error_message()){
+				    		information_message('', $event->get_error_message(), 1, $this->get_permalink());
+				    	} else {
+				    		$this->proceed_delete();
+				    	}
+				    }
 					break;
 				case 'replace':
 				    $entity_locking = new entity_locking($this->id, TYPE_NOTICE);
@@ -87,7 +104,20 @@ class entities_records_controller extends entities_controller {
 					$this->proceed_expl_update();
 					break;
 				case 'expl_delete':
-					$this->proceed_expl_delete();
+					if($this->is_expl_deletable()) {
+						// On déclenche un événement sur la supression
+						$evt_handler = events_handler::get_instance();
+						$event = new event_entity("entity", "has_deletion_rights");
+						$event->set_entity_id($this->id);
+						$event->set_entity_type(TYPE_EXPL);
+						$event->set_user_id($PMBuserid);
+						$evt_handler->send($event);
+						if($event->get_error_message()){
+							information_message('', $event->get_error_message(), 1, $this->get_permalink());
+						} else {
+							$this->proceed_expl_delete();
+						}
+					}
 					break;
 				case 'explnum_form':
 					$this->proceed_explnum_form();
@@ -96,14 +126,49 @@ class entities_records_controller extends entities_controller {
 					$this->proceed_explnum_update();
 					break;
 				case 'explnum_delete':
-					$this->proceed_explnum_delete();
+					if($this->is_explnum_deletable()) {
+						// On déclenche un événement sur la supression
+						$evt_handler = events_handler::get_instance();
+						$event = new event_entity("entity", "has_deletion_rights");
+						$event->set_entity_id($this->id);
+						$event->set_entity_type(TYPE_EXPLNUM);
+						$event->set_user_id($PMBuserid);
+						$evt_handler->send($event);
+						if($event->get_error_message()){
+							information_message('', $event->get_error_message(), 1, $this->get_permalink());
+						} else {
+							$this->proceed_explnum_delete();
+						}
+					}
 					break;
 			}
 		} else {
 			$this->display_error_message();
 		}
 	}
+	
+	protected function is_deletable() {
+		return true;
+	}
+	
+	protected function is_expl_deletable() {
+		return true;
+	}
+	
+	protected function is_explnum_deletable() {
+		global $msg;
 		
+		$expl = new explnum($this->id);
+		
+		$docNumCertifier = new DocnumCertifier($expl);
+		$check = $docNumCertifier->checkSignExists();
+		if ($check) {
+			print return_error_message($msg["540"], $msg["digital_signature_already_signed_docnum_del"], 1, "./catalog.php?categ=isbd&id=".$expl->explnum_notice);
+			return false;
+		}
+		return true;
+	}
+	
 	public function proceed_form() {
 		global $saisieISBN, $cataloging_scheme_id;
 		$myNotice = new notice($this->id, $saisieISBN);
@@ -237,6 +302,10 @@ class entities_records_controller extends entities_controller {
 		$event_handler->send($event);
 		
 		return $myNotice->id;
+	}
+	
+	public function proceed_delete() {
+		
 	}
 	
 	public function proceed_replace() {

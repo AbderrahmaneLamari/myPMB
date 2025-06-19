@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_instrument.tpl.php,v 1.1 2021/01/27 08:36:32 dgoron Exp $
+// $Id: nomenclature_instrument.tpl.php,v 1.1.8.1 2023/07/04 12:11:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $msg, $nomenclature_instrument_content_form_tpl, $nomenclature_instrument_dialog_tpl;
+global $msg, $nomenclature_instrument_js_content_form_tpl, $nomenclature_instrument_dialog_tpl;
 
 /*
  * Exemple de test de la complétion Ajax des instruments
@@ -28,7 +28,7 @@ global $msg, $nomenclature_instrument_content_form_tpl, $nomenclature_instrument
 </script>
  */
 
-$nomenclature_instrument_content_form_tpl="		
+$nomenclature_instrument_js_content_form_tpl="		
 <script type='text/javascript'>
 
 	function test_form(form){
@@ -44,30 +44,6 @@ $nomenclature_instrument_content_form_tpl="
 	}
 	
 </script>
-<div class='row'>
-	<label class='etiquette' for='code'>".$msg['admin_nomenclature_instrument_form_code']."</label>
-</div>
-<div class='row'>
-	<input type='text' class='saisie-50em' name='code' id='code' value='!!code!!' />
-</div>				
-<div class='row'>
-	<label class='etiquette' for='name'>".$msg['admin_nomenclature_instrument_form_name']."</label>
-</div>
-<div class='row'>
-	<input type='text' class='saisie-50em' name='name' id='name' value='!!name!!' />
-</div>					
-<div class='row'>
-	<label class='etiquette' for='musicstand'>".$msg['admin_nomenclature_instrument_form_musicstand']."</label>
-</div>
-<div class='row'>
-	!!musicstand!!
-</div>				
-<div class='row'>
-	<label class='etiquette' for='name'>".$msg['admin_nomenclature_instrument_form_standard']."</label>
-</div>
-<div class='row'>
-	<input type='checkbox' name='standard' id='standard' value='1' !!checked!!/>
-</div>	
 ";
 
 $nomenclature_instrument_dialog_tpl = "

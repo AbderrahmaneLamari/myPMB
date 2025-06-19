@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SubTabSimpleSearch.js,v 1.7.2.1 2021/10/13 12:59:20 tsamson Exp $
+// $Id: SubTabSimpleSearch.js,v 1.9 2022/05/17 07:31:52 gneveu Exp $
 
 
 define([
@@ -45,20 +45,22 @@ define([
 			},
 			onDownloadEnd: function(){
 				var searchButton = query('input[id="launch_search_button"]', this.containerNode)[0];
-				searchButton.setAttribute('type', 'submit'); 
-				this.form = searchButton.form;
-
-		    	domAttr.remove(this.form, "onSubmit");
-		    	
-				on(this.form, 'submit', lang.hitch(this, this.postForm));
-				if(typeof this.getParent().resizeIframe == "function"){
+				if(searchButton) {
+					searchButton.setAttribute('type', 'submit'); 
+					this.form = searchButton.form;
+	
+			    	domAttr.remove(this.form, "onSubmit");
+			    	
+					on(this.form, 'submit', lang.hitch(this, this.postForm));
 					if(typeof this.getParent().resizeIframe == "function"){
-						this.getParent().resizeIframe();
+						if(typeof this.getParent().resizeIframe == "function"){
+							this.getParent().resizeIframe();
+						} else {
+							this.getParent().getParent().resizeIframe();
+						}
 					} else {
 						this.getParent().getParent().resizeIframe();
 					}
-				} else {
-					this.getParent().getParent().resizeIframe();
 				}
 			},
 			checkSize: function(){

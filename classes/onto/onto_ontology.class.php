@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_ontology.class.php,v 1.57.2.3 2021/09/03 08:14:42 qvarin Exp $
+// $Id: onto_ontology.class.php,v 1.65.4.3 2023/12/27 13:43:36 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -150,6 +150,9 @@ class onto_ontology {
                 optional {
                 	?class pmb:flag ?flag .
     			}.	
+                optional {
+                	?class pmb:field ?field .
+    			}.	
     			optional {
     				?class rdfs:subClassOf ?sub_class_of .
     				optional {
@@ -161,8 +164,12 @@ class onto_ontology {
     		
     		if($this->store->query($query)){
     			if($this->store->num_rows()){
-    				$result = $this->store->get_result();		
+    				$result = $this->store->get_result();
     				foreach ($result as $elem){
+    				    if(!empty($elem->flag) && $elem->flag === "internal"){
+    				        // On utilise ce flag pour masquer de l'interface certains éléments
+    				        continue;
+    				    }
                         if (!isset($this->classes_uris[$elem->class])) {
     						$class = new onto_class();
     						$class->uri = $elem->class;
@@ -171,7 +178,9 @@ class onto_ontology {
     						$class->label = $this->get_label($elem);
     						$this->classes_uris[$elem->class] = $class;					
                         }        
-    
+                        if(isset($elem->field)) {
+                            $this->classes_uris[$elem->class]->field = $elem->field;
+                        }
                         if(isset($elem->sub_class_of)) {
                         	$this->classes_uris[$elem->class]->add_sub_class_of($elem->sub_class_of);
                         }
@@ -213,6 +222,7 @@ class onto_ontology {
 			$class_name = $this->get_class_name("class", $elements);
 			$this->classes[$uri_class] = new $class_name($uri_class,$this);
 			$this->classes[$uri_class]->set_pmb_name($this->classes_uris[$uri_class]->pmb_name);
+			$this->classes[$uri_class]->set_field($this->classes_uris[$uri_class]->field);
 			$this->classes[$uri_class]->set_onto_name($this->name);
 			$this->classes[$uri_class]->set_data_store($this->data_store);
 		}
@@ -286,7 +296,10 @@ class onto_ontology {
 	    if (!$this->properties_uri) {
 	        
 	        $success  = $this->store->query("select * where {
-				?property rdf:type <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> .
+				?property rdf:type <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> .	
+                optional {
+                	?property pmb:subfield ?subfield .
+    			}.	
 				optional {
 					?property rdfs:domain ?domain
 				} .
@@ -306,6 +319,9 @@ class onto_ontology {
 						?list_item rdfs:label ?list_item_value .
 						?list_item pmb:identifier ?list_item_id .
 						?list_item pmb:msg_code ?list_item_msg_code .
+    					optional {
+    						?list_item pmb:order ?list_item_order .
+    					}
 					}
 				} .
                 optional {
@@ -328,6 +344,9 @@ class onto_ontology {
                         $this->properties_uri[$elem->property]->get_properties($this->store);
                     }
                     
+                    if(isset($elem->subfield)) {
+                        $this->properties_uri[$elem->property]->subfield = $elem->subfield;
+                    }
                     if (!empty($elem->domain)) {
                         if(!isset($this->properties_uri[$elem->property]->domain) || !is_array($this->properties_uri[$elem->property]->domain)) {
                             $this->properties_uri[$elem->property]->domain = array();
@@ -344,7 +363,8 @@ class onto_ontology {
                         if (!isset($this->properties_uri[$elem->property]->pmb_list_item[$elem->list_item_id])) {
                             $this->properties_uri[$elem->property]->pmb_list_item[$elem->list_item_id] = array(
                                 'value' => $this->get_label_from_msg($elem->list_item_msg_code, $elem->list_item_value),
-                                'id' => $elem->list_item_id
+                                'id' => $elem->list_item_id,
+                                'order' => $elem->list_item_order ?? 0
                             );
                         }
                     }
@@ -372,7 +392,9 @@ class onto_ontology {
                         if(!isset($this->properties_uri[$elem->property]->flags)) {
                             $this->properties_uri[$elem->property]->flags = array();
                         }
-                        $this->properties_uri[$elem->property]->flags[] = $elem->flag;
+                        if (!in_array($elem->flag, $this->properties_uri[$elem->property]->flags)) {
+                            $this->properties_uri[$elem->property]->flags[] = $elem->flag;
+                        }
                     }
                     
                     if (!empty($elem->extended)){
@@ -393,6 +415,9 @@ class onto_ontology {
 	        foreach($this->properties_uri as $property_uri => $property){
 	            if(!is_array($property->domain) || !count($property->domain)){
 	                foreach($this->classes_uris as $class_uri => $class){
+	                	if(!isset($this->properties_uri[$property_uri]->domain) || !is_array($this->properties_uri[$property_uri]->domain)) {
+	                		$this->properties_uri[$property_uri]->domain = array();
+	                	}
 	                    $this->properties_uri[$property_uri]->domain[] = $class_uri;
 	                }
 	            }
@@ -437,7 +462,8 @@ class onto_ontology {
 		$this->class_properties[$class_uri] = array();
 		if (is_array($this->properties_uri)) {
     		foreach($this->properties_uri as $property_uri => $property){
-    			if(in_array($class_uri,$property->domain)){
+    		    // C'est une property associée au domain et sans le flag internal
+    			if(in_array($class_uri,$property->domain) && !in_array("internal",$property->flags)){
    			        $this->class_properties[$class_uri][] = $property_uri;
     			}
     		}
@@ -481,6 +507,7 @@ class onto_ontology {
 			$this->properties[$uri_property][$uri_class]->set_domain($this->properties_uri[$uri_property]->domain);
 			$this->properties[$uri_property][$uri_class]->set_range($this->properties_uri[$uri_property]->range);
 			$this->properties[$uri_property][$uri_class]->set_pmb_name($this->properties_uri[$uri_property]->pmb_name);
+			$this->properties[$uri_property][$uri_class]->set_subfield($this->properties_uri[$uri_property]->subfield ?? "");
 			if(isset($this->properties_uri[$uri_property]->pmb_marclist_type)){
 				$this->properties[$uri_property][$uri_class]->set_pmb_marclist_type($this->properties_uri[$uri_property]->pmb_marclist_type);
 			}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_authorities_titres_uniformes_query.class.php,v 1.4.2.1 2021/08/09 08:25:06 qvarin Exp $
+// $Id: searcher_authorities_titres_uniformes_query.class.php,v 1.6 2022/02/16 14:04:00 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -56,7 +56,7 @@ class searcher_authorities_titres_uniformes_query extends searcher_authorities_t
 	        
 	        $filters = $this->_get_authorities_filters();
 	        if (count($filters)) {
-	            if (strpos($query, "where") === false) {
+	            if (stripos($query, "where") === false) {
     	            $query .= ' where '.implode(' and ', $filters);
 	            } else {
 	                $query .= ' and '.implode(' and ', $filters);

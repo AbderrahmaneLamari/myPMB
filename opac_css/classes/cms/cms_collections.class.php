@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_collections.class.php,v 1.7.8.1 2022/01/19 13:37:17 dgoron Exp $
+// $Id: cms_collections.class.php,v 1.9 2022/02/24 14:55:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -203,8 +203,8 @@ class cms_collection extends cms_root{
 		global $cms_collection_id,$cms_collection_title,$cms_collection_description,$cms_collection_num_parent,$storage_method;
 		
 		$this->id = intval($cms_collection_id);
-		$this->title= $cms_collection_title;
-		$this->description = $cms_collection_description;
+		$this->title= stripslashes($cms_collection_title);
+		$this->description = stripslashes($cms_collection_description);
 		$this->num_parent = $cms_collection_num_parent;
 		$this->num_storage = $storage_method;
 		
@@ -264,7 +264,7 @@ class cms_collection extends cms_root{
 			$list.= $document->get_item_render("openEditDialog");
 		}
 		$upload_max_filesize = ini_get('upload_max_filesize');
-		if (!$upload_max_filesize) {
+		if (empty($upload_max_filesize)) {
 			$upload_max_filesize = 50000;
 		} else {
 			$upload_max_filesize = trim($upload_max_filesize);
@@ -375,7 +375,7 @@ class cms_collection extends cms_root{
 			document_url = '".addslashes($infos['url'])."',
 			document_path = '".addslashes($infos['path'])."',
 			document_create_date = '".addslashes($infos['create_date'])."',	
-			document_num_storage = '".($infos['num_storage']*1)."',
+			document_num_storage = '".intval($infos['num_storage'])."',
 			document_type_object = 'collection',
 			document_num_object = '".$this->id."'	
 		";

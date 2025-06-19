@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: options_resolve.class.php,v 1.1.2.2 2021/07/02 08:59:14 dgoron Exp $
+// $Id: options_resolve.class.php,v 1.2 2022/05/05 06:44:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -53,7 +53,6 @@ class options_resolve extends options {
 									<th>".$msg['procs_options_resolve_options_label']."</th>
 									<th>".$msg['procs_options_resolve_options_link']."</th>
 								</tr>";
-							$max = 0;
 							for($i=0; $i<count($this->parameters['RESOLVE']);$i++){
 								$requete="select count(".$_custom_prefixe_."_custom_".$this->dtype.") from ".$_custom_prefixe_."_custom_values where ".$_custom_prefixe_."_custom_champ=".$this->idchamp." and SUBSTRING_INDEX(".$_custom_prefixe_."_custom_".$this->dtype.",'|',-1) like '".$this->parameters['RESOLVE'][$i]['ID']."'";
 								$res = pmb_mysql_query($requete);
@@ -145,7 +144,7 @@ class options_resolve extends options {
 		global $first;
 		
 		parent::set_parameters_from_form();
-		$this->parameters['SIZE'][0]['value'] = stripslashes($SIZE*1);
+		$this->parameters['SIZE'][0]['value'] = intval($SIZE);
 		$this->parameters['REPEATABLE'][0]['value'] = $REPEATABLE ? 1 : 0;
 		if ($first == 2){
 			$this->parameters['RESOLVE']= array();

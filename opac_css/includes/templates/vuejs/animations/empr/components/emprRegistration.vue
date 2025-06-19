@@ -8,6 +8,7 @@
 						<th>{{ pmb.getMessage("animation", "animation_empr_registration_animation_start") }}</th>
 						<th>{{ pmb.getMessage("animation", "animation_empr_registration_animation_title") }}</th>
 						<th>{{ pmb.getMessage("animation", "animation_empr_registration_nb_registred") }}</th>
+						<th>{{ pmb.getMessage("animation", "animation_empr_registration_status") }}</th>
 					</tr>
 					<tr v-for="(registration, index) in registrations" :class="index % 2 ? 'even' : 'odd'">
 						<td>
@@ -16,6 +17,7 @@
 						</td>
 						<td><a :href="'./index.php?lvl=animation_see&id=' + registration.animation.id">{{ registration.animation.name }}</a></td>
 						<td>{{ registration.nbRegisteredPersons }}</td>
+						<td>{{ registration.registrationStatus.name }}</td>
 					</tr>
 				</tbody>
 			</table>

@@ -3,7 +3,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: manifest.xml,v 1.45 2021/06/01 13:11:22 dbellamy Exp $ -->
+$Id: manifest.xml,v 1.47 2022/10/21 08:38:32 dgoron Exp $ -->
 
 <manifest>
 	<name>pmbesOPACEmpr</name>
@@ -367,7 +367,7 @@ $Id: manifest.xml,v 1.45 2021/06/01 13:11:22 dbellamy Exp $ -->
 				<result name="can_reserve" type="scalar" dataType="boolean"/>
 			</outputs>
 		</method>
-		<method name="add_resa" comment="msg:add_resa_description" rights="" version="1.0" language_independant="true">
+		<method name="add_resa" comment="msg:add_resa_description" rights="" version="1.0" language_independant="false">
 			<pmb_requirements>
 				<pmb_requirement start_path="class" file="emprunteur.class.php"/>
 				<pmb_requirement start_path="class" file="resa.class.php"/>
@@ -390,6 +390,7 @@ $Id: manifest.xml,v 1.45 2021/06/01 13:11:22 dbellamy Exp $ -->
 		<method name="list_abonnements" comment="msg:list_abonnements_description" rights="" version="1.0" language_independant="true">
 			<pmb_requirements>
 				<pmb_requirement start_path="class" file="emprunteur.class.php"/>
+				<pmb_requirement start_path="class" file="bannette_abon.class.php"/>
 			</pmb_requirements>
 			<inputs>
 				<description>msg:list_abonnements_input_description</description>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_metadatas_datasource_metadatas_page_opac.class.php,v 1.17 2019/10/30 11:22:34 btafforeau Exp $
+// $Id: cms_module_metadatas_datasource_metadatas_page_opac.class.php,v 1.18 2022/05/05 07:04:32 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -92,7 +92,6 @@ class cms_module_metadatas_datasource_metadatas_page_opac extends cms_module_met
 					$query = "select num_type from authperso_custom_values join authperso_custom on authperso_custom_champ = idchamp where authperso_custom_origine = '".$id."'";
 					$result = pmb_mysql_query($query);
 					if(pmb_mysql_num_rows($result)){
-						$row = pmb_mysql_fetch_object($result);
 						$query = "select '".$id."' as id ,'".addslashes(authperso::get_isbd($id))."' as title";
 					}
 				default :
@@ -109,7 +108,7 @@ class cms_module_metadatas_datasource_metadatas_page_opac extends cms_module_met
 		global $opac_url_base;
 		global $opac_show_book_pics;
 		global $opac_book_pics_url;
-		global $dbh,$msg;
+		global $msg;
 		global $base_path;
 		//on commence par récupérer le type et le sous-type de page...
 		$type_page_opac = cms_module_common_datasource_typepage_opac::get_type_page();
@@ -130,7 +129,7 @@ class cms_module_metadatas_datasource_metadatas_page_opac extends cms_module_met
 						$niveau = $get['lvl'];
 					} else $niveau='';
 					
-					$result = pmb_mysql_query($query, $dbh);
+					$result = pmb_mysql_query($query);
 					while ($row = pmb_mysql_fetch_object($result)) {
 						$datas["id"] = $row->id;
 						$datas["title"] = $row->title;

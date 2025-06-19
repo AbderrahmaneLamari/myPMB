@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: vedette_link.class.php,v 1.8.10.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: vedette_link.class.php,v 1.10 2022/09/22 13:52:04 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -58,7 +58,7 @@ class vedette_link {
 	 * @param int $object_type Type de l'objet
 	 */
 	static public function save_vedette_link(vedette_composee $vedette, $object_id, $object_type) {
-		$query = "insert into vedette_link (num_vedette, num_object, type_object) values (".$vedette->get_id().", ".$object_id.", ".$object_type.")";
+		$query = "replace into vedette_link (num_vedette, num_object, type_object) values (".$vedette->get_id().", ".$object_id.", ".$object_type.")";
 		pmb_mysql_query($query);
 	}
 	

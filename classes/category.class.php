@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: category.class.php,v 1.80.2.3 2022/01/18 10:46:07 arenou Exp $
+// $Id: category.class.php,v 1.86.4.1 2023/09/20 14:33:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -52,25 +52,25 @@ class category {
 	// ---------------------------------------------------------------
 	//		propriétés de la classe
 	// ---------------------------------------------------------------
-	public $id=0;
-	public $autorite='';
-	public $libelle='';
-	public $commentaire='';
-	public $catalog_form=''; // forme pour affichage complet
-	public $isbd_entry_lien_gestion=''; // pour affichage avec lien vers la gestion
-	public $parent_id=0;
+	public $id = 0;
+	public $autorite = '';
+	public $libelle = '';
+	public $commentaire = '';
+	public $catalog_form = ''; // forme pour affichage complet
+	public $isbd_entry_lien_gestion = ''; // pour affichage avec lien vers la gestion
+	public $parent_id = 0;
 	public $parent_libelle = '';
-	public $voir_id=0;
-	public $has_link=FALSE;
-	public $has_child=FALSE;
-	public $has_parent=FALSE;
-	public $path_table=array();	// tableau contenant le path éclaté (ids et libellés)
-	public $associated_terms=array(); // tableau des termes associés
-	public $is_under_tilde=0; // Savoir si c'est sous une catégorie qui commence par un ~
+	public $voir_id = 0;
+	public $has_link = FALSE;
+	public $has_child = FALSE;
+	public $has_parent = FALSE;
+	public $path_table = array();	// tableau contenant le path éclaté (ids et libellés)
+	public $associated_terms = array(); // tableau des termes associés
+	public $is_under_tilde = 0; // Savoir si c'est sous une catégorie qui commence par un ~
 	public $thes;		//le thesaurus d'appartenance
 	public $import_denied = 0;
-	public $not_use_in_indexation=0; //Savoir si l'on peut utiliser le terme en indexation
-	public $list_see=array();
+	public $not_use_in_indexation = 0; //Savoir si l'on peut utiliser le terme en indexation
+	public $list_see = array();
 	protected $listchilds;
 	protected static $controller;
 	protected $parent;
@@ -126,6 +126,8 @@ class category {
 		if(!pmb_mysql_num_rows($result)) return;
 		
 		$data = pmb_mysql_fetch_object($result);
+		pmb_mysql_free_result($result);
+		
 		$this->id = $data->categ_id;
 		$this->autorite = $data->autorite;
 		$id_top = $this->thes->num_noeud_racine;
@@ -141,8 +143,9 @@ class category {
 		//$anti_recurse[$this->voir_id]=1;
 		if($this->parent_id != $id_top) $this->has_parent = TRUE;
 	
-		$requete = "SELECT 1 FROM noeuds WHERE num_parent='".$this->id."' limit 1";
-		$result = pmb_mysql_query($requete);
+		// on regarde si la catégorie à des enfants
+		$query = "SELECT 1 FROM noeuds WHERE num_parent='".$this->id."' limit 1";
+		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)) $this->has_child = TRUE;
 	
 		// constitution du chemin
@@ -158,6 +161,8 @@ class category {
 				$result=@pmb_mysql_query($requete);
 				if (pmb_mysql_num_rows($result)) {
 					$parent = pmb_mysql_fetch_object($result);
+					pmb_mysql_free_result($result);
+					
 					if(preg_match("#^~#",$parent->categ_libelle)){
 						$this->is_under_tilde=1;
 					}
@@ -301,6 +306,8 @@ class category {
 		}
 		$form = $form_categ_parent;
 		$form = str_replace('!!parent_value!!', $p_value, $form);
+		$form = str_replace('!!id_thes!!', $this->thes->id_thesaurus, $form);
+		$form = str_replace('!!id_noeud!!', $this->id, $form);
 		$form = str_replace('!!parent_libelle!!', htmlentities($p_libelle,ENT_QUOTES, $charset), $form);
 		return $form;
 	}
@@ -801,11 +808,6 @@ class category {
 			} else {
 				$category_form = str_replace('!!document_title!!', addslashes($title), $category_form);
 			}
-			if ($this->id) {
-				// Impression de la branche du thésaurus
-				$lien_impression_thesaurus="<a href='#' onClick=\"openPopUp('./print_thesaurus.php?current_print=2&action=print_prepare&aff_num_thesaurus=".$id_thes."&id_noeud_origine=".$this->id."','print'); return false;\">".$msg['print_branche']."</a>";
-				$category_form=str_replace("<!-- imprimer_thesaurus -->",$lien_impression_thesaurus,$category_form);
-			}
 		
 			//Remplacement
 			$button_remplace = "<input type='button' class='bouton' value='$msg[158]' ";
@@ -849,6 +851,14 @@ class category {
 			$bouton_audit= "";
 		}
 		$category_form = str_replace('!!audit_bt!!', $bouton_audit, $category_form);
+		
+		if ($aff_node_info && $this->id) {
+			// Impression de la branche du thésaurus
+			$button_impression_thesaurus="<input class='bouton' type='button' onClick=\"openPopUp('./print_thesaurus.php?current_print=2&action=print_prepare&aff_num_thesaurus=".$id_thes."&id_noeud_origine=".$this->id."','print'); return false;\" title=\"".$msg['print_branche']."\" value=\"".$msg['print_branche']."\" />";
+		} else {
+			$button_impression_thesaurus="";
+		}
+		$category_form=str_replace("<!-- imprimer_thesaurus -->",$button_impression_thesaurus,$category_form);
 		
 		$category_form = str_replace('!!user_input!!', htmlentities($user_input,ENT_QUOTES, $charset), $category_form);
 		$category_form = str_replace('!!nbr_lignes!!', $nbr_lignes, $category_form);
@@ -1056,7 +1066,7 @@ class category {
 				$n=new noeuds();
 				$n->num_parent=($num_parent != 0 ? $num_parent : $row->num_noeud_racine);
 				$n->num_thesaurus=$id_thesaurus;
-				$n->num_statut = ($data['statut'] ? $data['statut']+= 0 : $data['statut'] = 1);
+				$n->num_statut = ($data['statut'] ? intval($data['statut']) : 1);
 				$n->save();
 				$id = $n->id_noeud;
 				$c=new categories($id, $lang);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entrez_protocol.class.php,v 1.13 2020/04/24 07:32:34 dgoron Exp $
+// $Id: entrez_protocol.class.php,v 1.14 2022/06/14 07:45:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -75,6 +75,9 @@ class xml_dom_entrez {
 		$this->last_char=true;
 		$this->last_elt[$this->depth]=$this->cur_elt;
 		$this->cur_elt=array();
+		if(!isset($this->cur_elt["DATA"])) {
+			$this->cur_elt["DATA"] = '';
+		}
 		$this->cur_elt["DATA"].=$char;
 		$this->cur_elt["TYPE"]=2;
 		$this->depth++;
@@ -159,7 +162,7 @@ class xml_dom_entrez {
 			}
 			$nc=0;
 			$found=false;
-			if(is_array($node["CHILDS"]) && count($node["CHILDS"])){
+			if(!empty($node["CHILDS"]) && is_array($node["CHILDS"]) && count($node["CHILDS"])){
 				for ($j=0; $j<count($node["CHILDS"]); $j++) {
 					if (($node["CHILDS"][$j]["TYPE"]==1)&&($node["CHILDS"][$j]["NAME"]==$name)) {
 						//C'est celui là !!
@@ -226,7 +229,7 @@ class xml_dom_entrez {
 		if ($node["TYPE"]!=1) return false;
 		//Recherche des fils et vérification qu'il n'y a que du texte !
 		$flag_text=true;
-		if(is_array($node["CHILDS"]) && count($node["CHILDS"])){
+		if(!empty($node["CHILDS"]) && is_array($node["CHILDS"]) && count($node["CHILDS"])){
 			for ($i=0; $i<count($node["CHILDS"]); $i++) {
 				if ($node["CHILDS"][$i]["TYPE"]!=2) $flag_text=false;
 			}
@@ -234,7 +237,7 @@ class xml_dom_entrez {
 		if ((!$flag_text)&&(!$force_entities)) {
 			$force_entities=true;
 		}
-		if(is_array($node["CHILDS"]) && count($node["CHILDS"])){
+		if(!empty($node["CHILDS"]) && is_array($node["CHILDS"]) && count($node["CHILDS"])){
 			for ($i=0; $i<count($node["CHILDS"]); $i++) {
 				if ($node["CHILDS"][$i]["TYPE"]==2)
 					if ($force_entities) 
@@ -453,12 +456,24 @@ class entrez_request {
 		}
 
 		$curl =  new Curl();
-		$url = $this->base_url . "efetch.fcgi?db=".$this->database."&retmode=xml&id=".implode(",", $this->current_id_list);
-		$result = $curl->get($url);
+		if(count($this->current_id_list) > 200) {
+			$url = $this->base_url . "efetch.fcgi";
+			$fields = [
+					'db' => $this->database,
+					'retmode' => 'xml',
+					'id' => implode(',', $this->current_id_list),
+			];
+			$result = $curl->post($url, $fields);
+		} else {
+			$url = $this->base_url . "efetch.fcgi?db=".$this->database."&retmode=xml&id=".implode(",", $this->current_id_list);
+			$result = $curl->get($url);
+		}
 		
-		$current_responses = $result->body;
-
-		$this->current_responses = $current_responses;
+		$response_status = substr($result->headers['Status-Code'], 0, 1);
+		if ($response_status == '2' || $response_status == '3') {
+			$current_responses = $result->body;
+			$this->current_responses = $current_responses;
+		}
 	}
 	
 	public function get_current_responses() {

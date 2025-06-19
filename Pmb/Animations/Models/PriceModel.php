@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: PriceModel.php,v 1.21 2020/10/06 08:39:19 qvarin Exp $
+// $Id: PriceModel.php,v 1.21.6.1 2023/03/10 08:54:11 gneveu Exp $
 
 namespace Pmb\Animations\Models;
 
@@ -139,6 +139,17 @@ class PriceModel extends Model
         foreach ($pricesList as $price){
             $price = new PriceOrm($price->id_price);
             $price->delete();
+        }
+    }
+
+    public static function addPriceRepeatAnimation($prices, $id_animation) {
+        foreach ($prices as $price) {
+            $priceORM = new PriceOrm();
+            $priceORM->num_animation = $id_animation;
+            $priceORM->name = $price->name;
+            $priceORM->value = $price->value;
+            $priceORM->num_price_type = $price->numPriceType;
+            $priceORM->save();
         }
     }
 }

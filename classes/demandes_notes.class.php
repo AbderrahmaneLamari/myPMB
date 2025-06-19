@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes_notes.class.php,v 1.40 2021/03/30 16:34:05 dgoron Exp $
+// $Id: demandes_notes.class.php,v 1.42.4.1 2024/01/05 15:32:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -99,15 +99,63 @@ class demandes_notes {
 		return $path;
 	}
 	
+	public function get_content_form($reply=false) {
+	    global $demandes_include_note;
+	    
+	    if(!$this->id_note || ($this->id_note && $reply)) {
+	        $this->date_note=date("Ymd",time());
+	    }
+	    if(!($this->id_note && !$reply)){
+	        if($demandes_include_note) {
+	            $this->rapport = 1;
+	        }
+	    }
+	    
+	    $interface_content_form = new interface_content_form(static::class);
+	    
+	    //Champs cachés
+	    $interface_content_form->add_element('iduser')
+	    ->add_input_node('hidden', $this->notes_num_user);
+	    $interface_content_form->add_element('typeuser')
+	    ->add_input_node('hidden', $this->notes_type_user);
+	    $interface_content_form->add_element('idaction')
+	    ->add_input_node('hidden', $this->num_action);
+	    $interface_content_form->add_element('iddemande')
+	    ->add_input_node('hidden', $this->num_demande);
+	    
+	    $html_note_date = "
+        <input type='hidden' id='date_note' name='date_note' value='".$this->date_note."' />
+        <input type='button' class='bouton' id='date_note_btn' name='date_note_btn' value='".formatdate($this->date_note)."' onClick=\"openPopUp('./select.php?what=calendrier&caller=modif_note&date_caller=".$this->date_note."&param1=date_note&param2=date_note_btn&auto_submit=NO&date_anterieure=YES', 'calendar')\"/>";
+	    $interface_content_form->add_element('date_note', 'demandes_note_date')
+	    ->add_html_node($html_note_date);
+	    
+	    $interface_content_form->add_element('contenu_note', 'demandes_note_contenu')
+	    ->add_textarea_node($this->contenu, 0, 15)
+	    ->set_attributes(array('wrap' => 'virtual'));
+	    $interface_content_form->add_element('ck_prive')
+	    ->add_input_node('boolean', $this->prive)
+	    ->set_label_code('demandes_note_privacy');
+	    $interface_content_form->add_element('ck_rapport')
+	    ->add_input_node('boolean', $this->rapport)
+	    ->set_label_code('demandes_note_rapport');
+	    $interface_content_form->add_element('ck_vue')
+	    ->add_input_node('boolean', !$this->notes_read_gestion)
+	    ->set_label_code('demandes_note_vue');
+	    $interface_content_form->add_element('demande_end')
+	    ->add_input_node('boolean', ($this->demande_final_note_num == $this->id_note ? 1 : 0))
+	    ->set_label_code('demandes_note_demande_end');
+	    return $interface_content_form->get_display();
+	}
+	
 	/*
 	 * Formulaire d'ajout/modification
 	 */
 	public function show_modif_form($reply=false){
-		global $content_form_modif_note, $msg, $charset, $demandes_include_note;
+		global $msg;
 		
 		print "<h2>".$this->get_path()."</h2>";
 		
-		$content_form = $content_form_modif_note;
+		$content_form = $this->get_content_form($reply);
 		
 		$interface_form = new interface_demandes_form('modif_note');
 		$interface_form->set_num_action($this->num_action);
@@ -115,54 +163,13 @@ class demandes_notes {
 		$title = (strlen($this->contenu)>30 ? substr($this->contenu,0,30).'...' : $this->contenu);
 		if($this->id_note && !$reply){
 			$interface_form->set_label($msg['demandes_note_modif'].' : '.$title);
-			
-			$content_form = str_replace('!!ck_rapport!!', ($this->rapport ? 'checked' : ''),$content_form);
-			$content_form = str_replace('!!ck_prive!!', ($this->prive ? 'checked' : ''),$content_form);
-			$content_form = str_replace('!!ck_vue!!', ($this->notes_read_gestion ? '' : 'checked'),$content_form);
-			if($this->demande_final_note_num == $this->id_note){
-				$content_form = str_replace('!!ck_final_note!!','checked',$content_form);
-			}else{
-				$content_form = str_replace('!!ck_final_note!!','',$content_form);
-			}
-			$content_form = str_replace('!!date_note_btn!!',formatdate($this->date_note),$content_form);
-			$content_form = str_replace('!!date_note!!',$this->date_note,$content_form);
 			$content_form = str_replace('!!idnote!!',$this->id_note,$content_form);
 		} elseif($this->id_note && $reply) {
 			$interface_form->set_label($msg['demandes_note_reply'].' : '.$title);
-			
-			if($demandes_include_note)
-				$content_form = str_replace('!!ck_rapport!!','checked',$content_form);
-			else $content_form = str_replace('!!ck_rapport!!','',$content_form);
-				$content_form = str_replace('!!ck_prive!!','',$content_form);
-			$date = formatdate(today());
-			$date_note=date("Ymd",time());
-			$content_form = str_replace('!!date_note_btn!!',$date,$content_form);
-			$content_form = str_replace('!!date_note!!',$date_note,$content_form);
 			$content_form = str_replace('!!idnote!!','',$content_form);
-			$content_form = str_replace('!!ck_final_note!!','',$content_form);
 		} else {
 			$interface_form->set_label($msg['demandes_note_creation']);
-			
-			$content_form = str_replace('!!ck_prive!!','',$content_form);
-			if($demandes_include_note)
-				$content_form = str_replace('!!ck_rapport!!','checked',$content_form);
-			else $content_form = str_replace('!!ck_rapport!!','',$content_form);
-			$date = formatdate(today());
-			$date_note=date("Ymd",time());
-			$content_form = str_replace('!!date_note_btn!!',$date,$content_form);
-			$content_form = str_replace('!!date_note!!',$date_note,$content_form);
-			$content_form = str_replace('!!idnote!!','',$content_form);
-			$content_form = str_replace('!!parent_text!!','',$content_form);
-			$content_form = str_replace('!!id_note_parent!!','',$content_form);
-			$content_form = str_replace('!!style!!','',$content_form);
-			$content_form = str_replace('!!ck_final_note!!','',$content_form);
 		}
-		$content_form = str_replace('!!contenu!!',htmlentities($this->contenu,ENT_QUOTES,$charset),$content_form);
-		$content_form = str_replace('!!idaction!!',$this->num_action,$content_form);
-		$content_form = str_replace('!!iduser!!',$this->notes_num_user,$content_form);
-		$content_form = str_replace('!!typeuser!!',$this->notes_type_user,$content_form);
-		$content_form = str_replace('!!iddemande!!',$this->num_demande,$content_form);
-		
 		$interface_form->set_object_id($this->id_note)
 		->set_confirm_delete_msg($msg['demandes_note_confirm_suppr'])
 		->set_content_form($content_form)
@@ -301,7 +308,7 @@ class demandes_notes {
 		$dialog_note = str_replace('!!idaction!!',$num_action,$dialog_note);
 		$dialog = '';
 		if (!empty($notes)) {
-			foreach($notes as $idNote=>$note){
+			foreach($notes as $note){
 				//Utilisateur ou lecteur ? 
 				if($note->notes_type_user==="1"){
 					$side='note_opac';
@@ -475,7 +482,7 @@ class demandes_notes {
 		
 		$contenu = sprintf($msg['demandes_note_mail_new'],$PMBuserprenom." ".$PMBusernom." ",$this->libelle_action,$this->libelle_demande).'<br />';
 		$contenu.=$this->contenu.'<br />';
-		$lien_opac='<a href="'.$opac_url_base.'empr.php?tab=request&lvl=list_dmde&sub=open_demande&iddemande='.$this->num_demande.'&last_modified='.$this->num_action.'#fin">'.$msg['demandes_see_last_note'].'</a>';
+		//$lien_opac='<a href="'.$opac_url_base.'empr.php?tab=request&lvl=list_dmde&sub=open_demande&iddemande='.$this->num_demande.'&last_modified='.$this->num_action.'#fin">'.$msg['demandes_see_last_note'].'</a>';
 		$lien_gestion='<a href="'.$pmb_url_base.'demandes.php?categ=gestion&act=see_dmde&iddemande='.$this->num_demande.'&last_modified='.$this->num_action.'#fin">'.$msg['demandes_see_last_note'].'</a>';
 		$objet = $msg['demandes_note_mail_new_object'];
 		
@@ -483,39 +490,39 @@ class demandes_notes {
 		$headers .= "Content-type: text/html; charset=iso-8859-1";
 		
 		//Envoi du mail aux autres documentalistes concernés par la demande
-		$req = "SELECT user_email, prenom,nom FROM users
+		$req = "SELECT userid, user_email, prenom,nom FROM users
 		JOIN demandes_users ON num_user=userid
 		WHERE num_demande='".$this->num_demande."' AND num_user !='".$idsender."'";
 		$res = pmb_mysql_query($req);
 		
 		while(($user = pmb_mysql_fetch_object($res))){	
 			if($user->user_email){
-				if($user->prenom){
-					$user->nom=$user->prenom.' '.$user->nom;
-				}
-				$envoi_OK = mailpmb($user->nom,$user->user_email,$objet,$contenu.$lien_gestion,$PMBuserprenom." ".$PMBusernom,$PMBuseremail,$headers,"" );
+				$mail_user_demande_note = new mail_user_demande_note();
+				$mail_user_demande_note->set_mail_to_id($user->userid);
+				$mail_user_demande_note->set_demande_note($this);
+				$mail_user_demande_note->send_mail();
 			}
 		}
 		
 		//Envoi du mail au demandeur
-		$req= "SELECT empr_prenom,empr_nom,  empr_mail FROM empr
+		$req= "SELECT id_empr, empr_prenom, empr_nom, empr_mail FROM empr
 		JOIN demandes ON id_empr=num_demandeur
 		WHERE id_demande='".$this->num_demande."'";
 		
 		$res = pmb_mysql_query($req);
 		$empr = pmb_mysql_fetch_object($res);		
 		if($empr->empr_mail) {
-			if($empr->empr_prenom){
-				$empr->empr_nom=$empr->empr_prenom.' '.$empr->empr_nom;
-			}
-			$envoi_OK = mailpmb($empr->empr_nom,$empr->empr_mail,$objet,$contenu.$lien_opac,$PMBuserprenom." ".$PMBusernom,$PMBuseremail,$headers,"");
+			$mail_reader_demande_note = new mail_reader_demande_note();
+			$mail_reader_demande_note->set_mail_to_id($empr->id_empr);
+			$mail_reader_demande_note->set_demande_note($this);
+			$mail_reader_demande_note->send_mail();
 		}
 		
 		// Envoi au mail générique
 		if($demandes_email_generic){
 			$param=explode(",", $demandes_email_generic);
 			if(($param[0]==2 || $param[0]==3) && $param[1]){
-				$envoi_OK = mailpmb("",$param[1],$objet,$contenu.$lien_gestion,$PMBuserprenom." ".$PMBusernom,$PMBuseremail,$headers,"",$param[2]);				
+				mailpmb("",$param[1],$objet,$contenu.$lien_gestion,$PMBuserprenom." ".$PMBusernom,$PMBuseremail,$headers,"",$param[2]);				
 			}
 		}
 	}

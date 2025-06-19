@@ -2,9 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bul_main.inc.php,v 1.13 2019/12/04 10:04:53 dgoron Exp $
+// $Id: bul_main.inc.php,v 1.14 2022/02/23 14:47:31 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $class_path, $include_path, $action, $msg, $serial_header;
+global $bul_id, $serial_id, $explnum_id, $f_explnum_id, $f_bulletin;
 
 // page de switch gestion du bulletinage périodiques
 
@@ -13,10 +16,18 @@ switch($action) {
 		include('./catalog/serials/bulletinage/bul_view.inc.php');
 		break;
 	case 'bul_form':
-		include('./catalog/serials/bulletinage/bul_form.inc.php');
+		require_once($class_path."/entities/entities_bulletinage_controller.class.php");
+		$entities_bulletinage_controller = new entities_bulletinage_controller($bul_id);
+		$entities_bulletinage_controller->set_serial_id($serial_id);
+		$entities_bulletinage_controller->set_action('form');
+		$entities_bulletinage_controller->proceed();
 		break;
 	case 'bul_duplicate':
-		include('./catalog/serials/bulletinage/bul_duplicate.inc.php');
+		require_once($class_path."/entities/entities_bulletinage_controller.class.php");
+		$entities_bulletinage_controller = new entities_bulletinage_controller($bul_id);
+		$entities_bulletinage_controller->set_serial_id($serial_id);
+		$entities_bulletinage_controller->set_action('duplicate');
+		$entities_bulletinage_controller->proceed();
 		break;
 	case 'bul_del_notice':
 		include('./catalog/serials/bulletinage/bul_del_notice.inc.php');

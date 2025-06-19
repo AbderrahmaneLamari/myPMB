@@ -1,0 +1,27 @@
+ .pmb_button {
+    font: var(--font-link);
+    padding: 11px 24px 10px 24px;
+    border-radius: 44px;
+    background-color: var(--c-white);
+    border: 1px solid var(--c-primary);
+    box-shadow: 3px 5px 0 var(--c-primary);
+    color: var(--c-primary);
+    transition: var(--transition);
+    text-align: center;
+    display: inline-block;
+    margin-top: 16px;
+ }
+
+ .pmb_button:hover {
+    box-shadow:  0 -3px 0 var(--c-primary);
+    color: var(--c-primary);
+    transition: var(--transition)
+ }
+
+ .pmb-button-left {
+   align-self: flex-start;
+ }
+
+ .pmb-button-center {
+   align-self: center;
+ }

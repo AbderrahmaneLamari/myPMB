@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interface_admin_form.class.php,v 1.15 2021/03/18 08:15:12 jlaurent Exp $
+// $Id: interface_admin_form.class.php,v 1.16 2022/05/12 06:53:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -41,15 +41,6 @@ class interface_admin_form extends interface_form {
 			".$this->get_display_submit_action()."
 		</div>";
 		return $display;
-	}
-	
-	protected function get_display_delete_action() {
-	    global $charset, $msg;
-	    if($this->block_delete) {
-	        return "<input type='button' class='bouton' name='delete_button' id='delete_button' value='".htmlentities($this->get_action_delete_label(), ENT_QUOTES, $charset)."' onclick=\"alert('".$msg["animation_mailtpl_use"]."')\" />";
-	    } else {
-	        return "<input type='button' class='bouton' name='delete_button' id='delete_button' value='".htmlentities($this->get_action_delete_label(), ENT_QUOTES, $charset)."' onclick=\"if(confirm('".htmlentities(addslashes($this->confirm_delete_msg), ENT_QUOTES, $charset)."')){document.location='".$this->get_delete_action()."';}\" />";
-	    }
 	}
 	
 	public function get_display_parameters() {

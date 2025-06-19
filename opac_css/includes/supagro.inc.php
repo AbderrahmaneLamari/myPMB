@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: supagro.inc.php,v 1.9.2.1 2022/01/10 10:35:57 dgoron Exp $
+// $Id: supagro.inc.php,v 1.10 2022/01/10 10:23:05 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

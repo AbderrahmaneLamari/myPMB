@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.tpl.php,v 1.54.2.1 2021/08/09 10:24:14 dgoron Exp $
+// $Id: search.tpl.php,v 1.55 2021/08/09 10:23:16 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 

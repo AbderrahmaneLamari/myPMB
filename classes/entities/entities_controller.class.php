@@ -2,10 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_controller.class.php,v 1.13.8.1 2021/09/22 08:29:54 moble Exp $
+// $Id: entities_controller.class.php,v 1.16.4.1 2023/04/07 09:15:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+use Pmb\Digitalsignature\Models\DocnumCertifier;
+
+global $class_path;
 require_once($class_path."/acces.class.php");
 require_once($class_path."/onto/onto_pmb_entities_mapping.class.php");
 require_once($class_path."/frbr/cataloging/frbr_cataloging_scheme.class.php");
@@ -95,6 +98,7 @@ class entities_controller {
 		global $msg;
 		global $f_notice, $f_bulletin, $f_nom, $f_url;
 		global $conservervignette, $f_statut_chk, $f_explnum_statut;
+		global $pmb_digital_signature_activate;
 
 		//Vérification des champs personalisés
 		$p_perso=new parametres_perso("explnum");
@@ -105,17 +109,25 @@ class entities_controller {
 		}
 		
 		$explnum = new explnum($this->id);
+		
+		if ($pmb_digital_signature_activate) {
+		    $docNumCertifier = new DocnumCertifier($explnum);
+		    $check = $docNumCertifier->checkSignExists();
+		    if ($check) {
+		        return print return_error_message($msg["540"], $msg["digital_signature_already_signed_docnum_del"], 1, "./catalog.php?categ=isbd&id=".$explnum->explnum_notice);
+		    }
+		}
+		
 		$explnum->set_p_perso($p_perso);
 		$explnum->mise_a_jour($f_notice, $f_bulletin, $f_nom, $f_url, $this->get_permalink(), $conservervignette, $f_statut_chk, $f_explnum_statut);
 	}
 	
 	public function proceed_explnum_delete() {
-		global $msg;
+	    global $msg;
 	
+		$explnum = new explnum($this->id);
 		print "<div class=\"row\"><div class=\"msg-perio\">".$msg['catalog_notices_suppression']."</div></div>";
-		
-		$expl = new explnum($this->id);
-		$expl->delete();
+		$explnum->delete();
 	
 		print $this->get_redirection_form();
 	}

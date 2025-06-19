@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: marc_table.class.php,v 1.48 2019/07/11 14:17:15 btafforeau Exp $
+// $Id: marc_table.class.php,v 1.49 2022/12/07 16:32:48 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -23,6 +23,10 @@ class marc_list {
 	public $parser;
 	public $inverse_of = array();
 	public $attributes = array();
+	
+	public const TYPE_DOCTYPE = "doctype";
+	
+	public const TYPE_NIVEAU_BIBLIO = "nivbiblio";
 
 // méthodes
 
@@ -53,7 +57,7 @@ class marc_list {
 				$this->table = $parser->table;
 				$this->tablefav = $parser->tablefav;
 				break;
-			case 'doctype':
+			case \marc_list::TYPE_DOCTYPE:
 				$parser = new XMLlist("$include_path/marc_tables/$lang/doctype.xml", 0);
 				$parser->analyser();
 				$this->table = $parser->table;
@@ -90,7 +94,7 @@ class marc_list {
 				$parser->analyser();
 				$this->table = $parser->table;
 				break;
-			case 'nivbiblio':
+			case \marc_list::TYPE_NIVEAU_BIBLIO:
 				$parser = new XMLlist("$include_path/marc_tables/$lang/nivbiblio.xml");
 				$parser->analyser();
 				$this->table = $parser->table;

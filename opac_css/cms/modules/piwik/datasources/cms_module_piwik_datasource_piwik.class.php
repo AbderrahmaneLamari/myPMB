@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_piwik_datasource_piwik.class.php,v 1.4 2016/09/20 10:25:41 apetithomme Exp $
+// $Id: cms_module_piwik_datasource_piwik.class.php,v 1.5 2022/05/31 08:37:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -29,7 +29,6 @@ class cms_module_piwik_datasource_piwik extends cms_module_common_datasource{
 	 * Récupération des données de la source...
 	 */
 	public function get_datas(){
-		global $dbh;
 		global $user_query;
 		global $opac_autolevel2,$mode,$get_last_query;
 		if(!$this->datas){
@@ -49,7 +48,7 @@ class cms_module_piwik_datasource_piwik extends cms_module_common_datasource{
 				if($_SESSION['id_empr_session']){
 					//récupération des informations liés au lecteur
 					$query = "select empr_year, empr_sexe, empr_categ.libelle as categ, empr_codestat.libelle as codestat, location_libelle as location , empr_ville from empr join empr_categ on id_categ_empr = empr_categ join empr_codestat on idcode = empr_codestat join docs_location on idlocation = empr_location where id_empr = '".($_SESSION['id_empr_session']*1)."'";
-					$result = pmb_mysql_query($query,$dbh);
+					$result = pmb_mysql_query($query);
 					if(pmb_mysql_num_rows($result)){
 						while($row = pmb_mysql_fetch_object($result)){
 							$server['visitor']['year'] = $row->year;
@@ -101,7 +100,7 @@ class cms_module_piwik_datasource_piwik extends cms_module_common_datasource{
 										}else if(count($_SESSION['level1']) == 1 ){
 											foreach ($_SESSION['level1'] as $lvl=>$level1){
 												$server['search']['type'] = $_SESSION['search_type']." / ".$lvl;
-												$server['search']['count'] = $_SESSION['level1'][$lvl]['count'];
+												$server['search']['count'] = $level1['count'];
 											}
 										}else {
 											$server['search']['type'] = $_SESSION['search_type']." / tous";

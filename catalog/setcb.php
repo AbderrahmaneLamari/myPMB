@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: setcb.php,v 1.24 2021/02/10 16:36:12 dbellamy Exp $
+// $Id: setcb.php,v 1.24.6.2 2023/04/07 13:03:10 dbellamy Exp $
 // popup de saisie d'un code barre
 
 require_once "../includes/error_report.inc.php";
@@ -10,7 +10,7 @@ require_once "../includes/global_vars.inc.php";
 require_once "../includes/config.inc.php";
 
 $base_path		   = "..";
-$include_path      = $base_path."/".$include_path; 
+$include_path      = $base_path."/".$include_path;
 $class_path        = $base_path."/".$class_path;
 $styles_path       = $base_path."/".$styles_path;
 
@@ -41,7 +41,7 @@ if(!checkUser('PhpMyBibli')) {
 	exit;
 }
 
-if(SESSlang) {
+if( defined('SESSlang') && SESSlang ) {
 	$lang=SESSlang;
 	$helpdir = $lang;
 }
@@ -63,7 +63,7 @@ print "<!DOCTYPE html>
 	<meta http-equiv='Cache-Control' content='no-cache'>";
 echo HtmlHelper::getInstance()->getStyle($stylesheet);
 print "	<title>$msg[4014]</title></head><body>";
-	
+
 if (!isset($formulaire_appelant) || !$formulaire_appelant) $formulaire_appelant="notice" ;
 if (!isset($objet_appelant) || !$objet_appelant) $objet_appelant="f_cb" ;
 if(!isset($bulletin)) $bulletin = '';
@@ -105,7 +105,7 @@ if (isset($suite) && $suite) { // un CB a été soumis
 		if ($nbr_verif_code > 0) $alerte_code_double = 1 ;
 			else $alerte_code_double = 0 ;
 	}
-} 
+}
 
 if ($alerte_code_double) {
 	?>
@@ -124,7 +124,7 @@ if ($alerte_code_double) {
 			</script>
 		<?php
 		}
-			
+
 
 ?>
 <div class='center'>

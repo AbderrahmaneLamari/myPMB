@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_subtabs_edit_ui.class.php,v 1.1.4.3 2021/12/23 13:55:45 dgoron Exp $
+// $Id: list_subtabs_edit_ui.class.php,v 1.4.4.1 2024/01/08 14:13:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,6 +22,9 @@ class list_subtabs_edit_ui extends list_subtabs_ui {
 			case 'expl':
 				$title .= $msg['1110'];
 				break;
+			case 'pnb':
+			    $title .= $msg['edit_menu_pnb'];
+			    break;
 			case 'notices':
 				$title .= $msg['350'];
 				break;
@@ -115,6 +118,9 @@ class list_subtabs_edit_ui extends list_subtabs_ui {
 			case 'procs':
 				$sub_title .= $msg['1131'];
 				break;
+			case 'pnb':
+			    $sub_title .= $msg['edit_menu_pnb_orders'];
+			    break;
 			case 'cbgen':
 				switch($sub) {
 					case 'libre':

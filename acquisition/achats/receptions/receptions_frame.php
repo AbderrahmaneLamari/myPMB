@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: receptions_frame.php,v 1.21.2.1 2022/01/05 15:29:50 dgoron Exp $
+// $Id: receptions_frame.php,v 1.22 2022/01/05 15:25:28 dgoron Exp $
 
 // définition du minimum nécessaire
 

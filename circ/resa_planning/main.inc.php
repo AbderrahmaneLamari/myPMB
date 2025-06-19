@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.20 2021/05/03 07:59:40 dgoron Exp $
+// $Id: main.inc.php,v 1.21.4.1 2023/03/21 15:48:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $include_path, $msg, $charset, $layout_begin;
-global $categ, $action, $resa_action;
+global $categ, $action, $mode, $resa_action;
 global $resa_check, $empr_ids, $id_empr, $groupID, $resa_date_debut, $resa_date_fin;
 global $id_notice, $id_bulletin, $location, $form_resa_dates, $resa_deb, $resa_fin;
 
@@ -99,13 +99,20 @@ switch ($categ) {
 
 				$tab_loc_retrait = resa_planning::get_available_locations($id_empr,$id_notice,$id_bulletin);
 
-				if(count($tab_loc_retrait)>=1) {
+				if(count($tab_loc_retrait)) {
 					$form_loc_retrait = '<table ><tbody><tr><th>'.$msg['resa_planning_loc_retrait'].'</th><th>'.$msg['resa_planning_qty_requested'].'</th></tr>';
 					foreach($tab_loc_retrait as $v) {
 						$form_loc_retrait.= '<tr><td style="width:50%">'.htmlentities($v['location_libelle'],ENT_QUOTES,$charset).'</td>';
 						$form_loc_retrait.= '<td><select name="location['.$v['location_id'].']">';
-						for($i=1;$i<$v['location_nb']*1+1;$i++) {
-							$form_loc_retrait.= '<option value='.$i.'>'.$i.'</option>';
+						$v['location_nb'] = intval($v['location_nb']);
+						if(count($tab_loc_retrait) > 1) {
+							for($i=0;$i<$v['location_nb']+1;$i++) {
+								$form_loc_retrait.= '<option value='.$i.' '.($i == 1 ? 'selected="selected"' : '').'>'.$i.'</option>';
+							}
+						} else {
+							for($i=1;$i<$v['location_nb']+1;$i++) {
+								$form_loc_retrait.= '<option value='.$i.'>'.$i.'</option>';
+							}
 						}
 						$form_loc_retrait.= '</select></td>';
 						$form_loc_retrait.='</tr>';
@@ -136,7 +143,7 @@ switch ($categ) {
 				$check_qty=0;
 				if(isset($location) && is_array($location)) {
 					foreach($location as $v) {
-						$check_qty+= $v*1;
+						$check_qty+= intval($v);
 					}
 				}
 				if($check_qty==0) {
@@ -152,7 +159,7 @@ switch ($categ) {
 					$resdate=pmb_mysql_fetch_object($resultatdate);
 					if($resdate->diff > 0 ) {
 						foreach($location as $resa_loc_retrait=>$resa_qty) {
-							$resa_qty+=0;
+							$resa_qty = intval($resa_qty);
 							if($resa_qty) {
 								$r = new resa_planning();
 								$r->resa_idempr = $id_empr;
@@ -179,16 +186,15 @@ switch ($categ) {
 			case 'val_resa':	//Validation réservation depuis liste
 			    if(!empty($resa_check) && is_array($resa_check)) {
     				for($i=0;$i<count($resa_check);$i++) {
-    
     					$key = $resa_check[$i];
     					//On vérifie les dates
     					if(!empty($resa_date_debut[$key]) && !empty($resa_date_fin[$key])) {
-        					$tresa_date_debut = explode('-', extraitdate($resa_date_debut[$key]));
+        					$tresa_date_debut = explode('-', $resa_date_debut[$key]);
         					if (strlen($tresa_date_debut[2])==1) $tresa_date_debut[2] = '0'.$tresa_date_debut[2];
         					if (strlen($tresa_date_debut[1])==1) $tresa_date_debut[1] = '0'.$tresa_date_debut[1];
         					$r_date_debut = implode('', $tresa_date_debut);
         
-        					$tresa_date_fin = explode('-', extraitdate($resa_date_fin[$key]));
+        					$tresa_date_fin = explode('-', $resa_date_fin[$key]);
         					if (strlen($tresa_date_fin[2])==1) $tresa_date_fin[2] = '0'.$tresa_date_fin[2];
         					if (strlen($tresa_date_fin[1])==1) $tresa_date_fin[1] = '0'.$tresa_date_fin[1];
         					$r_date_fin = implode('', $tresa_date_fin);

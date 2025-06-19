@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesReaders.class.php,v 1.5.8.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: pmbesReaders.class.php,v 1.6.4.1 2023/03/16 11:03:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,18 +10,6 @@ global $class_path;
 require_once($class_path."/external_services.class.php");
 
 class pmbesReaders extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	/**
 	 * $search => limit - exceed - running
@@ -32,7 +20,8 @@ class pmbesReaders extends external_services_api_class {
 	public function listReadersSubscription($search='',$empr_location_id='',$empr_statut_edit='', $sortby=''){
 		global $msg, $pmb_relance_adhesion,$pmb_lecteurs_localises;
 		global $deflt2docs_location;
-							
+				
+		$result = array();
 		if ($search =='limit') {
 			$restrict = " ((to_days(empr_date_expiration) - to_days(now()) ) <=  $pmb_relance_adhesion ) and empr_date_expiration >= now() ";
 		} else if ($search =='exceed') {
@@ -43,31 +32,30 @@ class pmbesReaders extends external_services_api_class {
 		
 		// restriction localisation le cas échéant
 		if ($pmb_lecteurs_localises) {
-			if ($empr_location_id=="") 
+			if ($empr_location_id=="") {
 				$empr_location_id = $deflt2docs_location ;
-			if ($empr_location_id!=0) 
+			}
+			$empr_location_id = intval($empr_location_id);
+			if ($empr_location_id!=0) {
 				$restrict_localisation = " AND empr_location='$empr_location_id' ";
-			else 
+			} else {
 				$restrict_localisation = "";
+			}
 		}
 
 		// filtré par un statut sélectionné
+		$empr_statut_edit = intval($empr_statut_edit);
 		if ($empr_statut_edit) {
-			if ($empr_statut_edit!=0) 
-				$restrict_statut = " AND empr_statut='$empr_statut_edit' ";
-			else 
-				$restrict_statut="";
-		} 
-		
-		// on récupére le nombre de lignes 
-		if(!$nbr_lignes) {
-			$requete = "SELECT COUNT(1) FROM empr, empr_statut where 1 ";
-			$requete = $requete.$restrict_localisation.$restrict_statut." and ".$restrict;
-			$requete .= " and empr_statut=idstatut";
-			$res = pmb_mysql_query($requete);
-			$nbr_lignes = pmb_mysql_result($res, 0, 0);
+			$restrict_statut = " AND empr_statut='$empr_statut_edit' ";
+		} else {
+			$restrict_statut="";
 		}
-
+		// on récupére le nombre de lignes 
+		$requete = "SELECT COUNT(1) FROM empr, empr_statut where 1 ";
+		$requete = $requete.$restrict_localisation.$restrict_statut." and ".$restrict;
+		$requete .= " and empr_statut=idstatut";
+		$res = pmb_mysql_query($requete);
+		$nbr_lignes = pmb_mysql_result($res, 0, 0);
 		if($nbr_lignes) {
 //			if ($statut_action=="modify") {
 //				$requete="UPDATE empr set empr_statut='$empr_chang_statut_edit' where 1 ".$restrict_localisation.$restrict_statut." and ".$restrict;
@@ -129,6 +117,7 @@ class pmbesReaders extends external_services_api_class {
 				"nb_pret" => $nb_pret,
 			);
 		}
+		return $result;
 	}
 	
 	/**

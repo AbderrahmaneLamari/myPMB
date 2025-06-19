@@ -5,7 +5,7 @@
 ****************************************************************************************
 © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: champs_base.xml,v 1.4 2019/04/19 12:28:25 ngantier Exp $ -->
+$Id: champs_base.xml,v 1.5 2022/03/18 11:35:42 tsamson Exp $ -->
 
 <indexation>
 
@@ -181,6 +181,21 @@ $Id: champs_base.xml,v 1.4 2019/04/19 12:28:25 ngantier Exp $ -->
 			</link>
 		</table>
 		<isbd name="isbd" class_name="indexint" id="03" pond="0"/>
+	</field>
+	<field name="aut_link" external="yes" id="100!!id_authperso!!909" datatype="aut_link">
+		<table name="authperso_authorities" alias="authperso_link">
+			<filter>authperso_link.id_authperso_authority != !!object_id!!</filter>
+			<tablefield name="admin_menu_authperso" id="01" pond="110">authperso_index_infos_global</tablefield>
+			<tablekey>id_authperso_authority</tablekey>
+			<idkey>id_authperso_authority</idkey>
+			<link type="nn">
+				<table>aut_link</table>
+				<referencefield>aut_link_to_num AND aut_link_from = (1000 + !!id_authperso!!) AND aut_link_from_num != !!object_id!! OR (authperso_authorities.id_authperso_authority = aut_link_to_num AND aut_link_to = (1000 + !!id_authperso!!) AND aut_link_to_num != !!object_id!!)</referencefield>
+				<externalfield>aut_link_to_num = authperso_link.id_authperso_authority OR aut_link_from_num</externalfield>
+				<linkrestrict></linkrestrict>
+			</link>
+		</table>
+		<isbd name="isbd" class_name="authperso" id="02" pond="80"/>
 	</field>
 	
 	<!-- Common fields -->

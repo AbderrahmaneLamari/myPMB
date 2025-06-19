@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes_controller.class.php,v 1.1.2.2 2021/08/06 14:17:44 dgoron Exp $
+// $Id: demandes_controller.class.php,v 1.1 2021/08/06 14:14:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

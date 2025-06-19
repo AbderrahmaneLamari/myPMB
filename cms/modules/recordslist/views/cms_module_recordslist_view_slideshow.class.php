@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_recordslist_view_slideshow.class.php,v 1.2 2021/02/12 10:08:40 qvarin Exp $
+// $Id: cms_module_recordslist_view_slideshow.class.php,v 1.2.6.2 2023/06/09 08:21:08 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 class cms_module_recordslist_view_slideshow extends cms_module_common_view_slideshow {
 	
@@ -49,11 +51,10 @@ class cms_module_recordslist_view_slideshow extends cms_module_common_view_slide
 		$query = "select notice_id,tit1,thumbnail_url,code from notices where notice_id in ('".implode("','",$records['records'])."') order by field( notice_id, '".implode("','",$records['records'])."')";
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)){
+		    $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
 			while($row = pmb_mysql_fetch_object($result)){
 				$url_vign = "";
-				if (($row->thumbnail_url || $row->code) && ($opac_show_book_pics=='1' && ($opac_book_pics_url || $row->thumbnail_url))) {
-					$url_vign = getimage_url($row->code, $row->thumbnail_url);
-				}
+				$url_vign = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $row->notice_id);
 				$notice_class = new $opac_notice_affichage_class($row->notice_id);
 				$notice_class->do_header();
 				if($this->parameters['used_template']){

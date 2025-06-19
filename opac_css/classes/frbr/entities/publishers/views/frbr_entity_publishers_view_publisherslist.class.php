@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_publishers_view_publisherslist.class.php,v 1.5 2021/03/01 11:04:07 tsamson Exp $
+// $Id: frbr_entity_publishers_view_publisherslist.class.php,v 1.5.6.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,7 +14,7 @@ class frbr_entity_publishers_view_publisherslist extends frbr_entity_common_view
 		$this->default_template = "<div>
 {% for publisher in publishers %}
 <h3>{{publisher.name}}</h3>
-<blockquote>{{publisher.comment}}</blockquote>
+<div>{{publisher.comment}}</div>
 {% endfor %}
 </div>";
 	}

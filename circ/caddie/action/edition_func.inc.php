@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: edition_func.inc.php,v 1.13.6.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: edition_func.inc.php,v 1.15 2022/03/21 12:54:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -30,7 +30,7 @@ if (($flag=="") && ($no_flag=="")) {
 
 $requete = "SELECT empr_caddie_content.* FROM empr_caddie_content where empr_caddie_id='".$idcaddie."' ";
 if ($flag && $no_flag ) $complement_clause = "";
-if (!$flag && $no_flag ) $complement_clause = " and flag is null ";
+if (!$flag && $no_flag ) $complement_clause = " and (flag is null or flag='') ";
 if ($flag && !$no_flag ) $complement_clause = " and flag is not null ";
 if (!$flag && !$no_flag ) return ;
 $requete .= $complement_clause." order by object_id";

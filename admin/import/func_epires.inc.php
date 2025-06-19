@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_epires.inc.php,v 1.23.2.2 2021/12/09 14:25:07 dgoron Exp $
+// $Id: func_epires.inc.php,v 1.26 2022/05/25 07:21:57 dgoron Exp $
 
 // DEBUT paramétrage propre à la base de données d'importation :
 global $class_path; //Nécessaire pour certaines inclusions
@@ -103,7 +103,7 @@ function import_new_notice_suite() {
 		//Notice chapeau existe-t-elle ?
 		$requete="SELECT notice_id FROM notices WHERE tit1='".addslashes($info_464[0]['t'])."' and niveau_hierar='1' and niveau_biblio='s'";
 		$resultat=pmb_mysql_query($requete);
-		if (@pmb_mysql_num_rows($resultat)) {
+		if (pmb_mysql_num_rows($resultat)) {
 			//Si oui, récupération id
 			$chapeau_id=pmb_mysql_result($resultat,0,0);
 
@@ -116,9 +116,17 @@ function import_new_notice_suite() {
 			//Bulletin existe-t-il ?
 			$requete="SELECT bulletin_id FROM bulletins WHERE bulletin_numero='".addslashes($info_464[0]['v'])."' AND mention_date='".addslashes($info_464[0]['d'])."' AND bulletin_notice=$chapeau_id";
 			$resultat=pmb_mysql_query($requete);
-			if (@pmb_mysql_num_rows($resultat)) {
+			//On lance une autre requête de test pour vérifier l'existence du bulletin (espace insécable dans le numéro ?)
+			//#125734 : contenu du fichier PRISME en erreur
+			$requete_clean_nbsp="SELECT bulletin_id FROM bulletins WHERE bulletin_numero='".addslashes(clean_nbsp($info_464[0]['v']))."' AND mention_date='".addslashes($info_464[0]['d'])."' AND bulletin_notice=$chapeau_id";
+			$resultat_clean_nbsp=pmb_mysql_query($requete_clean_nbsp);
+			
+			if (pmb_mysql_num_rows($resultat)) {
 				//Si oui, récupération id bulletin
 				$bulletin_id=pmb_mysql_result($resultat,0,0);
+			} elseif (pmb_mysql_num_rows($resultat_clean_nbsp)) {
+				//Si oui, récupération id bulletin
+				$bulletin_id=pmb_mysql_result($resultat_clean_nbsp,0,0);
 			} else {
 				//Si non, création bulletin
 				$info=array();
@@ -268,7 +276,7 @@ function import_new_notice_suite() {
 	}
 
 	//Indexation décimale
-	if ($info_676[0]) {
+	if (!empty($info_676[0])) {
 		$requete="select indexint_id from indexint where indexint_name='".addslashes($info_676[0])."'";
 		$resultat=pmb_mysql_query($requete);
 		if (pmb_mysql_num_rows($resultat)) {
@@ -283,10 +291,14 @@ function import_new_notice_suite() {
 	}
 
 	//Organisme
-	import_records::insert_list_integer_value_custom_field_from_name('op', $notice_id, $info_900[0]);
+	if(isset($info_900[0])) {
+		import_records::insert_list_integer_value_custom_field_from_name('op', $notice_id, $info_900[0]);
+	}
 
 	//Genre
-	import_records::insert_list_integer_value_custom_field_from_name('gen', $notice_id, $info_901[0]);
+	if(isset($info_901[0])) {
+		import_records::insert_list_integer_value_custom_field_from_name('gen', $notice_id, $info_901[0]);
+	}
 
 	//Type de texte
 	if (count($info_904)) {

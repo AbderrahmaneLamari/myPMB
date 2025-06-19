@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cbgenlibre.inc.php,v 1.23.2.1 2021/12/08 12:59:06 dgoron Exp $
+// $Id: cbgenlibre.inc.php,v 1.24 2021/12/08 12:56:22 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

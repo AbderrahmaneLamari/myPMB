@@ -9,7 +9,7 @@
 // d'exemplaire. fredericg@free.fr
 // 
 // +-------------------------------------------------+
-// $Id: func_bdp59.inc.php,v 1.6.4.2 2021/12/09 14:25:07 dgoron Exp $
+// $Id: func_bdp59.inc.php,v 1.8 2021/12/09 14:22:19 dgoron Exp $
 
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");

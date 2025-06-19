@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormCategorySelector.js,v 1.4.2.1 2021/11/12 13:55:45 dgoron Exp $
+// $Id: FormCategorySelector.js,v 1.5 2021/11/12 13:52:04 dgoron Exp $
 
 define([
         'dojo/_base/declare',

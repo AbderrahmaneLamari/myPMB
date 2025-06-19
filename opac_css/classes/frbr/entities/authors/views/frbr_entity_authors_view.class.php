@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_authors_view.class.php,v 1.3.8.1 2021/08/09 13:25:54 tsamson Exp $
+// $Id: frbr_entity_authors_view.class.php,v 1.4.4.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 require_once($class_path."/author.class.php");
@@ -14,7 +14,7 @@ class frbr_entity_authors_view extends frbr_entity_common_view_django{
 		parent::__construct($id);
 		$this->default_template = "<div>
 <h3>{{author.name}}</h3>
-<blockquote>{{author.comment}}</blockquote>
+<div>{{author.comment}}</div>
 </div>";
 	}
 		

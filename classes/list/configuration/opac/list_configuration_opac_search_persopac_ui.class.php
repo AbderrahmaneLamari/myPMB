@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_opac_search_persopac_ui.class.php,v 1.9.2.2 2021/11/23 09:58:08 dgoron Exp $
+// $Id: list_configuration_opac_search_persopac_ui.class.php,v 1.11.4.2 2023/03/24 09:27:57 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -25,18 +25,18 @@ class list_configuration_opac_search_persopac_ui extends list_configuration_opac
 				'search_name' => 'search_persopac_table_name',
 				'search_shortname' => 'search_persopac_table_shortname',
 				'search_human' => 'search_persopac_table_humanquery',
-				'search_type' => 'search_persopac_type'		);
+				'search_type' => 'search_persopac_type'		
+		);
 	}
 	
 	protected function add_column_edit() {
-		global $msg, $charset;
+		global $msg;
 		
-		$this->columns[] = array(
-				'property' => '',
-				'label' => $msg['search_persopac_table_edit'],
-				'html' => "<input class='bouton_small' value='".htmlentities($msg["search_persopac_modifier"], ENT_QUOTES, $charset)."' type='button'  onClick=\"document.location='".static::get_controller_url_base()."&action=form&id=!!id!!'\" />",
-                'exportable' => false
+		$html_properties = array(
+				'value' => $msg['search_persopac_modifier'],
+				'link' => static::get_controller_url_base()."&action=form&id=!!id!!"
 		);
+		$this->add_column_simple_action('', $msg['search_persopac_table_edit'], $html_properties);
 	}
 	
 	protected function init_available_columns() {
@@ -63,7 +63,7 @@ class list_configuration_opac_search_persopac_ui extends list_configuration_opac
 	}
 	
 	protected function get_entities($entitie = '') {
-		global $msg, $charset;
+		global $msg;
 	
 		if(!isset($this->entities)) {
 			$authpersos=authpersos::get_instance();
@@ -91,6 +91,11 @@ class list_configuration_opac_search_persopac_ui extends list_configuration_opac
 		return $this->entities;
 	}
 	
+	protected function _get_object_property_search_type($object) {
+		$entities = $this->get_entities();
+		return $entities[$object->search_type];
+	}
+	
 	protected function get_cell_content($object, $property) {
 		global $msg, $charset;
 		
@@ -105,9 +110,8 @@ class list_configuration_opac_search_persopac_ui extends list_configuration_opac
 			case 'search_directlink':
 				$content .= $this->get_cell_visible_flag($object, $property);
 				break;
-			case 'search_type':
-				$entities = $this->get_entities();
-				$content .= $entities[$object->search_type];
+			case 'search_human':
+				$content .= $object->search_human; // on conserve l'interprétation du HTML
 				break;
 			default :
 				$content .= parent::get_cell_content($object, $property);

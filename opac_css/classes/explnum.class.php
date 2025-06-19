@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum.class.php,v 1.19.2.4 2022/01/12 16:19:21 dgoron Exp $
+// $Id: explnum.class.php,v 1.25.4.1 2023/10/11 14:20:57 dgoron Exp $
 
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
@@ -55,6 +55,9 @@ if ( ! defined( 'EXPLNUM_CLASS' ) ) {
 		}
 		
 		protected function init_repertoire() {
+		    if(!defined('SESSlogin')) {
+		        return;
+		    }
 			$req = "select repertoire_id, repertoire_nom, repertoire_path from  upload_repertoire, users where repertoire_id=deflt_upload_repertoire and username='".SESSlogin."'";
 			$res = pmb_mysql_query($req);
 			if(pmb_mysql_num_rows($res)){
@@ -92,7 +95,7 @@ if ( ! defined( 'EXPLNUM_CLASS' ) ) {
 			if ($this->explnum_id) {
 				$requete = "SELECT explnum_id, explnum_notice, explnum_bulletin, explnum_nom, explnum_mimetype, explnum_extfichier, explnum_url, explnum_data, explnum_vignette,
 				explnum_statut, explnum_index_sew, explnum_index_wew, explnum_repertoire, explnum_nomfichier, explnum_path, repertoire_nom, repertoire_path, group_concat(num_location SEPARATOR ',') as loc,
-				explnum_create_date, explnum_update_date, explnum_file_size
+				explnum_create_date, explnum_update_date, explnum_file_size, explnum_docnum_statut
 				FROM explnum left join upload_repertoire on explnum_repertoire=repertoire_id left join explnum_location on num_explnum=explnum_id where explnum_id='".$this->explnum_id."' group by explnum_id";
 				$result = pmb_mysql_query($requete);
 				if(pmb_mysql_num_rows($result)) {
@@ -176,22 +179,26 @@ if ( ! defined( 'EXPLNUM_CLASS' ) ) {
 			return '';
 		}
 		
-		public function get_file_name(){
-			$nomfichier = "";
-			if ($this->explnum_nomfichier) {
-				$nomfichier = $this->explnum_nomfichier;
-			} elseif($this->explnum_extfichier) {
-				if ($this->explnum_nom) {
-					$nomfichier=$this->explnum_nom;
-					if(!preg_match("/\.".$this->explnum_extfichier."$/",$nomfichier)){
-						$nomfichier.=".".$this->explnum_extfichier;
-					}
-				} else {
-					$nomfichier="pmb".$this->explnum_id.".".$this->explnum_extfichier;
-				}
-			}
-			$nomfichier = static::clean_explnum_file_name($nomfichier);
-			return $nomfichier;
+		public function get_file_name() {
+		    if ($this->explnum_nomfichier && pmb_substr($this->explnum_nomfichier, 0, 5) != 'file_') {
+		        return static::clean_explnum_file_name($this->explnum_nomfichier);
+		    }
+		    if ($this->explnum_extfichier) {
+		        $nomfichier = static::clean_explnum_file_name($this->explnum_nom);
+		        if ($nomfichier) {
+		            if (! pmb_preg_match("/\." . $this->explnum_extfichier . "$/", $nomfichier)) {
+		                $nomfichier .= "." . $this->explnum_extfichier;
+		            }
+		            return $nomfichier;
+		        } elseif ($this->explnum_nomfichier) {
+		            return static::clean_explnum_file_name($this->explnum_nomfichier);
+		        } else {
+		            return "pmb" . $this->explnum_id . "." . $this->explnum_extfichier;
+		        }
+		    }
+		    if ($this->explnum_nomfichier) {
+		        return static::clean_explnum_file_name($this->explnum_nomfichier);
+		    }
 		}
 		
 		public function get_file_size(){
@@ -304,36 +311,29 @@ if ( ! defined( 'EXPLNUM_CLASS' ) ) {
 		    global $prefix_url_image ;
 		    
 		    if ($pmb_docnum_img_folder_id) {
-		        return static::upload_thumbnail($explnum_vignette, $explnum_id);
-		    } else { //traitement de base
-		        if ($prefix_url_image) {
-		            $tmpprefix_url_image = $prefix_url_image;
-		        } else {
-		            $tmpprefix_url_image = "./" ;
-		        }
-		        
-		        if ($explnum_vignette){
-		            return $tmpprefix_url_image."vig_num.php?explnum_id=".$explnum_id;
-		        }
+		        static::upload_thumbnail($explnum_vignette, $explnum_id);
 		    }
-		    return "";
+		    if ($prefix_url_image) {
+		        $tmpprefix_url_image = $prefix_url_image;
+		    } else {
+		        $tmpprefix_url_image = "./" ;
+		    }
+		    return $tmpprefix_url_image."vig_num.php?explnum_id=".$explnum_id;
 		}
 		
 		public static function upload_thumbnail($explnum_vignette, $explnum_id) {
-		    if (strpos($explnum_vignette, "docnum") === false) {
+		    if ($explnum_vignette) {
 		        $query = "select repertoire_path from upload_repertoire where repertoire_id ='".thumbnail::get_parameter_img_folder_id("docnum")."'";
 		        $result = pmb_mysql_query($query);
 		        if(pmb_mysql_num_rows($result)){
 		            $row=pmb_mysql_fetch_object($result);
 		            $filename_output=$row->repertoire_path.thumbnail::get_img_prefix("docnum").$explnum_id;
 		            if (file_put_contents($filename_output, $explnum_vignette)) {
-		                $explnum_vignette = thumbnail::get_thumbnail_url($explnum_id, "docnum");
-		                $query = "update explnum set explnum_vignette='" . addslashes($explnum_vignette) . "' where explnum_id='" . $explnum_id . "'";
+		                $query = "update explnum set explnum_vignette='' where explnum_id='" . $explnum_id . "'";
 		                pmb_mysql_query($query);
 		            }
 		        }
 		    }
-		    return $explnum_vignette;
 		}
 		
 		/**

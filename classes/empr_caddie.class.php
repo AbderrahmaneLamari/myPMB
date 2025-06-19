@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_caddie.class.php,v 1.51.2.1 2021/12/22 14:56:30 dgoron Exp $
+// $Id: empr_caddie.class.php,v 1.56.4.3 2023/10/31 10:24:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -71,9 +71,9 @@ class empr_caddie extends caddie_root {
 		}
 	}
 
-	protected function get_template_form() {
-		global $empr_cart_form;
-		return $empr_cart_form;
+	protected function get_template_content_form() {
+		global $empr_cart_content_form;
+		return $empr_cart_content_form;
 	}
 	
 	protected function get_warning_delete() {
@@ -95,33 +95,6 @@ class empr_caddie extends caddie_root {
 		return $message_delete_warning;
 	}
 	
-	// formulaire
-	public function get_form($form_action="", $form_cancel="", $form_duplicate="") {
-		global $msg, $charset;
-		global $liaison_tpl;
-		
-		$form = parent::get_form($form_action, $form_cancel, $form_duplicate);
-		if($this->get_idcaddie()) {
-			$info_liaisons = $this->get_links_form();
-			$message_delete_warning = "";
-			if($info_liaisons){
-				$liaison_tpl=str_replace("<!-- info_liaisons -->",$info_liaisons,$liaison_tpl);
-				$form = str_replace('<!-- liaisons -->', $liaison_tpl, $form);
-				$message_delete_warning = $this->get_warning_delete();
-				$button_delete = "<input type='button' class='bouton' value=' ".$msg['supprimer']." ' onClick=\"javascript:alert('".$message_delete_warning."\\n".$msg["empr_caddie_used_cant_delete"]."')\" />";
-				$form = str_replace('!!button_delete!!', $button_delete, $form);
-			
-			} else {
-				$button_delete = "<input type='button' class='bouton' value=' ".$msg['supprimer']." ' onClick=\"javascript:confirmation_delete(".$this->get_idcaddie().",'".htmlentities(addslashes($this->name),ENT_QUOTES, $charset)."')\" />";
-				$form = str_replace('!!button_delete!!', $button_delete, $form);
-				$form .= confirmation_delete("./circ.php?categ=caddie&action=del_cart&idemprcaddie=");
-			}
-		} else {
-			$form = str_replace('!!button_delete!!', '', $form);
-		}
-		return $form;
-	}
-	
 	// Liaisons pour le panier
 	protected function get_links_form() {
 		global $msg, $charset;
@@ -138,7 +111,7 @@ class empr_caddie extends caddie_root {
                                        </div>
                                        <div class='row'>";
 						if (SESSrights & ADMINISTRATION_AUTH) {
-							$link="<a href='./admin.php?categ=planificateur&sub=manager&act=task&type_task_id=!!id_bis!!&planificateur_id=!!id!!'>!!name!!</a>";
+							$link="<a href='./admin.php?categ=planificateur&sub=manager&action=edit&type_id=!!id_bis!!&id=!!id!!'>!!name!!</a>";
 						} else {
 							$link="!!name!!";
 						}
@@ -329,32 +302,38 @@ class empr_caddie extends caddie_root {
 		} else return 0 ;
 	}
 	
-	static public function show_actions($id_caddie = 0) {
-		global $msg,$cart_action_selector,$cart_action_selector_line;
-	
-		//Le tableau des actions possibles
+	public static function get_array_actions($id_caddie = 0, $type_caddie = 'NOTI', $actions_to_remove = array()) {
+		global $msg;
+		
 		$array_actions = array();
-		$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_edit_panier"], 'location' => './circ.php?categ=caddie&sub=gestion&quoi=panier&action=edit_cart&idemprcaddie='.$id_caddie.'&item=0');
-		$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_suppr_panier"], 'location' => './circ.php?categ=caddie&sub=action&quelle=supprpanier&action=choix_quoi&idemprcaddie='.$id_caddie.'&item=');
-		$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_transfert"], 'location' => './circ.php?categ=caddie&sub=action&quelle=transfert&action=transfert&idemprcaddie='.$id_caddie.'&item=');
-		$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_edition"], 'location' => './circ.php?categ=caddie&sub=action&quelle=edition&action=choix_quoi&idemprcaddie='.$id_caddie.'&item='.$id_caddie.'&item=0');
-		$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_mailing"], 'location' => './circ.php?categ=caddie&sub=action&quelle=mailing&action=envoi&idemprcaddie='.$id_caddie.'&item='.$id_caddie.'&item=0');
-		$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_carte"], 'location' => './circ.php?categ=caddie&sub=action&quelle=carte&action=choix_quoi&idemprcaddie='.$id_caddie.'&item=0');
-		$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_selection"], 'location' => './circ.php?categ=caddie&sub=action&quelle=selection&action=&idemprcaddie='.$id_caddie.'&item='.$id_caddie.'&item=0');
-		$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_suppr_base"], 'location' => './circ.php?categ=caddie&sub=action&quelle=supprbase&action=choix_quoi&idemprcaddie='.$id_caddie.'&item=');
-		
-		//On crée les lignes du menu
-		$lines = '';
-		foreach($array_actions as $item_action){
-			$tmp_line = str_replace('!!cart_action_selector_line_location!!',$item_action['location'],$cart_action_selector_line);
-			$tmp_line = str_replace('!!cart_action_selector_line_msg!!',$item_action['msg'],$tmp_line);
-			$lines.= $tmp_line;
+		if (empty($actions_to_remove['edit_cart'])) {
+			$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_edit_panier"], 'location' => static::get_constructed_link('gestion', 'panier', 'edit_cart', $id_caddie, '&item=0'));
 		}
-		
-		//On récupère le template
-		$to_show = str_replace('!!cart_action_selector_lines!!',$lines,$cart_action_selector);
-	
-		return $to_show;
+		if (empty($actions_to_remove['pointage_raz'])) {
+			$array_actions[] = array('msg' => $msg["empr_caddie_menu_pointage_raz"], 'location' => static::get_constructed_link('gestion', 'razpointage', '', $id_caddie, '&moyen=raz'));
+		}
+		if (empty($actions_to_remove['supprpanier'])) {
+			$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_suppr_panier"], 'location' => static::get_constructed_link('action', 'supprpanier', 'choix_quoi', $id_caddie));
+		}
+		if (empty($actions_to_remove['transfert'])) {
+			$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_transfert"], 'location' => static::get_constructed_link('action', 'transfert', 'transfert', $id_caddie));
+		}
+		if (empty($actions_to_remove['edition'])) {
+			$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_edition"], 'location' => static::get_constructed_link('action', 'edition', 'choix_quoi', $id_caddie, '&item=0'));
+		}
+		if (empty($actions_to_remove['mailing'])) {
+			$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_mailing"], 'location' => static::get_constructed_link('action', 'mailing', 'envoi', $id_caddie, '&item=0'));
+		}
+		if (empty($actions_to_remove['carte'])) {
+			$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_carte"], 'location' => static::get_constructed_link('action', 'carte', 'choix_quoi', $id_caddie, '&item=0'));
+		}
+		if (empty($actions_to_remove['selection'])) {
+			$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_selection"], 'location' => static::get_constructed_link('action', 'selection', '', $id_caddie, '&item=0'));
+		}
+		if (empty($actions_to_remove['suppr_base'])) {
+			$array_actions[] = array('msg' => $msg["empr_caddie_menu_action_suppr_base"], 'location' => static::get_constructed_link('action', 'supprbase', 'choix_quoi', $id_caddie));
+		}
+		return $array_actions;
 	}
 	
 	protected function replace_in_action_query($query, $by) {
@@ -380,7 +359,7 @@ class empr_caddie extends caddie_root {
 	
 	public function get_edition_form($action="", $action_cancel="") {
 		if(!$action) $action = "./circ/caddie/action/edit.php?idemprcaddie=".$this->get_idcaddie();
-		if(!$action_cancel) $action_cancel = "./circ.php?categ=caddie&sub=action&quelle=edition&action=&idemprcaddie=0" ;
+		if(!$action_cancel) $action_cancel = static::get_constructed_link('action', 'edition');
 		$form = parent::get_edition_form($action, $action_cancel);
 		$form = str_replace('<!-- !!boutons_supp!! -->', '', $form);
 		return $form;
@@ -452,8 +431,8 @@ class empr_caddie extends caddie_root {
 		} else {
 			print $this->get_js_script_cart_objects('circ');
 			print $begin_result_liste;
-			print empr_caddie::show_actions($this->get_idcaddie());
-			foreach ($liste as $cle => $object) {
+			print static::show_actions($this->get_idcaddie(), $this->type);
+			foreach ($liste as $object) {
 				// affichage de la liste des emprunteurs
 				$requete = "SELECT * FROM empr WHERE id_empr=".$object['object_id']." LIMIT 1";
 				$fetch = pmb_mysql_query($requete);
@@ -483,7 +462,7 @@ class empr_caddie extends caddie_root {
 	}
 	
 	public function aff_cart_titre() {
-		$link = "./circ.php?categ=caddie&sub=gestion&quoi=panier&action=&idemprcaddie=".$this->get_idcaddie();
+		$link = static::get_constructed_link('gestion', 'panier', '', $this->get_idcaddie());
 		return "
 			<div class='titre-panier'>
 				<h3>
@@ -505,11 +484,16 @@ class empr_caddie extends caddie_root {
 	public function del_items_base_from_list($liste=array()) {	
 		global $url_base;
 		
-		$res_aff_suppr_base = "" ;
-		foreach ($liste as $cle => $object) {
-			if ($this->del_item_base($object)==CADDIE_ITEM_SUPPR_BASE_OK) $this->del_item_all_caddies ($object) ;
-			else  {
-				$res_aff_suppr_base .= aff_cart_unique_object ($object, $this->type, $url_base="./circ.php?categ=caddie&sub=gestion&quoi=panier&idemprcaddie=".$this->idemprcaddie);
+		$res_aff_suppr_base = array();
+		foreach ($liste as $object) {
+			$del_item_base = $this->del_item_base($object);
+			if ($del_item_base == CADDIE_ITEM_SUPPR_BASE_OK) {
+				$this->del_item_all_caddies ($object);
+			} else  {
+				if(empty($res_aff_suppr_base[$del_item_base])) {
+					$res_aff_suppr_base[$del_item_base] = array();
+				}
+				$res_aff_suppr_base[$del_item_base][] = aff_cart_unique_object ($object, $this->type, $url_base="./circ.php?categ=caddie&sub=gestion&quoi=panier&idemprcaddie=".$this->idemprcaddie);
 			}
 		}
 		return $res_aff_suppr_base;
@@ -537,5 +521,45 @@ class empr_caddie extends caddie_root {
 	
 	public function set_idcaddie($idcaddie) {
 	    $this->idemprcaddie = intval($idcaddie);
+	}
+	
+	public static function get_constructed_link($sub='', $sub_categ='', $action='', $idcaddie=0, $args_others='') {
+		global $base_path;
+		global $quoi;
+		
+		$link = $base_path."/circ.php?categ=caddie&sub=".$sub;
+		if($sub_categ) {
+			switch ($sub) {
+				case 'gestion':
+					switch ($quoi) {
+						case 'selection':
+							$link .= "&quoi=selection&moyen=".$sub_categ;
+							break;
+						case 'pointage':
+							$link .= "&quoi=pointage&moyen=".$sub_categ;
+							break;
+						default :
+							$link .= "&quoi=".$sub_categ;
+							break;
+					}
+					break;
+				case 'action':
+					$link .= "&quelle=".$sub_categ;
+					break;
+			}
+		}
+		if($action) $link .= "&action=".$action;
+		if($args_others) $link .= $args_others;
+		if($idcaddie) $link .= "&idemprcaddie=".$idcaddie;
+		return $link;
+	}
+	
+	public function has_flag_not_sended() {
+	    $result = pmb_mysql_query("SELECT count(*) as nb FROM empr_caddie_content WHERE flag='2' AND empr_caddie_id=".$this->idemprcaddie);
+	    return pmb_mysql_result($result, 0, 'nb');
+	}
+	
+	public function reset_flag_not_sended() {
+	    pmb_mysql_query("UPDATE empr_caddie_content SET flag='' WHERE flag='2' AND empr_caddie_id=".$this->idemprcaddie);
 	}
 } // fin de déclaration de la classe

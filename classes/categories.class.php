@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: categories.class.php,v 1.54.2.1 2021/06/29 08:25:47 dgoron Exp $
+// $Id: categories.class.php,v 1.57.4.1 2023/10/27 08:59:56 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -92,7 +92,7 @@ class categories{
 		$q.= "comment_voir = '".addslashes($this->comment_voir)."', ";
 		$q.= "index_categorie = ' ".addslashes(strip_empty_words($this->libelle_categorie,$this->langue))." ' ";
 		$q.= "where num_noeud = '".$this->num_noeud."' and langue = '".$this->langue."' "; 
-		$r = pmb_mysql_query($q);
+		pmb_mysql_query($q);
 		categories::update_index($this->num_noeud);
 		$this->update_index_path_word();
 
@@ -102,8 +102,6 @@ class categories{
 	}
 	
 	public function update_index_path_word(){
-		global $msg;
-		global $include_path;	
 		global $thesaurus_auto_postage_search;
 		global $thesaurus_auto_postage_search_nb_descendant,$thesaurus_auto_postage_search_nb_montant;	
 
@@ -121,7 +119,7 @@ class categories{
 			$limit=$thesaurus_auto_postage_search_nb_descendant;		
 			if($limit){				
 				$liste_num_noeud=explode('/',$path);
-				if($limit != '*') array_splice($liste_num_noeud,0,count($liste_num_noeud)-$limit-1);
+				if($limit != '*') array_splice($liste_num_noeud,0,count($liste_num_noeud) - intval($limit) - 1);
 				$select_num_noeud=implode(',',$liste_num_noeud);
 				if($select_num_noeud) {
 					$q = "select libelle_categorie from categories where num_noeud in( $select_num_noeud ) and langue = '".$this->langue."' and num_thesaurus=$num_thesaurus";
@@ -167,7 +165,7 @@ class categories{
 		$q.= "path_word_categ = ' ".trim(addslashes($index))." ', ";		
 		$q.= "index_path_word_categ = ' ".trim(addslashes($clean_index))." ' ";
 		$q.= "where num_noeud = '".$this->num_noeud."' and langue = '".$this->langue."' and num_thesaurus=$num_thesaurus"; 
-		$r = pmb_mysql_query($q);		
+		pmb_mysql_query($q);		
 	}
 	
 	//verifie si une categorie existe dans la langue concernée
@@ -181,9 +179,9 @@ class categories{
 	
 	//supprime une categorie en base.
 	public function delete($num_noeud, $langue) {
-		$num_noeud += 0;
+		$num_noeud = intval($num_noeud);
 		$q = "delete from categories where num_noeud = '".$num_noeud."' and langue = '".$langue."' ";
-		$r = @pmb_mysql_query($q);
+		pmb_mysql_query($q);
 	}		
 
 	//Liste les libelles des ancetres d'une categorie dans la langue concernée 
@@ -197,7 +195,7 @@ class categories{
 			$id_list = array_reverse($id_list);
 			self::$list_ancestors_name[$num_noeud.'_'.$langue] = '';
 			
-			foreach($id_list as $dummykey=>$id) {
+			foreach($id_list as $id) {
 				if (categories::exists($id, $langue)) $lg=$langue;
 				else $lg=$thes->langue_defaut; 
 				$q = "select libelle_categorie from categories where num_noeud = '".$id."' ";
@@ -222,7 +220,7 @@ class categories{
 		$id_list = array_reverse($id_list);
 		$anc_list = array();
 
-		foreach($id_list as $key=>$id) {
+		foreach($id_list as $id) {
 			if (categories::exists($id, $langue)) $lg=$langue; 
 			else $lg=$thes->langue_defaut; 
 			$q = "select * from noeuds, categories ";
@@ -271,6 +269,15 @@ class categories{
 		if ($ordered !== 0) $q.= "order by ".$ordered." ";
 		$r = pmb_mysql_query($q);
 		return $r;
+	}
+
+	public static function hasChildren($num_noeud=0) {
+	    $num_noeud = intval($num_noeud);
+
+		$q = "SELECT 1 FROM noeuds LEFT JOIN categories AS catdef ON noeuds.id_noeud=catdef.num_noeud ";
+		$q.= "WHERE noeuds.num_parent = '".$num_noeud."' LIMIT 1";
+		$r = pmb_mysql_query($q);
+		return pmb_mysql_result($r, 0) == "1";
 	}
 
 	//optimization de la table categories
@@ -370,7 +377,7 @@ class categories{
 	   	$query = "select num_faq_question from faq_questions_categories where num_categ = ".$id;
 	   	$result = pmb_mysql_query($query);
 	   	if(pmb_mysql_num_rows($result)){
-	   		$index = new indexation($include_path."/indexation/faq/question.xml", "faq_questions");
+	   	    $index = indexations_collection::get_indexation(AUT_TABLE_FAQ);
 	   		while($row = pmb_mysql_fetch_object($result)){
 	   			$index->maj($row->num_faq_question,"categories");
 	   		}

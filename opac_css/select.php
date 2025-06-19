@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: select.php,v 1.21.2.1 2021/09/03 09:35:59 tsamson Exp $
+// $Id: select.php,v 1.24.4.1 2023/10/17 14:03:22 tsamson Exp $
 
 // définition du minimum nécéssaire 
 $base_path=".";
@@ -36,22 +36,30 @@ if(!isset($f_user_input)) $f_user_input = '';
 
 require_once($base_path."/selectors/templates/sel_common.tpl.php");
 
-// classes pour la gestion des sélecteurs
-if(!isset($autoloader) || !is_object($autoloader)){
-	require_once($class_path."/autoloader.class.php");
-	$autoloader = new autoloader();
-}
-$autoloader->add_register("selectors_class",true);
-
 //L'usager a demandé à voir plus de résultats dans sa liste paginée
 if(isset($nb_per_page_custom) && $nb_per_page_custom*1) {
 	$nb_per_page = $nb_per_page_custom;
 }
 if(!isset($nb_per_page) || !$nb_per_page) {
-    $nb_per_page = 10;
+    $nb_per_page = 25;
 }
 
 $nb_per_page = intval($nb_per_page);
+
+global $param1, $param2, $caller, $format_return;
+global $callback, $infield, $p1, $p2, $search_field_id;
+global $search_xml_file, $user_input;
+
+$param1 = strip_tags($param1);
+$param2 = strip_tags($param2);
+$caller = strip_tags($caller);
+$format_return = strip_tags($format_return);
+$callback = strip_tags($callback);
+$infield = strip_tags($infield);
+$p1 = strip_tags($p1);
+$p2 = strip_tags($p2);
+$search_field_id = strip_tags($search_field_id);
+$user_input = strip_tags($user_input);
 
 print "<script type='text/javascript'>
 	self.focus();
@@ -140,9 +148,6 @@ switch($what) {
 		
 		$base_url = selector_ontology::get_base_url();
 		
-		require_once($class_path."/autoloader.class.php");
-		$autoloader = new autoloader();
-		$autoloader->add_register("onto_class",true);
 		$selector_instance = new selector_ontology(stripslashes($deb_rech));
 		break;
 	case 'keyword':

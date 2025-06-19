@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesAccessRights.class.php,v 1.2 2020/04/22 09:08:05 dgoron Exp $
+// $Id: pmbesAccessRights.class.php,v 1.2.6.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($class_path."/external_services.class.php");
 require_once("$include_path/mysql_connect.inc.php");
 
@@ -13,20 +14,6 @@ require_once("$include_path/mysql_connect.inc.php");
  ATTENTION: Si vous modifiez de fichier vous devez probablement modifier le fichier pmbesIndex.class.php
 */
 class pmbesAccessRights extends external_services_api_class {
-	public $error=false;		//Y-a-t-il eu une erreur
-	public $error_message="";	//Message correspondant à l'erreur
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	protected function initialization_rights($domain, $keep_specific_rights=1, $delete_calculated_rights=0) {
 		$ac= new acces();

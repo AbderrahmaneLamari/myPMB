@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pnb_order.class.php,v 1.9 2019/12/19 15:02:11 qvarin Exp $
+// $Id: pnb_order.class.php,v 1.10.4.3 2024/01/08 14:10:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path."/templates/pnb/pnb_param.tpl.php");
 require_once($class_path.'/mono_display.class.php');
 
@@ -15,6 +16,7 @@ class pnb_order {
 	protected $order_id;
 	protected $line_id;
 	protected $num_notice;
+	protected $notice;
 	protected $loan_max_duration;
 	protected $nb_loans;
 	protected $nb_simultaneous_loans;
@@ -26,14 +28,11 @@ class pnb_order {
 	protected $offer_formated_date;
 	protected $offer_formated_date_end;
 	protected $nb_current_loans;
-	private static $loans_infos = [];
+	public static $loans_infos = [];
 	private static $expl_infos = [];
 	
 	public function __construct($id = 0){
-		$id += 0;
-		if ($id) {
-			$this->id = $id;
-		}
+		$this->id = intval($id);
 		$this->fetch_data();
 	}
 	
@@ -123,8 +122,11 @@ class pnb_order {
 	
 	public function get_notice() {
 		if (empty($this->num_notice)) return '';
-		$notice = new mono_display($this->num_notice);
-		return $notice->header;
+		if (empty($this->notice)) {
+    		$notice = new mono_display($this->num_notice);
+    		$this->notice = $notice->header;
+		}
+		return $this->notice;
 	}
 	
 	public function get_exemplaires(){
@@ -152,21 +154,29 @@ class pnb_order {
 	}
 	
 	public function get_loans_completed_number() {
-	    if(!isset(self::$loans_infos[$this->get_line_id()] )){
-	        self::$loans_infos[$this->get_line_id()] = dilicom::get_instance()->get_loan_status(array($this->get_line_id()));
+	    if(!isset(self::$loans_infos[$this->get_line_id()] )) {
+	        $loans_infos = dilicom::get_instance()->get_loan_status(array($this->get_line_id()));
+	        
+	        if(is_array($loans_infos["loanResponseLine"]) && count($loans_infos["loanResponseLine"])) {
+	            self::$loans_infos[$this->get_line_id()] = $loans_infos["loanResponseLine"][0];
+	        }
 	    }
-	    if (isset(self::$loans_infos[$this->get_line_id()] ['loanResponseLine'][0]['nta'])) {
-	        return self::$loans_infos[$this->get_line_id()] ['loanResponseLine'][0]['nta'];
+	    if (isset(self::$loans_infos[$this->get_line_id()]['nta'])) {
+	        return self::$loans_infos[$this->get_line_id()]['nta'];
 	    }
 	    return 0;
 	}
 	
 	public function get_loans_in_progress() {
-	    if(!isset(self::$loans_infos[$this->get_line_id()] )){
-	        self::$loans_infos[$this->get_line_id()] = dilicom::get_instance()->get_loan_status(array($this->get_line_id()));
+	    if(!isset(self::$loans_infos[$this->get_line_id()] )) {
+	        $loans_infos = dilicom::get_instance()->get_loan_status(array($this->get_line_id()));
+	        
+	        if(is_array($loans_infos["loanResponseLine"]) && count($loans_infos["loanResponseLine"])) {
+	            self::$loans_infos[$this->get_line_id()] = $loans_infos["loanResponseLine"][0];
+	        }
 	    }
-	    if (isset(self::$loans_infos[$this->get_line_id()] ['loanResponseLine'][0]['nus1'])) {
-	        return self::$loans_infos[$this->get_line_id()] ['loanResponseLine'][0]['nus1'];
+	    if (isset(self::$loans_infos[$this->get_line_id()]['nus1'])) {
+	        return self::$loans_infos[$this->get_line_id()]['nus1'];
 	    }
 	    return '0';
 	}

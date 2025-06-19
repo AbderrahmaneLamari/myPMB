@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authority_page.class.php,v 1.36.2.4 2021/12/21 10:02:54 qvarin Exp $
+// $Id: authority_page.class.php,v 1.42.4.1 2023/06/13 09:09:02 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -87,13 +87,17 @@ class authority_page {
 			foreach ($frbr_build->get_cadres() as $cadre) {
 				if ($cadre['place_visibility']) {
 					if($cadre['cadre_type']) {
-						switch ($cadre['cadre_type']) {
-							case 'isbd':
-								$this->dom->getElementById("aut_details")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("aut_see"),true));
-								break;
-							case 'records_list':
-								$this->dom->getElementById("aut_details")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("aut_details_liste"),true));
-								break;
+					    switch ($cadre['cadre_type']) {
+					        case 'isbd':
+					            if ($this->dom->getElementById("aut_see")) {
+					                $this->dom->getElementById("aut_details")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("aut_see"),true));
+					            }
+					            break;
+					        case 'records_list':
+					            if ($this->dom->getElementById("aut_details_liste")) {
+					                $this->dom->getElementById("aut_details")->parentNode->appendChild($this->dom->importNode($this->dom->getElementById("aut_details_liste"),true));
+					            }
+					            break;
 							case 'frbr_graph' :
 								$graph_node = $this->dom->createElement("div");
 								$graph_node->setAttribute('id', 'frbr_entity_graph');
@@ -192,6 +196,7 @@ class authority_page {
 		global $add_cart_link;
 		global $from;
 		global $nb_per_page_custom;
+		global $charset;
 		
 		
 		//droits d'acces emprunteur/notice
@@ -240,7 +245,7 @@ class authority_page {
 				}
 			}
 		}
-		$recordslist = "<h3><span class=\"aut_details_liste_titre\">".$this->get_title_recordslist()." (<span id='nb_aut_details'>" . $nbr_lignes . "</span>)</span></h3>\n";
+		$recordslist = "<h3><span class=\"aut_details_liste_titre\">".$this->get_title_recordslist()." (<span id='nb_aut_details'>" . htmlentities($nbr_lignes, ENT_QUOTES, $charset) . "</span>)</span></h3>\n";
 		
 		if (!$only_records) {
 			// Ouverture du div resultatrech_liste
@@ -273,7 +278,6 @@ class authority_page {
 			$requete = sort::get_sort_query($requete, $nbr_lignes, $debut, "notices", "notice_id", $opac_nb_aut_rec_per_page);
 			
 			$res = pmb_mysql_query($requete);
-		
 
 			if (!$only_records) {
 				if ($opac_notices_depliable) $recordslist.= $begin_result_liste;
@@ -318,10 +322,14 @@ class authority_page {
 				/*****Spécifique au catégories***/
 			}
 			
+			global $count;
+			$count = $nbr_lignes;
+			
 			$only_recordslist = "<blockquote>\n";
 			$only_recordslist.= aff_notice(-1);
 			$nb=0;
 			$recherche_ajax_mode=0;
+			
 			while(($obj=pmb_mysql_fetch_object($res))) {
 				global $infos_notice;
 				if($nb++>4) $recherche_ajax_mode=1;
@@ -343,7 +351,12 @@ class authority_page {
 			if (!isset($l_typdoc)) {
 			   $l_typdoc = '';
 			}
-			$recordslist.= "<div id='navbar'><hr /><div style='text-align:center'>".printnavbar($page, $nbr_lignes, $opac_nb_aut_rec_per_page, "./index.php?lvl=".$this->get_mode_recordslist()."&id=".$this->id."&page=!!page!!&nbr_lignes=$nbr_lignes&l_typdoc=".rawurlencode($l_typdoc).($nb_per_page_custom ? "&nb_per_page_custom=".$nb_per_page_custom : ''))."</div></div>\n";
+			
+			$recordmodes = record_display_modes::get_instance();
+			$nav_displayed = (is_object($recordmodes) ? $recordmodes->is_nav_displayed($recordmodes->get_current_mode()) : true);
+			if ($nav_displayed) {
+				$recordslist.= "<div id='navbar'><hr /><div style='text-align:center'>".printnavbar($page, $nbr_lignes, $opac_nb_aut_rec_per_page, "./index.php?lvl=".$this->get_mode_recordslist()."&id=".$this->id."&page=!!page!!&nbr_lignes=$nbr_lignes&l_typdoc=".rawurlencode($l_typdoc).($nb_per_page_custom ? "&nb_per_page_custom=".$nb_per_page_custom : ''))."</div></div>\n";
+			}
 		} else {
 		    switch (static::class) {
 				case 'authority_page_indexint':

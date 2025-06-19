@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatches.class.php,v 1.4.10.1 2021/11/26 12:52:43 dgoron Exp $
+// $Id: docwatches.class.php,v 1.5 2021/11/26 12:50:00 dgoron Exp $
 
 global $class_path;
 require_once($class_path."/scheduler/scheduler_task.class.php");

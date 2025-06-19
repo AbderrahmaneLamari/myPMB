@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authorities_collection.class.php,v 1.8.2.1 2021/09/08 12:54:50 qvarin Exp $
+// $Id: authorities_collection.class.php,v 1.9 2021/09/08 12:55:49 gneveu Exp $
 
 /**
  * Classe de collection d'autorités pour éviter d'instancier plusieurs fois les mêmes autorités dans une même page

@@ -2,11 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_bulletinage_explnum_controller.class.php,v 1.3 2019/06/13 15:26:51 btafforeau Exp $
+// $Id: entities_bulletinage_explnum_controller.class.php,v 1.3.10.2 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-require_once ($class_path."/entities/entities_analysis_controller.class.php");
+global $class_path;
+require_once ($class_path."/entities/entities_bulletinage_controller.class.php");
 
 class entities_bulletinage_explnum_controller extends entities_bulletinage_controller {
 		
@@ -48,8 +49,10 @@ class entities_bulletinage_explnum_controller extends entities_bulletinage_contr
 	}
 	
 	protected function get_permalink($id=0) {
-		if(!$id) $id = $this->bulletin_id;
-		return $this->url_base."&action=view&bul_id=".$id;
+	    if(!$id) {
+	        $id = $this->bulletin_id;
+	    }
+		return $this->url_base."&action=view&bul_id=" . intval($id);
 	}
 	
 	public function set_bulletin_id($bulletin_id=0) {

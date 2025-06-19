@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_controler.class.php,v 1.26.2.3 2021/08/05 13:35:19 qvarin Exp $
+// $Id: onto_contribution_controler.class.php,v 1.30 2022/03/15 14:40:51 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -98,13 +98,12 @@ class onto_contribution_controler extends onto_common_controler {
 		$jsonRPC = new jsonRPCClient(stripslashes($pmb_contribution_ws_url));
 		$jsonRPC->setUser(stripslashes($pmb_contribution_ws_username));
 		$jsonRPC->setPwd(stripslashes($pmb_contribution_ws_password));
-		
+
 		$result = $jsonRPC->pmbesContributions_integrate_entity($this->item->get_uri());
 		if (!$return) {
 			$return = array("uri" => $this->item->get_uri(), "id" => $this->item->get_id());
 		}
 		$return["entity"] = $result;
-		
 		//on enregitre un triplet faisant le lien entre l'URI et l'id de l'entité créée 
 		$data_store = $this->handler->get_data_store(); 
 		$this->save_entity_id_in_store($result, $data_store);
@@ -116,7 +115,6 @@ class onto_contribution_controler extends onto_common_controler {
 		    // Une fois la contribution validé on store plus aucune donner dans le store
 		    $this->proceed_delete(true);
 		}
-		
 		return $return;
 	}
 	

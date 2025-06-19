@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_analysis_controller.class.php,v 1.8.6.1 2022/01/11 08:29:49 qvarin Exp $
+// $Id: entities_analysis_controller.class.php,v 1.10.4.2 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once ($class_path."/entities/entities_records_controller.class.php");
 
 class entities_analysis_controller extends entities_records_controller {
@@ -45,6 +46,35 @@ class entities_analysis_controller extends entities_records_controller {
 			}
 		}
 		return $acces_m;
+	}
+	
+	public function proceed() {
+	    global $msg;
+	    
+	    //verification des droits de modification notice
+	    if($this->has_rights()) {
+	        switch($this->action) {
+	            case 'orphan_form':
+	                //information_message('', sprintf($msg['notice_id_orphan_analysis'], $this->id));
+	                
+// 	                error_message($msg[235], , 1, "./catalog.php?categ=search&mode=0");
+	                
+	                $entity_locking = new entity_locking($this->id, TYPE_NOTICE);
+	                if($entity_locking->is_locked()){
+	                    print $entity_locking->get_locked_form();
+	                    break;
+	                }
+	                $this->proceed_orphan_form();
+	                $entity_locking->lock_entity();
+	                print $entity_locking->get_polling_script();
+	                break;
+	            default:
+	                parent::proceed();
+	                break;
+	        }
+	    } else {
+	        $this->display_error_message();
+	    }
 	}
 	
 	protected function get_page_title($duplicate=false) {
@@ -109,7 +139,7 @@ class entities_analysis_controller extends entities_records_controller {
 	}
 	
 	public function proceed_move() {
-		global $msg;
+		global $msg, $serial_header;
 		global $to_bul;
 		
 		$myAnalysis = $this->get_object_instance();
@@ -125,9 +155,21 @@ class entities_analysis_controller extends entities_records_controller {
 		}
 	}
 	
+	public function proceed_orphan_form() {
+	    global $charset;
+	    
+	    print $this->get_page_title();
+	    $myAnalysis = $this->get_object_instance();
+	    print "<div class='row'><div class='perio-barre'>".$this->get_link_parent()."<h3>".htmlentities($myAnalysis->tit1, ENT_QUOTES, $charset)."</h3></div></div><br />";
+	    
+	    print "<div class='row'>".$myAnalysis->analysis_form(true)."</div>";
+	}
+	
 	protected function get_permalink($id=0) {
-		if(!$id) $id = $this->bulletin_id;
-		return $this->url_base."&sub=bulletinage&action=view&bul_id=".$id;
+	    if(!$id) {
+	        $id = $this->bulletin_id;
+	    }
+		return $this->url_base."&sub=bulletinage&action=view&bul_id=" . intval($id);
 	}
 	
 	protected function get_link_parent() {

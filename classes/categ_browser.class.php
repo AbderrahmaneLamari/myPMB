@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: categ_browser.class.php,v 1.29.4.1 2021/11/30 10:43:48 dgoron Exp $
+// $Id: categ_browser.class.php,v 1.30 2021/11/30 10:42:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

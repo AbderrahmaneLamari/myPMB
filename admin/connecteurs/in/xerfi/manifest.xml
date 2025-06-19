@@ -4,16 +4,17 @@
 ****************************************************************************************
 © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: manifest.xml,v 1.2 2020/06/10 12:49:20 dbellamy Exp $ -->
+$Id: manifest.xml,v 1.2.6.1 2023/12/12 15:41:46 dbellamy Exp $ -->
 
 <manifest>
 	<name>xerfi</name>
-	<repository>no</repository>
 	<comment>Xerfi</comment>
+	<search>yes</search>
+	<repository>no</repository>
+	<enrichment>no</enrichment>
 	<author>Didier Bellamy</author>
 	<org>PMB Services</org>
 	<date>2020-06-09</date>
 	<status>open</status>
 	<url>http://www.sigb.net</url>
-	<enrichment>no</enrichment>
 </manifest>

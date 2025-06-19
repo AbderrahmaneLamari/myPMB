@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: metasMapper.class.php,v 1.6.8.1 2022/01/14 13:54:33 dgoron Exp $
+// $Id: metasMapper.class.php,v 1.7 2022/01/14 13:51:45 dgoron Exp $
 
 
 class metasMapper {

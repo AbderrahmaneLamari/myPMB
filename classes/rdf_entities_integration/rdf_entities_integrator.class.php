@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_integrator.class.php,v 1.29.2.4 2021/09/03 08:14:42 qvarin Exp $
+// $Id: rdf_entities_integrator.class.php,v 1.33 2021/09/03 08:16:22 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

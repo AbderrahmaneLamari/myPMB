@@ -2,16 +2,17 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_onglet.class.php,v 1.12 2019/06/18 12:50:18 ngantier Exp $
+// $Id: notice_onglet.class.php,v 1.13 2022/02/14 08:27:04 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/notice_tpl_gen.class.php"); 
 
 class notice_onglet {
 	
 	public function __construct($id_tpl){
-		$this->id_tpl=$id_tpl+0;
+		$this->id_tpl=intval($id_tpl);
 		$this->fetch_data();
 	}
 	

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SearchController.js,v 1.1.4.3 2021/10/13 12:59:20 tsamson Exp $
+// $Id: SearchController.js,v 1.3 2021/10/13 13:16:27 tsamson Exp $
 
 define(['dojo/_base/declare',
 		'apps/search/SearchController',

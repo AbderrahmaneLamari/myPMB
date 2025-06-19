@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_languages_datasource.class.php,v 1.1.2.2 2022/01/07 08:52:17 moble Exp $
+// $Id: cms_module_languages_datasource.class.php,v 1.3 2022/01/07 09:01:04 moble Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -17,7 +17,6 @@ class cms_module_languages_datasource extends cms_module_common_datasource{
 	        "cms_module_common_selector_lang"
 	    );
 	}
-
 	/*
 	 * Récupération des données de la source...
 	 */

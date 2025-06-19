@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_transferts_reception_ui.class.php,v 1.6.2.2 2021/12/23 13:55:45 dgoron Exp $
+// $Id: list_transferts_reception_ui.class.php,v 1.10.4.1 2023/12/15 14:45:47 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -31,7 +31,7 @@ class list_transferts_reception_ui extends list_transferts_ui {
 		$this->add_column('transfert_ask_user_num');
 		$this->add_column('transfert_send_user_num');
 		if(($action == '' || $action == 'list') && $transferts_reception_lot == '1') {
-			$this->add_column_sel_button();
+			$this->add_column_selection();
 		}
 	}
 	
@@ -39,27 +39,46 @@ class list_transferts_reception_ui extends list_transferts_ui {
 		return '';
 	}
 	
+	public function init_filters($filters=array()) {
+		global $deflt_docs_location;
+		
+		$this->filters = array(
+				'site_origine' => 0,
+				'site_destination' => $deflt_docs_location,
+		);
+		//Surcharge si les filtres ne sont pas affiches dans ce contexte
+		if(empty($this->selected_filters['site_origine'])) {
+			$filters['site_origine'] = 0;
+		}
+		if(empty($this->selected_filters['site_destination'])) {
+			$filters['site_destination'] = $deflt_docs_location;
+		}
+		parent::init_filters($filters);
+	}
+	
 	protected function init_available_filters() {
 		$this->available_filters =
 		array('main_fields' =>
 				array(
-						'site_origine' => 'transferts_circ_reception_filtre_source',
+				    'site_origine' => 'transferts_circ_reception_filtre_source',
+				    'site_destination' => 'transferts_circ_validation_filtre_destination',
 				)
 		);
 		$this->available_filters['custom_fields'] = array();
 	}
 	
 	protected function init_default_selected_filters() {
-		$this->add_selected_filter('site_origine');
+	    $this->add_selected_filter('site_origine');
+	    $this->add_selected_filter('site_destination');
 	}
 	
-	protected function get_display_selection_actions() {
+	protected function init_default_selection_actions() {
 		global $msg;
-		global $transferts_reception_lot;
-		if ($transferts_reception_lot=="1") {
-			return "<input type='button' class='bouton' name='".$msg["transferts_circ_btReception"]."' value='".$msg["transferts_circ_btReception"]."' onclick='verifChk(document.".$this->get_form_name().",\"aff_recep\")'>";
-		} else {
-			return "";
+		global $action, $transferts_reception_lot;
+		
+		parent::init_default_selection_actions();
+		if (($action == '' || $action == 'list') && $transferts_reception_lot=="1") {
+			$this->add_selection_action('recep', $msg['transferts_circ_btReception'], '');
 		}
 	}
 	

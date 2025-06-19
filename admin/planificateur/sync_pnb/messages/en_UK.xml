@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: en_UK.xml,v 1.4.2.1 2021/07/06 12:24:56 dbellamy Exp $ -->
+$Id: en_UK.xml,v 1.5 2021/07/06 12:34:21 dbellamy Exp $ -->
 
 <XMLlist>
 	<entry code="pnb_sync_type">Type de synchronisation</entry>

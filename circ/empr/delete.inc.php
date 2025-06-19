@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: delete.inc.php,v 1.15.8.1 2022/01/07 14:25:11 dgoron Exp $
+// $Id: delete.inc.php,v 1.16 2022/01/07 14:23:32 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

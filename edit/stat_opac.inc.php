@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: stat_opac.inc.php,v 1.28 2021/04/21 08:10:49 dgoron Exp $
+// $Id: stat_opac.inc.php,v 1.29 2022/04/22 11:50:52 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -75,8 +75,8 @@ function show_results_stats($id_proc=0){
 		$param_hidden.="<input type='hidden' name='nombre_lignes_total'  value='".$nombre_lignes_total."' />";//Je garde le nombre de ligne total pour le pas refaire la requête à la page suivante
 		
 		
-		//Si aucune limite_page n'a été passée, valeur par défaut : 10
-		if (!isset($limite_page) || !$limite_page) $limite_page = 10;
+		//Si aucune limite_page n'a été passée, valeur par défaut : 25
+		if (!isset($limite_page) || !$limite_page) $limite_page = 25;
 		$nbpages= $nombre_lignes_total / $limite_page; 
 		
 		// on arondi le nombre de page pour ne pas avoir de virgules, ici au chiffre supérieur 

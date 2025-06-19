@@ -1,0 +1,42 @@
+.pmb_rss h4,
+.cms_module_watcheslist h4 {
+    font-family: var(--font);
+    font-size: 1.8rem;
+    color: var(--c-primary);
+    font-weight: bold;
+}
+
+.pmb_rss h3,
+.pmb_veilles h4 {
+    font-family: var(--font);
+    font-size: 1.8rem;
+    color: var(--c-primary);
+    font-weight: bold;
+    line-height: 2.4rem;
+}
+
+.pmb_watch_date {
+    font-weight: 500;
+    font-size: 1.6rem;
+}
+
+.pmb_rss_description {
+    margin: 4px;
+}
+
+.pmb_watch_source {
+    color: var(--c-thirdly);
+    font-weight: 500;
+    margin-top: 4px;
+    display: block;
+}
+
+.pmb_watch_items,
+.pmb_rss ul {
+    margin-top: 16px;
+    column-gap: 32px;
+}
+
+.pmb_watch_items {
+    margin-bottom: 32px;
+}

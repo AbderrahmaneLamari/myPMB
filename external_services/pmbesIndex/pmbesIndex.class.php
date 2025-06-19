@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesIndex.class.php,v 1.8.2.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: pmbesIndex.class.php,v 1.9.4.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -15,18 +15,6 @@ ATTENTION: Si vous modifiez de fichier vous devez aussi modifier le fichier pmbe
 */
 
 class pmbesIndex extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	public function reindexRecords($list_notices=array()){
 		$result = array();
@@ -60,9 +48,6 @@ class pmbesIndex extends external_services_api_class {
 		}
 		return $result;
 	}
-	
-	
-	
 	
 	public function indexGlobal() {
 		global $msg, $charset, $PMBusername;

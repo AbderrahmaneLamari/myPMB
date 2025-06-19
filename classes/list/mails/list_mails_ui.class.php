@@ -2,12 +2,14 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_mails_ui.class.php,v 1.2.2.5 2021/11/17 13:33:29 dgoron Exp $
+// $Id: list_mails_ui.class.php,v 1.15.4.2 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path;
 require_once($class_path.'/mail.class.php');
+require_once($class_path.'/mails/mails.class.php');
+require_once($class_path.'/campaigns/campaign.class.php');
 
 class list_mails_ui extends list_ui {
 	
@@ -27,10 +29,12 @@ class list_mails_ui extends list_ui {
 		$this->available_filters =
 		array('main_fields' =>
 				array(
-						'from_uri' => 'mail_from_uri',
+						'types' => 'mail_types',
 						'from_name' => 'mail_from_name',
 						'date' => 'mail_date',
 						'sended' => 'mail_sended',
+						'campaigns' => 'mail_campaigns',
+// 						'from_uri' => 'mail_from_uri',
 				)
 		);
 		$this->available_filters['custom_fields'] = array();
@@ -42,20 +46,23 @@ class list_mails_ui extends list_ui {
 	public function init_filters($filters=array()) {
 		
 		$this->filters = array(
-				'from_uri' => array(),
+				'types' => array(),
 				'from_name' => array(),
 				'date_start' => '',
 				'date_end' => '',
-				'sended' => 'all'
+				'sended' => 'all',
+				'campaigns' => array(),
+				'from_uri' => array()
 		);
 		parent::init_filters($filters);
 	}
 	
 	protected function init_default_selected_filters() {
-		$this->add_selected_filter('from_uri');
+		$this->add_selected_filter('types');
 		$this->add_selected_filter('from_name');
 		$this->add_selected_filter('date');
 		$this->add_selected_filter('sended');
+		$this->add_selected_filter('campaigns');
 	}
 	
 	/**
@@ -65,6 +72,7 @@ class list_mails_ui extends list_ui {
 		$this->available_columns = 
 		array('main_fields' =>
 			array(
+					'type' => 'mail_type',
 					'to_name' => 'mail_to_name',
 					'to_mail' => 'mail_to_mail',
 					'object' => 'mail_object',
@@ -77,7 +85,8 @@ class list_mails_ui extends list_ui {
 					'date' => 'mail_date',
 					'sended' => 'mail_sended',
 					'error' => 'mail_error',
-					'from_uri' => 'mail_from_uri'
+					'from_uri' => 'mail_from_uri',
+					'campaign' => 'mail_campaign'
 			)
 		);
 	}
@@ -89,55 +98,42 @@ class list_mails_ui extends list_ui {
 	    $this->add_applied_sort('date', 'desc');
 	}
 	
-	public function init_applied_group($applied_group=array()) {
-		$this->applied_group = array(0 => 'from_uri');
+	protected function init_default_applied_group() {
+		$this->applied_group = array(0 => 'type');
 	}
 	
-	/**
-	 * Tri SQL
-	 */
-	protected function _get_query_order() {
-		
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'to_name' :
-				case 'to_mail' :
-				case 'object' :
-				case 'from_name' :
-				case 'from_mail' :
-				case 'copy_cc' :
-				case 'copy_bcc' :
-				case 'reply_name' :
-				case 'reply_mail' :
-				case 'date' :
-				case 'sended' :
-				case 'error' :
-				case 'from_uri' :
-					$order .= 'mail_'.$sort_by;
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}	
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'to_name' :
+	        case 'to_mail' :
+	        case 'object' :
+	        case 'from_name' :
+	        case 'from_mail' :
+	        case 'copy_cc' :
+	        case 'copy_bcc' :
+	        case 'reply_name' :
+	        case 'reply_mail' :
+	        case 'date' :
+	        case 'sended' :
+	        case 'error' :
+	        case 'from_uri' :
+	            return 'mail_'.$sort_by;
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
 	 * Filtres provenant du formulaire
 	 */
 	public function set_filters_from_form() {
-		$this->set_filter_from_form('from_uri');
+		$this->set_filter_from_form('types');
 		$this->set_filter_from_form('from_name');
 		$this->set_filter_from_form('date_start');
 		$this->set_filter_from_form('date_end');
 		$this->set_filter_from_form('sended');
+		$this->set_filter_from_form('campaigns');
+		$this->set_filter_from_form('from_uri');
 		parent::set_filters_from_form();
 	}
 	
@@ -149,15 +145,18 @@ class list_mails_ui extends list_ui {
 		$this->add_column('from_name');
 		$this->add_column('from_mail');
 		$this->add_column('copy_cc');
+		$this->add_column('copy_bcc');
 		$this->add_column('reply_name');
 		$this->add_column('reply_mail');
 		$this->add_column('date');
 		$this->add_column('sended');
+		$this->add_column('campaign');
 		$this->add_column('error');
 	}
 	
 	protected function init_default_settings() {
 		parent::init_default_settings();
+		$this->set_setting_display('search_form', 'options', true);
 		$this->set_setting_column('date', 'datatype', 'datetime');
 	}
 	
@@ -167,14 +166,17 @@ class list_mails_ui extends list_ui {
 			case 'from_name':
 				$query = 'select distinct mail_from_name as id, mail_from_name as label from mails order by label';
 				break;
+			case 'campaigns':
+				$query = 'SELECT distinct id_campaign as id, concat(campaign_date, " ", campaign_label) as label  FROM campaigns JOIN mails ON mails.mail_num_campaign = campaigns.id_campaign ORDER BY campaign_label';
+				break;
 		}
 		return $query;
 	}
 	
-	protected function get_search_filter_from_uri() {
+	protected function get_search_filter_types() {
 		global $msg;
-		$types_uri = mail::get_list_types_uri();
-		return $this->get_search_filter_multiple_selection('', 'from_uri', $msg["all"], $types_uri);
+		$types = mail::get_list_types();
+		return $this->get_search_filter_multiple_selection('', 'types', $msg["all"], $types);
 	}
 	
 	protected function get_search_filter_from_name() {
@@ -197,38 +199,41 @@ class list_mails_ui extends list_ui {
 			<label for='".$this->objects_type."_sended_yes'>".$msg['mail_sended_yes']."</label>";
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
+	protected function get_search_filter_campaigns() {
+		global $msg;
 		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+		return $this->get_search_filter_multiple_selection($this->get_selection_query('campaigns'), 'campaigns', $msg['campaigns_all']);
+	}
+	
+	protected function get_search_filter_from_uri() {
+		global $msg;
+		$types_uri = mail::get_list_types_uri();
+		return $this->get_search_filter_multiple_selection('', 'from_uri', $msg["all"], $types_uri);
+	}
+	
+	protected function _add_query_filters() {
+		$this->_add_query_filter_multiple_restriction('types', 'mail_type');
+		$this->_add_query_filter_multiple_restriction('from_name', 'mail_from_name');
+		$this->_add_query_filter_interval_restriction('date', 'mail_date', 'datetime');
+		if($this->filters['sended'] == 'yes') {
+			$this->query_filters [] = 'mail_sended = 1';
+		} elseif($this->filters['sended'] == 'no') {
+			$this->query_filters [] = 'mail_sended = 0';
+		}
+		$this->_add_query_filter_multiple_restriction('campaigns', 'mail_num_campaign');
 		if(!empty($this->filters['from_uri'])) {
 			foreach ($this->filters['from_uri'] as $uri) {
-				$filters [] = 'mail_from_uri LIKE "%'.$uri.'%"';
+				$this->query_filters [] = 'mail_from_uri LIKE "%'.$uri.'%"';
 			}
 		}
-		if(!empty($this->filters['from_name'])) {
-			$filters [] = 'mail_from_name IN ("'.implode('","', $this->filters['from_name']).'")';
+	}
+	
+	protected function _get_object_property_type($object) {
+		$message = mails::get_message('mail_'.$object->get_type());
+		if($message) {
+			return $message;
 		}
-		if($this->filters['date_start']) {
-			$filters [] = 'mail_date >= "'.$this->filters['date_start'].'"';
-		}
-		if($this->filters['date_end']) {
-			$filters [] = 'mail_date <= "'.$this->filters['date_end'].' 23:59:59"';
-		}
-		if($this->filters['sended'] == 'yes') {
-			$filters [] = 'mail_sended = 1';
-		} elseif($this->filters['sended'] == 'no') {
-			$filters [] = 'mail_sended = 0';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+		return $object->get_type();
 	}
 	
 	protected function _get_object_property_to_mail($object) {
@@ -252,6 +257,14 @@ class list_mails_ui extends list_ui {
 		}
 	}
 	
+	protected function _get_object_property_campaign($object) {
+		if($object->get_num_campaign()) {
+			$campaign = new campaign($object->get_num_campaign());
+			return $campaign->get_label();
+		}
+		return '';
+	}
+	
 	protected function _get_object_property_from_uri($object) {
 		$types_uri = mail::get_list_types_uri();
 		foreach ($types_uri as $uri=>$label) {
@@ -260,6 +273,30 @@ class list_mails_ui extends list_ui {
 			}
 		}
 		return $object->get_from_uri();
+	}
+	
+	protected function get_default_attributes_format_cell($object, $property) {
+		global $base_path;
+		
+		$attributes = array();
+		switch($property) {
+			case 'campaign':
+				if(SESSrights & EDIT_AUTH) {
+					$attributes['href'] = $base_path."/edit.php?categ=opac&sub=campaigns&action=view&id=".$object->get_num_campaign();
+				}
+				break;
+			default:
+				break;
+		}
+		return $attributes;
+	}
+	
+	protected function _get_query_property_filter($property) {
+		switch ($property) {
+			case 'campaigns':
+				return "SELECT concat(campaign_date, ' ', campaign_label) as label FROM campaigns where id_campaign IN (".implode(',', $this->filters[$property]).")";
+		}
+		return '';
 	}
 	
 	protected function _get_query_human_date() {

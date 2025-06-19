@@ -1,0 +1,45 @@
+<!-- $Id: section_in_result_display.tpl.html,v 1.1.2.2 2023/04/27 09:40:13 qvarin Exp $ -->
+
+<div id="section_container_{{ section.id }}" class="parentSecCourte uk-clearfix">
+    {% block section_picture_tdoc %}
+        <div class="vignetteimgSec">
+            {% block section_picture %}
+                  {% if section.logo.small %}
+                      <div class="vignetteDocSec">
+                          <img class="vignetteSec" src="{{ section.logo.small }}" alt="{{ section.title }}" />
+                      </div>
+                  {% endif %}
+            {% endblock %}
+        </div>
+    {% endblock %}
+
+    {% block section_content %}
+            <!-- Contenu de la rubrique -->
+            <div class="section_corps">
+                <div class="descr_section_corps">
+                    {% block section_title %}
+                        <div class="title_secCourte">
+                            <h3>
+                            {% if section.link %}
+                                <a href="{{ section.link }}">
+                            {% endif %}
+                                {{ section.title }}
+                            {% if section.permalink %}
+                                </a>
+                            {% endif %}
+                            </h3>
+                        </div>
+                    {% endblock %}
+
+                    {% block section_resume %}
+                        {% if section.resume %}
+                            <div class="resume_secCourte">
+                                <span>{{ section.resume | strip_tags  | limitstring 250 }}</span>
+                            </div>
+                        {% endif %}
+                    {% endblock %}
+                </div>
+            </div>
+    {% endblock %}
+    <div class='clear'></div>
+</div>

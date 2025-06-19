@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_docs_typdoc_ui.class.php,v 1.4 2021/01/12 07:23:35 dgoron Exp $
+// $Id: list_configuration_docs_typdoc_ui.class.php,v 1.4.6.1 2023/03/24 07:55:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -35,6 +35,22 @@ class list_configuration_docs_typdoc_ui extends list_configuration_docs_ui {
 		return $main_fields;
 	}
 	
+	protected function get_default_attributes_format_cell($object, $property) {
+		switch($property) {
+			case 'tdoc_libelle':
+				if ($object->tdoc_owner) {
+					return array(
+							'style' => 'font-style:italic;'
+					);
+				} else {
+					return array(
+							'style' => 'font-weight:bold;'
+					);
+				}
+		}
+		return parent::get_default_attributes_format_cell($object, $property);
+	}
+	
 	protected function get_cell_content($object, $property) {
 		global $msg, $charset;
 		global $pmb_quotas_avances;
@@ -42,13 +58,6 @@ class list_configuration_docs_typdoc_ui extends list_configuration_docs_ui {
 		
 		$content = '';
 		switch($property) {
-			case 'tdoc_libelle':
-				if ($object->tdoc_owner) {
-					$content .= "<i>".$object->tdoc_libelle."</i>";
-				} else {
-					$content .= "<strong>".$object->tdoc_libelle."</strong>";
-				}
-				break;
 			case 'duree_pret':
 			case 'duree_resa':
 			case 'short_loan_duration':

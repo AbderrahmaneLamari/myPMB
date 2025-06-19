@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facette_search_opac.class.php,v 1.2 2021/04/15 09:01:06 dgoron Exp $
+// $Id: facette_search_opac.class.php,v 1.3 2022/01/31 14:55:28 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -181,7 +181,7 @@ class facette_search_opac {
 		    while($row=pmb_mysql_fetch_object($result)){
 		        $array_subfields[$row->idchamp] = $row->titre;
 		    }
-		} elseif($id > $this->get_authperso_start()) {
+		} elseif(($id > $this->get_authperso_start()) && ($id < ($this->get_authperso_start()+100))) {//on garde une plage de cent authperso différentes
 			$array_subfields[0] = $msg['facette_isbd'];
 			$result = pmb_mysql_query("select idchamp,titre from authperso_custom where num_type='".($id-$this->get_authperso_start())."' order by titre asc");
 			while($row=pmb_mysql_fetch_object($result)){

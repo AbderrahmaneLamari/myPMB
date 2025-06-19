@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: webdav_group_standard.class.php,v 1.4 2020/11/25 11:07:50 arenou Exp $
+// $Id: webdav_group_standard.class.php,v 1.4.6.1 2023/03/09 15:19:14 dbellamy Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 require_once($base_path.'/admin/connecteurs/out/webdav/groups/webdav_group.class.php');
@@ -70,19 +70,7 @@ class webdav_group_standard extends webdav_group {
 		    'max_errors' => 100,
 		    'store_strip_mb_comp_str' => 0
 		);
-		
-		$tab_namespaces = array(
-		    "skos"	=> "http://www.w3.org/2004/02/skos/core#",
-		    "dc"	=> "http://purl.org/dc/elements/1.1",
-		    "dct"	=> "http://purl.org/dc/terms/",
-		    "owl"	=> "http://www.w3.org/2002/07/owl#",
-		    "rdf"	=> "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-		    "rdfs"	=> "http://www.w3.org/2000/01/rdf-schema#",
-		    "xsd"	=> "http://www.w3.org/2001/XMLSchema#",
-		    "pmb"	=> "http://www.pmbservices.fr/ontology#"
-		);
-		
-		$onto_handler = new onto_handler($class_path."/rdf/skos_pmb.rdf", "arc2", $onto_store_config, "arc2", $data_store_config, $tab_namespaces, 'http://www.w3.org/2004/02/skos/core#prefLabel', 'http://www.w3.org/2004/02/skos/core#ConceptScheme');
+		$onto_handler = new onto_handler($class_path."/rdf/skos_pmb.rdf", "arc2", $onto_store_config, "arc2", $data_store_config, ONTOLOGY_NAMESPACE, 'http://www.w3.org/2004/02/skos/core#prefLabel', 'http://www.w3.org/2004/02/skos/core#ConceptScheme');
 		$params = new onto_param();
 		$params->concept_scheme = [$this->config['used_schema']];
 		$onto_controler = new onto_skos_controler($onto_handler, $params);

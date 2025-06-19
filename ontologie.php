@@ -2,12 +2,12 @@
 // +--------------------------------------------------------------------------+
 // | PMB est sous licence GPL, la réutilisation du code est cadrée            |
 // +--------------------------------------------------------------------------+
-// $Id: ontologie.php,v 1.2 2016/03/29 15:31:32 arenou Exp $
+// $Id: ontologie.php,v 1.3 2022/10/27 14:30:46 arenou Exp $
 
 //Impression
 
 $base_path = ".";
-$base_auth = "ADMIN_AUTH";
+$base_auth = "ADMINISTRATION_AUTH";
 $base_title = "";
 $base_nobody=1;
 $base_noheader=1;

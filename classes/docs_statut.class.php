@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docs_statut.class.php,v 1.17.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: docs_statut.class.php,v 1.18.4.1 2023/07/05 15:33:38 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -65,11 +65,45 @@ class docs_statut {
 		$this->allow_resa = $data->statut_allow_resa;
 	}
 
-	public function get_form() {
-		global $admin_statut_content_form, $msg, $charset;
+	public function get_content_form() {
+		global $msg;
+		global $pmb_transferts_actif;
 		
-		$content_form = $admin_statut_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		$interface_content_form = new interface_content_form(static::class);
+		
+		$interface_content_form->add_element('form_libelle', '103')
+		->add_input_node('text', $this->libelle)
+		->set_attributes(array('data-translation-fieldname' => 'statut_libelle'));
+		$interface_content_form->add_element('form_libelle_opac', 'docs_statut_form_libelle_opac')
+		->add_input_node('text', $this->libelle_opac)
+		->set_attributes(array('data-translation-fieldname' => 'statut_libelle_opac'));
+		$interface_content_form->add_element('form_pret', '117', 'flat')
+		->add_input_node('boolean', $this->pret_flag)
+		->set_attributes(array('onClick', 'test_check(this.form)'));
+		$interface_content_form->add_element('form_allow_resa', 'statut_allow_resa_title', 'flat')
+		->add_input_node('boolean', $this->allow_resa);
+		if ($pmb_transferts_actif) {
+			$interface_content_form->add_element('form_trans', 'transferts_statut_lib_transferable', 'flat')
+			->add_input_node('boolean', $this->transfert_flag)
+			->set_attributes(array('onClick', 'test_check_trans(this.form)'));
+		}
+		$interface_content_form->add_element('form_visible_opac', 'opac_object_visible', 'flat')
+		->add_input_node('boolean', $this->visible_opac)
+		->set_attributes(array('onClick', 'test_check_visible_opac(this.form)'));
+		$interface_content_form->add_element('form_statusdoc_codage_import', 'proprio_codage_interne')
+		->add_input_node('text', $this->statusdoc_codage_import)
+		->set_class('saisie-20em');
+		$interface_content_form->add_element('form_statusdoc_owner', 'proprio_codage_proprio')
+		->add_query_node('select', "select idlender as id, lender_libelle as label from lenders order by label", $this->statusdoc_owner)
+		->set_empty_option(0, $msg[556])
+		->set_first_option(0, $msg["proprio_generique_biblio"])
+		->set_class('saisie-20em');
+		
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
 		$interface_form = new interface_admin_form('typdocform');
 		if(!$this->id){
@@ -77,31 +111,9 @@ class docs_statut {
 		}else{
 			$interface_form->set_label($msg['118']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!libelle_opac!!', htmlentities($this->libelle_opac, ENT_QUOTES, $charset), $content_form);
-		
-		if($this->pret_flag) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox!!', $checkbox, $content_form);
-		$content_form = str_replace('!!pret!!', $this->pret_flag, $content_form);
-		
-		if($this->allow_resa) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_allow_resa!!', $checkbox, $content_form);
-		
-		if($this->transfert_flag) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_trans!!', $checkbox, $content_form);
-		$content_form = str_replace('!!trans!!', $this->transfert_flag, $content_form);
-		
-		if($this->visible_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_visible_opac!!', $checkbox, $content_form);
-		$content_form = str_replace('!!visible_opac!!', $this->visible_opac, $content_form);
-		
-		$content_form = str_replace('!!statusdoc_codage_import!!', $this->statusdoc_codage_import, $content_form);
-		$combo_lender= gen_liste ("select idlender, lender_libelle from lenders order by lender_libelle ", "idlender", "lender_libelle", "form_statusdoc_owner", "", $this->statusdoc_owner, 0, $msg[556],0,$msg["proprio_generique_biblio"]) ;
-		$content_form = str_replace('!!lender!!', $combo_lender, $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('docs_statut')
 		->set_field_focus('form_libelle');
 		return $interface_form->get_display();

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_resa_planning_edition_ui.class.php,v 1.6.2.1 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_resa_planning_edition_ui.class.php,v 1.7.4.1 2023/03/29 12:34:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -30,7 +30,6 @@ class list_resa_planning_edition_ui extends list_resa_planning_ui {
 	
 	protected function init_default_columns() {
 	    global $pmb_lecteurs_localises;
-	    global $pmb_location_resa_planning;
 		
 		$this->add_column('record');
 		$this->add_column('empr');
@@ -43,7 +42,7 @@ class list_resa_planning_edition_ui extends list_resa_planning_ui {
 		$this->add_column('resa_qty');
 		$this->add_column('resa_validee');
 		$this->add_column('resa_confirmee');
-		if ($pmb_location_resa_planning=='1') {
+		if ($this->get_locations_number() > 1) {
 		    $this->add_column('resa_loc_retrait');
 		}
 	}

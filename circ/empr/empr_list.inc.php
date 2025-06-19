@@ -2,14 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_list.inc.php,v 1.84 2020/11/05 10:22:14 dgoron Exp $
+// $Id: empr_list.inc.php,v 1.85 2022/04/01 08:52:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $msg, $sub;
 global $id_notice, $id_bulletin, $groupID;
-global $form_cb, $empr_location_id, $pmb_lecteurs_localises, $type_resa;
+global $form_cb, $empr_location_id, $pmb_lecteurs_localises, $type_resa, $page;
 global $empr_sort_rows, $empr_show_rows, $empr_filter_rows;
+global $force_resa, $pmb_resa_records_no_expl;
 
 $id_notice = intval($id_notice);
 $id_bulletin = intval($id_bulletin);
@@ -34,10 +35,10 @@ function iconepanier($id_emprunteur) {
 }
 
 function get_nbpret($id_emprunteur){
-	global $dbh, $msg;
+	global $msg;
 
 	$rqt = "select count(pret_idexpl) as prets from empr left join pret on pret_idempr=id_empr where id_empr='".$id_emprunteur."' group by id_empr";
-	$res = pmb_mysql_query($rqt,$dbh);
+	$res = pmb_mysql_query($rqt);
 	$nb = pmb_mysql_fetch_object($res);
 
 	return "<td>".$msg['empr_nb_pret']." : ".$nb->prets."</td>";
@@ -149,7 +150,7 @@ switch ($sub) {
 		if (!isset($nbr_lignes)) {
 			$requete = "SELECT COUNT(1) FROM empr $clause ";
 			$res = pmb_mysql_query($requete);
-			$nbr_lignes = @pmb_mysql_result($res, 0, 0);
+			$nbr_lignes = pmb_mysql_result($res, 0, 0);
 		}
 		break;
 }
@@ -157,9 +158,9 @@ switch ($sub) {
 if ($nbr_lignes == 1) {
 	// on lance la vraie requête
 	$requete = "SELECT id_empr as id FROM empr $clause ";
-	$res = @pmb_mysql_query($requete);
+	$res = pmb_mysql_query($requete);
 
-	$id = @pmb_mysql_result($res, '0', 'id');
+	$id = pmb_mysql_result($res, '0', 'id');
 	if ($id) {
 		$erreur_affichage="<table style='border:0px' cellpadding='1' >
 		<tr><td style='width:33%'>&nbsp;<span>&nbsp;</span></td>

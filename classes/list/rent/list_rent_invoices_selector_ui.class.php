@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_rent_invoices_selector_ui.class.php,v 1.1 2021/04/06 07:05:05 dgoron Exp $
+// $Id: list_rent_invoices_selector_ui.class.php,v 1.1.8.1 2023/03/24 07:55:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -29,12 +29,10 @@ class list_rent_invoices_selector_ui extends list_rent_invoices_ui {
 		$this->set_setting_display('search_form', 'export_icons', false);
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		$attributes['onclick'] = "account_add_account_in_invoice(".$this->num_account.", ".$object->get_id().");";
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	protected function get_selection_actions() {

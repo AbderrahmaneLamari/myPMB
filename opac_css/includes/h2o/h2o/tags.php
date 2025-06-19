@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: tags.php,v 1.12.2.3 2021/12/24 14:28:40 qvarin Exp $
+// $Id: tags.php,v 1.15 2021/12/24 14:33:07 qvarin Exp $
 
 /**
  *

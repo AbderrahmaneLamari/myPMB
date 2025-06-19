@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_transferts_edition_ui.class.php,v 1.13.2.1 2021/12/23 13:55:44 dgoron Exp $
+// $Id: list_transferts_edition_ui.class.php,v 1.14.4.1 2023/12/15 14:45:47 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -25,6 +25,7 @@ class list_transferts_edition_ui extends list_transferts_ui {
 						'destination' => 'transferts_edition_tableau_destination',
 						'expl_owner' => 'transferts_edition_tableau_expl_owner',
 						'motif' => 'transferts_edition_tableau_motif',
+						'motif_refus' => 'transferts_circ_motif_refus',
 						'transfert_ask_user_num' => 'transferts_edition_ask_user',
 						'transfert_send_user_num' => 'transferts_edition_send_user',
 						'section' => 'transferts_edition_tableau_section',
@@ -150,7 +151,11 @@ class list_transferts_edition_ui extends list_transferts_ui {
 		if($transferts_edition_show_all_colls) {
 			$this->add_column('destination', 'transferts_edition_tableau_destination');
 		}
-		$this->add_column('motif', 'transferts_edition_tableau_motif');
+		if (isset($this->filters["etat_demande"]) && $this->filters["etat_demande"] == 4) {
+            $this->add_column('motif_refus', 'transferts_circ_motif_refus');
+		} else {
+		    $this->add_column('motif', 'transferts_edition_tableau_motif');
+		}
 		$this->add_column('transfert_ask_user_num', 'transferts_edition_ask_user');
 		$this->add_column('transfert_send_user_num', 'transferts_edition_send_user');
 

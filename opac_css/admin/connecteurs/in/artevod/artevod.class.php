@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: artevod.class.php,v 1.16 2019/12/30 15:58:50 btafforeau Exp $
+// $Id: artevod.class.php,v 1.17 2022/02/16 13:33:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -129,8 +129,8 @@ class artevod extends connector {
     
     public function make_serialized_source_properties($source_id) {
     	global $url, $cp_field, $enrichment_template;
-    	global $del_xsl_transform;
     	
+    	$t=array();
     	$t["url"]=$url;
     	$t["cp_field"] = $cp_field;
     	$t['enrichment_template'] = ($enrichment_template ? $enrichment_template : addslashes($this->default_enrichment_template));
@@ -175,7 +175,7 @@ class artevod extends connector {
     }
         
     public function maj_entrepot($source_id, $callback_progress="", $recover=false, $recover_env="") {
-    	global $charset, $base_path;
+    	global $base_path;
     	
     	$this->fetch_global_properties();
     	$keys = unserialize($this->parameters);
@@ -515,7 +515,7 @@ class artevod extends connector {
 	} 
         
     public function rec_record($record, $source_id, $search_id) {
-    	global $charset, $base_path, $dbh, $url, $search_index;
+    	global $charset, $base_path;
 
     	$date_import = date("Y-m-d H:i:s",time());
     	
@@ -538,6 +538,7 @@ class artevod extends connector {
     		}
     		if (($this->del_old) || ((!$this->del_old)&&(!$ref_exists))) {
     			//Insertion de l'entête
+    			$n_header = array();
 				$n_header["rs"] = "*";
 				$n_header["ru"] = "*";
 				$n_header["el"] = "1";

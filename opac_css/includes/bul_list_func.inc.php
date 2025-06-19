@@ -57,22 +57,6 @@ function affichage_liste_bulletins_tableau($res, $print = true) {
 	
 	$odd_even=1;
 	while(($tableau=pmb_mysql_fetch_array($res))) {
-
-	    $td_nb_analysis = "";
-	    if ($opac_show_nb_analysis) {
-	        
-    	    $nb_analysis = 0;
-    	    $analysis = "";
-    	    
-    	    $record_datas = NEW record_datas($tableau['bulletin_notice']);
-    	    $nb_analysis = $record_datas->get_nb_articles($tableau['bulletin_id']);
-    	    
-    	    if ($nb_analysis) {
-    	        $analysis = $nb_analysis." ".( $nb_analysis == 1 ? $msg['article'] : $msg['articles'] );
-    	        $td_nb_analysis = "<td> $analysis </td>";
-    	    }
-	    }
-	    
 		if ($odd_even==0) {
 			$pair_impair="odd";
 			$odd_even=1;
@@ -98,10 +82,6 @@ function affichage_liste_bulletins_tableau($res, $print = true) {
 		if ($tableau['bulletin_titre']) $return.= pmb_bidi(" ".htmlentities($tableau['bulletin_titre'],ENT_QUOTES, $charset)."\n"); 
 		$return.= "		</td>";
 		
-		if ($td_nb_analysis) {
-		    $return .= $td_nb_analysis;
-		}
-		
 		if ($pmb_collstate_advanced) {
 			$collstates = array();
 			$query = "SELECT collstate_bulletins_num_collstate, state_collections FROM collstate_bulletins JOIN collections_state ON collections_state.collstate_id = collstate_bulletins.collstate_bulletins_num_collstate WHERE collstate_bulletins_num_bulletin = '".$tableau['bulletin_id']."'";
@@ -122,7 +102,16 @@ function affichage_liste_bulletins_tableau($res, $print = true) {
 			}
 			$return .= $collstate_list."</td>";
 		}
-		
+		if ($opac_show_nb_analysis) {
+			$analysis = "";
+			$record_datas = NEW record_datas($tableau['bulletin_notice']);
+			$nb_analysis = $record_datas->get_nb_articles($tableau['bulletin_id']);
+			
+			if ($nb_analysis) {
+				$analysis = $nb_analysis." ".( $nb_analysis == 1 ? $msg['article'] : $msg['articles'] );
+			}
+			$return .= "<td> ".$analysis." </td>";
+		}
 		$return.= "</tr>";
 	}
 	$return.= "</table><br /><br />";

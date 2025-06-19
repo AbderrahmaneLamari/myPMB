@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_vign.php,v 1.5 2015/05/29 14:48:13 arenou Exp $
+// $Id: cms_vign.php,v 1.6 2022/04/15 12:16:06 dbellamy Exp $
 
 // définition du minimum nécéssaire 
 $base_path     = ".";                            
@@ -11,11 +11,6 @@ $base_title    = "";
 $base_noheader = 1;
 $base_nocheck  = 1;
 $base_nobody   = 1;
-
-
-require_once($base_path."/classes/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("cms_modules",true);
 
 require_once ("$base_path/includes/init.inc.php");  
 session_write_close();

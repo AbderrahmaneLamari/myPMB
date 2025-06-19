@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: search_simple_fields.xml,v 1.20 2021/03/04 13:46:51 dbellamy Exp $ -->
+<!-- $Id: search_simple_fields.xml,v 1.22 2022/02/16 15:56:37 dgoron Exp $ -->
 <pmbfields>
 
 	<!-- Zone fixedFields :
@@ -147,6 +147,41 @@
 		<field title="msg:caddie_de_NOTI" id="11">
 			<query for="EQ" regDiacrit="no">
 				<main><![CDATA[select distinct object_id as notice_id from caddie_content,notices where caddie_id='!!p!!' and object_id=notices.notice_id order by index_serie, tnvol, index_sew]]></main>
+			</query>
+		</field>
+		<!-- étagère virtuelle -->
+		<field title="msg:etagere_query" id="14">
+			<variable name="opac_etagere_order" type="global"/>
+			<input type="query_list">
+				<query>select idetagere, name from etagere order by name</query>
+			</input>
+			<query for="EQ" multiple="yes">
+				<part>
+					<main>drop table if exists tmp_etagere_caddie_content</main>
+				</part>
+				<part>
+					<main>
+						CREATE TEMPORARY TABLE tmp_etagere_caddie_content as 
+						SELECT distinct object_id, etagere_id 
+						FROM caddie_content
+						JOIN etagere_caddie ON caddie_content.caddie_id=etagere_caddie.caddie_id
+						WHERE etagere_id=!!p!! AND (etagere_caddie.etagere_caddie_filters LIKE '%elt_flag%' OR etagere_caddie.etagere_caddie_filters NOT LIKE '%elt_no_flag%') and caddie_content.flag=1
+						UNION
+						SELECT distinct object_id, etagere_id
+						FROM caddie_content
+						JOIN etagere_caddie ON caddie_content.caddie_id=etagere_caddie.caddie_id
+						WHERE etagere_id=!!p!! AND (etagere_caddie.etagere_caddie_filters LIKE '%elt_no_flag%' OR etagere_caddie.etagere_caddie_filters NOT LIKE '%elt_flag%') and caddie_content.flag IS NULL
+					</main>
+				</part>
+				<part>
+					<main>
+						<![CDATA[SELECT distinct notice_id FROM tmp_etagere_caddie_content
+							JOIN notices ON notices.notice_id = tmp_etagere_caddie_content.object_id
+							JOIN etagere ON etagere.idetagere = tmp_etagere_caddie_content.etagere_id 
+							ORDER BY !!opac_etagere_order!!
+						]]>
+					</main>
+				</part>
 			</query>
 		</field>
 		<!-- **** RECHERCHE POUR L'API **** -->

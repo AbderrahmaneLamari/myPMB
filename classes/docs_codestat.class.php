@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docs_codestat.class.php,v 1.18.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: docs_codestat.class.php,v 1.20.2.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -58,11 +58,27 @@ class docs_codestat {
 
 	}
 
-	public function get_form() {
-		global $admin_codstat_content_form, $msg, $charset;
+	public function get_content_form() {
+		global $msg;
 		
-		$content_form = $admin_codstat_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_libelle', '103')
+		->add_input_node('text', $this->libelle)
+		->set_attributes(array('data-translation-fieldname' => 'codestat_libelle'));
+		$interface_content_form->add_element('form_statisdoc_codage_import', 'proprio_codage_interne')
+		->add_input_node('text', $this->statisdoc_codage_import)
+		->set_class('saisie-20em');
+		$interface_content_form->add_element('form_statisdoc_owner', 'proprio_codage_proprio')
+		->add_query_node('select', "select idlender, lender_libelle from lenders order by lender_libelle ", $this->statisdoc_owner)
+		->set_empty_option(0, $msg[556])
+		->set_first_option(0, $msg["proprio_generique_biblio"])
+		->set_class('saisie-20em');
+		
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
 		$interface_form = new interface_admin_form('typdocform');
 		if(!$this->id){
@@ -70,14 +86,9 @@ class docs_codestat {
 		}else{
 			$interface_form->set_label($msg['102']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!statisdoc_codage_import!!', $this->statisdoc_codage_import, $content_form);
-		$combo_lender= gen_liste ("select idlender, lender_libelle from lenders order by lender_libelle ", "idlender", "lender_libelle", "form_statisdoc_owner", "", $this->statisdoc_owner, 0, $msg[556],0,$msg["proprio_generique_biblio"]) ;
-		$content_form = str_replace('!!lender!!', $combo_lender, $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('docs_codestat')
 		->set_field_focus('form_libelle');
 		return $interface_form->get_display();
@@ -154,10 +165,13 @@ class docs_codestat {
 		$query = "SELECT idcode FROM docs_codestat WHERE statisdoc_codage_import='${key1}' and statisdoc_owner = '${key2}' LIMIT 1 ";
 		$result = pmb_mysql_query($query);
 		if(!$result) die("can't SELECT docs_codestat ".$query);
-		$docs_codestat  = pmb_mysql_fetch_object($result);
-	
-		/* le code statistique de doc existe, on retourne l'ID */
-		if($docs_codestat->idcode) return $docs_codestat->idcode;
+		if(pmb_mysql_num_rows($result)) {
+			$docs_codestat  = pmb_mysql_fetch_object($result);
+			/* le code statistique de doc existe, on retourne l'ID */
+			if($docs_codestat->idcode) {
+				return $docs_codestat->idcode;
+			}
+		}
 	
 		// id non-récupérée, il faut créer la forme.
 		

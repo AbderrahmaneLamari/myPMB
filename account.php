@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: account.php,v 1.85.2.1 2021/10/26 09:33:36 dgoron Exp $
+// $Id: account.php,v 1.87 2022/04/15 12:16:06 dbellamy Exp $
 
 global $base_path, $base_auth, $base_title, $base_use_dojo, $include_path, $class_path;
 global $categ, $id;
@@ -26,10 +26,6 @@ include "$include_path/templates/account.tpl.php";
 if(empty($categ)) {
 	$categ = 'favorites';
 }
-
-require_once $class_path.'/autoloader.class.php';
-$autoload = new autoloader();
-$autoload->add_register("onto_class");
 
 module_account::get_instance()->proceed_header();
 

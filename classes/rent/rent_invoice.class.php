@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rent_invoice.class.php,v 1.28 2021/04/02 15:31:05 dgoron Exp $
+// $Id: rent_invoice.class.php,v 1.29 2022/03/10 15:19:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -490,7 +490,7 @@ class rent_invoice {
 	}
 	
 	public function set_id($id) {
-		$this->id = $id*1;
+		$this->id = intval($id);
 	}
 	
 	public function set_num_user($num_user) {

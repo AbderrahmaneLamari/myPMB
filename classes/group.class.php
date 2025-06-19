@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: group.class.php,v 1.29.2.2 2021/11/30 09:28:06 dgoron Exp $
+// $Id: group.class.php,v 1.32.4.1 2023/07/28 09:44:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -84,40 +84,47 @@ class group {
 
 	// génération du form de group
 	public function get_form() {
-		global $group_form;
+		global $group_content_form;
+		global $base_path;
 		global $msg;
 	 	global $charset;
-		if($this->id) $titre = $msg[912]; // modification
-			else $titre = $msg[910]; // création
-		$group_form = str_replace('!!titre!!', $titre, $group_form);
-		if ($this->lettre_rappel) $group_form = str_replace('!!lettre_rappel!!', "checked", $group_form);
-		else $group_form = str_replace('!!lettre_rappel!!', "", $group_form);
-		if ($this->mail_rappel) $group_form = str_replace('!!mail_rappel!!', "checked", $group_form);
-		else $group_form = str_replace('!!mail_rappel!!', "", $group_form);
-		if ($this->lettre_rappel_show_nomgroup) $group_form = str_replace('!!lettre_rappel_show_nomgroup!!', "checked", $group_form);
-		else $group_form = str_replace('!!lettre_rappel_show_nomgroup!!', "", $group_form);
-		if ($this->lettre_resa) $group_form = str_replace('!!lettre_resa!!', "checked", $group_form);
-		else $group_form = str_replace('!!lettre_resa!!', "", $group_form);
-		if ($this->mail_resa) $group_form = str_replace('!!mail_resa!!', "checked", $group_form);
-		else $group_form = str_replace('!!mail_resa!!', "", $group_form);
-		if ($this->lettre_resa_show_nomgroup) $group_form = str_replace('!!lettre_resa_show_nomgroup!!', "checked", $group_form);
-		else $group_form = str_replace('!!lettre_resa_show_nomgroup!!', "", $group_form);
-		$group_form = str_replace('!!group_name!!', htmlentities($this->libelle,ENT_QUOTES, $charset), $group_form);
-		$group_form = str_replace('!!nom_resp!!', $this->libelle_resp, $group_form);
-		$group_form = str_replace('!!comment_gestion!!', $this->comment_gestion, $group_form);
-		$group_form = str_replace('!!comment_opac!!', $this->comment_opac, $group_form);
-		$group_form = str_replace('!!groupID!!', $this->id, $group_form);
-		$group_form = str_replace('!!respID!!', $this->id_resp, $group_form);
-		if($this->id) {
-		 	$link_annul = './circ.php?categ=groups&action=showgroup&groupID='.$this->id;
-		 	$link_suppr = "<input type='button' class='bouton' value='$msg[63]' onClick=\"confirm_delete();\" />";
-		} else {
-	 		$link_annul = './circ.php?categ=groups';
-	 		$link_suppr = "";
+	 	
+	 	$content_form = $group_content_form;
+	 	
+	 	$interface_form = new interface_circ_form('group_form');
+	 	if($this->id) {
+	 		$interface_form->set_label($msg[912]);
+	 	} else {
+	 		$interface_form->set_label($msg[910]);
 	 	}
-		$group_form = str_replace('!!link_annul!!', $link_annul, $group_form);
-		$group_form = str_replace('<!-- bouton_suppression -->', $link_suppr, $group_form);
-		return $group_form;
+
+	 	if ($this->lettre_rappel) $content_form = str_replace('!!lettre_rappel!!', "checked", $content_form);
+		else $content_form = str_replace('!!lettre_rappel!!', "", $content_form);
+		if ($this->mail_rappel) $content_form = str_replace('!!mail_rappel!!', "checked", $content_form);
+		else $content_form = str_replace('!!mail_rappel!!', "", $content_form);
+		if ($this->lettre_rappel_show_nomgroup) $content_form = str_replace('!!lettre_rappel_show_nomgroup!!', "checked", $content_form);
+		else $content_form = str_replace('!!lettre_rappel_show_nomgroup!!', "", $content_form);
+		if ($this->lettre_resa) $content_form = str_replace('!!lettre_resa!!', "checked", $content_form);
+		else $content_form = str_replace('!!lettre_resa!!', "", $content_form);
+		if ($this->mail_resa) $content_form = str_replace('!!mail_resa!!', "checked", $content_form);
+		else $content_form = str_replace('!!mail_resa!!', "", $content_form);
+		if ($this->lettre_resa_show_nomgroup) $content_form = str_replace('!!lettre_resa_show_nomgroup!!', "checked", $content_form);
+		else $content_form = str_replace('!!lettre_resa_show_nomgroup!!', "", $content_form);
+		$content_form = str_replace('!!group_name!!', htmlentities($this->libelle,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!nom_resp!!', $this->libelle_resp, $content_form);
+		$content_form = str_replace('!!comment_gestion!!', $this->comment_gestion, $content_form);
+		$content_form = str_replace('!!comment_opac!!', $this->comment_opac, $content_form);
+		$content_form = str_replace('!!respID!!', $this->id_resp, $content_form);
+
+		$interface_form->set_object_id($this->id)
+		->set_confirm_delete_msg($msg['931'])
+		->set_content_form($content_form)
+		->set_table_name('groupe')
+		->set_field_focus('group_name');
+		$display = $interface_form->get_display();
+		$display .= "<script src='".$base_path."/javascript/ajax.js' type='text/javascript'></script>";
+		$display .= "<script type='text/javascript'>ajax_parse_dom();</script>";
+		return $display;
 	}
     
 	// affectation de nouvelles valeurs
@@ -143,12 +150,12 @@ class group {
 	public function get_members() {
 		if(!$this->id) return;
 	
-		$requete = "select EMPR.id_empr AS id, EMPR.empr_nom AS nom , EMPR.empr_prenom AS prenom, EMPR.empr_cb AS cb, EMPR.empr_categ AS id_categ, EMPR.type_abt AS id_abt";
-		$requete .= " FROM empr EMPR, empr_groupe MEMBERS";
-		$requete .= " WHERE MEMBERS.empr_id=EMPR.id_empr";
-		$requete .= " AND MEMBERS.groupe_id=".$this->id;
-		$requete .= " ORDER BY EMPR.empr_nom, EMPR.empr_prenom";
-		$result = pmb_mysql_query($requete);
+		$query = "select EMPR.id_empr AS id, EMPR.empr_nom AS nom , EMPR.empr_prenom AS prenom, EMPR.empr_cb AS cb, EMPR.empr_categ AS id_categ, EMPR.type_abt AS id_abt";
+		$query .= " FROM empr EMPR, empr_groupe MEMBERS";
+		$query .= " WHERE MEMBERS.empr_id=EMPR.id_empr";
+		$query .= " AND MEMBERS.groupe_id=".$this->id;
+		$query .= " ORDER BY EMPR.empr_nom, EMPR.empr_prenom";
+		$result = pmb_mysql_query($query);
 		$this->nb_members = pmb_mysql_num_rows($result);
 		if($this->nb_members) {
 		 	while($mb = pmb_mysql_fetch_object($result)) {
@@ -257,7 +264,7 @@ class group {
 	
 		if($this->id) {
 			if($this->nb_members) {
-			    foreach ($this->members as $cle => $membre) {
+			    foreach ($this->members as $membre) {
 					$date_prolong = "form_expiration_".$membre['id'];
 					global ${$date_prolong};
 					if (${$date_prolong} != "") {
@@ -278,7 +285,7 @@ class group {
 										emprunteur::rec_abonnement($membre['id'],$membre['id_abt'],$membre['id_categ'],$rec_caution);
 									}
 								} else {
-									error_message($msg[540], "erreur modification emprunteur", 1, './circ.php?categ=groups&action=showgroup&groupID=".$this->id."');
+									error_message($msg[540], "erreur modification emprunteur", 1, static::format_url('&action=showgroup&groupID='.$this->id));
 								}
 							}
 						}
@@ -295,15 +302,15 @@ class group {
 		if(!$this->id) return;
 		$expls = array();		
 		foreach ($this->members as $empr) {
-			$req = "select pret_idexpl from pret where pret_idempr=".$empr['id'];
-			$res = pmb_mysql_query($req);
+			$query = "select pret_idexpl from pret where pret_idempr=".$empr['id'];
+			$res = pmb_mysql_query($query);
 		 	while ($r = pmb_mysql_fetch_object($res)) {
 		 		$expls[] = array(
 		 				'id' => $r->pret_idexpl,
 		 		);
 		 	}
-			$req = "update pret set pret_retour='".$group_prolonge_pret_date."', cpt_prolongation=cpt_prolongation+1 where pret_retour<'".$group_prolonge_pret_date."' and pret_idempr=".$empr['id'];
-			$res = pmb_mysql_query($req);
+		 	$query = "update pret set pret_retour='".$group_prolonge_pret_date."', cpt_prolongation=cpt_prolongation+1 where pret_retour<'".$group_prolonge_pret_date."' and pret_idempr=".$empr['id'];
+		 	pmb_mysql_query($query);
 		}
 		return $expls;
 	}
@@ -362,7 +369,7 @@ class group {
 	}
 
 	public function get_transactions($typ_compte) {
-		global $charset, $msg;
+		global $msg;
 		global $show_transactions, $date_debut;
 
 		$display = '';
@@ -445,9 +452,9 @@ class group {
 		
 		$form = "		
 		<div class='row'>
-			<div class='colonne2'><h2><a href='./circ.php?categ=groups&action=showgroup&groupID=".$this->id."'>!!group_name!!</a> : !!type_compte!!</h2></div><div class='colonne2' style='text-align:right'><h2>".$msg["finance_solde"]." !!solde!!<br />".$msg["finance_not_validated"]." : !!non_valide!!</h2></div>
+			<div class='colonne2'><h2><a href='".static::format_url("&action=showgroup&groupID=".$this->id)."'>!!group_name!!</a> : !!type_compte!!</h2></div><div class='colonne2' style='text-align:right'><h2>".$msg["finance_solde"]." !!solde!!<br />".$msg["finance_not_validated"]." : !!non_valide!!</h2></div>
 		</div>
-		<form name='compte_form' method='post' action='./circ.php?categ=groups&action=showcompte&typ_compte=!!typ_compte!!&groupID=".$this->id."'>
+		<form name='compte_form' method='post' action='".static::format_url("&action=showcompte&typ_compte=!!typ_compte!!&groupID=".$this->id)."'>
 				<input type='hidden' name='act' value=''/>
 				<div class='row' id='selector_transaction_list'>
 				<div class='colonne3'><input type='radio' name='show_transactions' value='1' id='show_transactions_1' !!checked1!! onClick=\"this.form.submit();\"/><label for='show_transactions_1'>".$msg["finance_form_empr_ten_last"]."</label></div>
@@ -542,19 +549,19 @@ class group {
 		}	
 		// construnction du formulaire
 		if ($solde_abonnement || $novalid_abonnement) {
-			$form.= "<div class='colonne4'><div><strong><a href='./circ.php?categ=groups&action=showcompte&groupID=".$this->id."&typ_compte=1'>".$msg["finance_solde_abt"]."</a></strong> ".comptes::format($solde_abonnement)."</div>";
+			$form.= "<div class='colonne4'><div><strong><a href='".static::format_url("&action=showcompte&groupID=".$this->id."&typ_compte=1")."'>".$msg["finance_solde_abt"]."</a></strong> ".comptes::format($solde_abonnement)."</div>";
 			if ($novalid_abonnement)
 				$form.= "<div>".$msg["finance_not_validated"]." : ".comptes::format($novalid_abonnement)."</div>";			
 			$form.= "</div>";
 		}
 		if ($solde_prets || $novalid_prets) {
-			$form.= "<div class='colonne4'><div><strong><a href='./circ.php?categ=groups&action=showcompte&groupID=".$this->id."&typ_compte=3'>".$msg["finance_solde_pret"]."</a></strong> ".comptes::format($solde_prets)."</div>";
+			$form.= "<div class='colonne4'><div><strong><a href='".static::format_url("&action=showcompte&groupID=".$this->id."&typ_compte=3")."'>".$msg["finance_solde_pret"]."</a></strong> ".comptes::format($solde_prets)."</div>";
 			if ($novalid_prets)
 				$form.= "<div>".$msg["finance_not_validated"]." : ".comptes::format($novalid_prets)."</div>";
 			$form.= "</div>";
 		}
 		if ($solde_amende || $novalid_amende) {
-			$form.= "<div class='colonne4'><div><strong><a href='./circ.php?categ=groups&action=showcompte&groupID=".$this->id."&typ_compte=2'>".$msg["finance_solde_amende"]."</a></strong> ".comptes::format($solde_amende)."</div>";
+			$form.= "<div class='colonne4'><div><strong><a href='".static::format_url("&action=showcompte&groupID=".$this->id."&typ_compte=2")."'>".$msg["finance_solde_amende"]."</a></strong> ".comptes::format($solde_amende)."</div>";
 			if ($novalid_amende)
 				$form.= "<div>".$msg["finance_not_validated"]." : ".comptes::format($novalid_amende)."</div>";
 			if ($total_amende)
@@ -565,7 +572,7 @@ class group {
 			$form.= "
 				<div class='colonne4'>
 					<div>
-						<strong><a href='./circ.php?categ=groups&action=showcompte&groupID=".$this->id."&typ_compte=4'>".$msg["transactype_empr_compte"]."</a></strong> ".comptes::format($solde_transac)."</div>";
+						<strong><a href='".static::format_url("&action=showcompte&groupID=".$this->id."&typ_compte=4")."'>".$msg["transactype_empr_compte"]."</a></strong> ".comptes::format($solde_transac)."</div>";
 			if ($novalid_transac)
 				$form.= "<div>".$msg["finance_not_validated"]." : ".comptes::format($novalid_transac)."</div>";
 			$form.= "</div>";
@@ -605,7 +612,7 @@ class group {
 		$form = '';
 		if ($solde < 0) {
 			$form = "		
-				<h2><a href='./circ.php?categ=groups&action=showgroup&groupID=".$this->id."'>".htmlentities($this->libelle)."</a> : ".comptes::get_typ_compte_lib($typ_compte)."</h2>
+				<h2><a href='".static::format_url("&action=showgroup&groupID=".$this->id)."'>".htmlentities($this->libelle)."</a> : ".comptes::get_typ_compte_lib($typ_compte)."</h2>
 				<table>
 					<tr>
 						<td style='text-align:right'>".$msg["finance_enc_montant_valide"]." : </td>
@@ -700,10 +707,10 @@ class group {
 			}
 			if ($somme_restante > 0) {
 				// Trop percu, il faut rendre la monnaie
-				return "<script type='text/javascript'>alert('".$msg['group_encaissement_trop_percu'].$somme_restante.$pmb_gestion_devise."'); parent.document.location=\"./circ.php?categ=groups&action=showgroup&groupID=".$this->id."\";</script>";
+				return "<script type='text/javascript'>alert('".$msg['group_encaissement_trop_percu'].$somme_restante.$pmb_gestion_devise."'); parent.document.location=\"".static::format_url("&action=showgroup&groupID=".$this->id)."\";</script>";
 			}		
 		}
-		return "<script type='text/javascript'>parent.document.location=\"./circ.php?categ=groups&action=showgroup&groupID=".$this->id."\";</script>";
+		return "<script type='text/javascript'>parent.document.location=\"".static::format_url("&action=showgroup&groupID=".$this->id)."\";</script>";
 	}
 	
 	public function transactions_proceed() {
@@ -772,5 +779,11 @@ class group {
 			}
 		}
 		return $this->nb_resas;
+	}
+	
+	protected static function format_url($url='') {
+		global $base_path;
+		
+		return $base_path.'/circ.php?categ=groups'.$url;
 	}
 }

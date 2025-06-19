@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_loans_groups_ui.class.php,v 1.5.2.1 2021/08/05 10:17:13 dgoron Exp $
+// $Id: list_loans_groups_ui.class.php,v 1.8 2022/09/30 12:30:39 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class list_loans_groups_ui extends list_loans_ui {
     
-    public function init_applied_group($applied_group=array()) {
+    protected function init_default_applied_group() {
         $this->applied_group = array(0 => 'groups');
     }
     
@@ -53,11 +53,6 @@ class list_loans_groups_ui extends list_loans_ui {
     
     protected function _get_query_order() {
         return ' GROUP BY pret_idempr, pret_idexpl '.parent::_get_query_order();
-    }
-      
-    protected function _get_query_pager() {
-        $this->applied_sort_type = 'OBJECTS';
-        return "";
     }
     
     /**

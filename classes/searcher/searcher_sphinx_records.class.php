@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_sphinx_records.class.php,v 1.21.2.1 2021/06/24 10:27:03 btafforeau Exp $
+// $Id: searcher_sphinx_records.class.php,v 1.22 2021/06/24 10:30:55 btafforeau Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

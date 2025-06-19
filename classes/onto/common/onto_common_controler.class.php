@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_controler.class.php,v 1.50 2020/10/14 09:15:56 arenou Exp $
+// $Id: onto_common_controler.class.php,v 1.60.2.1 2023/11/10 10:15:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -37,10 +37,19 @@ class onto_common_controler {
 	 */
 	public function proceed(){
 	    global $pmb_allow_authorities_first_page, $force_delete;
+	    
+	    if($this->params->sub == "search_extended"){
+	        // RMC !
+	        print $this->get_menu();
+	        return $this->proceed_rmc();
+	    }
 		
 		//on affecte la proprité item par une instance si nécessaire...
 		$this->init_item();
 		switch($this->params->action){		
+		    case 'advanced_search';
+                return $this->proceed_rmc();
+                break;
 			case "ajax_selector" :
 				return $this->proceed_ajax_selector();
 				break;
@@ -52,7 +61,6 @@ class onto_common_controler {
 				$this->proceed_edit();
 				break;
 			case "save" :
-				print $this->get_menu();
 				$this->proceed_save();
 				break;
 			case "search" :
@@ -69,6 +77,7 @@ class onto_common_controler {
 				$this->proceed_delete(true);
 				break;
 			case "confirm_delete" :
+			    print $this->get_menu();
 			    if(!isset($force_delete)) $force_delete = false;
 			    $this->proceed_delete($force_delete);
 				break;
@@ -76,12 +85,21 @@ class onto_common_controler {
 				//voir plus tard si on veut forcer la suppression
 				return $this->proceed_delete_from_cart(false);
 				break;
+			case "selector_add" :
 			case "add": //Cas ajouté pour être en conformité avec le cas des selecteurs autorité (voir ./selectors/classes/selector_ontology.class.php)
 				return $this->proceed_selector_add();
 				break;
+			case "selector_save" :
+			    $this->proceed_selector_save();
+			    break;
 			case "update": //Cas ajouté pour être en conformité avec le cas des selecteurs autorité (voir ./selectors/classes/selector_ontology.class.php)
 				return $this->proceed_save(false);
 				break;
+			// AR - 08/11/2022 : Page de consultation d'une entité
+			case "see" :
+			    print $this->get_menu();
+			    return $this->proceed_see();
+			    break;
 			case "list" :
 			default :
 				print $this->get_menu();				
@@ -96,13 +114,14 @@ class onto_common_controler {
 	}
 	
 	protected function init_item(){
-		//dans le framework
-		if(!$this->item && $this->params->sub && ((isset($this->params->id) && $this->params->id) || in_array($this->params->action, array('edit', 'save', 'add', 'push', 'save_push', 'update')))){
-			if(in_array($this->params->action, array('save', 'save_push', 'update'))){
+	    //dans le framework
+	    if(!$this->item && ((isset($this->params->id) && $this->params->id) || in_array($this->params->action, array('edit', 'save', 'add', 'selector_add', 'selector_save', 'push', 'save_push', 'update')))){
+	        $class_uri = $this->get_item_type_to_list($this->params,false);
+	        if(in_array($this->params->action, array('save', 'save_push', 'update','selector_save'))){
 				//lors d'une sauvegarde d'un item, on a posté l'uri
-				$this->item = $this->handler->get_item($this->handler->get_class_uri($this->params->sub), $this->params->item_uri);
+	            $this->item = $this->handler->get_item($class_uri, $this->params->item_uri);
 			}else{
-				$this->item = $this->handler->get_item($this->handler->get_class_uri($this->params->sub), onto_common_uri::get_uri($this->params->id));
+                $this->item = $this->handler->get_item($class_uri, onto_common_uri::get_uri($this->params->id));
 			}
 			$this->item->set_framework_params($this->params);
 		}
@@ -121,12 +140,33 @@ class onto_common_controler {
 			$ui_class_name::display_errors($this,$result);
 		}else {
 			vedette_composee::update_vedettes_built_with_element(onto_common_uri::get_id($this->item->get_uri()), TYPE_ONTOLOGY);
+			indexation_stack::push($this->item->get_id(), TYPE_ONTOLOGY, "all", $this->handler->get_ontology()->name);
 			if ($list){
-				$this->proceed_list();
+			    // AR 10/11/22 : On retourne plus sur la liste mais sur la fiche !
+			    print $this->get_menu();
+				$this->proceed_see();
 			}else{ //Cas ajouté pour les selecteurs
 				return onto_common_uri::get_id($this->item->get_uri());
 			}
 		}
+	}
+	
+	protected function proceed_selector_save()
+	{
+	    $this->item->get_values_from_form();
+	    
+	    $result = $this->handler->save($this->item);
+	    if($result !== true){
+	        $ui_class_name=self::resolve_ui_class_name($this->params->sub,$this->handler->get_onto_name());
+	        $ui_class_name::display_errors($this,$result);
+	    }else {
+	        indexation_stack::push($this->item->get_id(), TYPE_ONTOLOGY, "all", $this->handler->get_ontology()->name);
+            $this->proceed_list_selector();
+	        //Cas ajouté pour les selecteurs
+	        //  return onto_common_uri::get_id($this->item->get_uri());
+	        
+	    }
+	    return true;
 	}
 
 	protected function proceed_delete($force_delete = false, $print = true){
@@ -155,7 +195,7 @@ class onto_common_controler {
 	protected function proceed_list_selector(){
 		$type = $this->get_item_type_to_list($this->params,true);
 		$ui_class_name=self::resolve_ui_class_name($type,$this->handler->get_onto_name());
-		print $ui_class_name::get_search_form_selector($this,$this->params);
+        print $ui_class_name::get_search_form_selector($this,$this->params);
 		print $ui_class_name::get_list_selector($this,$this->params);
 	}
 
@@ -189,12 +229,9 @@ class onto_common_controler {
 	}
 	
 	protected function proceed_selector_add(){
-		//on en aura besoin à la sauvegarde...
-		$_SESSION['onto_skos_concept_selector_last_parent_id'] = $this->params->parent_id;
 		//réglons rapidement ce problème... cf. dette technique
 		print "<div id='att'></div>";
-		$type = $this->get_item_type_to_list($this->params,true);
-		print $this->item->get_form($this->params->base_url, '', 'update');
+		print $this->item->get_form($this->params->base_url, '', 'selector_save');
 	}
 	
 	protected function proceed_confirm_delete($result){
@@ -209,6 +246,7 @@ class onto_common_controler {
 	 */
 	public function get_menu(){
 		global $base_path;
+		global $msg;
 		$menu = "
 		<h1>".$this->get_title()."</h1>
 		<div class='hmenu'>";
@@ -218,6 +256,12 @@ class onto_common_controler {
 			<span ".($class->pmb_name == $this->params->sub ? "class='selected'" : "").">
 			<a href='".$base_path."/".$this->get_base_resource()."categ=".$this->params->categ."&sub=".$class->pmb_name."&action=list'>".$this->get_label($class->pmb_name)."</a>
 			</span>";
+		}
+		if($this->handler->get_onto_name() != 'skos') {
+    		$menu.="
+    			<span ".('search_extended' == $this->params->sub ? "class='selected'" : "").">
+    			<a href='".$base_path."/".$this->get_base_resource()."categ=&sub=search_extended'>".$msg['search_extended']."</a>
+    			</span>";
 		}
 		$menu.= "
 		</div>";
@@ -289,13 +333,12 @@ class onto_common_controler {
 				'page' => $page
 		);
 		$list['elements'] = array();
+		$entity_class_name = onto_common_entity::get_entity_class_name($this->get_class_pmb_name($class_uri),$this->get_onto_name());
 		if($results && count($results)){
 			foreach($results as $result){
-				if(!isset($list['elements'][$result->elem]['default']) || !$list['elements'][$result->elem]['default']){
-					$list['elements'][$result->elem]['default'] = $result->label;
-				}
-				if(isset($result->label_lang) && substr($lang,0,2) == $result->label_lang){
-					$list['elements'][$result->elem][$lang] = $result->label;
+			    $list['elements'][$result->elem]['data'] = new $entity_class_name($result->elem, $this->handler);
+				if(empty($list['elements'][$result->elem]['default'])){
+				    $list['elements'][$result->elem]['default'] = $list['elements'][$result->elem]['data']->isbd;
 				}
 			}
 		}
@@ -457,6 +500,12 @@ class onto_common_controler {
 			$search_class_name = $this->get_searcher_class_name($class_uri);
 			if(strpos($search_class_name,'searcher_ontologies') === 0 && isset($params->ontology_id)){
 				$searcher = new $search_class_name(stripslashes($params->{$user_query_var}),$params->ontology_id);
+				$class = $this->handler->get_ontology()->get_class($class_uri);
+				$searcher->add_fields_restrict([[
+				    'field' => "code_champ",
+				    'values' => array($class->field),
+				    'op' => "or",
+				    'not' => false]]);
 			}else{
 				$searcher = new $search_class_name(stripslashes($params->{$user_query_var}));
 			}
@@ -525,8 +574,10 @@ class onto_common_controler {
 				return $search_class_name;
 			}
 		}
-		$search_class_name = 'searcher_ontologies';
-		return $search_class_name;
+		if($this->class_is_indexed($classes[$class_uri]->pmb_name)){
+		    return 'searcher_ontologies';
+		}
+		return false;
 	}
 	
 	/**
@@ -584,7 +635,7 @@ class onto_common_controler {
 		return $this->get_list($class_uri, $params);
 	}
 	
-	protected function get_item_type_to_list($params, $pmb_name = false){
+	public function get_item_type_to_list($params, $pmb_name = false){
 		//on commence par récupérer l'URI de la classe de l'ontologie des éléments que l'on veut lister...
 		switch($params->action){
 			case "list_selector":
@@ -592,15 +643,19 @@ class onto_common_controler {
 			case "selector_save" :
 				//dans le cas de list_selector, l'information peut provenir de différents endroits selon que l'on soit dans un sélecteur dans un formulaire du framework ou en externe
 				//1er cas : pas d'objs, pas d'éléments, l'infos est dans le sub
-				if (!$this->params->objs && !$params->element) {
+				if (!$params->objs && !$params->element) {
 					$class_uri = $this->get_class_uri($params->sub);
 				}else{
 					//2ème cas : on a objs, on est dans le framework et objs contient le nom PMB de la propriété
-					if($this->params->objs != ""){
+					if($params->objs != ""){
 						//on récupère la propriété
 						$property = $this->get_onto_property_from_pmb_name($params->objs);
 						//à partir de la propriété, on a le range
-						$class_uri = $property->range[$params->range];
+						$class_uri = $property->range[0];
+					    // Sur un range multiple, on peut en avoir déja un de passée
+					    if($params->range != ''){
+					        $class_uri = $this->get_class_uri($params->range);
+					    }
 					}else {
 						//3ème et dernier cas, on prend le le pmb_name dans element
 						$class_uri = $this->get_class_uri($params->element);
@@ -753,5 +808,35 @@ class onto_common_controler {
 	protected function set_session_history($human_query, $search_type = "extended") {
 	    
 	}
+
+	public function get_class_name($class_uri)
+	{
+	    $query = 'select ?name where {
+            <'.$class_uri.'> pmb:name ?name
+        }';
+	    $this->handler->data_query($query);
+	    $result = $this->handler->data_result();
+	    return $result[0]->name;
+	}
 	
+	
+	protected function proceed_see()
+	{
+	    $instance = onto_common_page::get_instance($this->item,$this->handler,$this->params);
+	    $instance->render();
+	}
+	
+	protected function proceed_rmc()
+	{
+	    $sc = new search_ontology(false,"search_fields_ontology",'',$this->handler->get_ontology());
+	    $url = './'.$this->params->base_resource.'&categ=&sub=search_extended';
+	    switch($this->params->action){
+	        case 'search' : 
+	            $sc->show_results($url.'&action=search', $url);
+	            break;
+	        default : 
+	            print $sc->show_form($url, $url.'&action=search', $this->url_target."_perso&sub=form");
+	            break;
+	    }
+	}
 }

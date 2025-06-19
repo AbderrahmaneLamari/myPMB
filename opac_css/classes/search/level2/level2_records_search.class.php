@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: level2_records_search.class.php,v 1.10 2020/07/07 06:28:04 dgoron Exp $
+// $Id: level2_records_search.class.php,v 1.11 2022/11/09 09:43:43 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -94,7 +94,7 @@ class level2_records_search extends level2_search {
     	global $link_to_print_search_result;
     	global $page;
     	global $searcher; //C'est SALE mais pas le choix pour gérer l'historique
-    	global $catal_navbar;
+    	global $catal_navbar, $nb_per_page_custom;
     	
     	$display = '';
     	if($this->type == 'tous') {
@@ -128,16 +128,22 @@ class level2_records_search extends level2_search {
     		$nbexplnum_to_photo = $searcher->get_nb_explnums();
     	}
     	if($count){
+    		if (!$nb_per_page_custom) {
+    			$nb_per_page_custom = $opac_search_results_per_page;
+    		}
+    		
     		if(!$page) {
     			$debut = 0;
     		} else {
-    			$debut = ($page-1)*$opac_search_results_per_page;
+    			$debut = ($page-1)*$nb_per_page_custom;
     		}
+    		
     		if(isset($_SESSION["last_sortnotices"]) && $_SESSION["last_sortnotices"]!==""){
-    			$notices = $searcher->get_sorted_result($_SESSION["last_sortnotices"],$debut,$opac_search_results_per_page);
+    			$notices = $searcher->get_sorted_result($_SESSION["last_sortnotices"],$debut,$nb_per_page_custom);
     		}else{
-    			$notices = $searcher->get_sorted_result("default",$debut,$opac_search_results_per_page);
+    			$notices = $searcher->get_sorted_result("default",$debut,$nb_per_page_custom);
     		}
+    		
     		if (count($notices)) {
     			$_SESSION['tab_result_current_page'] = implode(",", $notices);
     		} else {

@@ -1,0 +1,18 @@
+/*-------------
+- OPAC: ASKMDP -
+ -------------*/
+
+#askmdp .bouton {
+    font: var(--font-link);
+    padding: 11px 24px 10px 24px;
+    border-radius: var(--border-radius);
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    transition: var(--transition);
+    text-align: center;
+    margin-top: 12px;
+}
+
+#askmdp {
+    font: var(--font-resume);
+    }

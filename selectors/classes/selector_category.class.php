@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_category.class.php,v 1.34.2.2 2021/11/12 13:55:45 dgoron Exp $
+// $Id: selector_category.class.php,v 1.40.2.1 2023/09/06 09:18:38 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -25,7 +25,11 @@ function parent_link($categ_id,$categ_see) {
 	global $thesaurus_mode_pmb ;
 	global $callback;
 	
-	if ($categ_see) $categ=$categ_see; else $categ=$categ_id;
+	if ($categ_see) {
+	    $categ = $categ_see;
+	} else {
+	    $categ = $categ_id;
+	}
 	$tcateg =  new category($categ);
 	
 	if ($tcateg->commentaire) {
@@ -35,15 +39,18 @@ function parent_link($categ_id,$categ_see) {
 		$zoom_comment = "" ;
 		$java_comment = "" ;
 	}
-	if ($thesaurus_mode_pmb && $caller=='notice') $nom_tesaurus='['.$tcateg->thes->getLibelle().'] ' ;
-		else $nom_tesaurus='' ;
+	if ($thesaurus_mode_pmb && $caller=='notice') {
+	    $nom_thesaurus='['.$tcateg->thes->getLibelle().'] ' ;
+	} else {
+	    $nom_thesaurus='' ;
+	}
 	if($tcateg->not_use_in_indexation && ($caller == "notice")){
 		$link= "<img src='".get_url_icon('interdit.gif')."' style='border:0px; margin:3px 3px'/>";
 	}elseif(((!$tcateg->is_under_tilde) || $keep_tilde)){
 		if($caller == "search_form"){
 			$lib_final=$tcateg->libelle;
 		}else{
-			$lib_final=$nom_tesaurus.$tcateg->catalog_form;
+			$lib_final=$nom_thesaurus.$tcateg->catalog_form;
 		}
 		$link="<a href=\"\" onclick=\"set_parent('$caller', '$tcateg->id', '".htmlentities(addslashes($lib_final),ENT_QUOTES, $charset)."','$callback','".$tcateg->thes->id_thesaurus."'); return false;\" $java_comment><span class='plus_terme'><span>+</span></span></a>$zoom_comment";
 	}
@@ -187,10 +194,6 @@ class selector_category extends selector_authorities {
 		return $sel_search_form;
 	}
 	
-	protected function get_searcher_instance() {
-		return searcher_factory::get_searcher('categories', '', $this->user_input);
-	}
-	
 	protected function get_sel_search_form_name() {
 		global $action;
 		
@@ -250,28 +253,127 @@ class selector_category extends selector_authorities {
 				";
 	}
 	
-	protected function hierarchical_results_search() {
+	protected function get_display_hierarchical_object($authority_id=0, $object_id=0) {
 		global $msg, $charset;
+		global $thesaurus_mode_pmb;
+		global $caller, $callback;
+		global $keep_tilde;
+		
+		$display = "";
+
+		$authority = $this->get_authority_instance($authority_id, $object_id);
+		$category = $authority->get_object_instance();
+		
+		$not_use_in_indexation=$category->not_use_in_indexation;
+		$display .= "<tr><td>";
+		
+		$display .= $authority->get_display_statut_class_html();
+		
+		$id_thes = $this->get_thesaurus_id();
+		if($id_thes == -1 && $thesaurus_mode_pmb){
+			$label_display = '['.htmlentities($category->thes->libelle_thesaurus,ENT_QUOTES, $charset).']';
+		} else {
+			$label_display = '';
+		}
+		if($category->voir_id) {
+			$category_voir = new category($category->voir_id);
+			$label_display .= "$category->libelle -&gt;<i>".$category_voir->catalog_form."@</i>";
+			$id_=$category->voir_id;
+			$not_use_in_indexation=$category_voir->not_use_in_indexation;
+			if($caller == 'search_form') {
+				$libelle_=$category_voir->libelle;
+			}else{
+				$libelle_=$category_voir->catalog_form;
+			}
+		} else {
+			$id_=$category->id;
+			if($caller == 'search_form') {
+				$libelle_=$category->libelle;
+			}else{
+				$libelle_=$category->catalog_form;
+			}
+			$label_display .= $category->libelle;
+		}
+		if($category->has_child) {
+			$display .= "<a href='".static::get_base_url()."&parent=".$category->id."&id2=".$category->id.'&id_thes='.$category->thes->id_thesaurus."'>";//On mets le bon identifiant de thésaurus
+			$display .= "<img src='".get_url_icon('folderclosed.gif')."' style='border:0px; margin:3px 3px'/></a>";
+		} else {
+			$display .= "<img src='".get_url_icon('doc.gif')."' style='border:0px; margin:3px 3px'/>";
+		}
+		if ($category->commentaire) {
+			$zoom_comment = "<div id='zoom_comment".$category->id."' style='border: solid 2px #555555; background-color: #FFFFFF; position: absolute; display:none; z-index: 2000;'>".htmlentities($category->commentaire,ENT_QUOTES, $charset)."</div>" ;
+			$java_comment = " onmouseover=\"z=document.getElementById('zoom_comment".$category->id."'); z.style.display=''; \" onmouseout=\"z=document.getElementById('zoom_comment".$category->id."'); z.style.display='none'; \"" ;
+		} else {
+			$zoom_comment = "" ;
+			$java_comment = "" ;
+		}
+		if ($thesaurus_mode_pmb && $caller=='notice') {
+		    $nom_thesaurus='['.$category->thes->getLibelle().'] ' ;
+		} else {
+		    $nom_thesaurus='' ;
+		}
+		if ($category->is_under_tilde && !$category->voir_id && !$keep_tilde) {
+			if(!empty($category->path_table[0]['libelle'])) {
+				$img_title = $msg['orphan_parent_category']." ".$category->path_table[0]['libelle'];
+			} else {
+				$img_title = '';
+			}
+			$display .= "<img src='".get_url_icon('interdit.gif')."' style='border:0px; margin:3px 3px' title='".htmlentities($img_title,ENT_QUOTES, $charset)."'/>&nbsp;";
+			$display .= $label_display;
+			$display .=$zoom_comment."\n";
+			$display .= "</td></tr>";
+		} elseif($not_use_in_indexation && ($caller == "notice")){
+			$display .= "<img src='".get_url_icon('interdit.gif')."' style='border:0px; margin:3px 3px'/>&nbsp;";
+			$display .= $label_display;
+			$display .=$zoom_comment."\n";
+			$display .= "</td></tr>";
+		}else{
+			$display .= "<a href='#' $java_comment onclick=\"set_parent('$caller', '$id_', '".htmlentities(addslashes($nom_thesaurus.$libelle_),ENT_QUOTES, $charset)."','$callback','".$category->thes->id_thesaurus."')\">";
+			$display .= $label_display;
+			$display .= "</a>$zoom_comment\n";
+			$display .= "</td></tr>";
+		}
+		return $display;
+	}
+	
+	protected function get_start_hierarchical_list() {
+		global $page;
+		
+		if(!$page) {
+			return 0;
+		} else {
+			return ($page-1)*$this->get_nb_per_page_hierarchical_list();
+		}
+	}
+	
+	protected function get_nb_per_page_hierarchical_list() {
+		global $nb_per_page, $nb_per_page_select;
+		
+		$parameters_tabs = $this->get_parameters_tabs();
+		if(!empty($parameters_tabs['hierarchical_search']['pager_gestion']['nb_per_page'])) {
+			$nb_per_page = $parameters_tabs['hierarchical_search']['pager_gestion']['nb_per_page'];
+		}
+		if(!$nb_per_page) {
+			if($nb_per_page_select) $nb_per_page = $nb_per_page_select;
+			else $nb_per_page = 10;
+		}
+		return $nb_per_page;
+	}
+	
+	protected function hierarchical_results_search() {
+		global $msg;
 		global $id2, $parent;
 		global $lang;
 		global $page;
-		global $nb_per_page;
 		global $keep_tilde;
-		global $thesaurus_mode_pmb;
-		global $caller, $callback;
 		global $bouton_ajouter;
 		
 		$display = '';
 		if(!$page) {
 			$page = 1;
 		}
-		if(!$nb_per_page) $nb_per_page = 10;
-		$debut = ($page-1)*$nb_per_page;
-		
-		$libelle_partiel=0;
-		if($caller == 'search_form') {
-			$libelle_partiel=1;
-		}
+		$debut = $this->get_start_hierarchical_list();
+		$nb_per_page = $this->get_nb_per_page_hierarchical_list();
 		
 		$id_thes = $this->get_thesaurus_id();
 		$thes = new thesaurus($id_thes);
@@ -321,14 +423,14 @@ class selector_category extends selector_authorities {
 				$query.= ", ".$members["select"]." AS pert ";
 			}
 		
-			$query.= "FROM noeuds JOIN categories ON noeuds.id_noeud = categories.num_noeud AND  categories.langue='".$lang."'";
+			$query.= "FROM noeuds JOIN categories ON noeuds.id_noeud = categories.num_noeud AND  categories.langue='".$lang."' ";
 			$query.= "WHERE noeuds.num_thesaurus = '".$id_thes."' ";
 			if(!$this->user_input){
 				$query.= "AND noeuds.num_parent = '".$id_noeud."' ";
 			}else{
 				$query.= "AND (".$members["where"].") ";
 			}
-		
+			if (!$keep_tilde) $query.= "AND categories.libelle_categorie not like '~%' ";
 		
 		}else{
 			$members_catdef = $aq->get_query_members("catdef", "catdef.libelle_categorie", "catdef.index_categorie", "catdef.num_noeud");
@@ -341,7 +443,6 @@ class selector_category extends selector_authorities {
 				$query.= ", IF (catlg.num_noeud IS NULL, catdef.index_categorie, catlg.index_categorie) as index_categorie ";
 				$query.= ", IF (catlg.num_noeud IS NULL, (".$members_catdef["select"]."), (".$members_catlg["select"].") ) AS pert ";
 			}
-		
 		
 			if(($id_thes != -1)){//Je n'ai qu'un thésaurus mais langue du thésaurus != de langue de l'inteface
 				$query.= "FROM noeuds JOIN categories AS catdef ON noeuds.id_noeud = catdef.num_noeud AND catdef.langue = '".$thes->langue_defaut."' ";
@@ -360,7 +461,7 @@ class selector_category extends selector_authorities {
 				$query.= "WHERE 1 ";
 				$query.= "AND ( IF (catlg.num_noeud IS NULL, ".$members_catdef["where"].", ".$members_catlg["where"].") ) ";
 			}
-		
+			if (!$keep_tilde) $query.= "AND catdef.libelle_categorie not like '~%' ";
 		}
 		
 		$query.= "ORDER BY ";
@@ -419,64 +520,9 @@ class selector_category extends selector_authorities {
 					}
 					$premier=false;
 				}
-				if (!$tcateg->is_under_tilde ||($tcateg->voir_id)||($keep_tilde)) {
-					$not_use_in_indexation=$tcateg->not_use_in_indexation;
-					$browser_content .= "<tr><td>";
-		
-					$authority = new authority(0,$tcateg->id, AUT_TABLE_CATEG);
-					$browser_content .= $authority->get_display_statut_class_html();
-		
-					if($id_thes == -1 && $thesaurus_mode_pmb){
-						$label_display = '['.htmlentities($tcateg->thes->libelle_thesaurus,ENT_QUOTES, $charset).']';
-					} else {
-						$label_display = '';
-					}
-					if($tcateg->voir_id) {
-						$tcateg_voir = new category($tcateg->voir_id);
-						$label_display .= "$tcateg->libelle -&gt;<i>".$tcateg_voir->catalog_form."@</i>";
-						$id_=$tcateg->voir_id;
-						$not_use_in_indexation=$tcateg_voir->not_use_in_indexation;
-						if($libelle_partiel){
-							$libelle_=$tcateg_voir->libelle;
-						}else{
-							$libelle_=$tcateg_voir->catalog_form;
-						}
-					} else {
-						$id_=$tcateg->id;
-						if($libelle_partiel){
-							$libelle_=$tcateg->libelle;
-						}else{
-							$libelle_=$tcateg->catalog_form;
-						}
-						$label_display .= $tcateg->libelle;
-					}
-					if($tcateg->has_child) {
-						$browser_content .= "<a href='".static::get_base_url()."&parent=".$tcateg->id."&id2=".$tcateg->id.'&id_thes='.$tcateg->thes->id_thesaurus."'>";//On mets le bon identifiant de thésaurus
-						$browser_content .= "<img src='".get_url_icon('folderclosed.gif')."' style='border:0px; margin:3px 3px'/></a>";
-					} else {
-						$browser_content .= "<img src='".get_url_icon('doc.gif')."' style='border:0px; margin:3px 3px'/>";
-					}
-					if ($tcateg->commentaire) {
-						$zoom_comment = "<div id='zoom_comment".$tcateg->id."' style='border: solid 2px #555555; background-color: #FFFFFF; position: absolute; display:none; z-index: 2000;'>".htmlentities($tcateg->commentaire,ENT_QUOTES, $charset)."</div>" ;
-						$java_comment = " onmouseover=\"z=document.getElementById('zoom_comment".$tcateg->id."'); z.style.display=''; \" onmouseout=\"z=document.getElementById('zoom_comment".$tcateg->id."'); z.style.display='none'; \"" ;
-					} else {
-						$zoom_comment = "" ;
-						$java_comment = "" ;
-					}
-					if ($thesaurus_mode_pmb && $caller=='notice') $nom_tesaurus='['.$tcateg->thes->getLibelle().'] ' ;
-					else $nom_tesaurus='' ;
-					if($not_use_in_indexation && ($caller == "notice")){
-						$browser_content .= "<img src='".get_url_icon('interdit.gif')."' style='border:0px; margin:3px 3px'/>&nbsp;";
-						$browser_content .= $label_display;
-						$browser_content .=$zoom_comment."\n";
-						$browser_content .= "</td></tr>";
-					}else{
-						$browser_content .= "<a href='#' $java_comment onclick=\"set_parent('$caller', '$id_', '".htmlentities(addslashes($nom_tesaurus.$libelle_),ENT_QUOTES, $charset)."','$callback','".$tcateg->thes->id_thesaurus."')\">";
-						$browser_content .= $label_display;
-						$browser_content .= "</a>$zoom_comment\n";
-						$browser_content .= "</td></tr>";
-					}
-				}
+// 				if (!$tcateg->is_under_tilde ||($tcateg->voir_id)||($keep_tilde)) {
+					$browser_content .= $this->get_display_hierarchical_object(0, $cat[0]);
+// 				}
 				// constitution de la page
 			}
 			//Création barre de navigation

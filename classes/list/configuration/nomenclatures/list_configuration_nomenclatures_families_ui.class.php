@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_nomenclatures_families_ui.class.php,v 1.1 2021/01/27 08:36:33 dgoron Exp $
+// $Id: list_configuration_nomenclatures_families_ui.class.php,v 1.1.8.1 2023/03/07 15:35:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -54,12 +54,11 @@ class list_configuration_nomenclatures_families_ui extends list_configuration_no
 	protected function add_column_musicstand_edition() {
 		global $msg;
 		
-		$this->columns[] = array(
-				'property' => 'musicstand_edition',
-				'label' => '',
-				'html' => "<input type='button' class='bouton' value='".$msg['admin_nomenclature_musicstand_edition']."' onclick=\"document.location='".static::get_musicstands_url_base()."&num_family=!!id!!'\"  />",
-				'exportable' => false
+		$html_properties = array(
+				'value' => $msg['admin_nomenclature_musicstand_edition'],
+				'link' => static::get_musicstands_url_base()."&num_family=!!id!!"
 		);
+		$this->add_column_simple_action('musicstand_edition', '', $html_properties);
 	}
 	
 	protected function get_cell_content($object, $property) {

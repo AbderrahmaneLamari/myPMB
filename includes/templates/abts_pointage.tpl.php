@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: abts_pointage.tpl.php,v 1.21.2.1 2021/07/05 13:07:28 dgoron Exp $
+// $Id: abts_pointage.tpl.php,v 1.22 2021/07/05 13:06:20 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 

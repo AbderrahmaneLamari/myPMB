@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: param.inc.php,v 1.10 2018/05/17 08:16:38 dgoron Exp $
+// $Id: param.inc.php,v 1.11 2022/03/17 13:55:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $visionneuse_path, $quoi, $action;
 
 require_once($visionneuse_path."/classes/mimetypes/".$quoi."/".$quoi.".class.php");	
 
@@ -61,7 +63,7 @@ function show_form($action=''){
 			$form.="</td>";
 		} else {
 			$form.="
-					<td><input type='".$tabParam['type']."' name='".$tabParam['name']."' id='".$tabParam['name']."' value='".$tabParam['value']."' ".($tabParam['type'] == "checkbox" ? ($params_values[$key] == 1 ? "checked='checked'" : ""): "")."/></td>";
+					<td><input type='".$tabParam['type']."' name='".$tabParam['name']."' id='".$tabParam['name']."' value='".$tabParam['value']."' ".($tabParam['type'] == "checkbox" ? (isset($params_values[$key]) && $params_values[$key] == 1 ? "checked='checked'" : ""): "")."/></td>";
 		}
 			$form.="
 					<td>".$tabParam['desc']."</td>

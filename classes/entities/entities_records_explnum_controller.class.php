@@ -2,10 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_records_explnum_controller.class.php,v 1.3 2021/03/19 08:49:02 dgoron Exp $
+// $Id: entities_records_explnum_controller.class.php,v 1.6 2022/06/21 10:05:39 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+use Pmb\Digitalsignature\Models\DocnumCertifier;
+
+global $class_path;
 require_once ($class_path."/entities/entities_records_controller.class.php");
 
 class entities_records_explnum_controller extends entities_records_controller {
@@ -35,7 +38,14 @@ class entities_records_explnum_controller extends entities_records_controller {
 		global $msg;
 		global $base_path;
 		
+		$explnum = new explnum($this->id,$this->record_id, $this->bulletin_id);
+		
 		if($this->id) {
+	        $docNumCertifier = new DocnumCertifier($explnum);
+	        $check = $docNumCertifier->checkSignExists();
+	        if ($check) {
+	            return print return_error_message($msg["540"], $msg["digital_signature_already_signed_docnum"], 1, "./catalog.php?categ=isbd&id=".$this->record_id);
+	        }
 			$this->action_link = "./catalog.php?categ=explnum_update&sub=update&id=".$this->id;
 			$this->delete_link = "./catalog.php?categ=del_explnum&id=".$this->record_id."&explnum_id=".$this->id;
 			print "<h1>".$msg['explnum_doc_associe']."</h1>";
@@ -53,7 +63,6 @@ class entities_records_explnum_controller extends entities_records_controller {
 		print pmb_bidi($notice->isbd.'</div>');
 		print "<div class=\"row\">";
 		
-		$explnum = new explnum($this->id,$this->record_id, $this->bulletin_id);
 		print $explnum->explnum_form($this->action_link,$this->get_permalink(), $this->delete_link);
 		print '</div>';
 	}

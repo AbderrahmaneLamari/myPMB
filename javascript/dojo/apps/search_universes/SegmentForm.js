@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SegmentForm.js,v 1.14 2020/06/19 07:55:19 tsamson Exp $
+// $Id: SegmentForm.js,v 1.15 2022/12/06 17:53:47 arenou Exp $
 
 
 define([
@@ -36,6 +36,12 @@ define([
 			if (params.authperso_id > 0) {
 				path += '&authperso_id=';
 				path += params.authperso_id;
+			}
+			if (params.class_id > 0) {
+				path += '&class_id=';
+				path += params.class_id;
+				path += '&ontology_id=';
+				path += params.ontology_id;
 			}
 			if (path) {
 				this.loadDialog(params, evt, path, true);

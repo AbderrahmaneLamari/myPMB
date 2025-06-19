@@ -2,7 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: doc_num.php,v 1.69.2.1 2021/09/18 13:04:35 dgoron Exp $
+// $Id: doc_num.php,v 1.72 2022/12/15 08:08:37 dbellamy Exp $
+
+use Pmb\Digitalsignature\Models\DocnumCertifier;
 
 $base_path=".";
 require_once($base_path."/includes/init.inc.php");
@@ -11,6 +13,8 @@ global $class_path, $include_path, $css, $msg, $charset;
 global $opac_opac_view_activate, $opac_view, $current_opac_view, $pmb_logs_activate;
 global $gestion_acces_active, $gestion_acces_empr_notice, $gestion_acces_empr_docnum;
 global $explnum_id, $_mimetypes_bymimetype_, $opac_photo_watermark;
+global $pmb_digital_signature_activate, $get_sign;
+global $short_header;
 
 //fichiers nécessaires au bon fonctionnement de l'environnement
 require_once($base_path."/includes/common_includes.inc.php");
@@ -59,24 +63,24 @@ if(isset($code)) {
 	$log_ok=connexion_empr();
 	if($log_ok) $_SESSION["connexion_empr_auto"]=1;
 }
+
 $explnum_id=intval($explnum_id);
+if(!$explnum_id) {
+    header("Location: images/mimetype/unknown.gif");
+    exit ;
+}
 $explnum = new explnum($explnum_id);
 
-if (!$explnum->explnum_id) {
-	header("Location: images/mimetype/unknown.gif");
-	exit ;
-}
-
-$id_for_rigths = $explnum->explnum_notice;
+$id_for_rights = $explnum->explnum_notice;
 if($explnum->explnum_bulletin != 0){
 	//si bulletin, les droits sont rattachés à la notice du bulletin, à défaut du pério...
 	$req = "select bulletin_notice,num_notice from bulletins where bulletin_id =".$explnum->explnum_bulletin;
 	$res = pmb_mysql_query($req);
 	if(pmb_mysql_num_rows($res)){
 		$row = pmb_mysql_fetch_object($res);
-		$id_for_rigths = $row->num_notice;
-		if(!$id_for_rigths){
-			$id_for_rigths = $row->bulletin_notice;
+		$id_for_rights = $row->num_notice;
+		if(!$id_for_rights){
+			$id_for_rights = $row->bulletin_notice;
 		}
 	}
 	$type = "" ;
@@ -84,23 +88,22 @@ if($explnum->explnum_bulletin != 0){
 
 
 //droits d'acces emprunteur/notice
+$rights = 0;
+$dom_2 = null;
 if ($gestion_acces_active==1 && $gestion_acces_empr_notice==1) {
 	$ac= new acces();
 	$dom_2= $ac->setDomain(2);
-	$rights= $dom_2->getRights($_SESSION['id_empr_session'],$id_for_rigths);
-} else {
-	$dom_2=null;
-	$rights=0;
+	$rights= $dom_2->getRights($_SESSION['id_empr_session'],$id_for_rights);
 }
 
 //Accessibilité des documents numériques aux abonnés en opac
-$req_restriction_abo = "SELECT explnum_visible_opac, explnum_visible_opac_abon FROM notices,notice_statut WHERE notice_id='".$id_for_rigths."' AND statut=id_notice_statut ";
-
+$req_restriction_abo = "SELECT explnum_visible_opac, explnum_visible_opac_abon FROM notices,notice_statut WHERE notice_id='".$id_for_rights."' AND statut=id_notice_statut ";
 $result=pmb_mysql_query($req_restriction_abo);
 $expl_num=pmb_mysql_fetch_array($result,PMB_MYSQL_ASSOC);
 
-$docnum_rights = 0;
 //droits d'acces emprunteur/document numérique
+$docnum_rights = 0;
+$dom_3 = null;
 if ($gestion_acces_active==1 && $gestion_acces_empr_docnum==1) {
 	$ac= new acces();
 	$dom_3= $ac->setDomain(3);
@@ -109,13 +112,50 @@ if ($gestion_acces_active==1 && $gestion_acces_empr_docnum==1) {
 
 //Accessibilité (Consultation/Téléchargement) sur le document numérique aux abonnés en opac 
 $req_restriction_docnum_abo = "SELECT explnum_download_opac, explnum_download_opac_abon FROM explnum,explnum_statut WHERE explnum_id='".$explnum_id."' AND explnum_docnum_statut=id_explnum_statut ";
-
 $result_docnum=pmb_mysql_query($req_restriction_docnum_abo);
 $docnum_expl_num=pmb_mysql_fetch_array($result_docnum,PMB_MYSQL_ASSOC);
-		
-if( ( ($rights & 16) || (is_null($dom_2) && $expl_num["explnum_visible_opac"] && (!$expl_num["explnum_visible_opac_abon"] || ($expl_num["explnum_visible_opac_abon"] && $_SESSION["user_code"]))))
-    && ( ($docnum_rights & 8) || (empty($dom_3) && $docnum_expl_num["explnum_download_opac"] && (!$docnum_expl_num["explnum_download_opac_abon"] || ($docnum_expl_num["explnum_download_opac_abon"] && $_SESSION["user_code"]))))){
 
+
+$access_is_allowed = false;
+if( (
+    ($rights & 16)
+    || (
+        is_null($dom_2)
+        && $expl_num["explnum_visible_opac"]
+        && (
+            !$expl_num["explnum_visible_opac_abon"]
+            || ($expl_num["explnum_visible_opac_abon"] && $_SESSION["user_code"])
+            )
+        )
+    )
+    && (
+        ($docnum_rights & 8)
+        || (
+            is_null($dom_3)
+            && $docnum_expl_num["explnum_download_opac"]
+            && (
+                !$docnum_expl_num["explnum_download_opac_abon"]
+                || ($docnum_expl_num["explnum_download_opac_abon"] && $_SESSION["user_code"])
+                )
+            )
+        )
+    ){
+    $access_is_allowed = true;
+}
+
+//Si le document est accessible
+if ( $access_is_allowed ) {
+
+    if($pmb_digital_signature_activate && $get_sign) {
+        $certifier = new DocnumCertifier($explnum);
+        if($certifier->checkSignExists()) {
+            $path = $certifier->getCmsFilePath();
+            header("Content-Disposition: attachment; filename=sign_docnum_" . $explnum->explnum_id . ".cms");
+            print file_get_contents($path);
+            exit;
+        }
+    }
+    
 	if (!($file_loc = $explnum->get_is_file())) {
 		$content = $explnum->get_file_content();
 	} else {
@@ -162,7 +202,6 @@ if( ( ($rights & 16) || (is_null($dom_2) && $expl_num["explnum_visible_opac"] &&
 		
 		if ($_mimetypes_bymimetype_[$explnum->explnum_mimetype]["embeded"]=="yes") {
 			print "<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><meta charset=\"".$charset."\" /></head><body><EMBED src=\"./doc_num_data.php?explnum_id=$explnum_id\" $type $name controls='console' ></EMBED></body></html>" ;
-			if ($fo) fclose($fo);
 			exit ;
 		}
 
@@ -245,27 +284,24 @@ if( ( ($rights & 16) || (is_null($dom_2) && $expl_num["explnum_visible_opac"] &&
 		}
 		exit ;
 	}
-}else{
-	if(!$_SESSION['id_empr_session'] && ( $opac_show_links_invisible_docnums || (
-        ( is_null($dom_2) )
-        && ( is_null($dom_3) )
-        && $expl_num["explnum_visible_opac"]
-        && $docnum_expl_num["explnum_download_opac"]
-        && ($docnum_expl_num["explnum_download_opac_abon"] || $expl_num["explnum_visible_opac_abon"])
-        ))){
-		require_once($base_path."/includes/templates/common.tpl.php");
-		$short_header = str_replace("!!liens_rss!!","",$short_header);
-		print $short_header;
-		require_once($class_path."/auth_popup.class.php");
-		print "<div id='att'></div>
-				<script type='text/javascript' src='".$include_path."/javascript/auth_popup.js'></script>";
-		print "<script type='text/javascript'>
-				auth_popup('./ajax.php?module=ajax&categ=auth&callback_func=docnum_refresh', true);
-				function docnum_refresh(){
-					window.location.reload();
-				}
-			</script>";
-	}else{
-		print $msg['forbidden_docnum'];
-	}
 }
+
+// Si le document n'est pas accessible et que l'on est pas connecté, on propose de se connecter
+if ( !$access_is_allowed  && !$_SESSION['id_empr_session'] ) {
+	require_once($base_path."/includes/templates/common.tpl.php");
+	$short_header = str_replace("!!liens_rss!!", "", $short_header);
+	print $short_header;
+	require_once($class_path."/auth_popup.class.php");
+	print "<div id='att'></div>
+			<script type='text/javascript' src='".$include_path."/javascript/auth_popup.js'></script>";
+	print "<script type='text/javascript'>
+			auth_popup('./ajax.php?module=ajax&categ=auth&callback_func=docnum_refresh', true);
+			function docnum_refresh(){
+				window.location.reload();
+			}
+		</script>";
+// Sinon on indique que le document n'est pas accessible
+} else {
+	print $msg['forbidden_docnum'];
+}
+

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: caddie_root.class.php,v 1.48.2.3 2021/09/08 08:10:14 dgoron Exp $
+// $Id: caddie_root.class.php,v 1.56.4.1 2023/04/12 09:22:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once ($class_path."/users.class.php");
 
 // définition de la classe de gestion des paniers
@@ -21,8 +22,8 @@ define( 'CADDIE_ITEM_SUPPR_BASE_OK', 6) ;
 define( 'CADDIE_ITEM_INEXISTANT', 7 );
 define( 'CADDIE_ITEM_RESA', 8 );
 define( 'CADDIE_ITEM_AUT_USED', 9) ;
-
-
+define( 'CADDIE_ITEM_EXPLNUM_USED', 10) ;
+define( 'CADDIE_ITEM_NO_DELETION_RIGHTS', 11) ;
 
 class caddie_root {
 	// propriétés
@@ -58,7 +59,7 @@ class caddie_root {
 		$this->creation_date = '0000-00-00 00:00:00';
 	}
 	
-	protected function get_template_form() {
+	protected function get_template_content_form() {
 		return "";
 	}
 	
@@ -71,6 +72,10 @@ class caddie_root {
 			return true;
 		}
 		return false;
+	}
+	
+	public static function get_types() {
+		return array();
 	}
 	
 	protected function get_type_form() {
@@ -115,37 +120,37 @@ class caddie_root {
 	}
 	
 	// formulaire
-	public function get_form($form_action="", $form_cancel="", $form_duplicate="") {
+	public function get_form($url_base="") {
 		global $msg, $charset;
 		global $PMBuserid;
-		
-		global $current_print;
 		global $clause, $filtered_query;
+		global $liaison_tpl;
 		
-		$form = $this->get_template_form();
-		$form = str_replace ( '!!formulaire_action!!', $form_action, $form );
-		$form = str_replace('!!formulaire_annuler!!', $form_cancel, $form);
+		$content_form = $this->get_template_content_form();
+		
+		$interface_form = static::get_interface_form_from_object_type($this->type);
+		$interface_form->set_url_base($url_base);
 		if ($this->get_idcaddie()) {
-			$form = str_replace ( '!!title!!', $msg['edit_cart'], $form);
-			$form = str_replace('!!autorisations_users!!', users::get_form_autorisations($this->autorisations,0), $form);
-			$form = str_replace('!!infos_creation!!', "<br />".$this->get_info_creation(), $form);
-			$button_duplicate = "&nbsp;<input type='button' class='bouton' value=' ".$msg['duplicate']." ' onClick=\"document.location='".$form_duplicate."'\" />";
-			$form = str_replace('!!button_duplicate!!', $button_duplicate, $form);
+			$interface_form->set_label($msg['edit_cart']);
 		} else {
-			$form = str_replace ( '!!title!!', $msg['new_cart'], $form);
-			$form = str_replace('!!autorisations_users!!', users::get_form_autorisations("",1), $form);
-			$form = str_replace('!!infos_creation!!', "", $form);
-			$form = str_replace('!!button_duplicate!!', "", $form);
+			$interface_form->set_label($msg['new_cart']);
 		}
-		$form = str_replace('!!name!!', htmlentities($this->name,ENT_QUOTES, $charset), $form);
-		$form = str_replace('!!comment!!', htmlentities($this->comment,ENT_QUOTES, $charset), $form);
-		$form = str_replace('!!autorisations_all!!', ($this->autorisations_all ? "checked='checked'" : ""), $form);
+		if ($this->get_idcaddie()) {
+			$content_form = str_replace('!!autorisations_users!!', users::get_form_autorisations($this->autorisations,0), $content_form);
+			$content_form = str_replace('!!infos_creation!!', "<br />".$this->get_info_creation(), $content_form);
+		} else {
+			$content_form = str_replace('!!autorisations_users!!', users::get_form_autorisations("",1), $content_form);
+			$content_form = str_replace('!!infos_creation!!', "", $content_form);
+		}
+		$content_form = str_replace('!!name!!', htmlentities($this->name,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!comment!!', htmlentities($this->comment,ENT_QUOTES, $charset), $content_form);
+		$content_form = str_replace('!!autorisations_all!!', ($this->autorisations_all ? "checked='checked'" : ""), $content_form);
 		$classementGen = new classementGen(static::get_table_name(), $this->get_idcaddie());
-		$form = str_replace("!!object_type!!",$classementGen->object_type,$form);
-		$form = str_replace("!!classements_liste!!",$classementGen->getClassementsSelectorContent($PMBuserid,$classementGen->libelle),$form);
-		$form = str_replace("!!acces_rapide!!",($this->acces_rapide?"checked='checked'":""),$form);
-		$form = str_replace("!!favorite_color!!", $this->favorite_color,$form);
-		$form = str_replace("!!datalist_options_favorite_colors!!", $this->get_options_favorite_colors(),$form);
+		$content_form = str_replace("!!object_type!!",$classementGen->object_type,$content_form);
+		$content_form = str_replace("!!classements_liste!!",$classementGen->getClassementsSelectorContent($PMBuserid,$classementGen->libelle),$content_form);
+		$content_form = str_replace("!!acces_rapide!!",($this->acces_rapide?"checked='checked'":""),$content_form);
+		$content_form = str_replace("!!favorite_color!!", $this->favorite_color,$content_form);
+		$content_form = str_replace("!!datalist_options_favorite_colors!!", $this->get_options_favorite_colors(),$content_form);
 		$memo_contexte = "";
 		if($clause) {
 			$memo_contexte .= "<input type='hidden' name='clause' value=\"".htmlentities(stripslashes($clause), ENT_QUOTES, $charset)."\">";
@@ -153,8 +158,32 @@ class caddie_root {
 		if($filtered_query) {
 			$memo_contexte.="<input type='hidden' name='filtered_query' value=\"".htmlentities(stripslashes($filtered_query), ENT_QUOTES, $charset)."\">";
 		}
-		$form=str_replace('<!--memo_contexte-->', $memo_contexte, $form);
-		return $form;
+		$content_form=str_replace('<!--memo_contexte-->', $memo_contexte, $content_form);
+		
+		$content_form=str_replace('!!cart_type!!', $this->get_type_form(), $content_form);
+		
+		$message_delete_warning = '';
+		if ($this->get_idcaddie()) {
+			$info_liaisons = $this->get_links_form();
+			$message_delete_warning = "";
+			if($info_liaisons){
+				$liaison_tpl=str_replace("<!-- info_liaisons -->",$info_liaisons,$liaison_tpl);
+				$content_form = str_replace('<!-- liaisons -->', $liaison_tpl, $content_form);
+				$message_delete_warning = $this->get_warning_delete();
+				
+				if(static::class == 'empr_caddie') {
+					$interface_form->set_no_deletable(true);
+					$interface_form->set_no_deletable_msg($message_delete_warning."\\n".$msg["empr_caddie_used_cant_delete"]);
+				}
+			}
+		}
+		$interface_form->set_object_id($this->get_idcaddie())
+		->set_confirm_delete_msg($message_delete_warning."\\n".$msg['confirm_suppr_de']." ".$this->name." ?")
+		->set_content_form($content_form)
+		->set_table_name(static::$table_name)
+		->set_field_focus('cart_name')
+		->set_duplicable(true);
+		return $interface_form->get_display();
 	}
 	
 	protected function get_links_form() {
@@ -174,7 +203,7 @@ class caddie_root {
 		} else {
 			$this->autorisations="1";
 		}
-		$this->autorisations_all = $autorisations_all+0;
+		$this->autorisations_all = intval($autorisations_all);
 		$this->name = stripslashes($cart_name);
 		$this->comment = stripslashes($cart_comment);
 		$this->acces_rapide = (isset($acces_rapide)?1:0);
@@ -218,7 +247,7 @@ class caddie_root {
 		
 		$filter_query = '';
 		if ($elt_flag && $elt_no_flag ) $filter_query .= "";
-		if (!$elt_flag && $elt_no_flag ) $filter_query .= " and flag is null ";
+		if (!$elt_flag && $elt_no_flag ) $filter_query .= " and (flag is null or flag = '') ";
 		if ($elt_flag && !$elt_no_flag ) $filter_query .= " and flag is not null ";
 		return $filter_query;
 	}
@@ -287,14 +316,14 @@ class caddie_root {
 	// suppression d'un item
 	public function del_item($item=0) {
 		$query = "delete FROM ".static::get_table_content_name()." where ".static::get_field_content_name()."='".$this->get_idcaddie()."' and object_id='".$item."' ";
-		$result = @pmb_mysql_query($query);
+		pmb_mysql_query($query);
 		$this->compte_items();
 	}
 	
 	// Dépointage de tous les items
 	public function depointe_items() {
 		$query = "update ".static::get_table_content_name()." set flag=null where ".static::get_field_content_name()."='".$this->get_idcaddie()."' ";
-		$result = @pmb_mysql_query($query);
+		pmb_mysql_query($query);
 		$this->compte_items();
 	}
 	
@@ -302,7 +331,7 @@ class caddie_root {
 	public function depointe_item($item=0) {
 		if ($item) {
 			$query = "update ".static::get_table_content_name()." set flag=null where ".static::get_field_content_name()."='".$this->get_idcaddie()."' and object_id='".$item."' ";
-			$result = @pmb_mysql_query($query);
+			$result = pmb_mysql_query($query);
 			if ($result) {
 				$this->compte_items();
 				return 1;
@@ -338,9 +367,9 @@ class caddie_root {
 	// suppression d'un panier
 	public function delete() {
 		$query = "delete FROM ".static::get_table_content_name()." where ".static::get_field_content_name()."='".$this->get_idcaddie()."' ";
-		$result = pmb_mysql_query($query);
+		pmb_mysql_query($query);
 		$query = "delete FROM ".static::get_table_name()." where ".static::get_field_name()."='".$this->get_idcaddie()."' ";
-		$result = pmb_mysql_query($query);
+		pmb_mysql_query($query);
 	}
 	
 	// compte_items
@@ -362,7 +391,7 @@ class caddie_root {
 		$nb_element_a_ajouter = 0;
 		$line = pmb_split("\n", $final_query);
 		$nb_element_avant = $this->nb_item;
-		foreach ($line as $cle => $valeur) {
+		foreach ($line as $valeur) {
 			if ($valeur != '') {
 				if ( (pmb_strtolower(pmb_substr($valeur,0,6))=="select") || (pmb_strtolower(pmb_substr($valeur,0,6))=="create")) {
 				} else {
@@ -622,7 +651,6 @@ class caddie_root {
 	}
 	
 	public function get_choix_quoi_form($action="", $action_cancel="", $titre_form="", $bouton_valider="",$onclick="", $aff_choix_dep = false) {
-		global $msg;
 		global $elt_flag,$elt_no_flag;
 		
 		$form = $this->get_choix_quoi_template_form();
@@ -663,12 +691,11 @@ class caddie_root {
 	}
 	
 	public static function check_rights($id) {
-		global $msg;
 		global $PMBuserid;
 	
 		if ($id) {
 			$query = "SELECT autorisations, autorisations_all FROM ".static::get_table_name()." WHERE ".static::get_field_name()."='$id' ";
-			$result = @pmb_mysql_query($query);
+			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)) {
 				$temp = pmb_mysql_fetch_object($result);
 				if($temp->autorisations_all) return $id;
@@ -679,11 +706,35 @@ class caddie_root {
 		return 0 ;
 	}
 	
+	public static function get_array_actions($id_caddie = 0, $type_caddie = 'NOTI', $actions_to_remove = array()) {
+		return array();
+	}
+	
+	public static function show_actions($id_caddie = 0, $type_caddie = '') {
+		global $cart_action_selector,$cart_action_selector_line;
+		
+		$array_actions = static::get_array_actions($id_caddie, $type_caddie);
+		//On crée les lignes du menu
+		$lines = '';
+		if(is_array($array_actions) && count($array_actions)){
+			foreach($array_actions as $item_action){
+				$tmp_line = str_replace('!!cart_action_selector_line_location!!',$item_action['location'],$cart_action_selector_line);
+				$tmp_line = str_replace('!!cart_action_selector_line_msg!!',$item_action['msg'],$tmp_line);
+				$lines.= $tmp_line;
+			}
+		}
+		
+		//On récupère le template
+		$to_show = str_replace('!!cart_action_selector_lines!!',$lines,$cart_action_selector);
+		
+		return $to_show;
+	}
+	
 	public function reindex_from_list($liste=array()) {
 		global $msg;
 		
 		$pb=new progress_bar($msg['caddie_situation_reindex_encours'],count($liste),5);
-		foreach ($liste as $cle => $object) {
+		foreach ($liste as $object) {
 			$this->reindex_object($object);
 			$pb->progress();
 		}
@@ -691,7 +742,7 @@ class caddie_root {
 	}
 	
 	public function del_items_base_from_list($liste=array()) {
-		return '';
+		return array();
 	}
 	
 	public function get_tab_list() {
@@ -705,7 +756,7 @@ class caddie_root {
 		}
 		$query = "SELECT ".static::$table_content_name.".* FROM ".static::$table_content_name." where ".static::$field_content_name."='".$this->get_idcaddie()."' ";
 		if ($elt_flag && $elt_no_flag ) $complement_clause = "";
-		if (!$elt_flag && $elt_no_flag ) $complement_clause = " and flag is null ";
+		if (!$elt_flag && $elt_no_flag ) $complement_clause = " and (flag is null or flag = '') ";
 		if ($elt_flag && !$elt_no_flag ) $complement_clause = " and flag is not null ";
 		$query .= $complement_clause." order by object_id";
 		$result = pmb_mysql_query($query);
@@ -825,5 +876,38 @@ class caddie_root {
 				break;
 		}
 		return $instance;
+	}
+	
+	public static function get_interface_form_from_object_type($object_type='NOTI') {
+		switch (static::class) {
+			case 'empr_caddie':
+				$instance = new interface_circ_form('cart_form');
+				break;
+			case 'authorities_caddie':
+				$instance = new interface_autorites_form('cart_form');
+				break;
+			default:
+				$instance = new interface_catalog_form('cart_form');
+				break;
+		}
+		return $instance;
+	}
+	
+	public function has_del_item_base_rights($item, $item_type) {
+		global $PMBuserid;
+	
+		// On déclenche un événement sur la supression
+		$evt_handler = events_handler::get_instance();
+		$event = new event_entity("entity", "has_deletion_rights");
+		$event->set_entity_id($item);
+		$event->set_entity_type($item_type);
+		$event->set_user_id($PMBuserid);
+		$evt_handler->send($event);
+		if($event->get_error_message()) {
+			// Pas de suppression dans la base
+			// Probable changement de statut au travers d'un plugin sur écoute
+			return false;
+		}
+		return true;
 	}
 } // fin de déclaration de la classe caddie_root

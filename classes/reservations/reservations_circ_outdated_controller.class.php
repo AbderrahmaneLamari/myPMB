@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: reservations_circ_outdated_controller.class.php,v 1.1.2.2 2021/10/21 13:07:36 dgoron Exp $
+// $Id: reservations_circ_outdated_controller.class.php,v 1.1 2021/10/21 13:05:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

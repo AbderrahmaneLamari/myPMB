@@ -1,0 +1,43 @@
+<!-- $Id: askmdp.tpl.html,v 1.2 2022/06/21 15:22:51 qvarin Exp $ -->
+<blockquote id="askmdp">
+{% if send_email %}
+	<hr /><p class='texte'>{{ success_msg }}</p>
+{% else %}
+	<hr />
+	<p class='texte'>{{ msg.mdp_txt_intro_demande }}</p>
+	<script type='text/javascript'>
+		function validForm(event) {
+			if (!event.target || !event.target.email) {
+				event.preventDefault();
+				console.error('email not found');
+				return false;
+			}
+	
+			const email = event.target.email.value ?? '';
+			if (!validMail(email)) {
+				event.preventDefault();
+				return false;
+			}
+			return true;
+		}
+	
+		function validMail(email) {
+			var node = document.getElementById('invalid_email');
+			if (email.length == 0 || !is_valid_mail(email)) {
+				if (node) node.style.display = '';
+				return false;
+			}
+			if (node) node.style.display = 'none';
+			return true;
+		}
+	</script>
+	
+	<form action="askmdp.php" method="post" onsubmit="validForm(event)"><br />
+		<p id="invalid_email" {%if not email_unavailable %}style="display:none"{% endif %}>{{ msg.contact_form_error_email_adress }}</p>
+		<input type="email" name="email" size="20" border="0" value="{{ email }}" placeholder="email@" onchange="validMail(event.target.value)" required>
+		&nbsp;&nbsp;
+		<input type="hidden" name="demande" value="ok" >
+		<input type="submit" name="ok" value="{{ msg.mdp_bt_send }}" class="bouton">
+	</form>
+{% endif %}
+</blockquote>

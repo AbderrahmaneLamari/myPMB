@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc_file_catalog.class.php,v 1.9 2020/08/17 11:57:12 dgoron Exp $
+// $Id: misc_file_catalog.class.php,v 1.10 2022/06/28 06:14:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -40,7 +40,7 @@ class misc_file_catalog extends misc_file {
 			<th>".htmlentities($msg['misc_file_label'], ENT_QUOTES, $charset)."</th>
 			<th>".htmlentities($msg['misc_file_comment'], ENT_QUOTES, $charset)."</th>
 			<th>".htmlentities($msg['misc_file_visible'], ENT_QUOTES, $charset)."</th>
-			<th></th>
+			<!--<th></th>-->
 		</tr>";
 		return $display;
 	}
@@ -58,7 +58,7 @@ class misc_file_catalog extends misc_file {
 					<td>".$element['NAME']."</td>
 					<td>".(isset($element['COMMENT']) ? get_msg_to_display($element['COMMENT']) : '')."</td>
 					<td>".$this->get_visible_checkbox($element['ID'])."</td>
-					<td>".$this->get_substituted_icon($element['ID'])."</td>
+					<!--<td>".$this->get_substituted_icon($element['ID'])."</td>-->
 				</tr>";
 			}
 		}

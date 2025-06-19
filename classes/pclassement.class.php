@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pclassement.class.php,v 1.7.2.1 2021/11/05 12:55:26 dgoron Exp $
+// $Id: pclassement.class.php,v 1.8.4.1 2023/09/02 13:52:53 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $include_path;
 include_once($include_path."/templates/pclass.tpl.php");
 
 class pclassement {
@@ -37,52 +38,31 @@ class pclassement {
 		}
 	}
 	
-	protected function get_locations_form() {
-		global $thesaurus_classement_location;
-		global $pclassement_locations_form;
-		
-		$locations_form = '';
-		if($thesaurus_classement_location) {
-			$locations_form = $pclassement_locations_form;
-			
-			$locations ="";
-			$query = "SELECT idlocation, location_libelle FROM docs_location ORDER BY location_libelle";
-			$result = pmb_mysql_query($query);
-			while($obj=pmb_mysql_fetch_object($result)) {
-				$as=array_search($obj->idlocation,$this->locations);
-				$locations .= "
+	protected function get_locations_checkboxes() {
+		$locations ="";
+		$query = "SELECT idlocation, location_libelle FROM docs_location ORDER BY location_libelle";
+		$result = pmb_mysql_query($query);
+		while($obj=pmb_mysql_fetch_object($result)) {
+			$as=array_search($obj->idlocation,$this->locations);
+			$locations .= "
 				<input type='checkbox' name='locations_list[]' value='".$obj->idlocation."' ".($as !== null && $as!==false ? "checked='checked'" : "")." class='checkbox' id='location_".$obj->idlocation."' />
 				<label for='numloc".$obj->idlocation."'>&nbsp;".$obj->location_libelle."</label>
 				<br />";
-			}
-			$locations_form = str_replace('!!locations!!', $locations, $locations_form);
 		}
-		return $locations_form;
+		return $locations;
 	}
 	
-	public function get_form() {
-		global $msg, $charset;
-		global $pclassement_content_form;
+	public function get_content_form() {
+		global $thesaurus_classement_location;
 		
-		$content_form = $pclassement_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
-		
-		$interface_form = new interface_autorites_form('pclass');
-		if(!$this->id){
-			$interface_form->set_label($msg['pclassement_creation']);
-		}else{
-			$interface_form->set_label($msg['pclassement_modification']);
-		}
-		
+		$interface_content_form = new interface_content_form(static::class);
 		if($this->id) {	//modification
-			$identifiant = "<div class='row'><label class='etiquette' >".$msg[38]."</label></div>";
-			$identifiant.= "<div class='row'>".$this->id."</div>";
-		} else {	//creation
-			$identifiant = '';
+			$interface_content_form->add_element('identifier', '38')
+			->add_html_node($this->id);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!identifiant!!', $identifiant, $content_form);
-	
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->name);
+		
 		$doctype = new marc_list('doctype');
 		$toprint_typdocfield = " <select name='typedoc_list[]' MULTIPLE SIZE=20 >";
 		foreach($doctype->table as $value=>$libelletypdoc) {
@@ -91,13 +71,28 @@ class pclassement {
 			$toprint_typdocfield .= "$tag$libelletypdoc</option>";
 		}
 		$toprint_typdocfield .= "</select>";
-		$content_form = str_replace('!!type_doc!!', $toprint_typdocfield, $content_form);
+		$interface_content_form->add_element('typedoc_list', 'pclassement_type_doc_titre')
+		->add_html_node($toprint_typdocfield);
 		
-		$content_form = str_replace('!!locations!!', $this->get_locations_form(), $content_form);
+		if($thesaurus_classement_location) {
+			$interface_content_form->add_element('locations_list', 'pclassement_locations')
+			->add_html_node($this->get_locations_checkboxes());
+		}
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
+		$interface_form = new interface_autorites_form('pclass');
+		if(!$this->id){
+			$interface_form->set_label($msg['pclassement_creation']);
+		}else{
+			$interface_form->set_label($msg['pclassement_modification']);
+		}
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr'])
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('pclassement')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();

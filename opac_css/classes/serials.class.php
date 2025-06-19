@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serials.class.php,v 1.2.2.1 2022/01/12 07:57:53 dgoron Exp $
+// $Id: serials.class.php,v 1.4.4.1 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -46,6 +46,17 @@ class bulletinage extends notice {
 		return $this->bulletin_id;
 	}
 	
+	public static function get_permalink($issue_id) {
+	    global $opac_url_base;
+
+	    $issue_id = intval($issue_id);
+	    $record_id = static::get_issue_record_id_from_id($issue_id);
+	    if (!empty($record_id)) {
+	        return parent::get_permalink($record_id);
+	    }
+	    return $opac_url_base."index.php?lvl=bulletin_display&id=".$issue_id;
+	}
+	
 	public static function get_notice_id_from_id($bulletin_id) {
 	    $bulletin_id = intval($bulletin_id);
 	    $query = "SELECT num_notice, bulletin_notice FROM bulletins WHERE bulletin_id = ".$bulletin_id;
@@ -56,6 +67,13 @@ class bulletinage extends notice {
 	    } else {
 	        return $row->bulletin_notice; // Notice de périodique
 	    }
+	}
+
+	public static function get_issue_record_id_from_id($bulletin_id) {
+	    $bulletin_id = intval($bulletin_id);
+	    $query = "SELECT num_notice FROM bulletins WHERE bulletin_id = ".$bulletin_id;
+	    $result = pmb_mysql_query($query);
+	    return pmb_mysql_result($result, 0, 0) ?? 0;
 	}
 } // fin définition classe
 
@@ -71,7 +89,9 @@ class analysis extends notice {
 	// constructeur
 	public function __construct($analysis_id, $bul_id=0) {
 		$this->id = intval($analysis_id);
-		if ($bul_id) $this->id_bulletinage = $bul_id;
+		if ($bul_id) {
+		    $this->id_bulletinage = intval($bul_id);
+		}
 		
 		return $this->id;
 	}

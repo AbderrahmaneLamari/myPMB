@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // + 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormEdit.js,v 1.42.2.4 2021/07/02 09:55:20 qvarin Exp $
+// $Id: FormEdit.js,v 1.47 2022/01/31 14:50:58 dgoron Exp $
 
 
 define(['dojo/_base/declare', 
@@ -305,6 +305,11 @@ function(declare, xhr, lang, topic, on, dom, domGeom, domStyle, domAttr, query, 
 				}
 			}
 			this.zones = new Array();
+			
+			var defaultZone = query('#el0Child', this.context);
+			if(defaultZone.length) {
+				domStyle.set(defaultZone[0], 'display', 'block');
+			}
 		},
 		addDefaultZone: function(zoneId){
 			var domZone = dom.byId(zoneId+'Child');
@@ -335,7 +340,7 @@ function(declare, xhr, lang, topic, on, dom, domGeom, domStyle, domAttr, query, 
 		},
 		addZone: function(params) {
 			
-			// On créer un id de zone qui n'est pas déjà utilisé
+			// On crÃ©er un id de zone qui n'est pas dÃ©jÃ  utilisÃ©
 			var nbZones = this.nbZones;			
 			var nodeId = 'zone'+nbZones;
 			while (this.getZoneFromId(nodeId) != false) {
@@ -724,7 +729,7 @@ function(declare, xhr, lang, topic, on, dom, domGeom, domStyle, domAttr, query, 
 				if (savedScheme) {
 					this.savedScheme = savedScheme;
 					
-					// On évite d'avoir plusieurs fois le même id pour les zones
+					// On Ã©vite d'avoir plusieurs fois le mÃªme id pour les zones
 					let zones = new Object();
 					for(var i=0 ; i < this.savedScheme.length ; i++) {
 						let zone = this.savedScheme[i];

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: GraphStore.js,v 1.28.2.1 2021/08/02 12:31:57 qvarin Exp $
+// $Id: GraphStore.js,v 1.32 2022/12/20 10:23:03 qvarin Exp $
 
 
 define(["dojo/_base/declare", 
@@ -102,6 +102,7 @@ define(["dojo/_base/declare",
 				question : data.question,
 				comment : data.comment,
 				response : data.response,
+				orderResponse : data.orderResponse,
 				status : data.scenarioStatus,
 				equation : data.equation ? data.equation : "" 
 			};
@@ -130,6 +131,7 @@ define(["dojo/_base/declare",
 				node.comment = params.elt.comment;
 				node.status = params.elt.status;
 				node.response = params.elt.response;
+				node.orderResponse = params.elt.orderResponse;
 				node.equation = params.elt.equation;
 			}
 			var addedNode = this.add(node);
@@ -148,7 +150,7 @@ define(["dojo/_base/declare",
 			formsNode.forEach(lang.hitch(this, function(params){
 				var needed = availableEntities.query({type:'property',form_id:params.eltId});
 				for(var i=0 ; i<needed.total ; i++){
-					if (needed[i].flag) {
+					if (needed[i].flag.length){
 						var test = this.query({propertyPmbName: needed[i].pmb_name, parent: params.id});
 						if(test.total == 0){						
 							var nodeData = { 
@@ -298,6 +300,7 @@ define(["dojo/_base/declare",
 			scenario.comment = data.comment;
 			scenario.status = data.scenarioStatus;
 			scenario.response = data.response;
+			scenario.orderResponse = data.orderResponse;
 			scenario.equation = data.equation;
 			this.put(scenario);
 			if(scenario.parentScenario){
@@ -316,6 +319,7 @@ define(["dojo/_base/declare",
 			currentScenario.question = newProperties.question;
 			currentScenario.status = newProperties.status;
 			currentScenario.response = newProperties.response;
+			currentScenario.orderResponse = newProperties.orderResponse;
 			currentScenario.equation = newProperties.equation;
 			return currentScenario;
 		},
@@ -324,6 +328,7 @@ define(["dojo/_base/declare",
 			
 			form.name = data.name;
 			form.response = data.response;
+			form.orderResponse = data.orderResponse;
 			form.comment = data.comment;
 			
 			this.put(form);
@@ -890,14 +895,12 @@ define(["dojo/_base/declare",
 		},
 		
 		pasteNodeOfClipboard: async function(nodeCopied, parentNodeId, isChildren = false) {
-			
 			var nextParentId = await this.createNodeCopied(nodeCopied, parentNodeId, isChildren);
 			for (var i = 0; i < nodeCopied.childrens.length; i++) {
 				var children = nodeCopied.childrens[i];
 				this.pasteNodeOfClipboard(children, nextParentId, true)
 			}
 			topic.publish('GraphStore', 'refreshNodes');
-			
 		},
 		
 		canDeleteScenario: function(nodeId) {
@@ -950,7 +953,6 @@ define(["dojo/_base/declare",
 						nodeCopied.id = nodeCopied.eltId;
 					}
 					
-
 					if (this.isPasteAndApdate == "true" && nodeCopied.type == "form") {
 						await this.duplicateForm(nodeCopied, parentNodeId);
 					} else {
@@ -973,7 +975,7 @@ define(["dojo/_base/declare",
 						var attachementId = attachements[i].toString();
 						var attachementNode = lang.clone(this.get(attachementId));
 						
-						if (nodeCopied.entityType == attachementNode.entityType) {
+						if (attachementNode.parent == parentNodeId && attachementNode.propertyPmbName == nodeCopied.propertyPmbName) {
 							nextParentId = attachementNode.id;
 							break;
 						}
@@ -994,7 +996,7 @@ define(["dojo/_base/declare",
 					
 					if (nodeCopied.type == "scenario" && !this.get(nodeCopied.parentScenario)) {
 						
-						node = {
+						let node = {
 							comment: "",
 							displayed: "",
 							entityType: nodeCopied.entityType,
@@ -1002,6 +1004,7 @@ define(["dojo/_base/declare",
 							name: nodeCopied.name,
 							question: "",
 							response: "",
+							orderResponse: 0,
 							status: "1",
 							type: nodeCopied.type,
 						}

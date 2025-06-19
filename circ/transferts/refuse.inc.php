@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // Â© 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: refuse.inc.php,v 1.18.2.1 2021/07/30 14:48:34 dgoron Exp $
+// $Id: refuse.inc.php,v 1.20 2022/10/04 09:20:22 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $sub, $action, $msg, $database_window_title, $base_path;
+global $sub, $action, $msg, $database_window_title;
 global $deflt_docs_location;
 global $transferts_nb_jours_pret_defaut, $liste_transfert, $transid;
 global $motif,$date_retour;
@@ -218,7 +218,7 @@ if ($action == "") {
 	}
 	//pas d'action donc affichage de la liste des transferts refusés
 	
-	$list_transferts_refus_ui = new list_transferts_refus_ui(array('etat_transfert' => 0, 'type_transfert' => 1, 'etat_demande' => 4, 'site_destination' => $deflt_docs_location, 'site_origine' => 0));
+	$list_transferts_refus_ui = new list_transferts_refus_ui(array('etat_transfert' => 0, 'type_transfert' => 1, 'etat_demande' => 4));
 	print $list_transferts_refus_ui->get_display_list();
 }
 

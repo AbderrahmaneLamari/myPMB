@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_author.class.php,v 1.12.8.1 2021/10/20 12:07:17 dgoron Exp $
+// $Id: selector_author.class.php,v 1.15 2023/02/08 16:28:33 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -151,13 +151,13 @@ class selector_author extends selector_authorities {
 		return authorities_collection::get_authority('authority', $authority_id, ['num_object' => $object_id, 'type_object' => AUT_TABLE_AUTHORS]);
 	}
 	
-	protected function get_display_object($authority_id=0, $object_id=0) {
+	protected function get_display_object($id=0, $object_id=0) {
 		global $msg, $charset;
 		global $caller;
 		global $callback;
 		
 		$display = '';
-		$authority = $this->get_authority_instance($authority_id, $object_id);
+		$authority = $this->get_authority_instance($id, $object_id);
 		$author = $authority->get_object_instance(array('recursif' => 1));
 		$author_voir="" ;
 		// gestion des voir :
@@ -173,15 +173,11 @@ class selector_author extends selector_authorities {
 		return $display;
 	}
 	
-	protected function get_searcher_instance() {
-		return searcher_factory::get_searcher('authors', '', $this->user_input);
-	}
-	
 	protected function get_link_pagination() {
 		global $rech_regexp;
 		global $type_autorite;
 		
-		$type_autorite += 0;
+		$type_autorite = intval($type_autorite);
 		$link = static::get_base_url()."&rech_regexp=$rech_regexp&user_input=".rawurlencode($this->user_input)."&type_autorite=".$type_autorite."&page=!!page!!";
 		return $link;
 	}

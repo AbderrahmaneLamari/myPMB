@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: elements_records_caddie_list_ui.class.php,v 1.2 2018/10/18 09:08:07 dgoron Exp $
+// $Id: elements_records_caddie_list_ui.class.php,v 1.2.12.1 2023/06/02 06:46:06 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/elements_list/elements_records_list_ui.class.php');
 
 /**

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: resa.inc.php,v 1.72 2021/03/31 14:55:37 dgoron Exp $
+// $Id: resa.inc.php,v 1.74 2022/10/19 13:15:04 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -39,20 +39,27 @@ if ($opac_resa) {
             $recup_id_resa .= " AND resa_idbulletin = $id_bulletin";
         }
         $resrecup_id_resa = pmb_mysql_query($recup_id_resa);
-        $obj_recupidresa = pmb_mysql_fetch_object($resrecup_id_resa) ;
-        $suppr_id_resa = $obj_recupidresa->id_resa ;
+        if(pmb_mysql_num_rows($resrecup_id_resa)) {
+        	$obj_recupidresa = pmb_mysql_fetch_object($resrecup_id_resa) ;
+        	$suppr_id_resa = $obj_recupidresa->id_resa ;
         
-        // récup éventuelle du cb
-        $cb_recup = $obj_recupidresa->resa_cb ;
-        // archivage resa
-        $rqt_arch = "UPDATE resa_archive, resa SET resarc_anulee = 1 WHERE id_resa = '".$suppr_id_resa."' AND resa_arc = resarc_id ";
-        pmb_mysql_query($rqt_arch);
-        // suppression
-        $rqt = "delete from resa where id_resa='".$suppr_id_resa."' ";
-        $res = pmb_mysql_query($rqt) ;
-        $nb_resa_suppr = pmb_mysql_affected_rows() ;
+	        // récup éventuelle du cb
+	        $cb_recup = $obj_recupidresa->resa_cb ;
+	        
+	        // archivage resa
+	        $rqt_arch = "UPDATE resa_archive, resa SET resarc_anulee = 1 WHERE id_resa = '".$suppr_id_resa."' AND resa_arc = resarc_id ";
+	        pmb_mysql_query($rqt_arch);
+	        // suppression
+	        $rqt = "delete from resa where id_resa='".$suppr_id_resa."' ";
+	        $res = pmb_mysql_query($rqt) ;
+	        $nb_resa_suppr = pmb_mysql_affected_rows() ;
+        } else {
+        	$suppr_id_resa = 0;
+        	$cb_recup = '';
+        	$nb_resa_suppr = 0;
+        }
         
-        if($pmb_transferts_actif){
+        if($pmb_transferts_actif && $suppr_id_resa){
             /*
              // si transferts validé (en attente d'envoi), il faut restaurer le statut
              $rqt = "SELECT id_transfert FROM transferts,transferts_demande
@@ -118,15 +125,18 @@ if ($opac_resa) {
                     $rqt = "insert into resa_ranger (resa_cb) values ('".$cb_recup."') ";
                     $res = pmb_mysql_query($rqt) ;
                 }
-                alert_mail_users_pmb($id_notice, $id_bulletin, $_SESSION["id_empr_session"], 1) ;
+                reservation::alert_mail_users_pmb($id_notice, $id_bulletin, $_SESSION["id_empr_session"], 1) ;
             }else{
                 //MB: 17/04/2015 Il y a une résa à satisfaire: le document est donc à traiter coté gestion
                 $sql = "UPDATE exemplaires set expl_retloc=expl_location where expl_cb='".$cb_recup."' limit 1";
                 pmb_mysql_query($sql);
-                alert_mail_users_pmb($id_notice, $id_bulletin, $_SESSION["id_empr_session"], 2) ;
+                reservation::alert_mail_users_pmb($id_notice, $id_bulletin, $_SESSION["id_empr_session"], 2) ;
             }
         } else {
-            alert_mail_users_pmb($id_notice, $id_bulletin, $_SESSION["id_empr_session"], 1) ;
+        	// on s'assure que la réservation existait et qu'elle a bien été supprimée
+        	if($nb_resa_suppr) {
+        		reservation::alert_mail_users_pmb($id_notice, $id_bulletin, $_SESSION["id_empr_session"], 1) ;
+        	}
         }
         if ($id_notice) {
             $opac_notices_depliable = 0 ;
@@ -274,7 +284,7 @@ if ($opac_resa) {
                                 $evt_handler->send($event);
                                 
                                 $message_resa = $msg["added_resa"];
-                                alert_mail_users_pmb($id_notice, $id_bulletin, $_SESSION["id_empr_session"]) ;
+                                reservation::alert_mail_users_pmb($id_notice, $id_bulletin, $_SESSION["id_empr_session"]) ;
                             } else {
                                 $message_resa=$msg["resa_doc_no_reservable"] ;
                             }
@@ -315,7 +325,7 @@ if ($opac_resa) {
 								resarc_expl_nb = '$nb_expl'
 							 ";
                             pmb_mysql_query($query);
-                            $stat_id = pmb_mysql_insert_id($dbh);
+                            $stat_id = pmb_mysql_insert_id();
                             // Lier achive et résa pour suivre l'évolution de la résa
                             $query = "update resa SET resa_arc='$stat_id' where id_resa='".$id_resa_ajoutee."'";
                             pmb_mysql_query($query);

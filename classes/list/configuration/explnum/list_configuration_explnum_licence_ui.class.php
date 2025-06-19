@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_explnum_licence_ui.class.php,v 1.2 2021/02/24 10:39:30 dgoron Exp $
+// $Id: list_configuration_explnum_licence_ui.class.php,v 1.2.6.2 2023/03/24 07:55:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -37,12 +37,12 @@ class list_configuration_explnum_licence_ui extends list_configuration_explnum_u
 	
 	protected function add_column_configure_profiles_rights() {
 		global $msg;
-		$this->columns[] = array(
-				'property' => '',
-				'label' => '',
-				'html' => '<input type="button" class="bouton" onclick="document.location=\''.static::get_controller_url_base().'&action=settings&id=!!id!!\';" value="'.$msg['explnum_licence_settings'].'" />',
-				'exportable' => false
+		
+		$html_properties = array(
+				'value' => $msg['explnum_licence_settings'],
+				'link' => static::get_controller_url_base().'&action=settings&id=!!id!!'
 		);
+		$this->add_column_simple_action('configure_profiles_rights', '', $html_properties);
 	}
 	
 	protected function get_display_content_object_list($object, $indice) {
@@ -59,13 +59,10 @@ class list_configuration_explnum_licence_ui extends list_configuration_explnum_u
 		return htmlentities($msg["explnum_licence_no_licence_defined"], ENT_QUOTES, $charset);
 	}
 	
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "document.location=\"".$this->get_edition_link($object)."\""
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_label_button_add() {

@@ -1,0 +1,29 @@
+/*-------------
+- OPAC: NAVBAR -
+ -------------*/
+
+ #navbar {
+    clear: both;
+}
+
+.navbar {
+    line-height: normal;
+}
+
+.navbar img {
+    vertical-align: middle;
+}
+
+#navbar input[type="text"] {
+    margin: 0px;
+}
+
+#search #navbar_input_page {
+    float: none;
+    margin: 0;
+    padding: 2px;
+    border: 1px solid #F5F5F5;
+    color: #170000;
+    vertical-align: baseline;
+    background-color: #f8f8f8;
+}

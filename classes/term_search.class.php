@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: term_search.class.php,v 1.35 2021/04/27 09:30:35 dgoron Exp $
+// $Id: term_search.class.php,v 1.36.2.2 2023/09/06 09:18:38 dgoron Exp $
 //
 // Gestion de la recherche des termes dans le thésaurus
 
@@ -20,7 +20,7 @@ class term_search {
 	public $search_term_name;			//Nom de la variable contenant le terme recherché dans les catégories
 	public $search_term_origin_name;	//Nom de la variable contenant le terme recherché saisi par l'utilisateur
     public $search_term;				//Terme recherché dans les catégories
-	public $search_term_oigin;			//Terme recherché saisi par l'utilisateur
+    public $search_term_origin;			//Terme recherché saisi par l'utilisateur
     public $n_per_page;				//Nombre de résultats par page
     public $base_query;				//Paramètres supplémentaires à passer dans l'url
     public $url_for_term_show;			//Page à appeller pour l'affichage de la fiche du terme
@@ -36,7 +36,7 @@ class term_search {
     public $iframe_mode;
 	
     //Constructeur
-    public function __construct($search_term_name, $search_term_origin_name, $n_per_page = 500, $base_query, $url_for_term_show, $url_for_term_search, $keep_tilde = 0, $id_thes = 0, $iframe_mode = true) {
+    public function __construct($search_term_name, $search_term_origin_name, $n_per_page = 500, $base_query = '', $url_for_term_show = '', $url_for_term_search = '', $keep_tilde = 0, $id_thes = 0, $iframe_mode = true) {
 
     	global $page;
     	
@@ -122,7 +122,7 @@ class term_search {
     //Récupération du nombre de termes correspondants à la recherche
     //N'est plus appelé depuis le 3/08/2012
     public function get_term_count() {
-    	global $lang;
+        global $lang, $default_tmp_storage_engine;
     	global $thesaurus_mode_pmb;
 
 		//Comptage du nombre de termes
@@ -151,7 +151,7 @@ class term_search {
 				$q = "drop table if exists cattmp ";
 				$r = pmb_mysql_query($q);
 	
-				$q1 = "create temporary table cattmp engine=myisam select ";
+				$q1 = "create temporary table cattmp engine={$default_tmp_storage_engine} select ";
 				$q1.= "if(catlg.num_noeud is null, catdef.libelle_categorie, catlg.libelle_categorie) as categ_libelle ";
 				$q1.= "from categories as catdef "; 
 				$q1.= "left join categories as catlg on catdef.num_noeud = catlg.num_noeud and catlg.langue = '".$lang."' "; 
@@ -160,7 +160,7 @@ class term_search {
 				$q1.= "and catdef.num_thesaurus = '".$this->id_thes."' ";
 				$q1.= "and catdef.langue = '".$this->thes->langue_defaut."' "; 
 				$q1.= "and catdef.libelle_categorie not like '~%' ";
-				$r1 = pmb_mysql_query($q1);
+				pmb_mysql_query($q1);
 				$q2 = "select count(distinct categ_libelle) from cattmp ";
 				$r2 = pmb_mysql_query($q2);
 				$this->n_total=pmb_mysql_result($r2, 0, 0);
@@ -173,7 +173,7 @@ class term_search {
 			$q = "drop table if exists cattmp ";
 			$r = pmb_mysql_query($q);
 
-			$q1 = "create temporary table cattmp engine=myisam select ";
+			$q1 = "create temporary table cattmp engine={$default_tmp_storage_engine} select ";
 			$q1.= "id_thesaurus, ";
 			$q1.= "if(catlg.num_noeud is null, catdef.libelle_categorie, catlg.libelle_categorie) as categ_libelle ";
 			$q1.= "from thesaurus ";
@@ -182,7 +182,7 @@ class term_search {
 			$q1.= "where 1 ";
 			if ($where_term) $q1.= "and (if(catlg.num_noeud is null, ".$members_catdef["where"].", ".$members_catlg["where"].") ) ";
 			$q1.= "and catdef.libelle_categorie not like '~%' ";
-			$resultat1 = pmb_mysql_query($q1);
+			pmb_mysql_query($q1);
 			
 			$q2 = "select count(distinct id_thesaurus,categ_libelle) from cattmp ";					
 		  	$r2=pmb_mysql_query($q2);
@@ -316,7 +316,7 @@ class term_search {
 				    $nbre_termes = '('.$r->nb.') ';
 				}
 				if ($this->iframe_mode) {
-    				$res .= "$nbre_termes<a href='#' data-name='term_show'>";
+				    $res .= "$nbre_termes<a href='#' data-name='term_show' data-term-label='".htmlentities($r->categ_libelle, ENT_QUOTES, $charset)."' data-term-thes='".$r->num_thesaurus."'>";
 				} else {
 				    $args = 'term='.rawurlencode($r->categ_libelle).'&id_thes='.$r->num_thesaurus.'&'.$this->base_query;
 				    $res .= "$nbre_termes<a href=\"".$this->url_for_term_show.'?'.$args."\" data-evt-args=\"".$args."\" target=\"term_show\" >";

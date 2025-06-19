@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: params.inc.php,v 1.9.14.1 2021/11/25 14:31:39 dgoron Exp $
+// $Id: params.inc.php,v 1.10 2021/11/25 14:30:16 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

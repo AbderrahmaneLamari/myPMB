@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_universes_controller.class.php,v 1.21.2.5 2021/12/07 07:40:41 gneveu Exp $
+// $Id: search_universes_controller.class.php,v 1.28.4.1 2023/08/25 13:11:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -37,17 +37,16 @@ class search_universes_controller {
     public function proceed_universe() {
         global $action;
         
+        $search_universe = new search_universe($this->object_id);
+        $search_universe->get_segments();
         switch($action) {
             case 'search':
-                $search_universe = new search_universe($this->object_id);
                 $search_universe->get_result_from_segments();
                 break;
             case 'simple_search':
-                $search_universe = new search_universe($this->object_id);
                 print $search_universe->get_form();
                 break;
         	default:
-        		$search_universe = new search_universe($this->object_id);
         		print $search_universe->get_form();
         		break;
         }
@@ -63,6 +62,7 @@ class search_universes_controller {
         
         $search_segment = search_segment::get_instance($this->object_id);
         $search_universe = new search_universe($search_segment->get_num_universe());
+        $search_universe->get_segments();
         $display_results = $search_segment->get_display_results();
         print $search_segment->get_display_search();
         print $search_universe->get_segments_list($search_segment->get_id());
@@ -89,6 +89,7 @@ class search_universes_controller {
         global $segment_id;
         
         $search_universe = new search_universe($this->object_id);
+        $search_universe->get_segments();
         switch($action){
             case 'simple_search':
                 $search_segment = search_segment::get_instance($segment_id);
@@ -100,7 +101,7 @@ class search_universes_controller {
                     'segment_id' => $segment_id,
                     'nb_result' => $nb_results, 
                     'order' => $search_segment->get_order(),
-                    'label' => $search_segment->get_label() 
+                    'label' => $search_segment->get_translated_label() 
                 ));
                 break;
             case 'extended_search':
@@ -113,7 +114,7 @@ class search_universes_controller {
                     'segment_id' => $segment_id,
                     'nb_result' => $nb_results, 
                     'order' => $search_segment->get_order(),
-                    'label' => $search_segment->get_label() 
+                    'label' => $search_segment->get_translated_label() 
                 ));
                 break;
             case 'rec_history' :
@@ -144,6 +145,7 @@ class search_universes_controller {
     private function init_start_search() {
         global $user_rmc;
         global $user_query;
+        global $shared_serialized_search;
         
         /**
         $cas = [
@@ -154,7 +156,7 @@ class search_universes_controller {
         ];
         **/
         //on fait appel à l'historique
-        if (empty($user_rmc) && empty($user_query)) {
+        if (empty($user_rmc) && empty($user_query) && empty($shared_serialized_search)) {
             $start_search = search_universes_history::get_start_search();
             search_universe::$start_search = [
                 "type" => $start_search["type"],
@@ -162,6 +164,21 @@ class search_universes_controller {
                 "launch_search" => $start_search["launch_search"],
                 "segment_json_search" => $start_search["segment_json_search"],
                 "search_index" => $start_search["search_index"],
+                "dynamic_params" => $start_search["dynamic_params"],
+                "shared_serialized_search" => "",
+            ];
+        } elseif (!empty($shared_serialized_search)) {
+            //partage de recherche
+            $start_search = search_universes_history::get_start_search();
+            search_universe::$start_search = [
+                "type" => (!empty($user_rmc) ? "extended" : "simple"),
+                "query" => "",
+                "launch_search" => false,
+                "segment_json_search" => "",
+                "search_index" => "",
+                "dynamic_params" => [],
+                "shared_serialized_search" => $start_search["shared_serialized_search"],
+                "shared_query" => $start_search["shared_query"],
             ];
         } else {
             search_universe::$start_search = [
@@ -170,8 +187,17 @@ class search_universes_controller {
                 "launch_search" => true,
                 "segment_json_search" => "",
                 "search_index" => "",
+                "dynamic_params" => [],
+                "shared_serialized_search" => "",
             ];
         }
+        if (!empty(search_universe::$start_search["dynamic_params"])) {
+            foreach (search_universe::$start_search["dynamic_params"] as $key => $value) {
+                global ${$key};
+                ${$key} = $value;
+            }
+        }
+        
         return;
     }
 }

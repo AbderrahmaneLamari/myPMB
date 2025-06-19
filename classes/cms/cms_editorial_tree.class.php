@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_editorial_tree.class.php,v 1.15.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: cms_editorial_tree.class.php,v 1.17.2.1 2023/12/04 15:37:52 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -27,13 +27,13 @@ class cms_editorial_tree {
 			while($row = pmb_mysql_fetch_object($res)){
 				$infos = array(
 					'id' => $row->id_section,
-					'title' => htmlentities($row->section_title, ENT_QUOTES,$charset),
+					'title' => $row->section_title,
 					'type' => ($row->section_num_parent == 0 ? "root_section": 'section'),
 					'state_label' => htmlentities($row->editorial_publication_state_label,ENT_QUOTES,$charset),	
 					'class_html' => $row->editorial_publication_state_class_html
 				);
 				if($row->logo_exist == 1){
-					$infos['icon'] =  "./cms_vign.php?type=section&id=".$row->id_section."&mode=small_vign";
+					//$infos['icon'] =  "./cms_vign.php?type=section&id=".$row->id_section."&mode=small_vign";
 				}
 				$sub_rqt = "select id_section, section_order from cms_sections where section_num_parent='".$row->id_section."' ORDER BY section_order ASC";
 				$sub_res = pmb_mysql_query($sub_rqt);
@@ -57,13 +57,13 @@ class cms_editorial_tree {
 							$art_content_infos['children'][]['_reference']= "article_".$art_row->id_article;
 							$art_infos = array(
 								'id' => "article_".$art_row->id_article,
-								'title' => htmlentities($art_row->article_title, ENT_QUOTES,$charset),
+								'title' => $art_row->article_title,
 								'type' => 'article',
 								'state_label' => htmlentities($art_row->editorial_publication_state_label, ENT_QUOTES,$charset),
 								'class_html' => $art_row->editorial_publication_state_class_html
 							);
 							if($art_row->logo_exist == 1){
-								$art_infos['icon'] =  "./cms_vign.php?type=article&id=".$art_row->id_article."&mode=small_vign";
+								//$art_infos['icon'] =  "./cms_vign.php?type=article&id=".$art_row->id_article."&mode=small_vign";
 							}
 							$this->tree[]=$art_infos;
 						}

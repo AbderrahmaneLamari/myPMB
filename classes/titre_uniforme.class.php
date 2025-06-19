@@ -2,10 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: titre_uniforme.class.php,v 1.201.2.8 2022/01/06 15:12:15 moble Exp $
+// $Id: titre_uniforme.class.php,v 1.214.4.6 2023/10/27 09:02:35 gneveu Exp $
 if (stristr ( $_SERVER ['REQUEST_URI'], ".class.php" ))
     die ( "no access" );
 
+use Pmb\Ark\Entities\ArkEntityPmb;
+    
 global $class_path, $include_path;
 require_once($class_path."/notice.class.php");
 require_once("$class_path/aut_link.class.php");
@@ -85,6 +87,7 @@ class titre_uniforme {
 	public $cp_error_message;
 	protected static $deleted_index = false;
 	protected static $controller;
+	protected $oeuvre_expressions_grouped_list_ui = [];
 	
 	// ---------------------------------------------------------------
 	//		titre_uniforme($id) : constructeur
@@ -135,7 +138,8 @@ class titre_uniforme {
 			$requete = "SELECT * FROM titres_uniformes WHERE tu_id=$this->id LIMIT 1 ";
 			$result = pmb_mysql_query($requete);
 			if(pmb_mysql_num_rows($result)) {
-				$temp = pmb_mysql_fetch_object($result);				
+				$temp = pmb_mysql_fetch_object($result);
+				pmb_mysql_free_result($result);
 				
 				$this->id	= $temp->tu_id;
 				$this->name	= $temp->tu_name;
@@ -174,27 +178,30 @@ class titre_uniforme {
 				if(pmb_mysql_num_rows($result)) {
 					while(($param=pmb_mysql_fetch_object($result))) {
 						$this->distrib[]["label"]=$param->distrib_name;
-					}	
+					}
+					pmb_mysql_free_result($result);
 				}					
 				$requete = "SELECT *  FROM tu_ref WHERE ref_num_tu='$this->id' order by ref_ordre";
 				$result = pmb_mysql_query($requete);
 				if(pmb_mysql_num_rows($result)) {
 					while(($param=pmb_mysql_fetch_object($result))) {
 						$this->ref[]["label"]=$param->ref_name;
-					}	
+					}
+					pmb_mysql_free_result($result);
 				}			
 				$requete = "SELECT *  FROM tu_subdiv WHERE subdiv_num_tu='$this->id' order by subdiv_ordre";
 				$result = pmb_mysql_query($requete);
 				if(pmb_mysql_num_rows($result)) {
 					while(($param=pmb_mysql_fetch_object($result))) {
 						$this->subdiv[]["label"]=$param->subdiv_name;
-					}	
+					}
+					pmb_mysql_free_result($result);
 				}	
 			} else {
 				// pas trouvé avec cette clé
 				$this->id = 0;			
 			}
-		}else if(isset($mapper)){
+		}elseif(isset($mapper)){
 			$this->oeuvre_nature = $mapper['oeuvre_nature'];
 			$this->oeuvre_type = $mapper['oeuvre_type'];
 		}
@@ -255,68 +262,73 @@ class titre_uniforme {
 	
 	public function get_authors() {
 		
-		if($this->authors === null){
-		global $fonction_auteur;
-		$responsabilites = array() ;
-		$auteurs = array() ;
+		if($this->authors === null) {
+			global $fonction_auteur;
+			
+			$responsabilites = array() ;
+			$auteurs = array() ;
+			
 			$this->authors["responsabilites"] = array() ;
 			$this->authors["auteurs"] = array() ;
-		$this->sorted_responsabilities = array(
-				'authors' => array(),
-				'performers' => array()
-		);
-		
-		$rqt = "select author_id, responsability_tu_fonction, responsability_tu_type, id_responsability_tu ";
-		$rqt.= "from responsability_tu, authors where responsability_tu_num='".$this->id."' and responsability_tu_author_num=author_id order by responsability_tu_type, responsability_tu_ordre " ;
-	
-		$res_sql = pmb_mysql_query($rqt);
-		$i = 0;
-		while ($resp_tu=pmb_mysql_fetch_object($res_sql)) {
-			$responsabilites[] = $resp_tu->responsability_tu_type;
-			$qualif_id = vedette_composee::get_vedette_id_from_object($resp_tu->id_responsability_tu, (!$resp_tu->responsability_tu_type ? TYPE_TU_RESPONSABILITY : TYPE_TU_RESPONSABILITY_INTERPRETER));
-			$qualif = null;
-			if($qualif_id){
-				$qualif = new vedette_composee($qualif_id);
-			}
-			$fonction_label = '';
-			if (!empty($resp_tu->responsability_tu_fonction) && isset($fonction_auteur[$resp_tu->responsability_tu_fonction])) {
-				$fonction_label = $fonction_auteur[$resp_tu->responsability_tu_fonction];
-			}
-			$data = array( 
-				'id' => $resp_tu->author_id,
-				'id_responsability_tu' => $resp_tu->id_responsability_tu,
-				'fonction' => $resp_tu->responsability_tu_fonction,
-				'fonction_label' => $fonction_label,
-				'qualif' => $qualif,
-				'qualif_label' => ($qualif ? $qualif->get_label() : ''),
-				'responsability' => $resp_tu->responsability_tu_type,
-				'objet' => authorities_collection::get_authority(AUT_TABLE_AUTHORS, $resp_tu->author_id)
-			) ;
-			$auteurs[] = $data;
-			$data['attributes'][] = array(
-					'fonction' => $data['fonction'],
-					'fonction_label' => $data['fonction_label'],
-					'qualif' => $data['qualif'],
-					'qualif_label' => $data['qualif_label']
+			$this->sorted_responsabilities = array(
+					'authors' => array(),
+					'performers' => array()
 			);
-			unset($data['fonction']);
-			unset($data['fonction_label']);
-			unset($data['qualif']);
-			unset($data['qualif_label']);
-			if (!$resp_tu->responsability_tu_type) {
-				if (!isset($this->sorted_responsabilities['authors'][$data['id']])) {
-					$this->sorted_responsabilities['authors'][$data['id']] = $data;
-				} else {
-					$this->sorted_responsabilities['authors'][$data['id']]['attributes'][] = $data['attributes'][0];
+		
+			$rqt = "select author_id, responsability_tu_fonction, responsability_tu_type, id_responsability_tu ";
+			$rqt.= "from responsability_tu, authors where responsability_tu_num='".$this->id."' and responsability_tu_author_num=author_id order by responsability_tu_type, responsability_tu_ordre " ;
+	
+			$res_sql = pmb_mysql_query($rqt);
+			if (pmb_mysql_num_rows($res_sql)) {
+				while ($resp_tu=pmb_mysql_fetch_object($res_sql)) {
+					$responsabilites[] = $resp_tu->responsability_tu_type;
+					$qualif_id = vedette_composee::get_vedette_id_from_object($resp_tu->id_responsability_tu, (!$resp_tu->responsability_tu_type ? TYPE_TU_RESPONSABILITY : TYPE_TU_RESPONSABILITY_INTERPRETER));
+					$qualif = null;
+					if($qualif_id){
+						$qualif = new vedette_composee($qualif_id);
+					}
+					$fonction_label = '';
+					if (!empty($resp_tu->responsability_tu_fonction) && isset($fonction_auteur[$resp_tu->responsability_tu_fonction])) {
+						$fonction_label = $fonction_auteur[$resp_tu->responsability_tu_fonction];
+					}
+					
+					$data = array( 
+						'id' => $resp_tu->author_id,
+						'id_responsability_tu' => $resp_tu->id_responsability_tu,
+						'fonction' => $resp_tu->responsability_tu_fonction,
+						'fonction_label' => $fonction_label,
+						'qualif' => $qualif,
+						'qualif_label' => ($qualif ? $qualif->get_label() : ''),
+						'responsability' => $resp_tu->responsability_tu_type,
+						'objet' => authorities_collection::get_authority(AUT_TABLE_AUTHORS, $resp_tu->author_id)
+					) ;
+					$auteurs[] = $data;
+					
+					$data['attributes'][] = array(
+						'fonction' => $data['fonction'],
+						'fonction_label' => $data['fonction_label'],
+						'qualif' => $data['qualif'],
+						'qualif_label' => $data['qualif_label']
+					);
+					
+					unset($data['fonction'], $data['fonction_label'], $data['qualif'], $data['qualif_label']);
+					
+					if (!$resp_tu->responsability_tu_type) {
+						if (!isset($this->sorted_responsabilities['authors'][$data['id']])) {
+							$this->sorted_responsabilities['authors'][$data['id']] = $data;
+						} else {
+							$this->sorted_responsabilities['authors'][$data['id']]['attributes'][] = $data['attributes'][0];
+						}
+					} else {
+						if (!isset($this->sorted_responsabilities['performers'][$data['id']])) {
+							$this->sorted_responsabilities['performers'][$data['id']] = $data;
+						} else {
+							$this->sorted_responsabilities['performers'][$data['id']]['attributes'][] = $data['attributes'][0];
+						}
+					}
 				}
-			} else {
-				if (!isset($this->sorted_responsabilities['performers'][$data['id']])) {
-					$this->sorted_responsabilities['performers'][$data['id']] = $data;
-				} else {
-					$this->sorted_responsabilities['performers'][$data['id']]['attributes'][] = $data['attributes'][0];
-				}
+				pmb_mysql_free_result($res_sql);
 			}
-		}
 			$this->authors["responsabilites"] = $responsabilites ;
 			$this->authors["auteurs"] = $auteurs ;
 		}
@@ -677,7 +689,7 @@ class titre_uniforme {
 		$titre_uniforme_form = str_replace("<!--	Référence numérique (pour la musique)	-->",$ref_num_form, $titre_uniforme_form);
 		// subdivision
 		$sub_form=static::gen_input_selection($msg["aut_titre_uniforme_form_subdivision_forme"],"saisie_titre_uniforme","subdiv",$this->subdiv,"","saisie-80em");
-		ini_set('xdebug.var_display_max_data', -1);
+		
 		$titre_uniforme_form = str_replace('<!-- Subdivision de forme -->',	$sub_form, $titre_uniforme_form);
 		
 		$titre_uniforme_form = str_replace('!!remplace!!', $button_remplace, $titre_uniforme_form);
@@ -687,9 +699,11 @@ class titre_uniforme {
 		
 		$titre_uniforme_form = str_replace('!!user_input!!', htmlentities($user_input,ENT_QUOTES, $charset), $titre_uniforme_form);
 		$titre_uniforme_form = str_replace('!!nbr_lignes!!', $nbr_lignes, $titre_uniforme_form);
+		//Gestion de la duplication
+		$titre_uniforme_form = str_replace('!!is_duplication!!', $duplicate ? 1 : 0,$titre_uniforme_form);
 		$titre_uniforme_form = str_replace('!!page!!', $page, $titre_uniforme_form);
 		$titre_uniforme_form = str_replace('!!tu_import_denied!!', $import_denied_checked, $titre_uniforme_form);	
-		if($thesaurus_concepts_active == 1 ){
+		if($thesaurus_concepts_active == 1){
 			$index_concept = new index_concept($this->id, TYPE_TITRE_UNIFORME);
 			$titre_uniforme_form = str_replace('!!concept_form!!',	$index_concept->get_form('saisie_titre_uniforme'),$titre_uniforme_form);
 		}else{
@@ -1442,6 +1456,7 @@ class titre_uniforme {
 	
 		global $msg;
 		global $pmb_synchro_rdf;
+		global $pmb_ark_activate;
 		
 		if (($this->id == $by) || (!$this->id))  {
 			return $msg[223];
@@ -1465,9 +1480,16 @@ class titre_uniforme {
 
 		vedette_composee::replace(TYPE_TITRE_UNIFORME, $this->id, $by);
 		
-		// remplacement liens de type expression et autres liens
+ 		// remplacement liens de type expression et autres liens
+		$requete = 'UPDATE tu_oeuvres_links set oeuvre_link_from="'.$by.'" WHERE oeuvre_link_from="'.$this->id.'"';
+		@pmb_mysql_query($requete);
+		
+		$requete = 'UPDATE tu_oeuvres_links set oeuvre_link_to="'.$by.'" WHERE oeuvre_link_to="'.$this->id.'"';
+		@pmb_mysql_query($requete);
+		
+		// En cas de doublons restant sur l'oeuvre on supprime le lien
 		$requete = 'DELETE FROM tu_oeuvres_links where oeuvre_link_from="'.$this->id.'" OR oeuvre_link_to="'.$this->id.'"';
-		$result = pmb_mysql_query($requete);
+		pmb_mysql_query($requete);
 		
 		// remplacement dans les responsabilités
 		$requete = "UPDATE notices_titres_uniformes SET ntu_num_tu='$by' WHERE ntu_num_tu='$this->id' ";
@@ -1515,6 +1537,15 @@ class titre_uniforme {
 		// nettoyage indexation
 		indexation_authority::delete_all_index($this->id, "authorities", "id_authority", AUT_TABLE_TITRES_UNIFORMES);
 		
+		if ($pmb_ark_activate) {
+		    $idReplaced = authority::get_authority_id_from_entity($this->id, AUT_TABLE_TITRES_UNIFORMES);
+		    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_TITRES_UNIFORMES);
+		    if ($idReplaced && $idReplacing) {
+		        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+		        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+		        $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		    }
+		}
 		// effacement de l'identifiant unique d'autorité
 		$authority = authorities_collection::get_authority(AUT_TABLE_AUTHORITY,0, [ 'num_object' => $this->id, 'type_object' => AUT_TABLE_TITRES_UNIFORMES]);
 		$authority->delete();
@@ -1584,6 +1615,7 @@ class titre_uniforme {
 		global $mapping_source_type;
 		global $mapping_source_id;
 		global $opac_enrichment_bnf_sparql;
+		global $is_duplication;
 		
 		$value = array_merge(static::get_default_data(), $value);
 		
@@ -1637,7 +1669,7 @@ class titre_uniforme {
 		$value['oeuvre_nature_nature'] = clean_string($mc_oeuvre_nature->attributes[$value ['oeuvre_nature']]['NATURE']);
 		$value['oeuvre_type'] = clean_string ( $value ['oeuvre_type'] );
 		$value['authors'] = $f_aut;
-		
+
 		if (!$forcing) {
 		    $titre=titre_uniforme::import_tu_exist($value,1,$this->id);
     		if($titre){
@@ -1712,60 +1744,68 @@ class titre_uniforme {
 		$this->update_tu_notices ($value['tu_notices']);
 		
 		
-		// Clean des vedettes
-		$id_vedettes_links_deleted=titre_uniforme::delete_vedette_links($this->id);
-		
-		// traitement des auteurs
-		// la variable $f_aut a été renseignée au début de la fonction
-		// pour gérer les auteurs dans la recherche des doublons
-		$rqt_del = "delete from responsability_tu where responsability_tu_num='".$this->id."' ";
-		$res_del = pmb_mysql_query($rqt_del);
-		$rqt_ins = "INSERT INTO responsability_tu (responsability_tu_author_num, responsability_tu_num, responsability_tu_fonction, responsability_tu_type, responsability_tu_ordre) VALUES ";		
-		$i=0;	
-		$var_name='saisie_titre_uniforme_role_composed';
-		global ${$var_name};
-		$role_composed=${$var_name};
-		$var_name='saisie_titre_uniforme_role_autre_composed';
-		global ${$var_name};
-		$role_composed_autre=${$var_name};
-		$id_vedettes_used=array();
-		while ($i<=count ($f_aut)-1) {
-			$id_aut=$f_aut[$i]['id'];
-			if ($id_aut) {
-				$fonc_aut = $f_aut[$i]['fonction'];
-				$type_aut = $f_aut[$i]['type'];
-				$ordre_aut = $f_aut[$i]['ordre'];
-				$rqt = $rqt_ins . " ('".$id_aut."','".$this->id."','".$fonc_aut."','".$type_aut."', '".$ordre_aut."') ";				
-				$res_ins = @pmb_mysql_query($rqt);
-				$id_responsability_tu=pmb_mysql_insert_id();
-				if($pmb_authors_qualification){
-					switch($type_aut){
-						case 0: 
-							$id_vedette=$this->update_vedette(stripslashes_array($role_composed[$ordre_aut]),$id_responsability_tu,TYPE_TU_RESPONSABILITY);
-						break;
-						case 1:  
-							$id_vedette=$this->update_vedette(stripslashes_array($role_composed_autre[$ordre_aut]),$id_responsability_tu,TYPE_TU_RESPONSABILITY_INTERPRETER);
-						break;			
-					}
-					if($id_vedette)$id_vedettes_used[]=$id_vedette; 
-				}
-			}
-			$i++;
-		}
-		foreach ($id_vedettes_links_deleted as $id_vedette){
-			if(!in_array($id_vedette,$id_vedettes_used)){
-				$vedette_composee = new vedette_composee($id_vedette);
-				$vedette_composee->delete();
-			}
-		}	
-		$aut_link= new aut_link(AUT_TABLE_TITRES_UNIFORMES,$this->id);
-		$aut_link->save_form();
+			// Clean des vedettes
+			$id_vedettes_links_deleted=titre_uniforme::delete_vedette_links($this->id);
 			
-		$aut_pperso= new aut_pperso("tu",$this->id);
-		if($aut_pperso->save_form()){
-			$this->cp_error_message = $aut_pperso->error_message; 
-			return false;
-		}
+			// traitement des auteurs
+			// la variable $f_aut a été renseignée au début de la fonction
+			// pour gérer les auteurs dans la recherche des doublons
+			$rqt_del = "delete from responsability_tu where responsability_tu_num='".$this->id."' ";
+			$res_del = pmb_mysql_query($rqt_del);
+			$rqt_ins = "INSERT INTO responsability_tu (responsability_tu_author_num, responsability_tu_num, responsability_tu_fonction, responsability_tu_type, responsability_tu_ordre) VALUES ";		
+			$i=0;	
+			$var_name='saisie_titre_uniforme_role_composed';
+			global ${$var_name};
+			$role_composed=${$var_name};
+			$var_name='saisie_titre_uniforme_role_autre_composed';
+			global ${$var_name};
+			$role_composed_autre=${$var_name};
+			$id_vedettes_used=array();
+			while ($i<=count ($f_aut)-1) {
+				$id_aut=$f_aut[$i]['id'];
+				if ($id_aut) {
+					$fonc_aut = $f_aut[$i]['fonction'];
+					$type_aut = $f_aut[$i]['type'];
+					$ordre_aut = $f_aut[$i]['ordre'];
+					$rqt = $rqt_ins . " ('".$id_aut."','".$this->id."','".$fonc_aut."','".$type_aut."', '".$ordre_aut."') ";				
+					$res_ins = @pmb_mysql_query($rqt);
+					$id_responsability_tu=pmb_mysql_insert_id();
+					if($pmb_authors_qualification){
+						switch($type_aut){
+							case 0:
+								//On duplique la vedette en mode duplication
+								if(! empty($is_duplication) && $is_duplication == 1) {
+									$role_composed[$ordre_aut]["id"] = 0;
+								}
+								$id_vedette=$this->update_vedette(stripslashes_array($role_composed[$ordre_aut]),$id_responsability_tu,TYPE_TU_RESPONSABILITY);
+							break;
+							case 1:
+								if(! empty($is_duplication) && $is_duplication == 1) {
+									$role_composed_autre[$ordre_aut]["id"] = 0;
+								} 
+								$id_vedette=$this->update_vedette(stripslashes_array($role_composed_autre[$ordre_aut]),$id_responsability_tu,TYPE_TU_RESPONSABILITY_INTERPRETER);
+							break;			
+						}
+						if($id_vedette)$id_vedettes_used[]=$id_vedette; 
+					}
+				}
+				$i++;
+			}
+			foreach ($id_vedettes_links_deleted as $id_vedette){
+				if(!in_array($id_vedette,$id_vedettes_used)){
+					$vedette_composee = new vedette_composee($id_vedette);
+					$vedette_composee->delete();
+				}
+			}	
+			$aut_link= new aut_link(AUT_TABLE_TITRES_UNIFORMES,$this->id);
+			$aut_link->save_form();
+				
+			$aut_pperso= new aut_pperso("tu",$this->id);
+			if($aut_pperso->save_form()){
+				$this->cp_error_message = $aut_pperso->error_message; 
+				return false;
+			}
+		// }
 		
 		//update authority informations
 		$authority = authorities_collection::get_authority(AUT_TABLE_AUTHORITY,0, [ 'num_object' => $this->id, 'type_object' => AUT_TABLE_TITRES_UNIFORMES]);
@@ -2376,13 +2416,14 @@ class titre_uniforme {
 			$index = $oeuvre->name." ".$oeuvre->tonalite." ".$oeuvre->subject." ".$oeuvre->place." ".$oeuvre->history." ";
 			$index.= $oeuvre->date." ".$oeuvre->context." ".$oeuvre->equinox." ".$oeuvre->coordinates." ";
 			
-			$as = array_keys ($oeuvre->responsabilites["responsabilites"], "0" ) ;
-			for ($i = 0 ; $i < count($as) ; $i++) {
-				$indice = $as[$i] ;
-				$auteur_0 = $oeuvre->responsabilites["auteurs"][$indice] ;
-				$auteur = authorities_collection::get_authority(AUT_TABLE_AUTHORS, $auteur_0["id"]);
-				$index .= $auteur->name . " " . $auteur->rejete . " ";
-				;
+			if (!empty($oeuvre->responsabilites)) {
+				$as = array_keys ($oeuvre->responsabilites["responsabilites"], "0" ) ;
+				for ($i = 0 ; $i < count($as) ; $i++) {
+					$indice = $as[$i] ;
+					$auteur_0 = $oeuvre->responsabilites["auteurs"][$indice] ;
+					$auteur = authorities_collection::get_authority(AUT_TABLE_AUTHORS, $auteur_0["id"]);
+					$index .= $auteur->name . " " . $auteur->rejete . " ";
+				}
 			}
 				
 			
@@ -2411,14 +2452,16 @@ class titre_uniforme {
 		if (! $this->id)
 			return;
 		
-		$as = array_keys ($this->responsabilites["responsabilites"], "0" ) ;
-		for ($i = 0 ; $i < count($as) ; $i++) {
-			$indice = $as[$i] ;
-			$auteur_0 = $this->responsabilites["auteurs"][$indice] ;
-			$auteur = authorities_collection::get_authority(AUT_TABLE_AUTHORS, $auteur_0["id"]);
-			if ($i > 0)
-				$this->tu_isbd .= " / ";
-			$this->tu_isbd.= $auteur->display.". ";			
+		if(!empty($this->responsabilites)) {
+			$as = array_keys ($this->responsabilites["responsabilites"], "0" ) ;
+			for ($i = 0 ; $i < count($as) ; $i++) {
+				$indice = $as[$i] ;
+				$auteur_0 = $this->responsabilites["auteurs"][$indice] ;
+				$auteur = authorities_collection::get_authority(AUT_TABLE_AUTHORS, $auteur_0["id"]);
+				if ($i > 0)
+					$this->tu_isbd .= " / ";
+				$this->tu_isbd.= $auteur->display.". ";			
+			}
 		}
 		if ($i)
 			$this->tu_isbd .= ". ";
@@ -2467,9 +2510,8 @@ class titre_uniforme {
         			$indice = $as[$i];
         			$auteur_0 = $this->responsabilites["auteurs"][$indice];
         			$authority = authorities_collection::get_authority(AUT_TABLE_AUTHORITY,0, ['num_object' => $auteur_0["id"],'type_object'=> AUT_TABLE_AUTHORS]);//new authority(0, $auteur_0["id"], AUT_TABLE_AUTHORS);
-        			$auteur = $authority->get_object_instance();
         			$isbd_simple .= " / ";
-        			$isbd_simple .= $auteur->isbd_entry;
+        			$isbd_simple .= $authority->get_isbd();
         			if($this->responsabilites['auteurs'][$i]['fonction']){
         				$isbd_simple.= ', '.$fonction_auteur[$this->responsabilites['auteurs'][$i]['fonction']];
         			}
@@ -3132,9 +3174,12 @@ class titre_uniforme {
 	    $display = str_replace("!!forcing_button!!", $authority->get_display_forcing_button($msg[287]), $display);
 	    $hidden_specific_values = $authority->put_global_in_hidden_field("saisie_titre_uniforme_role_composed");
 	    $hidden_specific_values .= $authority->put_global_in_hidden_field("saisie_titre_uniforme_role_autre_composed");
+	    $hidden_specific_values .= $authority->put_global_in_hidden_field("tab_concept_order");
+	    $hidden_specific_values .= $authority->put_global_in_hidden_field("concept");
 	    
 	    $hidden_specific_values .= $authority->put_global_in_hidden_field("max_aut0");
 	    $hidden_specific_values .= $authority->put_global_in_hidden_field("max_aut1");
+	    $hidden_specific_values .= $authority->put_global_in_hidden_field("is_duplication");
 	    
 	    for ($i=0; $i<$max_aut0; $i++) {
 	    	$hidden_specific_values .= $authority->put_global_in_hidden_field("f_aut0_id".$i);
@@ -3265,6 +3310,33 @@ class titre_uniforme {
 	
 	public function get_isbd_without_responsabilites() {
 	    return $this->get_isbd_simple(false);
+	}
+	
+	public function get_oeuvre_expressions_grouped_list_ui() {
+	    $contents = array();
+	    if(count($this->get_oeuvre_expressions_datas())){
+	        foreach ($this->get_oeuvre_expressions_datas() as $expression) {
+	            if (!isset($contents[$expression["type"]])) {
+	                $contents[$expression["type"]] = [];
+	                $contents[$expression["type"]] = [
+	                    "nb_result" => 0,
+	                    "label" => ucfirst($expression["type_label"]),
+	                    "content" => [],
+	                    "display" => ""
+	                ];
+	            }
+	            $contents[$expression["type"]]["nb_result"]++;
+	            
+	            $authority = authorities_collection::get_authority(AUT_TABLE_AUTHORITY,0, [ 'num_object' => $expression['to_id'], 'type_object' => AUT_TABLE_TITRES_UNIFORMES]);
+	            $contents[$expression["type"]]["content"][] = $authority->get_id();
+	        }
+	        
+	        foreach ($contents as $key => $value) {
+	            $contents[$key]["display"] = new elements_authorities_list_ui($contents[$key]["content"], $contents[$key]["nb_result"], false);
+	        }
+	        $this->oeuvre_expressions_grouped_list_ui = $contents;
+	    }
+	    return $this->oeuvre_expressions_grouped_list_ui;
 	}
 } // class titre uniforme
 

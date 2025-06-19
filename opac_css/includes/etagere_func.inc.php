@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: etagere_func.inc.php,v 1.67.2.1 2021/08/03 09:20:32 dgoron Exp $
+// $Id: etagere_func.inc.php,v 1.68 2021/08/03 09:17:52 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

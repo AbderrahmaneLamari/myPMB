@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: z3950_form.tpl.php,v 1.107 2019/08/29 10:05:39 btafforeau Exp $
+// $Id: z3950_form.tpl.php,v 1.107.8.1 2023/03/29 11:49:07 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
 global $nb_onglets, $ptab, $msg, $base_path, $charset, $form_notice, $current_module, $zone_article_form, $bt_undo, $zone_categ_form;
-
+global $deflt_notice_catalog_categories_auto;
 // template pour le form de catalogage
 
 // nombre de parties du form
@@ -1771,7 +1771,7 @@ $zone_article_form = "
 $bt_undo = "&nbsp;<input type='button' class='bouton' value=\"!!value!!\" onclick=\"!!action!!\" />";
 
 $zone_categ_form = "
-	<input type=\"radio\" checked onclick=\"document.getElementById('div_categorisation_manual').style.display='none'; document.getElementById('div_categorisation_auto').style.display=''\" checked id=\"categorisation_auto\" name=\"categorisation_type\" value=\"categorisation_auto\" /><label for=\"categorisation_auto\">".$msg['notice_integre_categorisation_auto']."</label>
+	<input type=\"radio\" onclick=\"document.getElementById('div_categorisation_manual').style.display='none'; document.getElementById('div_categorisation_auto').style.display=''\" id=\"categorisation_auto\" name=\"categorisation_type\" value=\"categorisation_auto\" /><label for=\"categorisation_auto\">".$msg['notice_integre_categorisation_auto']."</label>
 	<div id=\"div_categorisation_auto\">
 		<blockquote>
 		!!message_rameau!!
@@ -1802,4 +1802,14 @@ $zone_categ_form = "
 		</div>		
 	</div>
 	<br clear=\"all\" /><br />
+    <script type='text/javascript'>
+        var categ_auto = " . ($deflt_notice_catalog_categories_auto ? 1 : 0) . "
+        setTimeout(() => {
+           if(0 == categ_auto) {
+            document.getElementById('categorisation_manual').click()
+            } else {
+                document.getElementById('categorisation_auto').click()
+            }
+        }, 2500);
+    </script>
 ";

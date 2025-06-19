@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_item.class.php,v 1.82.2.7 2022/01/18 09:40:48 gneveu Exp $
+// $Id: onto_contribution_item.class.php,v 1.91 2022/05/24 13:25:48 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 require_once($include_path.'/templates/onto/contribution/onto_contribution_item.tpl.php');
@@ -245,7 +245,14 @@ class onto_contribution_item extends onto_common_item {
 			}
 		}
 		
-		$content.= "<input type='hidden' name='sub_form' value='".$sub_form."'>";		
+		$content.= "<input type='hidden' name='sub_form' value='".$sub_form."'>";
+		
+		if (!empty($this->get_additionnal_data())) {
+		    $additionnal_data = json_encode($this->get_additionnal_data()) ?? "{}";
+		    $content .= "<input id='additionnal_data' type='hidden' name='additionnal_data' value='{$additionnal_data}'>";
+		} else {
+		    $content .= "<input id='additionnal_data' type='hidden' name='additionnal_data' value='{}'>";		    
+		}
 			
 		$form=str_replace("!!onto_form_content!!",$content , $form);
 		
@@ -602,6 +609,8 @@ class onto_contribution_item extends onto_common_item {
 	 * @access public
 	 */
 	public function get_values_from_form() {
+	    global $additionnal_data;
+	    
 		$this->datatypes = array();
 		$prefix = onto_common_uri::get_name_from_uri($this->uri, $this->onto_class->pmb_name);
 	
@@ -610,7 +619,6 @@ class onto_contribution_item extends onto_common_item {
 				$property=$this->onto_class->get_property($uri_property);
 				$datatype_class_name = $this->resolve_datatype_class_name($property);
 				$this->datatypes = array_merge($this->datatypes, $datatype_class_name::get_values_from_form($prefix, $property, $this->uri));
-	
 			}
 		}
 	
@@ -626,6 +634,10 @@ class onto_contribution_item extends onto_common_item {
 				$this->onto_class->set_property($this->onto_class->get_property($uri_property));
 			}
 		}
+		
+		$additionnal_data = stripslashes($additionnal_data);
+		$additionnal_data = json_decode($additionnal_data, true);
+		$this->set_additionnal_data($additionnal_data);
 		
 		$this->onto_class->get_restrictions();
 		return $this->datatypes;
@@ -1029,6 +1041,7 @@ class onto_contribution_item extends onto_common_item {
 	    //gestion des scenarios liés
 	    $property->has_multiple_scenarios = false;
 	    $property->linked_scenarios = array();
+	    $property->scenarios_tab = array();
 	    
 	    //gestion des formulaires liés
 	    $property->has_linked_form = false;
@@ -1038,6 +1051,7 @@ class onto_contribution_item extends onto_common_item {
 	        if ($linked_scenario['propertyPmbName'] == $property->pmb_name) {
 	            if (!in_array($scenario_id, $property->linked_scenarios)) {
 	                $property->linked_scenarios[] = $scenario_id;
+	                $property->scenarios_tab[] = $linked_scenario;
 	            }
 	        }
 	    }

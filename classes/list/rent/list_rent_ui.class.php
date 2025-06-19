@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_rent_ui.class.php,v 1.6.2.2 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_rent_ui.class.php,v 1.8 2021/09/21 16:38:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

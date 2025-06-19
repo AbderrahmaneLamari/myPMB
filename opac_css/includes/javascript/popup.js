@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: popup.js,v 1.10.2.3 2021/11/17 08:36:21 dgoron Exp $
+// $Id: popup.js,v 1.14 2022/01/27 08:55:18 rtigero Exp $
 
 // openPopUp : permet d'afficher une popup de la taille et � la position donn�e
 //		la fonction gere aussi l'autoCentrage de la popup
@@ -125,6 +125,7 @@ function openPopUp(MyFile,MyWindow,MyWidth,MyHeight,MyLeft,MyTop,MyParam,ForceSe
 				MyParam = 'toolbar=no, dependent=yes, resizable=yes';
 				break;
 			case 'ajouter_un_tag':
+			case 'exporter_la_notice':
 			    MyWidth = '500';
 			    MyHeight = '400';
 			    MyParam = 'scrollbars=yes, resizable=yes';

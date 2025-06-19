@@ -1,0 +1,28 @@
+<!-- $Id: auth_popup.tpl.html,v 1.2 2022/08/01 13:45:18 dbellamy Exp $ -->
+
+{% block connexion %}
+	<div id='connexion'>
+	    <span id='login_form'>
+	        <form action="{{ global.opac_url_base }}ajax.php?module=ajax&categ=auth&action=check_auth" method="post" name="myform">
+	            <h4>{{ message }}</h4><br />
+	            <input type="text" name="login" class="login" autocomplete="off" size="14" value="{{ msg.common_tpl_cardnumber }}" onFocus="this.value='';" /><br />
+	            <input type="password" name="password" class="password" autocomplete="off" size="8" value="" />&nbsp;&nbsp;
+	            <input type="hidden" name="auth_from" value="auth_popup" />
+	            <input type="hidden" name="callback_func" value="{{ callback_func|urlencode }}" />
+	            <input type="hidden" name="callback_url" value="{{ callback_url|urlencode }}" />
+	            <input type="hidden" name="new_tab" value="{{ new_tab }}" />
+	            <input type="submit" name="ok" value="{{ msg.11 }}" class="bouton" />
+	        </form>
+	    </span>
+	</div>
+	{%if global.opac_password_forgotten_show %}
+	    <a class="mdp_forgotten" href="#" onclick="window.parent.location = '{{ global.opac_url_base }}askmdp.php';">{{ msg.mdp_forgotten }}</a>
+	{% endif %}
+	
+	{%if global.opac_websubscribe_show %}
+	    <br /><a class="subs_not_yet_subscriber" href="#" onclick="window.parent.location = '{{ global.opac_url_base }}subscribe.php';">{{ msg.subs_not_yet_subscriber }}</a>
+	{% endif %}	
+{% endblock %}
+
+{% block ext_auth %}
+{% endblock %}

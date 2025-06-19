@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: tabs_controller.class.php,v 1.1 2021/05/19 08:50:52 dgoron Exp $
+// $Id: tabs_controller.class.php,v 1.3.4.1 2023/09/02 09:32:39 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,12 +16,13 @@ class tabs_controller extends lists_controller {
 	protected static $list_ui_class_name = 'list_tabs_ui';
 	
 	public static function proceed($id=0) {
-		global $sub, $action;
-		global $tab_categ, $tab_sub;
+		global $action;
+		global $tab_module, $tab_categ, $tab_sub;
 		
-		if(empty($sub)) $sub ='admin';
-		static::$list_ui_class_name = 'list_tabs_'.$sub.'_ui';
-		static::$list_ui_class_name::set_module_name($sub);
+		if(empty($tab_module)) $tab_module ='admin';
+		static::$list_ui_class_name = 'list_tabs_'.$tab_module.'_ui';
+		static::$list_ui_class_name::set_module_name($tab_module);
+		static::$list_ui_class_name::set_no_check_rights(1);
 		$id = intval($id);
 		switch($action){
 			case 'edit':
@@ -47,5 +48,12 @@ class tabs_controller extends lists_controller {
 				parent::proceed($id);
 				break;
 		}
+	}
+	
+	public static function get_url_base() {
+	    global $tab_module;
+	    
+	    if(empty($tab_module)) $tab_module ='admin';
+	    return parent::get_url_base()."&tab_module=".$tab_module;
 	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: divercities.class.php,v 1.3 2020/10/20 07:15:22 dbellamy Exp $
+// $Id: divercities.class.php,v 1.4 2022/02/16 13:33:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -338,6 +338,7 @@ class divercities extends oai {
     	global $url,$clean_base_url,$formats,$del_deleted,$del_xsl_transform,$clean_html;
     	global $divercities_authentication_url_pattern, $divercities_authentication_source_id;
 
+    	$t=array();
     	$t["url"]=stripslashes($url);
     	$t["clean_base_url"]=$clean_base_url;
     	$t["sets"]=templates::get_values_completion_field_from_form('sets');

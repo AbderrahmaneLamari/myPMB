@@ -5,11 +5,12 @@
 ****************************************************************************************
 © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: cms_module_common_view_recordslist.xml,v 1.6.12.1 2021/09/22 13:04:25 btafforeau Exp $ -->
+$Id: cms_module_common_view_recordslist.xml,v 1.8 2022/09/22 09:21:03 tsamson Exp $ -->
 
 <XMLlist>
 	<entry code="cms_module_common_view_recordslist_used_template">Choix du template</entry>
 	<entry code="cms_module_common_view_title">Titre</entry>
+	<entry code="cms_module_common_view_source_infos_desc">Informations sur les sources</entry>
 	<entry code="cms_module_commom_view_records_desc">Notices</entry>
 	<entry code="cms_module_common_view_record_id_desc">Identifiant de la notice</entry>
 	<entry code="cms_module_common_view_record_header_desc">En-tête</entry>

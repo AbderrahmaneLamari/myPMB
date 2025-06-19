@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: start_export_caddie.php,v 1.36 2020/10/21 07:59:28 dgoron Exp $
+// $Id: start_export_caddie.php,v 1.36.6.2 2023/10/31 14:40:20 dgoron Exp $
 
 global $base_path, $base_auth, $base_title, $include_path, $class_path, $specialexport, $output_type, $idcaddie, $charset, $first, $output_params;
 global $n_current, $elt_flag, $elt_no_flag, $keep_expl, $msg, $keep_explnum, $export_type, $lender, $td, $sd;
+global $default_tmp_storage_engine;
 
 //Exécution de l'export
 $base_path = "../..";
@@ -161,7 +162,7 @@ switch ($myCart->type) {
 		}
 		//Exemplaires à exporter
 		$expl_a_exporter = $liste;
-		$requete="create temporary table expl_cart_id (id integer) ENGINE=MyISAM ";
+		$requete="create temporary table expl_cart_id (id integer) ENGINE={$default_tmp_storage_engine} ";
 		pmb_mysql_query($requete);
 		for ($i=0; $i<count($liste); $i++) {
 			$requete="insert into expl_cart_id (id) values($liste[$i])";
@@ -201,7 +202,7 @@ switch ($myCart->type) {
 		for ($i=0; $i<count($liste_no_flag); $i++) {
 			$liste[]=$liste_no_flag[$i];
 		}
-		$requete="create temporary table bull_cart_id (id integer) ENGINE=MyISAM ";
+		$requete="create temporary table bull_cart_id (id integer) ENGINE={$default_tmp_storage_engine} ";
 		pmb_mysql_query($requete);
 		for ($i=0; $i<count($liste); $i++) {
 			$requete="insert into bull_cart_id (id) values($liste[$i])";
@@ -239,8 +240,9 @@ if ($first!=1) {
 	    $export_instance = new $class_name();
 	    fwrite($fo, $export_instance->_get_header_($output_params));
 	} else {
-	    $def = new convert_output();
-	    fwrite($fo, $def->_get_header_($output_params));
+	    if(function_exists('_get_header_')) {
+	        fwrite($fo, _get_header_($output_params));
+	    }
 	}
 	fclose($fo);
 } 

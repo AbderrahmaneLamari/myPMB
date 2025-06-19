@@ -2,13 +2,23 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: admin.php,v 1.80 2021/03/08 16:58:52 dbellamy Exp $
+// $Id: admin.php,v 1.90.2.1 2023/09/04 14:36:35 tsamson Exp $
 
 // définition du minimum nécessaire 
 $base_path=".";                            
 $base_auth = "ADMINISTRATION_AUTH";  
 $base_title = "\$msg[7]"; 
-$base_use_dojo = 1;   
+$base_use_dojo = 1;
+
+global $msg, $class_path, $include_path;
+global $categ, $sub, $lang, $database_window_title;
+
+if (isset($_POST['dest']) && ($_POST['dest'] == "TABLEAU" || $_POST['dest'] == "TABLEAUHTML" || $_POST['dest'] == "TABLEAUCSV")) {
+	$base_noheader = 1;
+} elseif (isset($_GET['dest']) && ($_GET['dest'] == "TABLEAU" || $_GET['dest'] == "TABLEAUHTML" || $_GET['dest'] == "TABLEAUCSV")) {
+	$base_noheader = 1;
+}
+
 require_once ("$base_path/includes/init.inc.php");  
 require_once($class_path."/modules/module_admin.class.php");
 require_once($class_path.'/interface/admin/interface_admin_form.class.php');
@@ -24,31 +34,36 @@ if ($pmb_show_help) {
 	$extra = str_replace("!!help_link!!","<a href=# onclick=\"openPopUp('doc/index.php?doc_script_name=".$doc_script_name."&doc_categ=".$categ."&doc_sub=".$sub."&doc_lang=".$lang."', 'documentation', 480, 550, -2, -2, 'toolbar=0,menubar=0,dependent=0,resizable=1,alwaysRaised=1');return false;\">?</a>",$extra);
 }
 
-print "<div id='att' style='z-Index:1000'></div>";
-print $menu_bar;
-print $extra;
-print $extra2;
-print $extra_info;
-
-if($use_shortcuts) {
-	include("$include_path/shortcuts/circ.sht");
-	}
-	
-require_once $class_path.'/autoloader.class.php';
-$autoload = new autoloader();
-$autoload->add_register("onto_class");
-
-if($pmb_javascript_office_editor){
-	print $pmb_javascript_office_editor;
-	print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
-}
-
 switch($categ) {
 	case 'quotas':
 		require_once($class_path."/quotas.class.php");
-		print str_replace('!!menu_contextuel!!', module_admin::get_instance()->get_display_subtabs(), $admin_layout);
+		module_admin::get_instance()->proceed_header();
 		break;
-	case 'acces':
+	case 'plugin':
+	case 'finance':
+		print "<div id='att' style='z-Index:1000'></div>";
+		print $menu_bar;
+		print $extra;
+		print $extra2;
+		print $extra_info;
+		
+		if($use_shortcuts) {
+			include("$include_path/shortcuts/circ.sht");
+		}
+		break;
+	default:
+		module_admin::get_instance()->proceed_header();
+		break;
+}
+
+if(empty($base_noheader) && $pmb_javascript_office_editor){
+	print $pmb_javascript_office_editor;
+	print "<script type='text/javascript'>
+        pmb_include('$base_path/javascript/tinyMCE_interface.js');
+    </script>";
+}
+
+switch($categ) {
 	case 'plugin':
 		//Menu affiché plus tard..
 		break;
@@ -59,7 +74,6 @@ switch($categ) {
 		}
 		break;
 	default:
-		print str_replace('!!menu_contextuel!!', module_admin::get_instance()->get_display_subtabs(), $admin_layout);
 		break;
 }
 switch($categ) {
@@ -242,14 +256,42 @@ switch($categ) {
 	case 'animations':
 		include("./admin/animations/main.inc.php");
 		break;
+	case 'ark':
+	    include("./admin/ark/main.inc.php");
+	    break;
+	case 'digital_signature':
+		include("./admin/digital_signature/main.inc.php");
+		break;
+	case 'mails':
+		$module_admin = module_admin::get_instance();
+		$module_admin->set_url_base($base_path.'/admin.php?categ='.$categ.'&sub='.$sub);
+		$module_admin->set_object_id($id);
+		$module_admin->proceed_mails();
+		break;
+	case 'interface':
+		$module_admin = module_admin::get_instance();
+		$module_admin->set_url_base($base_path.'/admin.php?categ='.$categ.'&sub='.$sub);
+		$module_admin->set_object_id($id);
+		$module_admin->proceed_interface();
+		break;
+	case 'supervision':
+		$module_admin = module_admin::get_instance();
+		$module_admin->set_url_base($base_path.'/admin.php?categ='.$categ.'&sub='.$sub);
+		$module_admin->set_object_id($id);
+		$module_admin->proceed_supervision();
+		break;
+	case 'thumbnail':
+	    include("./admin/thumbnail/main.inc.php");
+	    break;
 	default:
 		echo window_title($database_window_title.$msg["7"].$msg["1003"].$msg["1001"]);
 		include("$include_path/messages/help/$lang/admin.txt");
 		break;
-	}
+}
 
-print $admin_layout_end;
-print $footer;
+module_admin::get_instance()->proceed_footer();
+
+html_builder();
 
 // deconnection MYSql
 pmb_mysql_close();

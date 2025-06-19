@@ -2,183 +2,101 @@
 // +-------------------------------------------------+
 // Â© 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: opac_view.tpl.php,v 1.9 2021/02/04 07:39:59 dgoron Exp $
+// $Id: opac_view.tpl.php,v 1.10 2022/05/12 07:50:04 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $msg, $tpl_opac_view_form, $current_module, $charset, $tpl_opac_view_create_form, $tpl_opac_view_list_sel_tableau, $tpl_opac_view_list_sel_tableau_ligne;
+global $msg, $tpl_opac_view_content_form, $charset, $tpl_opac_view_create_content_form, $tpl_opac_view_list_sel_tableau, $tpl_opac_view_list_sel_tableau_ligne;
 
 //*******************************************************************
 // Définition des templates pour les listes en edition
 //*******************************************************************
-$tpl_opac_view_form = "
-<script type='text/javascript'>
+$tpl_opac_view_content_form = "
+<!--	nom	-->
+<div class='row'>
+	<label class='etiquette' for='name'>".$msg["opac_view_form_name"]."</label>
+</div>
+<div class='row'>
+	<input type='text' class='saisie-80em' id='name' name='name' value=\"!!name!!\" />
+</div>
 
-function test_form(form) {
-	if(form.name.value.length == 0)	{
-		alert(\"".$msg["opac_view_form_name_empty"]."\");
-		return false;
-	}
-	return true;
-}
+<!--	Multi critère	-->
+<div class='row'>
+	<input type='radio' name='opac_view_wo_query' id='opac_view_w_query' value='0' !!opac_view_w_query_checked!! />
+	<label class='etiquette' for='opac_view_w_query' >".$msg["opac_view_form_search"]."</label>
+	<input type='radio' name='opac_view_wo_query' id='opac_view_wo_query' value='1' !!opac_view_wo_query_checked!! />
+	<label class='etiquette' for='opac_view_wo_query' >".$msg['opac_view_wo_query']."</label>
+</div>
+<div class='row'>
+	!!requete_human!!
+	<input type='hidden' name='requete' value='!!requete!!' />
+	<input type='button' id='search_bt' class='bouton' value='".$msg["opac_view_form_add_search"]."' !!search_build!! />
+</div>
 
-function confirm_delete() {
-    result = confirm('".$msg["confirm_suppr"]."');
-    if(result) {
+<!--	Paramètres de la vue	-->
+<div class='row'>
+	<label class='etiquette' >".$msg["opac_view_form_parameters"]."</label>
+</div>
+<div class='row'>
+	!!parameters!!
+</div>
 
-        document.location='./admin.php?categ=opac&sub=opac_view&section=list&action=delete&opac_view_id=!!opac_view_id!!';
-	} else
-        document.forms['opac_view_form'].elements['name'].focus();
-}
-function check_link(id) {
-	w=window.open(document.getElementById(id).value);
-	w.focus();
-}
-</script>
-!!form_modif_requete!!
-<form class='form-$current_module' name='opac_view_form' method='post' action='!!action!!'>
-	<h3>!!libelle!!</h3>
-	<div class='form-contenu'>
-		<!--	nom	-->
-		<div class='row'>
-			<label class='etiquette' for='name'>".$msg["opac_view_form_name"]."</label>
-		</div>
-		<div class='row'>
-			<input type='text' class='saisie-80em' id='name' name='name' value=\"!!name!!\" />
-		</div>
+<!--	Filtres de la vue	-->
+<div class='row'>
+	<label class='etiquette' >".$msg["opac_view_form_filters"]."</label>
+</div>
+<div class='row'>
+	!!filters!!
+</div>
 
-		<!--	Multi critère	-->
-		<div class='row'>
-			<input type='radio' name='opac_view_wo_query' id='opac_view_w_query' value='0' !!opac_view_w_query_checked!! />
-			<label class='etiquette' for='opac_view_w_query' >".$msg["opac_view_form_search"]."</label>
-			<input type='radio' name='opac_view_wo_query' id='opac_view_wo_query' value='1' !!opac_view_wo_query_checked!! />
-			<label class='etiquette' for='opac_view_wo_query' >".$msg['opac_view_wo_query']."</label>
-		</div>
-		<div class='row'>
-			!!requete_human!!
-			<input type='hidden' name='requete' value='!!requete!!' />
-			<input type='button' id='search_bt' class='bouton' value='".$msg["opac_view_form_add_search"]."' !!search_build!! />
-		</div>
-		
-		<!--	Paramètres de la vue	-->
-		<div class='row'>
-			<label class='etiquette' >".$msg["opac_view_form_parameters"]."</label>
-		</div>
-		<div class='row'>
-			!!parameters!!
-		</div>
+<!--	visibilité Opac	-->
+<div class='row'>
+	<label class='etiquette' >".$msg["opac_view_form_opac_visible_title"]."</label>
+</div>
+<div class='row'>
+	<select name='opac_view_form_visible' id='opac_view_form_visible' onchange=''>
+		<option value='0' !!opac_visible_selected_0!!>".$msg["opac_view_form_opac_visible_no"]."</option>
+		<option value='1' !!opac_visible_selected_1!!>".$msg["opac_view_form_opac_visible"]."</option>
+		<option value='2' !!opac_visible_selected_2!!>".$msg["opac_view_form_opac_visible_connected"]."</option>
+	</select>
+</div>
 
-		<!--	Filtres de la vue	-->
-		<div class='row'>
-			<label class='etiquette' >".$msg["opac_view_form_filters"]."</label>
-		</div>
-		<div class='row'>
-			!!filters!!
-		</div>
+<!--	commentaire de la vue	-->
+<div class='row'>
+	<label class='etiquette' >".$msg["opac_view_form_comment"]."</label>
+</div>
+<div class='row'>
+	<textarea name='comment' rows='3' cols='75' wrap='virtual'>!!comment!!</textarea>
+</div>
 
-		<!--	visibilité Opac	-->
-		<div class='row'>
-			<label class='etiquette' >".$msg["opac_view_form_opac_visible_title"]."</label>
-		</div>
-		<div class='row'>
-			<select name='opac_view_form_visible' id='opac_view_form_visible' onchange=''>
-				<option value='0' !!opac_visible_selected_0!!>".$msg["opac_view_form_opac_visible_no"]."</option>
-				<option value='1' !!opac_visible_selected_1!!>".$msg["opac_view_form_opac_visible"]."</option>
-				<option value='2' !!opac_visible_selected_2!!>".$msg["opac_view_form_opac_visible_connected"]."</option>
-			</select>
-		</div>
-
-		<!--	commentaire de la vue	-->
-		<div class='row'>
-			<label class='etiquette' >".$msg["opac_view_form_comment"]."</label>
-		</div>
-		<div class='row'>
-			<textarea name='comment' rows='3' cols='75' wrap='virtual'>!!comment!!</textarea>
-		</div>
-
-		<!-- date maj et validite -->
-		<div class='row'>
-			<div class='colonne5'>
-				<label class='etiquette' >".htmlentities($msg['opac_view_form_last_gen'],ENT_QUOTES, $charset)."</label>
-			</div>
-			<div class='colonne_suite'>
-				!!last_gen!!
-			</div>
-		</div>
-		<div class='row'>
-			<div class='colonne5'>
-				<label class='etiquette' >".htmlentities($msg['opac_view_form_ttl'],ENT_QUOTES, $charset)."</label>
-			</div>
-			<div class='colonne_suite'>
-				<input type='text' class='saisie-5em' name='ttl' value='!!ttl!!' />
-			</div>
-		</div>
-		<div class='row'></div>
+<!-- date maj et validite -->
+<div class='row'>
+	<div class='colonne5'>
+		<label class='etiquette' >".htmlentities($msg['opac_view_form_last_gen'],ENT_QUOTES, $charset)."</label>
 	</div>
-
-	<input type='hidden' name='opac_view_id' value='!!opac_view_id!!' />
-
-	<!--	Boutons	-->
-	<div class='row'>
-		<div class='left'>
-			<input type='button' class='bouton' value='".$msg["opac_view_form_annuler"]."' !!annul!! />
-			<input type='button' value='".$msg["opac_view_form_save"]."' class='bouton' id='btsubmit' onClick=\"if (test_form(this.form)) this.form.submit();\" />
-			</div>
-		<div class='right'>
-			!!delete!!
-			</div>
-		</div>
-	<div class='row'></div>
-</form>
-<script type='text/javascript'>
-	document.forms['opac_view_form'].elements['name'].focus();
-</script>
+	<div class='colonne_suite'>
+		!!last_gen!!
+	</div>
+</div>
+<div class='row'>
+	<div class='colonne5'>
+		<label class='etiquette' >".htmlentities($msg['opac_view_form_ttl'],ENT_QUOTES, $charset)."</label>
+	</div>
+	<div class='colonne_suite'>
+		<input type='text' class='saisie-5em' name='ttl' value='!!ttl!!' />
+	</div>
+</div>
 ";
 
-$tpl_opac_view_create_form = "
-<script type='text/javascript'>
-
-function test_form(form) {
-	if(form.name.value.length == 0)	{
-		alert(\"".$msg["opac_view_form_name_empty"]."\");
-		return false;
-	}
-	return true;
-}
-
-function check_link(id) {
-	w=window.open(document.getElementById(id).value);
-	w.focus();
-}
-</script>
-!!form_modif_requete!!
-<form class='form-$current_module' name='opac_view_form' method='post' action='!!action!!'>
-	<h3>!!libelle!!</h3>
-	<div class='form-contenu'>
-		<!--	nom	-->
-		<div class='row'>
-			<label class='etiquette' for='name'>".$msg["opac_view_form_name"]."</label>
-		</div>
-		<div class='row'>
-			<input type='text' class='saisie-80em' id='name' name='name' value=\"!!name!!\" />
-		</div>
-
-	</div>
-	<!--	Boutons	-->
-	<div class='row'>
-		<div class='left'>
-			<input type='button' class='bouton' value='".$msg["opac_view_form_annuler"]."' !!annul!! />
-			<input type='button' value='".$msg["opac_view_form_save"]."' class='bouton' id='btsubmit' onClick=\"if (test_form(this.form)) this.form.submit();\" />
-		</div>
-		<div class='right'>
-
-			</div>
-		</div>
-	<div class='row'></div>
-</form>
-<script type='text/javascript'>
-	document.forms['opac_view_form'].elements['name'].focus();
-</script>	";
+$tpl_opac_view_create_content_form = "
+<!--	nom	-->
+<div class='row'>
+	<label class='etiquette' for='name'>".$msg["opac_view_form_name"]."</label>
+</div>
+<div class='row'>
+	<input type='text' class='saisie-80em' id='name' name='name' value=\"!!name!!\" />
+</div>
+";
 
 $tpl_opac_view_list_sel_tableau = "
 <div class='row'>

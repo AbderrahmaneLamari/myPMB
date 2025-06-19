@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_bannettes_abon_ui.class.php,v 1.17.2.3 2021/12/03 10:38:17 dgoron Exp $
+// $Id: list_bannettes_abon_ui.class.php,v 1.21.4.1 2023/03/24 08:24:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -115,9 +115,9 @@ class list_bannettes_abon_ui extends list_bannettes_ui {
 				return "<th class='align_left' style='vertical-align:middle'>".$this->_get_label_cell_header($label)."</th>";
 			case 'subscribed':
 				return "<th class='center' style='vertical-align:middle'>
-							<i class='fa fa-plus-square' onclick='".$this->objects_type."_selection_all(document.".$this->get_form_name().");' style='cursor:pointer;' title='".htmlentities($msg['tout_cocher_checkbox'], ENT_QUOTES, $charset)."'></i>
+							<i class='fa fa-plus-square' id='".$this->objects_type."_list_cell_header_square_plus' onclick='".$this->objects_type."_selection_all(document.".$this->get_form_name().", this);' style='cursor:pointer;' title='".htmlentities($msg['tout_cocher_checkbox'], ENT_QUOTES, $charset)."'></i>
 							&nbsp;
-							<i class='fa fa-minus-square' onclick='".$this->objects_type."_unselection_all(document.".$this->get_form_name().");' style='cursor:pointer;' title='".htmlentities($msg['tout_decocher_checkbox'], ENT_QUOTES, $charset)."'></i>
+							<i class='fa fa-minus-square' id='".$this->objects_type."_list_cell_header_square_minus' onclick='".$this->objects_type."_unselection_all(document.".$this->get_form_name().", this);' style='cursor:pointer;' title='".htmlentities($msg['tout_decocher_checkbox'], ENT_QUOTES, $charset)."'></i>
 						</th>";
 			default:
 				return "<th class='center' style='vertical-align:middle'>".$this->_get_label_cell_header($label)."</th>";
@@ -182,10 +182,8 @@ class list_bannettes_abon_ui extends list_bannettes_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
-	    $content = $this->get_cell_content($object, $property);
-	    $display = $this->get_display_format_cell($content, $property);
-	    return $display;
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array();	
 	}
 	
 	public static function set_id_empr($id_empr) {

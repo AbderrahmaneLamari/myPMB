@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_records_bulletins_ui.class.php,v 1.8 2021/03/18 08:56:37 dgoron Exp $
+// $Id: list_records_bulletins_ui.class.php,v 1.9.4.2 2023/09/29 08:02:21 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/serials.class.php");
 
 class list_records_bulletins_ui extends list_records_ui {
@@ -21,24 +22,13 @@ class list_records_bulletins_ui extends list_records_ui {
 		return new bulletinage($row->bulletin_id);
 	}
 	
-	protected function _get_query_order() {
-	    if ($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'pert':
-					$order .= 'pert, index_sew, date_date, bulletin_id';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'pert':
+	            return 'pert, index_sew, date_date, bulletin_id';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -62,6 +52,15 @@ class list_records_bulletins_ui extends list_records_ui {
 		$this->available_columns['custom_fields'] = array();
 	}
 	
+	protected function _get_object_property_expl($object) {
+		global $msg;
+		
+		if (!empty($object->expl)) {
+			return count($object->expl)." ".$msg['bulletin_nb_exemplaires'];
+		}
+		return '';
+	}
+	
 	protected function get_cell_content($object, $property) {
 		global $msg;
 		
@@ -72,19 +71,21 @@ class list_records_bulletins_ui extends list_records_ui {
 				$cart_click_bull = "onClick=\"openPopUp('./cart.php?object_type=BULL&item=$object->bulletin_id', 'cart')\"";
 				$content .= "<img src='".get_url_icon('basket_small_20x20.gif')."' class='align_middle' alt='basket' title='$msg[400]' $cart_click_bull>";
 				break;
-			case 'bulletin_numero':
-				$url =  bulletinage::get_permalink($object->bulletin_id);
-				$content .= "<a href='$url'>$object->bulletin_numero</a>";
-				break;
-			case 'expl':
-				if (!empty($object->expl)) {
-					$content .= count($object->expl)." ".$msg['bulletin_nb_exemplaires'];
-				}
-				break;
 			default :
 				$content .= parent::get_cell_content($object, $property);
 				break;
 		}
 		return $content;
+	}
+	
+	protected function get_default_attributes_format_cell($object, $property) {
+		$attributes = array();
+		switch($property) {
+			case 'bulletin_numero':
+				$attributes['href'] = bulletinage::get_permalink($object->bulletin_id);
+			default:
+				break;
+		}
+		return $attributes;
 	}
 }

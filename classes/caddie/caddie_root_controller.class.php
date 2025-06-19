@@ -2,9 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: caddie_root_controller.class.php,v 1.57.2.3 2021/10/11 13:59:52 dgoron Exp $
+// $Id: caddie_root_controller.class.php,v 1.66.4.2 2023/09/04 14:36:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Digitalsignature\Models\DocnumCertifier;
+use Pmb\Digitalsignature\Models\SignatureModel;
 
 global $class_path;
 require_once($class_path."/classementGen.class.php");
@@ -98,7 +101,7 @@ abstract class caddie_root_controller {
 				static::proceed_by_caddie($idcaddie);
 				break;
 			case 'search_history':
-// 				include ("./".$module."/caddie/pointage/search_history.inc.php");
+				static::proceed_search_history($idcaddie);
 				break;
 			default:
 				print "<br /><br /><b>".$msg["caddie_select_pointage"]."</b>" ;
@@ -130,8 +133,8 @@ abstract class caddie_root_controller {
 			case 'selection':
 				static::proceed_selection($idcaddie, 'action', 'selection');
 				break;
-			case 'expdocnum':
-				static::proceed_expdocnum($idcaddie);
+			case 'docnum':
+				static::proceed_docnum($idcaddie);
 				break;
 			case 'reindex':
 				static::proceed_reindex($idcaddie);
@@ -221,27 +224,23 @@ abstract class caddie_root_controller {
 		global $object_type;
 	
 		$idcaddie = intval($idcaddie);
-		//$item += 0; item peux etre un cb
+		//$item = intval($item); item peux etre un cb
 		switch ($action) {
 			case 'new_cart':
 				$myCart = static::get_object_instance();
-				$form_action = static::get_constructed_link('gestion', 'panier', 'valid_new_cart')."&item=".$item;
-				$form_cancel = "history.go(-1);";
-				print $myCart->get_form($form_action, $form_cancel);
+				$url_base = static::get_constructed_link('gestion', 'panier')."&item=".$item;
+				print $myCart->get_form($url_base);
 				break;
 			case 'edit_cart':
 				$myCart = static::get_object_instance($idcaddie);
-				$form_action = static::get_constructed_link('gestion', 'panier', 'save_cart', $idcaddie, "&item=".$item);
-				$form_cancel = "document.location='".static::get_constructed_link('gestion', 'panier')."&item=".$item."';";
-				$form_duplicate = static::get_constructed_link('gestion', 'panier', 'duplicate_cart', $idcaddie);
-				print $myCart->get_form($form_action, $form_cancel, $form_duplicate);
+				$url_base = static::get_constructed_link('gestion', 'panier')."&item=".$item;
+				print $myCart->get_form($url_base);
 				break;
 			case 'duplicate_cart':
 			    $myCart = static::get_object_instance($idcaddie);
 			    $myCart->set_idcaddie(0);
-			    $form_action = static::get_constructed_link('gestion', 'panier', 'valid_new_cart')."&item=".$item;
-			    $form_cancel = "history.go(-1);";
-			    print $myCart->get_form($form_action, $form_cancel);
+			    $url_base = static::get_constructed_link('gestion', 'panier')."&item=".$item;
+			    print $myCart->get_form($url_base);
 			    break;
 			case 'del_cart':
 				$myCart = static::get_object_instance($idcaddie);
@@ -333,7 +332,7 @@ abstract class caddie_root_controller {
 						}
 						$liste= array_merge($liste_0,$liste_1);
 						if($liste) {
-						    foreach ($liste as $cle => $object) {
+						    foreach ($liste as $object) {
 								$myCart_selected->pointe_item($object,$myCart->type);
 							}
 						}
@@ -382,6 +381,13 @@ abstract class caddie_root_controller {
 					print pmb_bidi($myCart->aff_cart_nb_items()) ;
 					break;
 				default:
+					switch ($mode) {
+						case 'advanced':
+							print pmb_bidi($myCart->aff_cart_nb_items()) ;
+							print $myCart->get_edition_switch_form($mode, static::get_constructed_link('action', 'edition', 'choix_quoi', $idcaddie, '&object_type='.static::$object_type.'&item=0'));
+							static::proceed_edition_advanced($idcaddie, $myCart->type);
+							break;
+					}
 					break;
 			}
 		} else {
@@ -529,12 +535,28 @@ abstract class caddie_root_controller {
 					}
 					$liste= array_merge($liste_0,$liste_1);
 					$res_aff_suppr_base = $myCart->del_items_base_from_list($liste);
-					if ($res_aff_suppr_base) {
+					if (!empty($res_aff_suppr_base) && !empty($res_aff_suppr_base[CADDIE_ITEM_NO_DELETION_RIGHTS])) {
+						print "<br /><h3>".$msg['caddie_supprbase_no_deletion_rights']."</h3>";
+						// inclusion du javascript de gestion des listes dépliables
+						// début de liste
+						print $begin_result_liste;
+						foreach ($res_aff_suppr_base[CADDIE_ITEM_NO_DELETION_RIGHTS] as $item) {
+							print $item;
+						}
+						print $end_result_liste;
+						
+						unset($res_aff_suppr_base[CADDIE_ITEM_NO_DELETION_RIGHTS]);
+					}
+					if (!empty($res_aff_suppr_base)) {
 						print "<br /><h3>".$msg['caddie_supprbase_elt_used']."</h3>";
 						// inclusion du javascript de gestion des listes dépliables
 						// début de liste
 						print $begin_result_liste;
-						print $res_aff_suppr_base ;
+						foreach ($res_aff_suppr_base as $items) {
+							foreach ($items as $item) {
+								print $item;
+							}
+						}
 						print $end_result_liste;
 					}
 					print "<br /><h3>".$msg['caddie_situation_after_suppr']."</h3>";
@@ -628,6 +650,94 @@ abstract class caddie_root_controller {
 		}
 	}
 	
+	public static function get_display_tab($sub, $sub_categ, $tab, $label) {
+		global $charset;
+		return "
+		<span>
+			<a style='cursor: pointer;' href='".static::get_constructed_link('action', 'docnum', '', 0, '&tab='.$tab)."'>
+				<strong>".htmlentities($label, ENT_QUOTES, $charset)."</strong>
+			</a>
+		</span>";
+	}
+	
+	public static function proceed_docnum($idcaddie=0) {
+		global $msg;
+		global $tab;
+		global $pmb_digital_signature_activate;
+		
+		$idcaddie = intval($idcaddie);
+		if(empty($tab)) {
+			$html = "<table>
+				<tr><td>".static::get_display_tab('action', 'docnum', 'exp', $msg['caddie_menu_action_export_docnum'])."</td></tr>
+				<tr><td>".static::get_display_tab('action', 'docnum', 'del', $msg['caddie_menu_action_delete_docnum'])."</td></tr>";
+			
+			if($pmb_digital_signature_activate) {
+			    $html .= "<tr><td>".static::get_display_tab('action', 'docnum', 'sign', $msg['caddie_menu_action_sign_docnum'])."</td></tr>";
+			}
+
+            $html .= "</table>";
+            print($html);
+		} else {
+			switch ($tab) {
+				case 'del':
+					static::proceed_deldocnum($idcaddie);
+					break;
+				case 'sign':
+				    static::proceed_signdocnum($idcaddie);
+				    break;
+				case 'exp':
+				default:
+					static::proceed_expdocnum($idcaddie);
+					break;
+			}
+		}
+	}
+	
+	
+	public static function proceed_signdocnum($idcaddie=0) {
+	    global $msg;
+	    global $action;
+	    global $elt_flag, $elt_no_flag;
+	    global $elt_flag_inconnu, $elt_no_flag_inconnu;
+	    global $caddie_sign_id;
+	    
+	    $idcaddie = intval($idcaddie);
+	    if($idcaddie) {
+	        $myCart = static::get_object_instance($idcaddie);
+	        print pmb_bidi($myCart->aff_cart_titre());
+	        switch ($action) {
+	            case 'choix_quoi':
+	                print $myCart->aff_cart_nb_items();
+	                $label = "<label for='caddie_sign_id'>{$msg["caddie_sign_list"]}</label><br />";
+	                $html = $myCart->get_choix_quoi_form(static::get_constructed_link('action', 'docnum', 'sign')."&tab=sign&idcaddie=$idcaddie", static::get_constructed_link('action', 'docnum')."&tab=sign&idcaddie=0", $msg["caddie_choix_signdocnum"], $msg["caddie_expdocnum_sign"], "return confirm('$msg[caddie_confirm_sign]')");
+	                $html = str_replace("<!--sign_list-->", $label . gen_liste("select * from digital_signature", "id", "name", "caddie_sign_id", "", "", "", "", "", ""), $html);
+	                print($html);
+	                break;
+	            case 'sign':
+	                $res_aff_exp_doc_num="";
+	                if(!empty($caddie_sign_id)) {
+    	                if ($elt_flag) {
+    	                    $liste = $myCart->get_cart("FLAG", $elt_flag_inconnu) ;
+    	                    foreach ($liste as $object) {
+    	                        $res_aff_exp_doc_num .= $myCart->sign_docnum($object, $caddie_sign_id);
+    	                    }
+    	                }
+    	                if ($elt_no_flag) {
+    	                    $liste = $myCart->get_cart("NOFLAG", $elt_no_flag_inconnu) ;
+    	                    foreach ($liste as $object) {
+    	                        $res_aff_exp_doc_num .= $myCart->sign_docnum($object, $caddie_sign_id);
+    	                    }
+    	                }
+	                }
+	                print($res_aff_exp_doc_num);
+	                break;
+	                
+	        }
+	    }else {
+	        static::get_aff_paniers('action', 'docnum');
+	    }
+	}
+	
 	public static function proceed_expdocnum($idcaddie=0) {
 		global $msg;
 		global $action;
@@ -642,7 +752,7 @@ abstract class caddie_root_controller {
 			switch ($action) {
 				case 'choix_quoi':
 					print $myCart->aff_cart_nb_items();
-					print $myCart->get_choix_quoi_form(static::get_constructed_link('action', 'expdocnum', 'export')."&idcaddie=$idcaddie", static::get_constructed_link('action', 'expdocnum')."&idcaddie=0", $msg["caddie_choix_expdocnum"], $msg["caddie_expdocnum_export"], "return confirm('$msg[caddie_confirm_export]')");
+					print $myCart->get_choix_quoi_form(static::get_constructed_link('action', 'docnum', 'export')."&tab=exp&idcaddie=$idcaddie", static::get_constructed_link('action', 'docnum')."&tab=exp&idcaddie=0", $msg["caddie_choix_expdocnum"], $msg["caddie_expdocnum_export"], "return confirm('$msg[caddie_confirm_export]')");
 					break;
 				case 'export':
 					print "<br /><h3>".$msg['caddie_situation_exportdocnum']."</h3>";
@@ -658,14 +768,14 @@ abstract class caddie_root_controller {
 					$res_aff_exp_doc_num="";
 					if ($elt_flag) {
 						$liste = $myCart->get_cart("FLAG", $elt_flag_inconnu) ;
-						foreach ($liste as $cle => $object) {
-							$res_aff_exp_doc_num.=$myCart->export_doc_num ($object,$chemin_export_doc_num) ;
+						foreach ($liste as $object) {
+							$res_aff_exp_doc_num.=$myCart->export_doc_num($object,$chemin_export_doc_num) ;
 						}
 					}
 					if ($elt_no_flag) {
 						$liste = $myCart->get_cart("NOFLAG", $elt_no_flag_inconnu) ;
-						foreach ($liste as $cle => $object) {
-							$res_aff_exp_doc_num.=$myCart->export_doc_num ($object,$chemin_export_doc_num) ;
+						foreach ($liste as $object) {
+							$res_aff_exp_doc_num.=$myCart->export_doc_num($object,$chemin_export_doc_num) ;
 						}
 					}
 					if ($res_aff_exp_doc_num) {
@@ -677,7 +787,52 @@ abstract class caddie_root_controller {
 					break;
 			}
 		} else {
-			static::get_aff_paniers('action', 'expdocnum');
+			static::get_aff_paniers('action', 'docnum');
+		}
+	}
+	
+	public static function proceed_deldocnum($idcaddie=0) {
+		global $msg;
+		global $action;
+		global $elt_flag, $elt_no_flag;
+		global $elt_flag_inconnu, $elt_no_flag_inconnu;
+		
+		$idcaddie = intval($idcaddie);
+		if($idcaddie) {
+			$myCart = static::get_object_instance($idcaddie);
+			print pmb_bidi($myCart->aff_cart_titre());
+			switch ($action) {
+				case 'choix_quoi':
+					print $myCart->aff_cart_nb_items();
+					print $myCart->get_choix_quoi_form(static::get_constructed_link('action', 'docnum', 'delete')."&tab=del&idcaddie=$idcaddie", static::get_constructed_link('action', 'docnum')."&tab=del&idcaddie=0", $msg["caddie_choix_deldocnum"], $msg["caddie_deldocnum_delete"], "return confirm('$msg[caddie_confirm_delete]')");
+					break;
+				case 'delete':
+					print "<br /><h3>".$msg['caddie_situation_deletedocnum']."</h3>";
+					print $myCart->aff_cart_nb_items();
+					
+					$res_aff_del_doc_num="";
+					if ($elt_flag) {
+						$liste = $myCart->get_cart("FLAG", $elt_flag_inconnu) ;
+						foreach ($liste as $object) {
+							$res_aff_del_doc_num.=$myCart->delete_doc_num($object) ;
+						}
+					}
+					if ($elt_no_flag) {
+						$liste = $myCart->get_cart("NOFLAG", $elt_no_flag_inconnu) ;
+						foreach ($liste as $object) {
+							$res_aff_del_doc_num.=$myCart->delete_doc_num($object) ;
+						}
+					}
+					if ($res_aff_del_doc_num) {
+						print "<br /><h3>".$msg['caddie_res_deldocnum']."</h3>";
+						print $res_aff_del_doc_num;
+					} else print "<br /><h3>".$msg['caddie_res_deldocnum_nodocnum']."</h3>";
+					break;
+				default:
+					break;
+			}
+		} else {
+			static::get_aff_paniers('action', 'docnum');
 		}
 	}
 	
@@ -772,7 +927,7 @@ abstract class caddie_root_controller {
 					if($nb_elements_total){
 						$pb=new progress_bar($msg['caddie_situation_access_rights_encours'],$nb_elements_total,5);
 						if ($myCart->type=='NOTI'){
-						    foreach ($liste as $cle => $object) {
+						    foreach ($liste as $object) {
 								if ($gestion_acces_user_notice==1) {
 									$dom_1->delRessource($object);
 									$dom_1->applyRessourceRights($object);
@@ -784,15 +939,11 @@ abstract class caddie_root_controller {
 								$pb->progress();
 							}
 						}elseif($myCart->type=='BULL'){
-						    foreach ($liste as $cle => $object) {
+						    foreach ($liste as $object) {
 								$requete="SELECT bulletin_titre, num_notice FROM bulletins WHERE bulletin_id='".$object."'";
 								$res=pmb_mysql_query($requete);
 								if(pmb_mysql_num_rows($res)){
 									$element=pmb_mysql_fetch_object($res);
-									if(trim($element->bulletin_titre)){
-										$requete="UPDATE bulletins SET index_titre=' ".addslashes(strip_empty_words($element->bulletin_titre))." ' WHERE bulletin_id='".$object."'";
-										pmb_mysql_query($requete);
-									}
 									if($element->num_notice){
 										if ($gestion_acces_user_notice==1) {
 											$dom_1->delRessource($element->num_notice);
@@ -808,7 +959,7 @@ abstract class caddie_root_controller {
 								$pb->progress();
 							}
 						}elseif($myCart->type=='EXPL'){
-						    foreach ($liste as $cle => $object) {
+						    foreach ($liste as $object) {
 								$requete="SELECT expl_notice, expl_bulletin FROM exemplaires WHERE expl_id='".$object."' ";
 								$res=pmb_mysql_query($requete);
 								if(pmb_mysql_num_rows($res)){
@@ -827,10 +978,41 @@ abstract class caddie_root_controller {
 										$res2=pmb_mysql_query($requete);
 										if(pmb_mysql_num_rows($res2)){
 											$element=pmb_mysql_fetch_object($res2);
-											if(trim($element->bulletin_titre)){
-												$requete="UPDATE bulletins SET index_titre=' ".addslashes(strip_empty_words($element->bulletin_titre))." ' WHERE bulletin_id='".$row->expl_bulletin."'";
-												pmb_mysql_query($requete);
+											if($element->num_notice){
+												if ($gestion_acces_user_notice==1) {
+													$dom_1->delRessource($element->num_notice);
+													$dom_1->applyRessourceRights($element->num_notice);
+												}
+												if ($gestion_acces_empr_notice==1) {
+													$dom_2->delRessource($element->num_notice);
+													$dom_2->applyRessourceRights($element->num_notice);
+												}
 											}
+										}
+									}
+								}
+								$pb->progress();
+							}
+						}elseif($myCart->type=='EXPLNUM'){
+							foreach ($liste as $object) {
+								$requete="SELECT explnum_notice, explnum_bulletin FROM explnum WHERE explnum_id='".$object."' ";
+								$res=pmb_mysql_query($requete);
+								if(pmb_mysql_num_rows($res)){
+									$row=pmb_mysql_fetch_object($res);
+									if($row->explnum_notice){
+										if ($gestion_acces_user_notice==1) {
+											$dom_1->delRessource($row->explnum_notice);
+											$dom_1->applyRessourceRights($row->explnum_notice);
+										}
+										if ($gestion_acces_empr_notice==1) {
+											$dom_2->delRessource($row->explnum_notice);
+											$dom_2->applyRessourceRights($row->explnum_notice);
+										}
+									}else{
+										$requete="SELECT bulletin_titre, num_notice FROM bulletins WHERE bulletin_id='".$row->explnum_bulletin."'";
+										$res2=pmb_mysql_query($requete);
+										if(pmb_mysql_num_rows($res2)){
+											$element=pmb_mysql_fetch_object($res2);
 											if($element->num_notice){
 												if ($gestion_acces_user_notice==1) {
 													$dom_1->delRessource($element->num_notice);
@@ -871,7 +1053,7 @@ abstract class caddie_root_controller {
 		global $action;
 		
 		$idcaddie = intval($idcaddie);
-		$id_item += 0;
+		$id_item = intval($id_item);
 		$res_pointage = 0;
 		
 		$model_class_name = static::get_model_class_name();
@@ -950,21 +1132,20 @@ abstract class caddie_root_controller {
 	public static function proceed_quick_access($id_object=0, $type_object='') {
 		global $msg, $charset;
 		
-		$id_object += 0;
+		$id_object = intval($id_object);
 		$list = array();
 		
 		// Publication d'un évenement pour la récupération du panier préféré
 		$evt_handler = events_handler::get_instance();
 		$event = new event_caddie("caddie", "preferred_caddie_".(isset($type_object) ? strtolower($type_object) : 'noti'));
 		$evt_handler->send($event);
+		$preferred_caddie = array();
 		if($event->get_id_caddie()) {
 			$preferred_caddie[] = array(
 					'idcaddie' => $event->get_id_caddie(),
 					'name' => $event->get_name(),
 					'nb_item' => $event->get_nb_items()
 			);
-		} else {
-			$preferred_caddie = array();
 		}
 		$model_class_name = static::get_model_class_name();
 		$list = $model_class_name::get_cart_list($type_object, 1);
@@ -1010,6 +1191,9 @@ abstract class caddie_root_controller {
 				case 'NOTI' :
 					print "<h3>".$msg["caddie_fast_access_no_selected"]."</h3>";
 					break;
+				case 'EXPLNUM' :
+					print "<h3>".$msg["caddie_fast_access_explnum_no_selected"]."</h3>";
+					break;
 				default :
 					print "<h3>".$msg["caddie_fast_access_authorities_no_selected"]."</h3>";
 					break;
@@ -1031,7 +1215,7 @@ abstract class caddie_root_controller {
 		global $base_path, $current_module;
 		global $item;
 		
-		$id_object += 0;
+		$id_object = intval($id_object);
 		switch ($type) {
 			case 'editable':
 				$item = 0;
@@ -1149,12 +1333,14 @@ abstract class caddie_root_controller {
 	public static function get_display_list_from_item($type='display', $object_type='', $item=0) {
 		global $PMBuserid;
 		
-		$display = "<script src='./javascript/classementGen.js' type='text/javascript'></script>";
+		$display = "<script type='text/javascript'>
+            pmb_include('./javascript/classementGen.js');
+        </script>";
 		$model_class_name = static::get_model_class_name();
 		$liste = $model_class_name::get_cart_list_from_item($object_type, 0, $item);
 		if(sizeof($liste)) {
 			$print_cart = array();
-			foreach ($liste as $cle => $valeur) {
+			foreach ($liste as $valeur) {
 				$rqt_autorisation=explode(" ",$valeur['autorisations']);
 				if (array_search ($PMBuserid, $rqt_autorisation)!==FALSE || $valeur['autorisations_all'] || $PMBuserid==1) {
 					$myCart = new $model_class_name($valeur["idcaddie"]);

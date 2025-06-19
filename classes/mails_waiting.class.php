@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mails_waiting.class.php,v 1.3 2021/06/04 12:16:20 dgoron Exp $
+// $Id: mails_waiting.class.php,v 1.4.4.1 2023/07/04 09:16:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -33,18 +33,21 @@ class mails_waiting {
 		
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('mails_waiting_attachments', 'mails_waiting_attachments')
+		->add_input_node('text', $this->data['attachments']);
+		$interface_content_form->add_element('mails_waiting_max_by_send', 'mails_waiting_max_by_send')
+		->add_input_node('number', $this->data['max_by_send']);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $mails_waiting_content_form_tpl;
-		
-		$content_form = $mails_waiting_content_form_tpl;
 		
 		$interface_form = new interface_admin_form('mails_waiting_form');
 		$interface_form->set_label($msg['mails_waiting']);
-		$content_form = str_replace('!!attachments!!', $this->data['attachments'], $content_form);
-		$content_form = str_replace('!!max_by_send!!', $this->data['max_by_send'], $content_form);
-		
-		$interface_form->set_content_form($content_form);
+		$interface_form->set_content_form($this->get_content_form());
 		return $interface_form->get_display_parameters();
 	}
 	
@@ -56,7 +59,7 @@ class mails_waiting {
 		global $mails_waiting_max_by_send;
 		
 		$this->data['attachments'] = stripslashes($mails_waiting_attachments);
-		$this->data['max_by_send'] = $mails_waiting_max_by_send+0;
+		$this->data['max_by_send'] = intval($mails_waiting_max_by_send);
 	}
 	
 	/**

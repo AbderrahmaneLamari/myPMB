@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area_form.class.php,v 1.30.2.2 2021/08/12 07:50:19 qvarin Exp $
+// $Id: contribution_area_form.class.php,v 1.34 2022/07/07 14:49:19 qvarin Exp $
 if (stristr($_SERVER ['REQUEST_URI'], ".class.php"))
     die("no access");
     
@@ -264,6 +264,8 @@ if (stristr($_SERVER ['REQUEST_URI'], ".class.php"))
                         $this->linked_scenarios[$graph_store_datas[$i]['id']] = [
                             'propertyPmbName' => $graph_store_datas[$i]['propertyPmbName'],
                             'scenarioUri' => $graph_store_datas[$i]['uri'],
+                            'attachmentId' => $graph_store_datas[$i]['attachmentId'] ?? 0,
+                            'area_id' => $this->area_id,
                         ];
                     }
                     for ($j = 0 ; $j < count($data_form); $j++) {
@@ -286,7 +288,7 @@ if (stristr($_SERVER ['REQUEST_URI'], ".class.php"))
         }
         
         public function get_linked_scenarios() {
-            if (isset($this->linked_scenarios)) {
+            if (!empty($this->linked_scenarios)) {
                 return $this->linked_scenarios;
             }
             $contribution_area_store  = new contribution_area_store();
@@ -301,6 +303,8 @@ if (stristr($_SERVER ['REQUEST_URI'], ".class.php"))
                     $this->linked_scenarios[$graph_store_datas[$i]['id']] = [
                         'propertyPmbName' => $graph_store_datas[$i]['propertyPmbName'],
                         'scenarioUri' => $graph_store_datas[$i]['uri'],
+                        'attachmentId' => $graph_store_datas[$i]['attachmentId'] ?? 0,
+                        'area_id' => $this->area_id,
                     ];
                 }
             }
@@ -491,24 +495,9 @@ if (stristr($_SERVER ['REQUEST_URI'], ".class.php"))
             ));
             
             $form =  contribution_area_form::get_contribution_area_form($params->sub,$params->form_id,$params->area_id,$params->form_uri);
-            
-            $onto_store_config = array(
-                /* db */
-                'db_name' => DATA_BASE,
-                'db_user' => USER_NAME,
-                'db_pwd' => USER_PASS,
-                'db_host' => SQL_SERVER,
-                /* store */
-                'store_name' => 'onto_contribution_form_' . $form_id,
-                /* stop after 100 errors */
-                'max_errors' => 100,
-                'store_strip_mb_comp_str' => 0,
-                'params' => $form->get_active_properties()
-            );
+            $onto_store = contribution_area_store::get_formstore($form_id, $form->get_active_properties());
             
             // Ajouts des parametres perso dans le fichier ontologies_pmb_entities
-            $onto_store = new onto_store_arc2_extended($onto_store_config);
-            $onto_store->set_namespaces(contribution_area_store::CONTRIBUTION_NAMESPACE);
             $reset = $onto_store->load($class_path."/rdf/ontologies_pmb_entities.rdf", onto_parametres_perso::is_modified());
             onto_parametres_perso::load_in_store($onto_store, $reset);
             

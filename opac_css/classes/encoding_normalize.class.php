@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: encoding_normalize.class.php,v 1.13 2021/03/11 08:07:32 qvarin Exp $
+// $Id: encoding_normalize.class.php,v 1.16 2023/02/02 15:27:38 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -19,17 +19,18 @@ if (!defined('UTF8_BOM')) {
 class encoding_normalize {
 	
 	protected static function utf8_encode($elem){
+	    $result = [];
 		if(is_array($elem)){
 			foreach ($elem as $key =>$value){
-				$elem[$key] = encoding_normalize::utf8_encode($value);
+			    $result[encoding_normalize::utf8_encode($key)] = encoding_normalize::utf8_encode($value);
 			}
 		}else if(is_object($elem)){
-			$elem = encoding_normalize::obj2array($elem);
-			$elem = encoding_normalize::utf8_encode($elem);
+		    $result = encoding_normalize::obj2array($elem);
+		    $result = encoding_normalize::utf8_encode($result);
 		}else{
-			$elem = utf8_encode($elem);
+		    $result = utf8_encode($elem);
 		}
-		return $elem;
+		return $result;
 	}
 	
 	public static function utf8_normalize($elem){
@@ -42,7 +43,7 @@ class encoding_normalize {
 	}
 	
 	
-	protected static function obj2array($obj){
+	public static function obj2array($obj){
 		$array = array();
 		if(is_object($obj)){
 			foreach($obj as $key => $value){
@@ -67,7 +68,7 @@ class encoding_normalize {
 			if(count($elem)) {
 			    $obj = array();
 				foreach ($elem as $key =>$value){
-				    $obj[$key] = encoding_normalize::charset_normalize($value,$input_charset);
+				    $obj[encoding_normalize::charset_normalize($key,$input_charset)] = encoding_normalize::charset_normalize($value,$input_charset);
 				}
 				$elem = $obj;
 			}
@@ -78,7 +79,7 @@ class encoding_normalize {
 		        $obj->{encoding_normalize::charset_normalize($key,$input_charset)} = encoding_normalize::charset_normalize($value,$input_charset);
 		    }
 		    $elem = $obj;
-		} else {
+        }else{
 			//PMB dans un autre charset, on converti la chaine...
 			$elem = self::clean_cp1252($elem, $input_charset);
 			if($charset != $input_charset){
@@ -181,7 +182,7 @@ class encoding_normalize {
 		if($charset != "utf-8"){
 			if(is_array($elem)){
 				foreach ($elem as $key =>$value){
-					$elem[$key] = encoding_normalize::utf8_decode($value);
+				    $elem[encoding_normalize::utf8_decode($key)] = encoding_normalize::utf8_decode($value);
 				}
 			}else if(is_object($elem)){
 				$elem = encoding_normalize::obj2array($elem);
@@ -193,11 +194,15 @@ class encoding_normalize {
 		return $elem;
 	}
 	
-	public static function detect_encoding($str=''){
-		
+	public static function detect_encoding($str='', $list_encodings = null) {
+
+	    if (!isset($list_encodings)) {
+	        $list_encodings = mb_list_encodings();
+	    }
+
 		$first2 = substr($str, 0, 2);
 		$first3 = substr($str, 0, 3);
-		
+
 		if ($first3 == UTF8_BOM) {
 			return 'utf-8';
 		} elseif ($first2 == UTF16_BIG_ENDIAN_BOM) {
@@ -205,12 +210,31 @@ class encoding_normalize {
 		} elseif ($first2 == UTF16_LITTLE_ENDIAN_BOM) {
 			return 'utf-16le';
 		}
-		
-		$mbde = mb_detect_encoding($str, mb_list_encodings(), true);
+
+		$mbde = mb_detect_encoding($str, $list_encodings, true);
 		if ($mbde) {
 			return $mbde;
 		}
 		return false;
+	}
+
+	/**
+	 * Permet de convertir une chaine avec le bon encodage (global $charset)
+	 * Si l'encodage n'a pas fonctionne, retourne la chaine initiale
+	 *
+	 * @param string $str
+	 * @return string
+	 */
+	public static function convert_encoding($str)
+	{
+	    global $charset;
+
+	    $encoding = mb_detect_encoding($str, ["UTF-8", "ISO-8859-1"]);
+	    if (strtolower($encoding) != $charset) {
+	        $convert = mb_convert_encoding($str, $charset, $encoding);
+	        return $convert ? $convert : $str;
+	    }
+	    return $str;
 	}
 
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_works_view_workslist.class.php,v 1.7 2021/02/26 15:56:28 moble Exp $
+// $Id: frbr_entity_works_view_workslist.class.php,v 1.7.6.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -14,7 +14,7 @@ class frbr_entity_works_view_workslist extends frbr_entity_common_view_django{
 		$this->default_template = "<div>
 {% for work in works %}
 <h3>{{work.name}}</h3>
-<blockquote>{{work.comment}}</blockquote>
+<div>{{work.comment}}</div>
 {% endfor %}
 </div>";
 	}

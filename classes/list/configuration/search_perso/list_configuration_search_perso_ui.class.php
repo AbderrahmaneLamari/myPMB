@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_search_perso_ui.class.php,v 1.9.2.1 2021/11/23 09:58:08 dgoron Exp $
+// $Id: list_configuration_search_perso_ui.class.php,v 1.11.4.2 2023/03/24 07:55:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -25,26 +25,13 @@ class list_configuration_search_perso_ui extends list_configuration_ui {
 		return "SELECT search_id as id, search_perso.* FROM search_perso";
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
+	protected function _add_query_filters() {
 		global $PMBuserid;
-	
-		$filter_query = '';
-		$this->set_filters_from_form();
-	
-		$filters = array();
-		if ($this->filters['type']) {
-			$filters [] = "search_type = '".$this->filters['type']."'";
-		}
+		
+		$this->_add_query_filter_simple_restriction('type', 'search_type');
 		if ($PMBuserid!=1) {
-			$filters [] = "(autorisations='$PMBuserid' or autorisations like '$PMBuserid %' or autorisations like '% $PMBuserid %' or autorisations like '% $PMBuserid')";
+			$this->query_filters [] = "(autorisations='$PMBuserid' or autorisations like '$PMBuserid %' or autorisations like '% $PMBuserid %' or autorisations like '% $PMBuserid')";
 		}
-		if (count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	/**
@@ -72,14 +59,13 @@ class list_configuration_search_perso_ui extends list_configuration_ui {
 	}
 	
 	protected function add_column_edit() {
-		global $msg, $charset;
+		global $msg;
 	
-		$this->columns[] = array(
-				'property' => '',
-				'label' => $msg['search_perso_table_edit'],
-				'html' => "<input class='bouton_small' value='".htmlentities($msg["search_perso_modifier"], ENT_QUOTES, $charset)."' type='button'  onClick=\"document.location='".static::get_controller_url_base()."&sub=form&id=!!id!!'\" >",
-                'exportable' => false
+		$html_properties = array(
+				'value' => $msg['search_perso_modifier'],
+				'link' => static::get_controller_url_base()."&sub=form&id=!!id!!"
 		);
+		$this->add_column_simple_action('', $msg['search_perso_table_edit'], $html_properties);
 	}
 	
 	protected function init_available_columns() {
@@ -124,6 +110,9 @@ class list_configuration_search_perso_ui extends list_configuration_ui {
 				break;
 			case 'search_directlink':
 				$content .= $this->get_cell_visible_flag($object, $property);
+				break;
+			case 'search_human':
+				$content .= $object->search_human; //conservation de l'interprétation du HTML
 				break;
 			default :
 				$content .= parent::get_cell_content($object, $property);

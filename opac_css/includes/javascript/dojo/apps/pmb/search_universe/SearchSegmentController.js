@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SearchSegmentController.js,v 1.11.2.2 2021/11/03 15:48:49 tsamson Exp $
+// $Id: SearchSegmentController.js,v 1.14.4.1 2023/07/18 15:10:07 gneveu Exp $
 
 
 define(["dojo/_base/declare",
@@ -143,6 +143,12 @@ define(["dojo/_base/declare",
     	},
     	
     	getNbResultsOtherSegments : function () {
+            // Si la zone est masqué par du CSS (display none) on ne vas par chercher les informations.
+            var segmentsListInput = document.getElementById("search_universe_segments_list");
+            if(segmentsListInput && "none" == getComputedStyle(segmentsListInput)["display"]) {
+                return;
+            }
+
 			var searchIndex = dom.byId('search_index').value;
     		var data = {'search_index' : searchIndex};    		    				
     		query('.search_universe_segments_row').forEach(link => {
@@ -150,6 +156,8 @@ define(["dojo/_base/declare",
     				this.setWaitingIcon(link);
     				var segmentId = domAttr.get(link, 'data-segment-id');
     				var universeId = domAttr.get(link, 'data-universe-id');
+    				var dynamicField = domAttr.get(link, 'data-segment-dynamic-field');
+					dynamicField = parseInt(dynamicField)
 					
 					var user_query = dom.byId('last_query').value;
 					
@@ -170,11 +178,12 @@ define(["dojo/_base/declare",
 							if (response) {
 								var resultP = query('.segment_nb_results', link)[0];
 								resultP.innerHTML = '('+response.nb_result+')';
+								if (!dynamicField) {
+									sessionStorage.setItem('universe_'+universeId+'_segment_'+segmentId+"_nb_"+user_query, response.nb_result);
+									sessionStorage.setItem('universe_'+universeId+'_segment_'+segmentId+'_query_'+user_query, user_query);
 								
-								sessionStorage.setItem('universe_'+universeId+'_segment_'+segmentId+"_nb_"+user_query, response.nb_result);
-								sessionStorage.setItem('universe_'+universeId+'_segment_'+segmentId+'_query_'+user_query, user_query);
-								
-								sessionStorage.setItem('universe_'+universeId+'_segment_'+segmentId+'_last_query', response.nb_result);
+									sessionStorage.setItem('universe_'+universeId+'_segment_'+segmentId+'_last_query', response.nb_result);
+								}
 							}
 						}));	
 					}

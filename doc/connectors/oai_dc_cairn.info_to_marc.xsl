@@ -64,7 +64,7 @@
 	
 	<xsl:template name="source">
 		<xsl:if test="dc:source!=''">
-			<xsl:call-template name="split">
+			<xsl:call-template name="split_source">
 				<xsl:with-param name="input" select="dc:source"/>
 				<xsl:with-param name="source" select="dc:source"/>
 				<xsl:with-param name="reste" select="normalize-space(' ')" />
@@ -142,16 +142,16 @@
 		</xsl:if>
 	</xsl:template>
 	
-	<xsl:template name="split">
+	<xsl:template name="split_source">
 		<xsl:param name="input" />
 		<xsl:param name="source" />
 		<xsl:param name="reste" />
 		<xsl:param name="index" select="'1'"/>
 	 
 		<xsl:choose>
-			<xsl:when test="contains($input, ',')">				
-				<xsl:call-template name="split">
-					<xsl:with-param name="input" select="substring-after($input, ',')"/>
+			<xsl:when test="contains($input, '|')">				
+				<xsl:call-template name="split_source">
+					<xsl:with-param name="input" select="substring-after($input, '|')"/>
 					<xsl:with-param name="source" select="$source"/>
 					<xsl:with-param name="reste" select="$reste"/>
 					<xsl:with-param name="index" select="$index"/>
@@ -160,38 +160,43 @@
 			<xsl:otherwise>
 				<xsl:choose>
 					<xsl:when test="$index = 1">	
+						<f c="461">
+							<s c="x"><xsl:value-of select="normalize-space($input)"/></s>
+						</f>
+					</xsl:when>
+					<xsl:when test="$index = 2">	
 						<f c="215">
 							<s c="a"><xsl:value-of select="normalize-space($input)"/></s>
 						</f>
 					</xsl:when>
-					<xsl:when test="$index = 2">
+					<xsl:when test="$index = 3">
 						<f c="463">
 							<s c="d"><xsl:value-of select="normalize-space($input)"/></s>
 						</f>
 					</xsl:when>
-					<xsl:when test="$index = 3">	
+					<xsl:when test="$index = 4">	
 						<!-- ignore -->
 					</xsl:when>
-					<xsl:when test="$index = 4">
+					<xsl:when test="$index = 5">
 						<xsl:if test="normalize-space($input)!='-'">
 							<f c="463">
 								<s c="v"><xsl:value-of select="normalize-space($input)"/></s>
 							</f>
 						</xsl:if>
 					</xsl:when>
-					<xsl:when test="$index = 5">	
+					<xsl:when test="$index = 6">	
 						<f c="461">
 							<s c="t"><xsl:value-of select="normalize-space($input)"/></s>
 						</f>
 						
 					</xsl:when>
 				</xsl:choose>
-				<xsl:if test="$index &gt; 0 and $index &lt; 6">
-					<xsl:call-template name="split">
+				<xsl:if test="$index &gt; 0 and $index &lt; 7">
+					<xsl:call-template name="split_source">
 						<xsl:with-param name="index" select="number($index)+1"/>
 						<xsl:with-param name="source" select="$source"/>
-						<xsl:with-param name="reste" select="concat(',',$input,$reste)"/>
-						<xsl:with-param name="input" select="substring-before($source, concat(',',$input,$reste))"/>
+						<xsl:with-param name="reste" select="concat('|',$input,$reste)"/>
+						<xsl:with-param name="input" select="substring-before($source, concat('|',$input,$reste))"/>
 					</xsl:call-template>
 				</xsl:if>
 			</xsl:otherwise>

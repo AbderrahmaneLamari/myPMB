@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatch_selector.class.php,v 1.10.6.1 2022/01/04 08:48:17 dgoron Exp $
+// $Id: docwatch_selector.class.php,v 1.11.4.1 2023/09/20 13:50:12 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -156,6 +156,11 @@ class docwatch_selector extends docwatch_root{
 
 	public function get_value(){
 		return $this->value;
+	}
+
+	public function get_parameters()
+	{
+		return $this->parameters;
 	}
 	
 

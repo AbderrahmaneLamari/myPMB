@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_authors_view_authorslist.class.php,v 1.4 2021/02/26 15:56:27 moble Exp $
+// $Id: frbr_entity_authors_view_authorslist.class.php,v 1.4.6.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 require_once($class_path."/author.class.php");
@@ -15,7 +15,7 @@ class frbr_entity_authors_view_authorslist extends frbr_entity_common_view_djang
 		$this->default_template = "<div>
 {% for author in authors %}
 <h3>{{author.name}}</h3>
-<blockquote>{{author.comment}}</blockquote>
+<div>{{author.comment}}</div>
 {% endfor %}
 </div>";
 	}

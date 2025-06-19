@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_instruments.class.php,v 1.4.4.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: nomenclature_instruments.class.php,v 1.5.4.1 2023/05/05 13:45:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -42,7 +42,7 @@ class nomenclature_instruments{
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)){
 			while($row = pmb_mysql_fetch_object($result)){
-				$this->add_instrument( new nomenclature_instrument($row->id_instrument));				
+				$this->add_instrument(nomenclature_instrument::get_instance($row->id_instrument));				
 			}
 		}		
 	}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_categories_controller.class.php,v 1.24.2.2 2021/08/27 13:59:07 tsamson Exp $
+// $Id: entities_categories_controller.class.php,v 1.28.4.1 2023/04/07 09:15:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -174,7 +174,7 @@ class entities_categories_controller extends entities_authorities_controller {
 	}
 	
 	public function proceed() {
-	    global $sub, $save_and_continue, $category_parent_id, $parent;
+		global $sub, $save_and_continue, $category_parent_id, $PMBuserid, $parent;
 	
 		switch($sub) {
 			case 'delete':
@@ -183,7 +183,18 @@ class entities_categories_controller extends entities_authorities_controller {
 			        print $entity_locking->get_locked_form();
 			        break;
 			    }
-				$this->proceed_delete();
+			    // On déclenche un événement sur la supression
+			    $evt_handler = events_handler::get_instance();
+			    $event = new event_entity("entity", "has_deletion_rights");
+			    $event->set_entity_id($this->id);
+			    $event->set_entity_type($this->get_aut_const());
+			    $event->set_user_id($PMBuserid);
+			    $evt_handler->send($event);
+			    if($event->get_error_message()){
+			    	information_message('', $event->get_error_message(), 1, $this->get_permalink());
+			    } else {
+			    	$this->proceed_delete();
+			    }
 				break;
 			case 'update':
 			    $entity_locking = new entity_locking($this->id, $this->get_aut_const());
@@ -320,6 +331,12 @@ class entities_categories_controller extends entities_authorities_controller {
 			exit ;
 		}
 		
+		$parent_ancestors = noeuds::listAncestors($category_parent_id);
+		if ($this->id && in_array($this->id, $parent_ancestors)) {
+			error_form_message($msg["categ_update_error_parent_daughter"]);
+			exit ;
+		}
+		
 		//recuperation de la table des langues
 		$langages = new XMLlist("$include_path/messages/languages.xml", 1);
 		$langages->analyser();
@@ -342,10 +359,6 @@ class entities_categories_controller extends entities_authorities_controller {
 			error_form_message($msg['categ_num_aut_not_unique']);
 			exit;
 		}
-		
-		//Si pas de parent, le parent est le noeud racine du thesaurus
-		if (!$category_parent_id) $category_parent_id = $thes->num_noeud_racine;
-		
 		//synchro_rdf : on empile les noeuds impactés pour les traiter plus loin
 		if($pmb_synchro_rdf){
 			$arrayIdImpactes=array();
@@ -354,7 +367,7 @@ class entities_categories_controller extends entities_authorities_controller {
 				//on est en mise à jour
 				$arrayIdImpactes[]=$this->id;
 				//parent
-				if($noeud->num_parent!=$thes->num_noeud_racine){
+				if($noeud->num_parent != $thes->num_noeud_racine && $this->id_thes == $noeud->num_thesaurus){
 					$arrayIdImpactes[]=$noeud->num_parent;
 				}
 				//enfants
@@ -381,6 +394,17 @@ class entities_categories_controller extends entities_authorities_controller {
 		if($this->id) {
 			//noeud existant
 			$noeud = new noeuds($this->id);
+			//Si pas de parent, le parent est le noeud racine du thesaurus
+			if (!$category_parent_id) {
+			    //on teste d'abord si le thesaurus en session est le même que celui du noeud
+			    if ($this->id_thes == $noeud->num_thesaurus) {
+			        $category_parent_id = $thes->num_noeud_racine;
+			    } else {
+			        $this->id_thes = $noeud->num_thesaurus;
+			        $thes = new thesaurus($this->id_thes);
+			        $category_parent_id = $thes->num_noeud_racine;
+			    }
+			}
 			if (!noeuds::isProtected($this->id)) {
 				$noeud->num_parent = $category_parent_id;
 				$noeud->num_renvoi_voir = $category_voir_id;
@@ -392,6 +416,10 @@ class entities_categories_controller extends entities_authorities_controller {
 				$noeud->save();
 			}
 		} else {
+		    //Si pas de parent, le parent est le noeud racine du thesaurus
+		    if (!$category_parent_id) {
+		        $category_parent_id = $thes->num_noeud_racine;
+		    }
 			//noeud a creer
 			$noeud = new noeuds();
 			$noeud->num_parent = $category_parent_id;

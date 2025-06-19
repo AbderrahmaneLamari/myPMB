@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serialcirc_ask.class.php,v 1.12.2.1 2021/12/21 15:05:29 dgoron Exp $
+// $Id: serialcirc_ask.class.php,v 1.15 2022/08/01 06:44:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,6 +16,8 @@ class serialcirc_ask {
 
 	public $ask_info=array();
 
+	public $empr_info=array();
+	
 	public function __construct($id) {
 		$this->id=intval($id);		
 		$this->fetch_data(); 
@@ -100,40 +102,25 @@ class serialcirc_ask {
 		}	
 		return 0;	
 	}
-	public function ask_send_mail($empr_id,$objet,$texte_mail){
-		global $biblio_name,$biblio_email,$PMBuseremailbcc;
-		
-		$empr_info=$this->empr_info($empr_id);
-		$texte_mail=str_replace("!!issue!!", $this->ask_info['perio']['header'], $texte_mail);			
-		return mailpmb($empr_info["prenom"]." ".$empr_info["nom"], $empr_info["mail"], $objet,	$texte_mail, $biblio_name, $biblio_email,"", "", $PMBuseremailbcc,1);
-	}
 	
 	public function accept(){
-		global $serialcirc_inscription_accepted_mail,$serialcirc_inscription_end_mail,$msg,$charset;
-		
-		if ($charset=="utf-8") {
-			$serialcirc_inscription_accepted_mail = utf8_encode($serialcirc_inscription_accepted_mail);
-			$serialcirc_inscription_end_mail = utf8_encode($serialcirc_inscription_end_mail);
-		}
-		
 		$req="update serialcirc_ask set serialcirc_ask_statut=1 where id_serialcirc_ask=".$this->id;
 		pmb_mysql_query($req);	
 		// send mail
-		if($this->ask_info['type']) $this->ask_send_mail($this->ask_info['num_empr'],$msg["serialcirc_circ_title"],$serialcirc_inscription_end_mail);
-		else $this->ask_send_mail($this->ask_info['num_empr'],$msg["serialcirc_circ_title"],$serialcirc_inscription_accepted_mail);
+		$mail_serialcirc_ask_accept = new mail_serialcirc_ask_accept();
+		$mail_serialcirc_ask_accept->set_mail_to_id($this->ask_info['num_empr']);
+		$mail_serialcirc_ask_accept->set_serialcirc_ask($this);
+		$mail_serialcirc_ask_accept->send_mail();
 	}
 	
 	public function refus(){
-		global $serialcirc_inscription_no_mail,$msg,$charset;
-		
-		if ($charset=="utf-8") {
-			$serialcirc_inscription_no_mail = utf8_encode($serialcirc_inscription_no_mail);
-		}
-		
 		$req="update serialcirc_ask set serialcirc_ask_statut=2 where id_serialcirc_ask=".$this->id;
 		pmb_mysql_query($req);	
 		// send mail
-		$this->ask_send_mail($this->ask_info['num_empr'],$msg["serialcirc_circ_title"],$serialcirc_inscription_no_mail);		
+		$mail_serialcirc_ask_refus = new mail_serialcirc_ask_refus();
+		$mail_serialcirc_ask_refus->set_mail_to_id($this->ask_info['num_empr']);
+		$mail_serialcirc_ask_refus->set_serialcirc_ask($this);
+		$mail_serialcirc_ask_refus->send_mail();
 	}
 	
 	public static function set_inscription($id_perio,$id_empr,$id_serialcirc=0){
@@ -171,20 +158,27 @@ class serialcirc_ask {
 	}
 	
 	public function empr_info($id){
-		$info=array();
-		$req="select empr_cb, empr_nom ,  empr_prenom, empr_mail from empr where id_empr=".$id;
-		$res_empr=pmb_mysql_query($req);
-		if ($empr=pmb_mysql_fetch_object($res_empr)) {			
-			$info['cb'] = $empr->empr_cb;
-			$info['nom'] = $empr->empr_nom; 
-			$info['prenom'] = $empr->empr_prenom;  
-			$info['mail'] = $empr->empr_mail;  		
-			$info['id_empr']=$id;
-			$info['empr_libelle']=$info['nom']." ".$info['prenom']." ( ".$info['cb'] ." ) ";
-			$info['view_link']='./circ.php?categ=pret&form_cb='.$empr->empr_cb;
+		$id = intval($id);
+		if(empty($this->empr_info[$id])) {
+			$info=array();
+			$req="select empr_cb, empr_nom ,  empr_prenom, empr_mail from empr where id_empr=".$id;
+			$res_empr=pmb_mysql_query($req);
+			if ($empr=pmb_mysql_fetch_object($res_empr)) {			
+				$info['cb'] = $empr->empr_cb;
+				$info['nom'] = $empr->empr_nom; 
+				$info['prenom'] = $empr->empr_prenom;  
+				$info['mail'] = $empr->empr_mail;  		
+				$info['id_empr']=$id;
+				$info['empr_libelle']=$info['nom']." ".$info['prenom']." ( ".$info['cb'] ." ) ";
+				$info['view_link']='./circ.php?categ=pret&form_cb='.$empr->empr_cb;
+			}
+			$this->empr_info[$id]=$info;
 		}
-		$this->empr_info[$id]=$info;
-		return $info;
-	}	
+		return $this->empr_info[$id];
+	}
+	
+	public function get_ask_info() {
+		return $this->ask_info;
+	}
 	
 } //serialcirc class end

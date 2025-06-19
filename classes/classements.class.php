@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: classements.class.php,v 1.11 2021/03/15 11:02:58 dgoron Exp $
+// $Id: classements.class.php,v 1.11.6.1 2023/09/02 08:33:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -28,7 +28,7 @@ class classement {
 	public function getData() {
 		$this->type_classement	= 'BAN';
 		$this->nom_classement	= '';	
-		$this->nom_classemen_opac = '';	
+		$this->nom_classement_opac = '';	
 		$this->order = 0;
 		if($this->id_classement) {
 			$requete = "SELECT type_classement, nom_classement, classement_opac_name, classement_order FROM classements WHERE id_classement='$this->id_classement' ";
@@ -46,23 +46,33 @@ class classement {
 		}
 	}
 
+	public function get_content_form() {
+	    global $msg;
+	    
+	    $interface_content_form = new interface_content_form(static::class);
+	    $interface_content_form->add_element('nom_classement', 'dsi_clas_form_nom')
+	    ->set_class('colonne2')
+	    ->add_input_node('text', $this->nom_classement);
+	    
+	    if ($this->id_classement) {
+	        $type_classement = $msg['dsi_clas_type_class_'.$this->type_classement] ;
+	    } else {
+	        $type_classement = "<select id='type_classement' name='type_classement'><option value='BAN'>".$msg['dsi_clas_type_class_BAN']."</option><option value='EQU'>".$msg['dsi_clas_type_class_EQU']."</OPTION></select>";
+	    }
+	    $interface_content_form->add_element('type_classement', 'dsi_clas_form_type')
+	    ->set_class('colonne_suite')
+	    ->add_html_node($type_classement);
+	    
+	    $interface_content_form->add_element('nom_classement_opac', 'dsi_clas_form_nom_opac')
+	    ->add_input_node('text', $this->nom_classement_opac);
+	    return $interface_content_form->get_display();
+	}
+	
 	// ---------------------------------------------------------------
 	//		show_form : affichage du formulaire de saisie
 	// ---------------------------------------------------------------
 	public function show_form($type="pro") {
-		global $msg, $charset;
-		global $dsi_classement_content_form;
-	
-		$content_form = $dsi_classement_content_form;
-		if ($this->id_classement) {
-			$type_classement = $msg['dsi_clas_type_class_'.$this->type_classement] ;
-		} else {
-			$type_classement = "<select id='type_classement' name='type_classement'><option value='BAN'>".$msg['dsi_clas_type_class_BAN']."</option><option value='EQU'>".$msg['dsi_clas_type_class_EQU']."</OPTION></select>";
-		}
-		$content_form = str_replace('!!id_classement!!', $this->id_classement, $content_form);
-		$content_form = str_replace('!!nom_classement!!', htmlentities($this->nom_classement,ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!nom_classement_opac!!', htmlentities($this->nom_classement_opac,ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!type_classement!!', $type_classement, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_dsi_form('saisie_classement');
 		if(!$this->id_classement){
@@ -70,10 +80,9 @@ class classement {
 		}else{
 			$interface_form->set_label($msg['dsi_clas_form_modif']);
 		}
-		
 		$interface_form->set_object_id($this->id_classement)
 		->set_confirm_delete_msg($msg['confirm_suppr'])
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('classements')
 		->set_field_focus('nom_classement');
 		return $interface_form->get_display();
@@ -116,8 +125,29 @@ class classement {
 		pmb_mysql_query($requete);
 	}
 	
+	protected function init_order() {
+		if($this->type_classement == 'BAN'){
+			$query_where = "(type_classement='BAN' or type_classement='')";
+		} else {
+			$query_where = "(type_classement='EQU')";
+		}
+		$query = "SELECT id_classement, classement_order 
+				FROM classements 
+				WHERE ".$query_where."
+				ORDER BY classement_order, nom_classement";
+		$result = pmb_mysql_query($query);
+		if(pmb_mysql_num_rows($result)) {
+			$order = 1;
+			while ($row = pmb_mysql_fetch_object($result)) {
+				pmb_mysql_query("UPDATE classements SET classement_order = '".$order."' WHERE id_classement = ".$row->id_classement);
+				$order++;
+			}
+		}
+	}
+	
 	// ---------------------------------------------------------------
 	public function set_order($sens) {
+		$this->init_order();
 		if($this->type_classement == 'BAN'){
 			$query_where = "(type_classement='BAN' or type_classement='')";
 		} else {
@@ -130,7 +160,7 @@ class classement {
 				$ordre=pmb_mysql_result($resultat,0,0);
 				$requete="select max(classement_order) as ordre from classements where ".$query_where." and classement_order<$ordre";
 				$resultat=pmb_mysql_query($requete);
-				$ordre_max=@pmb_mysql_result($resultat,0,0);
+				$ordre_max=pmb_mysql_result($resultat,0,0);
 				if ($ordre_max != '') {
 					$requete="select id_classement from classements where ".$query_where." and classement_order=$ordre_max limit 1";
 					$resultat=pmb_mysql_query($requete);
@@ -147,7 +177,7 @@ class classement {
 				$ordre=pmb_mysql_result($resultat,0,0);
 				$requete="select min(classement_order) as ordre from classements where ".$query_where." and classement_order>$ordre";
 				$resultat=pmb_mysql_query($requete);
-				$ordre_min=@pmb_mysql_result($resultat,0,0);
+				$ordre_min=pmb_mysql_result($resultat,0,0);
 				if ($ordre_min != '') {
 					$requete="select id_classement from classements where ".$query_where." and classement_order=$ordre_min limit 1";
 					$resultat=pmb_mysql_query($requete);

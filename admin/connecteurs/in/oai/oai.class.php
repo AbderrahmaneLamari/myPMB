@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: oai.class.php,v 1.48.2.4 2022/01/14 14:55:11 dgoron Exp $
+// $Id: oai.class.php,v 1.53.4.2 2023/09/01 12:41:47 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -38,6 +38,24 @@ class oai extends connector {
 		return 1;
 	}
     
+	//Formulaire des propriétés générales
+	public function get_property_form() {
+		$this->fetch_global_properties();
+		//Affichage du formulaire en fonction de $this->parameters
+		$parameters = unserialize($this->parameters);
+		
+		if(!isset($parameters['sets_completion'])) {
+			$parameters['sets_completion'] = '1';
+		}
+		$r="
+			<div class='row'>
+				<div class='colonne3'><label for='sets_completion'>".$this->msg["oai_sets_to_sync_completion_format"]."</label></div>
+				<div class='colonne-suite'><input type='checkbox' id='sets_completion' name='sets_completion' value='1' ".(!empty($parameters['sets_completion']) ? "checked='checked'" : "")." /></div>
+			</div>
+			";
+		return $r;
+	}
+	
     public function source_get_property_form($source_id) {
         global $base_path, $charset, $clean_base_url, $sets, $formats, $xsl_transform, $url;
         global $del_deleted, $clean_html;
@@ -57,7 +75,7 @@ class oai extends connector {
     			<label for='url'>".$this->msg["oai_url"]."</label>
     		</div>
     		<div class='colonne_suite'>
-    			<input type='text' name='url' id='url' class='saisie-80em' value='".htmlentities($url, ENT_QUOTES, $charset)."'/>
+    			<input type='text' name='url' id='url' class='saisie-80em' value='".htmlentities($url ?? "", ENT_QUOTES, $charset)."'/>
     		</div>
 	    </div>
 		<div class='row'>
@@ -131,21 +149,41 @@ class oai extends connector {
 							$elements[] = array('id' => $code, 'name' => $set['name'].($set['description'] ? " (".$set['description'].")" : ""));
 						}
 					}
-					$form .= "<script type='text/javascript' src='".$base_path."/javascript/ajax.js'></script>";
-					templates::init_completion_attributes(array(
-					    array('name' => 'att_id_filter', 'value' => $source_id), 
-					    array('name' => 'source_url', 'value' => urlencode($vars['url'])),
-                        array('name' => 'connector_path', 'value' => $this->get_id()),
-					    array('name' => 'connector_name', 'value' => $this->get_id())
-				    ));
-					templates::init_selection_attributes(array(
-					    array('name' => 'source_id', 'value' => $source_id), 
-					    array('name' => 'source_url', 'value' => urlencode($vars['url'])),
-					    array('name' => 'connector_path', 'value' => $this->get_id()),
-					    array('name' => 'connector_name', 'value' => $this->get_id())
-					));
-					$form .= oai::get_syncronised_sets_template($elements, 'source_form', 'sets', 'set_id', 'connectors', true);
-					$form .= "</div></div>";
+					
+					$unserialized_parameters = unserialize($this->parameters);
+					if(isset($unserialized_parameters['sets_completion'])) {
+						$sets_completion = $unserialized_parameters['sets_completion'] ?? 0;
+					} else {
+						$sets_completion = 1;
+					}
+					if(!empty($sets_completion)) {
+						$form .= "<script type='text/javascript' src='".$base_path."/javascript/ajax.js'></script>";
+						templates::init_completion_attributes(array(
+						    array('name' => 'att_id_filter', 'value' => $source_id), 
+						    array('name' => 'source_url', 'value' => urlencode($vars['url'])),
+	                        array('name' => 'connector_path', 'value' => $this->get_id()),
+						    array('name' => 'connector_name', 'value' => $this->get_id())
+					    ));
+						templates::init_selection_attributes(array(
+						    array('name' => 'source_id', 'value' => $source_id), 
+						    array('name' => 'source_url', 'value' => urlencode($vars['url'])),
+						    array('name' => 'connector_path', 'value' => $this->get_id()),
+						    array('name' => 'connector_name', 'value' => $this->get_id())
+						));
+						$form .= oai::get_syncronised_sets_template($elements, 'source_form', 'sets', 'set_id', 'connectors', true);
+					} else {
+						if (count($oai_p->sets)<80) $combien = count($oai_p->sets);
+						else $combien=80;
+						$form.="<select id='sets' name='sets[]' class='saisie-80em' multiple='yes' size='".$combien."'>";
+						foreach ($oai_p->sets as $code => $set) {
+							$set_name = $set['name'].($set['description'] ? " (".$set['description'].")" : "");
+							$form.="<option value='".htmlentities($code,ENT_QUOTES,$charset)."' alt='".htmlentities($set_name,ENT_QUOTES,$charset)."' title='".htmlentities($set_name,ENT_QUOTES,$charset)."' ".(@array_search($code,$sets)!==false?"selected":"").">".htmlentities($set_name,ENT_QUOTES,$charset)."</option>\n";
+						}
+						$form.="	</select>";
+					}
+					$form .= "
+						<input type='hidden' name='sets_completion' value='".$sets_completion."' />
+					</div></div>";
 				}
 				$form .= "
 				<div class='row'>
@@ -210,12 +248,25 @@ class oai extends connector {
 		return $form;
     }
     
+    public function make_serialized_properties() {
+    	global $sets_completion;
+    	//Mise en forme des paramètres à partir de variables globales (mettre le résultat dans $this->parameters)
+    	$param = array();
+    	
+    	$param['sets_completion']=$sets_completion ?? 0;
+    	$this->parameters = serialize($param);
+    }
+    
     public function make_serialized_source_properties($source_id) {
-    	global $url,$clean_base_url,$formats,$del_deleted,$del_xsl_transform,$clean_html;
+    	global $url,$clean_base_url,$formats,$del_deleted,$del_xsl_transform,$clean_html, $sets, $sets_completion;
     	$t=array();
     	$t["url"]=stripslashes($url);
     	$t["clean_base_url"]=$clean_base_url;
-    	$t["sets"]=templates::get_values_completion_field_from_form('sets');
+    	if(!empty($sets_completion)) {
+    		$t["sets"]=templates::get_values_completion_field_from_form('sets');
+    	} else {
+    		$t["sets"]=$sets;
+    	}
     	$t["formats"]=$formats;
     	$t["del_deleted"]=$del_deleted;
     	$t["clean_html"]=$clean_html;
@@ -426,6 +477,7 @@ class oai extends connector {
 		$envt["form_radio"]=$form_radio;
 		return $envt;
 	}
+
 	
 	public function maj_entrepot($source_id,$callback_progress="",$recover=false,$recover_env="") {
 		global $form_from, $form_until, $form_radio;
@@ -470,6 +522,7 @@ class oai extends connector {
 						$last_date=$earliest_date->iso8601_to_unixtime($oai20->earliestDatestamp);
 					}
 					$date_start=$last_date;
+					$date_end = '';
 				} else {
 					if ($form_from)
 						$date_start=strtotime($form_from);
@@ -564,5 +617,33 @@ class oai extends connector {
 	    
 	    return $display;
 	}
+	
+	/**
+	 * Permet de verifier les donnees passees dans l'environnement
+	 *
+	 * @param int $source_id
+	 * @param array $env
+	 * @return array
+	 */
+	public function check_environnement($source_id, $env) {
+
+	    if (!in_array($env['form_radio'], ['all_notices', 'last_sync', 'date_sync'], true)) {
+	        $env['form_radio'] = 'date_sync';
+	    }
+
+	    // Format accepte : "Y-m-d"
+	    if (!preg_match("/^[0-9]{4}(-[0-9]{2}){2}$/", $env['form_from'])) {
+	        $env['form_from'] = date("Y-m-d", time());
+	    }
+	    if (!preg_match("/^[0-9]{4}(-[0-9]{2}){2}$/", $env['form_until'])) {
+	        $env['form_until'] = "";
+	    }
+
+	    $clean_env = [];
+	    $clean_env['form_radio'] = $env['form_radio'] ?? "";
+	    $clean_env['form_from'] = $env['form_from'];
+	    $clean_env['form_until'] = $env['form_until'] ?? "";
+
+	    return $clean_env;
+	}
 }
-?>

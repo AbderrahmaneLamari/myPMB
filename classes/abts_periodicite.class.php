@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: abts_periodicite.class.php,v 1.3 2021/02/19 13:53:19 dgoron Exp $
+// $Id: abts_periodicite.class.php,v 1.3.6.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -55,13 +55,33 @@ class abts_periodicite {
 		}				
 	}
 	
+	public function get_content_form() {
+		global $msg;
+		
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', 'abonnements_periodicite_libelle')
+		->add_input_node('text', $this->libelle);
+		$interface_content_form->add_element('duree', 'abonnements_periodicite_duree')
+		->add_input_node('text', $this->duree);
+		
+		$options = array(
+				'0' => $msg['abonnements_periodicite_unite_jour'],
+				'1' => $msg['abonnements_periodicite_unite_mois'],
+				'2' => $msg['abonnements_periodicite_unite_annee']
+		);
+		$interface_content_form->add_element('unite', 'abonnements_periodicite_unite')
+		->add_select_node($options, $this->unite);
+		$interface_content_form->add_element('seuil_periodicite', 'seuil_periodicite')
+		->add_input_node('text', $this->seuil_periodicite);
+		$interface_content_form->add_element('retard_periodicite', 'retard_periodicite')
+		->add_input_node('text', $this->retard_periodicite);
+		$interface_content_form->add_element('consultation_duration', 'serialcirc_consultation_duration')
+		->add_input_node('text', $this->consultation_duration);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_abonnements_periodicite_content_form;
-		global $charset;
-		
-		$content_form = $admin_abonnements_periodicite_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('typdocform');
 		if(!$this->id){
@@ -69,27 +89,9 @@ class abts_periodicite {
 		}else{
 			$interface_form->set_label($msg['118']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!duree!!', htmlentities($this->duree,ENT_QUOTES, $charset), $content_form);
-		$selected=array();
-		$selected[0]=$selected[1]=$selected[2]='';
-		$selected[$this->unite]= "selected='selected'";
-		$str_unite="
-       <select id='unite' name='unite'>
-        <option value='0'$selected[0]>".$msg['abonnements_periodicite_unite_jour']."</option>
-        <option value='1'$selected[1]>".$msg['abonnements_periodicite_unite_mois']."</option>
-        <option value='2'$selected[2]>".$msg['abonnements_periodicite_unite_annee']."</option>
-        </select>";
-		$content_form = str_replace('!!unite!!', $str_unite, $content_form);
-		
-		$content_form = str_replace('!!seuil_periodicite!!', htmlentities($this->seuil_periodicite,ENT_QUOTES, $charset), $content_form);
-		
-		$content_form = str_replace('!!retard_periodicite!!', htmlentities($this->retard_periodicite,ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!consultation_duration!!', htmlentities($this->consultation_duration,ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('abts_periodicites')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();

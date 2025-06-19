@@ -2,26 +2,11 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_model.tpl.php,v 1.1.2.5 2021/11/19 14:45:19 dgoron Exp $
+// $Id: selector_model.tpl.php,v 1.4.4.1 2023/07/04 09:16:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $msg, $charset, $selector_content_form, $selector_display_modes_content_form;
-
-$selector_content_form = "
-<div class='row'>
-	<label class='etiquette' for='selector_parameters_opac'>".$msg['selector_parameters_tabs']."</label>
-</div>
-<div class='row'>
-	!!parameters_tabs!!
-</div>
-<div class='row'>
-	<label class='etiquette' for='selector_parameters_opac'>".$msg['selector_display_modes']."</label>
-</div>
-<div class='row'>
-	!!display_modes!!
-</div>
-<input type='hidden' id='selector_name' name='selector_name' value='!!name!!' />";
+global $msg, $charset, $selector_display_modes_content_form;
 
 $selector_display_modes_content_form = "
 <div class='row'>

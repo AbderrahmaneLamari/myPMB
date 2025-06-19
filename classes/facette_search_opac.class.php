@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facette_search_opac.class.php,v 1.46.2.1 2021/11/15 10:18:02 gneveu Exp $
+// $Id: facette_search_opac.class.php,v 1.49.4.1 2023/11/16 13:17:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -67,6 +67,10 @@ class facette_search_opac {
 		        $type = "notices_externes";
 		    }
 			$file = static::get_xml_file($type);
+			if (!file_exists($file)) {
+			    self::$fields[$type] = [];
+			    return;
+			}
 			$fp=fopen($file,"r");
 			if ($fp) {
 				$xml=fread($fp,filesize($file));
@@ -78,19 +82,18 @@ class facette_search_opac {
 	
 	//creation de la liste des criteres principaux
 	public function create_list_fields($crit=0, $ss_crit=0){
-		global $msg, $charset;
+		global $charset;
 	
 		$fields_sorted = $this->fields_sort();
 		$select ="<select id='list_crit' name='list_crit' onchange='load_subfields(0)'>";
 		foreach ($fields_sorted as $id => $value) {
 			if($id == $this->get_authperso_start()) {
-				$query = "select id_authperso, authperso_name from authperso order by authperso_name";
-				$result = pmb_mysql_query($query);
-				if (pmb_mysql_num_rows($result)) {
-					while($row = pmb_mysql_fetch_object($result)) {
-						$select.="<option value=".($this->get_authperso_start() + $row->id_authperso)." ".($this->get_authperso_start() + $row->id_authperso == $crit ? "selected='selected'": "").">".htmlentities($row->authperso_name, ENT_QUOTES, $charset)."</option>";
-					}
-				}
+			    $objects = list_authperso_ui::get_instance()->get_objects();
+			    if(!empty($objects)) {
+			        foreach ($objects as $object) {
+			            $select.="<option value=".($this->get_authperso_start() + $object->id)." ".($this->get_authperso_start() + $object->id == $crit ? "selected='selected'": "").">".htmlentities($object->info['name'], ENT_QUOTES, $charset)."</option>";
+			        }
+			    }
 			} else {
 				$select.="<option value=".$id." ".($id==$crit ? "selected='selected'": "").">".htmlentities($value, ENT_QUOTES, $charset)."</option>";
 			}
@@ -190,19 +193,21 @@ class facette_search_opac {
 		global $msg;
 		
 		$array_sort = array();
-		for($i=0;$i<count(self::$fields[$this->type]['FIELD']);$i++){
-		    $prev_tmp = '';
-		    if(isset(self::$fields[$this->type]['FIELD'][$i]['TABLE'][0]['NAME'])){
-		        $prev_tmp = (isset($msg[self::$fields[$this->type]['FIELD'][$i]['TABLE'][0]['NAME']]) ? $msg[self::$fields[$this->type]['FIELD'][$i]['TABLE'][0]['NAME']] : self::$fields[$this->type]['FIELD'][$i]['TABLE'][0]['NAME']);
-		    }
-		    if(isset($msg[self::$fields[$this->type]['FIELD'][$i]['NAME']]) && $tmp = $msg[self::$fields[$this->type]['FIELD'][$i]['NAME']]){
-				$lib = $tmp;
-			}else{
-				$lib = self::$fields[$this->type]['FIELD'][$i]['NAME'];
-			}
-			$array_sort[self::$fields[$this->type]['FIELD'][$i]['ID']+0] = $lib.($prev_tmp ? ' - '.$prev_tmp : '');
+		if (isset(self::$fields[$this->type]['FIELD'])) {
+    		for($i=0;$i<count(self::$fields[$this->type]['FIELD']);$i++){
+    		    $prev_tmp = '';
+    		    if(isset(self::$fields[$this->type]['FIELD'][$i]['TABLE'][0]['NAME'])){
+    		        $prev_tmp = (isset($msg[self::$fields[$this->type]['FIELD'][$i]['TABLE'][0]['NAME']]) ? $msg[self::$fields[$this->type]['FIELD'][$i]['TABLE'][0]['NAME']] : self::$fields[$this->type]['FIELD'][$i]['TABLE'][0]['NAME']);
+    		    }
+    		    if(isset($msg[self::$fields[$this->type]['FIELD'][$i]['NAME']]) && $tmp = $msg[self::$fields[$this->type]['FIELD'][$i]['NAME']]){
+    				$lib = $tmp;
+    			}else{
+    				$lib = self::$fields[$this->type]['FIELD'][$i]['NAME'];
+    			}
+    			$array_sort[self::$fields[$this->type]['FIELD'][$i]['ID']+0] = $lib.($prev_tmp ? ' - '.$prev_tmp : '');
+    		}
+    		asort($array_sort);
 		}
-		asort($array_sort);
 		return $array_sort;
 		
 	}
@@ -227,7 +232,7 @@ class facette_search_opac {
 		    while($row=pmb_mysql_fetch_object($result)){
 		        $array_subfields[$row->idchamp] = $row->titre;
 		    }
-		} elseif($id > $this->get_authperso_start()) {
+		} elseif(($id > $this->get_authperso_start()) && ($id < ($this->get_authperso_start()+100))) {//on garde une plage de cent authperso différentes
 			$array_subfields[0] = $msg['facette_isbd'];
 			$result = pmb_mysql_query("select idchamp,titre from authperso_custom where num_type='".($id-$this->get_authperso_start())."' and search = 1 order by titre asc");
 			while($row=pmb_mysql_fetch_object($result)){

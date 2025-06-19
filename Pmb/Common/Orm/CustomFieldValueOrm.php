@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: CustomFieldValueOrm.php,v 1.7 2020/10/05 13:39:25 qvarin Exp $
+// $Id: CustomFieldValueOrm.php,v 1.9 2023/02/22 16:04:07 qvarin Exp $
 
 namespace Pmb\Common\Orm;
 
@@ -69,7 +69,7 @@ abstract class CustomFieldValueOrm extends Orm
     {
         return false;
     }
-    
+
     /**
      *
      * @return array
@@ -89,7 +89,27 @@ abstract class CustomFieldValueOrm extends Orm
         }
         return $instances;
     }
-    
+
+    /**
+     *
+     * @return array
+     */
+    public static function findAll()
+    {
+        $query = "SELECT * FROM " . static::$tableName;
+        $result = pmb_mysql_query($query);
+        $instances = array();
+        if (pmb_mysql_num_rows($result)) {
+            $className = static::class;
+            foreach ($result as $row) {
+                $instance = new $className(0);
+                $instance->feedObject($row);
+                $instances[] = $instance;
+            }
+        }
+        return $instances;
+    }
+
     /**
      *
      * @param array $data
@@ -112,7 +132,7 @@ abstract class CustomFieldValueOrm extends Orm
             return $this->{Helper::camelize("get " . $label)}();
         }
         
-        if (in_array($label, array_keys(static::$relations))) {
+        if (in_array($label, array_keys(static::$relations[static::class]))) {
             return $this->getRelated($label);
         }
         if (static::$reflectionClass->hasProperty($label)) {

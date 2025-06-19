@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Auth.php,v 1.7.4.1 2022/01/10 08:35:26 dgoron Exp $
+// $Id: Auth.php,v 1.8 2022/01/10 08:31:27 dgoron Exp $
 namespace Sabre\PMB;
 
 use Sabre\DAV;

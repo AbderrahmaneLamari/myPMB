@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scan_request.tpl.php,v 1.16 2020/05/29 13:49:21 gneveu Exp $
+// $Id: scan_request.tpl.php,v 1.17 2022/07/12 07:54:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -176,8 +176,8 @@ $scan_request_form_in_record_scripts = '
 	function scan_request_test_form(id_suffix){
 		var title = document.getElementById("scan_request_title" + id_suffix).value;
 		var date = document.getElementById("scan_request_date" + id_suffix).value;
-		var wish_date = document.getElementById("scan_request_wish_date" + id_suffix).nextElementSibling.value;
-		var deadline_date = document.getElementById("scan_request_deadline_date" + id_suffix).nextElementSibling.value;
+		var wish_date = document.getElementById("scan_request_wish_date" + id_suffix).value;
+		var deadline_date = document.getElementById("scan_request_deadline_date" + id_suffix).value;
 				
 		if(title.trim().length == 0){
 			alert("'.addslashes($msg['scan_request_test_form_title_mandatory']).'");

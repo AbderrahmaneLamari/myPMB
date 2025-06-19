@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_condition.class.php,v 1.22.8.1 2022/01/03 11:45:55 dgoron Exp $
+// $Id: cms_module_common_condition.class.php,v 1.24 2022/02/18 09:09:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,16 +16,15 @@ class cms_module_common_condition extends cms_module_root{
 	}
 	
 	protected function fetch_datas(){
-		global $dbh;
 		if($this->id){
 			//on commence par aller chercher ses infos
 			$query = " select id_cadre_content, cadre_content_hash, cadre_content_num_cadre, cadre_content_data from cms_cadre_content where id_cadre_content = '".$this->id."'";
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
 				$row = pmb_mysql_fetch_object($result);
-				$this->id = $row->id_cadre_content+0;
+				$this->id = (int) $row->id_cadre_content;
 				$this->hash = $row->cadre_content_hash;
-				$this->cadre_parent = $row->cadre_content_num_cadre+0;
+				$this->cadre_parent = (int) $row->cadre_content_num_cadre;
 				$this->unserialize($row->cadre_content_data);
 			}
 			//on va chercher les infos des sélecteurs...
@@ -34,7 +33,7 @@ class cms_module_common_condition extends cms_module_root{
 			if(pmb_mysql_num_rows($result)){
 				while($row=pmb_mysql_fetch_object($result)){
 					$this->selectors[] = array(
-						'id' => $row->id_cadre_content+0,
+					    'id' => (int) $row->id_cadre_content,
 						'name' => $row->cadre_content_object
 					);	
 				}
@@ -194,10 +193,12 @@ class cms_module_common_condition extends cms_module_root{
 			} 
 			//sélecteur
 			$selector_id = 0;
-			for($i=0 ; $i<count($this->selectors) ; $i++){
-				if(${$selector_choice} == $this->selectors[$i]['name']){
-					$selector_id = $this->selectors[$i]['id'];
-					break;
+			if (!empty($this->selectors)) {
+				for($i=0 ; $i<count($this->selectors) ; $i++){
+					if(${$selector_choice} == $this->selectors[$i]['name']){
+						$selector_id = $this->selectors[$i]['id'];
+						break;
+					}
 				}
 			}
 			$selector = new ${$selector_choice}($selector_id);

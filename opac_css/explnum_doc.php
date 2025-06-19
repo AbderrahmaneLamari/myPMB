@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum_doc.php,v 1.10.8.1 2022/01/05 15:29:50 dgoron Exp $
+// $Id: explnum_doc.php,v 1.11 2022/01/05 15:25:28 dgoron Exp $
 
 $base_path=".";
 require_once($base_path."/includes/init.inc.php");

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_reservations_circ_ui.class.php,v 1.12.2.2 2021/10/28 08:27:30 dgoron Exp $
+// $Id: list_reservations_circ_ui.class.php,v 1.16 2022/03/28 14:14:11 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -82,6 +82,7 @@ class list_reservations_circ_ui extends list_reservations_ui {
 	
 	protected function init_default_settings() {
 		parent::init_default_settings();
+		$this->set_setting_display('search_form', 'export_icons', false);
 		$this->set_setting_column('empr', 'align', 'left');
 		$this->set_setting_column('empr_location', 'align', 'left');
 		$this->set_setting_column('resa_loc_retrait', 'align', 'left');
@@ -122,25 +123,23 @@ class list_reservations_circ_ui extends list_reservations_ui {
 		return "<div class='center'><input type='checkbox' id='suppr_id_resa_!!id!!' name='suppr_id_resa[!!id!!]' class='".$this->objects_type."_selection' value='!!id!!'></div>";
 	}
 	
-	protected function get_selection_actions() {
+	protected function init_default_selection_actions() {
 		global $msg, $pdflettreresa_priorite_email_manuel;
 		
-		if(!isset($this->selection_actions)) {
-			$this->selection_actions = array();
-			if ($pdflettreresa_priorite_email_manuel!=3) {
-				$impression_confirmation_link = array(
-						'href' => static::get_controller_url_base()."&action=imprimer_confirmation",
-						'confirm' => ''
-				);
-				$this->selection_actions[] = $this->get_selection_action('impression_confirmation', $msg['resa_impression_confirmation'], '', $impression_confirmation_link);
-			}
-			$delete_link = array(
-					'href' => static::get_controller_url_base()."&action=suppr_resa",
-					'confirm' => $msg['resa_valider_suppression_confirm']
+		parent::init_default_selection_actions();
+		
+		if ($pdflettreresa_priorite_email_manuel!=3) {
+			$impression_confirmation_link = array(
+					'href' => static::get_controller_url_base()."&action=imprimer_confirmation",
+					'confirm' => ''
 			);
-			$this->selection_actions[] = $this->get_selection_action('delete', $msg['63'], 'interdit.gif', $delete_link);
+			$this->add_selection_action('impression_confirmation', $msg['resa_impression_confirmation'], '', $impression_confirmation_link);
 		}
-		return $this->selection_actions;
+		$delete_link = array(
+				'href' => static::get_controller_url_base()."&action=suppr_resa",
+				'confirm' => $msg['resa_valider_suppression_confirm']
+		);
+		$this->add_selection_action('delete', $msg['63'], 'interdit.gif', $delete_link);
 	}
 	
 	protected function get_selection_mode() {
@@ -151,16 +150,27 @@ class list_reservations_circ_ui extends list_reservations_ui {
 		return "suppr_id_resa";
 	}
 	
+	protected static function get_name_selected_objects_from_form() {
+		return "suppr_id_resa";
+	}
+	
 	public function get_export_icons() {
 		global $msg, $base_path;
 		
-		if($this->get_setting('display', 'search_form', 'export_icons')) {
+		$export_icons = '';
+		if(static::class != 'list_reservations_circ_reader_ui') {
 			//le lien pour l'edition
 			if (SESSrights & EDIT_AUTH) {
-				return "<a href='".$base_path."/edit.php?categ=notices&sub=resa'>".$msg['1100']." : ".$msg['edit_resa_menu']."</a> / <a href='".$base_path."/edit.php?categ=notices&sub=resa_a_traiter'>".$msg['1100']." : ".$msg['edit_resa_menu_a_traiter']."</a>" ;
+				$export_icons .= "<a href='".$base_path."/edit.php?categ=notices&sub=resa'>".$msg['1100']." : ".$msg['edit_resa_menu']."</a> / <a href='".$base_path."/edit.php?categ=notices&sub=resa_a_traiter'>".$msg['1100']." : ".$msg['edit_resa_menu_a_traiter']."</a>";
+				
+				if($this->get_setting('display', 'search_form', 'export_icons')) {
+					$export_icons = "<span class='".$this->objects_type."_export_icons_edit_links'>".$export_icons."</span>";
+				}
 			}
 		}
-		return "";
+		$export_icons .= parent::get_export_icons();
+		
+		return $export_icons;
 	}
 	
 	public static function get_controller_url_base() {

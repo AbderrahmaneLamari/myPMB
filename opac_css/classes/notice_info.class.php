@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_info.class.php,v 1.76.2.3 2022/01/11 08:35:21 dgoron Exp $
+// $Id: notice_info.class.php,v 1.84.2.2 2023/10/27 13:47:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 // Récupération des info de notices
 global $class_path, $include_path;
@@ -129,7 +131,7 @@ class notice_info {
 	public $print_mode = 0;
 	
 	public function __construct($id,$environement=array()) {			
-		$this->notice_id=$id+0;
+		$this->notice_id=intval($id);
 		$this->environement=$environement;
 		if(!isset($this->environement["short"])) $this->environement["short"] = 6;
 		if(!isset($this->environement["ex"]))	$this->environement["ex"] = 0;
@@ -318,15 +320,14 @@ class notice_info {
 	//Icone type de Document
 	public function get_memo_icondoc() {
 		global $tdoc;
-		global $use_opac_url_base;
+		
 		if(!isset($this->memo_icondoc)) {
 			$icon_doc = marc_list_collection::get_instance('icondoc');
 			$icon = $icon_doc->table[$this->notice->niveau_biblio.$this->notice->typdoc];
 			if ($icon) {
 				$biblio_doc = marc_list_collection::get_instance('nivbiblio');
 				$info_bulle_icon=$biblio_doc->table[$this->notice->niveau_biblio]." : ".$tdoc->table[$this->notice->typdoc];
-				if ($use_opac_url_base)	$this->memo_icondoc="<img src=\"".get_url_icon($icon, 1)."\" alt=\"$info_bulle_icon\" title=\"$info_bulle_icon\" class='align_top' />";
-				else $this->memo_icondoc="<img src=\"".get_url_icon($icon)."\" alt=\"$info_bulle_icon\" title=\"$info_bulle_icon\" class='align_top' />";
+				$this->memo_icondoc="<img src=\"".get_url_icon($icon)."\" alt=\"$info_bulle_icon\" title=\"$info_bulle_icon\" class='align_top' />";
 			} else {
 				$this->memo_icondoc="";
 			}
@@ -340,8 +341,7 @@ class notice_info {
 		
 		if(!isset($this->memo_iconcart)) {
 			if(isset($_SESSION["cart"]) && in_array($this->notice_id, $_SESSION["cart"])) {
-				if ($use_opac_url_base)	$this->memo_iconcart="<span id='baskets".$this->notice_id."'><a href='#' class=\"img_basket_exist\" title=\"".$msg['notice_title_basket_exist']."\"><img src=\"".get_url_icon('basket_exist.png', 1)."\" style='border:0px' alt=\"".$msg['notice_title_basket_exist']."\" /></a></span>";
-				else $this->memo_iconcart="<span id='baskets".$this->notice_id."'><a href='#' class=\"img_basket_exist\" title=\"".$msg['notice_title_basket_exist']."\"><img src=\"".get_url_icon('basket_exist.png')."\" style='border:0px' alt=\"".$msg['notice_title_basket_exist']."\" /></a></span>";
+				$this->memo_iconcart="<span id='baskets".$this->notice_id."'><a href='#' class=\"img_basket_exist\" title=\"".$msg['notice_title_basket_exist']."\"><img src=\"".get_url_icon('basket_exist.png')."\" style='border:0px' alt=\"".$msg['notice_title_basket_exist']."\" /></a></span>";
 			} else {
 				$title=$this->notice->tit1;
 				if ($use_opac_url_base) $this->memo_iconcart="<span id='baskets".$this->notice_id."'><a href=\"".$opac_url_base."cart_info.php?id=".$this->notice_id."&header=".rawurlencode(strip_tags($title))."\" target=\"cart_info\" class=\"img_basket\" title=\"".$msg['notice_title_basket']."\"><img src=\"".get_url_icon("basket_small_20x20.png", 1)."\" style='border:0px' alt=\"".$msg['notice_title_basket']."\" /></a></span>";
@@ -1154,39 +1154,28 @@ class notice_info {
 	}
 	
 	public function get_memo_image() {
-	    global $opac_book_pics_use_thumbnail_docnum;
-		global $opac_show_book_pics;
-		global $opac_book_pics_url;
+	    global $use_opac_url_base;
 		global $opac_book_pics_msg;
 		global $charset;
 		if(!isset($this->memo_image)) {
 			$this->memo_image="" ;
 			$this->memo_url_image="";
-			if ($this->notice->code || $this->notice->thumbnail_url) {
-				if ($opac_show_book_pics=='1' && ($opac_book_pics_url || $this->notice->thumbnail_url)) {
-					$url_image_ok = getimage_url($this->notice->code, $this->notice->thumbnail_url, false, $this->notice_id);
-					$title_image_ok = "";
-					if(!$this->notice->thumbnail_url) {
-						$title_image_ok = htmlentities($opac_book_pics_msg, ENT_QUOTES, $charset);
-					}
-					if(!trim($title_image_ok)){
-						$title_image_ok = htmlentities($this->notice->tit1, ENT_QUOTES, $charset);
-					}
-					$this->memo_image = "<img src='".$url_image_ok."' title=\"".$title_image_ok."\" class='align_right' hspace='4' vspace='2'>";
-					$this->memo_url_image=$url_image_ok;
-				} else{
-				    if ($opac_book_pics_use_thumbnail_docnum) {
-				        // Pas de vignette, on regarde si un document à une vignette
-				        $this->memo_url_image = $this->get_first_memo_explnum_thumbnail();
-				    }
-				    if (empty($this->memo_url_image)) {
-     					$this->memo_url_image=notice::get_picture_url_no_image($this->notice->niveau_biblio, $this->notice->typdoc);
-				    }
-				}
-			} elseif ($opac_book_pics_use_thumbnail_docnum) {
-			    // Pas de vignette, on regarde si un document à une vignette
-		        $this->memo_url_image = $this->get_first_memo_explnum_thumbnail();
+			$thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+			if($use_opac_url_base) {
+			    $url_image_ok = $thumbnailSourcesHandler->generateSrcBase64(TYPE_NOTICE, $this->notice_id);
+			} else {
+			    $url_image_ok = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $this->notice_id);
 			}
+			
+			$title_image_ok = "";
+			if(!$url_image_ok) {
+				$title_image_ok = htmlentities($opac_book_pics_msg, ENT_QUOTES, $charset);
+			}
+			if(!trim($title_image_ok)){
+				$title_image_ok = htmlentities($this->notice->tit1, ENT_QUOTES, $charset);
+			}
+			$this->memo_image = "<img src='".$url_image_ok."' title=\"".$title_image_ok."\" class='align_right' hspace='4' vspace='2'>";
+			$this->memo_url_image=$url_image_ok;
 		}
 		return $this->memo_image;
 	}
@@ -1427,4 +1416,3 @@ class notice_info {
 	    return $first_memo_explnum_thumbnail;
 	}
 }
-?>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_uri.class.php,v 1.17.8.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: onto_common_uri.class.php,v 1.19 2022/11/21 14:56:45 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -29,7 +29,7 @@ class onto_common_uri {
 	 * dernière URI générée
 	 * @access private
 	 */
-	static private $last_uri;
+	static protected $last_uri;
 
 	/**
 	 * Génère une nouvelle URI. Cette méthode est apellée par save() de onto_handler

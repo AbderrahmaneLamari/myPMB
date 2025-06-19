@@ -2,15 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: show_localisation.inc.php,v 1.96.2.1 2021/06/23 12:28:06 dgoron Exp $
+// $Id: show_localisation.inc.php,v 1.98.4.3 2023/12/02 13:20:51 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $base_path, $class_path, $msg, $charset;
 global $opac_nb_sections_per_line, $opac_categories_nb_col_subcat;
 global $location, $id;
-global $back_surloc, $back_loc, $back_section_see;
+global $back_surloc, $back_loc, $back_section_see, $opac_sur_location_activate;
 global $opac_perio_a2z_abc_search,$opac_perio_a2z_max_per_onglet;
+global $default_tmp_storage_engine;
+global $nc, $lcote, $ssub, $plettreaut, $dcote;
 
 require_once($class_path."/translation.class.php");
 require_once($class_path."/show_localisation.class.php");
@@ -82,10 +84,13 @@ if (!$location) {
 	}
 	print "<div id='aut_details'>\n";
 
-	if (isset($back_section_see) && $back_section_see) $url_section_see = $back_section_see;
-	else $url_section_see = "index.php?lvl=section_see";
-
-	print "<h3 class='loc_title'><span><a href=\"".$url_section_see."\"><img src='".get_url_icon("home.gif")."' alt='home' style='border:0px' class='align_bottom'/></a>".$sur_location_link.$location_link."</span></h3>";
+	if (isset($back_section_see) && $back_section_see) {
+	    $url_section_see = $back_section_see;
+	} else {
+	    $url_section_see = "index.php?lvl=section_see";
+	}
+	
+    print "<h3 class='loc_title'><span><a href=\"".$url_section_see."\"><img src='".get_url_icon("home.gif")."' alt='home' style='border:0px' class='align_bottom'/></a>".$sur_location_link.$location_link."</span></h3>";
 	if ($objloc->commentaire || $objloc->location_pic) {
 		print "<table class='loc_comment'><tr><td class='location_pic'>";
 		if ($objloc->location_pic)
@@ -134,8 +139,7 @@ if (!$location) {
 		} else {
 			$section_libelle = translation::get_translated_text($row->idsection, 'docs_section', 'section_libelle', $row->section_libelle);
 		}
-		$section_pic=pmb_mysql_result(pmb_mysql_query($requete),0,1);
-		if ($section_pic) $image_src = $section_pic ;
+		if ($row->section_pic) $image_src = $row->section_pic ;
 		else  $image_src = get_url_icon("rayonnage-small.png") ;
 		print "<div id='aut_see'><h3>";
 		if (!file_exists($Fnm))	{
@@ -157,7 +161,7 @@ if (!$location) {
 			print "</h3>\n";
 			print "</div>";
 			//On récupère les notices de monographie avec au moins un exemplaire dans la localisation et la section
-			$requete="create temporary table temp_n_id ENGINE=MyISAM ( 
+			$requete="create temporary table temp_n_id ENGINE={$default_tmp_storage_engine} ( 
                 ".show_localisation::get_query_records_items('notice_id', '', 'notice_id')."
             )";
 			pmb_mysql_query($requete);
@@ -172,7 +176,7 @@ if (!$location) {
 			show_localisation::affiche_notice_navigopac($requete);
 		}elseif($type_aff_navigopac == -1){//Navigation par auteurs
 			//On récupère les notices de monographie avec au moins un exemplaire dans la localisation et la section
-			$requete="create temporary table temp_n_id ENGINE=MyISAM ( 
+			$requete="create temporary table temp_n_id ENGINE={$default_tmp_storage_engine} ( 
                 ".show_localisation::get_query_records_items('notice_id', '', 'notice_id')."
             )";
 			pmb_mysql_query($requete);
@@ -379,7 +383,7 @@ if (!$location) {
 			        }
 			    }
 				//Table temporaire de tous les id
-				$requete = "create temporary table temp_n_id ENGINE=MyISAM (
+				$requete = "create temporary table temp_n_id ENGINE={$default_tmp_storage_engine} (
                     ".show_localisation::get_query_records_items('notice_id, expl_id', $clause, 'notice_id, expl_id')."
                 )";   
 				pmb_mysql_query($requete);
@@ -392,9 +396,9 @@ if (!$location) {
 				//Calcul du classement
 				$index=array();
 				if (!$ssub) {
-					$rq1_index="create temporary table union1 ENGINE=MyISAM (select distinct expl_cote from exemplaires, temp_n_id where expl_location='".$location."' and expl_section='".$id."' and expl_notice=temp_n_id.notice_id) ";
+					$rq1_index="create temporary table union1 ENGINE={$default_tmp_storage_engine} (select distinct expl_cote from exemplaires, temp_n_id where expl_location='".$location."' and expl_section='".$id."' and expl_notice=temp_n_id.notice_id) ";
 					pmb_mysql_query($rq1_index);
-					$rq2_index="create temporary table union2 ENGINE=MyISAM (select distinct expl_cote from exemplaires join (select distinct bulletin_id from bulletins join temp_n_id where bulletin_notice=notice_id) as sub on (bulletin_id=expl_bulletin) where expl_location='".$location."' and expl_section='".$id."') ";
+					$rq2_index="create temporary table union2 ENGINE={$default_tmp_storage_engine} (select distinct expl_cote from exemplaires join (select distinct bulletin_id from bulletins join temp_n_id where bulletin_notice=notice_id) as sub on (bulletin_id=expl_bulletin) where expl_location='".$location."' and expl_section='".$id."') ";
 					pmb_mysql_query($rq2_index);
 					$req_index="select distinct expl_cote from union1 union select distinct expl_cote from union2";
 					$res_index=pmb_mysql_query($req_index);
@@ -424,8 +428,8 @@ if (!$location) {
 									$index[$t["dcote"]]=$t;
 									break;
 								} else {
-									$rq_del="select distinct notice_id from notices, exemplaires where expl_cote='".$ct->expl_cote."' and expl_notice=notice_id ";
-									$rq_del.=" union select distinct notice_id from notices, exemplaires, bulletins where expl_cote='".$ct->expl_cote."' and expl_bulletin=bulletin_id and bulletin_notice=notice_id ";
+									$rq_del="select distinct notice_id, expl_id from notices, exemplaires where expl_cote='".$ct->expl_cote."' and expl_notice=notice_id ";
+									$rq_del.=" union select distinct notice_id, expl_id from notices, exemplaires, bulletins where expl_cote='".$ct->expl_cote."' and expl_bulletin=bulletin_id and bulletin_notice=notice_id ";
 									$res_del=pmb_mysql_query($rq_del) ;
 									if (pmb_mysql_num_rows($res_del)) {
 										while ($n_id=pmb_mysql_fetch_object($res_del)) {

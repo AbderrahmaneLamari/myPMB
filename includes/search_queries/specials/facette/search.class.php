@@ -2,9 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.9.4.1 2022/01/10 10:35:57 dgoron Exp $
+// $Id: search.class.php,v 1.11.4.2 2023/06/07 12:00:00 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+global $class_path;
+require_once($class_path."/facettes.class.php");
 
 //Classe de gestion de la recherche spécial "facette"
 
@@ -14,6 +17,7 @@ class facette_search {
 	public $params;
 	public $search;
 	public $champ_base;
+	public $xml_file;
 	
 	//Constructeur
     public function __construct($id,$n_ligne,$params,&$search) {
@@ -41,7 +45,7 @@ class facette_search {
     
 	public function get_op() {
     	$operators = array();
-    	if ($_SESSION["nb_queries"]!=0) {
+    	if (!isset($_SESSION["nb_queries"]) || $_SESSION["nb_queries"] != 0) {
     		$operators["EQ"]="=";
     	}
     	return $operators;
@@ -49,6 +53,27 @@ class facette_search {
     
     public function make_search(){
 		global $mode;
+		
+		//A retirer si le paramètre est ajouté côté gestion
+		$pmb_facettes_operator = 'and';
+		
+		$prefix = '';
+		switch($this->xml_file){
+			case 'search_fields_authorities':
+			case 'search_fields_authorities_subst':
+				$plural_prefix = 'authorities';
+				$prefix = 'authority';
+				$tempo_key_name = 'id_authority';
+				break;
+			case 'search_fields_unimarc':
+			case 'search_fields_unimarc_subst':
+				$mode = "external";
+			default:
+				$plural_prefix = 'notices';
+				$prefix = 'notice';
+				$tempo_key_name = 'notice_id';
+				break;
+		}
 		
     	$valeur = "field_".$this->n_ligne."_s_".$this->id;
     	global ${$valeur};
@@ -63,52 +88,65 @@ class facette_search {
     	}
     	$filter_array = ${$valeur};
 
-    	$table_name = "table_facette_temp".$this->n_ligne;
-  		$req_table_tempo = "CREATE TEMPORARY TABLE ".$table_name." (notice_id int, index i_notice_id(notice_id))";
-  		pmb_mysql_query($req_table_tempo) or die ();
-  		
+  		$t_ids=array();
+  		$ids = '';
   		if(is_array($filter_array)) {
-	   		foreach ($filter_array as $k=>$v) {
+	   		foreach ($filter_array as $v) {
 	  			$filter_value = $v[1];
 	    		$filter_field = $v[2];
 	    		$filter_subfield = $v[3];
 	
 	    		switch ($mode) {
 	    			case 7:
-	    				if(!$k){
-	    					$req_table_tempo = "INSERT INTO ".$table_name." ".facettes_external::get_filter_query_by_facette($filter_field, $filter_subfield, $filter_value);
-	    				} else {
-	    					$req_table_tempo = "DELETE FROM ".$table_name." WHERE notice_id NOT IN (".facettes_external::get_filter_query_by_facette($filter_field, $filter_subfield, $filter_value).")";
+	    				$qs = facettes_external::get_filter_query_by_facette($filter_field, $filter_subfield, $filter_value);
+	    				if($ids) {
+	    					$qs .= ' where recid IN ('.$ids.')';
 	    				}
 	    				break;
 	    			default:
-			    		if(!$k){
-			    		    $req_table_tempo = "INSERT INTO ".$table_name." SELECT DISTINCT id_notice FROM notices_fields_global_index WHERE code_champ = ".(int) $filter_field." AND code_ss_champ = ".(int) $filter_subfield." AND (";
-					  		foreach ($filter_value as $k2=>$v2) {
-					  			if ($k2) {
-					  				$req_table_tempo .= " OR ";
-					  			}
-					  			$req_table_tempo .= "value ='".addslashes($v2)."'";
-					  		}
-				  			$req_table_tempo .= ")";
-			    		}else{
-			    		    $req_table_tempo = "DELETE FROM ".$table_name." WHERE notice_id NOT IN (SELECT DISTINCT id_notice FROM notices_fields_global_index WHERE code_champ = ".(int) $filter_field." AND code_ss_champ = ".(int) $filter_subfield." AND (";
-					  		foreach ($filter_value as $k2=>$v2) {
-					  			if ($k2) {
-					  				$req_table_tempo .= " OR ";
-					  			}
-					  			$req_table_tempo .= "value ='".addslashes($v2)."'";
-					  		}
-				  			$req_table_tempo .= "))";
-			    		}
+	    				$qs = 'SELECT id_'.$prefix.' FROM '.$plural_prefix.'_fields_global_index WHERE code_champ = '.(intval($filter_field)).' AND code_ss_champ = '.(intval($filter_subfield)).' AND (';
+	    				foreach ($filter_value as $k2=>$v2) {
+	    					if ($k2) {
+	    						$qs .= ' OR ';
+	    					}
+	    					$qs .= 'value ="'.addslashes($v2).'"';
+	    				}
+	    				$qs .= ')';
+	    				if($ids) {
+	    					$qs .= ' and id_'.$prefix.' in ('.$ids.')';
+	    				}
 			    		break;
 	    		}
-	  			pmb_mysql_query($req_table_tempo);
+	  			$rs = pmb_mysql_query($qs) ;
+	  			
+	  			//Opérateur "AND", on repart d'un tableau vide
+	  			if($pmb_facettes_operator == 'and') {
+	  				$t_ids=array();
+	  				if(!pmb_mysql_num_rows($rs)) {
+	  					break;
+	  				}
+	  				while ($o=pmb_mysql_fetch_object($rs)) {
+	  					$t_ids[]= $o->{'id_'.$prefix};
+	  				}
+	  				$ids = implode(',',$t_ids);
+	  			} else {
+	  				while ($o=pmb_mysql_fetch_object($rs)) {
+	  					$t_ids[]= $o->{'id_'.$prefix};
+	  				}
+	  			}
 	  		}
   		}
-  		 	
-    	return $table_name;
-    	
+  		unset($ids);
+//   		$t_ids = array_slice($t_ids, 0, 5);
+  		$table_name = 'table_facette_temp_'.$this->n_ligne.'_'.md5(microtime());
+  		$qc_last_table = 'create temporary table '.$table_name.' ('.$tempo_key_name.' int, index i_'.$prefix.'_id('.$tempo_key_name.'))';
+  		pmb_mysql_query($qc_last_table);
+  		if(count($t_ids)) {
+  			$qi_last_table = 'insert ignore into '.$table_name.' values ('.implode('),(', $t_ids).')';
+  			pmb_mysql_query($qi_last_table);
+  		}
+  		unset($t_ids);
+  		return $table_name;
     }
     
     public function make_human_query(){
@@ -161,7 +199,7 @@ class facette_search {
     	global $charset, $msg;
     	
     	$field_name="field_".$this->n_ligne."_s_".$this->id;
-    	global ${$field_name},$launch_search;
+    	global ${$field_name};
     	$valeur = ${$field_name};
 
     	$item_literal_words = array();
@@ -186,6 +224,10 @@ class facette_search {
     	$form.="<input type='hidden' name='".$field_name."[]' value=\"".htmlentities(serialize($valeur),ENT_QUOTES,$charset)."\"/>";
 		
     	return $form;
+    }
+    
+    public function set_xml_file($file){
+    	$this->xml_file = $file;
     }
     
     //fonction de vérification du champ saisi ou sélectionné

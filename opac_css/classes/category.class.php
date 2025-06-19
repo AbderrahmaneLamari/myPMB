@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: category.class.php,v 1.33.2.1 2021/12/28 13:33:54 dgoron Exp $
+// $Id: category.class.php,v 1.34.4.1 2023/09/20 14:33:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -35,7 +35,9 @@ class category {
 	public $libelle_aff_complet = "";
 	public $commentaire_public = "";
 	public $not_use_in_indexation=0; //Savoir si l'on peut utiliser le terme en indexation
-
+	public $list_see = array();
+	protected $listchilds;
+	
 	// ---------------------------------------------------------------
 	//		category($id) : constructeur
 	// ---------------------------------------------------------------
@@ -192,6 +194,95 @@ class category {
 		$result = pmb_mysql_query($query);
 		return (pmb_mysql_result($result, 0, 0));
 	
+	}
+	
+	public function listChilds() {
+	    global $lang;
+	    if(!isset($this->listchilds)){
+	        
+	        if ($this->id == $this->thes->num_noeud_racine){
+	            $keep_tilde = 0;
+	        }else{
+	            $keep_tilde = 1;
+	        }
+	        
+	        $q = "select ";
+	        $q.= "catdef.num_noeud, noeuds.autorite, noeuds.num_parent, noeuds.num_renvoi_voir, noeuds.visible, noeuds.num_thesaurus, ";
+	        $q.= "if (catlg.num_noeud is null, catdef.langue, catlg.langue ) as langue, ";
+	        $q.= "if (catlg.num_noeud is null, catdef.libelle_categorie, catlg.libelle_categorie ) as libelle_categorie, ";
+	        $q.= "if (catlg.num_noeud is null, catdef.note_application, catlg.note_application ) as note_application, ";
+	        $q.= "if (catlg.num_noeud is null, catdef.comment_public, catlg.comment_public ) as comment_public, ";
+	        $q.= "if (catlg.num_noeud is null, catdef.comment_voir, catlg.comment_voir ) as comment_voir, ";
+	        $q.= "if (catlg.num_noeud is null, catdef.index_categorie, catlg.index_categorie ) as index_categorie ";
+	        $q.= "from noeuds left join categories as catdef on noeuds.id_noeud=catdef.num_noeud and catdef.langue = '".$this->thes->langue_defaut."' ";
+	        $q.= "left join categories as catlg on catdef.num_noeud = catlg.num_noeud and catlg.langue = '".$lang."' ";
+	        $q.= "where ";
+	        $q.= "noeuds.num_parent = '".$this->id."' ";
+	        if (!$keep_tilde) $q.= "and catdef.libelle_categorie not like '~%' ";
+	        $q.= "order by libelle_categorie ";
+	        // Possibilité d'ajouter une limitation ici (voir nouveau paramètre gestion)
+	        $q.="";
+	        
+	        $r = pmb_mysql_query($q);
+	        while($child=pmb_mysql_fetch_object($r)) {
+	            $authority = new authority(0, $child->num_noeud, AUT_TABLE_CATEG);
+	            $this->listchilds[]= array(
+	                'id' => $child->num_noeud,
+	                'name' => $child->comment_public,
+	                'libelle' => $child->libelle_categorie,
+	                'num_authority' => $authority->get_id()
+	            );
+	        }
+	        
+	    }
+	    return $this->listchilds;
+	}
+	
+	/**
+	 * Permet de récupérer les catégories dont le num_renvoi correspond à l'id du noeud courant
+	 */
+	public function listSynonyms(){
+	    if (isset($this->list_see)) {
+	        return $this->list_see;
+	    }
+	    global $lang;
+	    
+	    $this->list_see = array();
+	    $thes = thesaurus::getByEltId($this->id);
+	    $q = "select id_noeud from noeuds where num_thesaurus = '".$thes->id_thesaurus."' and autorite = 'ORPHELINS' ";
+	    
+	    $r = pmb_mysql_query($q);
+	    if($r && pmb_mysql_num_rows($r)){
+	        $num_noeud_orphelins = pmb_mysql_result($r, 0, 0);
+	    }else{
+	        $num_noeud_orphelins=0;
+	    }
+	    $q = "select ";
+	    $q.= "catdef.num_noeud, noeuds.autorite, noeuds.num_parent, noeuds.num_renvoi_voir, noeuds.visible, noeuds.num_thesaurus, ";
+	    $q.= "if (catlg.num_noeud is null, catdef.langue, catlg.langue ) as langue, ";
+	    $q.= "if (catlg.num_noeud is null, catdef.libelle_categorie, catlg.libelle_categorie ) as libelle_categorie, ";
+	    $q.= "if (catlg.num_noeud is null, catdef.note_application, catlg.note_application ) as note_application, ";
+	    $q.= "if (catlg.num_noeud is null, catdef.comment_public, catlg.comment_public ) as comment_public, ";
+	    $q.= "if (catlg.num_noeud is null, catdef.comment_voir, catlg.comment_voir ) as comment_voir, ";
+	    $q.= "if (catlg.num_noeud is null, catdef.index_categorie, catlg.index_categorie ) as index_categorie ";
+	    $q.= "from noeuds left join categories as catdef on noeuds.id_noeud=catdef.num_noeud and catdef.langue = '".$thes->langue_defaut."' ";
+	    $q.= "left join categories as catlg on catdef.num_noeud = catlg.num_noeud and catlg.langue = '".$lang."' ";
+	    $q.= "where ";
+	    $q.= "noeuds.num_parent = '$num_noeud_orphelins' and noeuds.num_renvoi_voir='".$this->id."' ";
+	    //if (!$keep_tilde) $q.= "and catdef.libelle_categorie not like '~%' ";
+	    //if ($ordered !== 0) $q.= "order by ".$ordered." ";
+	    $q.=""; // A voir pour ajouter un parametre gestion maxddisplay
+	    $r = pmb_mysql_query($q);
+	    
+	    while($cat_see=pmb_mysql_fetch_object($r)) {
+	        $this->list_see[]= array(
+	            'id' => $cat_see->num_noeud,
+	            'name' => $cat_see->comment_public,
+	            'parend_id' => $cat_see ->num_parent,
+	            'libelle' => $cat_see->libelle_categorie
+	        );
+	    }
+	    return $this->list_see;
 	}
 	
 	public function format_datas($antiloop = false){

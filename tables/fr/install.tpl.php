@@ -2,15 +2,18 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: install.tpl.php,v 1.1 2021/05/03 10:13:12 dbellamy Exp $
+// $Id: install.tpl.php,v 1.1.6.1 2023/04/07 13:53:58 dbellamy Exp $
 
-if(preg_match('/install_inc\.php/', $_SERVER['REQUEST_URI'])) {
+if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) {
 	include('../../includes/forbidden.inc.php'); 
 	forbidden();
 }
 
-global $install_msg, $install_lang, $charset;
+global $install_msg, $install_lang, $charset, $mysql_variables, $alter_session_variables;
 global $db_user, $user_password, $mysql_host;
+
+$dbname_pattern = '^[a-z|0-9|_]+$';
+$dbuser_pattern = '^[a-z|0-9|_]+$';
 
 $install_page = "
 <!DOCTYPE html>
@@ -61,6 +64,17 @@ $install_page = "
 		{
 			color: #090051;
 		}
+		.helper {
+			text-align : left;
+			font-size : 0.8em;
+			color: black;
+		}
+		.helper_error {
+			color: red;
+		}
+        .helper_hide {
+			display: none;
+		}
 		</style>
 	</head>
 	<body>
@@ -105,7 +119,7 @@ $install_page = "
 			
 			<hr />
 
-			<form method='post' action='install_rep.php'>
+			<form method='post' action='install_rep.php' onSubmit='return check_form();'>
 	
 				<h2>{$install_msg['install_system_param']}</h2>
 	
@@ -128,26 +142,8 @@ $install_page = "
 					<tr> 
 						<td style='width:200px;' class='etiquette'>{$install_msg['install_system_param_mysql_bdd']}</td>
 						<td>
-							<input class='saisie' name=\"dbnamedbhost\" type=\"text\" onChange=\"
-						        if (this.form.dbnamedbhost.value!='') {
-						        	this.form.user.value='';
-						        	this.form.passwd.value='';
-						        	this.form.dbname.value='';
-						        	this.form.user.style.display = 'none';
-						        	this.form.passwd.style.display = 'none';
-						        	this.form.dbname.style.display = 'none';
-						        	document.getElementById('fixeuser').style.display = 'inline';
-						        	document.getElementById('fixepasswd').style.display = 'inline';
-						        	document.getElementById('fixedbname').style.display = 'inline';
-						        } else {
-					        		this.form.user.style.display = 'block';
-					        		this.form.passwd.style.display = 'block';
-					        		this.form.dbname.style.display = 'block';
-					        		document.getElementById('fixeuser').style.display = 'none';
-					        		document.getElementById('fixepasswd').style.display = 'none';
-					        		document.getElementById('fixedbname').style.display = 'none';
-				        		}
-						        \" />
+							<input class='saisie' id='dbnamedbhost' name='dbnamedbhost' type='text' onKeyUp='check_dbnamedbhost();' />
+                            <div class='helper' id='dbnamedbhost_helper' >{$install_msg['install_system_param_mysql_bdd_helper']}</div>
 						</td>
 					</tr>
 				</table>
@@ -162,10 +158,11 @@ $install_page = "
 					<tr> 
 						<td style='width:200px;' class='etiquette'>{$install_msg['install_pmb_param_mysql_user']}</td>
 						<td>
-							<input class='saisie' type='text' name='user' value='bibli' />
+							<input class='saisie' type='text' name='user' value='bibli' onKeyUp='check_user();' />
 							<div id='fixeuser' style='display:none;'>
 								<strong style='color:#FF0000;'>{$install_msg['install_setby_system_param']}</strong>
 							</div>
+                            <div class='helper' id='user_helper' >{$install_msg['install_system_param_mysql_user_helper']}</div>
 						</td>
 					</tr>
 					<tr> 
@@ -180,10 +177,11 @@ $install_page = "
 					<tr> 
 						<td style='width:200px;' class='etiquette'>{$install_msg['install_pmb_param_mysql_bdd']}</td>
 						<td>
-							<input class='saisie' type='text' name='dbname' value='bibli' />
+							<input class='saisie' type='text' name='dbname' value='bibli' onKeyUp='check_dbname();' />
 							<div id='fixedbname' style='display:none;' >
 								<strong style='color:#FF0000;' >{$install_msg['install_setby_system_param']}</strong>
 							</div>
+                            <div class='helper' id='dbname_helper' >{$install_msg['install_system_param_mysql_bdd_helper']}</div>
 						</td>
 					</tr>
 				</table>
@@ -349,12 +347,112 @@ $install_page = "
 				<p style='text-align:center;'> 
 					<input type='submit' class='bouton' value='{$install_msg['install_bdd_create']}' />
 					<input type='hidden' name='install_lang' value='{$install_lang}' />
+                    <input type='hidden' name='mysql_variables' value='{$mysql_variables}' />
+                    <input type='hidden' name='alter_session_variables' value='{$alter_session_variables}' />
 					<input type='hidden' name='charset' value='{$charset}' />
 					<input type='hidden' name='Submit' value='OK' />
 				</p>
 
+                <script>
+                    function check_dbnamedbhost() {
+
+                        let form = document.forms[0];
+                        let dbnamedbhost = form.dbnamedbhost;
+                        let dbnamedbhost_helper = document.getElementById('dbnamedbhost_helper');
+                        let dbname_helper =  document.getElementById('dbname_helper');
+                        let user_helper = document.getElementById('user_helper');
+                        let fixeuser = document.getElementById('fixeuser');
+                        let fixepasswd = document.getElementById('fixepasswd');
+                        let fixedbname = document.getElementById('fixedbname');
+
+                        if(dbnamedbhost.value!='' & !dbnamedbhost.value.match('$dbname_pattern')) {
+                            dbnamedbhost_helper.className='helper helper_error';
+                        } else {
+                            dbnamedbhost_helper.className='helper';
+                        }
+                        if (dbnamedbhost.value!='') {
+                            form.user.value='';
+                            form.passwd.value='';
+                            form.dbname.value='';
+                            form.user.style.display = 'none';
+                            form.passwd.style.display = 'none';
+                            form.dbname.style.display = 'none';
+                            fixeuser.style.display = 'inline';
+                            fixepasswd.style.display = 'inline';
+                            fixedbname.style.display = 'inline';
+                            dbname_helper.className = 'helper helper_hide';
+                            user_helper.className = 'helper helper_hide';
+                        } else {
+                            form.user.style.display = 'block';
+                            form.passwd.style.display = 'block';
+                            form.dbname.style.display = 'block';
+                            fixeuser.style.display = 'none';
+                            fixepasswd.style.display = 'none';
+                            fixedbname.style.display = 'none';
+                            dbname_helper.className = 'helper';
+                            user_helper.className = 'helper';
+                        }
+                    }
+
+                    function check_user() {
+
+                        let form = document.forms[0];
+                        let user = form.user;
+                        let user_helper = document.getElementById('user_helper');
+
+                        if(user.value!='' & !user.value.match('$dbuser_pattern')) {
+                            user_helper.className='helper helper_error';
+                        } else {
+                            user_helper.className='helper';
+                        }
+                    }
+
+                    function check_dbname() {
+
+                        let form = document.forms[0];
+                        let dbname = form.dbname;
+                        let dbname_helper = document.getElementById('dbname_helper');
+
+                        if(dbname.value!='' & !dbname.value.match('$dbname_pattern')) {
+                            dbname_helper.className='helper helper_error';
+                        } else {
+                            dbname_helper.className='helper';
+                        }
+                    }
+
+                    function check_form() {
+
+                        let form = document.forms[0];
+                        let dbnamedbhost = form.dbnamedbhost;
+                        let dbnamedbhost_helper = document.getElementById('dbnamedbhost_helper');
+                        let dbname = form.dbname;
+                        let dbname_helper = document.getElementById('dbname_helper');
+                        let user = form.user;
+                        let user_helper = document.getElementById('user_helper');
+
+                        if(dbnamedbhost.value=='' & dbname.value=='') {
+                            dbname.focus();
+                            return false;
+                        }
+                        if(dbnamedbhost.value!='' & !dbnamedbhost.value.match('$dbname_pattern')) {
+                            dbnamedbhost.focus();
+                            dbnamedbhost_helper.className='helper helper_error';
+                            return false;
+                        }
+                        if(dbname.value!='' & !dbname.value.match('$dbname_pattern')) {
+                            dbname.focus();
+                            dbname_helper.className='helper helper_error';
+                            return false;
+                        }
+                        if(user.value!='' & !user.value.match('$dbuser_pattern')) {
+                            user.focus();
+                            user_helper.className='helper helper_error';
+                            return false;
+                        }
+                        return true;
+                    }
+                </script>
 			</form>
 		</div>
 	</body>
-</html>
-";
+</html>";

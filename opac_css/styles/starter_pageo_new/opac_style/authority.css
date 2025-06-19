@@ -1,0 +1,60 @@
+/*----------------
+- OPAC: AUTHORITY -
+ ----------------*/
+
+
+#aut_details>h3 {
+    margin-top: 20px;
+}
+
+.authorlevel2>h3 {
+    margin-bottom: 5px;
+    color: #626262;
+}
+
+.authorlevel2>p {
+    margin-bottom: 5px;
+    color: #222;
+}
+
+.authorlevel2>ul {
+    margin-bottom: 5px;
+    color: #222;
+}
+
+.authorlevel2>ul li {
+    width: 33%;
+    float: left;
+    padding: 2px 60px 2px 0px;
+    list-style-type: square;
+    list-style-position: inside;
+    color: #ED5923;
+}
+
+#aut_details #resultatrech_liste {
+    margin-top: 10px;
+    float: left;
+    width: 70%;
+}
+
+#aut_details_liste #resultatrech_liste {
+    width: auto;
+    float: none;
+}
+
+#aut_details_liste>span {
+    display: block;
+    float: left;
+}
+
+#aut_details_liste>blockquote {
+    clear: left;
+}
+
+.aut_see a {
+    text-decoration: none;
+}
+
+.aut_see td {
+    padding: 2px 0;
+}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_planificateur_manager_ui.class.php,v 1.1 2021/03/03 07:46:02 dgoron Exp $
+// $Id: list_configuration_planificateur_manager_ui.class.php,v 1.1.8.4 2023/05/26 14:07:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -57,18 +57,19 @@ class list_configuration_planificateur_manager_ui extends list_configuration_pla
 	
 	protected function add_column_add_task() {
 		global $msg;
-		$this->columns[] = array(
-				'property' => 'add_task',
-				'label' => '',
-				'html' => "<div class='align_right'><input type='button' value='".$msg["planificateur_task_add"]."' class='bouton_small' onClick='document.location=\"".static::get_controller_url_base()."&act=task&type_task_id=!!id!!\"'/></div>",
-				'exportable' => false
+		
+		$html_properties = array(
+				'value' => $msg["planificateur_task_add"],
+				'link' => static::get_controller_url_base().'&action=edit&type_id=!!id!!',
+				'align' => 'right'
 		);
+		$this->add_column_simple_action('add_task', '', $html_properties);
 	}
 	
 	protected function get_display_content_tasks_object_list($object, $indice) {
-		$display = "<tr class='".($indice % 2 ? 'odd' : 'even')."' style='display:none' id='".$object->get_name()."'><td>&nbsp;</td><td colspan='3'><table style='border:1px solid'>";
-		$display .= $object->get_display_list();
-		$display .= "</table></td></tr>";
+		$display = "<tr class='".($indice % 2 ? 'odd' : 'even')."' style='display:none' id='".$object->get_name()."'><td>&nbsp;</td><td colspan='3' style='border:1px solid'>";
+		$display .= list_scheduler_planning_ui::get_instance(array('type' => $object->get_id()))->get_display_list();
+		$display .= "</td></tr>";
 		return $display;
 	}
 		
@@ -111,13 +112,10 @@ class list_configuration_planificateur_manager_ui extends list_configuration_pla
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "document.location=\"".$this->get_edition_link($object)."\""
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_display_cell_html_value($object, $value) {
@@ -126,7 +124,7 @@ class list_configuration_planificateur_manager_ui extends list_configuration_pla
 	}
 	
 	protected function get_edition_link($object) {
-		return static::get_controller_url_base().'&act=modif&type_task_id='.$object->get_id();
+		return static::get_controller_url_base().'&action=type_edit&id='.$object->get_id();
 	}
 	
 	protected function get_button_add() {

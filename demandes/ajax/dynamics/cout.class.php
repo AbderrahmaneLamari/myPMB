@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cout.class.php,v 1.4.10.1 2021/12/27 14:05:14 dgoron Exp $
+// $Id: cout.class.php,v 1.5 2021/12/27 14:01:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_itemslist_selector_items_generic.class.php,v 1.3.12.1 2022/01/10 08:35:26 dgoron Exp $
+// $Id: cms_module_itemslist_selector_items_generic.class.php,v 1.4 2022/01/10 08:31:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

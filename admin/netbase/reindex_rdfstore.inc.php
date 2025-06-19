@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: reindex_rdfstore.inc.php,v 1.9.8.1 2021/12/13 15:31:04 dgoron Exp $
+// $Id: reindex_rdfstore.inc.php,v 1.10 2021/12/13 15:23:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

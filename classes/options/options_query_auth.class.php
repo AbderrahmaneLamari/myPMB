@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: options_query_auth.class.php,v 1.1.4.1 2021/12/02 16:14:35 gneveu Exp $
+// $Id: options_query_auth.class.php,v 1.2 2021/12/02 16:19:47 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

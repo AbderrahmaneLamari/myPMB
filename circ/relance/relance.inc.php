@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: relance.inc.php,v 1.111 2021/04/21 20:49:30 dgoron Exp $
+// $Id: relance.inc.php,v 1.115 2022/12/06 15:29:39 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -13,9 +13,10 @@ global $empr_sort_rows, $empr_show_rows, $empr_filter_rows;
 global $deflt2docs_location, $relance_solo;
 global $readers_relances_ui_selected_objects;
 
-require_once($include_path."/mail.inc.php") ;
-require_once ($include_path."/mailing.inc.php");
-require_once ("$include_path/notice_authors.inc.php");
+require_once $include_path."/mail.inc.php" ;
+require_once $include_path."/mailing.inc.php";
+require_once "$include_path/notice_authors.inc.php";
+require_once "$include_path/sms.inc.php";
 
 //Gestion des relances
 require_once($class_path."/relance.class.php");
@@ -23,8 +24,9 @@ require_once($class_path."/readers/readers_relances_controller.class.php");
 
 function send_mail($id_empr, $relance) {
 	mail_reader_loans_late_relance::set_niveau_relance($relance);
-	$mail_reader_loans_late_relance = new mail_reader_loans_late_relance();
-	$mail_reader_loans_late_relance->send_mail($id_empr);
+	$mail_reader_loans_late_relance = mail_reader_loans_late_relance::get_instance();
+	$mail_reader_loans_late_relance->set_mail_to_id($id_empr);
+	$mail_reader_loans_late_relance->send_mail();
 	return true;
 }
 
@@ -45,25 +47,25 @@ function print_relance($id_empr,$mail=true) {
 		$total_amende = $amende->get_total_amendes();
 	}
 	
-	//Si mail de rappel affecté au groupe, on envoi au responsable
+	//Si mail de rappel affecté au groupe, on envoie au responsable
 	$requete="select id_groupe,resp_groupe from groupe,empr_groupe where id_groupe=groupe_id and empr_id=$id_empr and resp_groupe and mail_rappel limit 1";
 	$res=pmb_mysql_query($requete);
 	if(pmb_mysql_num_rows($res) > 0) {
-		$requete="select empr_mail from empr where id_empr='".pmb_mysql_result($res,0,1)."'";
+		$requete="select empr_mail, empr_tel1, empr_sms from empr where id_empr='".pmb_mysql_result($res,0,1)."'";
 		$res=pmb_mysql_query($requete);
 		if (@pmb_mysql_num_rows($res)) {
-			list($empr_mail)=pmb_mysql_fetch_row($res);
+		    list($empr_mail, $empr_tel1, $empr_sms)=pmb_mysql_fetch_row($res);
 		}
 	} else {
-		$requete="select empr_mail from empr where id_empr=$id_empr";
+		$requete="select empr_mail, empr_tel1, empr_sms from empr where id_empr=$id_empr";
 		$resultat=pmb_mysql_query($requete);
 		if (@pmb_mysql_num_rows($resultat)) {
-			list($empr_mail)=pmb_mysql_fetch_row($resultat);
+			list($empr_mail, $empr_tel1, $empr_sms)=pmb_mysql_fetch_row($resultat);
 		}
 	}
 	
 	if ($niveau_min) {
-		//Si c'est un mail
+		//Par mail
 		//JP 05/06/2017 : je passe par un flag car l'imbrication de conditions se complique...
 		$flag_print=false;
 		if (((($mailretard_priorite_email==1)||($mailretard_priorite_email==2))&&($empr_mail))&&( ($niveau_min<3)||($mailretard_priorite_email_3) )&&($mail)) {
@@ -91,6 +93,13 @@ function print_relance($id_empr,$mail=true) {
 			pmb_mysql_query($requete);
 			$not_mail=1;
 		}
+		
+		//Par sms
+		global $empr_sms_msg_retard;
+		if($empr_tel1 && $empr_sms && $empr_sms_msg_retard) {
+		    send_sms(0, $niveau_min, $empr_tel1, $empr_sms_msg_retard);
+		}
+		
 	}
 	$req="delete from cache_amendes where id_empr=".$id_empr;
 	pmb_mysql_query($req);

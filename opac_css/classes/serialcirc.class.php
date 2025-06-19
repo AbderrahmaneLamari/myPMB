@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serialcirc.class.php,v 1.5 2019/06/18 13:00:13 ngantier Exp $
+// $Id: serialcirc.class.php,v 1.6 2022/02/01 07:57:50 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($class_path."/serialcirc_diff.class.php") ;
 require_once($include_path."/serialcirc.inc.php");
 
@@ -24,7 +25,7 @@ class serialcirc {
 	public $late_mode;				// mode de retard
 	
 	public function __construct($id){
-		$this->id_serialcirc = $id*1;
+		$this->id_serialcirc = intval($id);
 		$this->_fetch_data();
 	}
 	

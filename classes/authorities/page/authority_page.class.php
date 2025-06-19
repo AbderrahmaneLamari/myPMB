@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authority_page.class.php,v 1.3.12.1 2021/06/14 07:41:18 dgoron Exp $
+// $Id: authority_page.class.php,v 1.4 2021/06/14 07:38:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

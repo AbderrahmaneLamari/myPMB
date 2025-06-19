@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_converter_category.class.php,v 1.3 2020/11/26 13:29:05 qvarin Exp $
+// $Id: rdf_entities_converter_category.class.php,v 1.4 2022/05/25 08:24:25 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -32,8 +32,14 @@ class rdf_entities_converter_category extends rdf_entities_converter_authority {
 	protected function init_foreign_fields() 
 	{
 	    $this->foreign_fields = array_merge(parent::init_foreign_fields(), array(
-	        'num_parent' => 'http://www.pmbservices.fr/ontology#parent_category',
-	        'num_renvoi_voir' => 'http://www.pmbservices.fr/ontology#category_see'
+	        'num_parent' => array(
+	            'type' => 'category',
+	            'property' => 'http://www.pmbservices.fr/ontology#parent_category'
+	        ),
+	        'num_renvoi_voir' => array(
+	            'type' => 'category',
+	            'property' => 'http://www.pmbservices.fr/ontology#category_see'
+	        )
 	    ));
 	    return $this->foreign_fields;
 	}

@@ -2,15 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_build.class.php,v 1.22.2.1 2021/09/10 09:29:29 qvarin Exp $
+// $Id: frbr_build.class.php,v 1.25 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-require_once($class_path."/autoloader.class.php");
-if(!isset($autoloader)) {
-	$autoloader = new autoloader();
-}
-$autoloader->add_register("frbr_entities",true);
+global $class_path;
 
 require_once($class_path."/frbr/frbr_pages.class.php");
 
@@ -39,7 +35,7 @@ class frbr_build {
 	protected $datanodes;
 	
 	public function __construct($object_id=0, $object_type='', $authperso_type = 0) {
-		$this->object_id = $object_id+0;
+		$this->object_id = intval($object_id);
 		$this->object_type = $object_type;
 		$this->authperso_type = $authperso_type;
 		$this->fetch_data();

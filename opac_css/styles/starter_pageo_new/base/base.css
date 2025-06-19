@@ -1,0 +1,443 @@
+/*-----------
+- BASE: BASE -
+ -----------*/
+
+ html {
+    overflow-x: hidden;
+    font-size: 10px;
+}
+
+body {
+    color: var(--c-black);
+    background-color: var(--c-white);
+    font: var(--font-resume);
+    line-height: 1.1;
+}
+ 
+.cmsNoStyles {
+  border: 0!important;
+  margin: 0!important;
+  padding: 0!important;
+  height: 0!important;
+  background-color: transparent;
+  visibility: 0;
+}
+
+div[id^="cms_module"]:empty,
+div:empty:not(.not_empty),
+span[type="cms_module_hidden"] {
+  display:none;
+}
+
+/* Pour rendre visible les cadres hors de la page en partie construire*/
+span[draggable="yes"] {
+    display:block;
+}
+
+h1,h2,h3,h4,h5,h6 {
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    line-height: inherit;
+}
+
+*+h1,*+h2,*+h3,*+h4,*+h5,*+h6 {
+    margin: 0;
+}
+
+div,
+span,
+applet,
+object,
+iframe,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+font,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+caption,
+figure {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+}
+
+table,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td {
+    margin: 0;
+    padding: 0;
+    outline: 0;
+    background: transparent;
+}
+
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+nav,
+section {
+    display: block;
+}
+
+ol,
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+blockquote,
+q {
+    quotes: none;
+}
+
+.smaller {
+    font-size: 0.8rem;
+}
+
+.small {
+    font-size: 0.9rem;
+}
+
+.big {
+    font-size: 1.1rem;
+}
+
+.bigger {
+    font-size: 1.2rem;
+}
+
+.biggest {
+    font-size: 1.3rem;
+}
+
+em {
+    font-style: italic;
+}
+
+strong {
+    font-weight: bold;
+}
+
+code {
+    padding: 2px 4px;
+    background: rgba(0, 0, 0, .04);
+    color: #b11;
+}
+
+mark {
+    padding: 2px 4px;
+    background: #ff0;
+}
+
+sup,
+sub {
+    vertical-align: 0;
+    position: relative;
+}
+
+sup {
+    bottom: 1ex;
+}
+
+sub {
+    top: .5ex;
+}
+
+.clear {
+    clear: both;
+}
+
+cite {
+    font-style: normal;
+}
+
+form {
+    margin: 0 auto;
+    width: auto;
+}
+
+fieldset {
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+
+*,
+*:before,
+*:after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+
+a,a:hover {
+    text-decoration: none;
+    color: inherit;
+}
+
+hr {
+    border: none;
+}
+
+/* ========================================================================
+   Formulaire
+ ========================================================================== */
+
+label,
+input,
+button,
+select,
+textarea {
+    font-weight: normal;
+    line-height: normal;
+    font-size: 1.4rem;
+    border: none;
+}
+
+button {
+    cursor: pointer;
+    background: none;
+    padding: 0;
+}
+
+select,
+textarea,
+input[type="text"],
+input[type="password"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="month"],
+input[type="time"],
+input[type="week"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input[type="color"],
+.uneditable-input {
+    display: inline-block;
+    height: auto;
+    padding: 4px 6px;
+    font-size: inherit;
+    line-height: normal;
+    color: inherit;
+    border-radius: 0px;
+    vertical-align: middle;
+}
+
+textarea,
+input[type="text"],
+input[type="password"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="month"],
+input[type="time"],
+input[type="week"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input[type="color"],
+.uneditable-input {
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+}
+
+textarea:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="datetime"]:focus,
+input[type="datetime-local"]:focus,
+input[type="date"]:focus,
+input[type="month"]:focus,
+input[type="time"]:focus,
+input[type="week"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+input[type="search"]:focus,
+input[type="tel"]:focus,
+input[type="color"]:focus,
+.uneditable-input:focus {
+    border-color: rgb(221, 221, 221);
+    outline: thin dotted \9;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+    line-height: normal;
+    margin-left: 4px;
+    margin-right: 2px;
+}
+
+input[type="file"],
+input[type="image"],
+input[type="submit"],
+input[type="reset"],
+input[type="button"],
+input[type="radio"],
+input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+input#a2z_abt_actif {
+    margin-left: 10px;
+    vertical-align: sub;
+}
+
+select,
+input[type="file"] {
+    min-height: 20px;
+    margin-top: 4px;
+    line-height: 20px;
+    width: 100%;
+}
+
+select {
+    width: auto;
+    border: 1px solid #cccccc;
+    background-color: #ffffff;
+    padding: 0px;
+}
+
+select[multiple],
+select[size] {
+    height: auto;
+}
+
+select:focus,
+input[type="file"]:focus,
+input[type="radio"]:focus,
+input[type="checkbox"]:focus {
+    outline: thin dotted #333;
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: -2px;
+    outline-color: rgba(88, 160, 231, 0.65);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #999999;
+}
+
+
+input:-moz-placeholder,
+textarea:-moz-placeholder {
+    color: #999999;
+}
+
+input:-ms-input-placeholder,
+textarea:-ms-input-placeholder {
+    color: #999999;
+}
+
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+    color: #999999;
+}
+
+input[disabled],
+select[disabled],
+textarea[disabled],
+input[readonly],
+select[readonly],
+textarea[readonly] {
+    cursor: not-allowed;
+    background-color: #eeeeee;
+}
+
+input[type="radio"][disabled],
+input[type="checkbox"][disabled],
+input[type="radio"][readonly],
+input[type="checkbox"][readonly] {
+    background-color: transparent;
+}
+
+input:focus:invalid,
+textarea:focus:invalid,
+select:focus:invalid {
+    color: #b94a48;
+    border-color: #ee5f5b;
+}
+
+input:focus:invalid:focus,
+textarea:focus:invalid:focus,
+select:focus:invalid:focus {
+    border-color: #e9322d;
+    -webkit-box-shadow: 0 0 6px #f8b9b7;
+    -moz-box-shadow: 0 0 6px #f8b9b7;
+    box-shadow: 0 0 6px #f8b9b7;
+}
+
+
+iframe {
+  max-width: 100%;
+}
+
+/* Hide element pour le referencement src : https://github.com/twbs/bootstrap/blob/main/scss/mixins/_visually-hidden.scss */
+
+.pmb_visually_hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}

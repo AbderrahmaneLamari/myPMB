@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ComputedFieldsStore.js,v 1.13.2.4 2021/07/30 09:16:12 qvarin Exp $
+// $Id: ComputedFieldsStore.js,v 1.20 2022/05/30 13:17:26 qvarin Exp $
 
 define([
 	'dojo/_base/declare',
@@ -22,6 +22,8 @@ define([
 		fieldsToModify: null,
 		
 		entitiesAlreadyRetrieved: [],
+
+		fieldsValue: {},
 		
 		constructor: function() {
 			topic.subscribe("form/change", lang.hitch(this, function(fieldNum){
@@ -57,6 +59,7 @@ define([
 		},
 		
 		initFormFields: function(nodeId) {
+			this.init(nodeId);
 			query('[data-pmb-uniqueid]', nodeId).forEach(lang.hitch(this, function(node){
 				this.computeField(domAttr.get(node, 'data-pmb-uniqueid'));
 			}));
@@ -137,30 +140,124 @@ define([
 				}
 			}
 			
-			promiseAll(deferredList).then(function(results){
+			promiseAll(deferredList).then(lang.hitch(this, function(results){
 				var fieldNodes = query('[data-pmb-uniqueid="'+fieldNum+'"]');
 				if (!fieldNodes.length) {
 					return false;
 				}
-				fieldNodes.forEach((fieldNode) => {
+				fieldNodes.forEach(lang.hitch(this, function (fieldNode) {
 					var functionToExec = new Function(aliases.join(), field[0].template);
 					var fieldContent = functionToExec.apply(fieldNode, results);
 					
 					var fieldValueNode = dom.byId(fieldNode.id + '_0_value');
 					var fieldValueTabNode = query('[name="'+fieldNode.id + '[0][value][]"]');
-					if (fieldValueTabNode && fieldValueTabNode[0] && !fieldValueTabNode[0].value) {
-						fieldValueTabNode[0].value = fieldContent; 
+					
+					if (fieldValueTabNode && fieldValueTabNode[0]) {
+						this.updateFieldValue(fieldValueTabNode[0], fieldContent);	
 					}
-					if (fieldValueNode && !fieldValueNode.value) {
-						fieldValueNode.value = fieldContent;
+					
+					if (fieldValueNode) {
+						this.updateFieldValue(fieldValueNode, fieldContent);	
 					}
+					
 					var fieldDisplayLabelNode = registry.byId(fieldNode.id + '_0_display_label');
 					if (fieldDisplayLabelNode) {
 						fieldDisplayLabelNode.updateTemplate();
 						fieldDisplayLabelNode.updateDisplayLabel();
 					}
-				});
-			});
+				}));
+			}));
+		},
+		
+		init : function (contentPaneNodeId) {
+			const additionnalDataNode = this.getElementByIdFromContentPane('additionnal_data', contentPaneNodeId);
+			if (!additionnalDataNode) {
+				return false;
+			}
+			
+			var formId = additionnalDataNode.form.id;
+			this.fieldsValue[formId] = {};
+			const additionnalData = JSON.parse(additionnalDataNode.value);
+			if (additionnalData && additionnalData.computed_fields_data) {
+				this.fieldsValue[formId] = additionnalData.computed_fields_data;
+			}
+			
+			for (var field of this.data) {				
+				const queryCollection = query('[data-pmb-uniqueid="' + field.field_num + '"]');
+				queryCollection.forEach(lang.hitch(this, function(node) {
+					const fieldValueNode = dom.byId(node.id + '_0_value');
+					const fieldValueTabNode = query('[name="' + node.id + '[0][value][]"]');
+					
+					if (fieldValueTabNode && fieldValueTabNode[0] && !this.fieldsValue[formId][fieldValueTabNode[0].id]) {
+						this.fieldsValue[formId][fieldValueTabNode[0].id] = fieldValueTabNode[0].value;						
+					}
+					if (fieldValueNode && !this.fieldsValue[formId][fieldValueNode.id]) {
+						this.fieldsValue[formId][fieldValueNode.id] = fieldValueNode.value;						
+					}
+				}));
+			}
+			topic.subscribe('contribution/submit', lang.hitch(this, this.saveData, contentPaneNodeId))
+		},
+
+		saveData : function (contentPaneNodeId) {
+			var additionnalDataNode = this.getElementByIdFromContentPane('additionnal_data', contentPaneNodeId);
+			if (!additionnalDataNode) {
+				return false;
+			}
+			
+			const formId = additionnalDataNode.form.id;
+			var additionnalData = JSON.parse(additionnalDataNode.value);
+			additionnalData.computed_fields_data = this.fieldsValue[formId];
+			additionnalDataNode.value = JSON.stringify(additionnalData);
+		},
+
+		updateFieldValue : function (domNode, newValue) {
+			const formId = domNode.form.id;
+			
+			if (!domNode.name) {
+				// Je sais pas pourquoi, mais le champ n'a pas de name
+				return false;
+			}
+
+			if (typeof newValue == "undefined") {
+				// La nouvelle valeur est incorrecte
+				return false;
+			}
+			
+			if (domNode.value != this.fieldsValue[formId][domNode.id]) {
+				// Champ modifié par l'utilisateur
+				return false;
+			}
+			
+			if (domNode.value == newValue) {
+				// La valeur n'a pas changée
+				return false;				
+			}
+			
+			domNode.value = newValue;
+			this.fieldsValue[formId][domNode.id] = newValue;
+			const uniqueid = this.getUniqueidByField(domNode)
+			if (uniqueid) {
+				// Le champ a été modifiés, on emit un "form/change".			
+				topic.publish("form/change", uniqueid);
+			}
+			return true;
+		},
+		
+		getElementByIdFromContentPane: function(nodeId, contentPane) {
+			const queryCollection = query('#' + nodeId, contentPane);
+			return queryCollection[0] ?? undefined;
+		},
+		
+		getUniqueidByField: function(domNode) {
+			if (!domNode.nodeName || domNode.nodeName == "FORM" || domNode.nodeName == "#document") {			
+				return undefined;
+			}
+			
+			if (domNode.attributes && domNode.attributes['data-pmb-uniqueid']) {
+				return domNode.attributes['data-pmb-uniqueid'].value;	
+			}
+			return domNode.parentElement ? this.getUniqueidByField(domNode.parentElement) : undefined;
 		}
 	});
 });

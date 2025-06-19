@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_readers_bannette_ui.class.php,v 1.14 2020/11/09 09:06:50 dgoron Exp $
+// $Id: list_readers_bannette_ui.class.php,v 1.16 2022/04/15 12:08:31 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path."/templates/list/readers/list_readers_bannette_ui.tpl.php");
 require_once($class_path."/bannette.class.php");
 
@@ -43,7 +44,7 @@ class list_readers_bannette_ui extends list_readers_ui {
 	}
 	
 	protected function get_search_filter_has_affected() {
-		global $msg, $charset;
+		global $msg;
 	
 		return "
 			<input type='radio' id='".$this->objects_type."_has_affected_no' name='".$this->objects_type."_has_affected' value='0' ".(!$this->filters['has_affected'] ? "checked='checked'" : "")." />
@@ -170,21 +171,18 @@ class list_readers_bannette_ui extends list_readers_ui {
 		}
 	}
 	
-	protected function get_selection_actions() {
+	protected function init_default_selection_actions() {
 		global $msg;
 		global $base_path;
 		global $id_bannette;
 		
-		if(!isset($this->selection_actions)) {
-			$this->selection_actions = array();
-			if($this->id_bannette || $id_bannette) {
-				$link = array();
-				$link['href'] = $base_path."/dsi.php?categ=bannettes&sub=pro&id_bannette=".($this->id_bannette ? $this->id_bannette : $id_bannette)."&suite=affect_lecteurs&faire=enregistrer";
-					
-				$this->selection_actions[] = $this->get_selection_action('save', $msg['77'], 'sauv.gif', $link);
-			}
+		$this->selection_actions = array();
+		if($this->id_bannette || $id_bannette) {
+			$link = array(
+					'href' => $base_path."/dsi.php?categ=bannettes&sub=pro&id_bannette=".($this->id_bannette ? $this->id_bannette : $id_bannette)."&suite=affect_lecteurs&faire=enregistrer"
+			);
+			$this->add_selection_action('save', $msg['77'], 'sauv.gif', $link);
 		}
-		return $this->selection_actions;
 	}
 
 	protected function add_events_on_selection_actions() {
@@ -298,7 +296,7 @@ class list_readers_bannette_ui extends list_readers_ui {
 	}
 	
 	public function set_id_bannette($id_bannette) {
-		$this->id_bannette = $id_bannette+0;
+		$this->id_bannette = intval($id_bannette);
 	}
 	
 	public function get_bannette() {

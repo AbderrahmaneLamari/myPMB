@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_itemslist_view_slideshow.class.php,v 1.1 2019/12/12 15:49:07 btafforeau Exp $
+// $Id: cms_module_itemslist_view_slideshow.class.php,v 1.1.6.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -21,8 +21,8 @@ class cms_module_itemslist_view_slideshow extends cms_module_common_view_slidesh
                     <a href='{{item.url}}' title='Source' target='_blank'>
                         <h3>{{item.title}}</h3>
                     </a>
-                    <blockquote>{{item.publication_date}} / {{item.source.title}}</blockquote>
-                    <blockquote>{{item.summary}}</blockquote>
+                    <div>{{item.publication_date}} / {{item.source.title}}</div>
+                    <div>{{item.summary}}</div>
                 </li>
                 {% endif %}
             {% endif %}

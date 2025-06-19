@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: expl_info.inc.php,v 1.68 2021/05/17 21:01:25 dgoron Exp $
+// $Id: expl_info.inc.php,v 1.68.6.1 2023/10/24 10:10:51 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -272,7 +272,7 @@ function get_expl_info($id, $lien_notice=1) {
 			$bl = new bulletinage_display($expl->expl_bulletin);
 			$expl->isbd  = $bl->display;
 			if ($cart_link_non) $expl->aff_reduit = $bl->header;
-			else $expl->aff_reduit = "<a href='./catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=$expl->expl_bulletin'>".$bl->header."</a>";
+			else $expl->aff_reduit = "<a href='./catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=" . intval($expl->expl_bulletin) . "'>".$bl->header."</a>";
 		}
 		if ($expl->expl_lastempr) {
 			$lastempr = new emprunteur($expl->expl_lastempr, '', FALSE, 0) ;

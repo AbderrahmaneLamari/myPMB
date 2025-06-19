@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_generic.class.php,v 1.23.2.1 2021/12/27 08:20:53 dgoron Exp $
+// $Id: searcher_generic.class.php,v 1.25 2022/03/17 12:15:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -36,6 +36,8 @@ class searcher_generic {
 	
 	protected $tri="default";	// tri à utiliser
 	protected $details = [];
+	
+	protected $context_parameters;
 	
 	public function __construct($user_query){
 		global $pmb_search_noise_limit_type;
@@ -349,4 +351,19 @@ class searcher_generic {
 	    $this->details = $details;
 	}
 
+	public function get_context_parameters() {
+		return $this->context_parameters;
+	}
+	
+	public function set_context_parameters($context_parameters=array()) {
+		$this->context_parameters = $context_parameters;
+	}
+	
+	public function add_context_parameter($key, $value) {
+		$this->context_parameters[$key] = $value;
+	}
+	
+	public function delete_context_parameter($key) {
+		unset($this->context_parameters[$key]);
+	}
 }

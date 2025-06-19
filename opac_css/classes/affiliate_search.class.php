@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: affiliate_search.class.php,v 1.31.2.1 2021/12/24 13:23:41 dgoron Exp $
+// $Id: affiliate_search.class.php,v 1.32.4.1 2023/04/24 13:07:59 dgoron Exp $
 
 global $class_path, $include_path;
 require_once($class_path."/connecteurs.class.php");
@@ -657,74 +657,76 @@ class affiliate_search_author extends affiliate_search_authorities {
 				break;
 		}
 
-		$res_sql=pmb_mysql_query($rqt) or die (pmb_mysql_error());
+		$res_sql=pmb_mysql_query($rqt);
 		$authors = $collectivities = $congres = array();
-		while($row= pmb_mysql_fetch_object($res_sql)){
-			$infos = explode("|",$row->infos);
-			switch($row->type){
-				case "70" :
-					$rqt  = "select * from entrepot_source_".$infos[7]." where recid='".$infos[6]."' and ufield = '".$infos[0]."' and field_order='".$infos[2]."'";
-					$res = pmb_mysql_query($rqt);
-					$rejete=$entree="";
-					if(pmb_mysql_num_rows($res))
-						while($r = pmb_mysql_fetch_object($res)){
-							switch($r->usubfield){
-								case "a" :
-									$entree = $r->value;
-									break;
-								case "b" :
-									$rejete = $r->value;
-									break;
+		if($res_sql) {
+			while($row= pmb_mysql_fetch_object($res_sql)){
+				$infos = explode("|",$row->infos);
+				switch($row->type){
+					case "70" :
+						$rqt  = "select * from entrepot_source_".$infos[7]." where recid='".$infos[6]."' and ufield = '".$infos[0]."' and field_order='".$infos[2]."'";
+						$res = pmb_mysql_query($rqt);
+						$rejete=$entree="";
+						if(pmb_mysql_num_rows($res))
+							while($r = pmb_mysql_fetch_object($res)){
+								switch($r->usubfield){
+									case "a" :
+										$entree = $r->value;
+										break;
+									case "b" :
+										$rejete = $r->value;
+										break;
+								}
 							}
-						}
-					$authors[]=array(
-						'value' => $infos[5],
-						'label' =>($rejete ? $rejete." " : "").$entree,
-						'type' => "70"
-					);
-					break;
-				case "71" :
-					$rqt  = "select * from entrepot_source_".$infos[7]." where recid='".$infos[6]."' and ufield = '".$infos[0]."' and field_order='".$infos[2]."'";
-					$res = pmb_mysql_query($rqt);
-					$rejete=$entree="";
-					if(pmb_mysql_num_rows($res))
-						while($r = pmb_mysql_fetch_object($res)){
-							switch($r->usubfield){
-								case "a" :
-									$entree = $r->value;
-									break;
-								case "c" :
-									$rejete = $r->value;
-									break;
+						$authors[]=array(
+							'value' => $infos[5],
+							'label' =>($rejete ? $rejete." " : "").$entree,
+							'type' => "70"
+						);
+						break;
+					case "71" :
+						$rqt  = "select * from entrepot_source_".$infos[7]." where recid='".$infos[6]."' and ufield = '".$infos[0]."' and field_order='".$infos[2]."'";
+						$res = pmb_mysql_query($rqt);
+						$rejete=$entree="";
+						if(pmb_mysql_num_rows($res))
+							while($r = pmb_mysql_fetch_object($res)){
+								switch($r->usubfield){
+									case "a" :
+										$entree = $r->value;
+										break;
+									case "c" :
+										$rejete = $r->value;
+										break;
+								}
 							}
-						}
-					$collectivities[]=array(
-						'value' => $infos[5],
-						'label' =>$entree.($rejete ? ", ".$rejete : ""),
-						'type' => "71"
-					);
-					break;
-				case "72" :
-					$rqt  = "select * from entrepot_source_".$infos[7]." where recid='".$infos[6]."' and ufield = '".$infos[0]."' and field_order='".$infos[2]."'";
-					$res = pmb_mysql_query($rqt);
-					$rejete=$entree="";
-					if(pmb_mysql_num_rows($res))
-						while($r = pmb_mysql_fetch_object($res)){
-							switch($r->usubfield){
-								case "a" :
-									$entree = $r->value;
-									break;
-								case "c" :
-									$rejete = $r->value;
-									break;
+						$collectivities[]=array(
+							'value' => $infos[5],
+							'label' =>$entree.($rejete ? ", ".$rejete : ""),
+							'type' => "71"
+						);
+						break;
+					case "72" :
+						$rqt  = "select * from entrepot_source_".$infos[7]." where recid='".$infos[6]."' and ufield = '".$infos[0]."' and field_order='".$infos[2]."'";
+						$res = pmb_mysql_query($rqt);
+						$rejete=$entree="";
+						if(pmb_mysql_num_rows($res))
+							while($r = pmb_mysql_fetch_object($res)){
+								switch($r->usubfield){
+									case "a" :
+										$entree = $r->value;
+										break;
+									case "c" :
+										$rejete = $r->value;
+										break;
+								}
 							}
-						}
-					$congres[]=array(
-						'value' => $infos[5],
-						'label' =>$entree.($rejete ? ", ".$rejete : ""),
-						'type' => "72"
-					);
-					break;
+						$congres[]=array(
+							'value' => $infos[5],
+							'label' =>$entree.($rejete ? ", ".$rejete : ""),
+							'type' => "72"
+						);
+						break;
+				}
 			}
 		}
 		$authors = array_unique($authors,SORT_REGULAR);

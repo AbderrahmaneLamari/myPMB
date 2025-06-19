@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: modelling.php,v 1.7 2021/04/30 06:25:04 dgoron Exp $
+// $Id: modelling.php,v 1.7.6.1 2023/09/04 14:36:35 tsamson Exp $
 
 
 // définition du minimum nécessaire 
@@ -23,7 +23,9 @@ $module_modelling->proceed_header();
 
 if($pmb_javascript_office_editor){
     print $pmb_javascript_office_editor;
-    print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+    print "<script type='text/javascript'>
+        pmb_include('$base_path/javascript/tinyMCE_interface.js');
+    </script>";
 }
 
 $id = intval($id);

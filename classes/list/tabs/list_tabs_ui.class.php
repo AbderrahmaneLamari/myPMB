@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_tabs_ui.class.php,v 1.10.2.5 2021/12/13 08:37:51 dgoron Exp $
+// $Id: list_tabs_ui.class.php,v 1.20.4.4 2023/09/15 15:44:12 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Common\Helper\Helper;
 
 global $class_path;
 require_once($class_path."/tabs/tabs.class.php");
@@ -13,6 +15,8 @@ require_once($class_path."/tabs/tab.class.php");
 class list_tabs_ui extends list_ui {
 	
 	protected static $module_name;
+	
+	protected static $no_check_rights;
 	
 	protected function get_object_instance($row) {
 		return $row;
@@ -28,7 +32,7 @@ class list_tabs_ui extends list_ui {
 	protected function has_tab_rights($categ, $sub) {
 		global $PMBuserid;
 		
-		if($PMBuserid == 1) {
+		if(!empty(static::$no_check_rights) || $PMBuserid == 1) {
 			return true;
 		}
 		$tabs_module = tabs::get_tabs_module(static::$module_name);
@@ -92,7 +96,8 @@ class list_tabs_ui extends list_ui {
 	}
 	
 	public function get_display_tab($object) {
-		return "<li id='".static::$module_name."_menu_".$object->get_label_code()."' ".($this->is_active_tab($object->get_label_code(), $object->get_categ(), $object->get_sub()) ? "class='active'" : "" ).">
+		$nodeId = static::$module_name . "_menu_" . Helper::snakelize($object->get_label_code());
+		return "<li id='{$nodeId}' ".($this->is_active_tab($object->get_label_code(), $object->get_categ(), $object->get_sub()) ? "class='active'" : "" ).">
 			<a href='".$object->get_destination_link()."'>
 				".$object->get_label()."
 			</a>
@@ -151,7 +156,7 @@ class list_tabs_ui extends list_ui {
 		);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'section');
 	}
 	
@@ -238,7 +243,7 @@ class list_tabs_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		switch ($property) {
 			case 'initialization':
@@ -251,9 +256,7 @@ class list_tabs_ui extends list_ui {
 				}
 				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	protected function init_default_selection_actions() {
@@ -280,6 +283,13 @@ class list_tabs_ui extends list_ui {
 		}
 	}
 	
+	protected function get_display_cell_html_value($object, $value) {
+	    if(empty($object->get_id())) {
+	        $value = str_replace('!!id!!', $object->get_module()."_".$object->get_categ().(!empty($object->get_sub()) ? "_".$object->get_sub() : ""), $value);
+	    }
+	    return parent::get_display_cell_html_value($object, $value);
+	}
+	
 	protected function save_object($object, $property, $value) {
 		switch ($property) {
 			case 'autorisations':
@@ -295,7 +305,15 @@ class list_tabs_ui extends list_ui {
 		tab::delete($id);
 	}
 	
+	public static function get_controller_url_base() {
+	    return parent::get_controller_url_base().(!empty(static::$module_name) ? '&tab_module='.static::$module_name : '');
+	}
+	
 	public static function set_module_name($module_name) {
 		static::$module_name = $module_name;
+	}
+	
+	public static function set_no_check_rights($no_check_rights) {
+		static::$no_check_rights = intval($no_check_rights);
 	}
 }

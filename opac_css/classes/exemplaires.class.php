@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: exemplaires.class.php,v 1.6 2020/09/11 10:49:59 dgoron Exp $
+// $Id: exemplaires.class.php,v 1.8.4.2 2023/12/01 14:28:11 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -118,17 +118,22 @@ class exemplaires {
 					
 					while ($expl = pmb_mysql_fetch_object($result)) {
 				
-						$requete_resa = "SELECT count(1) from resa where resa_cb='".$expl->expl_cb."' ";
+						$requete_resa = "SELECT count(1) from resa where resa_cb='".addslashes($expl->expl_cb)."' ";
 						$flag_resa = pmb_mysql_result(pmb_mysql_query($requete_resa),0,0);
-						$requete_resa = "SELECT count(1) from resa_ranger where resa_cb='".$expl->expl_cb."' ";
+						$requete_resa = "SELECT count(1) from resa_ranger where resa_cb='".addslashes($expl->expl_cb)."' ";
 						$flag_resa = $flag_resa + pmb_mysql_result(pmb_mysql_query($requete_resa),0,0);
+						$requete_owner = "SELECT distinct lender_libelle FROM exemplaires JOIN lenders ON lenders.idlender = exemplaires.expl_owner WHERE expl_id = '".$expl->expl_id."'";
+						$lender = pmb_mysql_result(pmb_mysql_query($requete_owner),0,0);
+						$requete_codestat = "SELECT codestat_libelle FROM exemplaires JOIN docs_codestat ON docs_codestat.idcode = exemplaires.expl_codestat WHERE expl_id = '".$expl->expl_id."'";
+						$codestat = pmb_mysql_result(pmb_mysql_query($requete_codestat),0,0);
 						
 						$expl_datas = array(
 								'num_infopage' => $expl->num_infopage,
 								'surloc_id' => (isset($expl->surloc_id) ? $expl->surloc_id : 0),
 								'expl_location' => $expl->expl_location,
 								'expl_cb' => $expl->expl_cb,
-								'statut_libelle_opac' => $expl->statut_libelle_opac,
+								'statut_libelle_opac' => translation::get_translated_text($expl->expl_statut, "docs_statut", "statut_libelle_opac", $expl->statut_libelle_opac),
+								'section_libelle_opac' => translation::get_translated_text($expl->idsection, "docs_section", "section_libelle_opac", $expl->section_libelle_opac),
 								'pret_flag' => $expl->pret_flag,
 								'pret_retour' => $expl->pret_retour,
 								'pret_idempr' => $expl->pret_idempr,
@@ -136,7 +141,10 @@ class exemplaires {
 								'expl_id' => $expl->expl_id,
 								'flag_resa' => $flag_resa,
 								'id_notice' => 0,
-								'id_bulletin' => 0
+								'id_bulletin' => 0,
+								'expl_comment' => $expl->expl_comment,
+								'expl_owner' => $lender,
+								'expl_codestat' => $codestat
 						);
 						
 						foreach ($colonnesarray as $colonne) {

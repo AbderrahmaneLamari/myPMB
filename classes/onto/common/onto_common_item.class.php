@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_item.class.php,v 1.77.2.5 2021/09/03 08:14:43 qvarin Exp $
+// $Id: onto_common_item.class.php,v 1.86 2022/12/02 09:42:34 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -55,13 +55,19 @@ class onto_common_item {
 	 * Tableau d'erreurs de check_values
 	 * @access private
 	 */
-	private $checking_errors;
+	protected $checking_errors;
 	
 	
 	/**
 	 * Parametrage du framework
 	 */
 	protected $framework_params;
+	
+	/**
+	 * Tableau de données complémentaires
+	 * @var array
+	 */
+	protected $additionnal_data = [];
 	
 	/**
 	 * 
@@ -104,7 +110,7 @@ class onto_common_item {
 		    if(strpos($opac_url_base,"http") !== 0){
 		        $base_url = "http://www.pmbservices.fr/";
 		    }
-			$this->uri = onto_common_uri::replace_temp_uri($this->uri,$this->onto_class->uri,$base_url.$this->onto_class->pmb_name."#");
+		    $this->uri = onto_common_uri::replace_temp_uri($this->uri,$this->onto_class->uri,$base_url.$this->get_onto_class()->get_ontology()->name."/".$this->get_onto_class_pmb_name()."#");
 		}
 	}
 	
@@ -330,8 +336,9 @@ class onto_common_item {
 			foreach($datatypes as $datatype){
 				//on commence par vérifier les valeurs des datatypes...
 				if(!$datatype->check_value()){
-					$this->checking_errors[$property_uri]['type'] = "unvalid datas";
+					$this->checking_errors[$property_uri]['type'] = $datatype->get_error_type();
 					$this->checking_errors[$property_uri]['error'] = get_class($datatype);
+					$this->checking_errors[$property_uri]['message'] = $datatype->get_error_message();
 					$valid = false;
 					break;
 				}
@@ -369,6 +376,10 @@ class onto_common_item {
 		}
 		
 		foreach ($this->onto_class->get_properties() as $property_uri) {
+		    if(!empty($this->checking_errors[$property_uri])){
+		        // On a déjà un souci plus haut dans le test, on ne s'embete pas plus...
+		        continue;
+		    }
 			$restriction = $this->onto_class->get_restriction($property_uri);
 			$min = $restriction->get_min();
 			$max = $restriction->get_max();
@@ -585,5 +596,17 @@ class onto_common_item {
 	
 	public function get_onto_class_pmb_name() {
 	    return $this->onto_class->pmb_name;
+	}
+	
+	public function set_additionnal_data($additionnal_data) {
+	    $this->additionnal_data = $additionnal_data;
+	}
+	
+	public function add_additionnal_data($key, $value = "") {
+	    $this->additionnal_data[$key] = $value;
+	}
+	
+	public function get_additionnal_data() {
+	    return $this->additionnal_data;
 	}
 } // end of onto_common_item

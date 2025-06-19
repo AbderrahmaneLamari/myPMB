@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_sphinx_authorities.class.php,v 1.5 2020/03/17 10:31:44 btafforeau Exp $
+// $Id: searcher_sphinx_authorities.class.php,v 1.5.6.1 2023/09/06 08:19:20 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -66,7 +66,7 @@ class searcher_sphinx_authorities extends searcher_sphinx {
 	
 	public function get_full_query(){		
 		$this->get_result();
-		$query =  'select id_authority, pert from '.$this->get_tempo_tablename();	
+		$query =  'select distinct id_authority, pert from '.$this->get_tempo_tablename();	
 		return $query;
 	}
 	

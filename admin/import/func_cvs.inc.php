@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_cvs.inc.php,v 1.3.4.2 2021/12/09 14:25:07 dgoron Exp $
+// $Id: func_cvs.inc.php,v 1.5 2021/12/09 14:22:20 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

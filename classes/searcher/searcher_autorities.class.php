@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_autorities.class.php,v 1.32 2021/04/06 10:20:53 tsamson Exp $
+// $Id: searcher_autorities.class.php,v 1.34.4.1 2023/05/30 07:06:52 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/searcher/searcher_generic.class.php');
-
 
 //un jour ca sera utile
 class searcher_autorities extends searcher_generic {
@@ -45,6 +45,13 @@ class searcher_autorities extends searcher_generic {
 		return 'select id_authority from authorities';
 	}
 	
+	/**
+	 * Jointure externes SQL pour les besoins des filtres
+	 */
+	protected function _get_query_join_filters() {
+		return '';	
+	}
+	
 	protected function _get_authorities_filters(){
 		global $authority_statut, $no_display;
 		$filters = array();
@@ -68,6 +75,7 @@ class searcher_autorities extends searcher_generic {
 			if ($this->user_query !== "*") {
 				$query = 'select id_authority from authorities join '.$this->object_table.' on authorities.num_object = '.$this->object_table_key;
 			}
+			$query .= $this->_get_query_join_filters();
 			if (count($filters)) {
 				$query .= ' where '.implode(' and ', $filters);
 			}
@@ -84,7 +92,7 @@ class searcher_autorities extends searcher_generic {
     			$filters[] = 'id_authority in ('.$query.')';
 			}
 			if (count($filters)) {
-				$query = 'select id_authority from authorities where '.implode(' and ', $filters);
+				$query = 'select id_authority from authorities '.$this->_get_query_join_filters().' where '.implode(' and ', $filters);
 			}
 		}
 		return $query;
@@ -97,6 +105,16 @@ class searcher_autorities extends searcher_generic {
 		return $str_to_hash;
 	}
 
+	protected function _get_in_cache($sorted=false){
+		global $last_param;
+		
+		//non utilisation du cache pour un affichage des derniers elements
+		if (!empty($last_param)) {
+			return false;
+		}
+		return parent::_get_in_cache($sorted);
+	}
+	
 	// à réécrire au besoin...
 	protected function _sort($start,$number) {
 	    global $last_param, $tri_param, $limit_param;
@@ -219,7 +237,7 @@ class searcher_autorities extends searcher_generic {
 
 		$this->table_tempo = 'search_result'.md5(microtime(true));
 		$rqt = 'create temporary table '.$this->table_tempo.' '.$query;
-		$res = pmb_mysql_query($rqt);
+		pmb_mysql_query($rqt);
 		pmb_mysql_query('alter table '.$this->table_tempo.' add index i_id('.$this->object_key.')');
 	}
 	
@@ -261,7 +279,7 @@ class searcher_autorities extends searcher_generic {
 			while ($row = pmb_mysql_fetch_object($result)) {
 				if(!$first)$display .=", ";
 				$display .=htmlentities($row->authority_number,ENT_QUOTES,$charset);
-				if($tmp=trim($row->origin_authorities_name)){
+				if(trim($row->origin_authorities_name)){
 					$display .=htmlentities(" (".$row->origin_authorities_name.")",ENT_QUOTES,$charset);
 				}
 				$first=false;
@@ -276,6 +294,7 @@ class searcher_autorities extends searcher_generic {
 	*/
 	public function add_fields_restrict($fields_restrict = array()) {
 		if(count($fields_restrict)){
+			$tab = array();
 			$tab[] = array(
 				'op' => "and",
 				'sub' => $fields_restrict

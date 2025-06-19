@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: import_empr.class.php,v 1.3 2020/09/15 14:52:48 dgoron Exp $
+// $Id: import_empr.class.php,v 1.4 2023/02/15 07:12:00 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -121,45 +121,5 @@ class import_empr extends import_entities {
 		}
 		$selector .= "</select>";
 		return $selector;
-	}
-	
-	public static function get_encoded_buffer($buffer) {
-		global $charset;
-		global $encodage_fic_source;
-		
-		if(isset($encodage_fic_source)){
-			$_SESSION["encodage_fic_source"]=$encodage_fic_source;
-		}elseif(isset($_SESSION["encodage_fic_source"])){
-			$encodage_fic_source=$_SESSION["encodage_fic_source"];
-		}
-		if($encodage_fic_source){//On a forcé l'encodage
-			switch ($encodage_fic_source) {
-				case 'iso8859':
-					if($charset == 'utf-8') {
-						if(function_exists("mb_convert_encoding") && ((strpos($buffer,chr(0x92)) !== false) || (strpos($buffer,chr(0x93)) !== false) || (strpos($buffer,chr(0x9c)) !== false) || (strpos($buffer,chr(0x8c)) !== false))){//Pour les caractères windows
-							$buffer = mb_convert_encoding($buffer,"UTF-8","Windows-1252");
-						}else{
-							$buffer = utf8_encode($buffer);
-						}
-					}
-					break;
-				case 'iso5426':
-					$buffer=iso2709_record::ISO_646_5426_decode($buffer);
-					if($charset == 'utf-8') {
-						if(function_exists("mb_convert_encoding") && ((strpos($buffer,chr(0x92)) !== false) || (strpos($buffer,chr(0x93)) !== false) || (strpos($buffer,chr(0x9c)) !== false) || (strpos($buffer,chr(0x8c)) !== false))){//Pour les caractères windows
-							$buffer = mb_convert_encoding($buffer,"UTF-8","Windows-1252");
-						}else{
-							$buffer = utf8_encode($buffer);
-						}
-					}
-					break;
-				case 'utf-8':
-					if($charset == 'iso-8859-1') {
-						$buffer = utf8_decode($buffer);
-					}
-					break;
-			}
-		}
-		return $buffer;
 	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: abts_abonnements.class.php,v 1.64.2.1 2021/07/22 12:24:51 dgoron Exp $
+// $Id: abts_abonnements.class.php,v 1.66 2023/01/05 11:11:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -122,11 +122,53 @@ class abts_abonnement {
 		}
 	}
 	
+	protected function get_tpl_empr_list() {
+		global $msg;
+		global $abonnement_serialcirc_empr_list_empr, $abonnement_serialcirc_empr_list_group, $abonnement_serialcirc_empr_list_group_elt;
+		
+		$tpl_empr_list = '';
+		$serialcirc_diff=new serialcirc_diff(0,$this->abt_id);
+		foreach($serialcirc_diff->diffusion as $diff){
+			if($diff['empr_type']==SERIALCIRC_EMPR_TYPE_empr){
+				$tpl_empr=$abonnement_serialcirc_empr_list_empr;
+				$name_elt=$serialcirc_diff->empr_info[ $diff['empr']['id_empr']]['empr_libelle'];
+			}else{
+				$name_elt=$diff['empr_name'];
+				$group_list_list="";
+				if(count($diff['group'])){
+					$tpl_empr=$abonnement_serialcirc_empr_list_group;
+					foreach($diff['group'] as $empr){
+						$group_list=$abonnement_serialcirc_empr_list_group_elt;
+						$resp="";
+						if($empr['responsable']){
+							$resp=$msg["serialcirc_group_responsable"];
+						}
+						$group_list=str_replace('!!empr_libelle!!',$empr['empr']['empr_libelle'].$resp, $group_list);
+						$group_list_list.=$group_list;
+					}
+					$tpl_empr=str_replace('!!empr_list!!', $group_list_list, $tpl_empr);
+				}else {
+					$tpl_empr=$abonnement_serialcirc_empr_list_empr;
+				}
+			}
+			$tpl_empr=str_replace('!!id_diff!!', $diff['id'], $tpl_empr);
+			if (isset($diff['empr']['view_link'])) {
+				$tpl_empr=str_replace('!!empr_view_link!!', $diff['empr']['view_link'], $tpl_empr);
+			} else {
+				// un groupe
+				$tpl_empr=str_replace('!!empr_view_link!!', '', $tpl_empr);
+			}
+			$tpl_empr=str_replace('!!empr_name!!', $name_elt, $tpl_empr);
+			$tpl_empr_list .= $tpl_empr;
+		}
+		return $tpl_empr_list;
+	}
+	
 	public function show_abonnement() {
 		global $abonnement_view,$serial_id;
 		global $msg;
-		global $abonnement_serialcirc_empr_list_empr, $abonnement_serialcirc_empr_list_group, $abonnement_serialcirc_empr_list_group_elt;
 		global $pmb_gestion_devise;
+		
 		$perio=new serial_display($this->num_notice,1);
 		$r=$abonnement_view;
 		$r=str_replace("!!view_id_abonnement!!","catalog.php?categ=serials&sub=abon&serial_id=$serial_id&abt_id=$this->abt_id",$r);
@@ -171,41 +213,7 @@ class abts_abonnement {
 		$r=str_replace("!!commentaire!!",$aff_destinataire,$r);					
 		
 		//Liste des destinataires
-		$serialcirc_diff=new serialcirc_diff(0,$this->abt_id);
-		$tpl_empr_list = "";
-		foreach($serialcirc_diff->diffusion as $diff){
-			if($diff['empr_type']==SERIALCIRC_EMPR_TYPE_empr){
- 				$tpl_empr=$abonnement_serialcirc_empr_list_empr;
- 				$name_elt=$serialcirc_diff->empr_info[ $diff['empr']['id_empr']]['empr_libelle'];
-			}else{
-				$name_elt=$diff['empr_name'];
-				$group_list_list="";
-				if(count($diff['group'])){
- 					$tpl_empr=$abonnement_serialcirc_empr_list_group;
-					foreach($diff['group'] as $empr){
-						$group_list=$abonnement_serialcirc_empr_list_group_elt;
-						$resp="";
-						if($empr['responsable']){
-							$resp=$msg["serialcirc_group_responsable"];
-						}
-						$group_list=str_replace('!!empr_libelle!!',$empr['empr']['empr_libelle'].$resp, $group_list);
-						$group_list_list.=$group_list;
-					}
-					$tpl_empr=str_replace('!!empr_list!!', $group_list_list, $tpl_empr);
-				}else {
-					$tpl_empr=$abonnement_serialcirc_empr_list_empr;
-				}
-			}
-			$tpl_empr=str_replace('!!id_diff!!', $diff['id'], $tpl_empr);
-			if (isset($diff['empr']['view_link'])) {
-			    $tpl_empr=str_replace('!!empr_view_link!!', $diff['empr']['view_link'], $tpl_empr);			    
-			} else {
-			    // un groupe
-			    $tpl_empr=str_replace('!!empr_view_link!!', '', $tpl_empr);
-			}
-			$tpl_empr=str_replace('!!empr_name!!', $name_elt, $tpl_empr);
-			$tpl_empr_list.=$tpl_empr;
-		}
+		$tpl_empr_list = $this->get_tpl_empr_list();
 		$aff_empr_list="";
 		if($tpl_empr_list){
 			$aff_empr_list="

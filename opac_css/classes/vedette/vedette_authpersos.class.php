@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: vedette_authpersos.class.php,v 1.6 2021/01/14 13:58:49 jlaurent Exp $
+// $Id: vedette_authpersos.class.php,v 1.6.6.1 2023/05/12 14:26:28 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -32,11 +32,12 @@ class vedette_authpersos extends vedette_element{
 	}
 	
 	public function set_vedette_element_from_database(){
+		$this->isbd = "";
 	    $this->entity = authorities_collection::get_authority(AUT_TABLE_AUTHORITY, 0, [ 'num_object' => $this->id, 'type_object' => AUT_TABLE_AUTHPERSO]);
 	    if ($this->entity->get_object_instance()->get_isbd($this->id)){
     	    $this->isbd = $this->entity->get_object_instance()->get_isbd($this->id);
-	    } else {
-	        $this->isbd =  onto_contribution_datatype_resource_selector::get_properties_from_uri($this->id)['isbd'];
+	    } elseif(class_exists("onto_contribution_datatype_resource_selector")) {
+	        $this->isbd = onto_contribution_datatype_resource_selector::get_properties_from_uri($this->id)['isbd'];
 	    }
 	}
 	

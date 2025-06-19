@@ -5,7 +5,7 @@
 ****************************************************************************************
 © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: cms_module_recordslist.xml,v 1.8.8.1 2021/10/13 12:23:10 qvarin Exp $ -->
+$Id: cms_module_recordslist.xml,v 1.9 2021/10/13 12:46:28 qvarin Exp $ -->
 
 <XMLlist>
 	<entry code='cms_module_common_datasource_similarrecords'>Similar records</entry>

@@ -3,12 +3,13 @@
 // +-------------------------------------------------+
 // | 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mailing_empr.class.php,v 1.33.2.2 2021/11/24 10:04:53 dgoron Exp $
+// $Id: mailing_empr.class.php,v 1.36.4.1 2023/09/15 14:12:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 use Pmb\Animations\Controller\MailingController;
 
+global $class_path, $include_path;
 require_once($class_path."/campaigns/campaign.class.php");
 require_once($class_path.'/emprunteur_datas.class.php');
 require_once($include_path."/mailing.inc.php");
@@ -36,16 +37,12 @@ class mailing_empr {
 	}
 	
 	public function send($objet_mail, $message, $paquet_envoi=0,$pieces_jointes=array()) {
-	    global $charset, $msg, $opac_url_base;
-		global $pmb_mail_delay, $pmb_mail_html_format, $pmb_img_url, $pmb_img_folder;
-		global $PMBuserprenom, $PMBusernom, $PMBuseremail, $PMBuseremailbcc;
-		global $opac_connexion_phrase,$class_path, $idemprcaddie;
+	    global $dbh, $charset;
+		global $pmb_mail_delay;
 		  
 		if ($this->id_list) {
 			// ajouter les tags <html> si besoin :
 			if (strpos("<html",substr($message,0,20))===false) $message="<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><meta charset=\"".$charset."\" /></head><body>$message</body></html>";
-			$headers  = "MIME-Version: 1.0\n";
-			$headers .= "Content-type: text/html; charset=iso-8859-1";
 
 			$emprs = $this->get_empr_list($paquet_envoi);
 			$n_envoi = count($emprs);
@@ -66,206 +63,30 @@ class mailing_empr {
 					}
 				}
 			}
-			
 			while ($ienvoi<$n_envoi) {
 				$destinataire = $emprs[$ienvoi];
-				$iddest=$destinataire->id_empr;
-				$emaildest=$destinataire->empr_mail;
-				$nomdest=$destinataire->empr_nom;
-				if ($destinataire->empr_prenom) $nomdest=$destinataire->empr_prenom." ".$destinataire->empr_nom; 
+				$mail_mailing = new mail_mailing();
+				$mail_mailing->set_mail_to_id($destinataire->id_empr)
+						->set_destinataire($destinataire)
+						->set_object_tpl($objet_mail)
+						->set_content_tpl($message)
+						->set_mail_attachments($pieces_jointes)
+						->set_associated_campaign($this->associated_campaign)
+						->set_associated_num_campaign($this->associated_num_campaign);
+				$mail_mailing->set_mailing($this);
+				$envoi_OK = $mail_mailing->send_mail();
 				
-				$loc_name = '';
-				$loc_adr1 = '';
-				$loc_adr2 = '';
-				$loc_cp = '';
-				$loc_town = '';
-				$loc_phone = '';
-				$loc_email = '';
-				$loc_website = '';
-				if ($destinataire->empr_location) {
-					$empr_dest_loc = pmb_mysql_query("SELECT * FROM docs_location WHERE idlocation=".$destinataire->empr_location);
-					if (pmb_mysql_num_rows($empr_dest_loc)) {
-						$empr_loc = pmb_mysql_fetch_object($empr_dest_loc);
-						$loc_name = $empr_loc->name;
-						$loc_adr1 = $empr_loc->adr1;
-						$loc_adr2 = $empr_loc->adr2;
-						$loc_cp = $empr_loc->cp;
-						$loc_town = $empr_loc->town;
-						$loc_phone = $empr_loc->phone;
-						$loc_email = $empr_loc->email;
-						$loc_website = $empr_loc->website;
-					}
-				}
-				
-				switch ($destinataire->empr_sexe) {
-					case "2":
-						$empr_civilite = $msg["civilite_madame"];
-						break;
-					case "1":
-						$empr_civilite = $msg["civilite_monsieur"];
-						break;
-					default:
-						$empr_civilite = $msg["civilite_unknown"];
-						break;
-				}
-				
-				$dates = time();
-				$login = $destinataire->empr_login;
-				$code=md5($opac_connexion_phrase.$login.$dates);
-				
-				$empr_auth_opac = "<a href='".$opac_url_base."empr.php?code=!!code!!&emprlogin=!!login!!&date_conex=!!date_conex!!'>".$msg["selvars_empr_auth_opac"]."</a>";
-				$empr_auth_opac_subscribe_link = "<a href='".$opac_url_base."empr.php?lvl=renewal&code=!!code!!&emprlogin=!!login!!&date_conex=!!date_conex!!'>".$msg["selvars_empr_auth_opac_subscribe_link"]."</a>";
-				$empr_auth_opac_change_password_link = "<a href='".$opac_url_base."empr.php?lvl=change_password&code=!!code!!&emprlogin=!!login!!&date_conex=!!date_conex!!'>".$msg["selvars_empr_auth_opac_change_password_link"]."</a>";
-				
-				$message_to_send = $message;
-				$search = array(
-					"!!empr_name!!",
-					"!!empr_first_name!!",
-					"!!empr_sexe!!",
-					"!!empr_cb!!",
-					"!!empr_login!!",
-					"!!empr_mail!!",
-					"!!empr_dated!!",
-					"!!empr_datef!!",
-					"!!empr_nb_days_before_expiration!!",
-			        "!!empr_auth_opac!!",
-			        "!!empr_auth_opac_subscribe_link!!",
-					"!!empr_auth_opac_change_password_link!!",
-					"!!empr_loc_name!!",
-					"!!empr_loc_adr1!!",
-					"!!empr_loc_adr2!!",
-					"!!empr_loc_cp!!",
-					"!!empr_loc_town!!",
-					"!!empr_loc_phone!!",
-					"!!empr_loc_email!!",
-					"!!empr_loc_website!!",
-					"!!empr_day_date!!",
-					"!!code!!",
-					"!!login!!",
-					"!!date_conex!!",
-					"!!empr_last_loan_date!!",
-				);
-				$replace = array(
-					$destinataire->empr_nom,
-					$destinataire->empr_prenom,
-					$empr_civilite,
-					$destinataire->empr_cb,
-					$destinataire->empr_login,
-					$destinataire->empr_mail,
-					$destinataire->aff_empr_date_adhesion,
-					$destinataire->aff_empr_date_expiration,
-					$destinataire->nb_days_before_expiration,
-				    $empr_auth_opac,
-				    $empr_auth_opac_subscribe_link,
-					$empr_auth_opac_change_password_link,
-					$loc_name,
-					$loc_adr1,
-					$loc_adr2,
-					$loc_cp,
-					$loc_town,
-					$loc_phone,
-					$loc_email,
-					$loc_website,
-					$destinataire->aff_empr_day_date,
-					$code,
-					$login,
-					$dates,
-					$destinataire->aff_last_loan_date,
-				);
-				
-				$emprunteur_datas = new emprunteur_datas($destinataire->id_empr);
-				if (strpos($message_to_send, "!!empr_loans!!") !== false) {
-					$search[] = "!!empr_loans!!";
-					$replace[] = $emprunteur_datas->m_liste_prets();
-				}
-				if (strpos($message_to_send, "!!empr_loans_late!!") !== false) {
-					$search[] = "!!empr_loans_late!!";
-					$replace[] = $emprunteur_datas->m_liste_prets(true);
-				}
-				if (strpos($message_to_send, "!!empr_resas!!") !== false) {
-					$search[] = "!!empr_resas!!";
-					$replace[] = $emprunteur_datas->m_liste_resas();
-				}
-				if (strpos($message_to_send, "!!empr_resa_confirme!!") !== false) {
-					$search[] = "!!empr_resa_confirme!!";
-					$replace[] = $emprunteur_datas->m_liste_resas_confirme();
-				}
-				if (strpos($message_to_send, "!!empr_resa_not_confirme!!") !== false) {
-					$search[] = "!!empr_resa_not_confirme!!";
-					$replace[] = $emprunteur_datas->m_liste_resas_not_confirme();
-				}
-				if (strpos($message_to_send, "!!empr_name_and_adress!!") !== false) {
-					$search[] = "!!empr_name_and_adress!!";
-					$replace[] = nl2br($emprunteur_datas->m_lecteur_adresse());
-				}
-				if (strpos($message_to_send, "!!empr_all_information!!") !== false) {
-					$search[] = "!!empr_all_information!!";
-					$replace[] = nl2br($emprunteur_datas->m_lecteur_info());
-				}
-				
-				require_once($class_path.'/event/events/event_mailing.class.php');
-				$event = new event_mailing('mailing', 'replace_vars');
-				$evth = events_handler::get_instance();
-				$event->set_empr_cb($destinataire->empr_cb);
-				$evth->send($event);
-				$additionnal_replacevars = $event->get_replaced_vars();
-				if (!empty($additionnal_replacevars)) {
-				    
-				    if (is_array($additionnal_replacevars['search'])) {
-				        $search = array_merge($search, $additionnal_replacevars['search']);
-				    } else {
-    				    $search[]= $additionnal_replacevars['search'];
-				    }
-				    
-				    if (is_array($additionnal_replacevars['replace'])) {
-				        $replace = array_merge($replace, $additionnal_replacevars['replace']);
-				    } else {
-    				    $replace[]= $additionnal_replacevars['replace'];
+				if ($pmb_mail_delay*1) {
+				    sleep((int)$pmb_mail_delay*1/1000);
+				    if(!pmb_mysql_ping($dbh)) {
+				        $dbh = connection_mysql();
 				    }
 				}
-				
-				$message_to_send = str_replace($search, $replace, $message_to_send);
-				$objet_mail = str_replace($search, $replace, $objet_mail);
-				
-				//générer le corps du message
-				if ($pmb_mail_html_format==2){
-					// transformation des url des images pmb en chemin absolu ( a cause de tinyMCE ) 
-					preg_match_all("/(src|background)=\"(.*)\"/Ui", $message_to_send, $images);
-				    if(isset($images[2])) {
-				      	foreach($images[2] as $i => $url) {
-				        	$filename  = basename($url);
-				        	$directory = dirname($url);
-				        	if(urldecode($directory."/")==$pmb_img_url){
-					        	$newlink=$pmb_img_folder .$filename;
-					        	$message_to_send = preg_replace("/".$images[1][$i]."=\"".preg_quote($url, '/')."\"/Ui", $images[1][$i]."=\"".$newlink."\"", $message_to_send);
-				        	}
-				      	}
-				    }
-				}
-				// le flag sended_bcc à 0 et on ajoute les destinataires bcc sur la première passe
-				if(!$this->sended_bcc && !$this->total_envoyes){
-					$bcc=$PMBuseremailbcc;
-					//copie_cachée forcée depuis le planificateur
-					if($this->email_cc){
-						if(trim($bcc)){
-							$bcc.=";";
-						}
-						$bcc.=$this->email_cc;
-					}
-				}else{
-					$bcc="";
-				}
-				if($this->associated_campaign) {
-					$envoi_OK = $campaign->send_mail($iddest, $nomdest, $emaildest, $objet_mail, $message_to_send, $PMBuserprenom." ".$PMBusernom, $PMBuseremail, $headers, "", $bcc, 0, $pieces_jointes, "", "", true) ;
-				} else {
-					$envoi_OK = mailpmb($nomdest, $emaildest, $objet_mail, $message_to_send, $PMBuserprenom." ".$PMBusernom, $PMBuseremail, $headers, "", $bcc, 0, $pieces_jointes, "", "", true) ;
-				}
-				if ($pmb_mail_delay*1) sleep((int)$pmb_mail_delay*1/1000);
 				
 				if ($envoi_OK) {
 					$this->sended_bcc=true;
 				}
-				$this->update_flag($envoi_OK, $iddest);
+				$this->update_flag($envoi_OK, $destinataire->id_empr);
 				
 				$ienvoi++;
 			}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: vedette_common.tpl.php,v 1.17.2.1 2021/07/05 09:33:34 gneveu Exp $
+// $Id: vedette_common.tpl.php,v 1.19 2021/07/05 09:48:03 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -55,7 +55,7 @@ $vedette_tpl['css'] = '
 	}
 	
 	.vedette_composee_subdivision_label {
-        height:100px;
+        height:100px; 
 		width: 90px;
 		line-height: 18px;
 		padding: 5px;

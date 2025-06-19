@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: procs.inc.php,v 1.68 2021/05/11 07:39:06 dgoron Exp $
+// $Id: procs.inc.php,v 1.70 2022/04/22 11:50:52 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -104,7 +104,7 @@ if (!$id_proc) {
 			case "TABLEAUCSV":
 			case "EXPORT_NOTI":
 				if(!$req_nombre_lignes){
-					$res = @pmb_mysql_query($sql, $dbh) or die($sql."<br /><br />".pmb_mysql_error()); 
+					$res = pmb_mysql_query($sql) or die($sql."<br /><br />".pmb_mysql_error()); 
 				}else{
 					$res = $req_nombre_lignes;
 				}
@@ -113,6 +113,7 @@ if (!$id_proc) {
 				echo "<h1>".htmlentities($row[1], ENT_QUOTES, $charset)."</h1><h2>".htmlentities($row[3], ENT_QUOTES, $charset)."</h2>";
 				//tri défini ?
 				if($sort>0){
+					$arraySql=array();
 // 					preg_match('`^(.+)( order by .+)$`i',$sql,$arraySql);
 					preg_match("/(.+)(order by.+)$/isU", $sql,$arraySql);
 					if(count($arraySql)) {
@@ -121,8 +122,8 @@ if (!$id_proc) {
 						$sql .= " order by ".($sort>0?$sort:(-$sort)." DESC");
 					}
 				}
-				//Si aucune limite_page n'a été passée, valeur par défaut : 10
-				if (!isset($limite_page) || !$limite_page) $limite_page = 10;
+				//Si aucune limite_page n'a été passée, valeur par défaut : 25
+				if (!isset($limite_page) || !$limite_page) $limite_page = 25;
 				$nbpages= $nombre_lignes_total / $limite_page;
 				
 				// on arondi le nombre de page pour ne pas avoir de virgules, ici au chiffre supérieur
@@ -168,7 +169,7 @@ if (!$id_proc) {
 					for($i=0; $i < $nbr_lignes; $i++) {
 						$row = pmb_mysql_fetch_row($res);
 						$j=0;
-						foreach($row as $dummykey=>$col) {
+						foreach($row as $col) {
 							if(trim($col)=='') $col=" ";
 							if (is_numeric($col)) {
 								$worksheet->write(($i+2),$j,$col);
@@ -191,7 +192,7 @@ if (!$id_proc) {
        		        for($i=0; $i < $nbr_lignes; $i++) {
 						$row = pmb_mysql_fetch_row($res);
 						echo "<tr>";
-						foreach($row as $dummykey=>$col) {
+						foreach($row as $col) {
 							if (is_numeric($col)){
 								$col = "'".$col ;
 							}
@@ -210,7 +211,7 @@ if (!$id_proc) {
 					for($i=0; $i < $nbr_lignes; $i++) {
 						$row = pmb_mysql_fetch_row($res);
 						echo "\n";
-						foreach($row as $dummykey=>$col) {
+						foreach($row as $col) {
 							/* if (is_numeric($col)) {
 								$col = "\"'".(string)$col."\"" ;
 							} */
@@ -265,7 +266,7 @@ if (!$id_proc) {
 							echo "	<tr class='even'>";
 							$odd_even=0;
 						}
-						foreach($row as $dummykey=>$col) {
+						foreach($row as $col) {
 							if(trim($col)=='') $col="&nbsp;";
 							print '<td>'.$col.'</td>';
 						}

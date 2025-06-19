@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: arch_statut.class.php,v 1.1 2021/01/07 13:33:53 dgoron Exp $
+// $Id: arch_statut.class.php,v 1.1.8.2 2023/11/17 09:42:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -49,13 +49,34 @@ class arch_statut {
 		$this->class_html = $data->archstatut_class_html;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		
+		$interface_content_form->add_element('form_gestion_libelle', 'collstate_statut_libelle')
+		->add_input_node('text', $this->gestion_libelle);
+		$interface_content_form->add_inherited_element('display_colors', 'form_class_html', 'collstate_statut_class_html')
+		->init_nodes([$this->class_html]);
+		
+		$interface_content_form->add_element('form_opac_libelle', 'collstate_statut_libelle')
+		->add_input_node('text', $this->opac_libelle)
+		->set_attributes(array('data-translation-fieldname' => 'archstatut_opac_libelle'));
+		$interface_content_form->add_element('form_visible_opac', 'collstate_statut_visu_opac_form', 'flat')
+		->add_input_node('boolean', $this->visible_opac);
+		$interface_content_form->add_element('form_visu_abon', 'collstate_statut_visible_opac_abon', 'flat')
+		->add_input_node('boolean', $this->visible_opac_abon);
+		
+		$interface_content_form->add_zone('gestion', 'collstate_statut_gestion', ['form_gestion_libelle', 'form_class_html']);
+		$interface_content_form->add_zone('opac', 'collstate_statut_opac', ['form_opac_libelle']);
+		$interface_content_form->add_zone('visibilite_generale', 'collstate_statut_visibilite_generale', ['form_visible_opac'])
+		->set_class('colonne2');
+		$interface_content_form->add_zone('visibilite_restrict', 'collstate_statut_visibilite_restrict', ['form_visu_abon'])
+		->set_class('colonne_suite');
+		
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_collstate_statut_content_form;
-		global $charset;
-		
-		$content_form = $admin_collstate_statut_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('statutform');
 		if(!$this->id){
@@ -63,33 +84,9 @@ class arch_statut {
 		}else{
 			$interface_form->set_label($msg['118']);
 		}
-		$content_form = str_replace('!!gestion_libelle!!', htmlentities($this->gestion_libelle,ENT_QUOTES, $charset), $content_form);
-		
-		//if ($visible_gestion) $checkbox="checked"; else $checkbox="";
-		//$content_form = str_replace('!!checkbox_visible_gestion!!', $checkbox, $content_form);
-		
-		$content_form = str_replace('!!opac_libelle!!', htmlentities($this->opac_libelle,ENT_QUOTES, $charset), $content_form);
-		if ($this->visible_opac) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_visible_opac!!', $checkbox, $content_form);
-		
-		if ($this->visible_opac_abon) $checkbox="checked"; else $checkbox="";
-		$content_form = str_replace('!!checkbox_visu_abon!!', $checkbox, $content_form);
-		
-		$couleur = array();
-		for ($i=1;$i<=20; $i++) {
-			if ($this->class_html=="statutnot".$i) $checked = "checked";
-			else $checked = "";
-			$couleur[$i]="<span for='statutnot".$i."' class='statutnot".$i."' style='margin: 7px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' />
-					<input id='statutnot".$i."' type=radio name='form_class_html' value='statutnot".$i."' $checked class='checkbox' /></span>";
-			if ($i==10) $couleur[10].="<br />";
-			elseif ($i!=20) $couleur[$i].="<b>|</b>";
-		}
-		$couleurs=implode("",$couleur);
-		$content_form = str_replace('!!class_html!!', $couleurs, $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->gestion_libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('arch_statut')
 		->set_field_focus('form_gestion_libelle');
 		return $interface_form->get_display();
@@ -117,6 +114,8 @@ class arch_statut {
 			$requete = "INSERT INTO arch_statut SET archstatut_gestion_libelle='".addslashes($this->gestion_libelle)."',archstatut_visible_gestion='".$this->visible_gestion."',archstatut_opac_libelle='".addslashes($this->opac_libelle)."', archstatut_visible_opac='".$this->visible_opac."', archstatut_class_html='".addslashes($this->class_html)."', archstatut_visible_opac_abon='".$this->visible_opac_abon."' ";
 			pmb_mysql_query($requete);
 		}
+		$translation = new translation($this->id, "arch_statut");
+		$translation->update("archstatut_opac_libelle", "form_opac_libelle");
 	}
 	
 	public static function delete($id) {
@@ -125,6 +124,7 @@ class arch_statut {
 			$total = 0;
 			$total = pmb_mysql_result(pmb_mysql_query("select count(1) from collections_state where collstate_statut ='".$id."' "), 0, 0);
 			if ($total==0) {
+			    translation::delete($id, "arch_statut");
 				$requete = "DELETE FROM arch_statut WHERE archstatut_id='$id' ";
 				pmb_mysql_query($requete);
 				$requete = "OPTIMIZE TABLE arch_statut ";

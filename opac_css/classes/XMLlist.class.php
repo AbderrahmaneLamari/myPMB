@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: XMLlist.class.php,v 1.41 2020/04/24 07:32:34 dgoron Exp $
+// $Id: XMLlist.class.php,v 1.41.6.1 2023/07/12 14:02:38 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -420,9 +420,11 @@ class XMLlist {
 				$cache_php->setInCache($key_file_content, array($this->table,$this->table_js,$this->tablefav,$this->attributes));
 				$cache_php->setInCache($key_file,$key_file_content);
 			}else{
-				$tmp = fopen($tempFile, "wb");
-				fwrite($tmp,serialize(array($this->table,$this->table_js,$this->tablefav,$this->attributes)));
-				fclose($tmp);
+			    if (file_exists($tempFile)) {
+    				$tmp = fopen($tempFile, "wb");
+    				fwrite($tmp,serialize(array($this->table,$this->table_js,$this->tablefav,$this->attributes)));
+    				fclose($tmp);
+			    }
 			}
 		}
 	}

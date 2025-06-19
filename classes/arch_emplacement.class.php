@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: arch_emplacement.class.php,v 1.2 2021/01/12 07:42:45 dgoron Exp $
+// $Id: arch_emplacement.class.php,v 1.2.6.2 2023/11/17 09:42:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -39,13 +39,16 @@ class arch_emplacement {
 		$this->libelle = $data->archempla_libelle;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_libelle', 'admin_collstate_emplacement_nom')
+		->add_input_node('text', $this->libelle)
+		->set_attributes(array('data-translation-fieldname' => 'archempla_libelle'));
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
 		global $msg;
-		global $admin_emplacement_content_form;
-		global $charset;
-		
-		$content_form = $admin_emplacement_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('emplacementform');
 		if(!$this->id){
@@ -53,12 +56,10 @@ class arch_emplacement {
 		}else{
 			$interface_form->set_label($msg['admin_collstate_edit_emplacement']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
-		->set_table_name('arch_type')
+		->set_content_form($this->get_content_form())
+		->set_table_name('arch_emplacement')
 		->set_field_focus('form_libelle');
 		return $interface_form->get_display();
 	}
@@ -82,6 +83,8 @@ class arch_emplacement {
 			$requete = "INSERT INTO arch_emplacement (archempla_id,archempla_libelle) VALUES (0, '".addslashes($this->libelle)."') ";
 			pmb_mysql_query($requete);
 		}
+		$translation = new translation($this->id, "arch_emplacement");
+		$translation->update("archempla_libelle", "form_libelle");
 	}
 	
 	public static function delete($id) {
@@ -90,6 +93,7 @@ class arch_emplacement {
 			$total = 0;
 			$total = pmb_mysql_num_rows(pmb_mysql_query("select 1 from collections_state where collstate_emplacement='".$id."' limit 0,1"));
 			if ($total==0) {
+			    translation::delete($id, "arch_emplacement");
 				$requete = "DELETE FROM arch_emplacement WHERE archempla_id=$id ";
 				pmb_mysql_query($requete);
 				return true;

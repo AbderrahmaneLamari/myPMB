@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_searcharticles.class.php,v 1.11 2019/10/24 08:03:45 dgoron Exp $
+// $Id: cms_module_common_datasource_searcharticles.class.php,v 1.12 2022/05/31 08:37:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -38,7 +38,6 @@ class cms_module_common_datasource_searcharticles extends cms_module_common_data
 	 * Récupération des données de la source...
 	 */
 	public function get_datas(){
-		global $dbh;
 		$selector = $this->get_selected_selector();
 		if($selector) {
 			if($selector->get_value() != ""){

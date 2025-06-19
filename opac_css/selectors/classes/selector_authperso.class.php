@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_authperso.class.php,v 1.9.2.1 2021/10/20 12:07:16 dgoron Exp $
+// $Id: selector_authperso.class.php,v 1.11 2022/12/22 10:57:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -102,17 +102,15 @@ class selector_authperso extends selector_authorities {
         global $id;
         global $base_url;
         global $type_autorite;
-        global $nb_per_page, $rech_regexp;
+		global $rech_regexp;
         
         $authperso_id = intval($authperso_id);
         $id = intval($id);
         $type_autorite = intval($type_autorite);
-        $nb_per_page = intval($nb_per_page);
-        
         $base_url = static::get_base_url()."&rech_regexp=$rech_regexp&user_input=".rawurlencode($this->user_input)."&type_autorite=".$type_autorite;
         
         $authperso=new authperso($authperso_id);
-        $display_list = $authperso->get_list_selector($id,$this->get_link_pagination(),$nb_per_page);
+		$display_list = $authperso->get_list_selector($id,$this->get_link_pagination(),$this->get_nb_per_page_list());
         return $display_list;
     }
     

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_indexint.class.php,v 1.7.8.1 2021/10/20 12:07:17 dgoron Exp $
+// $Id: selector_indexint.class.php,v 1.10 2023/02/08 16:28:33 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -94,14 +94,14 @@ class selector_indexint extends selector_authorities {
 		return authorities_collection::get_authority('authority', $authority_id, ['num_object' => $object_id, 'type_object' => AUT_TABLE_INDEXINT]);
 	}
 	
-	protected function get_display_object($authority_id=0, $object_id=0) {
+	protected function get_display_object($id=0, $object_id=0) {
 		global $charset;
 		global $caller;
 		global $callback;
 		global $thesaurus_classement_mode_pmb;
 		
 		$display = '';
-		$authority = $this->get_authority_instance($authority_id, $object_id);
+		$authority = $this->get_authority_instance($id, $object_id);
 		$indexint = $authority->get_object_instance();
 		
 		if ($indexint->comment) {
@@ -117,10 +117,6 @@ class selector_indexint extends selector_authorities {
 				$entry</a>");
 		$display .= "<br />";
 		return $display;
-	}
-	
-	protected function get_searcher_instance() {
-		return searcher_factory::get_searcher('indexint', '', $this->user_input);
 	}
 	
 	public function get_sel_search_form_template() {

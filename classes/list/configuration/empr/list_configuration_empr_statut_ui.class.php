@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_empr_statut_ui.class.php,v 1.4 2021/04/19 07:10:14 dgoron Exp $
+// $Id: list_configuration_empr_statut_ui.class.php,v 1.4.6.1 2023/03/24 07:55:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -64,22 +64,16 @@ class list_configuration_empr_statut_ui extends list_configuration_empr_ui {
 		$this->set_setting_column('allow_contribution', 'datatype', 'boolean');
 	}
 	
-	protected function get_cell_content($object, $property) {
-		$content = '';
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch($property) {
 			case 'statut_libelle':
-				if ($object->idstatut>2) {
-					$content .= $object->statut_libelle;
+				if ($object->idstatut<=2) {
+					return array(
+							'style' => 'font-weight:bold;'
+					);
 				}
-				else {
-					$content .= "<strong>".$object->statut_libelle."</strong>";
-				}
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
 		}
-		return $content;
+		return array();
 	}
 	
 	protected function get_edition_link($object) {

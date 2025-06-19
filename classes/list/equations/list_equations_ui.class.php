@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_equations_ui.class.php,v 1.1.4.3 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_equations_ui.class.php,v 1.6.4.3 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -36,33 +36,19 @@ class list_equations_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-		
-		if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'id_equation':
-					$order .= 'id_equation';
-					break;
-				case 'nom_equation' :
-					$order .= 'nom_equation, comment_equation';
-					break;
-				case 'nom_classement':
-					$order .= 'nom_classement';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'id_equation':
+	            return 'id_equation';
+	        case 'nom_equation' :
+	            return 'nom_equation, comment_equation';
+	        case 'nom_classement':
+	            return 'nom_classement';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -89,6 +75,7 @@ class list_equations_ui extends list_ui {
 	protected function init_default_settings() {
 		parent::init_default_settings();
 		$this->set_setting_display('search_form', 'export_icons', false);
+		$this->set_setting_selection_actions('delete', 'visible', false);
 		$this->set_setting_column('id_equation', 'datatype', 'integer');
 		$this->set_setting_column('id_equation', 'text', array('bold' => true));
 		$this->set_setting_column('nom_equation', 'align', 'left');
@@ -140,9 +127,7 @@ class list_equations_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_name() {
-		global $msg;
-		
-		return "<input class='saisie-20em' id='".$this->objects_type."_name' type='text' name='".$this->objects_type."_name' value=\"".$this->filters['name']."\" title='$msg[3000]' />";
+		return $this->get_search_filter_simple_text('name');
 	}
 	
 	protected function get_search_filter_id_classement() {
@@ -166,28 +151,16 @@ class list_equations_ui extends list_ui {
 		return "<input class='bouton' type='button' value='".$msg['ajouter']."' onClick=\"document.location='./catalog.php?categ=search&mode=6';\" />";
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
+	protected function _add_query_filters() {
 		if($this->filters['id_classement']) {
-			$filters [] = 'num_classement = "'.$this->filters['id_classement'].'"';
+			$this->query_filters [] = 'num_classement = "'.$this->filters['id_classement'].'"';
 		} elseif($this->filters['id_classement'] === 0) {
-			$filters [] = 'num_classement = "0"';
+			$this->query_filters [] = 'num_classement = "0"';
 		}
 		if($this->filters['name']) {
-			$filters [] = 'nom_equation like "%'.str_replace("*", "%", addslashes($this->filters['name'])).'%"';
+			$this->query_filters [] = 'nom_equation like "%'.str_replace("*", "%", addslashes($this->filters['name'])).'%"';
 		}
-		$filters [] = 'proprio_equation = 0';
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
+		$this->query_filters [] = 'proprio_equation = 0';
 	}
 		
 	protected function _get_query_property_filter($property) {
@@ -224,13 +197,27 @@ class list_equations_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "document.location=\"".static::get_controller_url_base()."&id_equation=".$object->id_equation."&suite=acces\""
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+	}
+	
+	protected function init_default_selection_actions() {
+		global $msg;
+		
+		parent::init_default_selection_actions();
+		$delete_link = array(
+				'href' => static::get_controller_url_base()."&action=list_delete",
+				'confirm' => $msg['confirm_suppr']
+		);
+		$this->add_selection_action('delete', $msg['63'], 'interdit.gif', $delete_link);
+	}
+	
+	public static function delete_object($id) {
+		$id = intval($id);
+		$equation = new equation($id);
+		$equation->delete();
 	}
 	
 	public static function get_ajax_controller_url_base() {

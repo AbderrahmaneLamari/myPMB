@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_mba_nantes.inc.php,v 1.13.4.1 2021/12/09 14:25:07 dgoron Exp $
+// $Id: func_mba_nantes.inc.php,v 1.14 2021/12/09 14:22:20 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

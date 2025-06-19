@@ -1,14 +1,14 @@
 // +-------------------------------------------------+
 // Â© 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormContributionSelector.js,v 1.24 2021/02/05 16:00:24 gneveu Exp $
+// $Id: FormContributionSelector.js,v 1.27 2023/01/27 09:42:35 tsamson Exp $
 
 /*
- * C'est cette classe qui aura la lourde responsabilité de mettre en place
- * l'ensemble des onglets permettant de représenter un selecteur
+ * C'est cette classe qui aura la lourde responsabilitï¿½ de mettre en place
+ * l'ensemble des onglets permettant de reprï¿½senter un selecteur
  * 
- * Cette classe devra pouvoir être utilisée dans les selecteurs comme dans le module
- * de gestion des formulaires. Prévoir l'utilisation d'un mode permettant de définir
+ * Cette classe devra pouvoir ï¿½tre utilisï¿½e dans les selecteurs comme dans le module
+ * de gestion des formulaires. Prï¿½voir l'utilisation d'un mode permettant de dï¿½finir
  * le contexte dans lequel nous nous trouvons 
  */
 
@@ -67,16 +67,18 @@ define([
 				} else {
 					
 					//on teste si on ne provient pas d'un schema de catalogage
-					this.simpleSearchTab = new SubTabContributionSimpleSearch({
-						title: pmbDojo.messages.getMessage('selector', 'selector_tab_simple_search'), 
-						style: 'width:95%; height:100%;', 
-						parameters: this.parameters
-					});
-					this.simpleSearchTab.href = this.parameters.selectorURL+'&action=simple_search';
-					this.addChild(this.simpleSearchTab);
-					
-					this.simpleSearchTab.resize();
-					this.simpleSearchTab.startup();
+					if (!parseInt(this.parameters.noSearch)) {
+						this.simpleSearchTab = new SubTabContributionSimpleSearch({
+							title: pmbDojo.messages.getMessage('selector', 'selector_tab_simple_search'), 
+							style: 'width:95%; height:100%;', 
+							parameters: this.parameters
+						});
+						this.simpleSearchTab.href = this.parameters.selectorURL+'&action=simple_search';
+						this.addChild(this.simpleSearchTab);
+						
+						this.simpleSearchTab.resize();
+						this.simpleSearchTab.startup();
+					}
 					
 //					this.extendedSearchTab = new SubTabAdvancedSearch({title: pmbDojo.messages.getMessage('selector', 'selector_tab_advanced_search'), style: 'width:95%; height:100%;', loadScripts: true, parameters: this.parameters});
 //					this.extendedSearchTab.href = this.parameters.selectorURL+'&action=advanced_search&mode='+this.parameters.multicriteriaMode;
@@ -249,7 +251,7 @@ define([
 					)
 				);
 				
-				//Dans le cas de l'edition d'un docnum lié à une notice
+				//Dans le cas de l'edition d'un docnum liï¿½ ï¿½une notice
 				var prefix_form = query("input[id=form_id]",this.newTab.domNode);
 				var prefix = query("input[id=prefix_uri]",this.newTab.domNode);
 				if(prefix[0]){
@@ -290,7 +292,7 @@ define([
 				
 				var uriTemp = "";
 				if (!this.subTabEdit && this.newTab) {
-					// On récupère l'uri de l'entité
+					// On rï¿½cupï¿½re l'uri de l'entitï¿½
 					var itemUri = this.newTab.containerNode.querySelector("#item_uri");
 					if (itemUri) {
 						uriTemp = itemUri.value;
@@ -334,6 +336,7 @@ define([
 			                
 			                this.multiScenario = 0;
 			                this.formURL = domAttr.get(e.target, "data-form_url");
+			                this.parameters.selectorURL += "&current_scenario_id="+domAttr.get(e.target, "data-scenario_id"); 
 			                this.createTabs();
 			            }))
 			        })

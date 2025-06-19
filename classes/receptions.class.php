@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: receptions.class.php,v 1.12.2.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: receptions.class.php,v 1.13 2021/12/28 08:46:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

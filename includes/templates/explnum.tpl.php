@@ -2,15 +2,21 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum.tpl.php,v 1.51 2019/09/03 09:45:28 dgoron Exp $
+// $Id: explnum.tpl.php,v 1.56 2022/12/13 08:32:09 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
 global $pmb_docnum_in_directory_allow, $explnum_form, $msg, $charset, $current_module, $pmb_docnum_in_database_allow, $explnum_drop_zone, $explnum_popup_edition_script;
 
 // on teste si des répertoires de stockages sont paramétrés
-if (pmb_mysql_num_rows(pmb_mysql_query("select * from upload_repertoire "))==0) $pmb_docnum_in_directory_allow = 0;
-else $pmb_docnum_in_directory_allow=1;
+$result_upload_repertoire = pmb_mysql_query("select repertoire_id from upload_repertoire ");
+if(pmb_mysql_num_rows($result_upload_repertoire)){
+	$pmb_docnum_in_directory_allow = 1;
+	pmb_mysql_free_result($result_upload_repertoire);
+} else {
+	$pmb_docnum_in_directory_allow = 0;
+}
+
 // les deux paramètres pour savoir si on peut stocker de la GED sont donc : 
 // $pmb_docnum_in_directory_allow
 // $pmb_docnum_in_database_allow
@@ -36,6 +42,12 @@ $explnum_form ="
 			return false;
 		}
 		
+        var ck_sign = document.getElementById('ck_sign');
+        if(ck_sign && ck_sign.checked){
+            if(!confirm(\"".$msg['explnum_digital_signature_confirm']."\")){
+                return false;
+            }
+        }
 		return check_form();
 	}
 	
@@ -202,6 +214,9 @@ $explnum_form.="
 		</div>
 		<!-- el0Child_5 utilisé par les licences -->
 		!!explnum_licence_selectors!!			    		
+		
+		<!-- el0Child_6 utilisé par la signature electronique-->
+		!!sign_docnum!!
 		
 		!!index_concept_form!!
 		!!champs_perso!!

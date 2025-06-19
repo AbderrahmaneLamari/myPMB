@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_editorial_data.class.php,v 1.12.2.1 2021/10/11 13:31:27 btafforeau Exp $
+// $Id: cms_editorial_data.class.php,v 1.14.4.3 2023/12/06 14:26:51 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Common\Event\Event;
 
 global $include_path, $class_path;
 global $lang, $opac_default_lang, $opac_url_base;
@@ -55,13 +57,68 @@ class cms_editorial_data extends cms_root {
 	protected $articles;
     protected $num_page;				//Id de la page sur laquelle seras affiché l'élément (défini par le type en administration)
     protected $var_name;				//Nom de la variable d'environnement utilisé sur la page pour afficher l'élément (défini par le type également)
-	protected $links_patterns; 
-    
+	protected $links_patterns;
+
+    /**
+     * Nom du calendrier
+     *
+     * @var string
+     */
+	public $calendar = "";
+
+    /**
+     * Couleur du calendrier
+     *
+     * @var string
+     */
+	public $color = "";
+
+    /**
+     * Identifiant du Type d'evenement
+     *
+     * @var integer
+     */
+	public $id_type = 0;
+
+    /**
+     * Identifiant de l'evenement
+     *
+     * @var integer
+     */
+	public $id_event = 0;
+
+    /**
+     * Titre de l'evenement
+     *
+     * @var string
+     */
+    public $event_title = "";
+
+    /**
+     * Date de debut de l'evenement
+     *
+     * @var array
+     */
+	public $event_start = [];
+
+    /**
+     * Date de fin de l'evenement
+     *
+     * @var array
+     */
+	public $event_end = [];
+
     /**
      * Concepts associés
      * @var index_concept
      */
     protected $index_concept = null;
+    
+    public const TYPE_ARTICLE = "article";
+
+    public const TYPE_SECTION = "section";
+
+    protected $dynamicProperties = [];
     
 	public function __construct($id, $type, $links_patterns = []) {
         $this->type = $type;
@@ -75,7 +132,7 @@ class cms_editorial_data extends cms_root {
     }
     
     protected function fetch_data(){
-        if(!$this->id || ($this->type != "article" && $this->type != "section")) {
+    	if(!$this->id || ($this->type != self::TYPE_ARTICLE && $this->type != self::TYPE_SECTION)) {
             return false;
         }
         
@@ -136,12 +193,17 @@ class cms_editorial_data extends cms_root {
             $this->fields_type = array();
             $query = "select id_editorial_type from cms_editorial_types where editorial_type_element = '".$this->type."_generic'";
             $result = pmb_mysql_query($query);
+            $num_type = 0;
             if(pmb_mysql_num_rows($result)){
-                $fields_type = new cms_editorial_parametres_perso(pmb_mysql_result($result,0,0));
+                $num_type = pmb_mysql_result($result,0,0);//par defaut on selectionne le type generique
+                $fields_type = new cms_editorial_parametres_perso($num_type);
                 $this->fields_type = $fields_type->get_out_values($this->id);
             }
-            if($this->num_type){
-                $query = "select editorial_type_label, editorial_type_permalink_num_page, editorial_type_permalink_var_name from cms_editorial_types where id_editorial_type = ".$this->num_type;
+            if (!empty($this->num_type)) {
+                $num_type = $this->num_type;// si besoin on selectionne le type specifique
+            }
+            if($num_type){
+                $query = "select editorial_type_label, editorial_type_permalink_num_page, editorial_type_permalink_var_name from cms_editorial_types where id_editorial_type = ".$num_type;
                 $result = pmb_mysql_query($query);
                 if(pmb_mysql_num_rows($result)){
                     $row = pmb_mysql_fetch_object($result);
@@ -159,8 +221,11 @@ class cms_editorial_data extends cms_root {
                     }
                     
                     $this->type_content = $row->editorial_type_label;
-                    $fields_type = new cms_editorial_parametres_perso($this->num_type);
-                    $this->fields_type = array_merge($this->fields_type, $fields_type->get_out_values($this->id));
+                    //on merge eventuellement avec les cp specifiques
+                    if ($this->num_type) {
+                        $fields_type = new cms_editorial_parametres_perso($this->num_type);
+                        $this->fields_type = array_merge($this->fields_type, $fields_type->get_out_values($this->id));
+                    }
                 }
             }
         }
@@ -410,14 +475,32 @@ class cms_editorial_data extends cms_root {
             return call_user_func_array(array($this, $attribute), []);
         } else if (method_exists($this, "is_".$attribute)) {
             return call_user_func_array(array($this, "is_".$attribute), []);
+        } elseif (!empty($this->dynamicProperties) && isset($this->dynamicProperties[$attribute])) {
+            return $this->dynamicProperties[$attribute];
+        }
+
+        global $class_path;
+        if (!class_exists("events_handler")) {
+	        require_once ($class_path . '/event/events_handler.class.php');
+        }
+
+        $event = new Event("cms_editorial_data", "get_$attribute");
+        $evth = \events_handler::get_instance();
+        $event->setContext(["instance" => $this, "attribute" => $attribute]);
+        $evth->send($event);
+
+        $data = $event->getData();
+        if (!empty($data)) {
+            $this->dynamicProperties[$attribute] = $data;
+            return $this->dynamicProperties[$attribute];
         }
         return null;
     }
-    
-    public function __set($name, $value){
-        $this->{$name} = $value;
+
+    public function __set($name, $value) {
+		$this->{$name} = $value;
     }
-    
+
     public function get_avis_display() {
         if (!$this->get_avis_allowed()) {
             return "";
@@ -474,7 +557,7 @@ class cms_editorial_data extends cms_root {
             }
         }
     }
-    
+
     public function get_link() {
         if (!empty($this->link)) {
             return $this->link;

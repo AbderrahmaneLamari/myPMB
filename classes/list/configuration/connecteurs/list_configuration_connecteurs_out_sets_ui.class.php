@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_connecteurs_out_sets_ui.class.php,v 1.4 2021/04/19 07:10:15 dgoron Exp $
+// $Id: list_configuration_connecteurs_out_sets_ui.class.php,v 1.5.4.2 2023/03/24 07:55:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -35,7 +35,7 @@ class list_configuration_connecteurs_out_sets_ui extends list_configuration_conn
 	    $this->add_applied_sort('type');
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'type');
 	}
 	
@@ -60,13 +60,13 @@ class list_configuration_connecteurs_out_sets_ui extends list_configuration_conn
 	}
 	
 	protected function add_column_manualupdate() {
-		global $msg, $charset;
-		$this->columns[] = array(
-				'property' => 'manualupdate',
-				'label' => $msg['admin_connecteurs_setcateg_manualupdate'],
-				'html' => "<input type='button' class='bouton_small' value='".htmlentities($msg["admin_connecteurs_setcateg_updatemanually"] ,ENT_QUOTES, $charset)."' onClick='document.location=\"".static::get_controller_url_base()."&action=manual_update&id=!!id!!\"'/>",
-				'exportable' => false
+		global $msg;
+		
+		$html_properties = array(
+				'value' => $msg['admin_connecteurs_setcateg_updatemanually'],
+				'link' => static::get_controller_url_base().'&action=manual_update&id=!!id!!'
 		);
+		$this->add_column_simple_action('manualupdate', $msg['admin_connecteurs_setcateg_manualupdate'], $html_properties);
 	}
 	
 	protected function get_display_content_object_list($object, $indice) {
@@ -92,13 +92,10 @@ class list_configuration_connecteurs_out_sets_ui extends list_configuration_conn
 		return static::get_controller_url_base().'&action=edit&id='.$object->id;
 	}
 	
-	protected function get_display_cell($object, $property) {
-		$attributes = array(
+	protected function get_default_attributes_format_cell($object, $property) {
+		return array(
 				'onclick' => "document.location=\"".$this->get_edition_link($object)."\""
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	public function get_error_message_empty_list() {

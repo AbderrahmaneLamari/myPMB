@@ -2,12 +2,13 @@
 // +-------------------------------------------------+
 // 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_search_view.class.php,v 1.11.2.11 2021/12/03 13:22:39 moble Exp $
+// $Id: search_segment_search_view.class.php,v 1.21.4.2 2023/09/07 06:59:07 gneveu Exp $
 if (stristr ( $_SERVER ['REQUEST_URI'], ".class.php" ))
 	die ( "no access" );
 
 global $class_path;
 
+use Pmb\Searchform\Views\SearchAutocompleteView;
 require_once ($class_path . "/search_view.class.php");
 
 class search_segment_search_view extends search_view {
@@ -57,9 +58,13 @@ class search_segment_search_view extends search_view {
 	    
 		$form = "
         <div id='search_segment_form_container'>
-    		<form name='search_input' id='search_input' action='" . static::$url_base."action=segment_results&new_search=1' method='post' onSubmit=\"if (search_input.user_query.value.length == 0) { search_input.user_query.value='*'; return true; }\">
-    			<input type='text' id='segment_user_query' name='user_query' class='text_query' value=\"\" size='65' />
-				<input type='submit' id='launch_search_button' name='ok' value='".$msg["142"]."' class='bouton'/>";	
+    		<form name='search_input' id='search_input' action='" . static::$url_base."action=segment_results&new_search=1' method='post' onSubmit=\"if (search_input.user_query.value.length == 0) { search_input.user_query.value='*'; return true; }\">";
+		if (static::$segment->is_autocomplete()) {
+			$form.=static::get_autocomplete_input();
+		} else {
+			$form .= "<input type='text' id='segment_user_query' name='user_query' class='text_query' value=\"\" size='65' placeholder='" . $msg['search_segment_user_query_search'] . "'/>";
+		}
+		$form .= "<input type='submit' id='launch_search_button' name='ok' value='".$msg["142"]."' class='bouton'/>";	
         if ($opac_show_help) {
 			$form .= "<input type='button' value='$msg[search_help]' class='bouton button_search_help' onClick='window.open(\"$base_path/help.php?whatis=simple_search\", \"search_help\", \"scrollbars=yes, toolbar=no, dependent=yes, width=400, height=400, resizable=yes\"); return false' />\n";
 		}
@@ -168,5 +173,20 @@ class search_segment_search_view extends search_view {
 	        }
 	    }
 	    return new search_perso($id);
+	}
+	private static function get_autocomplete_input() {
+	    global $msg;
+	    $searchView = new SearchAutocompleteView("searchform/searchautocomplete", [
+	        "segment_id" => static::$segment->get_id(),
+	        "input_id" => "segment_user_query",
+			"input_name" => "user_query",
+	        "input_value" => "",
+	        "input_class" => "text_query",
+	        "input_size" => "65",
+	        "input_placeholder" => $msg["autolevel1_search"],
+	        "show_entities" => 0,
+			"form_id" => "search_input"
+	    ]);
+	    return $searchView->render();
 	}
 }

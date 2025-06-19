@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: index_concept.class.php,v 1.5.2.2 2022/01/03 10:54:54 dgoron Exp $
+// $Id: index_concept.class.php,v 1.7 2022/01/03 10:52:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

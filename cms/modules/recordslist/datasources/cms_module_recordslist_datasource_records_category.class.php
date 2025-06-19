@@ -2,12 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_recordslist_datasource_records_category.class.php,v 1.2 2017/03/16 10:14:52 ngantier Exp $
+// $Id: cms_module_recordslist_datasource_records_category.class.php,v 1.4 2022/09/06 07:52:20 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class cms_module_recordslist_datasource_records_category extends cms_module_common_datasource_records_list{
 	
+    public function __construct($id=0){
+        parent::__construct($id);
+        $this->paging = true;
+    }
+    
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
 	 */
@@ -23,15 +28,14 @@ class cms_module_recordslist_datasource_records_category extends cms_module_comm
 	 * Récupération des données de la source...
 	 */
 	public function get_datas(){
-		global $dbh;
 		$return = array();
 		
 		$selector = $this->get_selected_selector();
 		if ($selector) {					
-			$value = $selector->get_value();
+			$value = intval($selector->get_value());
 			if($value){
-				$query = "select notcateg_notice as notice_id from notices_categories where num_noeud = '".($value*1)."' ";
-				$result = pmb_mysql_query($query,$dbh);
+				$query = "select notcateg_notice as notice_id from notices_categories where num_noeud = '".$value."' ";
+				$result = pmb_mysql_query($query);
 				if(pmb_mysql_num_rows($result) > 0){
 					$records = array();
 					while($row = pmb_mysql_fetch_object($result)){
@@ -44,6 +48,13 @@ class cms_module_recordslist_datasource_records_category extends cms_module_comm
 		
 			$return = $this->sort_records($return['records']);
 			$return["title"] = $this->msg['cms_module_recordslist_datasource_records_category_title'];
+			
+			// Pagination
+			if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+			    $return["paging"] = $this->inject_paginator($return['records']);
+			    $return['records'] = $this->cut_paging_list($return['records'], $return["paging"]);
+			}
+			
 			return $return;
 		}
 		return false;

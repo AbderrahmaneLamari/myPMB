@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_auth_perso.class.php,v 1.7.2.3 2021/08/12 07:50:18 qvarin Exp $
+// $Id: onto_auth_perso.class.php,v 1.10 2021/08/12 08:17:05 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

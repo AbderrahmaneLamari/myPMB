@@ -2,14 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cart_info.php,v 1.98.2.4 2022/01/03 09:06:45 jparis Exp $
+// $Id: cart_info.php,v 1.104.4.2 2023/08/31 12:56:46 qvarin Exp $
 
-global $msg, $class_path, $include_path, $lvl, $action, $autoloader;
+global $msg, $class_path, $include_path, $lvl, $action;
 global $opac_search_other_function;
 global $opac_integrate_anonymous_cart, $cart_integrate_anonymous_on_confirm, $opac_simplified_cart, $opac_max_cart_items;
 global $opac_default_style, $css, $opac_accessibility;
 global $location, $id;
 global $header, $plettreaut, $lcote, $dcote, $user_query;
+global $default_tmp_storage_engine;
 
 //Actions et affichage du résultat pour un panier de l'opac
 $base_path=".";
@@ -216,7 +217,7 @@ if (($id)&&(!$lvl)) {
 
 			if($type_aff_navigopac == 0 or ($type_aff_navigopac == -1 && !$plettreaut)or ($type_aff_navigopac != -1 && $type_aff_navigopac != 0 && !isset($dcote) && !isset($nc))){
 				//Pas de navigation ou navigation par les auteurs mais sans choix effectué
-				$requete="create temporary table temp_n_id ENGINE=MyISAM ( select distinct expl_notice as notice_id from exemplaires where expl_section='".$id."' and expl_location='".$location."' )";
+				$requete="create temporary table temp_n_id ENGINE={$default_tmp_storage_engine} ( select distinct expl_notice as notice_id from exemplaires where expl_section='".$id."' and expl_location='".$location."' )";
 				pmb_mysql_query($requete);
 				//On récupère les notices de périodique avec au moins un exemplaire d'un bulletin dans la localisation et la section
 				$requete="INSERT INTO temp_n_id (select distinct bulletin_notice as notice_id from bulletins join exemplaires on bulletin_id=expl_bulletin where expl_section='".$id."' and expl_location='".$location."' )";
@@ -226,7 +227,7 @@ if (($id)&&(!$lvl)) {
 				
 			}elseif($type_aff_navigopac == -1 ){
 				
-				$requete="create temporary table temp_n_id ENGINE=MyISAM ( SELECT distinct expl_notice as notice_id from exemplaires where expl_section='".$id."' and expl_location='".$location."' )";
+				$requete="create temporary table temp_n_id ENGINE={$default_tmp_storage_engine} ( SELECT distinct expl_notice as notice_id from exemplaires where expl_section='".$id."' and expl_location='".$location."' )";
 				pmb_mysql_query($requete);
 				//On récupère les notices de périodique avec au moins un exemplaire d'un bulletin dans la localisation et la section
 				$requete="INSERT INTO temp_n_id (select distinct bulletin_notice as notice_id from bulletins join exemplaires on bulletin_id=expl_bulletin where expl_section='".$id."' and expl_location='".$location."' )";
@@ -255,7 +256,7 @@ if (($id)&&(!$lvl)) {
 				}else{
 					$expl_cote_cond= " expl_cote regexp '".$dcote.str_repeat("[0-9]",$lcote-strlen($dcote))."' and expl_cote not regexp '(\\\\.[0-9]*".$dcote.str_repeat("[0-9]",$lcote-strlen($dcote)).")|([^0-9]*[0-9]+\\\\.?[0-9]*.+".$dcote.str_repeat("[0-9]",$lcote-strlen($dcote)).")' ";
 				}
-				$requete="create temporary table temp_n_id ENGINE=MyISAM select distinct expl_notice as notice_id from exemplaires where expl_location=$location and expl_section='$id' " ;
+				$requete="create temporary table temp_n_id ENGINE={$default_tmp_storage_engine} select distinct expl_notice as notice_id from exemplaires where expl_location=$location and expl_section='$id' " ;
 				if (strlen($dcote)) {
 					$requete.= " and $expl_cote_cond ";
 					$level_ref=strlen($dcote)+1;
@@ -271,9 +272,9 @@ if (($id)&&(!$lvl)) {
 				@pmb_mysql_query("alter table temp_n_id add index(notice_id)");
 				
 				//Calcul du classement
-				$rq1_index="create temporary table union1 ENGINE=MyISAM (select distinct expl_cote from exemplaires, temp_n_id where expl_location='".$location."' and expl_section='".$id."' and expl_notice=temp_n_id.notice_id) ";
+				$rq1_index="create temporary table union1 ENGINE={$default_tmp_storage_engine} (select distinct expl_cote from exemplaires, temp_n_id where expl_location='".$location."' and expl_section='".$id."' and expl_notice=temp_n_id.notice_id) ";
 				pmb_mysql_query($rq1_index);
-				$rq2_index="create temporary table union2 ENGINE=MyISAM (select distinct expl_cote from exemplaires join (select distinct bulletin_id from bulletins join temp_n_id where bulletin_notice=notice_id) as sub on (bulletin_id=expl_bulletin) where expl_location='".$location."' and expl_section='".$id."') ";
+				$rq2_index="create temporary table union2 ENGINE={$default_tmp_storage_engine} (select distinct expl_cote from exemplaires join (select distinct bulletin_id from bulletins join temp_n_id where bulletin_notice=notice_id) as sub on (bulletin_id=expl_bulletin) where expl_location='".$location."' and expl_section='".$id."') ";
 				pmb_mysql_query($rq2_index);			
 				$req_index="select distinct expl_cote from union1 union select distinct expl_cote from union2";
 				$res_index=pmb_mysql_query($req_index);
@@ -342,12 +343,6 @@ if (($id)&&(!$lvl)) {
 			break;
 		default:
 			// classes pour la gestion des sélecteurs
-			if(!isset($autoloader) || !is_object($autoloader)){
-				require_once($class_path."/autoloader.class.php");
-				$autoloader = new autoloader();
-			}
-			$autoloader->add_register("authorities_page_class",true);
-			
 			require_once($class_path."/caddie/caddie_controller.class.php");
 			caddie_controller::set_user_query(stripslashes($user_query));
 			$message = caddie_controller::proceed($id);
@@ -364,10 +359,20 @@ $_SESSION["cart"]=$cart_;
 if (!count($cart_)) {
 	print "<script>document.getElementById('cart_info_iframe_content').setAttribute('class', 'basket_is_empty');</script>";
 }
-if ($opac_accessibility && isset($_SESSION["pmbopac_fontSize"])) {
+
+// Compatibilite avec l'ancien mecanisme
+if (!empty($_SESSION["pmbopac_fontSize"])) {
+	$_SESSION["accessibility"] = $_SESSION["pmbopac_fontSize"];
+	unset($_SESSION["pmbopac_fontSize"]);
+}
+
+if ($opac_accessibility && isset($_SESSION["accessibility"])) {
 	print "
-		<script type='text/javascript' src='".$include_path."/javascript/misc.js'></script>
-		<script type='text/javascript'>get_ref('cart_info_body').style['fontSize'] = '".$_SESSION["pmbopac_fontSize"]."';</script>";
+		<script type='text/javascript' src='{$include_path}/javascript/accessibility.js'></script>
+		<input type=\"hidden\" id=\"opacAccessibility\" name=\"opacAccessibility\" value=\"$opac_accessibility\" />
+		<script type='text/javascript'>
+			accessibilitySetFontSize('{$_SESSION["accessibility"]}');
+		</script>";
 }
 if($opac_integrate_anonymous_cart && isset($_SESSION['cart_anonymous'])){
 	integrate_anonymous_cart();

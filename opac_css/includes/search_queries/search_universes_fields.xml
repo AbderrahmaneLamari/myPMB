@@ -1,44 +1,58 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: search_universes_fields.xml,v 1.1.2.3 2021/12/11 09:47:05 tsamson Exp $ -->
+<!-- $Id: search_universes_fields.xml,v 1.3.4.1 2023/11/02 13:37:47 gneveu Exp $ -->
+
+<!-- 
+
+	Pour configurer la RMC dans les univers
+
+	Pour choisir sur quels champs on veut chercher, il nous faut une balise <field>
+		- id : unique
+		- group : permet d'ordonner le menu déroulent et de faire des groupes de recherche
+		- title : titre du champ de recherche
+
+	On la type de saisie <input>
+		- type : text, list, ...
+
+	On a la définiton des segments <segments>
+		- id : Id du segment paramétré en gestion
+		- field : Sur quel champ on cherche (ce referer au search_field.xml)
+
+		Pour les segments d'autorités, pour rechercher sur les champs perso
+		On met le type d'autorité + l'id du cp
+			Exemple : authors_2
+
+		Pour les segments d'autorités perso, pour rechercher sur les champs perso
+		On met le type a + l'id du cp
+			Exemple : a_2
+
+	On a la définiton des opérateur <operators>
+		- type : BOOLEAN, CONTAINS, ...
+
+ -->
+
 <pmbfields>
 	<memoryEngineAllowed>yes</memoryEngineAllowed>
 	<universesFields>
-		<field id='1' group='1' title='msg:title'>
+		<field id='1' group='1' title='msg:103'>
 			<input type="text"/>
 			<segments>
-				<segment id="25" field="f_1"/>
-				<segment id="24" field="f_1"/>
-				<segment id="27" field="f_1"/>
-				<segment id="28" field="f_1"/>
-				<segment id="26" field="f_1"/>
-				<segment id="29" field="f_1"/>
-				<segment id="2" field="f_7003"/>
-				<segment id="20" field="f_7003"/>
-				<segment id="18" field="f_7003"/>
+				<segment id="25" field="f_42"/>
+				<segment id="3" field="f_1002"/>
+				<segment id="43" field="f_1002"/>
 			</segments>
 			<operators>
 				<operator type="BOOLEAN"/>
 				<operator type="STARTWITH"/>
 			</operators>
 		</field>
-		<field id='2' group='1' title='msg:234'>
-			<input type="text"/>
-			<segments>
-				<segment id="25" field="f_2"/>
-				<segment id="24" field="f_2"/>
-				<segment id="27" field="f_2"/>
-				<segment id="28" field="f_2"/>
-				<segment id="26" field="f_2"/>
-				<segment id="29" field="f_2"/>
-				<segment id="2" field="f_7007"/>
-				<segment id="20" field="f_7007"/>
-				<segment id="18" field="f_7007"/>
-				<segment id="3" field="f_1102"/>
-				<segment id="43" field="f_1102"/>
-				<segment id="44" field="f_1102"/>
-			</segments>
+		<field group="1" title="msg:type_doc_sort" id="2">
+			<input type="marc_list">
+				<name>doctype</name>
+				<restrictquery>SELECT group_concat(distinct typdoc SEPARATOR ',') as all_typdoc from notices !!restrictview!!</restrictquery>
+				<restrictview> JOIN opac_view_notices_!!opac_view!! ON notice_id = opac_view_num_notice</restrictview>
+			</input>
 			<operators>
-				<operator type="BOOLEAN"/>
+				<operator type="EQ"/>
 			</operators>
 		</field>
 	</universesFields>

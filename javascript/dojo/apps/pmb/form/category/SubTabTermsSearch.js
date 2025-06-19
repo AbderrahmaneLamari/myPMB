@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SubTabTermsSearch.js,v 1.6 2021/05/07 09:35:28 dgoron Exp $
+// $Id: SubTabTermsSearch.js,v 1.6.6.1 2023/09/06 09:18:38 dgoron Exp $
 
 
 define([
@@ -71,8 +71,18 @@ define([
 				}
 			},
 			searchLinkClicked: function(searchLink, e) {
+				if(searchLink.getAttribute('data-term-label')) {
+					var term = searchLink.getAttribute('data-term-label');
+				} else {
+					var term = searchLink.text;
+				}
+				if(searchLink.getAttribute('data-term-thes')) {
+					var id_thes = parseInt(searchLink.getAttribute('data-term-thes'));
+				} else {
+					var id_thes = -1;
+				}
 				e.preventDefault();
-				request(this.parameters.selectorURL + "&action=terms_show_notice&term=" + encodeURIComponent(searchLink.text), {
+				request(this.parameters.selectorURL + "&action=terms_show_notice&term=" + encodeURIComponent(term) + "&id_thes=" + id_thes, {
 					data: '',
 					method: 'POST',
 					handleAs: 'html',

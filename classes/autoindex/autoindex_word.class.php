@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: autoindex_word.class.php,v 1.4.16.1 2022/01/03 10:28:29 dgoron Exp $
+// $Id: autoindex_word.class.php,v 1.5 2022/01/03 10:20:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

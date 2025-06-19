@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sort.php,v 1.12.2.2 2021/10/25 08:17:25 gneveu Exp $
+// $Id: sort.php,v 1.14.4.1 2023/08/31 12:56:46 qvarin Exp $
 
 $base_path = ".";
 $base_auth = "CATALOGAGE_AUTH";
@@ -16,7 +16,7 @@ include ($include_path . "/error_report.inc.php");
 require_once ($class_path . "/sort.class.php");
 
 //permet de préciser sur quoi vont s'appliquer les tris (par defaut:notices)
-if ($_REQUEST["type_tri"]) {
+if (isset($_REQUEST["type_tri"])) {
     if (is_numeric($_REQUEST["type_tri"])) {
         $triType = entities::get_sort_string_from_const_type($_REQUEST["type_tri"]);
     } else {
@@ -28,7 +28,7 @@ if ($_REQUEST["type_tri"]) {
 }
 
 //action (par defaut:affliste)
-if ($_REQUEST["action_tri"]) {
+if (isset($_REQUEST["action_tri"])) {
 	$actionTri = $_REQUEST["action_tri"];
 } else {
 	//par defaut affichage de la liste des tris
@@ -39,7 +39,7 @@ if ($_REQUEST["action_tri"]) {
 
 //déclaration de la classe
 $sort = new sort($triType,'base');
-$sort->caller = $_REQUEST['caller'];
+$sort->caller = $_REQUEST['caller'] ?? "";
 switch ($actionTri) {
 	
 	
@@ -142,5 +142,3 @@ switch ($actionTri) {
 	    }
 		break;
 }
-
-?>

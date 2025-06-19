@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_persopac.class.php,v 1.51.2.1 2021/12/28 10:48:29 dgoron Exp $
+// $Id: search_persopac.class.php,v 1.53 2022/12/23 10:36:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -113,7 +113,11 @@ class search_persopac {
 			$this->directlink += 1;
 		}
 		$this->limitsearch = $limitsearch;
-		$this->empr_categ_restrict = $empr_restrict;
+		if(!empty($empr_restrict)) {
+			$this->empr_categ_restrict = $empr_restrict;
+		} else {
+			$this->empr_categ_restrict = array();
+		}
 		if (!empty($type)) {
 		    $this->type = $type;
 		}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scheduler_tasks.class.php,v 1.8 2021/03/03 07:46:02 dgoron Exp $
+// $Id: scheduler_tasks.class.php,v 1.9.4.1 2023/03/28 13:04:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,7 +11,6 @@ global $class_path, $include_path;
 require_once($include_path."/parser.inc.php");
 require_once($include_path."/templates/taches.tpl.php");
 require_once($include_path."/connecteurs_out_common.inc.php");
-require_once($class_path."/scheduler/scheduler_task_docnum.class.php");
 require_once($class_path."/upload_folder.class.php");
 require_once($class_path."/xml_dom.class.php");
 require_once($class_path."/scheduler/scheduler_task.class.php");
@@ -20,7 +19,7 @@ require_once($class_path."/scheduler/scheduler_tasks_type.class.php");
 class scheduler_tasks {
 	
 	public static $xml_catalog;
-	public $tasks=array();								// liste des types de tâches
+	public $types = array();								// liste des types de tâches
 	
 	public function __construct() {
 		$this->fetch_data();
@@ -41,7 +40,7 @@ class scheduler_tasks {
 	}
 	
 	public static function get_catalog_element($id=0, $attribute='') {
-		$id += 0;
+		$id = intval($id);
 		if($id) {
 			static::parse_catalog();
 			foreach (static::$xml_catalog["ACTION"] as $anitem) {
@@ -55,10 +54,10 @@ class scheduler_tasks {
 	protected function fetch_data() {
 		static::parse_catalog();
 		foreach (static::$xml_catalog["ACTION"] as $anitem) {
-			$this->tasks[$anitem['NAME']] = new scheduler_tasks_type($anitem['ID']);
-			$this->tasks[$anitem['NAME']]->set_name($anitem['NAME']);
-			$this->tasks[$anitem['NAME']]->set_path($anitem['PATH']);
-			$this->tasks[$anitem['NAME']]->set_comment($anitem['COMMENT']);
+			$this->types[$anitem['NAME']] = new scheduler_tasks_type($anitem['ID']);
+			$this->types[$anitem['NAME']]->set_name($anitem['NAME']);
+			$this->types[$anitem['NAME']]->set_path($anitem['PATH']);
+			$this->types[$anitem['NAME']]->set_comment($anitem['COMMENT']);
 		}
 	}
 	
@@ -68,21 +67,21 @@ class scheduler_tasks {
 		$display = "
 			<script type='text/javascript'>
 				function expand_taches_all() {";
-		foreach ($this->tasks as $name=>$tasks_type) {
+		foreach ($this->types as $type) {
 			$display .= "
-					if (document.getElementById('".$name."')) {
-						if (document.getElementById('".$name."').style.display=='none') {
-							document.getElementById('".$name."').style.display='';
+					if (document.getElementById('".$type->get_name()."')) {
+						if (document.getElementById('".$type->get_name()."').style.display=='none') {
+							document.getElementById('".$type->get_name()."').style.display='';
 						}
 					}";
 		}
 		$display .= "}
 			function collapse_taches_all() {";
-		foreach ($this->tasks as $name=>$tasks_type) {
+		foreach ($this->types as $type) {
 			$display .= "
-					if (document.getElementById('".$name."')) {
-						if (document.getElementById('".$name."').style.display=='') {
-							document.getElementById('".$name."').style.display='none';
+					if (document.getElementById('".$type->get_name()."')) {
+						if (document.getElementById('".$type->get_name()."').style.display=='') {
+							document.getElementById('".$type->get_name()."').style.display='none';
 						} 
 					}";
 		}
@@ -101,6 +100,8 @@ class scheduler_tasks {
 	}
 	
 	public static function get_selector_options($type, $selected) {
+		global $charset;
+		
 		$options = '';
 		static::parse_catalog();
 		$num_type_tache = 0;
@@ -115,5 +116,9 @@ class scheduler_tasks {
 			$options .= "<option value='".$row->id_planificateur."' ".($row->id_planificateur == $selected ? "selected='selected'" : "")."> ".htmlentities($row->libelle_tache, ENT_QUOTES, $charset)."</option>";
 		}
 		return $options;
+	}
+	
+	public function get_types() {
+		return $this->types;
 	}
 }

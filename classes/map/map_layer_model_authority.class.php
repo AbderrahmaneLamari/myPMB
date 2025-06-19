@@ -3,7 +3,7 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: map_layer_model_authority.class.php,v 1.14.8.1 2022/01/05 15:29:50 dgoron Exp $
+// $Id: map_layer_model_authority.class.php,v 1.15 2022/01/05 15:25:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

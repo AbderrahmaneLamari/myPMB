@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesRepositories.class.php,v 1.7.2.1 2021/12/28 10:48:29 dgoron Exp $
+// $Id: pmbesRepositories.class.php,v 1.8.4.1 2023/03/16 11:03:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -10,18 +10,6 @@ global $class_path;
 require_once($class_path."/external_services.class.php");
 
 class pmbesRepositories extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	public function list_agnostic_repositories() {
 		$result = array();
@@ -41,6 +29,7 @@ class pmbesRepositories extends external_services_api_class {
 	}
 	
 	public function rec_record($source_id, $record) {
+		$source_id = intval($source_id);
 		$record = charset_pmb_normalize($record);
 		$n_header = array();
 		foreach($record["header"] as $aheader_field) {
@@ -120,7 +109,7 @@ class pmbesRepositories extends external_services_api_class {
 	}
 	
 	public function add_unimarc_notice_to_repository($source_id, $notice) {
-		$source_id += 0;
+		$source_id = intval($source_id);
 		$sql = 'SELECT 1 FROM connectors_sources WHERE source_id = '.$source_id.' AND id_connector = \'agnostic\'';
 		if(!pmb_mysql_num_rows(pmb_mysql_query($sql)))
 			throw new Exception('Source not found.');
@@ -128,8 +117,3 @@ class pmbesRepositories extends external_services_api_class {
 		return array("notice" => $notice);
 	}
 }
-
-
-
-
-?>

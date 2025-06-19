@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area_status.class.php,v 1.5.2.1 2022/01/05 08:35:55 dgoron Exp $
+// $Id: contribution_area_status.class.php,v 1.6 2022/01/05 08:35:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

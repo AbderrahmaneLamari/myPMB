@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serials_simple_circ.inc.php,v 1.2.10.1 2021/12/08 16:01:06 dgoron Exp $
+// $Id: serials_simple_circ.inc.php,v 1.3 2021/12/08 15:59:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

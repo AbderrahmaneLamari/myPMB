@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: EntityForm.js,v 1.10 2020/10/09 12:59:06 btafforeau Exp $
+// $Id: EntityForm.js,v 1.10.6.2 2023/09/08 09:35:13 rtigero Exp $
 
 
 define([
@@ -88,6 +88,22 @@ define([
 			var cancelButton = dom.byId('cancel_button');
 			if (cancelButton) {
 			    domStyle.set(cancelButton,'display','none');
+			}
+
+			var duplicateButton = dom.byId('duplicate_button');
+			const universeType = "universe";
+			
+			if(duplicateButton) {
+				this.signals.push(on(duplicateButton,'click', lang.hitch(this, function(evt) {
+					//il faut savoir si on duplique un segment ou un univers
+					if(this.type == universeType) {
+						topic.publish('formButton', 'startDuplicateUniverse', {id : this.id, type : this.type});
+					} else {
+						topic.publish('formButton', 'startDuplicateSegment', {id : this.id, type : this.type});
+					}
+					evt.preventDefault();
+					return false;
+				})));
 			}
 		
 			pmbEventsHandler.initEvents(this);

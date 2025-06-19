@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: groupexpl.inc.php,v 1.4.8.1 2022/01/10 10:59:02 dgoron Exp $
+// $Id: groupexpl.inc.php,v 1.5 2022/01/10 10:57:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

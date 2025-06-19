@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_bannettes_abo_ui.class.php,v 1.6 2021/04/16 14:33:49 dgoron Exp $
+// $Id: list_bannettes_abo_ui.class.php,v 1.7.4.1 2023/03/24 08:24:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -41,7 +41,7 @@ class list_bannettes_abo_ui extends list_bannettes_ui {
 	}
 	
 	protected function _get_object_property_equations($object) {
-		return static::get_equations($object->id_bannette, $object->proprio_bannette);
+		return implode(' ', static::get_equations($object->id_bannette, $object->proprio_bannette));
 	}
 	
 	protected function get_cell_content($object, $property) {
@@ -63,7 +63,7 @@ class list_bannettes_abo_ui extends list_bannettes_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$onclick="";
 		switch($property) {
 			case 'name':
@@ -80,12 +80,9 @@ class list_bannettes_abo_ui extends list_bannettes_ui {
 				$onclick = "document.location=\"./dsi.php?categ=diffuser&sub=lancer\";";
 				break;
 		}
-		$attributes = array(
+		return array(
 				'style' => 'vertical-align:top;',
 				'onclick' => $onclick,
 		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 }

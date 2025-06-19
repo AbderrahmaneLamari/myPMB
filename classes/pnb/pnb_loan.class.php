@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pnb_loan.class.php,v 1.16.2.1 2021/12/28 13:51:32 dgoron Exp $
+// $Id: pnb_loan.class.php,v 1.17.4.1 2023/08/09 12:55:57 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -271,10 +271,26 @@ class pnb_loan extends do_pret {
 	    return true;
 	}
 	
+	/**
+	 * Suppression pret numerique
+	 *
+	 * @param int $id_empr : id emprunteur
+	 * @param int $expl_id : id exemplaire
+	 * @return boolean
+	 */
 	public static function del_pnb_loans($id_empr, $expl_id){
-	    pmb_mysql_query("DELETE FROM pnb_loans WHERE pnb_loan_num_expl = $expl_id AND pnb_loan_num_loaner = $id_empr");
+	    
+	    $id_empr = intval($id_empr);
+	    $expl_id = intval($expl_id);
+	    
+	    // Suppression dans la table pnb_loans
+	    $q = "DELETE ignore FROM pnb_loans WHERE pnb_loan_num_expl = $expl_id AND pnb_loan_num_loaner = $id_empr";
+	    pmb_mysql_query($q);
+	    
+	    // Suppression dans la table pret
+	    $q = "DELETE ignore FROM pret WHERE pret_pnb_flag = 1 AND pret_idexpl = $expl_id AND pret_idempr = $id_empr";
+	    pmb_mysql_query($q);
 	    return true;
 	}
 	
-// Fin class		
 }

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormContainer.js,v 1.11 2020/08/11 08:04:15 jlaurent Exp $
+// $Id: FormContainer.js,v 1.11.6.2 2023/09/08 09:35:13 rtigero Exp $
 
 
 define(["dojo/_base/declare", 
@@ -61,6 +61,10 @@ define(["dojo/_base/declare",
 						this.addNewEntity = true;
 					}
 					this.loadContent(evtArgs.html);
+					break;
+				case 'duplicateSegment':
+				case 'duplicateUniverse':
+					this.duplicateItem(evtArgs);
 					break;
 			}			
 		},
@@ -212,5 +216,18 @@ define(["dojo/_base/declare",
 //				this.dijits[dijitId].destroy();
 			}
 		},
+		duplicateItem : function(params){
+			this.showPatience();
+			xhr(params.action,{
+				handleAs: "json",
+				method:'GET'
+			}).then(lang.hitch(this,function(response){
+				this.hidePatience();
+				if (response.status) {
+					topic.publish('FormContainer', 'updateTree', response);
+					this.set('content', '');
+				}	
+			}));
+		}
 	});
 });

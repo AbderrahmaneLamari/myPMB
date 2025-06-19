@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ItemUI.js,v 1.40.2.2 2021/07/19 08:08:38 moble Exp $
+// $Id: ItemUI.js,v 1.42 2021/07/19 08:13:51 moble Exp $
 
 
 define(["dojo/_base/declare", "dijit/layout/ContentPane", "dojo/dom-construct", "dojo/dom", "dojo/on", "dojo/topic","dojo/_base/lang","dijit/form/Button","dijit/form/RadioButton","dijit/form/ToggleButton", "apps/pmb/authForm","dijit/form/DropDownButton", "dijit/DropDownMenu", "dijit/MenuItem", "dijit/form/TextBox","dijit/registry","dojo/dom-style"], function(declare,ContentPane, domConstruct, dom, on, topic, lang, Button, RadioButton, ToggleButton,authForm, DropDownButton, DropDownMenu, MenuItem, TextBox, registry,domStyle){

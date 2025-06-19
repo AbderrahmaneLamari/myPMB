@@ -20,7 +20,7 @@ class CoreFilters extends FilterCollection {
         if(is_string($value)){
             return strlen($value);
         }
-    	return count($value);
+        return is_countable($value) ? count($value) : 0;
     }
     
     public static function urlencode($data) {
@@ -74,7 +74,7 @@ class StringFilters extends FilterCollection {
 
     public static function humanize($string) {
         $string = preg_replace('/\s+/', ' ', trim(preg_replace('/[^A-Za-z0-9()!,?$]+/', ' ', $string)));
-        return capfirst($string);
+        return self::capfirst($string);
     }
     
     public static function capitalize($string) {

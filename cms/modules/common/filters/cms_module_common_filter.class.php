@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_filter.class.php,v 1.12 2021/02/19 14:49:31 btafforeau Exp $
+// $Id: cms_module_common_filter.class.php,v 1.14 2023/02/16 13:50:55 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -164,8 +164,17 @@ class cms_module_common_filter extends cms_module_root{
 			<select name='".$this->get_form_value_name("selector_".$type."_choice")."' onchange='cms_module_load_elem_form(this.value,0,\"".$this->get_form_value_name("selector_by_form")."\");'>
                 <option value=''>" . $this->msg['cms_module_common_filter_selector_by_choice_default'] . "</option>";
 			foreach ($selectors as $selector) {
-				$form .= "
-				<option value='".$selector."' ".($this->parameters['selector'][$type] == $selector ? "selected='selected'" : "").">".$this->format_text($this->msg[$selector])."</option>";
+			    $selected = "";
+			    if (
+			        !empty($this->parameters) &&
+			        !empty($this->parameters['selector']) &&
+			        !empty($this->parameters['selector'][$type]) &&
+			        $this->parameters['selector'][$type] == $selector
+			    ) {
+    			    $selected = "selected='selected'";
+			    }
+
+			    $form .= sprintf('<option value="%s" %s>%s</option>', $selector, $selected, $this->format_text($this->msg[$selector]));
 			}
 			$form .= "
 			</select>";
@@ -339,11 +348,17 @@ class cms_module_common_filter extends cms_module_root{
 	public function filter($datas){
 		$filtered_datas= array();
 		//on récupère le champ à tester...
+		$field_from = '';
 		$selector_from = $this->get_selected_selector("from");
-		$field_from = $selector_from->get_value();
+		if(!empty($selector_from)) {
+			$field_from = $selector_from->get_value();
+		}
 		//a quoi...
+		$field_by = '';
 		$selector_by = $this->get_selected_selector("by");
-		$field_by = $selector_by->get_value();
+		if(!empty($selector_by)) {
+			$field_by = $selector_by->get_value();
+		}
 		if($field_by){
 			$fields = new cms_editorial_parametres_perso($field_from['type']);
 			if(!isset($fields->t_fields[$field_from['field']])){

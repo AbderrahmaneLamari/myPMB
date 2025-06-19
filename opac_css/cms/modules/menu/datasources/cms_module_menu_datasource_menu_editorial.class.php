@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_menu_datasource_menu_editorial.class.php,v 1.17.2.1 2022/01/12 07:57:53 dgoron Exp $
+// $Id: cms_module_menu_datasource_menu_editorial.class.php,v 1.19 2022/02/18 09:55:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -46,7 +46,7 @@ class cms_module_menu_datasource_menu_editorial extends cms_module_menu_datasour
 
 	public function save_form(){
 		global $cms_module_menu_datasource_menu_editorial_max_depth;
-		$this->parameters['max_depth'] = $cms_module_menu_datasource_menu_editorial_max_depth+0;
+		$this->parameters['max_depth'] = (int) $cms_module_menu_datasource_menu_editorial_max_depth;
 		$this->save_constructor_link_form("section");	
 		return parent::save_form();
 	}
@@ -91,7 +91,7 @@ class cms_module_menu_datasource_menu_editorial extends cms_module_menu_datasour
 							'link' => $this->get_constructed_link("section",$row->id_section),
 							'details' => $section->format_datas($links)
 						);
-						$sub_query = "select count(id_section) from cms_sections where section_num_parent = '".($row->id_section*1)."'";
+						$sub_query = "select count(id_section) from cms_sections where section_num_parent = '".$row->id_section."'";
 						$sub_result = pmb_mysql_query($sub_query);
 						if(pmb_mysql_num_rows($result) && pmb_mysql_result($sub_result,0,0)>0){
 							$item['children'] = $this->build_tree_sections($row->id_section,$depth+1);

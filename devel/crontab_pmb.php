@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: crontab_pmb.php,v 1.3.24.1 2021/09/22 14:49:09 dbellamy Exp $
+// $Id: crontab_pmb.php,v 1.4 2021/09/22 14:47:18 dbellamy Exp $
 
 // PARAMETRAGE CLIENT
 

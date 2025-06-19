@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector.class.php,v 1.19.2.2 2021/11/12 13:55:43 dgoron Exp $
+// $Id: selector.class.php,v 1.22 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -134,6 +134,24 @@ class selector {
 		return $jscript;
 	}
 	
+	protected function get_start_list() {
+		global $page;
+		
+		$page = intval($page);
+		if(!$page) {
+			return 0;
+		} else {
+			return ($page-1)*$this->get_nb_per_page_list();
+		}
+	}
+	
+	protected function get_nb_per_page_list() {
+		global $nb_per_page;
+		
+		$nb_per_page = intval($nb_per_page);
+		return $nb_per_page;
+	}
+	
 	protected function get_display_object($id=0, $object_id=0) {
 	
 	}
@@ -158,22 +176,16 @@ class selector {
 	}
 	
 	public function get_pagination() {
-		global $nb_per_page;
 		global $page;
 		
-		$nb_per_page = intval($nb_per_page);
 		$page = intval($page);
-		// constitution des liens
-		$nbepages = ceil($this->nbr_lignes/$nb_per_page);
 		if(!$page) {
 			$page = 1;
 		}
-		$suivante = $page+1;
-		$precedente = $page-1;
 		
 		// affichage du lien précédent si nécéssaire
 		$pagination = "<div class='row'>&nbsp;<hr /></div><div class='center'>";
-		$pagination .= printnavbar($page, $this->nbr_lignes, $nb_per_page, $this->get_link_pagination()) ;
+		$pagination .= printnavbar($page, $this->nbr_lignes, $this->get_nb_per_page_list(), $this->get_link_pagination()) ;
 		$pagination .= "</div>";
 		return $pagination;
 	}

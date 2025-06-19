@@ -4,7 +4,9 @@
 // © 2006 mental works / www.mental-works.com contact@mental-works.com
 // 	complètement repris et corrigé par PMB Services
 // +-------------------------------------------------+
-// $Id: avis.php,v 1.55 2019/12/31 12:52:27 ngantier Exp $
+// $Id: avis.php,v 1.55.6.1 2023/04/18 13:10:16 qvarin Exp $
+
+use Pmb\Common\Library\CSRF\ParserCSRF;
 
 $base_path=".";
 require_once($base_path."/includes/init.inc.php");
@@ -84,6 +86,8 @@ if ($opac_avis_allow>0 && $allow_avis==0) {
 // pour template des avis
 require_once($base_path.'/includes/templates/avis.tpl.php');
 
+ob_start();
+
 print $popup_header;
 
 if ($opac_avis_allow && !$allow_avis) die($popup_footer);
@@ -127,6 +131,12 @@ if($pmb_logs_activate){
 }
 
 print $popup_footer;
+
+$htmltoparse = ob_get_contents();
+ob_end_clean();
+
+$parserCSRF = new ParserCSRF();
+print $parserCSRF->parseHTML($htmltoparse);
 
 /* Fermeture de la connexion */
 pmb_mysql_close($dbh);

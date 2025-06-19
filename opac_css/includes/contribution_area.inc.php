@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area.inc.php,v 1.24.2.1 2021/07/01 12:13:08 qvarin Exp $
+// $Id: contribution_area.inc.php,v 1.28 2022/07/07 14:49:19 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -20,10 +20,6 @@ require_once($class_path."/contribution_area/contribution_area_attachment.class.
 require_once($class_path."/contribution_area/contribution_area_form.class.php");
 require_once($class_path."/rdf_entities_conversion/rdf_entities_converter_controller.class.php");
 require_once($class_path."/onto/common/onto_common_uri.class.php");
-
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("onto_class",true);
 
 if (($gestion_acces_active == 1) && (($gestion_acces_empr_contribution_area == 1) || ($gestion_acces_empr_contribution_scenario == 1))) {
 	$ac = new acces();
@@ -98,8 +94,12 @@ if ($id_empr) {
 			print $contribution_area_scenario->render();
 			break;
 		case 'attachment' :
-		    global $attachment, $area_id;
+		    global $attachment, $area_id, $entity_type;
 		    $contribution_area_attachment = new contribution_area_attachment($attachment,$area_id);
+		    if (!empty($entity_type)) {
+		        $contribution_area_attachment->set_entity_type($entity_type);
+		    }
+		    $contribution_area_attachment->get_scenarios();
 		    print $contribution_area_attachment->render();
 			break;
 		case 'convert' :
@@ -171,18 +171,18 @@ if ($id_empr) {
     		    
     		    $infos = $contribution_area_store->get_properties_from_uri($uri);
     			$params = new onto_param(array(
-    					'base_resource' => 'index.php',
-    					'lvl' => 'contribution_area',
-    					'sub' => '',
-    					'action' => 'edit',
-    					'page' => '1',
-    					'nb_per_page' => (isset($nb_per_page) ? $nb_per_page : 20),
-                        'id' => $id,
-                        'area_id' => (!empty($infos['area']) ? $infos['area'] : ""),
-    					'parent_id' => '',
-    					'form_id' => '',
-    					'form_uri' => '',
-    					'item_uri' => '',
+					'base_resource' => 'index.php',
+					'lvl' => 'contribution_area',
+					'sub' => '',
+					'action' => 'edit',
+					'page' => '1',
+					'nb_per_page' => (isset($nb_per_page) ? $nb_per_page : 20),
+					'id' => $id,
+					'area_id' => (!empty($infos['area']) ? $infos['area'] : ""),
+					'parent_id' => '',
+					'form_id' => $form_id ?? $infos['form_id'],
+					'form_uri' => '',
+    				'item_uri' => '',
     			));
     			
     			if (isset($dom_4) && !$dom_4->getRights($_SESSION['id_empr_session'], $params->area_id, 4)) {
@@ -191,8 +191,8 @@ if ($id_empr) {
     			}
     			
     			$form =  contribution_area_form::get_contribution_area_form($params->sub,$params->form_id,$params->area_id,$params->form_uri);		
+    			$onto_store = contribution_area_store::get_formstore($form_id ?? $infos['form_id'], $form->get_active_properties());
     			
-    			$onto_store = contribution_area_store::get_formstore($form_id, $form->get_active_properties());
     			//chargement de l'ontologie dans son store
     			$reset = $onto_store->load($class_path."/rdf/ontologies_pmb_entities.rdf", onto_parametres_perso::is_modified());
     			onto_parametres_perso::load_in_store($onto_store, $reset);

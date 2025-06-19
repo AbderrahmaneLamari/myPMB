@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: douchette_ajax.inc.php,v 1.5 2019/07/31 07:16:57 dgoron Exp $
+// $Id: douchette_ajax.inc.php,v 1.6 2022/03/08 13:45:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -43,6 +43,7 @@ if($idcaddie) {
 	$param->nb_item_blob=$myCart->nb_item_blob;
 	$param->nb_item_blob_pointe=$myCart->nb_item_blob_pointe;
 }
+$array=array();
 $array[0]=$param;
 $buf_xml = array2xml($array);		
 ajax_http_send_response("$buf_xml","text/xml");

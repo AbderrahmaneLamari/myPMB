@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_property.class.php,v 1.16.2.2 2021/09/03 08:14:43 qvarin Exp $
+// $Id: onto_common_property.class.php,v 1.21 2022/12/01 14:00:28 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -141,6 +141,8 @@ class onto_common_property extends onto_common_root {
 
 	protected $framework_params;
 	
+	public $subfield;
+	
 	public function __construct($uri,$ontology) {
 		parent::__construct($uri,$ontology);
 		$this->fetch_pmb_datatype();
@@ -189,6 +191,7 @@ class onto_common_property extends onto_common_root {
 	}
 	
 	public function set_range($range){
+	    if(is_array($range)) sort($range);
 		$this->range = $range;
 	}
 	
@@ -312,5 +315,10 @@ class onto_common_property extends onto_common_root {
 	        }
 	    }
 	    return $this->label;
+	}
+	
+	public function set_subfield($subfield)
+	{
+	    $this->subfield = $subfield;
 	}
 } // end of onto_common_property

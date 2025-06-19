@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ResourceSelector.js,v 1.12.2.5 2021/09/07 09:35:55 qvarin Exp $
+// $Id: ResourceSelector.js,v 1.18 2022/04/12 14:32:19 qvarin Exp $
 
 
 define([
@@ -32,6 +32,12 @@ define([
 		lastValue: null,
 		
 		attIdFilter: null,
+
+		requestTimeout: null,
+
+		loaderNode: null,
+
+		ImgloaderNode: null,
 		
 		attIdFilterEnableFor: [
 			"concept",
@@ -53,17 +59,34 @@ define([
 			if (domAttr.has(this.domNode, 'att_id_filter')) {
 				this.attIdFilter = domAttr.get(this.domNode, 'att_id_filter');
 			}
+			this.initLoader()
 		},
 	
 		updateDatalist: function(e) {
 			if (this.domNode.value == this.lastValue) {
 				return false;
 			}
-			this.lastValue = this.domNode.value;
+
+			if (this.requestTimeout != null) {
+				clearTimeout(this.requestTimeout);
+				this.requestTimeout = null;
+			}
 			
+			this.lastValue = this.domNode.value;
 			var data = this.domNode.value;
 			if (!data) {
 				data = "*";
+			}
+			
+			// Pour eviter le spam de requête, on met un timeout
+			this.requestTimeout = setTimeout(lang.hitch(this, this.fetchDataList, data), 500);
+		},
+		
+		fetchDataList: function(data) {
+			
+			// Si completion est vide on ne fait pas de requête ajax
+			if (!this.completion || this.completion == '') {
+				return this.setDatalist([]);
 			}
 			
 			var params = 'handleAs=json&completion='+this.completion+'&autexclude='+this.autexclude+'&param1='+this.param1+'&param2='+this.param2+'&from_contrib=1';
@@ -71,11 +94,13 @@ define([
 			if (this.attIdFilterEnableFor.includes(this.completion)) {
 				params += '&att_id_filter=' + this.attIdFilter;
 			}
+			this.showLoader();
 			request.post(this.target, {
 				handleAs: 'json',
 				data: params
 			}).then(lang.hitch(this, function(data) {
 				this.setDatalist(data);
+				this.hiddenLoader();
 			}), function(err){console.log(err);});
 		},
 		
@@ -164,6 +189,31 @@ define([
 			// remplace les multiples espaces en 1 seul
 			var str = dom.body.textContent.replace(/(\s){2,}/gm, ' ');
 			return str.trim();
+		},
+		
+		initLoader: function () {
+			this.ImgloaderNode = domConstruct.create("img", {
+				id: this.domNode.id + "_img_loader",
+				'class': "loading_img",
+				style: "display:none;",
+				src: pmbDojo.images.getImage('patience.gif'),
+			});
+			this.loaderNode = domConstruct.create("div", {
+				id: this.domNode.id + "_loader",
+				'class': "field_container_loader",
+			});
+			
+			this.loaderNode.append(this.ImgloaderNode);
+			this.domNode.parentNode.insertBefore(this.loaderNode, this.domNode);
+			this.loaderNode.append(this.domNode);
+		},
+		
+		showLoader: function() {
+			this.ImgloaderNode.style = "";
+		},
+
+		hiddenLoader: function() {
+			this.ImgloaderNode.style = "display:none;";			
 		}
 	})
 });

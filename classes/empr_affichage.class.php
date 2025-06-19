@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr_affichage.class.php,v 1.17.8.1 2022/01/05 08:13:43 dgoron Exp $
+// $Id: empr_affichage.class.php,v 1.19 2023/02/08 13:18:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -88,7 +88,7 @@ class empr_affichage {
 	public $fiche_compte="";		// code HTML d'un compte
 	
 	// constructeur------------------------------------------------------------
-	public function empr_affichage($id_empr, $message=array(), $type_fiche=0, $liens=array()) {
+	public function __construct($id_empr, $message=array(), $type_fiche=0, $liens=array()) {
 	  	// $id_empr  = id de la fiche à afficher
 	  	// $message[]= message à insérer dans la fiche pour alerte
 	  	//			-$message[message]=			texte du message

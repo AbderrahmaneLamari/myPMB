@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: devis.inc.php,v 1.60 2021/04/22 09:00:55 dgoron Exp $
+// $Id: devis.inc.php,v 1.62 2022/08/01 06:44:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -40,7 +40,6 @@ require_once ("$class_path/notice.class.php");
 require_once("$class_path/sel_display.class.php");
 require_once("$class_path/lettre_devis.class.php");
 require_once($class_path.'/accounting/accounting_devis_controller.class.php');
-require_once($class_path."/mail/accounting/mail_accounting_devis.class.php");
 require_once("$class_path/user.class.php");
 
 //Affiche la liste des devis pour un etablissement
@@ -745,7 +744,9 @@ function print_dev($id_bibli=0, $id_dev=0, $by_mail=FALSE) {
 		$no_mail=TRUE;
 	} else {
 	    $mail_accounting_devis = new mail_accounting_devis();
-	    $res_envoi = $mail_accounting_devis->send_mail($id_bibli, $id_dev);
+	    $mail_accounting_devis->set_id_bibli($id_bibli);
+	    $mail_accounting_devis->set_id_acte($id_dev);
+	    $res_envoi = $mail_accounting_devis->send_mail();
 		if (!$res_envoi) {
 			$no_mail=TRUE;
 		}

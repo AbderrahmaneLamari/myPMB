@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_vign.php,v 1.16 2021/02/02 14:19:18 dgoron Exp $
+// $Id: cms_vign.php,v 1.19 2022/07/06 10:02:19 qvarin Exp $
 
 // définition du minimum nécéssaire 
 $base_path     = ".";                            
@@ -15,16 +15,17 @@ $base_nobody   = 1;
 require_once("./includes/apache_functions.inc.php");
 
 //Renvoi du statut 304 si possible
+$database = (string) $_GET['database'];
 $mode = (string) $_GET['mode'];
 $type = (string) $_GET['type'];
 $id = (int) $_GET['id'];
 $cache_file = '';
-$cache_file_prefix = $base_path."/temp/cms_vign/".$mode."/".$type.$id;
+
+$database_path = (!empty($database) ? $database."/" : "");
+$cache_file_prefix = $base_path."/temp/cms_vign/".$database_path.$mode."/".$type.$id;
 //une journée
 $offset = 60 * 60 * 24 ;
 //Si le fichier de cache existe, on considère qu'il est activé...
-
-
 if(file_exists($cache_file_prefix.'.png')){
 	$cache_file = $cache_file_prefix.'.png';
 } elseif(file_exists($cache_file_prefix.'.jpeg')){
@@ -32,7 +33,6 @@ if(file_exists($cache_file_prefix.'.png')){
 } elseif(file_exists($cache_file_prefix.'.gif')){
 	$cache_file = $cache_file_prefix.'.gif';
 }
-	
 if($cache_file) {
 	$headers = getallheaders();
 	if (isset($headers['If-Modified-Since']) && (strtotime($headers['If-Modified-Since']) >= filemtime($cache_file))) {
@@ -55,10 +55,6 @@ $dbh = connection_mysql();
 require_once($base_path."/includes/misc.inc.php");
 require_once($base_path."/includes/session.inc.php");
 session_write_close();
-
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("cms_modules",true);
 
 //on ne charge que le minima, donc il faut aller chercher soit même le param qui nous interesse
 $query = "select valeur_param from parametres where type_param= 'cms' and sstype_param='active_image_cache'";

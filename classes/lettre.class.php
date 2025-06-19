@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lettre.class.php,v 1.7.8.1 2021/12/22 15:08:51 dgoron Exp $
+// $Id: lettre.class.php,v 1.9 2023/02/08 13:17:53 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -196,7 +196,7 @@ class lettre{
  */
 class lettre_relance extends lettre {
 
-	public function __construct($id_empr=0,$type_lettre,$id_groupe=0){
+	public function __construct($id_empr=0,$type_lettre="",$id_groupe=0){
 		parent::__construct($id_empr,$type_lettre,$id_groupe);
 	}
 	
@@ -393,7 +393,7 @@ class lettre_reservation extends lettre{
 	public $notice_resa = "";
 	public $notice_resa_planning = "";
 	
-	public function __construct($ids_resa=array(),$type_lettre){
+	public function __construct($ids_resa=array(),$type_lettre=""){
 		if($type_lettre=='lettre_resa_planning'){
 			$rqt = "select resa_idempr from resa_planning where id_resa in ('".implode("','",$ids_resa)."')  ";
 			$res = pmb_mysql_query($rqt) ;

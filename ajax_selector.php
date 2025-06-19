@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_selector.php,v 1.137.2.6 2022/01/04 13:05:47 dgoron Exp $
+// $Id: ajax_selector.php,v 1.152.2.4 2023/12/29 09:29:19 rtigero Exp $
 
 $base_path=".";
 $base_noheader=1;
@@ -13,7 +13,7 @@ require_once("includes/init.inc.php");
 
 global $class_path, $msg, $charset, $completion, $param1, $param2, $pos_cursor, $autfield, $autexclude, $persofield, $id;
 global $thesaurus_mode_pmb, $thesaurus_defaut, $thesaurus_categories_show_only_last_indexation, $lang;
-global $thesaurus_classement_mode_pmb, $thesaurus_classement_location, $deflt_docs_location;
+global $thesaurus_classement_mode_pmb, $thesaurus_classement_location, $thesaurus_classement_defaut, $deflt_docs_location, $typdoc;
 
 require_once("$class_path/marc_table.class.php");
 require_once("$class_path/analyse_query.class.php");
@@ -37,51 +37,127 @@ switch($completion):
 		if ($thesaurus_mode_pmb==1) $id_thes=-1;
 		else $id_thes=$thesaurus_defaut;
 
+		if($att_id_filter!=0){ //forcage sur un thésaurus en particulier
+		    $id_thes=$att_id_filter;
+		    $linkfield=$att_id_filter;
+		}
+		if (!empty($autexclude)) {
+		    $autexclude = intval($autexclude);
+		}
+
 		$aq=new analyse_query($start);
 
 		$members_catdef = $aq->get_query_members("catdef", "catdef.libelle_categorie", "catdef.index_categorie", "catdef.num_noeud");
 		$members_catlg = $aq->get_query_members("catlg", "catlg.libelle_categorie", "catlg.index_categorie", "catlg.num_noeud");
-		
-		$requete_langue="select catlg.num_noeud as categ_id, noeuds.num_parent as categ_parent, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, catlg.langue as langue, 
-		catlg.libelle_categorie as categ_libelle,catlg.index_categorie as index_categorie, catlg.note_application as categ_comment, 
-		(".$members_catlg["select"].") as pert, thesaurus_order from thesaurus left join noeuds on  thesaurus.id_thesaurus = noeuds.num_thesaurus left join categories as catlg on noeuds.id_noeud = catlg.num_noeud 
+
+		$requete_langue="select catlg.num_noeud as categ_id, noeuds.num_parent as categ_parent, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, catlg.langue as langue,
+		catlg.libelle_categorie as categ_libelle,catlg.index_categorie as index_categorie, catlg.note_application as categ_comment,
+		(".$members_catlg["select"].") as pert, thesaurus_order from thesaurus left join noeuds on  thesaurus.id_thesaurus = noeuds.num_thesaurus left join categories as catlg on noeuds.id_noeud = catlg.num_noeud
 		and catlg.langue = '".$lang."' where catlg.libelle_categorie like '".addslashes($start)."%' and catlg.libelle_categorie not like '~%'";
-		
-		$requete_defaut="select catdef.num_noeud as categ_id, noeuds.num_parent as categ_parent, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, catdef.langue as langue, 
-		catdef.libelle_categorie as categ_libelle,catdef.index_categorie as index_categorie, catdef.note_application as categ_comment, 
-		(".$members_catdef["select"].") as pert, thesaurus_order from thesaurus left join noeuds on  thesaurus.id_thesaurus = noeuds.num_thesaurus left join categories as catdef on noeuds.id_noeud = catdef.num_noeud 
+		if ($autexclude) {
+		    $requete_langue .= " AND noeuds.id_noeud != $autexclude AND (noeuds.path NOT LIKE '$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude')";
+		}
+
+		$requete_defaut="select catdef.num_noeud as categ_id, noeuds.num_parent as categ_parent, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, catdef.langue as langue,
+		catdef.libelle_categorie as categ_libelle,catdef.index_categorie as index_categorie, catdef.note_application as categ_comment,
+		(".$members_catdef["select"].") as pert, thesaurus_order from thesaurus left join noeuds on  thesaurus.id_thesaurus = noeuds.num_thesaurus left join categories as catdef on noeuds.id_noeud = catdef.num_noeud
 		and catdef.langue = thesaurus.langue_defaut where catdef.libelle_categorie like '".addslashes($start)."%' and catdef.libelle_categorie not like '~%'";
-		
+		if ($autexclude) {
+		    $requete_defaut .= " AND noeuds.id_noeud != $autexclude AND (noeuds.path NOT LIKE '$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude')";
+		}
+
 		$requete="select * from (".$requete_langue." union ".$requete_defaut.") as sub1 group by categ_id order by pert desc, thesaurus_order, num_thesaurus, categ_libelle limit 20";
-		
+
 		$res = pmb_mysql_query($requete) or die(pmb_mysql_error()."<br />$requete");
+
+		$aq=new analyse_query(stripslashes($datas."*"));
+		$members_catdef = $aq->get_query_members("catdef", "catdef.libelle_categorie", "catdef.index_categorie", "catdef.num_noeud");
+		$members_catlg = $aq->get_query_members("catlg", "catlg.libelle_categorie", "catlg.index_categorie", "catlg.num_noeud");
+		if (!$aq->error) {
+		    $requete1="SELECT noeuds.id_noeud AS categ_id, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, noeuds.not_use_in_indexation";
+		        $requete1.=", if (catlg.num_noeud is null, catdef.langue , catlg.langue) as langue, if (catlg.num_noeud is null, catdef.libelle_categorie , catlg.libelle_categorie ) as categ_libelle,if (catlg.num_noeud is null, catdef.index_categorie , catlg.index_categorie ) as index_categorie, if(catlg.num_noeud is null, ".$members_catdef["select"].", ".$members_catlg["select"].") as pert ";
+		        $requete1.=" FROM thesaurus JOIN noeuds ON thesaurus.id_thesaurus = noeuds.num_thesaurus  LEFT JOIN categories as catdef on noeuds.id_noeud = catdef.num_noeud AND catdef.langue=thesaurus.langue_defaut LEFT JOIN categories as catlg on catdef.num_noeud=catlg.num_noeud and catlg.langue = '".$lang."'";
+		        $requete1.=" WHERE if(catlg.num_noeud is null, ".$members_catdef["where"].", ".$members_catlg["where"].")";
+		        $requete1.= " order by pert desc, thesaurus_order, num_thesaurus, categ_libelle";
+		} else {
+		    $requete1="";
+		}
+		if ($autexclude) {
+		    $requete1 .= " AND noeuds.id_noeud != $autexclude AND (noeuds.path NOT LIKE '$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude')";
+		}
+
+
 		while(($categ=pmb_mysql_fetch_object($res))) {
 			$display_temp = "" ;
 			$lib_simple="";
 			$tab_lib_categ=array();
 			$temp = new categories($categ->categ_id, $categ->langue);
 			if ($id_thes == -1) {
-				$thes = new thesaurus($categ->num_thesaurus);
+				$thes = thesaurus::get_instance($categ->num_thesaurus);
 				$display_temp = htmlentities('['.$thes->libelle_thesaurus.'] ',ENT_QUOTES, $charset);
 			}
-			$id_categ_retenue = $categ->categ_id ;	
+			$id_categ_retenue = $categ->categ_id ;
 			if($categ->categ_see) {
 				$id_categ_retenue = $categ->categ_see ;
 				$temp = new categories($categ->categ_see, $categ->langue);
 				$display_temp.= $categ->categ_libelle." -> ";
 				$lib_simple = $temp->libelle_categorie;
 				if ($thesaurus_categories_show_only_last_indexation) $display_temp.= $temp->libelle_categorie;
-					else $display_temp.= categories::listAncestorNames($categ->categ_see, $categ->langue);				
+					else $display_temp.= categories::listAncestorNames($categ->categ_see, $categ->langue);
 				$display_temp.= "@";
 			} else {
 				$lib_simple = $categ->categ_libelle;
 				if ($thesaurus_categories_show_only_last_indexation) $display_temp.= $categ->categ_libelle;
-				else $display_temp.= categories::listAncestorNames($categ->categ_id, $categ->langue); 			
-			}		
-			
-			$tab_lib_categ[$display_temp] = $lib_simple; 
+				else $display_temp.= categories::listAncestorNames($categ->categ_id, $categ->langue);
+			}
+
+			$tab_lib_categ[$display_temp] = $lib_simple;
 			$array_selector[$id_categ_retenue] = $display_temp;
-		} // fin while		
+		} // fin while
+		if ($requete1  && (count($array_selector) < 20)) {
+		    $res1 = @pmb_mysql_query($requete1);
+		    while(($categ=pmb_mysql_fetch_object($res1)) && (count($array_selector) <= 20)) {
+		        $display_temp = "" ;
+		        $display_temp_prefix="";
+		        $lib_simple="";
+		        $tab_lib_categ = array();
+		        $temp = new categories($categ->categ_id, $categ->langue);
+		        if ($id_thes == -1) {
+		        	$thes = thesaurus::get_instance($categ->num_thesaurus);
+		            $display_temp_prefix = '['.$thes->libelle_thesaurus.']';
+		        }
+		        $id_categ_retenue = $categ->categ_id ;
+		        $not_use_in_indexation=$categ->not_use_in_indexation;
+		        if($categ->categ_see) {
+		            $id_categ_retenue = $categ->categ_see ;
+		            //Catégorie à ne pas utiliser en indexation
+		            $category=new category($categ->categ_see);
+		            $not_use_in_indexation=$category->not_use_in_indexation;
+
+		            $temp = new categories($categ->categ_see, $categ->langue);
+		            $display_temp.= $categ->categ_libelle." -> ";
+		            $lib_simple = $temp->libelle_categorie;
+		            $chemin=categories::listAncestorNames($categ->categ_see, $categ->langue);
+	                $display_temp.= $chemin;
+		            $display_temp.= "@";
+		        } else {
+		            $lib_simple = $categ->categ_libelle;
+		            $chemin=categories::listAncestorNames($categ->categ_id, $categ->langue);
+	                $display_temp.= $chemin;
+		        }
+		        if (!isset($array_selector[$categ->categ_id]) && !$not_use_in_indexation && !preg_match("#:~|^~#i",$chemin)) {
+		            $tab_lib_categ[$display_temp] = $lib_simple;
+		            $array_selector[$categ->categ_id] = $tab_lib_categ ;
+		            if ($display_temp_prefix) {
+		                $array_prefix[$categ->categ_id]=array(
+		                    'id' => $categ->num_thesaurus,
+		                    'libelle' => $display_temp_prefix,
+		                    'autid' => $id_categ_retenue
+		                );
+		            }
+		        }
+		    } // fin while
+		}
 		$origine = "ARRAY" ;
 		break;
 	case 'categories_mul':
@@ -90,15 +166,18 @@ switch($completion):
 		require_once("$class_path/thesaurus.class.php");
 		require_once("$class_path/categories.class.php");
 		if ($thesaurus_mode_pmb==1){
-			$id_thes=-1;	
+			$id_thes=-1;
 		}else{
 			$id_thes=$thesaurus_defaut;
 		}
-		if($att_id_filter!=0){ //forcage sur un thésaurus en particulié
+		if($att_id_filter!=0){ //forcage sur un thésaurus en particulier
 			$id_thes=$att_id_filter;
-			$linkfield=$att_id_filter; 
+			$linkfield=$att_id_filter;
 		}
-		
+		$equation_filters=search_authorities::get_join_and_clause_from_equation(AUT_TABLE_CATEG, $param1);
+		if (!empty($autexclude)) {
+		    $autexclude = intval($autexclude);
+		}
 		if(preg_match("#^f_categ_id#",$autfield)){//Permet de savoir si l'on vient du formulaire de notice ou de recherche
 			$from="notice";//Affichage complet du chemin de la catégorie
 		}else{
@@ -120,43 +199,48 @@ switch($completion):
 			}else{
 				$thesaurus_requette= " id_thesaurus in ($linkfield) and ";
 			}
-		}		
-		 
-		$requete_langue="select catlg.num_noeud as categ_id, noeuds.num_parent as categ_parent, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, catlg.langue as langue, 
-		catlg.libelle_categorie as categ_libelle,catlg.index_categorie as index_categorie, catlg.note_application as categ_comment, noeuds.not_use_in_indexation as not_use_in_indexation, 
-		(".$members_catlg["select"].") as pert, thesaurus_order from thesaurus left join noeuds on  thesaurus.id_thesaurus = noeuds.num_thesaurus left join categories as catlg on noeuds.id_noeud = catlg.num_noeud 
+		}
+
+		$requete_langue="select catlg.num_noeud as categ_id, noeuds.num_parent as categ_parent, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, catlg.langue as langue,
+		catlg.libelle_categorie as categ_libelle,catlg.index_categorie as index_categorie, catlg.note_application as categ_comment, noeuds.not_use_in_indexation as not_use_in_indexation,
+		(".$members_catlg["select"].") as pert, thesaurus_order from thesaurus left join noeuds on  thesaurus.id_thesaurus = noeuds.num_thesaurus left join categories as catlg on noeuds.id_noeud = catlg.num_noeud
 		and catlg.langue = '".$lang."' where $thesaurus_requette catlg.libelle_categorie like '".addslashes($start)."%' and catlg.libelle_categorie not like '~%'";
-		
-		$requete_defaut="select catdef.num_noeud as categ_id, noeuds.num_parent as categ_parent, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, catdef.langue as langue, 
-		catdef.libelle_categorie as categ_libelle,catdef.index_categorie as index_categorie, catdef.note_application as categ_comment, noeuds.not_use_in_indexation as not_use_in_indexation, 
-		(".$members_catdef["select"].") as pert, thesaurus_order from thesaurus left join noeuds on  thesaurus.id_thesaurus = noeuds.num_thesaurus left join categories as catdef on noeuds.id_noeud = catdef.num_noeud 
+		if ($autexclude) {
+		    $requete_langue .= " AND noeuds.id_noeud != $autexclude AND (noeuds.path NOT LIKE '$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude')";
+		}
+
+		$requete_defaut="select catdef.num_noeud as categ_id, noeuds.num_parent as categ_parent, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, catdef.langue as langue,
+		catdef.libelle_categorie as categ_libelle,catdef.index_categorie as index_categorie, catdef.note_application as categ_comment, noeuds.not_use_in_indexation as not_use_in_indexation,
+		(".$members_catdef["select"].") as pert, thesaurus_order from thesaurus left join noeuds on  thesaurus.id_thesaurus = noeuds.num_thesaurus left join categories as catdef on noeuds.id_noeud = catdef.num_noeud
 		and catdef.langue = thesaurus.langue_defaut where $thesaurus_requette catdef.libelle_categorie like '".addslashes($start)."%' and catdef.libelle_categorie not like '~%'";
-		
+		if ($autexclude) {
+		    $requete_defaut .= " AND noeuds.id_noeud != $autexclude AND (noeuds.path NOT LIKE '$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude')";
+		}
+
 		$requete="select * from (".$requete_langue." union ".$requete_defaut.") as sub1 group by categ_id order by pert desc, thesaurus_order, num_thesaurus, index_categorie";
 		$res = pmb_mysql_query($requete) or die(pmb_mysql_error()."<br />$requete");
 		//parcours des catégories jusqu'à la limite
 		//non limité dans la requête SQL à cause des conditions
-		while(($categ=pmb_mysql_fetch_object($res)) && (count($array_prefix) < 20)) {
+		while(($categ=pmb_mysql_fetch_object($res)) && (count($array_selector) < 20)) {
 			$display_temp = "" ;
 			$lib_simple="";
 			$tab_lib_categ=array();
 			$temp = new categories($categ->categ_id, $categ->langue);
 			if ($id_thes == -1) {//Si mode multi-thésaurus
-				$thes = new thesaurus($categ->num_thesaurus);
+				$thes = thesaurus::get_instance($categ->num_thesaurus);
 				if($from == "notice"){//Si saisi de notice
 					$lib_simple = htmlentities('['.$thes->libelle_thesaurus.'] ',ENT_QUOTES, $charset);
 				}
 			}
-			
-			$id_categ_retenue = $categ->categ_id ;
+			$id_categ_retenue = $categ->categ_id;
 			//Catégorie à ne pas utiliser en indexation
 			$not_use_in_indexation=$categ->not_use_in_indexation;
 			if($categ->categ_see) {
-				$id_categ_retenue = $categ->categ_see ;
+			    $id_categ_retenue = $categ->categ_see;
 				//Catégorie à ne pas utiliser en indexation
-				$category=new category($id_categ_retenue);
+				$category=new category($categ->categ_see);
 				$not_use_in_indexation=$category->not_use_in_indexation;
-				
+
 				$temp = new categories($categ->categ_see, $categ->langue);
 				$display_temp= $categ->categ_libelle." -> ";
 				$chemin=categories::listAncestorNames($categ->categ_see, $categ->langue);
@@ -184,26 +268,111 @@ switch($completion):
 					}else{
 						$lib_simple.= $categ->categ_libelle;
 					}
-				}			
-			}
-			
-			if(!$not_use_in_indexation && !preg_match("#:~|^~#i",$chemin)){
-				$tab_lib_categ[$display_temp] = $lib_simple; 
-				$array_selector[$id_categ_retenue] = $tab_lib_categ;
-				if(!$thes_unique){
-					$array_prefix[$id_categ_retenue] = array(
-						'id' => $categ->num_thesaurus,
-						'libelle' => htmlentities('['.$thes->libelle_thesaurus.'] ',ENT_QUOTES, $charset)
-					);
-				}else{
-					$array_prefix[$id_categ_retenue] = array(
-						'id' => $categ->num_thesaurus,
-						'libelle' => ""
-					);
 				}
-				
 			}
-		} // fin while		
+
+			if(!$not_use_in_indexation && !preg_match("#:~|^~#i",$chemin)){
+				$tab_lib_categ[$display_temp] = $lib_simple;
+				$array_selector[$categ->categ_id] = $tab_lib_categ;
+			    $array_prefix[$categ->categ_id] = array(
+					'id' => $categ->num_thesaurus,
+					'libelle' => "",
+			        'autid' => $id_categ_retenue
+				);
+				if(!$thes_unique){
+				    $array_prefix[$categ->categ_id]["libelle"] = htmlentities('['.$thes->libelle_thesaurus.'] ',ENT_QUOTES, $charset);
+				}
+			}
+		} // fin while
+		if (count($array_selector) < 20) {
+		    $aq=new analyse_query(stripslashes($datas."*"));
+		    $members_catdef = $aq->get_query_members("catdef", "catdef.libelle_categorie", "catdef.index_categorie", "catdef.num_noeud");
+		    $members_catlg = $aq->get_query_members("catlg", "catlg.libelle_categorie", "catlg.index_categorie", "catlg.num_noeud");
+		    if (!$aq->error) {
+		    	if($thes_unique) {
+		    		$thes = thesaurus::get_instance($thes_unique);
+		    	}
+		        $requete1="SELECT noeuds.id_noeud AS categ_id, noeuds.num_renvoi_voir as categ_see, noeuds.num_thesaurus, noeuds.not_use_in_indexation";
+		        if($thes_unique && (($lang==$thes->langue_defaut) || (in_array($lang, thesaurus::getTranslationsList())===false))){
+		            $requete1.=", catdef.langue as langue, catdef.libelle_categorie as categ_libelle,catdef.index_categorie as index_categorie, (".$members_catdef["select"].") as pert ";
+		            $requete1.=" FROM noeuds JOIN categories as catdef on noeuds.id_noeud = catdef.num_noeud AND  catdef.langue = '".$thes->langue_defaut."' ".$equation_filters['join'];
+		            $requete1.=" WHERE noeuds.num_thesaurus='".$thes_unique."' and catdef.libelle_categorie not like '~%' and ".$members_catdef["where"];
+		            $requete1.= $equation_filters['clause']." order by pert desc,num_thesaurus, categ_libelle";
+		        }else{
+		            $requete1.=", if (catlg.num_noeud is null, catdef.langue , catlg.langue) as langue, if (catlg.num_noeud is null, catdef.libelle_categorie , catlg.libelle_categorie ) as categ_libelle,if (catlg.num_noeud is null, catdef.index_categorie , catlg.index_categorie ) as index_categorie, if(catlg.num_noeud is null, ".$members_catdef["select"].", ".$members_catlg["select"].") as pert ";
+		            $requete1.=" FROM thesaurus JOIN noeuds ON thesaurus.id_thesaurus = noeuds.num_thesaurus LEFT JOIN categories as catdef on noeuds.id_noeud = catdef.num_noeud AND catdef.langue=thesaurus.langue_defaut LEFT JOIN categories as catlg on catdef.num_noeud=catlg.num_noeud and catlg.langue = '".$lang."'";
+		            $requete1.=" WHERE $thesaurus_requette if(catlg.num_noeud is null, ".$members_catdef["where"].", ".$members_catlg["where"].")";
+		            $requete1.= " order by pert desc, thesaurus_order, num_thesaurus, categ_libelle";
+		        }
+		    } else $requete1="";
+		    if ($autexclude) {
+		        $requete1 .= " AND noeuds.id_noeud != $autexclude AND (noeuds.path NOT LIKE '$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude/%' AND noeuds.path NOT LIKE '%/$autexclude')";
+		    }
+		    $res1 = @pmb_mysql_query($requete1);
+		    while(($categ=pmb_mysql_fetch_object($res1)) && (count($array_selector) <= 20)) {
+		        $display_temp = "" ;
+		        $display_temp_prefix="";
+		        $lib_simple="";
+		        $tab_lib_categ = array();
+		        $temp = new categories($categ->categ_id, $categ->langue);
+		        if ($id_thes == -1) {
+		        	$thes = thesaurus::get_instance($categ->num_thesaurus);
+		            $display_temp_prefix = '['.$thes->libelle_thesaurus.']';
+		        }
+		        $id_categ_retenue = $categ->categ_id ;
+		        $not_use_in_indexation=$categ->not_use_in_indexation;
+		        if($categ->categ_see) {
+		            $id_categ_retenue = $categ->categ_see ;
+		            //Catégorie à ne pas utiliser en indexation
+		            $category=new category($categ->categ_see);
+		            $not_use_in_indexation=$category->not_use_in_indexation;
+
+		            $temp = new categories($categ->categ_see, $categ->langue);
+		            $display_temp.= $categ->categ_libelle." -> ";
+		            $lib_simple = $temp->libelle_categorie;
+		            $chemin=categories::listAncestorNames($categ->categ_see, $categ->langue);
+		            $display_temp.= $chemin;
+					if ($thesaurus_categories_show_only_last_indexation){
+						$display_temp.= $temp->libelle_categorie;
+						$lib_simple.= $temp->libelle_categorie;
+					}else{
+						$display_temp.=$chemin;
+						if($from == "notice"){
+							$lib_simple.= $chemin;
+						}else{
+							$lib_simple.= $temp->libelle_categorie;
+						}
+					}
+		            $display_temp.= "@";
+		        } else {
+		            $lib_simple = $categ->categ_libelle;
+		            $chemin=categories::listAncestorNames($categ->categ_id, $categ->langue);
+					if ($thesaurus_categories_show_only_last_indexation){
+						$display_temp.= $temp->libelle_categorie;
+						$lib_simple.= $temp->libelle_categorie;
+					}else{
+						$display_temp.=$chemin;
+						if($from == "notice"){
+							$lib_simple.= $chemin;
+						}else{
+							$lib_simple.= $temp->libelle_categorie;
+						}
+					}
+		        }
+		        if (!isset($array_selector[$categ->categ_id]) && !$not_use_in_indexation && !preg_match("#:~|^~#i",$chemin)) {
+		            $tab_lib_categ[$display_temp] = $lib_simple;
+		            $array_selector[$categ->categ_id] = $tab_lib_categ;
+		            if ($display_temp_prefix) {
+		                $array_prefix[$categ->categ_id]=array(
+		                    'id' => $categ->num_thesaurus,
+		                    'libelle' => $display_temp_prefix,
+		                    'autid' => $id_categ_retenue
+		                );
+		            }
+		        }
+		    } // fin while
+		}
+
 		$origine = "ARRAY" ;
 		break;
 	case 'authors':
@@ -221,49 +390,52 @@ switch($completion):
 	case 'authors_person':
 		if ($autexclude) $restrict = " AND author_id not in ($autexclude) ";
 		else $restrict = "";
-		$requete="select if(author_date!='',concat(if(author_rejete is not null and author_rejete!='',concat(author_name,', ',author_rejete),author_name),' (',author_date,')'),if(author_rejete is not null and author_rejete!='',concat(author_name,', ',author_rejete),author_name)) as author,author_id from authors where author_type='70' and if(author_rejete is not null and author_rejete!='',concat(author_name,', ',author_rejete),author_name) like '".addslashes($start)."%' $restrict order by 1 limit 20";	
+		$requete="select if(author_date!='',concat(if(author_rejete is not null and author_rejete!='',concat(author_name,', ',author_rejete),author_name),' (',author_date,')'),if(author_rejete is not null and author_rejete!='',concat(author_name,', ',author_rejete),author_name)) as author,author_id from authors where author_type='70' and if(author_rejete is not null and author_rejete!='',concat(author_name,', ',author_rejete),author_name) like '".addslashes($start)."%' $restrict order by 1 limit 20";
 		$origine = "SQL" ;
 		break;
 	case 'congres_name':
 		if ($autexclude) $restrict = " AND author_id not in ($autexclude) ";
 		else $restrict = "";
-		$requete="select distinct author_name from authors where  author_type='72' and author_name like '".addslashes($start)."%' $restrict order by 1 limit 20";	
+		$requete="select distinct author_name from authors where  author_type='72' and author_name like '".addslashes($start)."%' $restrict order by 1 limit 20";
 		$origine = "SQL" ;
-		break;	
+		break;
 	case 'collectivite_name':
 		if ($autexclude) $restrict = " AND author_id not in ($autexclude) ";
 		else $restrict = "";
-		$requete="select distinct author_name from authors where  author_type='71' and author_name like '".addslashes($start)."%' $restrict order by 1 limit 20";	
+		$requete="select distinct author_name from authors where  author_type='71' and author_name like '".addslashes($start)."%' $restrict order by 1 limit 20";
 		$origine = "SQL" ;
-		break;	
+		break;
 	case 'publishers':
 	    $equation_filters=search_authorities::get_join_and_clause_from_equation(AUT_TABLE_PUBLISHERS, $param1);
 	    if ($autexclude) $restrict = " AND ed_id not in ($autexclude) ";
 		else $restrict = "";
 		$requete="select concat(
 					ed_name,
-					if((ed_ville is not null and ed_ville!='') or (ed_pays is not null and ed_pays!=''),' (',''), 
+					if((ed_ville is not null and ed_ville!='') or (ed_pays is not null and ed_pays!=''),' (',''),
 					if(ed_ville is not null and ed_ville!='',ed_ville,''),
-					if(ed_ville is not null and ed_ville!='' and ed_pays is not null and ed_pays!='',' - ',''), 
-					if(ed_pays is not null and ed_pays!='',ed_pays,''), 
+					if(ed_ville is not null and ed_ville!='' and ed_pays is not null and ed_pays!='',' - ',''),
+					if(ed_pays is not null and ed_pays!='',ed_pays,''),
 					if((ed_ville is not null and ed_ville!='') or (ed_pays is not null and ed_pays!=''),')','')
 					) as ed,ed_id from publishers ".$equation_filters["join"]." where concat(
 					ed_name,
-					if((ed_ville is not null and ed_ville!='') or (ed_pays is not null and ed_pays!=''),' (',''), 
+					if((ed_ville is not null and ed_ville!='') or (ed_pays is not null and ed_pays!=''),' (',''),
 					if(ed_ville is not null and ed_ville!='',ed_ville,''),
-					if(ed_ville is not null and ed_ville!='' and ed_pays is not null and ed_pays!='',' - ',''), 
-					if(ed_pays is not null and ed_pays!='',ed_pays,''), 
+					if(ed_ville is not null and ed_ville!='' and ed_pays is not null and ed_pays!='',' - ',''),
+					if(ed_pays is not null and ed_pays!='',ed_pays,''),
 					if((ed_ville is not null and ed_ville!='') or (ed_pays is not null and ed_pays!=''),')','')
-					) like '".addslashes($start)."%' ".$restrict." ".$equation_filters["clause"]." order by 1 limit 20";		
+					) like '".addslashes($start)."%' ".$restrict." ".$equation_filters["clause"]." order by 1 limit 20";
 		$origine = "SQL" ;
 		break;
 	case 'titre_uniforme':
 	    if($att_id_filter){
 	        // Si ce champ est présent, c'est un filtrage sur la nature de l'oeuvre
-	        global $oeuvre_nature_selector;
-	        $oeuvre_nature_selector = $att_id_filter;
+	    	$natures = marc_list_collection::get_instance("oeuvre_nature");
+	    	if(isset($natures->table->$att_id_filter)) {
+		        global $oeuvre_nature_selector;
+		        $oeuvre_nature_selector = $att_id_filter;
+	    	}
 	    }
-	    $searcher = new searcher_authorities_titres_uniformes($datas);
+	    $searcher = searcher_factory::get_searcher("titres_uniformes", "", $datas);
 	    $simple_search_results = $searcher->get_sorted_result();
 	    if(!empty($simple_search_results)) {
 	        foreach ($simple_search_results as $authority_id) {
@@ -272,7 +444,7 @@ switch($completion):
 	        }
 	    }
 		$origine = "ARRAY" ;
-		break;		
+		break;
 	case 'collections':
 	    $equation_filters=search_authorities::get_join_and_clause_from_equation(AUT_TABLE_COLLECTIONS, $param1);
 	    if ($autexclude) $restrict = " AND collection_id not in ($autexclude) ";
@@ -301,19 +473,19 @@ switch($completion):
 			}
 			$requete="select if(indexint_comment is not null and indexint_comment!='',concat('[',name_pclass,'] ',indexint_name,' - ',indexint_comment),
 			concat('[',name_pclass,'] ',indexint_name)) as indexint,indexint_id
-			from indexint,pclassement ".$equation_filters['join']." 
+			from indexint,pclassement ".$equation_filters['join']."
 			where if(name_pclass is not null and indexint_comment is not null and indexint_comment!='',concat(indexint_name,' - ',indexint_comment),indexint_name) like '".addslashes($start)."%' $restrict
 			and id_pclass = num_pclass
 			and typedoc like '%$typdoc%'
-			".$restrict_location." 
-			".$equation_filters['clause']." order by indexint_name, name_pclass limit 20";	
+			".$restrict_location."
+			".$equation_filters['clause']." order by indexint_name, name_pclass limit 20";
 		}else {
-			$requete="select if(indexint_comment is not null and indexint_comment!='',concat(indexint_name,' : ',indexint_comment),indexint_name) as indexint,indexint_id, concat( indexint_name,' ',indexint_comment) as indexsimple 
-			from indexint ".$equation_filters['join']." 
+			$requete="select if(indexint_comment is not null and indexint_comment!='',concat(indexint_name,' : ',indexint_comment),indexint_name) as indexint,indexint_id, concat( indexint_name,' ',indexint_comment) as indexsimple
+			from indexint ".$equation_filters['join']."
 			join pclassement on id_pclass = num_pclass
-			where if(indexint_comment is not null and indexint_comment!='',concat(indexint_name,' - ',indexint_comment),indexint_name) like '".addslashes($start)."%' 
-			and typedoc like '%$typdoc%'
-			".$restrict." 
+			where if(indexint_comment is not null and indexint_comment!='',concat(indexint_name,' - ',indexint_comment),indexint_name) like '".addslashes($start)."%'
+			and (typedoc like '%$typdoc%' or (typedoc like '' and num_pclass = '".$thesaurus_classement_defaut."'))
+			".$restrict."
 			".$equation_filters['clause']." order by 1 limit 20";
 		}
 		$origine = "SQL" ;
@@ -334,9 +506,9 @@ switch($completion):
 			and id_pclass = num_pclass
 			and typedoc like '%$typdoc%'
 			".$restrict_location."
-			order by indexint_name, name_pclass limit 20";	
+			order by indexint_name, name_pclass limit 20";
 		} else {
-			$requete="select if(indexint_comment is not null and indexint_comment!='',concat(indexint_name,' - ',indexint_comment),indexint_name) as indexint,indexint_id, concat( indexint_name,' ',indexint_comment) as indexsimple from indexint 
+			$requete="select if(indexint_comment is not null and indexint_comment!='',concat(indexint_name,' - ',indexint_comment),indexint_name) as indexint,indexint_id, concat( indexint_name,' ',indexint_comment) as indexsimple from indexint
 			where if(indexint_comment is not null and indexint_comment!='',concat(indexint_name,' - ',indexint_comment),indexint_name) like '".addslashes($start)."%' $restrict and num_pclass = '$thesaurus_classement_defaut' order by 1 limit 20";
 		}
 		$origine = "SQL" ;
@@ -377,7 +549,7 @@ switch($completion):
 			$s_func = new marc_list('lang');
 		}
 		$origine = "TABLEAU" ;
-		break;	
+		break;
 	case 'country':
 		// récupération des codes de langue
 		if (!isset($s_func )) {
@@ -421,18 +593,18 @@ switch($completion):
 	case 'bull_num':
 		$id_notice = substr($id,13);
 		$requete = "select bulletin_numero, date_date from bulletins where bulletin_notice='$id_notice' and bulletin_numero like '%".addslashes($start)."%' order by 1 limit 20";
-		$origine = "SQL"; 
-		break;		
-	case 'expl_cote':	
+		$origine = "SQL";
+		break;
+	case 'expl_cote':
 		if($pmb_prefill_cote_ajax){
 			include("./catalog/expl/ajax/$pmb_prefill_cote_ajax");
-			$array_selector = calculer_cote($start);	
-			$origine = "ARRAY";		
+			$array_selector = calculer_cote($start);
+			$origine = "ARRAY";
 		}
-		break;	
+		break;
 	case 'fournisseur':
 		$requete = "select raison_sociale as lib,id_entite as id from entites where type_entite='0' ";
-		if ($linkfield) $requete.= "and num_bibli IN (0, ".$linkfield.") ";	
+		if ($linkfield) $requete.= "and num_bibli IN (0, ".$linkfield.") ";
 		$requete.= "and raison_sociale like '".addslashes($start)."%' order by 1 limit 20";
 		$origine = "SQL";
 		break;
@@ -460,13 +632,13 @@ switch($completion):
 		// $param2 : id_exercice
 		require_once($class_path.'/rubriques.class.php');
 		require_once($class_path.'/entites.class.php');
-		
+
 		//on cherche toutes les rubriques correspondant à la recherche
 		$q = "select rubriques.id_rubrique from budgets, rubriques ";
 		$q.= "where budgets.statut = '1' and budgets.num_entite = '".$param1."'  and budgets.num_exercice = '".$param2."' and rubriques.num_budget = budgets.id_budget ";
 		$q.= "and rubriques.libelle like '".addslashes($start)."%' ";
 		$r = pmb_mysql_query($q);
-		
+
 		//on liste toutes les rubriques finales correspondantes
 		$array_rubriques_finales = array();
 		if (pmb_mysql_num_rows($r)) {
@@ -481,7 +653,7 @@ switch($completion):
 				}
 			}
 		}
-		
+
 		//on retourne le recordset des rubriques finales
 		$requete = "select budgets.libelle as lib_bud, rubriques.* from budgets, rubriques left join rubriques as rubriques2 on rubriques.id_rubrique=rubriques2.num_parent ";
 		$requete.= "where budgets.statut = '1' and budgets.num_entite = '".$param1."'  and budgets.num_exercice = '".$param2."' and rubriques.num_budget = budgets.id_budget and rubriques2.num_parent is NULL ";
@@ -552,11 +724,6 @@ switch($completion):
 		$origine="ARRAY";
 		break;
 	case 'onto':
-		if(!isset($autoloader) || !is_object($autoloader)){
-			require_once($class_path."/autoloader.class.php");	
-			$autoloader = new autoloader();
-		}
-		$autoloader->add_register("onto_class",true);
 		$onto_store_config = array(
 				/* db */
 				'db_name' => DATA_BASE,
@@ -617,7 +784,7 @@ switch($completion):
 		$array_selector = (isset($list_results['elements']) ? $list_results['elements'] : '');
 		$origine='ONTO_ARRAY';
 		break;
-		
+
 	case 'instruments':
 		// $param1 : id du pupitre préféré. si 0 on retourne tous les instruments
 		// $param1 = workshop: Signifie qu'il faut aller chercher le(s) pupitre(s) associés aux ateliers
@@ -632,7 +799,7 @@ switch($completion):
 			$liste_mots = explode("/",substr($start,0,$pos_cursor));
 			$start = array_pop($liste_mots);
 		}
-		
+
 		$origine = "SQL" ;
 		$musicstands = array();
 		if($param1 == 'workshop') {
@@ -648,18 +815,18 @@ switch($completion):
 		}
 		if (count($musicstands) && !$param2){ // que ceux du pupitre
 			$restrict .= " AND instrument_musicstand_num IN (".implode(',', $musicstands).") ";
-			
+
 			$requete="
-			select if(instrument_name is not null and instrument_name!='',concat(instrument_code,' - ',instrument_name),instrument_code) as instrument_lib, id_instrument, instrument_code from nomenclature_instruments 
+			select if(instrument_name is not null and instrument_name!='',concat(instrument_code,' - ',instrument_name),instrument_code) as instrument_lib, id_instrument, instrument_code from nomenclature_instruments
 			where ( instrument_code like '".addslashes($start)."%' or instrument_name like '".addslashes($start)."%' ) $restrict order by 1 limit 20";
-		
+
 		}elseif(count($musicstands) && $param2){//  que ceux du pupitre en premier, puis les autres
 			$restrict1 = $restrict." AND instrument_musicstand_num IN (".implode(',', $musicstands).") ";
 			$restrict2 = $restrict." AND instrument_musicstand_num NOT IN (".implode(',', $musicstands).") ";
 			$requetes = array();
-			$requetes[] = "select if(instrument_name is not null and instrument_name!='',concat(instrument_code,' - ',instrument_name),instrument_code) as instrument_lib, id_instrument, instrument_code from nomenclature_instruments 
+			$requetes[] = "select if(instrument_name is not null and instrument_name!='',concat(instrument_code,' - ',instrument_name),instrument_code) as instrument_lib, id_instrument, instrument_code from nomenclature_instruments
 			 	where ( instrument_code like '".addslashes($start)."%' or instrument_name like '".addslashes($start)."%' ) $restrict1 order by 1";
-			$requetes[] = "select if(instrument_name is not null and instrument_name!='',concat(instrument_code,' - ',instrument_name),instrument_code) as instrument_lib, id_instrument, instrument_code from nomenclature_instruments 
+			$requetes[] = "select if(instrument_name is not null and instrument_name!='',concat(instrument_code,' - ',instrument_name),instrument_code) as instrument_lib, id_instrument, instrument_code from nomenclature_instruments
 				where ( instrument_code like '".addslashes($start)."%' or instrument_name like '".addslashes($start)."%' ) $restrict2 order by 1 limit 20";
 			$origine = "SQL_GROUP" ;
 		}else{ // tous les instruments
@@ -676,7 +843,7 @@ switch($completion):
 		$requete="
 			select if(voice_name is not null and voice_name!='',concat(voice_code,' - ',voice_name),voice_code) as voice_lib, id_voice, voice_code from nomenclature_voices
 			where ( voice_code like '".addslashes($start)."%' or voice_name like '".addslashes($start)."%' ) $restrict order by 1 limit 20";
-		
+
 		$insert_between_separator = "/";
 		$origine = "SQL" ;
 		break;
@@ -695,16 +862,22 @@ switch($completion):
 		$origine = "TABLEAU" ;
 		break;
 	case 'oeuvre_event':
+	case 'onto_oeuvre_event':
 		require_once($class_path.'/authperso.class.php');
 		$array_selector = authperso::get_ajax_list_oeuvre_events($start, $param1);
+
 		$origine='ARRAY';
+		//On change l'origine si on arrive des contribs
+		if($completion == "onto_oeuvre_event") {
+			$origine='ONTO_ARRAY';
+		}
 		break;
 	case 'vedette':
 	    /**
 	     * modification de la requête pour utiliser le label plutot que l'id de la vedette.
 	     * cela evite d'avoir des doublons dans l'autocomplétion en RMC
 	     * à voir si l'id_vedette est nécessaire dans certains cas
-	     */	    
+	     */
 		$requete = "select distinct label, label from vedette where label like '".addslashes($start)."%'";
 		if($linkfield) {
 			$requete .= " and grammar in ('".implode("','",explode(',',$linkfield))."')";
@@ -729,7 +902,7 @@ switch($completion):
 				from empr where empr_mail like '".addslashes($start)."%' and empr_mail !='' order by 1 limit 20";
 		pmb_mysql_query($query);
 		$requetes[] = "select * from temp_empr_mail";
-		$query = "create temporary table temp_empr_name as select concat(empr_mail, ' (',empr_nom,' ',empr_prenom,')'), id_empr as id 
+		$query = "create temporary table temp_empr_name as select concat(empr_mail, ' (',empr_nom,' ',empr_prenom,')'), id_empr as id
 				from empr where empr_nom like '".addslashes($start)."%' and empr_mail !='' and id_empr not in (select id from temp_empr_mail) order by 1 limit 20";
 		pmb_mysql_query($query);
 		$requetes[] = "select * from temp_empr_name";
@@ -750,7 +923,7 @@ switch($completion):
 		$origine = "ARRAY" ;
 		break;
 	case 'profession':
-		$requete="select distinct empr_prof, 'dummy' as dummy_id from empr where empr_prof like '".addslashes($start)."%' order by 1 limit 20";
+		$requete="select distinct empr_prof, empr_prof as dummy_id from empr where empr_prof like '".addslashes($start)."%' order by 1 limit 20";
 		$origine = "SQL" ;
 		break;
 	case 'fields_global_index':
@@ -813,6 +986,24 @@ switch($completion):
 		}
 		$origine = "ARRAY";
 		break;
+	case 'animationsEmpr':
+	    // Un cas un peu speciale pour gere les emprunteurs deja inscrits
+	    $requete = "
+                select concat(empr_nom,' ',empr_prenom), id_empr as id from empr
+                where id_empr NOT IN ( select id_empr from empr
+                join anim_registrations on id_empr = num_empr and num_animation = " . $param1 .")
+                and concat(empr_nom,' ',empr_prenom) like '".addslashes($start)."%'";
+	    $origine = 'SQL';
+		break;
+	case 'animationsEmprMail':
+	    // Un cas un peu speciale pour gere les emprunteurs deja inscrits
+	    $requete = "
+                select concat(empr_mail, ' (',empr_nom,' ',empr_prenom,')'), id_empr as id from empr
+                where id_empr NOT IN ( select id_empr from empr
+                join anim_registrations on id_empr = num_empr and num_animation = " . $param1 .")
+                and empr_mail like '".addslashes($start)."%'";
+	    $origine = 'SQL';
+		break;
 	case 'animations':
 	    $requete = 'SELECT name, id_animation FROM anim_animations WHERE name LIKE "' . addslashes($start) . '%"';
 	    if (!empty($autexclude)) $requete .= " AND id_animation not in ($autexclude) ";
@@ -837,7 +1028,7 @@ switch($completion):
 		}
 		$origine = "ARRAY";
 		break;
-	default: 
+	default:
 		$p=explode('_', $completion);
 		if(count ($p)){
 			switch ($p[0]){
@@ -914,7 +1105,9 @@ switch ($origine):
 		foreach ($s_func->table as $index => $value) {
 		    if (strtolower(substr(convert_diacrit($value), 0, strlen($start_converted))) == strtolower($start_converted) || strtolower($start_converted) == "%") {
 				echo "<div id='l".$id."_".$i."'";
-				if ($autfield) echo " autid='".$index."'";
+				if ($autfield) {
+					echo " autid='".htmlentities($index, ENT_QUOTES, $charset)."'";
+				}
 				echo " class='ajax_selector_normal' onmouseover='this.className=\"ajax_selector_surbrillance\";' onmouseout='this.className=\"ajax_selector_normal\";' onClick='ajax_set_datas(\"l".$id."_".$i."\",\"$id\")'>".$value."</div>";
 				$i++;
 			}
@@ -925,6 +1118,7 @@ switch ($origine):
 			$i=1;
 			foreach ($array_selector as $index => $value) {
 				$lib_liste="";
+				$autid = $index;
 				if(isset($array_prefix[$index]['libelle'])) {
 					$thesaurus_lib = $array_prefix[$index]['libelle'];
 				} else {
@@ -935,6 +1129,9 @@ switch ($origine):
 				} else {
 					$thesaurus_id = 0;
 				}
+				if (isset($array_prefix[$index]['autid'])) {
+				    $autid = $array_prefix[$index]['autid'];
+				}
 				if(is_array($value)){
 					foreach($value as $k=>$v){
 						$lib_liste = $k;
@@ -942,10 +1139,10 @@ switch ($origine):
 					}
 				} else $lib_liste=$value;
 				echo "<div id='l".$id."_".$i."'";
-				if ($autfield) echo " autid='".$index."'";
+				if ($autfield) echo " autid='".htmlentities($autid, ENT_QUOTES, $charset)."'";
 				if ($thesaurus_id) echo " thesid='".$thesaurus_id."'";
 				echo " class='ajax_selector_normal' onmouseover='this.className=\"ajax_selector_surbrillance\";' onmouseout='this.className=\"ajax_selector_normal\";' onClick='if(document.getElementById(\"c".$id."_".$i."\")) ajax_set_datas(\"c".$id."_".$i."\",\"$id\"); else ajax_set_datas(\"l".$id."_".$i."\",\"$id\");'>".trim($thesaurus_lib." ".$lib_liste)."</div>";
-				$i++;	
+				$i++;
 			}
 		}
 		break;
@@ -972,14 +1169,14 @@ switch ($origine):
 					}
 				} else $lib_liste=$value;
 				echo "<div id='l".$id."_".$i."'";
-				if ($autfield) echo " autid='".$index."'";
+				if ($autfield) echo " autid='".htmlentities($index, ENT_QUOTES, $charset)."'";
 				if ($type_uri) echo " typeuri='".$type_uri."'";
 				echo " class='ajax_selector_normal' onmouseover='this.className=\"ajax_selector_surbrillance\";' onmouseout='this.className=\"ajax_selector_normal\";' onClick='if(document.getElementById(\"c".$id."_".$i."\")) ajax_set_datas(\"c".$id."_".$i."\",\"$id\"); else ajax_set_datas(\"l".$id."_".$i."\",\"$id\");'>".trim($type_label." ".$lib_liste)."</div>";
 				$i++;
 			}
 		}
-		break;	
-	default: 
+		break;
+	default:
 		break;
 endswitch;
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: MailingModel.php,v 1.7 2021/03/11 16:45:35 jlaurent Exp $
+// $Id: MailingModel.php,v 1.9 2023/02/20 14:07:00 qvarin Exp $
 namespace Pmb\Common\Models;
 
 class MailingModel extends Model
@@ -15,14 +15,13 @@ class MailingModel extends Model
      * @param string $template
      *
      * @return string $template
-     *        
      */
     public static function getReplacePattern(object $empr, string $template)
     {
         global $msg;
-        global $opac_connexion_phrase, $empr_auth_opac, $empr_auth_opac_subscribe_link, $empr_auth_opac_change_password_link;
+        global $opac_connexion_phrase, $opac_url_base;
 
-        switch ($empr->emprSexe) {
+        switch ($empr->emprSexe ?? "") {
             case "2":
                 $emprCivilite = $msg["civilite_madame"];
                 break;
@@ -36,6 +35,11 @@ class MailingModel extends Model
 
         $date = time();
 
+        $empr_auth_opac = "<a href='".$opac_url_base."empr.php?code=!!code!!&emprlogin=!!login!!&date_conex=!!date_conex!!'>".$msg["selvars_empr_auth_opac"]."</a>";
+        $empr_auth_opac_subscribe_link = "<a href='".$opac_url_base."empr.php?lvl=renewal&code=!!code!!&emprlogin=!!login!!&date_conex=!!date_conex!!'>".$msg["selvars_empr_auth_opac_subscribe_link"]."</a>";
+        $empr_auth_opac_change_password_link = "<a href='".$opac_url_base."empr.php?lvl=change_password&code=!!code!!&emprlogin=!!login!!&date_conex=!!date_conex!!'>".$msg["selvars_empr_auth_opac_change_password_link"]."</a>";
+
+
         $locName = '';
         $locAdr1 = '';
         $locAdr2 = '';
@@ -45,7 +49,8 @@ class MailingModel extends Model
         $locEmail = '';
         $locWebsite = '';
 
-        if ($empr->emprLocation) {
+        if (!empty($empr->emprLocation)) {
+            $empr->emprLocation = intval($empr->emprLocation);
             $empr_dest_loc = pmb_mysql_query("SELECT * FROM docs_location WHERE idlocation=" . $empr->emprLocation);
             if (pmb_mysql_num_rows($empr_dest_loc)) {
                 $empr_loc = pmb_mysql_fetch_object($empr_dest_loc);

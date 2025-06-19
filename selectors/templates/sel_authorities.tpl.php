@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sel_authorities.tpl.php,v 1.9 2020/07/09 09:27:00 dgoron Exp $
+// $Id: sel_authorities.tpl.php,v 1.9.6.1 2023/04/07 14:34:41 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "tpl.php")) die("no access");
 
@@ -18,6 +18,7 @@ global $add_field, $field_id, $field_name_id;
 global $max_field, $what;
 
 $jscript_common_authorities_unique ="
+	<div id='indexation_infos' style='display:none;'></div>
 	<script type='text/javascript'>
 		<!--
 		function set_parent(f_caller, id_value, libelle_value, callback){
@@ -61,6 +62,7 @@ $jscript_common_authorities_unique ="
 
 // Pour les liens entre autorités
 $jscript_common_authorities_link = "
+	<div id='indexation_infos' style='display:none;'></div>
 	<script type='text/javascript'>
 	function set_parent(f_caller, id_value, libelle_value, callback){	
 		var w = window;

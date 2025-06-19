@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_linked_record_selector_ui.class.php,v 1.8.2.1 2021/08/31 14:17:26 qvarin Exp $
+// $Id: onto_contribution_datatype_linked_record_selector_ui.class.php,v 1.11.2.1 2023/11/16 14:51:13 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -76,7 +76,7 @@ class onto_contribution_datatype_linked_record_selector_ui extends onto_common_d
 	 * @access public
 	 */
 	public static function get_form($item_uri,$property, $restrictions,$datas, $instance_name,$flag) {
-		global $msg,$charset,$ontology_tpl;
+		global $msg, $charset, $ontology_tpl, $ontology_contribution_tpl;
 		
 		if (empty($datas)) {
 		    $datas = array();
@@ -93,15 +93,18 @@ class onto_contribution_datatype_linked_record_selector_ui extends onto_common_d
 				$range_for_form.=$range;
 			}
 		}
+		$exploded_uri = explode("/", $item_uri);
+		$i = (count($exploded_uri) - 1);
 		
+		$uri_suffix = str_replace('#', '_', $exploded_uri[$i]);
 		/** TODO: à revoir avec le chef ** / 
 		/** On part du principe que l'on a qu'un range **/
 // 		$selector_url = $this->get_resource_selector_url($property->range[0]);
 		
 		$content='';
-		$content.=$ontology_tpl['form_row_content_input_sel'];
+		$content .= $ontology_contribution_tpl['form_row_content_input_sel'];
 		if ($restrictions->get_max() < count($datas) || $restrictions->get_max() === -1) {
-		    $content.=$ontology_tpl['form_row_content_input_add_linked_record'];
+		    $content .= $ontology_tpl['form_row_content_input_add_linked_record'];
 		}
 		$content = str_replace("!!property_name!!", rawurlencode($property->pmb_name), $content);
 		if (!empty($datas)) {
@@ -131,7 +134,6 @@ class onto_contribution_datatype_linked_record_selector_ui extends onto_common_d
 				
 				
 				$inside_row = str_replace("!!onto_current_element!!",onto_common_uri::get_id($item_uri),$inside_row);
-				$inside_row = str_replace("!!onto_current_range!!",'http://www.pmbservices.fr/ontology#record',$inside_row);
 				
 				$row = str_replace("!!onto_inside_row!!",$inside_row , $row);
 				
@@ -165,7 +167,6 @@ class onto_contribution_datatype_linked_record_selector_ui extends onto_common_d
 			$inside_row = str_replace("!!onto_row_content_marclist_range!!",$property->range[0] , $inside_row);
 			
 			$inside_row = str_replace("!!onto_current_element!!", onto_common_uri::get_id($item_uri),$inside_row);
-			$inside_row = str_replace("!!onto_current_range!!", 'http://www.pmbservices.fr/ontology#record', $inside_row);
 			
 			$row = str_replace("!!onto_inside_row!!",$inside_row , $row);
 			
@@ -181,6 +182,7 @@ class onto_contribution_datatype_linked_record_selector_ui extends onto_common_d
 		
 		$form = str_replace("!!onto_rows!!",$content ,$form);
 		$form = str_replace("!!onto_completion!!",'notice', $form);
+		$form = str_replace("!!onto_current_range!!",$uri_suffix, $form);
 		$form = str_replace("!!onto_row_id!!",$instance_name.'_'.$property->pmb_name , $form);
 		$form = str_replace("!!onto_selector_url!!", self::get_resource_selector_url($property->range[0]), $form);
 		return $form;
@@ -241,7 +243,7 @@ class onto_contribution_datatype_linked_record_selector_ui extends onto_common_d
                 break;
 	    }
 	    
-	    $options .= "<optgroup class='erreur' label='".$label."'>";
+	    $options = "<optgroup label='".$label."'>";
 	    foreach($type_relation->table as $key => $val) {
 	        
 	        $value = $key.'-'.$direction;

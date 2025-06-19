@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: search_fields_authorities.xml,v 1.60.2.1 2021/07/27 11:47:56 dgoron Exp $ -->
+<!-- $Id: search_fields_authorities.xml,v 1.63.2.1 2023/12/22 15:00:00 qvarin Exp $ -->
 <pmbfields>
 
 	<!-- Zone fixedFields :
@@ -472,6 +472,42 @@
 				JOIN audit ON object_id = num_object AND type_object = 1 and type_obj = 6 AND type_modif=1 AND type_user=1 WHERE user_id=!!p!!]]></main>
 			</query>
 		</field>
+		<field group="1" title="msg:search_extended_author_creation_date" id="1301">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=1 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=1 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=1 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=1 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=1 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
+		<field group="1" title="msg:search_extended_author_modify_date" id="1302">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=2 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=2 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=2 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=2 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join authors on authors.author_id=authorities.num_object and authorities.type_object = 1 JOIN audit ON object_id = author_id AND type_obj=6 AND type_modif=2 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
 		
 		<field group="2" title="msg:global_search" id="2102" >
 			<input type="text"/>
@@ -753,6 +789,42 @@
 			<query for="EQ">
 				<main><![CDATA[select distinct id_authority from authorities 
 				JOIN audit ON object_id = num_object AND type_object = 2 and type_obj = 12 AND type_modif=1 AND type_user=1 WHERE user_id=!!p!!]]></main>
+			</query>
+		</field>
+		<field group="2" title="msg:search_extended_category_creation_date" id="2301">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=1 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=1 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=1 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=1 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=1 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
+		<field group="2" title="msg:search_extended_category_modify_date" id="2302">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=2 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=2 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=2 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=2 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join noeuds on noeuds.id_noeud=authorities.num_object and authorities.type_object = 2 JOIN audit ON object_id = id_noeud AND type_obj=12 AND type_modif=2 WHERE quand >='!!p!!']]></main>
 			</query>
 		</field>
 		
@@ -1126,7 +1198,42 @@
 				JOIN audit ON object_id = num_object AND type_object = 3 and type_obj = 10 AND type_modif=1 AND type_user=1 WHERE user_id=!!p!!]]></main>
 			</query>
 		</field>
-	
+		<field group="3" title="msg:search_extended_contributor_creation_date" id="3301">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=1 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=1 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=1 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=1 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=1 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
+		<field group="3" title="msg:search_extended_contributor_modify_date" id="3302">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=2 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=2 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=2 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=2 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join publishers on publishers.ed_id=authorities.num_object and authorities.type_object = 3 JOIN audit ON object_id = ed_id AND type_obj=10 AND type_modif=2 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
 		<field group="4" title="msg:global_search" id="4102" >
 			<input type="text"/>
 			<query for="BOOLEAN" wordSearch="yes">
@@ -1433,7 +1540,42 @@
 				JOIN audit ON object_id = num_object AND type_object = 4 and type_obj = 7 AND type_modif=1 AND type_user=1 WHERE user_id=!!p!!]]></main>
 			</query>
 		</field>
-	
+		<field group="4" title="msg:search_extended_coll_creation_date" id="4301">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=1 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=1 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=1 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=1 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=1 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
+		<field group="4" title="msg:search_extended_coll_modify_date" id="4302">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=2 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=2 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=2 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=2 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join collections on collections.collection_id=authorities.num_object and authorities.type_object = 4 JOIN audit ON object_id = collection_id AND type_obj=7 AND type_modif=2 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
 		<field group="5" title="msg:global_search" id="5102" >
 			<input type="text"/>
 			<query for="BOOLEAN" wordSearch="yes">
@@ -1804,7 +1946,42 @@
 				JOIN audit ON object_id = num_object AND type_object = 5 and type_obj = 8 AND type_modif=1 AND type_user=1 WHERE user_id=!!p!!]]></main>
 			</query>
 		</field>
-		
+		<field group="5" title="msg:search_extended_subcoll_creation_date" id="5301">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=1 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=1 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=1 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=1 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=1 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
+		<field group="5" title="msg:search_extended_subcoll_modify_date" id="5302">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=2 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=2 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=2 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=2 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join sub_collections on sub_collections.sub_coll_id=authorities.num_object and authorities.type_object = 5 JOIN audit ON object_id = sub_coll_id AND type_obj=8 AND type_modif=2 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
 		<field group="6" title="msg:global_search" id="6102" >
 			<input type="text"/>
 			<query for="BOOLEAN" wordSearch="yes">
@@ -1999,7 +2176,42 @@
 				JOIN audit ON object_id = num_object AND type_object = 6 and type_obj = 11 AND type_modif=1 AND type_user=1 WHERE user_id=!!p!!]]></main>
 			</query>
 		</field>
-		
+		<field group="6" title="msg:search_extended_serie_creation_date" id="6301">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=1 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=1 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=1 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=1 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=1 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
+		<field group="6" title="msg:search_extended_serie_modify_date" id="6302">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=2 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=2 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=2 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=2 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join series on series.serie_id=authorities.num_object and authorities.type_object = 6 JOIN audit ON object_id = serie_id AND type_obj=11 AND type_modif=2 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
 		<field group="7" title="msg:global_search" id="7102" >
 			<input type="text"/>
 			<query for="BOOLEAN" wordSearch="yes">
@@ -3211,7 +3423,42 @@
 				JOIN audit ON object_id = num_object AND type_object = 7 and type_obj = 13 AND type_modif=1 AND type_user=1 WHERE user_id=!!p!!]]></main>
 			</query>
 		</field>
-		
+		<field group="7" title="msg:search_extended_tu_creation_date" id="7301">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=1 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=1 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=1 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=1 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=1 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
+		<field group="7" title="msg:search_extended_tu_modify_date" id="7302">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=2 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=2 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=2 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=2 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join titres_uniformes on titres_uniformes.tu_id=authorities.num_object and authorities.type_object = 7 JOIN audit ON object_id = tu_id AND type_obj=13 AND type_modif=2 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
 		<field group="8" title="msg:global_search" id="8102" >
 			<input type="text"/>
 			<query for="BOOLEAN" wordSearch="yes">
@@ -3443,7 +3690,42 @@
 				JOIN audit ON object_id = num_object AND type_object = 8 and type_obj = 9 AND type_modif=1 AND type_user=1 WHERE user_id=!!p!!]]></main>
 			</query>
 		</field>		
-		
+		<field group="8" title="msg:search_extended_indexint_creation_date" id="8301">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=1 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=1 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=1 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=1 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=1 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
+		<field group="8" title="msg:search_extended_indexint_modify_date" id="8302">
+			<input type="date"/>
+			<query for="EQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=2 WHERE DATEDIFF(quand, '!!p!!')=0]]></main>
+			</query>
+			<query for="LT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=2 WHERE quand < '!!p!!']]></main>
+			</query>
+			<query for="GT">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=2 WHERE quand > '!!p!!']]></main>
+			</query>
+			<query for="LTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=2 WHERE quand <='!!p!!']]></main>
+			</query>
+			<query for="GTEQ">
+				<main><![CDATA[SELECT DISTINCT id_authority from authorities join indexint on indexint.indexint_id=authorities.num_object and authorities.type_object = 8 JOIN audit ON object_id = indexint_id AND type_obj=9 AND type_modif=2 WHERE quand >='!!p!!']]></main>
+			</query>
+		</field>
 		<field group="10" title="msg:search_extended_common_statut" id="099" >
 			<input type="query_list">
 				<query>select id_authorities_statut, authorities_statut_label from authorities_statuts order by authorities_statut_label</query>
@@ -5936,16 +6218,16 @@
 		<fieldType type="authperso" prefix="a">
 			<field dataType="all_fields" id="10">
 				<query for="STARTWITH" notAllowedFor="list,query_list,marclist,query_auth" regDiacrit="no">
-					<main><![CDATA[select distinct id_authority from authorities join authperso_authorities on authperso_authorities.id_authperso_authority=authorities.num_object and authorities.type_object = 9 WHERE authperso_index_infos_global like ' !!p!!%' AND authperso_authority_authperso_num = !!autperso_type_num!! ORDER BY authperso_index_infos_global]]></main>
+					<main><![CDATA[select distinct id_authority from authorities join authperso_authorities on authperso_authorities.id_authperso_authority=authorities.num_object and authorities.type_object = 9 WHERE authperso_index_infos_global like '!!p!!%' AND authperso_authority_authperso_num = !!autperso_type_num!! ORDER BY authperso_index_infos_global]]></main>
 				</query>
 				<query for="ENDWITH" notAllowedFor="list,query_list,marclist,query_auth" regDiacrit="no">
-					<main><![CDATA[select distinct id_authority from authorities join authperso_authorities on authperso_authorities.id_authperso_authority=authorities.num_object and authorities.type_object = 9 WHERE authperso_index_infos_global like '%!!p!! ' AND authperso_authority_authperso_num = !!autperso_type_num!! ORDER BY authperso_index_infos_global]]></main>
+					<main><![CDATA[select distinct id_authority from authorities join authperso_authorities on authperso_authorities.id_authperso_authority=authorities.num_object and authorities.type_object = 9 WHERE authperso_index_infos_global like '%!!p!!' AND authperso_authority_authperso_num = !!autperso_type_num!! ORDER BY authperso_index_infos_global]]></main>
 				</query>
 				<query for="EXACT" notAllowedFor="list,query_list,marclist,query_auth" regDiacrit="no">
-					<main><![CDATA[select distinct id_authority from authorities join authperso_authorities on authperso_authorities.id_authperso_authority=authorities.num_object and authorities.type_object = 9 WHERE authperso_index_infos_global like ' !!p!! ' AND authperso_authority_authperso_num = !!autperso_type_num!! ORDER BY authperso_index_infos_global]]></main>
+					<main><![CDATA[select distinct id_authority from authorities join authperso_authorities on authperso_authorities.id_authperso_authority=authorities.num_object and authorities.type_object = 9 WHERE authperso_index_infos_global like '!!p!!' AND authperso_authority_authperso_num = !!autperso_type_num!! ORDER BY authperso_index_infos_global]]></main>
 				</query>
 				<query for="CONTAINS" regDiacrit="no">
-					<main><![CDATA[select distinct id_authority from authorities join authperso_authorities on authperso_authorities.id_authperso_authority=authorities.num_object and authorities.type_object = 9 WHERE authperso_index_infos_global like ' %!!p!!% ' AND authperso_authority_authperso_num = !!autperso_type_num!! ORDER BY authperso_index_infos_global]]></main>
+					<main><![CDATA[select distinct id_authority from authorities join authperso_authorities on authperso_authorities.id_authperso_authority=authorities.num_object and authorities.type_object = 9 WHERE authperso_index_infos_global like '%!!p!!%' AND authperso_authority_authperso_num = !!autperso_type_num!! ORDER BY authperso_index_infos_global]]></main>
 				</query>
 				<query for="CONTAINS_AT_LEAST" multipleWords="yes" regDiacrit="yes">
 					<main><![CDATA[select distinct id_authority from authorities join authperso_authorities on authperso_authorities.id_authperso_authority=authorities.num_object and authorities.type_object = 9 WHERE (!!multiple_term!!) AND authperso_authority_authperso_num = !!autperso_type_num!! ORDER BY authperso_index_infos_global]]></main>

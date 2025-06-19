@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_accounting_ui.class.php,v 1.38.2.2 2021/10/28 08:27:30 dgoron Exp $
+// $Id: list_accounting_ui.class.php,v 1.42.4.2 2023/09/29 09:55:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -205,25 +205,17 @@ class list_accounting_ui extends list_ui {
 	}
 
 	/**
+	 * Champ(s) du tri SQL
+	 */
+	protected function _get_query_field_order($sort_by) {
+	    return $sort_by;
+	}
+	
+	/**
 	 * Tri SQL
 	 */
 	protected function _get_query_order() {
-
-		if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				default :
-					$order .= $sort_by;
-					break;
-			}
-			if($order) {
-				$this->applied_sort_type = 'SQL';
-				return " group by actes.id_acte order by ".$order." ".$this->applied_sort[0]['asc_desc'];
-			} else {
-				return " group by actes.id_acte";
-			}
-		}
+	    return " group by actes.id_acte ".parent::_get_query_order();
 	}
 
 	/**
@@ -364,29 +356,20 @@ class list_accounting_ui extends list_ui {
 	 */
 	protected function _get_query_join_filters() {
 		$filter_join_query = '';
-		if($this->filters['rubrique'] || count($this->filters['applicants']) || count($this->filters['lgstats'])) {
+		if(!empty($this->filters['rubrique']) || (is_array($this->filters['applicants']) && count($this->filters['applicants'])) || (is_array($this->filters['lgstats']) && count($this->filters['lgstats']))) {
 			$filter_join_query .= " LEFT JOIN lignes_actes ON lignes_actes.num_acte=actes.id_acte";
 		}
-		if(count($this->filters['applicants'])) {
+		if(is_array($this->filters['applicants']) && count($this->filters['applicants'])) {
 			$filter_join_query .= " LEFT JOIN lignes_actes_applicants ON lignes_actes_applicants.ligne_acte_num=lignes_actes.id_ligne";
 		}
-		if(count($this->filters['lgstats'])) {
+		if(is_array($this->filters['lgstats']) && count($this->filters['lgstats'])) {
 			$filter_join_query .= " LEFT JOIN lignes_actes_statuts ON lignes_actes_statuts.id_statut=lignes_actes.statut";
 		}
 		return $filter_join_query;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-
-		$filter_query = '';
-
-		$this->set_filters_from_form();
-
-		$filters = array();
-		$filters[] = "actes.type_acte = '".$this->filters['type_acte']."'";
+	protected function _add_query_filters() {
+		$this->query_filters [] = "actes.type_acte = '".$this->filters['type_acte']."'";
 		if($this->filters['user_input']) {
 			$isbn = '';
 			$t_codes = array();
@@ -413,32 +396,32 @@ class list_accounting_ui extends list_ui {
 				foreach ($t_codes as $v) {
 					$codes_query [] = "lignes_actes.code like '%".addslashes($v)."%' ";
 				}
-				$filters[] = "(".implode(' or ', $codes_query).")";
+				$this->query_filters [] = "(".implode(' or ', $codes_query).")";
 			} else {
 				$members_actes = $this->get_analyse_query()->get_query_members("actes","actes.numero","actes.index_acte", "actes.id_acte");
 				$members_lignes = $this->get_analyse_query()->get_query_members("lignes_actes","lignes_actes.code","lignes_actes.index_ligne", "lignes_actes.id_ligne");
-				$filters[] = "(".$members_actes["where"]." or ".$members_lignes["where"]." or actes.numero like '%".addslashes($this->filters['user_input'])."%')";
+				$this->query_filters [] = "(".$members_actes["where"]." or ".$members_lignes["where"]." or actes.numero like '%".addslashes($this->filters['user_input'])."%')";
 			}
 		}
 		if($this->filters['entite']) {
-			$filters[] = "actes.num_entite = '".$this->filters['entite']."'";
+			$this->query_filters [] = "actes.num_entite = '".$this->filters['entite']."'";
 		}
 		if($this->filters['exercice']) {
-			$filters[] = "actes.num_exercice = '".$this->filters['exercice']."'";
+			$this->query_filters [] = "actes.num_exercice = '".$this->filters['exercice']."'";
 		}
 		if($this->filters['status']) {
 			if ($this->filters['status'] != '-1') {
 				if ($this->filters['status'] == 32) {
-					$filters[] = "((actes.statut & 32) = 32) ";
+					$this->query_filters [] = "((actes.statut & 32) = 32) ";
 				} else {
-					$filters[] = "((actes.statut & 32) = 0) and ((actes.statut & ".$this->filters['status'].") = '".$this->filters['status']."') ";
+					$this->query_filters [] = "((actes.statut & 32) = 0) and ((actes.statut & ".$this->filters['status'].") = '".$this->filters['status']."') ";
 				}
 			}
 		}
 		if($this->filters['rubrique']) {
-		    $rubriques_ids = array_keys(rubriques::getChilds($this->filters['rubrique']));
-		    $rubriques_ids[] = $this->filters['rubrique'];
-		    $filters[] = "lignes_actes.num_rubrique IN (".implode(",",$rubriques_ids).")";
+			$rubriques_ids = array_keys(rubriques::getChilds($this->filters['rubrique']));
+			$rubriques_ids[] = $this->filters['rubrique'];
+			$this->query_filters [] = "lignes_actes.num_rubrique IN (".implode(",",$rubriques_ids).")";
 		}
 		if(count($this->filters['applicants'])) {
 			$applicants = array();
@@ -453,11 +436,11 @@ class list_accounting_ui extends list_ui {
 				$filtre_empr = "lignes_actes_applicants.empr_num in ('".implode("','",$applicants['empr'])."') ";
 			}
 			if($filtre_empr) {
-				$filters[] = "(".$filtre_empr.")";
+				$this->query_filters [] = "(".$filtre_empr.")";
 			}
 		}
 		if(count($this->filters['lgstats'])) {
-			$filters[] = "lignes_actes.statut in (".implode(',',$this->filters['lgstats']).")";
+			$this->query_filters [] = "lignes_actes.statut in (".implode(',',$this->filters['lgstats']).")";
 		}
 		if(count($this->filters['suppliers'])) {
 			$suppliers = array();
@@ -467,14 +450,9 @@ class list_accounting_ui extends list_ui {
 				}
 			}
 			if(count($suppliers)) {
-				$filters[] = "actes.num_fournisseur in (".implode(',',$suppliers).")";
+				$this->query_filters [] = "actes.num_fournisseur in (".implode(',',$suppliers).")";
 			}
 		}
-		if(count($filters)) {
-			$filter_query .= $this->_get_query_join_filters();
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 
 	protected function get_link_action($action, $act) {
@@ -532,19 +510,19 @@ class list_accounting_ui extends list_ui {
 	}
 	
 	protected function _get_object_property_statut($object) {
-		global $msg, $charset;
+		global $msg;
 		
 		$st = (($object->statut) & ~(STA_ACT_ARC));
 		switch ($st) {
 			case STA_ACT_ENC :
-				return htmlentities($msg['acquisition_'.$this->get_initial_name().'_enc'], ENT_QUOTES, $charset);
+				return $msg['acquisition_'.$this->get_initial_name().'_enc'];
 			case STA_ACT_REC :
-				return htmlentities($msg['acquisition_'.$this->get_initial_name().'_rec'], ENT_QUOTES, $charset);
+				return $msg['acquisition_'.$this->get_initial_name().'_rec'];
 			case STA_ACT_PAY :
-				return htmlentities($msg['acquisition_'.$this->get_initial_name().'_pay'], ENT_QUOTES, $charset);
+				return $msg['acquisition_'.$this->get_initial_name().'_pay'];
 			default :
 				if(isset($msg['acquisition_'.$this->get_initial_name().'_enc'])) {
-					return htmlentities($msg['acquisition_'.$this->get_initial_name().'_enc'], ENT_QUOTES, $charset);
+					return $msg['acquisition_'.$this->get_initial_name().'_enc'];
 				} else {
 					return '';
 				}
@@ -552,14 +530,16 @@ class list_accounting_ui extends list_ui {
 	}
 	
 	protected function get_cell_content($object, $property) {
+		global $charset;
+		
 		$content = '';
 		switch($property) {
 			case 'statut':
 				$statut = $this->_get_object_property_statut($object);
 				if(($object->statut & STA_ACT_ARC) == STA_ACT_ARC) {
-					$content .= '<s>'.$statut.'</s>';
+					$content .= '<s>'.htmlentities($statut, ENT_QUOTES, $charset).'</s>';
 				} else {
-					$content .= $statut;
+					$content .= htmlentities($statut, ENT_QUOTES, $charset);
 				}
 				break;
 			case 'print_mail':
@@ -580,14 +560,12 @@ class list_accounting_ui extends list_ui {
 		}
 	}
 
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		if($property != 'print_mail') {
 			$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=modif&id_bibli=".$object->num_entite."&id_exercice=".$object->num_exercice."&id_".$this->get_initial_name()."=".$object->id_acte."\"";
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 
 	protected function _get_query_human_global_search() {
@@ -611,9 +589,12 @@ class list_accounting_ui extends list_ui {
 	}
 	
 	protected function _get_query_human_rubrique() {
-		$rubriques = new rubriques($this->filters['rubrique']);
-		$budgets = new budgets($rubriques->num_budget);
-		return "[".$budgets->libelle."] ".$rubriques->libelle;
+		if(!empty($this->filters['rubrique'])) {
+			$rubriques = new rubriques($this->filters['rubrique']);
+			$budgets = new budgets($rubriques->num_budget);
+			return "[".$budgets->libelle."] ".$rubriques->libelle;
+		}
+		return '';
 	}
 	
 	protected function _get_query_human_applicants() {

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: serialcirc_diff.class.php,v 1.39.2.2 2022/01/10 09:19:23 rtigero Exp $
+// $Id: serialcirc_diff.class.php,v 1.43 2023/01/05 11:19:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -40,6 +40,8 @@ class serialcirc_diff {
 	public $expl_statut_circ_after=0;
 	public $sort_diff='';
 	public $diffusion_nb_recipients=0;
+	
+	protected static $instances = array();
 	
 	public function __construct($id_serialcirc=0,$num_abt=0 ) {
 		$id_serialcirc = intval($id_serialcirc);
@@ -194,11 +196,11 @@ class serialcirc_diff {
 	}	
 	
 	public function update_serialcirc($data = array()){
-		if(!$data){
+		if(empty($data)){
 			$data['circ_type']=0;
 			$data['virtual_circ']=0;
 			$data['simple_circ']=1;
-			$data['no_ret_circ']+=0;
+			$data['no_ret_circ']=0;
 			$data['duration']=0;
 			$data['checked']=0;
 			$data['retard_mode']=0;
@@ -210,20 +212,20 @@ class serialcirc_diff {
 			$data['expl_statut_circ']=0;
 			$data['expl_statut_circ_after']=0;
 		}else{
-			$data['circ_type']+=0;
-			$data['virtual_circ']+=0;
-			$data['simple_circ']+=0;
-			$data['no_ret_circ']+=0;
-			$data['duration']+=0;
-			$data['checked']+=0;
-			$data['retard_mode']+=0;
-			$data['allow_resa']+=0;
-			$data['allow_copy']+=0;
-			$data['allow_send_ask']+=0;
-			$data['allow_subscription']+=0;
-			$data['duration_before_send']+=0;
-			$data['expl_statut_circ']+=0;
-			$data['expl_statut_circ_after']+=0;			
+			$data['circ_type'] = intval($data['circ_type']);
+			$data['virtual_circ'] = intval($data['virtual_circ']);
+			$data['simple_circ'] = intval($data['simple_circ']);
+			$data['no_ret_circ'] = intval($data['no_ret_circ']);
+			$data['duration'] = intval($data['duration']);
+			$data['checked'] = intval($data['checked']);
+			$data['retard_mode'] = intval($data['retard_mode']);
+			$data['allow_resa'] = intval($data['allow_resa']);
+			$data['allow_copy'] = intval($data['allow_copy']);
+			$data['allow_send_ask'] = intval($data['allow_send_ask']);
+			$data['allow_subscription'] = intval($data['allow_subscription']);
+			$data['duration_before_send'] = intval($data['duration_before_send']);
+			$data['expl_statut_circ'] = intval($data['expl_statut_circ']);
+			$data['expl_statut_circ_after'] = intval($data['expl_statut_circ_after']);			
 		}
 		
 		$req = "num_serialcirc_abt=".$this->num_abt.",
@@ -822,6 +824,7 @@ class serialcirc_diff {
 	}
 	
 	public function duplicate($abt_to_id){
+		$abt_to_id = intval($abt_to_id);
 		$requete="select id_serialcirc from serialcirc where num_serialcirc_abt=".$abt_to_id;
 		$resultat=pmb_mysql_query($requete);
 		if (pmb_mysql_num_rows($resultat)) {
@@ -982,5 +985,12 @@ class serialcirc_diff {
 	        }
 	    }
 	    return 0;
+	}
+	
+	public static function get_instance($id_serialcirc=0,$num_abt=0) {
+		if(!isset(static::$instances[$id_serialcirc][$num_abt])) {
+			static::$instances[$id_serialcirc][$num_abt] = new serialcirc_diff($id_serialcirc, $num_abt);
+		}
+		return static::$instances[$id_serialcirc][$num_abt];
 	}
 } //serialcirc class end

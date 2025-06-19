@@ -1,0 +1,29 @@
+/*----------------
+- BASE: VARIABLES -
+ ----------------*/
+
+
+/*--------------------
+- VARIABLES GÉNÉRALES -
+ --------------------*/
+
+ :root {
+   --c-white : #fafafa;
+   --c-black : #011342;
+   --c-primary : #0f4a8a;
+   --c-secondary : #A5F2ED;
+   --c-thirdly : #19A3A7;
+   --c-fourthly: #10768D;
+   --font: "Open Sans", sans-serif;
+   --font-title : normal normal bold 4rem/5.6rem var(--font);
+   --font-subtitle: normal normal bold 2.4rem/3.2rem var(--font);
+   --font-subtitle-variant: normal normal bold 1.8rem/2rem var(--font);
+   --font-resume: normal normal 300 1.6rem/2.2rem var(--font);
+   --font-link: normal normal 500 1.6rem/2.2rem var(--font);
+   --transition : .2s ease-in-out;
+   --filter-brightness : brightness(1.4);
+   --border-radius : 32px;
+   --border-radius-small : 12px;
+   --box-shadow : 0px 4px 24px #00555A1A;
+
+}

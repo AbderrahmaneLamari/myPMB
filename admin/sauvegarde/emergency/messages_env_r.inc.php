@@ -2,12 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: messages_env_r.inc.php,v 1.6 2007/03/10 08:32:25 touraine37 Exp $
+// $Id: messages_env_r.inc.php,v 1.6.38.1 2023/03/02 08:28:58 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
-
-$filename=$_GET["filename"];
-$critical=$_GET["critical"];
 
 $msg["sauv_misc_restaure"]="Restauration de la sauvegarde %s";
 $msg["sauv_misc_restaure_bad_sauv_file"]="Ce n'est pas un fichier de sauvegarde !";

@@ -2,11 +2,15 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum.inc.php,v 1.70.2.4 2021/12/28 10:30:20 dgoron Exp $
+// $Id: explnum.inc.php,v 1.77 2022/05/06 09:29:32 jparis Exp $
+
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path;
+
+use Pmb\Digitalsignature\Models\DocnumCertifier;
+
 require_once($class_path."/auth_popup.class.php");
 require_once($class_path."/explnum_licence/explnum_licence.class.php");
 //require_once($class_path."/access.class.php");
@@ -172,6 +176,13 @@ function show_explnum_per_notice($no_notice, $no_bulletin, $link_expl='') {
 		// on récupère les données des exemplaires
 		$i = 1 ;
 		$ligne_finale = '';
+		
+		global $pmb_digital_signature_activate;
+		if ($pmb_digital_signature_activate) {
+		    $ligne_finale .= DocnumCertifier::getJsCheck();
+		    $certifier = new DocnumCertifier(null);
+		}
+		
 		$ligne = '';
 		global $search_terms;
 		$docnums_exists_flag = false;
@@ -231,12 +242,9 @@ function show_explnum_per_notice($no_notice, $no_bulletin, $link_expl='') {
 				} 
 				$alt = htmlentities($expl->explnum_nom." - ".$expl->explnum_mimetype,ENT_QUOTES, $charset) ;
 				
-				if ($expl->explnum_vignette) {
-				    $thumbnail_url = explnum::get_thumbnail_url($expl->explnum_vignette, $expl->explnum_id);
-				    $obj="<img src='".$opac_url_base.$thumbnail_url."' alt='$alt' title='$alt' border='0'>";
-				}else {// trouver l'icone correspondant au mime_type
-					$obj="<img src='".get_url_icon('mimetype/'.icone_mimetype($expl->explnum_mimetype, $expl->explnum_extfichier), 1)."' alt='$alt' title='$alt' border='0'>";		
-				}
+			    $thumbnail_url = explnum::get_thumbnail_url($expl->explnum_vignette, $expl->explnum_id);
+			    $obj="<img src='".$thumbnail_url."' alt='$alt' title='$alt' border='0'>";
+				    
 				$expl_liste_obj = "";
 				
 				$obj_suite="$statut_libelle_div
@@ -309,6 +317,20 @@ function show_explnum_per_notice($no_notice, $no_bulletin, $link_expl='') {
 					$expl_liste_obj .= "<span class='title_docnum'>".htmlentities($expl->explnum_nom,ENT_QUOTES, $charset)."</span></a><div class='explnum_type'>".htmlentities($explmime_nom,ENT_QUOTES, $charset)."</div>";
 				} else {
 					$expl_liste_obj .= "<span class='title_docnum'>".htmlentities($expl->explnum_nom,ENT_QUOTES, $charset)."</span><div class='explnum_type'>".htmlentities($explmime_nom,ENT_QUOTES, $charset)."</div>";
+				}
+				
+				if ($pmb_digital_signature_activate) {
+				    $explnum = new explnum($expl->explnum_id);
+				    $certifier->setEntity($explnum);
+				    
+				    if ($certifier->checkSignExists()) {
+				        $expl_liste_obj .= "
+                        <span id='docnum_check_sign_" . $expl->explnum_id . "'></span>
+                        <script>
+                            certifier.chksign(" . $expl->explnum_id . ", 'docnum', true);
+                        </script>
+                    ";
+				    }
 				}
 				
 				// mémorisation des exemplaires numériques et de leurs localisations
@@ -437,12 +459,9 @@ function show_explnum_per_id($explnum_id, $link_explnum = "") {
 				$txt = "" ;
 			}
 							
-			if ($explnum->explnum_vignette) {
-			    $thumbnail_url = explnum::get_thumbnail_url($explnum->explnum_vignette, $explnum->explnum_id);
-			    $obj="<img src='".$opac_url_base.$thumbnail_url."' alt='$alt' title='$alt' border='0'>";
-			}else { // trouver l'icone correspondant au mime_type
-				$obj="<img src='".get_url_icon('mimetype/'.icone_mimetype($explnum->explnum_mimetype, $explnum->explnum_extfichier), 1)."' alt='$alt' title='$alt' border='0'>";		
-            }
+		    $thumbnail_url = explnum::get_thumbnail_url($explnum->explnum_vignette, $explnum->explnum_id);
+		    $obj="<img src='".$opac_url_base.$thumbnail_url."' alt='$alt' title='$alt' border='0'>";
+		    
 			$explnum_liste_obj = "";
 			
 			$obj.="$statut_libelle_div

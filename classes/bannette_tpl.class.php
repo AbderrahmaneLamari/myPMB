@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette_tpl.class.php,v 1.23 2021/02/01 13:24:08 dgoron Exp $
+// $Id: bannette_tpl.class.php,v 1.24 2022/02/11 09:39:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($class_path."/template.class.php");
 require_once("$include_path/templates/bannette_tpl.tpl.php");
 require_once($include_path."/h2o/pmb_h2o.inc.php");
@@ -18,7 +19,7 @@ class bannette_tpl extends template {
 	protected static $base_url;
 	
 	protected static function get_data_query($id) {
-		$id += 0;
+		$id = intval($id);
 		return "SELECT 'bannette' as template_type, bannettetpl_name as template_name, bannettetpl_comment as template_comment, bannettetpl_tpl as template_content  FROM bannette_tpl WHERE bannettetpl_id='".$id."'";
 	}
 	

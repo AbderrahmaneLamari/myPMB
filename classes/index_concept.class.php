@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: index_concept.class.php,v 1.34.2.5 2022/01/11 08:29:49 qvarin Exp $
+// $Id: index_concept.class.php,v 1.40.4.3 2023/05/14 07:50:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -57,6 +57,8 @@ class index_concept {
 	);
 	
 	private static $entities_caches = [];
+	
+	private static $authorities_caches = [];
 	
 	private static $narrowers_labels= [];
 	
@@ -329,8 +331,8 @@ class index_concept {
 				foreach ($concepts as $concept_id => $concept_display_label) {
 					$concept_data = array();
 					$concept_data['sheme']=$scheme;
-					$link=str_replace("!!concept_id!!", $concept_id, $index_concept_isbd_display_concept_link);
-					$link=str_replace("!!concept_display_label!!", $concept_display_label, $link);
+					$link=str_replace("!!concept_id!!", $concept_id ?? "", $index_concept_isbd_display_concept_link);
+					$link=str_replace("!!concept_display_label!!", $concept_display_label ?? "", $link);
 					$concept_data['link']=$link;
 					$concept_data['id']=$concept_id;
 					$concept_data['label']=$concept_display_label;	
@@ -509,7 +511,21 @@ class index_concept {
 		return $concepts_narrowers_labels;	
 	}
 	
+	public static function get_concept_from_id($concept_id, $property) {
+		switch ($property) {
+			case 'label':
+				return self::get_concept_label_from_id($concept_id);
+			case 'altlabel':
+				return self::get_concept_altlabel_from_id($concept_id);
+			case 'hiddenlabel':
+				return self::get_concept_hiddenlabel_from_id($concept_id);
+		}
+	}
+	
 	protected static function get_concept_label_from_id($concept_id) {
+		if(count(self::$concept_labels) > 2000){
+			self::$concept_labels = [];
+		}
 	    if(!empty(self::$concept_labels[$concept_id])){
 	        return self::$concept_labels[$concept_id];
 	    }
@@ -521,7 +537,7 @@ class index_concept {
 		if (skos_datastore::num_rows()) {
 			foreach (skos_datastore::get_result() as $concept) {
 			    $lang = "";
-			    if ($concept->label_lang) {
+			    if (isset($concept->label_lang)) {
 			        $lang = self::LANG_CODES[$concept->label_lang] ?? "";
 			    }
 			    self::$concept_labels[$concept_id][$lang] = $concept->label;
@@ -600,6 +616,57 @@ class index_concept {
 		    
 		}
 		self::$entities_caches[$entity_id."_".$entity_type."_".$scheme_id] = $concepts;
+		return $concepts;
+	}
+	
+	/**
+	 * Retourne un tableau des libelles des concepts qui indexent une autorite
+	 * (Utilisée en callback par l'indexation)
+	 */
+	public static function get_concepts_labels_from_linked_authority($entity_id, $authority_type, $authperso_type = 0) {
+	    $concepts_labels = array();
+	    $concepts = self::get_concepts_from_linked_authority($entity_id, $authority_type, $authperso_type);
+	    
+	    foreach ($concepts as $concept) {
+	        $concepts_labels[] = self::get_concept_label_from_id($concept['num_concept']);
+	    }
+	    return $concepts_labels;
+	}
+	
+	/**
+	 * recherche des concepts lies a l'autorite
+	 * @param int $entity_id
+	 * @param int $entity_type
+	 * @param number $scheme_id
+	 * @return array
+	 */
+	protected static function get_concepts_from_linked_authority($entity_id, $authority_type, $authperso_type = 0) {
+		if (!empty($authperso_type)) {
+		    $authority_type = 1000 + intval($authperso_type);
+		}
+		if(isset(self::$authorities_caches[$entity_id."_".$authority_type])){
+		    return self::$authorities_caches[$entity_id."_".$authority_type];
+		}
+		$concepts = array();
+		$query = "SELECT aut_link_to_num AS num_concept, aut_link_rank AS order_concept
+                FROM aut_link 
+                WHERE aut_link_to = ".AUT_TABLE_CONCEPT." AND aut_link_from = ".$authority_type." AND aut_link_from_num = ".$entity_id." 
+                UNION
+                SELECT aut_link_from_num AS num_concept, aut_link_rank AS order_concept
+                FROM aut_link 
+                WHERE aut_link_from = ".AUT_TABLE_CONCEPT." AND aut_link_to = ".$authority_type." AND aut_link_to_num = ".$entity_id." 
+                ORDER BY order_concept";
+		$result = pmb_mysql_query($query);
+		if (pmb_mysql_num_rows($result)) {
+			while ($row = pmb_mysql_fetch_assoc($result)){
+				$concepts[] = $row;
+			}
+		}
+		if(count(self::$authorities_caches) > 2000){
+		    self::$authorities_caches = [];	 
+		    
+		}
+		self::$authorities_caches[$entity_id."_".$authority_type] = $concepts;
 		return $concepts;
 	}
 } // fin de définition de la classe index_concept

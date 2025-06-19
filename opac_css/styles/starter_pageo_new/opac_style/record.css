@@ -1,0 +1,1220 @@
+/*---------------------
+- OPAC: RECORD_DISPLAY -
+ ---------------------*/
+
+
+/* -------------------------------------------------------*/
+/* -------------------------------------------------------*/
+/*                      Glyphe Icons                      */
+/* -------------------------------------------------------*/
+/* -------------------------------------------------------*/
+#resa_notice a:before,
+.actions_last_pageNot span:before,
+.plusN a:before,
+.avisNCourte a:before,
+.statutPartN span:before {
+    font-family: FontAwesome;
+    font-weight: normal;
+    font-style: normal;
+    display: inline-block;
+    text-decoration: inherit;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---------------------------------------------------------------------*/
+/* ---------------------------------------------------------------------*/
+/*          Notice reduite     record_in_result_display                 */
+/* ---------------------------------------------------------------------*/
+/* ---------------------------------------------------------------------*/
+
+
+/* ---------------------------------------------------------*/
+/*                        Grid Layout                       */
+/* ---------------------------------------------------------*/
+
+.vignetteimgNot {
+    margin-bottom: 10px;
+}
+
+.pmb_auteur {
+    font-weight: 500;
+    color: var(--c-primary);
+}
+
+/* ---------------------------------------------------------*/
+/*                      Notice reduite                      */
+/* ---------------------------------------------------------*/
+.parentNotCourte {
+    padding: 32px;
+    background-color: #fff;
+    border-radius: var(--border-radius-small);
+    box-shadow: var(--box-shadow);
+    overflow: hidden;
+    font-style: normal;
+    font-size: 1.6rem;
+    margin-bottom: 32px;
+    margin-top: 16px;
+    position: relative;
+}
+
+.panier_avis_notCourte .text_search0,
+.panier_avis_notCourte .text_search1,
+.panier_avis_notCourte .text_search2,
+.panier_avis_notCourte .text_search3,
+.panier_avis_notCourte .text_search4,
+.panier_avis_notCourte .text_search5,
+.footer_notice .text_search0,
+.footer_notice .text_search1,
+.footer_notice .text_search2,
+.footer_notice .text_search3,
+.footer_notice .text_search4,
+.footer_notice .text_search5,
+.plusN .text_search0,
+.plusN .text_search1,
+.plusN .text_search2,
+.plusN .text_search3,
+.plusN .text_search4,
+.plusN .text_search5 {
+    background-color: transparent;
+    text-decoration: none;
+    padding: 0px !important;
+}
+
+.avisNCourte a {
+    text-decoration: none;
+    color: var(--c-primary);
+}
+
+.tit1_notCourte {
+    font: var(--font-subtitle-variant);
+    color: var(--c-primary);
+}
+
+#search_universe_segment_result_list_content .pmb_record_item {
+    gap: 20px;
+}
+
+.pmb_record_aside {
+    padding-left: 20px;
+    max-width: 132px;
+    padding-top: 6px;
+}
+
+.pmb_record_content {
+    padding-right: 20px;
+}
+
+.resa_notice {
+    margin-left: auto;
+}
+
+.resa_notice a {
+    font: var(--font-link);
+    padding: 11px 24px 10px 24px;
+    border-radius: 44px;
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    transition: var(--transition);
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.resa_notice a::before {
+    content: url("../images/corner-arrow.png");
+    display: flex;
+    align-items: center;
+}
+
+
+/* ---------------------------------------------------------*/
+/*                        Picture                           */
+/* ---------------------------------------------------------*/
+.vignetteDocNot {
+    text-align: left;
+    overflow: hidden;
+}
+
+.vignetteNot {
+    width: initial;
+    height: auto;
+    max-width: 100%;
+    border-radius: 16px;
+}
+
+.parentNotCourte .vignetteNot {
+    width: 100%;
+}
+
+/* ---------------------------------------------------------*/
+/*                     Titre   Notice                       */
+/* ---------------------------------------------------------*/
+.title_notCourte h3 {
+    margin-bottom: 10px;
+    padding-top: 0px;
+}
+
+.title_notCourte h3 a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ---------------------------------------------------------*/
+/*                     Notice summary                       */
+/* ---------------------------------------------------------*/
+.resume_notCourte span {
+    line-height: 2.2rem;
+}
+
+.infoCompl_notCourte {
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.pmb_author {
+    color: var(--c-primary);
+}
+
+.pmb_author:hover {
+    color: var(--c-primary);
+    text-decoration: underline;
+}
+
+.in_notCourte {
+    color: var(--c-thirdly);
+    margin-bottom: 4px;
+}
+
+.infoCompl_notCourte span a {
+    text-decoration: none;
+}
+
+.pmb_record_item .ui-panel-basket-item>div {
+    background-color: var(--c-primary);
+    padding: 16px;
+    border-radius: var(--border-radius-small) 0 12px 0;
+    height: inherit;
+    max-width: 200px;
+    gap: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.lienN.pmb_bg_opac.pmb_record_icon_label {
+    font-weight: bold;
+    color: var(--c-primary);
+}
+
+.resume_notCourte {
+    margin-top: 6px;
+}
+
+.resume_notCourte::before {
+    content: url("../images/quote.png");
+    margin-right: 4px;
+}
+
+.pmb_record_item {
+    position: relative;
+}
+
+.pmb_record_item .statutPartN {
+    background-color: var(--c-fourthly);
+    border-radius: 0 0 12px 0;
+    position: absolute;
+    padding: 10px 12px;
+    top: 0;
+    left: 0;
+    font-size: 1.4rem;
+    height: inherit;
+}
+
+#blocNotice_descr>div {
+    display: flex;
+}
+
+.parentNotCourte .vignetteimgNot {
+    width: 100px;
+    float: left;
+    margin-right: 24px
+}
+
+.parentNotCourte .notice_corps {
+    width: 52%;
+    float: left;
+    margin-right: 24px
+}
+
+.panier_avis_notCourte {
+    width: 32%;
+    margin-left: auto;
+
+}
+
+/* ---------------------------------------------------------*/
+/*                       Notice complet                     */
+/* ---------------------------------------------------------*/
+.plusN {
+    margin: 20px 0;
+}
+
+#pmbopac .plusN a {
+    text-decoration: underline;
+    font-weight: bold;
+    color: var(--c-fourthly);
+    font-size: 1.4rem;
+}
+
+.notice_contenu,
+.descr_notice {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 1.8rem;
+}
+
+.notice_contenu {
+    gap: 0;
+}
+
+.asideContentNot {
+    width: 300px;
+    padding-right: 64px;
+}
+
+.descr_notice {
+    margin-top: 24px;
+}
+
+.descr_notice>div {
+    display: flex;
+    gap: 6px;
+}
+
+.notice_contenu h1 {
+    font: var(--font-title);
+    color: var(--c-primary);
+    margin-bottom: 8px;
+}
+
+.notice_contenu a {
+    color: var(--c-primary);
+    text-decoration: underline;
+    transition: var(--transition);
+}
+
+.notice_contenu a:hover {
+    color: var(--c-thirdly);
+    transition: var(--transition);
+}
+
+.asideContentNot .vignetteDocNot {
+    padding: 24px;
+}
+
+
+/* ---------------------------------------------------------*/
+/*                      Avis commentaire                    */
+/* ---------------------------------------------------------*/
+
+
+.avisNCourte2 {
+    text-align: right;
+    margin-top: 15px;
+}
+
+.avisNCourte2 a {
+    text-decoration: none;
+    font-style: italic;
+}
+
+.avisN a {
+    text-decoration: none;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    display: inline-block;
+    vertical-align: text-bottom;
+    line-height: 29px;
+}
+
+a.listeLectureN:hover {
+    text-decoration: none;
+}
+
+a.listeLectureN:hover span {
+    text-decoration: underline;
+
+}
+
+i.fa.fa-clipboard {
+    font-size: 20px;
+    color: #fff;
+}
+
+span.img_permalink i {
+    vertical-align: middle;
+}
+
+.tagsN a,
+.suggestsN a,
+.listeLectureN a,
+.docnumNCourtePermalink a,
+span.docNumN a,
+a.listeLectureN span {
+    color: var(--text-color-secondary)
+}
+
+/* ---------------------------------------------------------*/
+/*                            Panier                        */
+/* ---------------------------------------------------------*/
+.onglet_basketNotCourte .img_basketNotCourte img {
+    padding: 7px;
+    margin-right: 7px;
+    vertical-align: middle;
+}
+
+.onglet_basketNotCourte .img_basketNotCourte {
+    text-decoration: none;
+    background-color: inherit;
+    color: var(--text-color-secondary);
+    vertical-align: top;
+    line-height: 30px;
+}
+
+a.img_basketNotCourte:hover {
+    text-decoration: underline;
+}
+
+/* ---------------------------------------------------------*/
+/*                          Reserver                        */
+/* ---------------------------------------------------------*/
+#resa_notice {
+    float: right;
+}
+
+#resa_notice h3 {
+    border-bottom: none;
+}
+
+#resa_notice a {
+    text-decoration: none;
+    color: #5CB32A;
+}
+
+#resa_notice a:before {
+    content: "\f064";
+    font-size: 120%;
+    vertical-align: middle;
+    margin-right: 7px;
+    text-align: center;
+}
+
+.dispoLien_notice a {
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------*/
+/*                              Notice Footer                           */
+/* ---------------------------------------------------------------------*/
+.footer_notice {
+    text-align: right;
+    width: 100%;
+}
+
+.footer_notice .dispoLien_notice a {
+    font-size: 1em;
+    font-family: var(--text-font-secondary);
+    color: var(--text-color-thirdly);
+}
+
+/* ---------------------------------------------------------------------*/
+/* ---------------------------------------------------------------------*/
+/*                 Notice Full  record_extended_display                 */
+/* ---------------------------------------------------------------------*/
+/* ---------------------------------------------------------------------*/
+
+/* ---------------------------------------------------------*/
+/*                        Grid Layout                       */
+/* ---------------------------------------------------------*/
+#noticeNot {
+    max-width: 98%;
+    margin: 0px auto;
+    padding: 0;
+}
+
+#blocNotice_descr {
+    padding: 0px;
+    margin-bottom: 30px;
+}
+
+/* ---------------------------------------------------------*/
+/*                    Enrichissisement                      */
+/* ---------------------------------------------------------*/
+#blocNotice_descr ul.onglets_isbd_publicNot {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 0;
+    position: static;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+#blocNotice_descr ul.onglets_isbd_publicNot:after {
+    content: "";
+    display: block;
+    clear: both;
+}
+
+
+#blocNotice_descr ul.onglets_isbd_publicNot .isbd_public_active a span {
+    color: #ffffff;
+}
+
+#blocNotice_descr ul.onglets_isbd_publicNot li {
+    display: block;
+    margin: 10px 6px 0px 0;
+    position: relative;
+    text-align: center;
+    color: var(--c-white);
+    font-weight: 500;
+    border-bottom: none;
+    min-height: 30px;
+    line-height: 30px;
+    padding: 4px;
+    background-color: var(--c-primary);
+    border-radius: var(--border-radius);
+    min-width: 180px;
+    border: 1px solid var(--c-primary);
+    transition: var(--transition);
+}
+
+
+#blocNotice_descr ul.onglets_isbd_publicNot li a:hover {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#blocNotice_descr ul.onglets_isbd_publicNot li.isbd_public_inactive:hover {
+    background-color: var(--c-primary);
+    border: 1px solid var(--c-primary);
+    color: var(--c-white);
+    transition: var(--transition);
+}
+
+#blocNotice_descr ul.onglets_isbd_publicNot li.isbd_public_inactive {
+    color: var(--c-primary);
+    background-color: var(--c-white);
+    font-weight: 400;
+}
+
+#blocNotice_descr ul.onglets_isbd_publicNot li:hover a span {
+    color: #ffffff;
+}
+
+#blocNotice_descr ul.onglets_isbd_publicNot li img {
+    position: absolute;
+    right: 3%;
+    top: 20%;
+    background-color: #fff;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+/* ---------------------------------------------------------*/
+/*                           Panier                         */
+/* ---------------------------------------------------------*/
+
+.ui-panel-basket-item a[class^="img_baske"] img {
+    max-width: 32px;
+    max-height: 27px;
+}
+
+.onglet_basketNotCourte2 {
+    text-align: right;
+}
+
+/* ---------------------------------------------------------*/
+/*                         Notice content                   */
+/* ---------------------------------------------------------*/
+
+.descr_notice {
+    width: 100%;
+}
+
+.descr_notice td {
+    padding: 4px;
+    min-width: 200px;
+}
+
+.labelNot {
+    vertical-align: top;
+}
+
+/* ---------------------------------------------------------*/
+/*                     Titre   Notice                       */
+/* ---------------------------------------------------------*/
+#exempl_titleNot {
+    font-weight: bold;
+}
+
+#exempl_titleNot {
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------*/
+/*                       Notice complet                     */
+/* ---------------------------------------------------------*/
+
+
+/* ---------------------------------------------------------*/
+/*                      Avis commentaire                    */
+/* ---------------------------------------------------------*/
+
+span.avisN {
+    margin-left: 5px;
+    display: inline-block;
+}
+
+.asideContentNot>.avisN>span.avisN img.img_star_avis {
+    vertical-align: sub;
+}
+
+.avisN a+a {
+    margin-left: 7px;
+}
+
+/* ---------------------------------------------------------*/
+/*                     exemplaires                          */
+/* ---------------------------------------------------------*/
+#zone_exemplaires {
+    margin-bottom: 15px;
+    padding-right: 80px;
+}
+
+.exemplairesNot th {
+    background-color: #AB0101;
+    color: #ffffff;
+    line-height: 22px;
+    text-align: left;
+}
+
+.exemplairesNot th,
+.exemplairesNot td {
+    padding: 0px 5px;
+}
+
+.exemplaires table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.exemplaires th {
+    overflow: hidden;
+    background-color: var(--c-secondary);
+}
+
+#zone_exemplaires tr:first-of-type {
+    background-color: transparent;
+}
+
+.exemplaires tr:first-child th:first-child {
+    border-radius: var(--border-radius-small) 0 0 12px;
+}
+
+.exemplaires tr:first-child th:last-child {
+    border-radius: 0 12px 12px 0;
+}
+
+.record_nb_resas {
+    display: none;
+}
+
+/* ---------------------------------------------------------*/
+/*                      Reservation                         */
+/* ---------------------------------------------------------*/
+
+.resa_notice {
+    min-height: 40px;
+    text-align: right;
+    margin-bottom: 16px;
+}
+
+.resa_notice h3 {
+    font-size: 1em;
+}
+
+/* ---------------------------------------------------------*/
+/*                   Statut de la notice                    */
+/* ---------------------------------------------------------*/
+#main_hors_footer .statutNot {
+    margin: 5px 0 10px;
+}
+
+
+/* ---------------------------------------------------------*/
+/*                          Panier                          */
+/* ---------------------------------------------------------*/
+
+.icon_basketNot {
+    display: block;
+}
+
+/*Flex display
+--------------------------------------------------------------------------------------------*/
+
+.statutPartN,
+.avisNCourte,
+.docnumNCourte,
+.avisN,
+.tagsN,
+.suggestN,
+.lienP,
+.listeLectureN>a,
+div.record_lien,
+.onglet_basketNoticeCourte.ui-panel-basket-item>div,
+.onglet_basketNot.ui-panel-basket-item>div,
+.listeLectureNCourte a {
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    border: 1px solid var(--c-primary);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    color: var(--c-primary);
+    font-weight: 500;
+    margin-bottom: 12px;
+    cursor: pointer;
+    height: 44px;
+    gap: 10px;
+}
+
+.statutPartN {
+    cursor: inherit;
+}
+
+.asideContentNot .label_basketNot,
+.avisNCourte span {
+    color: var(--c-primary);
+}
+
+.avisNCourte:hover,
+.docnumNCourte:hover,
+.avisN:hover,
+.tagsN:hover,
+.suggestN:hover,
+.lienP:hover,
+.ui-panel-basket-item>div:hover,
+.listeLectureN>a:hover,
+div.record_lien:hover {
+    text-decoration: underline;
+    transition: var(--hover-transition);
+}
+
+.statutPartN span:nth-child(1),
+.avisNCourte span:nth-child(1),
+.docnumNCourte span:nth-child(1),
+.avisN span:nth-child(1),
+.tagsN span:nth-child(1),
+.suggestN span:nth-child(1),
+.listeLectureN span:nth-child(1),
+.lienP span:nth-child(1),
+.ui-panel-basket-item>div a:nth-child(1),
+.asideContentNot .pmb_record_icon,
+.ExtnotCom.imgListeLecture {
+    width: 44px;
+    text-align: center;
+    height: 100%;
+    background-color: var(--c-primary);
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avisNCourte .imgComment img {
+    width: 18px;
+}
+
+.typeDoc_notCourte img {
+    max-width: 25px;
+    max-height: 25px;
+}
+
+.asideContentNot>div:not(.vignetteDocNot) {
+    margin-bottom: 10px;
+}
+
+.pmb-tgle-accordion {
+    background: url('images/arrow_up_b.png') no-repeat;
+    width: 31px;
+    height: 18px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    border: none;
+}
+
+.pmb-tgle-accordion.uk-active {
+    background: url('images/arrow_down_b.png') no-repeat;
+}
+
+.pmb-accordion {
+    display: none;
+}
+
+.pmb-accordion.uk-active {
+    display: block;
+}
+
+.asideContentNot .vignetteDocNot {
+    margin-bottom: 20px;
+}
+
+.descr_notice tr .labelNot {
+    color: var(--c-black);
+    font-weight: 500;
+}
+
+.descr_notice tr .labelContent {
+    color: var(--c-black);
+}
+
+.descr_notice .record_tit1 .labelContent {
+    color: var(--c-black);
+}
+
+.notice_contenu {
+    overflow: hidden;
+    flex: 1;
+}
+
+.pmb_record_aside div:not('.pmb_record_img') {
+    background: var(--bg-color-secondary);
+    width: 75%;
+}
+
+/*------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------768-------------------------------------*/
+/*------------------------------------------------------------------------------------------*/
+
+@media screen and (max-width: 767px) {
+
+    .asideContentNot,
+    .notice_contenu {
+        float: none;
+        width: auto;
+        margin: 10px auto;
+    }
+
+    #pmbopac .parentNotCourte>div {
+        width: 100%;
+        float: none;
+        margin: 0 auto;
+        margin-bottom: 24px;
+    }
+}
+
+/*------------------------------------------------------------------------------------------*/
+/*--------------------------------------------Smart-----------------------------------------*/
+/*------------------------------------------------------------------------------------------*/
+
+/* @media screen and (max-width: 599px) {
+    .parentNotCourte .vignetteNot {
+        width: initial;
+    }
+
+    .notice_contenu {
+        border-top: solid 2px;
+        margin-top: 20px;
+    }
+
+    .descr_notice,
+    .descr_notice tbody {
+        display: block;
+        margin-top: 10px;
+    }
+
+    .descr_notice tr {
+        display: table;
+        width: 100%;
+        text-align: left;
+    }
+
+    .descr_notice td {
+        display: table-row;
+        width: 100%;
+    }
+
+    .descr_notice .labelNot {
+        padding: 0;
+        line-height: normal;
+    }
+
+    .descr_notice .labelNot>span {
+        display: block;
+        padding: 4px 7px;
+        font-weight: 500;
+        margin: 5px 0px;
+        background-color: #efefef;
+    }
+} */
+
+/* Affichage de Notices
+---------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------*/
+
+#notice {
+    margin: 15px 0px 0px 0px;
+}
+
+.notice-parent {
+    padding-top: 10px;
+    position: relative;
+    padding-left: 3px;
+    margin: 5px 0px 10px;
+}
+
+.notice-parent .notice-child br {
+    display: none;
+}
+
+.notice-heada {
+    font-weight: 300;
+    width: auto;
+    margin-bottom: 8px;
+    margin-left: 7px;
+    color: #000;
+    line-height: 21px;
+}
+
+div[id$="Parent"]>img {
+    vertical-align: middle;
+}
+
+.notice-parent .notice-heada i {
+    font-style: normal;
+}
+
+.notice-child {
+    margin-bottom: 20px !important;
+    margin-left: 5px;
+    padding-bottom: 0px;
+    border-radius: 0px 0px 0px 0px;
+}
+
+.notice-child h3,
+.a2z_perio h3>span {
+    padding: 10px 0px;
+    max-width: 90%;
+    display: block;
+    background-color: transparent;
+    font-weight: 400;
+    margin-bottom: 10px;
+    position: relative;
+    height: auto;
+}
+
+.infosRub .rubContent:before {
+    left: -2px;
+    top: 17px;
+}
+
+.infosInline .rubContent>h3:before {
+    left: -11px;
+    top: 13px;
+}
+
+a[name="docnum"] h3:hover,
+a[name="docnum"] {
+    color: #00727e;
+    text-decoration: none;
+}
+
+.a2z_perio h3>span {
+    font-size: 1rem;
+}
+
+#notice span>h3 {
+    max-width: none;
+}
+
+#bt_resa {
+    margin-left: 0px;
+    display: block;
+}
+
+.vignetteimg {
+    max-width: 100px;
+    max-height: 200px;
+    box-shadow: 1px 1px 2px #cccccc;
+    border-radius: 0px;
+    border: solid 1px #ededed;
+    margin-left: 10px;
+}
+
+#resultatrech .avis_detail span a {
+    text-decoration: none;
+}
+
+.main_wrapper {
+    margin-top: 10px;
+}
+
+.exemplaires {
+    margin-top: 10px;
+    border-collapse: collapse;
+    border-radius: var(--border-radius-small) 12px 0 0;
+    overflow: hidden;
+}
+
+.exemplaires th {
+    line-height: 22px;
+    text-align: left;
+}
+
+.exemplaires th,
+.exemplaires td {
+    padding: 8px 12px;
+}
+
+.notice-parent img {
+    vertical-align: text-bottom;
+    margin-left: 4px;
+}
+
+.notice-parent .img_plus {
+    max-width: 30px;
+    max-height: 30px;
+}
+
+.expl_situation strong {
+    color: inherit;
+}
+
+.etiq_champ {
+    font-weight: 400;
+    padding: 5px;
+}
+
+.public_title {
+    font-weight: 600;
+}
+
+#notice {
+    margin: 5px auto 0px;
+    width: auto;
+}
+
+.avis_detail {
+    font-weight: 400;
+}
+
+.simili_search .avis_detail {
+    padding: 16px 0 0;
+}
+
+
+/* responsive
+========================================================================== */
+
+#pmbopac.popup .asideContentNot,
+#pmbopac.popup .notice_contenu,
+#pmbopac.popup .panier_avis_notCourte {
+    float: none;
+    margin: 0 auto;
+    width: 85%;
+}
+
+#pmbopac .onglet_basketNot .img_basketNot {
+    padding: 0px;
+}
+
+#pmbopac .vignetteDocNot,
+#pmbopac .typeDoc_notCourte {
+    text-align: center;
+}
+
+#pmbopac .typeDoc_notCourte {
+    margin-top: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--c-thirdly);
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+#pmbopac .vignetteNot {
+    width: initial;
+    border: none;
+}
+
+/*lien panier
+ ========================================================================== */
+
+#add_result_cart {
+    font: var(--font-link);
+    padding: 11px 24px 10px 24px;
+    border-radius: var(--border-radius);
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    transition: var(--transition);
+    text-align: center;
+    margin: 24px 0;
+    display: inline-block;
+}
+
+.bannette-titre h1>a[href^="cart_inf"] {
+    padding-right: 7px;
+}
+
+.bannette-titre h1>a[href^="cart_inf"] {
+    padding-right: 7px;
+    display: inline-block;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.bannette-titre h1>a[href^="./empr.php?"] {
+    display: inline-block;
+}
+
+
+
+@media screen and (max-width: 1100px) {
+
+    #noticeNot>div:last-of-type {
+        flex-direction: column;
+    }
+
+    #zone_exemplaires {
+        padding-right: 0;
+    }
+
+}
+
+@media screen and (max-width: 1200px) {
+
+    .parentNotCourte .notice_corps {
+        width: 100%;
+        float: inherit;
+        margin-right: 0;
+    }
+
+    .panier_avis_notCourte {
+        width: 300px;
+        margin-left: 0;
+        margin-top: 50px;
+    }
+
+    .resa_notice,
+    .footer_notice {
+        text-align: left;
+    }
+}
+
+@media screen and (max-width: 960px) {
+
+    #blocNotice_descr>div {
+        flex-direction: column;
+        gap: 32px;
+    }
+
+    .asideContentNot {
+        width: 100%;
+        padding-right: 0;
+    }
+
+    .statutPartN,
+    .avisNCourte,
+    .docnumNCourte,
+    .avisN,
+    .tagsN,
+    .suggestN,
+    .lienP,
+    .asideContentNot .ui-panel-basket-item>div,
+    .listeLectureN>a,
+    div.record_lien {
+        margin: 12px auto;
+    }
+
+    .asideContentNot .resa_notice {
+        width: 100%;
+        max-width: 150px;
+        margin: 12px auto;
+    }
+
+    #zone_exemplaires .item_expl td::before {
+        content: " "attr(class)" ";
+        display: block;
+        background-color: var(--c-secondary);
+        width: 100%;
+        border-radius: var(--border-radius-small);
+        padding: 8px 12px;
+        margin-left: -12px;
+    }
+
+    #zone_exemplaires .item_expl td {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-left: 12px;
+    }
+
+    .exemplaires tr:first-of-type {
+        display: none;
+    }
+
+    .descr_notice tr {
+        display: flex;
+        flex-direction: column;
+        gap: -1px;
+    }
+
+}
+
+
+@media screen and (max-width: 640px) {
+
+    #search_universe_segment_result_list_content .pmb_record_item,
+    #cart_action .pmb_record_item {
+        flex-direction: column;
+    }
+
+    .pmb_record_content {
+        padding-left: 20px;
+    }
+
+    .descr_notice>div {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+}
+
+
+@media screen and (max-width: 480px) {
+
+    .statutPartN,
+    .avisNCourte,
+    .docnumNCourte,
+    .avisN,
+    .tagsN,
+    .suggestN,
+    .lienP,
+    .asideContentNot .ui-panel-basket-item>div,
+    .listeLectureN>a,
+    div.record_lien {
+        width: 100%;
+    }
+
+    .asideContentNot .resa_notice {
+        width: 100%;
+        margin: inherit;
+    }
+
+}

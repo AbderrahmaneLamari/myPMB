@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: circ.sht,v 1.15.2.1 2021/06/14 06:35:24 dgoron Exp $
+// $Id: circ.sht,v 1.16 2021/06/14 06:33:06 dgoron Exp $
 
 // raccourcis clavier pour la page main
 global $include_path, $raclavier, $deflt_bypass_isbn_page;

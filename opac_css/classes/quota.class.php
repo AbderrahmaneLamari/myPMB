@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: quota.class.php,v 1.3.2.3 2022/01/10 15:10:29 dgoron Exp $
+// $Id: quota.class.php,v 1.8.4.1 2023/05/31 06:27:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -898,7 +898,8 @@ class quota {
 					//$groupby_=array();
 					$tablelinked=array();
 					//Contournement pour gérer les nouveautés dans les quotas de prêt
-					if($this->quota_type["COUNT_TABLE"] == 'pret' && count($elements_)==1 && $elements_[0] == 'NOTICENOUVEAUTE') {
+					// + NOTICETYPDEDOC parfois ajouté en subst
+					if($this->quota_type["COUNT_TABLE"] == 'pret' && count($elements_)>=1 && (in_array('NOTICENOUVEAUTE', $elements_) || in_array('NOTICETYPDEDOC', $elements_))) {
 						$tablelinked['exemplaires'] = true;
 						$tablelinked['notices'] = true;
 						$tablelinked['bulletins'] = true;
@@ -952,7 +953,8 @@ class quota {
 						$distinct=count($count_distinct)?"distinct ".implode(",",$count_distinct):"1";
 					}
 					//Contournement pour gérer les nouveautés dans les quotas de prêt
-					if($this->quota_type["COUNT_TABLE"] == 'pret' && count($elements_)==1 && $elements_[0] == 'NOTICENOUVEAUTE') {
+					// + NOTICETYPDEDOC parfois ajouté en subst
+					if($this->quota_type["COUNT_TABLE"] == 'pret' && count($elements_)>=1 && (in_array('NOTICENOUVEAUTE', $elements_) || in_array('NOTICETYPDEDOC', $elements_))) {
 						$where_notice_m = str_replace('notice_is_new', 'notices_m.notice_is_new', $where);
 						$where_notice_s = str_replace('notice_is_new', 'notices_s.notice_is_new', $where);
 						$requete="select count(".$distinct.") from (((".$this->quota_type["COUNT_TABLE"]."
@@ -1054,7 +1056,7 @@ class quota {
 			$descriptor=$include_path."/quotas/$lang.xml";
 		}
 		if(!isset(static::$instance[$type_id][$descriptor])) {
-			static::$instance[$type_id][$descriptor] = new quota($type_id);
+			static::$instance[$type_id][$descriptor] = new quota($type_id, $descriptor);
 		}
 		return static::$instance[$type_id][$descriptor];
 	}

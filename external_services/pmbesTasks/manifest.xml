@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: manifest.xml,v 1.6 2019/08/28 06:48:51 ngantier Exp $ -->
+$Id: manifest.xml,v 1.6.8.1 2023/03/28 13:04:51 dgoron Exp $ -->
 <manifest>
 	<name>pmbesTasks</name>
 	<description>msg:Tasks_functions_description</description>
@@ -36,6 +36,9 @@ $Id: manifest.xml,v 1.6 2019/08/28 06:48:51 ngantier Exp $ -->
 			<outputs/>
 		</method>
 		<method name="runTasks" rights="" version="1.0" comment="msg:runTasks_description" language_independant="true">
+			<pmb_requirements>
+				<pmb_requirement start_path="class" file="scheduler/scheduler_task.class.php"/>
+			</pmb_requirements>
 			<inputs>
 				<description>msg:runTasks_input_description</description>
 				<param name="source_id" type="scalar" dataType="integer" description="msg:runTasks_source_id"/>

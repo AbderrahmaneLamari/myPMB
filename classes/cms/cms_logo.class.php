@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_logo.class.php,v 1.24.8.1 2022/01/19 14:35:11 dgoron Exp $
+// $Id: cms_logo.class.php,v 1.28.4.1 2023/09/14 08:29:35 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -165,22 +165,33 @@ class cms_logo {
 	
 	public function clean_cache($id = 0,$opac=false){
 		global $base_path;
-		$path = $base_path."/opac_css";
-		if(file_exists($path."/temp/cms_vign")){
-			$dh = opendir($path."/temp/cms_vign");
-			while($mode = readdir($dh)){
-				if($mode != "." && $mode!= ".." && $mode != "CVS"){
-					$mh = opendir($path."/temp/cms_vign/".$mode);	
-					while($file = readdir($mh)){
-						if($file && $file != "." && $file!= ".." && $file != "CVS" && (!$id || $file = $this->type.$id.".png") && file_exists($path."/temp/cms_vign/".$mode."/".$file)){
-							unlink($path."/temp/cms_vign/".$mode."/".$file);
+		if(!$id) {
+			$id = $this->id;
+		}
+		$path = $base_path."/opac_css/temp/cms_vign/";
+		$file_extensions = array("jpg", "jpeg", "png", "gif");
+		$dd = opendir($path);
+		while($database = readdir($dd)){
+			if($database != "." && $database!= ".." && $database != "CVS"){
+				$dh = opendir($path . $database);
+				while($mode = readdir($dh)){
+					if($mode != "." && $mode!= ".." && $mode != "CVS"){
+						$mh = opendir($path.$database."/".$mode);
+						while($file = readdir($mh)){
+							if($file != "." && $file!= ".." && $file != "CVS") {
+								$parsed_file = explode(".", $file);
+								if(file_exists($path . $database."/".$mode."/".$file) && $parsed_file[0] == $this->type.$id && in_array($parsed_file[1], $file_extensions)) {
+								    unlink($path . $database."/".$mode."/".$file);
+								}
+							}
 						}
+						closedir($mh);
 					}
-					closedir($mh);
 				}
 			}
 			closedir($dh);
 		}
+		closedir($dd);
 	}
 
 	public function delete(){
@@ -305,14 +316,17 @@ class cms_logo {
 	}
 	
 	private function init_opac_cache_path($mode){
-		global $base_path;
+		global $base_path, $database;
 		if(file_exists($base_path."/opac_css")){
-			if(!file_exists($base_path."/opac_css/temp/cms_vign")){
-				mkdir($base_path."/opac_css/temp/cms_vign");
-			}
-			if(!file_exists($base_path."/opac_css/temp/cms_vign/".$mode)){
-				mkdir($base_path."/opac_css/temp/cms_vign/".$mode);
-			}
+		    if(!file_exists($base_path."/opac_css/temp/cms_vign")){
+		        mkdir($base_path."/opac_css/temp/cms_vign");
+		    }
+		    if(!file_exists($base_path."/opac_css/temp/cms_vign/".$database)){
+		        mkdir($base_path."/opac_css/temp/cms_vign/".$database);
+		    }
+		    if(!file_exists($base_path."/opac_css/temp/cms_vign/".$database."/".$mode)){
+		        mkdir($base_path."/opac_css/temp/cms_vign/".$database."/".$mode);
+		    }
 			return true;	
 		}
 		return false;
@@ -424,20 +438,20 @@ class cms_logo {
 	}
 
 	public function get_vign_url($mode=""){
-		global $opac_url_base;
-		return $opac_url_base."cms_vign.php?type=".$this->type."&id=".$this->id."&mode=".$mode;
+		global $opac_url_base, $database;
+		return $opac_url_base."cms_vign.php?type=".$this->type."&id=".$this->id."&database=".$database."&mode=".$mode;
 	}
 
 	public function format_datas(){
 		return array(
-			'small_vign' => $this->get_vign_url("small_vign"),
-			'vign' =>		$this->get_vign_url("vign"),
-			'small' =>		$this->get_vign_url("small"),
-			'medium' =>		$this->get_vign_url("medium"),
-			'big' =>		$this->get_vign_url("big"),
-			'large' =>		$this->get_vign_url("large"),
-			'custom' =>		$this->get_vign_url("custom_"),
-			'exists' =>		($this->data ? true : false)
+		    'small_vign' => $this->data ? $this->get_vign_url("small_vign") : false,
+		    'vign' => $this->data ? $this->get_vign_url("vign") : false,
+		    'small' => $this->data ? $this->get_vign_url("small") : false,
+		    'medium' => $this->data ? $this->get_vign_url("medium") : false,
+		    'big' => $this->data ? $this->get_vign_url("big") : false,
+		    'large' => $this->data ? $this->get_vign_url("large") : false,
+		    'custom' => $this->data ? $this->get_vign_url("custom_") : false,
+		    'exists' => $this->data ? true : false
 		);
 	}
 

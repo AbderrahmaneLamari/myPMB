@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: export_z3950_new.php,v 1.10 2019/01/16 16:57:14 dgoron Exp $
+// $Id: export_z3950_new.php,v 1.11.2.3 2023/10/17 14:03:22 tsamson Exp $
 
 $base_path="../..";
 
@@ -42,7 +42,7 @@ $corresp_op=array(
 "21"=>		"BOOLEAN"
 );
 function make_error($nerr,$err_message) {
-	echo $nerr."@".$err_message."@";
+    echo htmlentities($nerr."@".$err_message."@");
 	exit();
 }
 
@@ -80,6 +80,8 @@ function traite_val($value,$idf) {
 function construct_query($query,$not,$level,$argn="",$oper="") {
 	global $corresp,$search,$corresp_op;
 	//La requête commence-t-elle par and, or ou and not ?
+	$query = stripslashes($query);
+	
 	$pos=strpos($query,"and not");
 	if (($pos!==false)&&($pos==0)) {
 		$ope="ex";
@@ -137,7 +139,7 @@ function construct_query($query,$not,$level,$argn="",$oper="") {
 			${$field}=$vals;
 			$op="op_".(!$level?0:($level-2+$argn))."_f_".$idf;
 			global ${$op};
-			${$op}=$corresp_op[$use[0]];
+			${$op}=$corresp_op[$use[0]] ?? null;
 			return $idf;
 		}	
 	}
@@ -146,6 +148,12 @@ function construct_query($query,$not,$level,$argn="",$oper="") {
 
 switch ($command) {
 	case "search":
+	    // On reçoit toujours en UTF-8 #140711
+	    global $charset;
+	    if($charset == "iso-8859-1") {
+	        $query = utf8_decode($query);
+	    }
+	    
 		//print $query."<br />";
 		construct_query($query,0,0);
 		$s=new search();
@@ -160,7 +168,7 @@ switch ($command) {
 		}
 		break;
 	case "get_notice":
-		$id=$query;
+		$id = intval($query);
 		$e = new export(array($id));
 		$e -> get_next_notice();
 		$toiso = new xml_unimarc();

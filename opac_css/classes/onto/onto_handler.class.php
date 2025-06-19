@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_handler.class.php,v 1.34.2.3 2022/01/05 10:34:12 tsamson Exp $
+// $Id: onto_handler.class.php,v 1.41 2023/02/17 13:45:34 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -55,6 +55,11 @@ class onto_handler {
 	
 	private $errors = array();
 
+	private static $pmb_names=
+	   [
+	        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' => 'type',
+	   ];
+	
 	/**
 	 * 
 	 *
@@ -317,6 +322,11 @@ class onto_handler {
 				$query .= " .\n <".addslashes($assertions[0]->get_subject())."> pmb:displayLabel '".addslashes($display_label)."'";
 			}
 			
+			$additionnal_data = $item->get_additionnal_data();
+			if (!empty($additionnal_data)) {
+			    $query .= ".\n <".addslashes($assertions[0]->get_subject())."> pmb:additionnal_data '".addslashes(json_encode($additionnal_data))."'";
+			}
+			
 			$query.="}";
 			
 			$this->data_store->query($query);
@@ -349,6 +359,8 @@ class onto_handler {
 		} else {
 			return $item->get_checking_errors();
 		}
+		$this->data_store->reset_after_save();
+		
 		return true;
 	} // end of member function save
 
@@ -479,6 +491,20 @@ class onto_handler {
 				$item->set_assertions($assertions);
 			}
 		}
+		
+		$query = "select ?additionnal_data where {
+			<{$item->get_uri()}> pmb:additionnal_data ?additionnal_data .
+		}";
+		
+		$success = $this->data_store->query($query);
+		if ($success) {		    
+    		$results = $this->data_store->get_result();
+    		if (!empty($results[0])) {
+    		    $additionnal_data = json_decode($results[0]->additionnal_data, true);
+    		    $item->set_additionnal_data($additionnal_data ?? []);
+    		}
+		}
+		
 		self::$item_instances[$item->get_uri()] = $item;
 		
 		return $item;
@@ -496,6 +522,9 @@ class onto_handler {
 	 * @return array
 	 */
 	public function get_classes(){
+	    if (!isset($this->ontology)) {
+            $this->get_ontology();
+        }
 		return $this->ontology->get_classes_uri();
 	}
 	
@@ -505,7 +534,10 @@ class onto_handler {
 	 *
 	 * @param string $uri_class
 	 */
-	public function get_class_label($uri_class){
+	public function get_class_label($uri_class){	
+	    if (!isset($this->ontology)) {
+            $this->get_ontology();
+        }
 		return $this->ontology->get_class_label($uri_class);
 	}
 	
@@ -560,6 +592,9 @@ class onto_handler {
 	 * @return string
 	 */
 	public function get_title(){
+		if (!isset($this->ontology)) {
+			$this->get_ontology();
+		}
 		return $this->ontology->title;
 	}
 	
@@ -569,6 +604,9 @@ class onto_handler {
 	 * @return string
 	 */
 	public function get_onto_name(){
+		if (!isset($this->ontology)) {
+			$this->get_ontology();
+		}
 		return $this->ontology->name;
 	}
 	
@@ -674,6 +712,9 @@ class onto_handler {
 	 * @return array
 	 */
 	public function get_onto_property_from_pmb_name($pmb_name) {
+		if (!isset($this->ontology)) {
+			$this->get_ontology();
+		}
 		$properties_uri = $this->ontology->get_properties();
 		foreach ($properties_uri as $uri => $info) {
 			if ($info->pmb_name == $pmb_name) {
@@ -748,6 +789,10 @@ class onto_handler {
 		return false;
 	}
 	
+	/**
+	 * 
+	 * @return onto_store
+	 */
 	public function get_data_store() {
 		return $this->data_store;
 	}
@@ -1010,33 +1055,27 @@ class onto_handler {
     	                // On supprime que les sous-formulaires
     	                continue;
     	            }
-    	            
-    	            /**
-            	     * TODO authorité liés à ajouter prochainement
-            	     * http://www.pmbservices.fr/ontology#linked_authority_selector
-            	     */
     	            switch (TRUE) {
-    	                
     	                // Author - Responsability
     	                case (strpos($result->object, "responsability") !== FALSE) :
     	                    $success = $this->delete_linked_contribution_specific($result->object, "responsability");
     	                    break;
-    	                    
 	                    // Work - Linked work
     	                case (strpos($result->object, "linked_work") !== FALSE) :
     	                    $success = $this->delete_linked_contribution_specific($result->object, "linked_work");
     	                    break;
-    	                    
 	                    // Record - Linked record
     	                case (strpos($result->object, "linked_record") !== FALSE) :
     	                    $success = $this->delete_linked_contribution_specific($result->object, "linked_record");
     	                    break;
-    	                    
+	                    // authority - Linked authority
+    	                case (strpos($result->object, "linked_authority") !== FALSE) :
+    	                    $success = $this->delete_linked_contribution_specific($result->object, "linked_authority");
+    	                    break;
     	                default:
                             $success = $this->delete_linked_contribution($result->object, $item_uri);
     	                    break;
     	            }
-    	            
     	            if ($success) {
     	                $contribution_linked_deleted[] = $result->object;
     	            }
@@ -1105,6 +1144,9 @@ class onto_handler {
 	        case "linked_record":
         	    $predicate = "pmb:has_record";
     	        break;
+	        case "linked_authority":
+        	    $predicate = "pmb:has_authority";
+    	        break;
 	        
 	    }
 	    
@@ -1160,4 +1202,18 @@ class onto_handler {
 	    return $this->errors;
 	}
 	
+	public function get_pmb_name($class_uri)
+	{
+	    if(!empty(self::$pmb_names[$class_uri])){
+	        return self::$pmb_names[$class_uri];
+	    }
+	    $query = 'select ?name where {
+            <'.$class_uri.'> pmb:name ?name
+        }';
+	    $this->onto_query($query);
+	    $result = $this->onto_result();
+	    self::$pmb_names[$class_uri] = $result[0]->name;
+	    return self::$pmb_names[$class_uri];
+	    
+	}
 } // end of onto_handler

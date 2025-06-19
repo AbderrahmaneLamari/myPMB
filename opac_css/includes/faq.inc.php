@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: faq.inc.php,v 1.2.8.1 2021/08/06 07:29:13 dgoron Exp $
+// $Id: faq.inc.php,v 1.3 2021/08/06 07:25:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

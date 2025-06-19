@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: resa.class.php,v 1.32 2020/06/19 12:31:00 dgoron Exp $
+// $Id: resa.class.php,v 1.38 2022/12/23 10:36:00 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,6 +12,7 @@ if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 if (!defined('RESA_CLASS')) {
 	define('RESA_CLASS', 1);
 
+	global $class_path, $include_path;
 	require_once("$class_path/quotas.class.php");
 	require_once("$class_path/serials.class.php");
 	require_once("$include_path/resa_func.inc.php");
@@ -47,25 +48,25 @@ if (!defined('RESA_CLASS')) {
 		1	->	aucun exemplaire ne peut être reservé
 		2	->	un ou des exemplaires peuvent être reservés et un au moins des exemplaires est disponible
 		 */
-
+		
 		//---------------------------------------------------------
 		//			Méthodes
 		//---------------------------------------------------------
 
 		// <----------------- constructeur ------------------>
 		public function __construct($id_empr=0, $id_notice=0, $bulletinage=0, $cb='') {
-			$this->id_empr = $id_empr+0;
-			$this->id_notice = $id_notice+0;
+			$this->id_empr = intval($id_empr);
+			$this->id_notice = intval($id_notice);
 			$this->service = new stdClass();
 			if($bulletinage) {
-				$this->id_bulletin = $bulletinage;
+				$this->id_bulletin = intval($bulletinage);
 				$this->id_notice = 0;
 			}
 			$this->fetch_data();
 			if($cb) {
 				$query = "select expl_id,expl_notice,expl_bulletin from exemplaires where expl_cb='$cb' limit 1";
 				$result = pmb_mysql_query($query);
-				if (($expl = pmb_mysql_fetch_object($result))) {
+				if ($expl = pmb_mysql_fetch_object($result)) {
 					$this->id_notice = $expl->expl_notice;
 					$this->id_bulletin = $expl->expl_bulletin;
 					$this->expl_id = $expl->expl_id;
@@ -237,9 +238,8 @@ if (!defined('RESA_CLASS')) {
 		}
 
 		public function can_reserve() {
-			global $msg;
 			global $quota_resa;
-			global $pmb_transferts_actif, $transferts_choix_lieu_opac, $pmb_location_reservation;
+			global $pmb_location_reservation;
 
 			$this->service->error="";
 			if (!$this->empr_exists()) {
@@ -250,7 +250,10 @@ if (!defined('RESA_CLASS')) {
 				$this->service->error="check_notice_exists";
 				return FALSE;
 			}
-
+			if($this->waiting_already_loaned()){
+				$this->service->error="check_waiting_already_loaned";
+				return FALSE;
+			}
 			//les quotas
 			if (!$quota_resa) {
 				//Si un quota atteint (check_quota inclu le message + la mise à 0 ou 1 de $this->force)
@@ -261,7 +264,6 @@ if (!defined('RESA_CLASS')) {
 					return FALSE;
 				}
 			}
-
 			if ($this->resa_exists()) {
 				$this->service->error="check_resa_exists";
 				return FALSE;
@@ -288,7 +290,7 @@ if (!defined('RESA_CLASS')) {
 		public function add($idloc_retrait=0) {
 			global $msg;
 			global $quota_resa;
-			global $pmb_transferts_actif, $transferts_choix_lieu_opac, $pmb_location_reservation;
+			global $pmb_location_reservation;
 
 			$this->service->error="";
 			if (!$this->empr_exists()) {
@@ -297,6 +299,10 @@ if (!defined('RESA_CLASS')) {
 			}
 			if (!$this->notice_exists()) {
 				$this->service->error="check_notice_exists";
+				return FALSE;
+			}
+			if($this->waiting_already_loaned()){
+				$this->service->error="check_waiting_already_loaned";
 				return FALSE;
 			}
 			//les quotas
@@ -330,8 +336,6 @@ if (!defined('RESA_CLASS')) {
 				}
 			}
 			// tout est OK, écriture de la réservation en table
-			// On récupère d'abord la durée
-			$t=static::get_time($this->id_empr, $this->id_notice, $this->id_bulletin);
 			$query="INSERT INTO resa (id_resa, resa_idempr, resa_idnotice, resa_idbulletin, resa_date, resa_loc_retrait) ";
 			$query .= "VALUES ('', '" . $this->id_empr . "', ";
 			if ($this->id_notice) $query .= "'".$this->id_notice."',0 ,";
@@ -401,7 +405,7 @@ if (!defined('RESA_CLASS')) {
 				$id_bulletin=$this->id_bulletin;
 				$query="delete from resa where resa_idempr=" . $this->id_empr." and resa_idbulletin=" . $this->id_bulletin;
 			}
-			$result=@pmb_mysql_query($query);
+			$result=pmb_mysql_query($query);
 			// archivage
 			$rqt_arch="UPDATE resa_archive SET resarc_anulee=1 WHERE resarc_id_empr='".$this->id_empr."' and resarc_idnotice='".$id_notice."' and	resarc_idbulletin='".$id_bulletin."' ";
 			pmb_mysql_query($rqt_arch);
@@ -591,6 +595,33 @@ if (!defined('RESA_CLASS')) {
 			return FALSE;
 		}
 
+		// <----------------- waiting_already_loaned() : on regarde si l'emprunteur a récemment emprunté ce document ------------------>
+		public function waiting_already_loaned() {
+			global $msg;
+			global $pmb_resa_waiting_already_loaned;
+			
+			$pmb_resa_waiting_already_loaned = intval($pmb_resa_waiting_already_loaned);
+			if(!$pmb_resa_waiting_already_loaned) {
+				return FALSE;
+			}
+			$dateTime = new DateTime(date('Y-m-d'));
+			$dateTime->modify('-'.$pmb_resa_waiting_already_loaned.' days');
+			
+			$query = "SELECT arc_id FROM pret_archive WHERE arc_id_empr = '".$this->id_empr."'";
+			if($this->id_notice) {
+				$query .= " AND arc_expl_notice = ".$this->id_notice;
+			} elseif ($this->id_bulletin) {
+				$query .= " AND arc_expl_bulletin = ".$this->id_bulletin;
+			}
+			$query .= " AND arc_fin > '".$dateTime->format('Y-m-d')."'";
+			$result = pmb_mysql_query($query);
+			if(pmb_mysql_num_rows($result)){
+				$this->message = "<strong>".str_replace('!!nb_days!!', $pmb_resa_waiting_already_loaned, $msg['resa_waiting_already_loaned'])."</strong>";
+				return TRUE;
+			}
+			return FALSE;
+		}
+		
 		// <----------------- check_statut() : le genre de choses qu'on peut attendre en retour ------------------>
 		/* fonction complexe à rediscuter : cas possibles :
 		- doc en consultation sur place uniquement
@@ -600,12 +631,12 @@ if (!defined('RESA_CLASS')) {
 		 */
 		public function check_statut() {
 			global $opac_resa_dispo; // les résa de disponibles sont-elles autorisées ?
-			global $msg, $pmb_location_reservation;
+			global $msg;
 
 			// on checke s'il y a des exemplaires prêtables
 			$query = $this->get_query_expl_lendable();
 			$result=pmb_mysql_query($query);
-			if (!@pmb_mysql_num_rows($result)) {
+			if (!pmb_mysql_num_rows($result)) {
 				// aucun exemplaire n'est disponible pour le prêt
 				$this->message .= "$msg[resa]&nbsp;:&nbsp;" . $this->notice."<br /><strong>$msg[resa_no_expl]</strong>";
 				$this->service->error="check_statut";
@@ -665,8 +696,7 @@ if (!defined('RESA_CLASS')) {
 		}
 
 		public function get_resa_cb() {
-			global $pmb_resa_dispo; // les résa de disponibles sont-elles autorisées ?
-			global $msg, $pmb_location_reservation, $deflt_docs_location, $pmb_transferts_actif, $transferts_choix_lieu_opac;
+			global $msg, $deflt_docs_location, $pmb_transferts_actif, $transferts_choix_lieu_opac;
 
 			$this->expl_affectable=array();
 			$this->expl_reservable=array();
@@ -820,13 +850,68 @@ if (!defined('RESA_CLASS')) {
 		}
 		
 		/**
+		 * On retourne la requête concernant les exemplaires prêtables pour la notice
+		 * @param number $location Localisation
+		 * @param string $outside Pour la localisation ou en dehors
+		 * @return string
+		 */
+		public function get_expl_lendable_query($location=0, $outside=false, $filter_loc_retrait=false) {
+			$query = "SELECT * FROM exemplaires, docs_statut WHERE expl_statut=idstatut AND statut_allow_resa=1 ";
+			if($location) {
+				if($outside) {
+					$query .= " AND expl_location <> ".$location;
+				} else {
+					$query .= " AND expl_location = ".$location;
+				}
+			} else {
+				$query .= $this->get_restrict_expl_location_query($filter_loc_retrait);
+			}
+			$query .= " AND ".$this->get_restrict_expl_notice_query();
+			return $query;
+		}
+		
+		/**
+		 * On retourne les exemplaires prêtables pour la notice
+		 * @param number $location Localisation
+		 * @param string $outside Pour la localisation ou en dehors
+		 * @return array
+		 */
+		public function get_expl_lendable($location=0, $outside=false) {
+			$expl_lendable = array();
+			$query = $this->get_expl_lendable_query($location, $outside);
+			$result = pmb_mysql_query($query);
+			while($row = pmb_mysql_fetch_object($result)) {
+				$expl_lendable[] = $row;
+			}
+			return $expl_lendable;
+		}
+		
+		/**
 		 * On compte le nombre total d'exemplaires prêtables pour la notice
 		 * @param number $location Localisation
 		 * @param string $outside Pour la localisation ou en dehors
 		 * @return string
 		 */
 		public function get_number_expl_lendable($location=0, $outside=false) {
-			$query = "SELECT count(1) FROM exemplaires, docs_statut WHERE expl_statut=idstatut AND statut_allow_resa=1 ";
+			$query = $this->get_expl_lendable_query($location, $outside);
+			$tresult = pmb_mysql_query($query);
+			return pmb_mysql_num_rows($tresult);
+		}
+		
+		public function get_number_expl_transferts_lendable($location=0, $outside=false) {
+		    $query = $this->get_expl_lendable_query($location, $outside, true);
+		    $tresult = pmb_mysql_query($query);
+		    return pmb_mysql_num_rows($tresult);
+		}
+		
+		/**
+		 * On retourne la requête concernant les exemplaires sortis pour la notice
+		 * @param number $location Localisation
+		 * @param string $outside Pour la localisation ou en dehors
+		 * @return string
+		 */
+		public function get_expl_out_query($location=0, $outside=false) {
+			$query = "SELECT * FROM exemplaires , pret WHERE pret_idexpl=expl_id ";
 			if($location) {
 				if($outside) {
 					$query .= " AND expl_location <> ".$location;
@@ -837,18 +922,32 @@ if (!defined('RESA_CLASS')) {
 				$query .= $this->get_restrict_expl_location_query();
 			}
 			$query .= " AND ".$this->get_restrict_expl_notice_query();
-			$tresult = pmb_mysql_query($query);
-			return pmb_mysql_result($tresult, 0, 0);
+			return $query;
+		}
+		
+		/**
+		 * On retourne les exemplaires sortis pour la notice
+		 * @param number $location Localisation
+		 * @param string $outside Pour la localisation ou en dehors
+		 * @return array
+		 */
+		public function get_expl_out($location=0, $outside=false) {
+			$expl_out = array();
+			$query = $this->get_expl_out_query($location, $outside);
+			$result = pmb_mysql_query($query);
+			while($row = pmb_mysql_fetch_object($result)) {
+				$expl_out[] = $row;
+			}
+			return $expl_out;
 		}
 		
 		/**
 		 * On compte le nombre d'exemplaires sortis
 		 */
 		public function get_number_expl_out() {
-			$query = "SELECT count(1) as qte FROM exemplaires , pret WHERE pret_idexpl=expl_id ".$this->get_restrict_expl_location_query();
-			$query .= " AND ".$this->get_restrict_expl_notice_query();
+			$query = $this->get_expl_out_query();
 			$tresult = pmb_mysql_query($query);
-			return pmb_mysql_result($tresult, 0, 0);
+			return pmb_mysql_num_rows($tresult);
 		}
 		
 		/**
@@ -859,6 +958,47 @@ if (!defined('RESA_CLASS')) {
 			$query .= " AND ".$this->get_restrict_expl_notice_query();
 			$tresult = pmb_mysql_query($query);
 			return pmb_mysql_result($tresult, 0, 0);
+		}
+		
+		/**
+		 * On retourne la requête concernant les exemplaires en transfert pour la notice
+		 * @param number $location Localisation
+		 * @param string $outside Pour la localisation ou en dehors
+		 * @return string
+		 */
+		public function get_expl_in_transfert_query($location=0, $outside=false) {
+			$query = "SELECT * FROM exemplaires
+				JOIN transferts_demande ON transferts_demande.num_expl=exemplaires.expl_id
+				JOIN transferts ON num_transfert=id_transfert
+				WHERE etat_transfert=0 AND origine=4 ";
+			if($location) {
+				if($outside) {
+					$query .= " AND expl_location <> ".$location;
+				} else {
+					$query .= " AND expl_location = ".$location;
+				}
+			} else {
+				$query .= $this->get_restrict_expl_location_query();
+			}
+			$query .= " AND ".$this->get_restrict_expl_notice_query();
+			return $query;
+		}
+		
+		/**
+		 * On compte le nombre d'exemplaires en transfert non sortis
+		 */
+		public function get_number_expl_in_transfert($location=0, $outside=false) {
+			$expl_out_ids = array();
+			$expl_out = $this->get_expl_out($location, $outside);
+			foreach ($expl_out as $expl) {
+				$expl_out_ids[] = $expl->expl_id;
+			}
+			$query = $this->get_expl_in_transfert_query($location, $outside);
+			if(!empty($expl_out_ids)) {
+				$query .= " AND expl_id NOT IN (".implode(',', $expl_out_ids).")";
+			}
+			$tresult = pmb_mysql_query($query);
+			return pmb_mysql_num_rows($tresult);
 		}
 		
 		/**
@@ -873,6 +1013,66 @@ if (!defined('RESA_CLASS')) {
 			return $number;
 		}
 		
+		/**
+		 * On retourne la requête concernant les exemplaires réservés
+		 * @param number $location Localisation
+		 * @param string $outside Pour la localisation ou en dehors
+		 * @return string
+		 */
+		public function get_expl_reserved_query($location=0, $outside=false) {
+			$query = "SELECT count(1) as qte FROM exemplaires JOIN resa ON resa_cb=expl_cb WHERE resa_cb <> '' ";
+			if($location) {
+				if($outside) {
+					$query .= " AND expl_location <> ".$location;
+				} else {
+					$query .= " AND expl_location = ".$location;
+				}
+			} else {
+				$query .= $this->get_restrict_expl_location_query();
+			}
+			$query .= " AND ".$this->get_restrict_expl_notice_query();
+			return $query;
+		}
+		
+		public function get_number_expl_reserved($location=0, $outside=false) {
+			$query = $this->get_expl_reserved_query($location, $outside);
+			$tresult = pmb_mysql_query($query);
+			return pmb_mysql_result($tresult, 0, 0);
+		}
+		
+		public function get_expl_lendable_in_loan_query($location=0, $outside=false) {
+			global $msg;
+			
+			$query = "SELECT e.*, date_format(pret_retour, '".$msg["format_date"]."') as aff_pret_retour from pret p, exemplaires e ";
+			if ($this->id_notice) $query .= " WHERE e.expl_notice=".$this->id_notice;
+			elseif ($this->id_bulletin) $query .= " WHERE e.expl_bulletin=".$this->id_bulletin;
+			else $query .= " WHERE 0"; // ni bulletin ni notice
+			$query .= " AND e.expl_id=p.pret_idexpl";
+			if($location) {
+				if($outside) {
+					$query .= " AND expl_location <> ".$location;
+				} else {
+					$query .= " AND expl_location = ".$location;
+				}
+			} else {
+				$query .= $this->get_restrict_expl_location_query();
+			}
+			$query .= " ORDER BY p.pret_retour";
+			return $query;
+		}
+		
+		public function get_expl_lendable_in_loan($location=0, $outside=false) {
+			$expl_in_loan = array();
+			$query = $this->get_expl_lendable_in_loan_query($location, $outside);
+			$result = pmb_mysql_query($query);
+			if (pmb_mysql_num_rows($result)) {
+				while($row = pmb_mysql_fetch_object($result)) {
+					$expl_in_loan[] = $row;
+				}
+			}
+			return $expl_in_loan;
+		}
+		
 		public function get_exemplaire() {
 			if(!isset($this->exemplaire)) {
 				$this->exemplaire = new exemplaire($this->expl_cb, $this->expl_id);
@@ -882,6 +1082,60 @@ if (!defined('RESA_CLASS')) {
 		
 		public function set_exemplaire($exemplaire) {
 			$this->exemplaire = $exemplaire;
+		}
+		
+		public function get_id() {
+			return $this->id;	
+		}
+		
+		public static function alert_mail_users_pmb($id_notice=0, $id_bulletin=0, $id_empr=0, $annul=0, $resa_planning=0) {
+			global $msg;
+			global $pmb_location_reservation,$pmb_resa_alert_localized;
+			global $use_opac_url_base;
+			
+			$id_notice = intval($id_notice);
+			$id_bulletin = intval($id_bulletin);
+			$id_empr = intval($id_empr);
+			
+			//Pas très propre mais pas mieux pour le moment / Réaffectation à la fin de la méthode
+			$temp_use_opac_url_base = $use_opac_url_base;
+			$use_opac_url_base=1;
+			
+			// paramétrage OPAC: choix du nom de la bibliothèque comme expéditeur
+			$requete = "select location_libelle, email, empr_location from empr, docs_location where empr_location=idlocation and id_empr='$id_empr' ";
+			$res = pmb_mysql_query($requete);
+			$loc=pmb_mysql_fetch_object($res) ;
+			if ($loc->email) {
+				$query = "select distinct empr_prenom, empr_nom, empr_cb, empr_mail, empr_tel1, empr_tel2, empr_cp, empr_ville, location_libelle, nom, prenom, userid, user_email, date_format(sysdate(), '".$msg["format_date_heure"]."') as aff_quand, deflt2docs_location, deflt_docs_location  from empr, docs_location, users where id_empr='$id_empr' and empr_location=idlocation and user_email like('%@%') and user_alert_resamail=1";
+				$result = pmb_mysql_query($query);
+				if ($resa_planning) {
+					$mail_opac_user_resa = new mail_opac_user_resa_planning();
+				} else {
+					$mail_opac_user_resa = new mail_opac_user_resa();
+				}
+				$mail_opac_user_resa->set_id_notice($id_notice)
+				->set_id_bulletin($id_bulletin)
+				->set_annul($annul);
+				
+				while ($empr=pmb_mysql_fetch_object($result)) {
+					if ($pmb_location_reservation && $pmb_resa_alert_localized) {
+						if ($pmb_resa_alert_localized==1 && $loc->empr_location!=$empr->deflt2docs_location) {
+							continue;
+						}
+						if ($pmb_resa_alert_localized==2 && $loc->empr_location!=$empr->deflt_docs_location) {
+							continue;
+						}
+						if ($pmb_resa_alert_localized==3 && $loc->empr_location!=$empr->deflt2docs_location && $loc->empr_location!=$empr->deflt_docs_location) {
+							continue;
+						}
+					}
+					$mail_opac_user_resa->set_mail_to_id($empr->userid)
+					->set_mail_from_id($loc->empr_location)
+					->set_empr($empr);
+					$mail_opac_user_resa->send_mail();
+				}
+			}
+			$use_opac_url_base = $temp_use_opac_url_base;
 		}
 		
 		//Récupération de la durée de réservation pour une notice ou un bulletin et un emprunteur

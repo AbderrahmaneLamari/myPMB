@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: datatype.php,v 1.6 2020/08/05 12:53:08 arenou Exp $
+// $Id: datatype.php,v 1.8 2022/07/18 07:46:07 tsamson Exp $
 
 class StreamWriter {
     public $buffer = array();
@@ -117,7 +117,7 @@ class Evaluator
                                 $left = null;
                                 $right = null;
                                 $i --;
-                                if ((is_array($args[$i]) && isset($args[$i]['operator'])) && in_array($args[$i]['operator'], ['not','and','or'])) {
+                                if ((!empty($args[$i]) && is_array($args[$i]) && isset($args[$i]['operator'])) && in_array($args[$i]['operator'], ['not','and','or'])) {
                                     $state = 'operator';
                                 } else {
                                     $state = "start_expression";

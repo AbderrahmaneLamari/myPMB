@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entite.inc.php,v 1.36.2.2 2021/12/22 11:24:52 dgoron Exp $
+// $Id: entite.inc.php,v 1.38 2021/12/22 11:22:35 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

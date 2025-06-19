@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: includes_etagere.inc.php,v 1.23 2018/02/08 15:18:05 dgoron Exp $
+// $Id: includes_etagere.inc.php,v 1.24 2022/05/05 06:44:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $base_path;
 
 require_once($base_path."/includes/init.inc.php");
 
@@ -75,5 +77,5 @@ $liens_opac['lien_rech_authperso'] 		= "./index.php?lvl=authperso_see&id=!!id!!"
  
 // print $etageres_footer;
 	
-//pmb_mysql_close($dbh);
+//pmb_mysql_close();
 

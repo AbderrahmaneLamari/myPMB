@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_merge_properties_ui.class.php,v 1.8.4.1 2021/12/20 15:48:15 tsamson Exp $
+// $Id: onto_common_datatype_merge_properties_ui.class.php,v 1.9 2021/12/20 15:53:01 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

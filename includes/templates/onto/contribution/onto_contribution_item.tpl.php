@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_item.tpl.php,v 1.5.2.2 2021/08/24 13:37:19 qvarin Exp $
+// $Id: onto_contribution_item.tpl.php,v 1.8 2022/10/04 09:42:17 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $ontology_tpl,$ontology_contribution_tpl,$msg,$base_path,$ontology_id, $pmb_form_authorities_editables, $PMBuserid;
+global $ontology_tpl,$ontology_contribution_tpl,$msg,$base_path, $PMBuserid;
 
 $ontology_tpl['form_body'] = '
 <script type="text/javascript" src="./javascript/ajax.js"></script>    
@@ -662,3 +662,45 @@ $ontology_contribution_tpl['form_scripts'] = '
   	ajax_parse_dom();
   });
 </script>';
+
+$ontology_tpl['form_body_grid'] = '
+<script type="text/javascript" src="./javascript/ajax.js"></script>
+<script type="text/javascript">
+	require(["dojo/ready", "apps/contribution_area/ContributionFormEdit", "dojo/dom" ], function(ready, ContributionFormEdit, dom){
+	     ready(function(){
+	     	new ContributionFormEdit("modelling");
+	     });
+	});
+</script>
+<form class="form-autorites" onSubmit="return false;">
+	<input type="hidden" id="return_url" name="return_url" value="!!return_url!!"/>
+	<div class="left">
+		<h3>!!onto_form_title!!</h3>
+	</div>
+	<div class="right">';
+if ($PMBuserid=="1"){
+    $ontology_tpl['form_body_grid'] .='<input type="button" class="bouton_small" value="'.$msg['authorities_edit_format'].'" id="bt_inedit"/>';
+}
+$ontology_tpl['form_body_grid'] .='<input type="button" class="bouton_small" value="'.$msg['authorities_origin_format'].'" id="bt_origin_format"/>';
+
+
+$ontology_tpl['form_body_grid'] .='<input type="button" class="bouton" value="'.$msg['contribution_area_edit_form'].'" onclick="window.location.href=\'./modelling.php?categ=contribution_area&sub=form&type=!!form_type!!&action=edit&form_id=!!form_id!!\'"/>';
+
+$ontology_tpl['form_body_grid'] .= '
+	</div>
+	<div id="form-contenu">
+		<div class="row">&nbsp;</div>
+		<div id="zone-container">
+			!!onto_form_content!!
+		</div>
+	</div>
+	<div class="row">&nbsp;</div>
+	<div class="left">
+		!!onto_form_save!!
+		&nbsp;
+		!!onto_form_back!!
+	</div>
+	<div class="row"></div>
+</form>
+!!onto_form_scripts!!
+';

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: editions_state_view_tcd.class.php,v 1.5 2019/06/05 06:41:21 btafforeau Exp $
+// $Id: editions_state_view_tcd.class.php,v 1.5.10.2 2023/03/07 07:38:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/editions_state_view.class.php");
 
 class editions_state_view_tcd extends editions_state_view {
@@ -17,7 +18,7 @@ class editions_state_view_tcd extends editions_state_view {
 	public function __construct($datas,$id,$param=array()){
 		//on gère les propriétés communes dans la classe parente
 		parent::__construct($datas,$id,$param);
-		$this->set_param_tcd($param["tcd"]);
+		$this->set_param_tcd($param["tcd"] ?? array());
 		$this->get_datas();
 	}
 	

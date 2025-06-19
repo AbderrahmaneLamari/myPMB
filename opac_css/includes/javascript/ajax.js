@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax.js,v 1.41 2021/01/14 10:23:40 moble Exp $
+// $Id: ajax.js,v 1.43.2.1 2023/12/27 15:39:22 dgoron Exp $
 
 requete=new Array();
 line=new Array();
@@ -158,20 +158,24 @@ function active_autocomplete(inputs) {
 }
 
 function ajax_parse_dom() {
-	var inputs=document.getElementsByTagName("input");
-	for (i=0; i<inputs.length; i++) {
-		ajax_pack_element(inputs[i]);
-	}
-	var textareas=document.getElementsByTagName("textarea");
-	for (i=0; i<textareas.length; i++) {
-		ajax_pack_element(textareas[i]);
-	}
+    document.addEventListener('DOMContentLoaded', function() {
+        var inputs = document.getElementsByTagName("input");
+        for (i = 0; i < inputs.length; i++) {
+            ajax_pack_element(inputs[i]);
+        }
+        var textareas=document.getElementsByTagName("textarea");
+        for (i = 0; i < textareas.length; i++) {
+            ajax_pack_element(textareas[i]);
+        }
+    })
 }
 
 function ajax_hide_list(e) {
 	if (!dontblur) {
 		if (e.target) var id=e.target.getAttribute("id"); else var id=e.srcElement.getAttribute("id");
-		setTimeout("document.getElementById('d"+id+"').style.display='none'; not_show['"+id+"']=true;",500);
+		if(document.getElementById('d"+id+"')) {
+			setTimeout("document.getElementById('d"+id+"').style.display='none'; not_show['"+id+"']=true;",500);
+		}
 	} else dontblur=false;
 }		
 
@@ -501,18 +505,20 @@ function ajax_timer_creerRequete(id) {
 
 function ajax_control_submit_form(id){
 	var node = document.getElementById(id);
-	while(node.parentNode!=null){
-		if(node.nodeName.toUpperCase() == "FORM" ){
+	while (node.parentNode!=null) {
+		if (node.nodeName.toUpperCase() == "FORM" ) {
 			break;
-		}else{
+		} else {
 			node = node.parentNode;
 		}
 	}
+	
 	var onsubmit = node.onsubmit;
-	node.onsubmit = function(event){
-		if(document.getElementById("d"+id).style.display == "block"){
+	node.onsubmit = function(event) {
+		const node = document.getElementById("d"+id);
+		if (node && node.style.display == "block") {
 			return false;
-		}else{
+		} else {
 			return onsubmit();
 		}
 	}

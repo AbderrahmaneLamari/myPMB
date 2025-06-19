@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_transferts_circ_ui.class.php,v 1.4 2021/05/25 11:09:08 dgoron Exp $
+// $Id: list_configuration_transferts_circ_ui.class.php,v 1.5 2022/09/30 12:56:30 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -68,7 +68,7 @@ class list_configuration_transferts_circ_ui extends list_configuration_transfert
 		$this->add_selector_parameter('transferts', 'retour_action_resa', 'admin_transferts_lib_retour_action_resa');
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'section');
 	}
 	

@@ -2,29 +2,23 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: resa.inc.php,v 1.57.2.2 2021/11/03 14:46:12 dgoron Exp $
+// $Id: resa.inc.php,v 1.62 2022/08/03 13:04:50 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $class_path, $include_path;
+global $include_path;
 require_once($include_path."/mail.inc.php") ;
 require_once($include_path."/sms.inc.php") ;
-require_once($class_path."/mail/reader/resa/mail_reader_resa.class.php");
 
 function alert_empr_resa($id_resa=0, $id_empr_concerne=0, $print_mode=0) {
-	global $msg, $charset;
-	global $PMBuserid, $PMBuseremailbcc ;
+	global $msg;
 	global $pdflettreresa_priorite_email ;
-	global $pdflettreresa_before_list , $pdflettreresa_madame_monsieur, $pdflettreresa_after_list, $pdflettreresa_fdp;
-	global $biblio_name, $biblio_email ;
-	global $biblio_adr1, $biblio_adr2, $biblio_cp, $biblio_town, $biblio_phone ; 
 	global $bouton_impr_conf, $pdflettreresa_priorite_email_manuel;
-	global $pmb_transferts_actif,$transferts_choix_lieu_opac;
-	global $empr_sms_activation;	
 	global $empr_sms_msg_resa_dispo;
-	global $use_opac_url_base; $use_opac_url_base=1; 
-	global $pmb_resa_planning;
 	global $class_path;
+	
+	global $use_opac_url_base; $use_opac_url_base=1; 
+	
 	// si c'est une impression à partir du bouton, on prend le paramètre ad hoc
 	if ($bouton_impr_conf) $pdflettreresa_priorite_email = $pdflettreresa_priorite_email_manuel ;
     
@@ -65,7 +59,9 @@ function alert_empr_resa($id_resa=0, $id_empr_concerne=0, $print_mode=0) {
 			if (!$lock_validation){
     			$to = $empr->empr_prenom." ".$empr->empr_nom." <".$empr->empr_mail.">";
     			$mail_reader_resa = new mail_reader_resa();
-    			$res_envoi = $mail_reader_resa->send_mail($empr);  			
+    			$mail_reader_resa->set_mail_to_id($empr->id_empr);
+    			$mail_reader_resa->set_empr($empr);
+    			$res_envoi = $mail_reader_resa->send_mail();  			
 			}
 			if (empty($res_envoi) || $pdflettreresa_priorite_email==2) {
 			    if(is_resa_confirme($empr->id_resa)) {

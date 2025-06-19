@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: groupexpl.class.php,v 1.15 2021/03/11 09:11:49 dgoron Exp $
+// $Id: groupexpl.class.php,v 1.15.6.1 2023/11/17 14:31:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once("$include_path/templates/groupexpl.tpl.php");
-
 require_once("$include_path/expl_info.inc.php") ;
 require_once("$include_path/bull_info.inc.php") ;
 require_once($class_path."/session.class.php");
@@ -216,12 +216,36 @@ class groupexpl {
 		return $tpl;
     }
  
+    public function get_content_form() {
+        global $msg;
+        global $pmb_lecteurs_localises,$deflt_docs_location;
+        
+        $interface_content_form = new interface_content_form(static::class);
+        $interface_content_form->add_element('name', 'groupexpl_form_name')
+        ->add_input_node('text', $this->info['name']);
+        if($pmb_lecteurs_localises){
+            if(!$this->info['location']) {
+                $f_loc=$deflt_docs_location;
+            } else {
+                $f_loc=$this->info['location'];
+            }
+            $interface_content_form->add_element('f_loc', 'groupexpl_form_location')
+            ->add_query_node('select', 'SELECT idlocation, location_libelle FROM docs_location order by location_libelle', $f_loc)
+            ->set_first_option(0, $msg['all_location']);
+        }
+        $interface_content_form->add_element('statut_principal', 'groupexpl_form_statut_principal')
+        ->add_html_node(do_selector('docs_statut', 'statut_principal', $this->info['statut_principal']));
+        $interface_content_form->add_element('statut_others', 'groupexpl_form_statut_others')
+        ->add_html_node(do_selector('docs_statut', 'statut_others', $this->info['statut_others']));
+        $interface_content_form->add_element('comment', 'groupexpl_form_comment')
+        ->add_textarea_node($this->info['comment'], 50, 2);
+        $interface_content_form->add_element('expl_list')
+        ->add_html_node(list_items_group_edit_ui::get_instance(array('expl_group' => $this->id))->get_display_list());
+        return $interface_content_form->get_display();
+    }
+    
 	public function get_form() {
-		global $groupexpl_content_form_tpl,$groupexpl_form_add_expl_tpl,$msg,$charset;		
-		global $pmb_lecteurs_localises,$deflt_docs_location;
-		
-		$content_form = $groupexpl_content_form_tpl;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $groupexpl_form_add_expl_tpl,$msg,$charset;		
 		
 		$interface_form = new interface_form('groupexpl_form');
 		if(!$this->id){
@@ -229,40 +253,9 @@ class groupexpl {
 		}else{
 			$interface_form->set_label($msg['groupexpl_form_edit']);
 		}
-		$content_form=str_replace('!!statut_principal!!',do_selector('docs_statut', 'statut_principal', $this->info['statut_principal']),$content_form);
-		$content_form=str_replace('!!statut_others!!',do_selector('docs_statut', 'statut_others', $this->info['statut_others']),$content_form);
-		
-		$loc_select = '';
-		if($pmb_lecteurs_localises){
-			if(!$this->info['location'])$f_loc=$deflt_docs_location;
-			else $f_loc=$this->info['location'];
-			
-			$loc_select .= "
-			<div class='row'>
-				<label class='etiquette' for='name'>".$msg['groupexpl_form_location']."</label>
-			</div>
-			<div class='row'>
-				<select name='f_loc' >";
-			$res = pmb_mysql_query("SELECT idlocation, location_libelle FROM docs_location order by location_libelle");
-			$loc_select .= "<option value='0'>".$msg["all_location"]."</option>";
-			while ($value = pmb_mysql_fetch_array($res)) {
-				$loc_select .= "<option value='".$value[0]."'";
-				if ($value[0]==$f_loc)	$loc_select .= " selected ";
-				$loc_select .= ">".htmlentities($value[1],ENT_QUOTES,$charset)."</option>";
-			}
-			$loc_select .= "
-				</select>
-			</div>";
-		}
-		
-		$content_form=str_replace('!!location!!',$loc_select, $content_form);
-		$content_form=str_replace('!!expl_list!!',list_items_group_edit_ui::get_instance(array('expl_group' => $this->id))->get_display_list(),$content_form);
-		$content_form=str_replace('!!name!!',htmlentities($this->info['name'],ENT_QUOTES,$charset),$content_form);
-		$content_form=str_replace('!!comment!!',htmlentities($this->info['comment'],ENT_QUOTES,$charset),$content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->info['name']." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('groupexpl')
 		->set_field_focus('name');
 		if($this->id) {
@@ -404,7 +397,6 @@ class groupexpls {
 		if($f_loc){
 			$req.=" where groupexpl_location =$f_loc ";			
 		}		
-		$i=0;		
 		$resultat=pmb_mysql_query($req);	
 		if (pmb_mysql_num_rows($resultat)) {
 			while($r=pmb_mysql_fetch_object($resultat)){	

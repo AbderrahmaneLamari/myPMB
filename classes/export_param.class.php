@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: export_param.class.php,v 1.15.2.1 2022/01/03 15:49:26 dgoron Exp $
+// $Id: export_param.class.php,v 1.16 2022/01/03 15:46:57 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

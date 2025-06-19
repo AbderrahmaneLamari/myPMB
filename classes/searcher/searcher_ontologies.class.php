@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_ontologies.class.php,v 1.1.10.2 2022/01/18 21:05:25 dgoron Exp $
+// $Id: searcher_ontologies.class.php,v 1.5 2023/02/07 15:31:40 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -37,7 +37,7 @@ class searcher_ontologies extends searcher_generic {
 	}
 	
 	protected function get_full_results_query(){
-		return 'select distinct '.$this->object_key.' from '.$this->object_words_table;;
+		return 'select distinct '.$this->object_key.' from '.$this->object_words_table;
 	}
 	
 	protected function _get_ontology_filters(){		
@@ -72,7 +72,7 @@ class searcher_ontologies extends searcher_generic {
 			if($res && pmb_mysql_num_rows($res)){
 				$this->result=array();
 				while($row = pmb_mysql_fetch_object($res)){
-					$this->result[] = $row->id_authority;
+				    $this->result[] = $row->{$this->object_key};
 				}
 			}
 		}

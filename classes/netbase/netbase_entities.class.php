@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: netbase_entities.class.php,v 1.1.2.2 2021/12/15 08:53:05 dgoron Exp $
+// $Id: netbase_entities.class.php,v 1.1.8.1 2023/05/05 13:45:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -103,5 +103,27 @@ class netbase_entities {
 				}
 			}
 		}
+	}
+	
+	protected static function is_temporary_file($file) {
+		if(strtoupper(substr($file, 0, 10)) == "INDEXATION_".LOCATION && substr($file, strlen($file)-4, 4) == ".pmb") {
+			return true;
+		}
+		return false;
+	}
+	
+	public static function clean_files($folder_path) {
+		if(is_dir($folder_path)) {
+			$dh = opendir($folder_path);
+			while(($file = readdir($dh)) !== false){
+				if(!is_dir($folder_path.'/'.$file) && $file != "." && $file != ".." && $file != "CVS"){
+					if(static::is_temporary_file($file)) {
+						unlink($folder_path.'/'.$file);
+					}
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 } // fin de déclaration de la classe netbase_entities

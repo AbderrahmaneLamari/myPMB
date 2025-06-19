@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: EntityTree.js,v 1.13.2.1 2021/10/11 15:48:15 moble Exp $
+// $Id: EntityTree.js,v 1.14.4.2 2023/09/08 09:35:13 rtigero Exp $
 
 
 define(["dojo/_base/declare",
@@ -99,6 +99,12 @@ define(["dojo/_base/declare",
                     break;
                 case 'checkChildrenToDelete':
                     this.checkChildrenToDelete(evtArgs);
+                    break;
+                case 'startDuplicateSegment':
+                    this.startDuplicateSegment(evtArgs);
+                    break;
+                case 'startDuplicateUniverse':
+                    this.startDuplicateUniverse(evtArgs);
                     break;
             }
         },
@@ -343,6 +349,26 @@ define(["dojo/_base/declare",
                 default:
                 	return type;
             }
+        },
+        startDuplicateSegment : function(args) {
+			let action = './ajax.php?module=admin&categ=search_universes&sub=segment&action=duplicate&id='+args.id+'&selected_universes=';
+			let selector = dom.byId('select_universes');
+			if(! selector.selectedOptions.length) {
+                alert(pmbDojo.messages.getMessage('search_universes', 'universe_required'));
+				return;
+			}
+			for(let option of selector.selectedOptions) {
+				action += option.value;
+				action += ',';
+			}
+			if(action.endsWith(',')) {
+				action = action.slice(0, action.length - 1);
+			}
+            topic.publish('formButton', 'duplicateSegment', { action : action });
+		},
+        startDuplicateUniverse : function(args) {
+            let action = './ajax.php?module=admin&categ=search_universes&sub=universe&action=duplicate&id='+args.id;
+            topic.publish('formButton', 'duplicateUniverse', { action : action });
         }
     });
 });

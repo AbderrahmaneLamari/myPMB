@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // Â© 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatch_item.class.php,v 1.9.2.2 2022/01/20 10:35:39 dgoron Exp $
+// $Id: docwatch_item.class.php,v 1.13 2023/02/02 15:48:34 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -447,7 +447,7 @@ class docwatch_item{
 		
 		// Mise à jour de tous les index de la notice
 		notice::majNoticesTotal($num_notice);
-		return array('id'=>$num_notice, 'title'=> $this->title,'link'=>"./catalog.php?categ=isbd&id=".$num_notice);
+		return array('id'=>$num_notice, 'title'=> $this->title,'link'=>notice::get_permalink($num_notice));
 	}
 
 	public function create_section($section_num_parent=0) {
@@ -514,6 +514,8 @@ class docwatch_item{
 	 * @access public
 	 */
 	public function fetch_datas(){
+		global $msg;
+		
 		$this->title = "";
 		$this->added_date = "0000-00-00 00:00:00";
 		$this->publication_date = "0000-00-00 00:00:00";
@@ -562,6 +564,10 @@ class docwatch_item{
 							"title" => $row->datasource_title
 						);
 					}
+				} else {
+					$this->source = array(
+							"title" => $msg['dsi_docwatch_datasource_deleted']
+					);
 				}
 				$query = "select id_watch,watch_title,watch_last_date, watch_desc, watch_logo_url from docwatch_watches where id_watch ='".$this->num_watch."'";
 				$result = pmb_mysql_query($query);
@@ -734,6 +740,7 @@ class docwatch_item{
 			"watch"=>$this->watch,
 			"publication_date"=>formatdate($this->publication_date,1),
 			"formated_publication_date"=>date("c",strtotime($this->publication_date)),
+		    "raw_publication_date"=>$this->publication_date,
 			"interesting"=>$this->interesting,
 			"descriptors_isbd"=>$this->get_descriptors_isbd(),
 			"tags_isbd"=>$this->get_tags_isbd(),

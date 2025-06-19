@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- $Id: ontologies_pmb_entities.rdf,v 1.54.2.8 2021/09/03 08:14:43 qvarin Exp $ -->
+<!-- $Id: ontologies_pmb_entities.rdf,v 1.69.2.1 2023/11/16 15:09:40 qvarin Exp $ -->
 
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
          xmlns:dct="http://purl.org/dc/terms/"
@@ -155,7 +155,6 @@
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
         <pmb:name>authority</pmb:name>
         <rdfs:subClassOf rdf:nodeID="has_authority_status_1-1"/>
-        <rdfs:subClassOf rdf:nodeID="comment_0-1"/>
     </rdf:Description>
     
     <!-- Auteur PMB -->
@@ -182,6 +181,7 @@
         <rdfs:subClassOf rdf:nodeID="website_0-1"/>
         <rdfs:subClassOf rdf:nodeID="thumbnail_url_0-1"/>
         <rdfs:subClassOf rdf:nodeID="isni_0-1"/>
+        <rdfs:subClassOf rdf:nodeID="comment_0-1"/>
     </rdf:Description>
     
     <!-- Categorie PMB -->
@@ -305,6 +305,7 @@
         <rdfs:subClassOf rdf:nodeID="equinox_0-1"/>
         <rdfs:subClassOf rdf:nodeID="other_feature_0-1"/>
         <rdfs:subClassOf rdf:nodeID="thumbnail_url_0-1"/>
+        <rdfs:subClassOf rdf:nodeID="comment_0-1"/>
         <pmb:displayLabel rdf:resource="http://www.pmbservices.fr/ontology#label"/>
         <pmb:name>work</pmb:name>
         <pmb:flag>pmb_entity</pmb:flag>
@@ -490,7 +491,8 @@
         <rdfs:subClassOf rdf:nodeID="docs_section_1-1"/>
         <rdfs:subClassOf rdf:nodeID="contribution_comment_0-1"/>
         <pmb:name>expl</pmb:name>
-		<pmb:displayLabel rdf:resource="http://www.pmbservices.fr/ontology#has_record"/>
+        <pmb:displayLabel rdf:resource="http://www.pmbservices.fr/ontology#has_record"/>
+        <pmb:displayLabel rdf:resource="http://www.pmbservices.fr/ontology#cb"/>
         <pmb:flag>pmb_entity</pmb:flag>
     </rdf:Description>
     
@@ -715,7 +717,7 @@
         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
         <rdfs:domain rdf:resource="http://www.pmbservices.fr/ontology#record"/>
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
-        <pmb:datatype rdf:resource="http://www.pmbservices.fr/ontology#integer"/>
+        <pmb:datatype rdf:resource="http://www.pmbservices.fr/ontology#small_text"/>
         <pmb:name>tnvol</pmb:name>
     </rdf:Description>
     
@@ -845,7 +847,7 @@
         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
         <rdfs:domain rdf:resource="http://www.pmbservices.fr/ontology#record"/>
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
-        <pmb:datatype rdf:resource="http://www.pmbservices.fr/ontology#integer"/>
+        <pmb:datatype rdf:resource="http://www.pmbservices.fr/ontology#small_text"/>
         <pmb:name>nocoll</pmb:name>
     </rdf:Description>
     
@@ -899,7 +901,6 @@
         <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
         <pmb:datatype rdf:resource="http://www.pmbservices.fr/ontology#small_text"/>
         <pmb:name>isbn</pmb:name>
-        <pmb:undisplayed>1</pmb:undisplayed>
     </rdf:Description>
     
     <!-- Importance materielle PMB -->
@@ -1482,6 +1483,7 @@
         <pmb:datatype rdf:resource="http://www.pmbservices.fr/ontology#linked_authority_selector"/>
         <pmb:reciprocalLink>1</pmb:reciprocalLink>
         <pmb:name>has_linked_authority</pmb:name>
+        <pmb:flag>authority</pmb:flag>
     </rdf:Description>
     
     <!-- Type de relation entre autorites PMB -->
@@ -1500,8 +1502,8 @@
     
     <!-- Type autorite PMB -->
     <rdf:Description rdf:about="http://www.pmbservices.fr/ontology#authority_type">
-        <rdfs:label xml:lang='fr'>Type d'autortitÈ</rdfs:label>
-        <rdfs:comment>Relie √† un type d'autoritÈ</rdfs:comment>
+        <rdfs:label xml:lang='fr'>Type d'autortit√©</rdfs:label>
+        <rdfs:comment>Relie √† un type d'autorit√©</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://www.pmbservices.fr/ontology#" />
         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
         <rdfs:domain rdf:resource="http://www.pmbservices.fr/ontology#linked_authority"/>
@@ -2055,7 +2057,7 @@
      <!-- Regime de licence PMB -->
     <rdf:Description rdf:about="http://www.pmbservices.fr/ontology#licence">        
         <rdfs:label xml:lang='fr'>R√©gime de licence</rdfs:label>
-        <rdfs:comment>Relie a un rÈgime de licence</rdfs:comment>
+        <rdfs:comment>Relie a un r√©gime de licence</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://www.pmbservices.fr/ontology#" />
         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
         <rdfs:domain rdf:resource="http://www.pmbservices.fr/ontology#docnum"/>
@@ -2123,7 +2125,22 @@
         <rdfs:subClassOf rdf:resource="http://www.pmbservices.fr/ontology#entity_link"/>
         <pmb:datatype rdf:resource="http://www.pmbservices.fr/ontology#resource_selector"/>
         <pmb:name>has_docnum</pmb:name>
-        <pmb:nosearch>1</pmb:nosearch>
+        <pmb:no_search>1</pmb:no_search>
+    </rdf:Description>
+    
+    <!-- Exemplaire associe a une notice PMB -->
+    <rdf:Description rdf:about="http://www.pmbservices.fr/ontology#has_expl">
+        <rdfs:label xml:lang='fr'>Exemplaire</rdfs:label>
+        <rdfs:comment>Relie a un exemplaire</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://www.pmbservices.fr/ontology#" />
+        <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
+        <pmb:flag>expl</pmb:flag>
+        <rdfs:domain rdf:resource="http://www.pmbservices.fr/ontology#record"/>
+        <rdfs:range rdf:resource="http://www.pmbservices.fr/ontology#expl"/>
+        <rdfs:subClassOf rdf:resource="http://www.pmbservices.fr/ontology#entity_link"/>
+        <pmb:datatype rdf:resource="http://www.pmbservices.fr/ontology#resource_selector"/>
+        <pmb:name>has_expl</pmb:name>
+        <pmb:no_search>1</pmb:no_search>
     </rdf:Description>
     
     <!-- Bulletin -->
@@ -2546,8 +2563,8 @@
     
     <!-- Datatype docnum licence PMB -->
     <rdf:Description rdf:about="http://www.pmbservices.fr/ontology#docnum_licence">
-        <rdfs:label xml:lang='fr'>Type liste de rÈgime de licence</rdfs:label>
-        <rdfs:comment>Renseigne qu'une ressource est de type liste de rÈgime de licence</rdfs:comment>
+        <rdfs:label xml:lang='fr'>Type liste de r√©gime de licence</rdfs:label>
+        <rdfs:comment>Renseigne qu'une ressource est de type liste de r√©gime de licence</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://www.pmbservices.fr/ontology#" />
         <rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
     </rdf:Description>
@@ -2590,8 +2607,8 @@
 
     <!-- Libelle cache PMB -->
     <rdf:Description rdf:about="http://www.pmbservices.fr/ontology#hiddenlabel">
-        <rdfs:label xml:lang='fr'>Libell√© cachÈ</rdfs:label>
-        <rdfs:comment>Relie a un libelle cachÈ</rdfs:comment>
+        <rdfs:label xml:lang='fr'>Libell√© cach√©</rdfs:label>
+        <rdfs:comment>Relie a un libelle cach√©</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://www.pmbservices.fr/ontology#" />
         <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
         <rdfs:domain rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
@@ -2699,6 +2716,7 @@
 		<pmb:reciprocalLink>1</pmb:reciprocalLink>
         <pmb:name>semantic_relation</pmb:name>
         <pmb:flag>concept</pmb:flag>
+        <pmb:undisplayed>1</pmb:undisplayed>
     </rdf:Description>
     
     <!-- Termes generiques partiels PMB -->
@@ -2790,7 +2808,7 @@
         <pmb:name>note_multilingue</pmb:name>
     </rdf:Description>
 
-    <!-- Note modifiÈe multilingue PMB -->
+    <!-- Note modifiee multilingue PMB -->
     <rdf:Description rdf:about="http://www.pmbservices.fr/ontology#note_editable_multilingue">
         <rdfs:label xml:lang='fr'>Note modifi√©e</rdfs:label>
         <rdfs:comment>Relie a une note modifiee</rdfs:comment>
@@ -2804,7 +2822,7 @@
         <pmb:name>note_editable_multilingue</pmb:name>
     </rdf:Description>
 
-    <!-- Note modifiÈe multilingue PMB -->
+    <!-- Note modifiee multilingue PMB -->
     <rdf:Description rdf:about="http://www.pmbservices.fr/ontology#editorialnote_multilingue">
         <rdfs:label xml:lang='fr'>Note √©ditoriale</rdfs:label>
         <rdfs:comment>Relie a une note editoriale</rdfs:comment>
@@ -2818,7 +2836,7 @@
         <pmb:name>editorialnote_multilingue</pmb:name>
     </rdf:Description>
     
-    <!-- DÈfinition multilingue PMB -->
+    <!-- Definition multilingue PMB -->
     <rdf:Description rdf:about="http://www.pmbservices.fr/ontology#definition_multilingue">
         <rdfs:label xml:lang='fr'>D√©finition</rdfs:label>
         <rdfs:comment>Relie a une definition</rdfs:comment>
@@ -2872,6 +2890,7 @@
         <pmb:multilingue>1</pmb:multilingue>
         <pmb:useLangConcept>1</pmb:useLangConcept>
         <pmb:name>comment_multilingue</pmb:name>
+        <pmb:undisplayed>1</pmb:undisplayed>
     </rdf:Description>
     
     <!-- RESTRICTIONS -->

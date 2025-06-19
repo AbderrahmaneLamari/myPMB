@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pnb_check.tpl.php,v 1.2 2020/12/21 11:30:49 dbellamy Exp $
+// $Id: pnb_check.tpl.php,v 1.2.6.1 2023/04/25 13:35:56 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -71,7 +71,7 @@ $pnb_check_form['report'] = "
 	<div class='form-contenu'>
 			
 		<div class='row'>
-			<a href='./temp/pnb_check.log' alt='".$msg['admin_pnb_check_dl_report']."' title='".$msg['admin_pnb_check_dl_report']."' download='pnb_check.log' type='text/plain' >".$msg['admin_pnb_check_dl_report']."</a>
+			<a href='./temp/pnb_check.txt' alt='".$msg['admin_pnb_check_dl_report']."' title='".$msg['admin_pnb_check_dl_report']."' download='pnb_check.txt' type='text/plain' >".$msg['admin_pnb_check_dl_report']."</a>
 		</div>
 		<hr />
 
@@ -79,7 +79,7 @@ $pnb_check_form['report'] = "
 
 		<hr />
 		<div class='row'>
-			<a href='./temp/pnb_check.log' alt='".$msg['admin_pnb_check_dl_report']."' title='".$msg['admin_pnb_check_dl_report']."' download='pnb_check.log' type='text/plain' >".$msg['admin_pnb_check_dl_report']."</a>
+			<a href='./temp/pnb_check.txt' alt='".$msg['admin_pnb_check_dl_report']."' title='".$msg['admin_pnb_check_dl_report']."' download='pnb_check.txt' type='text/plain' >".$msg['admin_pnb_check_dl_report']."</a>
 		</div>
 		<hr />
 

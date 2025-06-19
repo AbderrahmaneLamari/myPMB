@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_search_perso.class.php,v 1.9 2018/05/23 15:06:54 ngantier Exp $
+// $Id: search_segment_search_perso.class.php,v 1.10.4.4 2023/09/07 13:46:41 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path."/templates/search_universes/search_segment_search_perso.tpl.php");
 require_once($class_path."/search.class.php");
 require_once($class_path."/search_authorities.class.php");
@@ -19,7 +20,7 @@ class search_segment_search_perso {
 	protected $search_perso;
 	
 	public function __construct($num_segment = 0){
-		$this->num_segment = $num_segment+0;
+		$this->num_segment = intval($num_segment);
 		$this->fetch_data();
 	}
 	
@@ -50,7 +51,7 @@ class search_segment_search_perso {
 	}
 	
 	public function get_form($type = 'notices') {
-	    global $msg, $charset, $base_url;
+	    global $charset, $base_url;
 	    global $segment_search_perso_list_form, $segment_search_perso_list_line_form;
 	    
 	    $lst = "";
@@ -82,9 +83,12 @@ class search_segment_search_perso {
 		switch ($this->segment_type) {
 			case TYPE_NOTICE:
 				return 'RECORDS';
+			case TYPE_ANIMATION:
+				return 'ANIMATIONS';
+			case TYPE_CMS_EDITORIAL:
+				return 'CMS_EDITORIAL';
 			default:
 				return 'AUTHORITIES';
-				break;
 		}
 	}
 	
@@ -109,7 +113,7 @@ class search_segment_search_perso {
 	}
 	
 	public static function delete($id=0) {
-		$id += 0;
+		$id = intval($id);
 		if (!$id) {
 		    return;
 		}
@@ -118,7 +122,7 @@ class search_segment_search_perso {
 	}
 
 	public static function on_delete_search_perso($id=0) {
-		$id += 0;
+		$id = intval($id);
 		if (!$id) {
 		    return;
 		}
@@ -128,9 +132,7 @@ class search_segment_search_perso {
 	
 	public function get_search_form() {
 	    $search= $this->get_search_from_type();
-	    
-	    
-	    
+
 // 	    $form.= $search->show_form("./modelling.php?categ=contribution_area&sub=equation&action=build&equation_type=".$type."&id=".$this->id,
 // 	        "","","./modelling.php?categ=contribution_area&sub=equation&action=form&equation_type=".$type."&id=".$this->id);
 	    $form = $search->show_form('', '');
@@ -142,6 +144,10 @@ class search_segment_search_perso {
 	    switch ($this->segment_type) {
 	        case TYPE_NOTICE :
 	            return new search(false,"search_fields");
+	        case TYPE_ANIMATION :
+	            return new search(false,"search_fields_animations");
+	        case TYPE_CMS_EDITORIAL :
+	            return new search(false,"search_fields_cms_editorial");
 	        default:
 	            return new search_authorities(false,"search_fields_authorities");
 	    }
@@ -170,13 +176,18 @@ class search_segment_search_perso {
 	}
 	
 	public function set_segment_type($segment_type) {
-		$this->segment_type = $segment_type+0;
+		$this->segment_type = intval($segment_type);
 	}
 	
 	public function add_search_perso($id_search_perso) {
-	    $id_search_perso += 0;
+		$id_search_perso = intval($id_search_perso);
 	    if ($id_search_perso) {
 	        $this->search_perso[] =  $id_search_perso;
 	    }
+	}
+	
+	public function set_search_perso($searchPerso = array())
+	{
+		$this->search_perso = $searchPerso;
 	}
 }

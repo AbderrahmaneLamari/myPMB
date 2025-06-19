@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<!-- $Id: search_fields_expl.xml,v 1.60.2.2 2021/07/27 11:47:56 dgoron Exp $ -->
+<!-- $Id: search_fields_expl.xml,v 1.63.4.1 2023/11/17 09:42:47 dgoron Exp $ -->
 <pmbfields>
 
 	<!-- Zone fixedFields :
@@ -2255,6 +2255,12 @@
 				<multipleTerm>expl_note like '%!!p!!%'</multipleTerm>
 				<multipleOperator>and</multipleOperator>
 			</query>
+			<query for="ISEMPTY" regDiacrit="no">
+				<main><![CDATA[select distinct expl_id from exemplaires where expl_note = '']]></main>
+			</query>
+			<query for="ISNOTEMPTY" regDiacrit="no">
+				<main><![CDATA[select distinct expl_id from exemplaires where expl_note <> '']]></main>
+			</query>
 		</field>
 		<field title="msg:expl_zone_comment" id="53">
 			<input type='text'/>
@@ -2279,6 +2285,12 @@
 				<main><![CDATA[select distinct expl_id from exemplaires where !!multiple_term!!]]></main>			
 				<multipleTerm>expl_comment like '%!!p!!%'</multipleTerm>
 				<multipleOperator>and</multipleOperator>
+			</query>
+			<query for="ISEMPTY" regDiacrit="no">
+				<main><![CDATA[select distinct expl_id from exemplaires where expl_comment = '']]></main>
+			</query>
+			<query for="ISNOTEMPTY" regDiacrit="no">
+				<main><![CDATA[select distinct expl_id from exemplaires where expl_comment <> '']]></main>
 			</query>
 		</field>
 		<field title="msg:date_creation_query" id="50">
@@ -2548,7 +2560,7 @@
 		</field>
 		<field title="msg:collection_state_search_emp" id="58">
 			<input type="query_list">
-				<query>select archempla_id, archempla_libelle from arch_emplacement order by archempla_libelle</query>
+				<query translationTablename="arch_emplacement" translationFieldname="archempla_libelle">select archempla_id, archempla_libelle from arch_emplacement order by archempla_libelle</query>
 			</input>
 			<query for="EQ">
 				<main><![CDATA[select distinct expl_id from exemplaires join bulletins on expl_bulletin=bulletin_id join notices on bulletin_notice=notice_id join collections_state on (notice_id=id_serial) where collstate_emplacement=!!p!!]]></main>
@@ -2557,7 +2569,7 @@
 		
 		<field title="msg:collection_state_search_sup" id="59">
 			<input type="query_list">
-				<query>select archtype_id, archtype_libelle from arch_type order by archtype_libelle</query>
+				<query translationTablename="arch_type" translationFieldname="archtype_libelle">select archtype_id, archtype_libelle from arch_type order by archtype_libelle</query>
 			</input>
 			<query for="EQ">
 				<main><![CDATA[select distinct expl_id from exemplaires join bulletins on expl_bulletin=bulletin_id join notices on bulletin_notice=notice_id join collections_state on (notice_id=id_serial) where collstate_type=!!p!!]]></main>
@@ -2566,7 +2578,7 @@
 
 		<field title="msg:collection_state_search_sta" id="60">
 			<input type="query_list">
-				<query>select archstatut_id, archstatut_gestion_libelle from arch_statut order by archstatut_gestion_libelle</query>
+				<query translationTablename="arch_statut" translationFieldname="archstatut_gestion_libelle">select archstatut_id, archstatut_gestion_libelle from arch_statut order by archstatut_gestion_libelle</query>
 			</input>
 			<query for="EQ">
 				<main><![CDATA[select distinct expl_id from exemplaires join bulletins on expl_bulletin=bulletin_id join notices on bulletin_notice=notice_id join collections_state on (notice_id=id_serial) where collstate_statut=!!p!!]]></main>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: liste_lecture.class.php,v 1.73.2.1 2022/01/18 07:42:15 dgoron Exp $
+// $Id: liste_lecture.class.php,v 1.76.4.2 2023/11/08 07:51:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -183,28 +183,17 @@ class liste_lecture {
 	 * Accepte l'accès aux listes confidentielles
 	 */
 	protected function accepter_acces_confidentiel(){		
-		global $cb_demande,$opac_connexion_phrase ,$opac_url_base, $msg;
+		global $cb_demande;
 		
 		for($i=0;$i<sizeof($cb_demande);$i++){
 			$info = explode('-',$cb_demande[$i]);
 			$req = " update abo_liste_lecture set etat=2 where num_empr='".$info[1]."' and num_liste='".$info[0]."'";
 			pmb_mysql_query($req);
 			
-			$req ="select concat(empr_prenom,' ',empr_nom) as nom, empr_mail, empr_login from empr where id_empr='".$info[1]."'";
-			$res = pmb_mysql_query($req);
-			$destinataire = pmb_mysql_fetch_object($res);
-			$req ="select concat(empr_prenom,' ',empr_nom) as nom, empr_mail, nom_liste from empr e, opac_liste_lecture oll where oll.num_empr=e.id_empr and id_liste='".$info[0]."'";
-			$res = pmb_mysql_query($req);
-			$sender= pmb_mysql_fetch_object($res);
-			
-			$date = time();
-			$login = $destinataire->empr_login;
-			$code=md5($opac_connexion_phrase.$login.$date);			
-			$corps = sprintf($msg['list_lecture_intro_mail'],$destinataire->nom,$sender->nom_liste).", <br />".sprintf($msg['list_lecture_confirm_mail'],$sender->nom,$sender->nom_liste);
-			$corps .= "<br /><br /><a href='".$opac_url_base."empr.php?code=$code&emprlogin=$login&date_conex=$date&tab=lecture&lvl=private_list&sub=shared_list' >".sprintf($msg['list_lecture_confirm_redir_mail'],$sender->nom_liste)."</a>";
-			
-			mailpmb($destinataire->nom,$destinataire->empr_mail,sprintf($msg['list_lecture_objet_confirm_mail'],$sender->nom_liste),stripslashes($corps),$sender->nom,$sender->empr_mail);
-			
+			$mail_opac_reader_readinglist_accept_access = new mail_opac_reader_readinglist_accept_access();
+			$mail_opac_reader_readinglist_accept_access->set_mail_to_id($info[1]);
+			$mail_opac_reader_readinglist_accept_access->set_id_liste($info[0]);
+			$mail_opac_reader_readinglist_accept_access->send_mail();
 		}
 	}
 	
@@ -212,27 +201,17 @@ class liste_lecture {
 	 * Refuse l'accès aux listes confidentielles
 	 */
 	protected function refuser_acces_confidentiel(){
-		global $cb_demande, $msg, $com,$opac_url_base,$opac_connexion_phrase;
+		global $cb_demande;
 		
 		for($i=0;$i<sizeof($cb_demande);$i++){
 			$info = explode('-',$cb_demande[$i]);
 			$req = " update abo_liste_lecture set etat=0 where num_empr='".$info[1]."' and num_liste='".$info[0]."'";
 			pmb_mysql_query($req);
-			$req ="select concat(empr_prenom,' ',empr_nom) as nom, empr_mail, empr_login from empr where id_empr='".$info[1]."'";
-			$res = pmb_mysql_query($req);
-			$destinataire = pmb_mysql_fetch_object($res);
-			$req ="select concat(empr_prenom,' ',empr_nom) as nom, empr_mail, nom_liste from empr e, opac_liste_lecture oll where oll.num_empr=e.id_empr and id_liste='".$info[0]."'";
-			$res = pmb_mysql_query($req);
-			$sender= pmb_mysql_fetch_object($res);
 			
-			$date = time();
-			$login = $destinataire->empr_login;
-			$code=md5($opac_connexion_phrase.$login.$date);			
-			$corps = sprintf($msg['list_lecture_intro_mail'],$destinataire->nom,$sender->nom_liste).", <br />".sprintf($msg['list_lecture_refus_corps_mail'],$sender->nom,$sender->nom_liste);
-			if($com) $corps .= sprintf("<br />".$msg['list_lecture_corps_com_mail'],$sender->nom," <br />".$com);
-			$corps .= "<br /><br /><a href='".$opac_url_base."empr.php?code=$code&emprlogin=$login&date_conex=$date&tab=lecture&lvl=private_list' >".$msg['redirection_mail_link']."</a>";
-			
-			mailpmb($destinataire->nom,$destinataire->empr_mail,sprintf($msg['list_lecture_refus_mail'],$sender->nom_liste),stripslashes($corps),$sender->nom,$sender->empr_mail);
+			$mail_opac_reader_readinglist_refuse_access = new mail_opac_reader_readinglist_refuse_access();
+			$mail_opac_reader_readinglist_refuse_access->set_mail_to_id($info[1]);
+			$mail_opac_reader_readinglist_refuse_access->set_id_liste($info[0]);
+			$mail_opac_reader_readinglist_refuse_access->send_mail();
 		}
 	}
 	
@@ -803,7 +782,7 @@ class liste_lecture {
 		
 			$sql = $sort->appliquer_tri($_SESSION["last_sortreading_list"], $sql, 'notice_id', 0, 0);
 		} else {
-			$sql = "select notice_id from notices where notice_id in ('" . implode("','",$this->filtered_notices) . "') order by tit1";
+			$sql = "select notice_id from notices where notice_id in ('" . implode("','",$this->filtered_notices) . "') order by index_serie, tnvol, index_sew";
 		}
 		$res = pmb_mysql_query($sql);
 		$this->filtered_notices = array();
@@ -816,7 +795,7 @@ class liste_lecture {
 					'id_liste' => $this->id_liste,
 			)));
 			$affich_tris_result_liste = sort::show_tris_selector("reading_list");
-			$affich_tris_result_liste = str_replace('!!page_en_cours!!', 'lvl=show_list&params=' . $params . '&id_liste=' . $this->id_liste, $affich_tris_result_liste);
+			$affich_tris_result_liste = str_replace('!!page_en_cours!!', urlencode('lvl=show_list').'&params=' . $params . '&id_liste=' . $this->id_liste, $affich_tris_result_liste);
 			$affich_tris_result_liste = str_replace('!!page_en_cours1!!', 'lvl=show_list&params=' . $params . '&sub=' . $sub . '&id_liste=' . $this->id_liste, $affich_tris_result_liste);
 			$affich.=  $affich_tris_result_liste;
 		}
@@ -828,13 +807,14 @@ class liste_lecture {
 	/**
 	 * Affiche la barre de navigation des notices
 	 */
-	public function aff_navigation_notices($notices = array(), $id_liste, $sub) {
+	public function aff_navigation_notices($notices = array(), $id_liste = 0, $sub = '') {
 	    global $opac_search_results_per_page, $page;
 	    
 	    $count = count($notices);
 	    if (empty($count)) {
 	        return '';
 	    }
+	    $id_liste = intval($id_liste);
 		$catal_navbar = "<div class='row'>&nbsp;</div>";
 	    $url_page = "javascript:document.liste_lecture.page.value=!!page!!;document.liste_lecture.action=\"./index.php?lvl=show_list&sub=$sub&id_liste=$id_liste\";document.liste_lecture.submit()";
 	    $nb_per_page_custom_url = "javascript:document.liste_lecture.nb_per_page_custom.value=!!nb_per_page_custom!!";
@@ -888,25 +868,10 @@ class liste_lecture {
 	 * @param int $id_empr
 	 */
 	protected function send_subscribe_mail($id_empr) {
-		global $msg, $charset, $com, $opac_url_base, $opac_connexion_phrase, $empr_nom, $empr_prenom,$empr_mail;
-		
-		$inscrit = $this->empr[$id_empr];
-		$objet = sprintf($msg['list_lecture_objet_subscribe_mail'],$inscrit->nom_liste);
-		$date = time();
-		$login = $inscrit->empr_login;
-		$code=md5($opac_connexion_phrase.$login.$date);
-		$corps = sprintf($msg['list_lecture_intro_mail'],$inscrit->nom,$inscrit->nom_liste).", <br />".sprintf($msg['list_lecture_subscribe_mail'],$empr_prenom." ".$empr_nom,$inscrit->nom_liste);
-		if($com) $corps .= sprintf("<br />".$msg['list_lecture_corps_com_mail'],$empr_prenom." ".$empr_nom,"<br />".$com."<br />");
-		$corps .= "<br /><br /><a href='".$opac_url_base."empr.php?code=$code&emprlogin=$login&date_conex=$date&tab=lecture&lvl=private_list' >".$msg['redirection_mail_link']."</a>";
-		
-		if($empr_mail) {
-			$headers  = "MIME-Version: 1.0\n";
-			$headers .= "Content-type: text/html; charset=".$charset."\n";
-			mailpmb($inscrit->nom, $inscrit->empr_mail, $objet, $corps, $empr_prenom." ".$empr_nom, $empr_mail, $headers);
-			return true;
-		} else {
-			return false;
-		}
+		$mail_opac_reader_readinglist_subscribe = new mail_opac_reader_readinglist_subscribe();
+		$mail_opac_reader_readinglist_subscribe->set_mail_to_id($id_empr);
+		$mail_opac_reader_readinglist_subscribe->set_id_liste($this->id_liste);
+		return $mail_opac_reader_readinglist_subscribe->send_mail();
 	}
 	
 	/**
@@ -960,25 +925,10 @@ class liste_lecture {
 	 * @param int $id_empr
 	 */
 	protected function send_unsubscribe_mail($id_empr) {
-		global $msg, $charset, $com, $opac_url_base, $opac_connexion_phrase, $empr_nom, $empr_prenom,$empr_mail;
-	
-		$inscrit = $this->empr[$id_empr];
-		$objet = sprintf($msg['list_lecture_objet_unsubscribe_mail'],$inscrit->nom_liste);
-		$date = time();
-		$login = $inscrit->empr_login;
-		$code=md5($opac_connexion_phrase.$login.$date);
-		$corps = sprintf($msg['list_lecture_intro_mail'],$inscrit->nom,$inscrit->nom_liste).", <br />".sprintf($msg['list_lecture_unsubscribe_mail'],$empr_prenom." ".$empr_nom,$inscrit->nom_liste);
-		if($com) $corps .= sprintf("<br />".$msg['list_lecture_corps_com_mail'],$empr_prenom." ".$empr_nom,"<br />".$com."<br />");
-		$corps .= "<br /><br /><a href='".$opac_url_base."empr.php?code=$code&emprlogin=$login&date_conex=$date&tab=lecture&lvl=private_list' >".$msg['redirection_mail_link']."</a>";
-		
-		if($empr_mail) {
-			$headers  = "MIME-Version: 1.0\n";
-			$headers .= "Content-type: text/html; charset=".$charset."\n";
-			mailpmb($inscrit->nom, $inscrit->empr_mail, $objet, $corps, $empr_prenom." ".$empr_nom, $empr_mail, $headers);
-			return true;
-		} else {
-			return false;
-		}
+		$mail_opac_reader_readinglist_unsubscribe = new mail_opac_reader_readinglist_unsubscribe();
+		$mail_opac_reader_readinglist_unsubscribe->set_mail_to_id($id_empr);
+		$mail_opac_reader_readinglist_unsubscribe->set_id_liste($this->id_liste);
+		return $mail_opac_reader_readinglist_unsubscribe->send_mail();
 	}
 	
 	/**
@@ -1141,5 +1091,15 @@ class liste_lecture {
 	        $filtered_notices[] = $row->notice_id;
 	    }
 	    return $filtered_notices;
+	}
+	
+	public static function get_name_from_id($id) {
+		$id = intval($id);
+		$query = "SELECT nom_liste FROM opac_liste_lecture WHERE id_liste= ".$id;
+		$result = pmb_mysql_query($query);
+		if(pmb_mysql_num_rows($result)) {
+			return pmb_mysql_result($result, 0, 'nom_liste');
+		}
+		return '';
 	}
 }

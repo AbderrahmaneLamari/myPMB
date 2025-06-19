@@ -238,6 +238,22 @@ class H2o_Context implements ArrayAccess {
         }
         return null;
     }
+
+    /**
+     * Retourne le contexte d'une variable
+     * @param string $var_name nom de la variable
+     * @return bool
+     */
+    public function getContext($var_name)
+    {
+        if(count($this->scopes) > 1) {
+            $index = count($this->scopes) -1;
+            if(array_key_exists($var_name, $this->scopes[$index])) {
+                return self::GLOBAL_CONTEXT;
+            }
+        }
+        return self::CURRENT_CONTEXT;
+    }
 }
 
 class BlockContext {

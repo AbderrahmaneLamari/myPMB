@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mysql_functions.inc.php,v 1.12.2.2 2021/11/05 13:27:40 dgoron Exp $
+// $Id: mysql_functions.inc.php,v 1.15 2022/12/02 09:30:41 gneveu Exp $
 
 global $class_path;
 require_once($class_path.'/pmb_mysqli.class.php');
@@ -259,11 +259,13 @@ function pmb_mysql_field_type($result, $field_offset){
  *
  * @param mysqli_result $result
  */
-function pmb_mysql_free_result($result){
-	if($result === false){
-		return false;
+function pmb_mysql_free_result(&$result){
+	if ($result !== false && !empty($result->num_rows)) {
+		$result->free_result();
+		$result = null;
+		return true;
 	}
-	return $result->free_result();
+	return false;
 }
 
 /**
@@ -442,7 +444,7 @@ function pmb_mysql_debug($backtrace) {
 			<div class='pmb_mysql_debug_content'>
 				<strong>".$backtrace['file'].":".$backtrace['line']."</strong>
 				<p>".$backtrace['args'][0]."</p>
-				".($pmb_display_errors == 2 ? "<p>".pmb_mysql_error()."</p>" : "")."
+                ".($pmb_display_errors == 2 ? "<p>".pmb_mysql_error()."</p>" : "")."
 			</div>
 		</div>";
 	}

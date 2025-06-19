@@ -1,0 +1,24 @@
+.pmb-container {
+    max-width: 1552px; /* est égal à 1600px avec le padding de sécurité */
+    width: 100%;
+    padding: 0 24px;
+    margin: 0 auto;
+}
+
+#main_hors_footer:not(.home) > * {
+    margin-bottom: 62px;
+}
+
+#main_hors_footer>div:last-child {
+    margin-bottom: 32px;
+}
+
+.pmb_main_facettes {
+    gap: 38px;
+}
+
+@media (max-width: 959px) {
+    .pmb_main_facettes {
+        display: block;
+    }
+}

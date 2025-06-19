@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_analysis_explnum_controller.class.php,v 1.3 2019/06/13 15:26:51 btafforeau Exp $
+// $Id: entities_analysis_explnum_controller.class.php,v 1.4 2022/02/16 12:38:20 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once ($class_path."/entities/entities_analysis_controller.class.php");
 
 class entities_analysis_explnum_controller extends entities_analysis_controller {

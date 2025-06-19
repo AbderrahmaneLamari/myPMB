@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ris2pmbxml.class.php,v 1.2 2019/03/04 16:46:24 mbertin Exp $
+// $Id: ris2pmbxml.class.php,v 1.3 2022/04/21 07:34:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $base_path, $class_path, $include_path;
 require_once("$class_path/marc_table.class.php");
 require_once("$include_path/isbn.inc.php");
 require_once($base_path."/admin/convert/convert.class.php");
@@ -16,6 +17,7 @@ class ris2pmbxml extends convert {
 		$res = array();
 		
 		for($i=0;$i<count($tab_line);$i++){
+			$matches = array();
 			if(preg_match("/([A-Z0-9]{1,4}) *- (.*)/",$tab_line[$i],$matches)){
 				$champ = $matches[1];
 				if($res[$champ]) {
@@ -260,11 +262,7 @@ class ris2pmbxml extends convert {
 		$data.=htmlspecialchars(microtime(),ENT_QUOTES,$charset);
 		$data.="</f>\n";
 
-		if($infos_isbn){
-			$data.="<f c='010' ind='  '>\n";
-			$data.="	<s c='a'>".htmlspecialchars($infos_isbn,ENT_QUOTES,$charset)."</s>\n";
-			$data.="</f>\n";
-		}
+		$data.=static::get_converted_field_uni('010', 'a', $infos_isbn);
 	
 		if($titre){
 			$data.="<f c='200' ind='  '>\n";								
@@ -299,24 +297,16 @@ class ris2pmbxml extends convert {
 					if(strlen($note[$i]) > 9000){
 						$word =wordwrap($note[$i],9000,"####");
 						$words = explode("####",$word);
-						for($j=0;$j<count($words);$j++){						
-							$data.="<f c='300' ind='  '>\n";
-							$data.="	<s c='a'>".htmlspecialchars($words[$j],ENT_QUOTES,$charset)."</s>\n";
-							$data.="</f>\n";						
+						for($j=0;$j<count($words);$j++){
+							$data.=static::get_converted_field_uni('300', 'a', $words[$j]);
 						}
 					} else {
-						$data.="<f c='300' ind='  '>\n";
-						$data.="	<s c='a'>".htmlspecialchars($note[$i],ENT_QUOTES,$charset)."</s>\n";
-						$data.="</f>\n";
+						$data.=static::get_converted_field_uni('300', 'a', $note[$i]);
 					}
 				}
 			}	
 		}
-		if($resume){
-			$data.="<f c='330' ind='  '>\n";				
-			$data.="	<s c='a'>".htmlspecialchars($resume,ENT_QUOTES,$charset)."</s>\n";			
-			$data.="</f>\n";
-		}		
+		$data.=static::get_converted_field_uni('330', 'a', $resume);
 		if($perio_title){
 			$data.="<f c='461' ind='  '>\n";				
 			$data.="	<s c='t'>".htmlspecialchars($perio_title,ENT_QUOTES,$charset)."</s>\n";	
@@ -412,40 +402,19 @@ class ris2pmbxml extends convert {
 			}
 		}
 		
-		if($url){
-			$data.="<f c='856' ind='  '>\n";
-			$data.="	<s c='u'>".htmlspecialchars($url,ENT_QUOTES,$charset)."</s>";
-			$data.="</f>\n";
-		}	
-		if($subtype){
-			$data.="<f c='900' ind='  '>\n";
-			$data.="	<s c='a'>".htmlspecialchars($subtype,ENT_QUOTES,$charset)."</s>\n";
-			$data.="	<s c='l'>Sub-Type</s>\n";
-			$data.="	<s c='n'>subtype</s>\n";
-			$data.="</f>\n";
-		}
+		$data.=static::get_converted_field_uni('856', 'u', $url);
+		$data.=static::get_converted_field_uni('900', 'a', $subtype, array('l' => 'Sub-Type', 'n' => 'subtype'));
 		if($doi){
 			$doi = trim(str_replace("doi:","",$doi));
-			if($doi){
-				$data.="<f c='900' ind='  '>\n";
-				$data.="	<s c='a'>".htmlspecialchars($doi,ENT_QUOTES,$charset)."</s>\n";
-				$data.="	<s c='l'>DOI</s>\n";
-				$data.="	<s c='n'>cp_doi_identifier</s>\n";
-				$data.="</f>\n";
-			}
+			$data.=static::get_converted_field_uni('900', 'a', $doi, array('l' => 'DOI', 'n' => 'cp_doi_identifier'));
 		}
 		if($pubmedid){	
 			$pubmedid = trim(str_replace("PubMed ID:","",$pubmedid));
-			if($pubmedid){	
-				$data.="<f c='900' ind='  '>\n";
-				$data.="	<s c='a'>".htmlspecialchars($pubmedid,ENT_QUOTES,$charset)."</s>\n";
-				$data.="	<s c='l'>PUBMED</s>\n";
-				$data.="	<s c='n'>cp_pubmed_identifier</s>\n";
-				$data.="</f>\n";
-			}
+			$data.=static::get_converted_field_uni('900', 'a', $pubmedid, array('l' => 'PUBMED', 'n' => 'cp_pubmed_identifier'));
 		}
 		$data .= "</notice>\n";
 	
+		$r = array();
 		if (!$error) $r['VALID'] = true; else $r['VALID']=false;
 		$r['ERROR'] = $error;
 		$r['WARNING'] = $warning;

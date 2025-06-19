@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: tri.inc.php,v 1.8.8.1 2022/01/04 08:48:18 dgoron Exp $
+// $Id: tri.inc.php,v 1.9 2022/01/04 08:41:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

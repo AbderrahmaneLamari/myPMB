@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lettre_PDF.class.php,v 1.12.2.1 2021/06/30 07:45:10 dgoron Exp $
+// $Id: lettre_PDF.class.php,v 1.17.2.1 2023/04/12 15:38:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -23,6 +23,9 @@ class lettre_PDF {
 	public $w = 190;					//Largeur utile page
 	public $font = 'Helvetica';			//Police
 	public $fs = 10;					//Taille police
+	public $y_footer = 8;				//Distance footer / bas de page
+	public $h_footer = 8;				//Hauteur de la ligne
+	public $fs_footer = 10;				//Taille police footer
 	
 	protected static $instances = array();
 	protected static $language = '';
@@ -79,6 +82,21 @@ class lettre_PDF {
 		}
 		$this->_init_default_parameters();
 		$this->_init_default_positions();
+		
+		$pos_footer = explode(',', $this->get_parameter_value('pos_footer'));
+		if(count($pos_footer) == 3) {
+			$this->PDF->y_footer = $pos_footer[0];
+			$this->PDF->h_footer = $pos_footer[1];
+			$this->PDF->fs_footer = $pos_footer[2];
+		} elseif(count($pos_footer) == 2) { //parametres acquisition
+			$this->PDF->y_footer = $pos_footer[0];
+			$this->PDF->h_footer = $pos_footer[1];
+			$this->PDF->fs_footer = $pos_footer[1];
+		} else {
+			$this->PDF->y_footer=$this->y_footer;
+			$this->PDF->h_footer=$this->h_footer;
+			$this->PDF->fs_footer=$this->fs_footer;
+		}
 	}
 	
 	protected function _open() {
@@ -87,6 +105,10 @@ class lettre_PDF {
 		$this->PDF->setFont($this->font);
 		
 		$this->PDF->footer_type=1;
+		if(!empty($this->get_parameter_value('footer'))) {
+			$this->PDF->msg_footer = $this->get_parameter_value('footer')."\n";
+			$this->PDF->footer_type=3;
+		}
 	}
 	
 	protected function get_parameter_id($type_param, $sstype_param) {
@@ -158,6 +180,26 @@ class lettre_PDF {
 		return $values;
 	}
 	
+	protected function ln_multiCell() {
+		$this->PDF->Ln();
+	}
+	
+	protected function display_multiCell($w, $h, $txt, $border=0, $align='J', $fill=0) {
+		if(strpos($txt, '<br />')) {
+			$sections = explode('<br />', $txt);
+			foreach ($sections as $section) {
+				$this->PDF->multiCell($w, $h, $section, $border, $align, $fill);
+				$this->ln_multiCell();
+			}
+		} else {
+			$this->PDF->multiCell($w, $h, $txt , $border, $align, $fill);
+		}
+	}
+	
+	protected function display_parameter_multiCell($name) {
+		$this->display_multiCell($this->{"l_".$name}, $this->{"h_".$name}, $this->get_parameter_value($name));
+	}
+	
 	public function getLettre($format=0,$name='lettre.pdf') {
 		if (!$format) {
 			return $this->PDF->OutPut();
@@ -178,16 +220,19 @@ class lettre_PDF {
 		$this->_init_default_positions();
 	}
 	
+	protected static function get_parameter_name($name) {
+		return static::get_parameter_prefix().'_'.$name;
+	}
+	
 	public static function get_instance($group='') {
 	    global $msg, $charset;
 	    global $base_path, $class_path, $include_path;
 	    
 	    $className = static::class;
 	    if(!isset(static::$instances[$className])) {
+	    	$print_parameter = static::get_parameter_name('print');
+	    	global ${$print_parameter};
 		    if($group) {
-		        $prefix = static::get_parameter_prefix();
-		        $print_parameter = $prefix."_print";
-		        global ${$print_parameter};
 		        if(!empty(${$print_parameter}) && file_exists($class_path."/pdf/".$group."/".${$print_parameter}.".class.php")) {
 		            require_once($class_path."/pdf/".$group."/".${$print_parameter}.".class.php");
 		            $className = ${$print_parameter};

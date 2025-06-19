@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: aut_pass3.inc.php,v 1.12.8.1 2021/12/13 15:31:05 dgoron Exp $
+// $Id: aut_pass3.inc.php,v 1.13 2021/12/13 15:23:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ManageSearch.js,v 1.9 2020/09/14 08:28:16 dgoron Exp $
+// $Id: ManageSearch.js,v 1.10 2022/07/26 10:44:59 dgoron Exp $
 
 define([
         "dojo/_base/declare",
@@ -109,7 +109,7 @@ define([
 			var property = domNode[domNode.selectedIndex].value;
 			var label = domAttr.get(domNode[domNode.selectedIndex], 'data-property-code');
 			var number = domAttr.get(domNode, 'data-filters-number');
-			xhr('./ajax.php?module=ajax&categ=list&sub=options&action=get_search_filter_selector&objects_type='+this.objects_type+'&filter_property='+property+'&filter_label='+label, {
+			xhr('./ajax.php?module=ajax&categ=list&sub=options&action=get_search_filter_selector&objects_type='+this.objects_type+'&filter_property='+property+'&filter_label='+encodeURIComponent(label), {
 				sync: false,
 			}).then(lang.hitch(this, 
 					function(response){

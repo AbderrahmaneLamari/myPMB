@@ -7,7 +7,7 @@
 				</div>
 				<div class="row">
 					<b>{{ pmb.getMessage("animation", "animation_date") }} :</b>
-					{{ formdata.animation.event.startDate }} {{ pmb.getMessage("animation", "animation_au") }} {{ formdata.animation.event.endDate }}
+					{{ formdata.animation.event.startDate }} <template v-if="!formdata.animation.event.duringDay"> {{ pmb.getMessage("animation", "animation_au") }} {{ formdata.animation.event.endDate }}</template>
 				</div>
 				<div class='row' v-if="!this.formdata.animation.hasChildrens">
 					<span>
@@ -35,23 +35,23 @@
 				<table>
 					<thead>
 						<tr>
-							<th>{{ pmb.getMessage("animation", "list_registration_barcode") }}</th>
-							<th>{{ pmb.getMessage("animation", "list_registration_name") }}</th>
-							<th>{{ pmb.getMessage("animation", "list_registration_email") }}</th>
+							<th>{{ pmb.getMessage("animation", "list_registration_barcode") }} <sup v-if="formdata.params.animations_only_empr">*</sup></th>
+							<th>{{ pmb.getMessage("animation", "list_registration_name") }} <sup>*</sup></th>
+							<th>{{ pmb.getMessage("animation", "list_registration_email") }} <sup>*</sup></th>
 							<th>{{ pmb.getMessage("animation", "list_registration_phone") }}</th>
 						</tr>
-					</thead>						
+					</thead>
 					<tbody>
 						<tr>
 							<td>
-								<input id="registrationlist.barcode" v-model="registrationlist.barcode" type="text" class='saisie-20em' @change="getContactByBarcode" />
+								<input id="registrationlist.barcode" v-model="registrationlist.barcode" type="text" class='saisie-20em' @change="getContactByBarcode"/>
 								<input type="hidden" id="registrationlist.numEmpr" @change="updateContact" />
 							</td>
 							<td>
-								<input id="registrationlist.name" v-model="registrationlist.name" type="text" class="saisie-20emr" completion="emprunteur" autfield="registrationlist.numEmpr" autocomplete="off" />
+								<input id="registrationlist.name" v-model="registrationlist.name" type="text" class="saisie-20emr" completion="animationsEmpr" autfield="registrationlist.numEmpr" :param1="formdata.animation.id" autocomplete="off" />
 							</td>
 							<td>
-								<input id="registrationlist.email" v-model="registrationlist.email" type="email" class='saisie-20emr' completion="empr_mail" autfield="registrationlist.numEmpr" autocomplete="off" />
+								<input id="registrationlist.email" v-model="registrationlist.email" type="email" class='saisie-20emr' completion="animationsEmprMail" :param1="formdata.animation.id" autfield="registrationlist.numEmpr" autocomplete="off" />
 							</td>
 							<td>
 								<input id="registrationlist.phoneNumber" v-model="registrationlist.phoneNumber" type="text" class='saisie-20em'/>
@@ -75,8 +75,8 @@
 					<template v-for="(person, indexPerson) in registrationlist.registrationListPerson">
 						<thead>
 							<tr>
-								<th>{{ pmb.getMessage("animation", "list_registration_barcode") }}</th>
-								<th>{{ pmb.getMessage("animation", "list_registration_name") }}</th>
+								<th>{{ pmb.getMessage("animation", "list_registration_barcode") }} <sup v-if="formdata.params.animations_only_empr">*</sup></th>
+								<th>{{ pmb.getMessage("animation", "list_registration_name") }} <sup>*</sup></th>
 								<th></th>
 							</tr>
 						</thead>						
@@ -137,9 +137,7 @@
 							</tr>
 						</tbody>
 					</template>
-				</table>	
-				
-				
+				</table>
 				<div class="row">
 					<input @click="addPerson($event)" v-if="registrationlist.registrationListPerson.length > 0" :title="pmb.getMessage('animation', 'registration_add_persons')" class="bouton" type="button" :value="pmb.getMessage('animation', 'registration_add_persons')"/>
 				</div>
@@ -170,6 +168,17 @@
 			window.addEventListener("load", function(event) {
 				ajax_parse_dom();
 			});
+			
+			this.formdata.params.animations_only_empr = parseInt(this.formdata.params.animations_only_empr);
+		},
+		
+		data: function () {
+			return {
+				quotasAnimationCurrent : {
+					"global" : this.formdata.animation.allQuotas.availableQuotas.global,
+					"internet" : this.formdata.animation.allQuotas.availableQuotas.internet,
+				}
+			}
 		},
 		
 		components : {
@@ -208,21 +217,33 @@
 		methods : {
 		    
 		    isValidContact: function () {
-		        
+
+		        // On check le code barre
+                if (this.formdata.params.animations_only_empr && this.registrationlist.barcode == "") {
+                    alert(this.pmb.getMessage('animation', 'animation_registration_error_contact_barcode'));
+                    return false;
+                }
+
 				if ('' === this.registrationlist.name) {
 					alert(this.pmb.getMessage('animation', 'animation_registration_name_check_contact'));
 					return false;
 				}
-				if ('' === this.registrationlist.phoneNumber || !this.isValidPhone()) {
-					alert(this.pmb.getMessage('animation', 'animation_registration_phone_check'));
-					return false;
-				}
-				
+
+                if ('' == this.registrationlist.email || !is_valid_mail(this.registrationlist.email)) {
+                    alert(this.pmb.getMessage('animation', 'animation_registration_error_contact_mail'));
+                    return false;
+                }
+
+                if (this.registrationlist.phoneNumber && !this.isValidPhone()) {
+                    alert(this.pmb.getMessage('animation', 'animation_registration_phone_check'));
+                    return false;
+                }
+
 				if (typeof this.registrationlist.numAnimation == 'undefined') {
 					alert(this.pmb.getMessage('animation', 'animation_registration_animation_check'));
 					return false;
 				}
-				
+
 				return true;
 		    },
 		    
@@ -231,13 +252,20 @@
 		        if (this.registrationlist.nbRegisteredPersons == 0) {
 		            return false;
 		        }
-		        
-		        
+
 		        for (let person of this.registrationlist.registrationListPerson) {
+
+                    // On check le code barre
+                    if (this.formdata.params.animations_only_empr && person.barcode == "") {
+                        alert(this.pmb.getMessage('animation', 'animation_registration_error_barcode'));
+                        return false;
+                    }
+
 					if(person.name == ""){
 						alert(this.pmb.getMessage('animation', 'animation_registration_name_check_contact_registred'));
 						return false;
 					}
+
 					if (this.animationsSelected && this.animationsSelected.length) {
 						for (let indexAnimation in person.animations) {
 							for (let indexCp in person.animations[indexAnimation].personCustomsFields) {
@@ -264,7 +292,7 @@
 						}
 					}
 				}
-		        
+
 		        return true;
 		    },
 		    
@@ -328,6 +356,11 @@
 			deletePerson : function(index) {
 				this.registrationlist.registrationListPerson.splice(index, 1);
 				this.registrationlist.nbRegisteredPersons--;
+				
+				if (this.formdata.animation.allQuotas.availableQuotas.global < this.quotasAnimationCurrent.global){
+					this.formdata.animation.allQuotas.availableQuotas.global++
+				}
+				
 			},
 			
 			cloneObject : function(object) {
@@ -583,17 +616,12 @@
 					return true;
 				}
 				
-				var quotasRestant = 0;
-				
-				if (this.formdata.animation.allQuotas.availableQuotas.global && this.formdata.animation.allQuotas.availableQuotas.internet == 0){
-					quotasRestant = this.formdata.animation.allQuotas.availableQuotas.global - this.registrationlist.registrationListPerson.length;
+				if (this.formdata.animation.allQuotas.availableQuotas.global > 0){
+					this.formdata.animation.allQuotas.availableQuotas.global--
+					return true;
 				}
 				
-				if (this.formdata.animation.allQuotas.availableQuotas.internet > 0){
-					quotasRestant = this.formdata.animation.allQuotas.availableQuotas.internet - this.registrationlist.registrationListPerson.length;
-				}
-
-				return quotasRestant;
+				return false;
 			},
 			
 			registrationPushNewPerson : function (newPerson) {
@@ -638,10 +666,11 @@
 							
 							if (quotasRestant != true) {
 								if (this.formdata.listDaughters[i].allQuotas.availableQuotas.global && this.formdata.listDaughters[i].allQuotas.availableQuotas.internet == 0){
-									quotasRestant = this.formdata.listDaughters[i].allQuotas.availableQuotas.global - this.registrationlist.registrationListPerson.length;
+									quotasRestant = this.formdata.listDaughters[i].allQuotas.availableQuotas.global--;
 								}
 								if (this.formdata.listDaughters[i].allQuotas.availableQuotas.internet > 0){
-									quotasRestant = this.formdata.listDaughters[i].allQuotas.availableQuotas.internet - this.registrationlist.registrationListPerson.length;
+									quotasRestant = this.formdata.listDaughters[i].allQuotas.availableQuotas.global--;
+									quotasRestant = this.formdata.listDaughters[i].allQuotas.availableQuotas.internet--;
 								}
 							}
 							
@@ -653,7 +682,6 @@
 				    	}
 					}
 				}
-				
 				return quotas;
 			},
 		} 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: MailingListModel.php,v 1.9 2021/03/12 13:44:23 jlaurent Exp $
+// $Id: MailingListModel.php,v 1.9.6.1 2023/03/02 10:28:08 qvarin Exp $
 
 namespace Pmb\Animations\Models;
 
@@ -16,24 +16,27 @@ class MailingListModel extends Model
     protected $ormName = "\Pmb\Animations\Orm\MailingListOrm";
     Const MANUAL_SEND = 0;
     Const AUTOMATIC_SEND = 1;
-    
+
     public static function getMailingList(int $id)
     {
-        global $msg;
-        
         $returnList = array();
-        $mailList = self::toArray(MailingListOrm::find("num_animation", $id, "id_mailing_list DESC"));
-        foreach ($mailList as $key => $mail){
-            
+        $mailList = static::toArray(MailingListOrm::find("num_animation", $id, "id_mailing_list DESC"));
+
+        foreach ($mailList as $key => $mail) {
+
             $mail['mailing_content'] = json_decode(stripslashes($mail['mailing_content']));
             $mail['response_content'] = json_decode(stripslashes($mail['response_content']));
-            
+
             $date = new \DateTime($mail['send_at']);
             $mail['send_at'] = $date->format('d/m/Y H:i');
-            
-            $user = Helper::getUser($mail['num_user']);
-            $mail['user_name'] = $user['nom'] . ' ' . $user['prenom'];
-            
+
+            if (! empty($mail['num_user'])) {
+                $user = Helper::getUser($mail['num_user']);
+                if (! empty($user)) {
+                    $mail['user_name'] = $user['nom'] . ' ' . $user['prenom'];
+                }
+            }
+
             $returnList[$key] = $mail;
         }
         return $returnList;

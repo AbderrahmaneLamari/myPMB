@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_articleslist_view_dynamic_grid.class.php,v 1.1.2.1 2021/10/13 12:23:17 qvarin Exp $
+// $Id: cms_module_articleslist_view_dynamic_grid.class.php,v 1.3 2022/09/29 13:57:24 qvarin Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
     die("no access");
 
@@ -58,15 +58,15 @@ class cms_module_articleslist_view_dynamic_grid extends cms_module_common_view_d
         return parent::save_form();
     }
 
-    public function render($ids)
+    public function render($data)
     {
         $articles = array();
         $links = array();
         $links["article"] = $this->get_constructed_link("article", "!!id!!");
         
-        $index = count($ids);
+        $index = count($data['articles']);
         for ($i = 0; $i < $index; $i++) {            
-            $article = new cms_article($ids[$i]);
+        	$article = new cms_article($data['articles'][$i]);
             $articles[] = $article->format_datas($links);
         }
         

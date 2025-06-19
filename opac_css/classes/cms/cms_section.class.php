@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_section.class.php,v 1.54.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: cms_section.class.php,v 1.56 2022/02/24 14:55:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -103,9 +103,10 @@ class cms_section extends cms_editorial {
 	
 	public function duplicate($recursive, $num_parent = 0) {
 		if (!$num_parent) $num_parent = $this->num_parent;
-			
+		$num_parent = intval($num_parent);
+		
 		//on place la nouvelle rubrique à la fin par défaut
-		$query = "SELECT id_section FROM cms_sections WHERE section_num_parent=".($num_parent*1);
+		$query = "SELECT id_section FROM cms_sections WHERE section_num_parent=".$num_parent;
 		$result = pmb_mysql_query($query);
 		if ($result) $order = ",section_order = '".(pmb_mysql_num_rows($result)+1)."' ";
 		else $order = ",section_order = 1";

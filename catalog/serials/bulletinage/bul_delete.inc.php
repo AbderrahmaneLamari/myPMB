@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bul_delete.inc.php,v 1.22 2021/03/18 08:32:18 dgoron Exp $
+// $Id: bul_delete.inc.php,v 1.22.6.1 2023/04/07 09:15:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -41,27 +41,36 @@ if ($acces_m==0) {
 		error_message($msg[416], $msg["serialcirc_bull_no_del"], 1, bulletinage::get_permalink($bul_id));		
 	} else{
 		
-		$requete = "select 1 from pret, exemplaires, bulletins where bulletin_id='$bul_id' ";
-		$requete .="and pret_idexpl=expl_id and expl_bulletin=bulletin_id ";
-		$result=@pmb_mysql_query($requete);
+		$query = "select 1 from pret, exemplaires, bulletins where bulletin_id='$bul_id' ";
+		$query .="and pret_idexpl=expl_id and expl_bulletin=bulletin_id ";
+		$result = pmb_mysql_query($query);
 		if (pmb_mysql_num_rows($result)) {
 			// gestion erreur pret en cours
 			error_message($msg[416], $msg['impossible_bull_del_pret'], 1, bulletinage::get_permalink($bul_id));
 		
 		} else {
-		
-			$myBulletinage = new bulletinage($bul_id);
-			$myBulletinage->delete();		
-			
-			$retour =  serial::get_permalink($myBulletinage->bulletin_notice);
-			
-			// form de retour vers la page de gestion du periodique chapeau (auto-submit)
-			print "
+			// On déclenche un événement sur la supression
+			$evt_handler = events_handler::get_instance();
+			$event = new event_entity("entity", "has_deletion_rights");
+			$event->set_entity_id($bul_id);
+			$event->set_entity_type(TYPE_BULLETIN);
+			$event->set_user_id($PMBuserid);
+			$evt_handler->send($event);
+			if($event->get_error_message()){
+				information_message('', $event->get_error_message(), 1, bulletinage::get_permalink($bul_id));
+			} else {
+				$myBulletinage = new bulletinage($bul_id);
+				$myBulletinage->delete();
+				
+				$retour =  serial::get_permalink($myBulletinage->bulletin_notice);
+				
+				// form de retour vers la page de gestion du periodique chapeau (auto-submit)
+				print "
 				<form class='form-$current_module' name=\"dummy\" method=\"post\" action=\"$retour\" style=\"display:none\">
 					<input type=\"hidden\" name=\"id_form\" value=\"$id_form\">
 				</form>
 				<script type=\"text/javascript\">document.dummy.submit();</script>";
+			}
 		}
 	}	
 }
-?>

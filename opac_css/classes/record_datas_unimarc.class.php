@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: record_datas_unimarc.class.php,v 1.11.2.2 2022/01/05 15:29:50 dgoron Exp $
+// $Id: record_datas_unimarc.class.php,v 1.14 2022/05/17 14:02:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -830,78 +830,82 @@ class record_datas_unimarc {
 		$res["responsabilites"] = array() ;
 		$res["auteurs"] = array() ;
 	
-		if(!$this->source_id){
+		if(empty($this->source_id)){
 			$requete = "SELECT source_id FROM external_count WHERE rid=".addslashes($this->id);
 			$myQuery = pmb_mysql_query($requete);
-			$this->source_id = pmb_mysql_result($myQuery, 0, 0);
+			if(pmb_mysql_num_rows($myQuery)) {
+				$this->source_id = pmb_mysql_result($myQuery, 0, 0);
+			}
 		}
 	
-		$rqt = "select ufield,field_order,usubfield,subfield_order,value from entrepot_source_".$this->source_id." where recid='".addslashes($this->id)."' and ufield like '7%' group by ufield,usubfield,field_order,subfield_order,value order by recid,field_order,subfield_order";
-		$res_sql=pmb_mysql_query($rqt);
+		if(!empty($this->source_id)){
+			$rqt = "select ufield,field_order,usubfield,subfield_order,value from entrepot_source_".$this->source_id." where recid='".addslashes($this->id)."' and ufield like '7%' group by ufield,usubfield,field_order,subfield_order,value order by recid,field_order,subfield_order";
+			$res_sql=pmb_mysql_query($rqt);
 	
-		$id_aut="";
-		$n_aut=-1;
-		while ($l=pmb_mysql_fetch_object($res_sql)) {
-			if ($l->field_order!=$id_aut) {
-				$n_aut++;
-				switch ($l->ufield) {
-					case "700":
-					case "710":
-						$responsabilites[]=0;
+			$id_aut="";
+			$n_aut=-1;
+			while ($l=pmb_mysql_fetch_object($res_sql)) {
+				if ($l->field_order!=$id_aut) {
+					$n_aut++;
+					switch ($l->ufield) {
+						case "700":
+						case "710":
+							$responsabilites[]=0;
+							break;
+						case "701":
+						case "711":
+							$responsabilites[]=1;
+							break;
+						case "702":
+						case "712":
+							$responsabilites[]=2;
+							break;
+					}
+					switch (substr($l->ufield,0,2)) {
+						case "70":
+							$auteurs[$n_aut]["type"]=1;
+							break;
+						case "71":
+							$auteurs[$n_aut]["type"]=2;
+							break;
+					}
+					$auteurs[$n_aut]["id"]=(isset($l->recid) ? $l->recid : '').$l->field_order;
+					$id_aut=$l->field_order;
+				}
+				switch ($l->usubfield) {
+					case '4':
+						$auteurs[$n_aut]['fonction']=$l->value;
+						$auteurs[$n_aut]['fonction_aff']=$fonction_auteur[$l->value];
 						break;
-					case "701":
-					case "711":
-						$responsabilites[]=1;
+					case 'a':
+						$auteurs[$n_aut]['name']=$l->value;
 						break;
-					case "702":
-					case "712":
-						$responsabilites[]=2;
+					case 'b':
+						if ($auteurs[$n_aut]['type']==2) {
+							$auteurs[$n_aut]['subdivision']=$l->value;
+						} else {
+							$auteurs[$n_aut]['rejete']=$l->value;
+						}
+						break;
+					case 'd':
+						if ($auteurs[$n_aut]['type']==2) {
+							$auteurs[$n_aut]['numero']=$l->value;
+						}
+						break;
+					case 'e':
+						if ($auteurs[$n_aut]['type']==2) {
+							$auteurs[$n_aut]['lieu'].=(($auteurs[$n_aut]['lieu'])?'; ':'').$l->value;
+						}
+						break;
+					case 'f':
+						$auteurs[$n_aut]['date']=$l->value;
+						break;
+					case 'g':
+						if ($auteurs[$n_aut]['type']==2) {
+							$auteurs[$n_aut]['rejete']=$l->value;
+						}
 						break;
 				}
-				switch (substr($l->ufield,0,2)) {
-					case "70":
-						$auteurs[$n_aut]["type"]=1;
-						break;
-					case "71":
-						$auteurs[$n_aut]["type"]=2;
-						break;
-				}
-				$auteurs[$n_aut]["id"]=(isset($l->recid) ? $l->recid : '').$l->field_order;
-				$id_aut=$l->field_order;
-			}
-			switch ($l->usubfield) {
-				case '4':
-					$auteurs[$n_aut]['fonction']=$l->value;
-					$auteurs[$n_aut]['fonction_aff']=$fonction_auteur[$l->value];
-					break;
-				case 'a':
-					$auteurs[$n_aut]['name']=$l->value;
-					break;
-				case 'b':
-					if ($auteurs[$n_aut]['type']==2) {
-						$auteurs[$n_aut]['subdivision']=$l->value;
-					} else {
-						$auteurs[$n_aut]['rejete']=$l->value;
-					}
-					break;
-				case 'd':
-					if ($auteurs[$n_aut]['type']==2) {
-						$auteurs[$n_aut]['numero']=$l->value;
-					}
-					break;
-				case 'e':
-					if ($auteurs[$n_aut]['type']==2) {
-						$auteurs[$n_aut]['lieu'].=(($auteurs[$n_aut]['lieu'])?'; ':'').$l->value;
-					}
-					break;
-				case 'f':
-					$auteurs[$n_aut]['date']=$l->value;
-					break;
-				case 'g':
-					if ($auteurs[$n_aut]['type']==2) {
-						$auteurs[$n_aut]['rejete']=$l->value;
-					}
-					break;
 			}
 		}
 	
@@ -975,72 +979,79 @@ class record_datas_unimarc {
 	// recuperation des categories ------------------------------------------------------------------
 	private function fetch_categories() {
 		$this->categories = array();
-		if(!$this->source_id){
+		if(empty($this->source_id)){
 			$requete = "SELECT source_id FROM external_count WHERE rid=".addslashes($this->id);
 			$myQuery = pmb_mysql_query($requete);
-			$this->source_id = pmb_mysql_result($myQuery, 0, 0);
+			if(pmb_mysql_num_rows($myQuery)) {
+				$this->source_id = pmb_mysql_result($myQuery, 0, 0);
+			}
 		}
 		
-		$rqt = "select ufield,field_order,usubfield,subfield_order,value from entrepot_source_".$this->source_id." where recid='".addslashes($this->id)."' and ufield like '60%' group by ufield,usubfield,field_order,subfield_order,value order by recid,field_order,subfield_order";
-		$res_sql=pmb_mysql_query($rqt);
-		
-		$id_categ="";
-		$n_categ=-1;
-		$categ_l=array();
-		while ($l=pmb_mysql_fetch_object($res_sql)) {
-		    if ($l->field_order!=$id_categ) {
-		        if ($n_categ!=-1) {
-		            $categ_libelle = (!empty($categ_l["a"][0]) ? $categ_l["a"][0] : "").(!empty($categ_l["x"])?" - ".implode(" - ",$categ_l["x"]):"").(!empty($categ_l["y"]) ?" - ".implode(" - ",$categ_l["y"]):"").(!empty($categ_l["z"]) ?" - ".implode(" - ",$categ_l["z"]):"");
-		            $this->categories[] = $categ_libelle;
-		        }
-		        $categ_l=array();
-		        $n_categ++;
-		        $id_categ=$l->field_order;
-		    }
-		    $categ_l[$l->usubfield][]=$l->value;
-		}
-		if ($n_categ>=0) {
-		    $categ_libelle = (!empty($categ_l["a"][0]) ? $categ_l["a"][0] : "").(!empty($categ_l["x"])?" - ".implode(" - ",$categ_l["x"]):"").(!empty($categ_l["y"]) ?" - ".implode(" - ",$categ_l["y"]):"").(!empty($categ_l["z"]) ?" - ".implode(" - ",$categ_l["z"]):"");
-		    $this->categories[] =$categ_libelle;
+		if(!empty($this->source_id)){
+			$rqt = "select ufield,field_order,usubfield,subfield_order,value from entrepot_source_".$this->source_id." where recid='".addslashes($this->id)."' and ufield like '60%' group by ufield,usubfield,field_order,subfield_order,value order by recid,field_order,subfield_order";
+			$res_sql=pmb_mysql_query($rqt);
+			
+			$id_categ="";
+			$n_categ=-1;
+			$categ_l=array();
+			while ($l=pmb_mysql_fetch_object($res_sql)) {
+				if ($l->field_order!=$id_categ) {
+					if ($n_categ!=-1) {
+						$categ_libelle = (!empty($categ_l["a"][0]) ? $categ_l["a"][0] : "").(!empty($categ_l["x"])?" - ".implode(" - ",$categ_l["x"]):"").(!empty($categ_l["y"]) ?" - ".implode(" - ",$categ_l["y"]):"").(!empty($categ_l["z"]) ?" - ".implode(" - ",$categ_l["z"]):"");
+						$this->categories[] = $categ_libelle;
+					}
+					$categ_l=array();
+					$n_categ++;
+					$id_categ=$l->field_order;
+				}
+				$categ_l[$l->usubfield][]=$l->value;
+			}
+			if ($n_categ>=0) {
+				$categ_libelle = (!empty($categ_l["a"][0]) ? $categ_l["a"][0] : "").(!empty($categ_l["x"])?" - ".implode(" - ",$categ_l["x"]):"").(!empty($categ_l["y"]) ?" - ".implode(" - ",$categ_l["y"]):"").(!empty($categ_l["z"]) ?" - ".implode(" - ",$categ_l["z"]):"");
+				$this->categories[] =$categ_libelle;
+			}
 		}
 	}
 	
 	private function fetch_langues() {
 		global $marc_liste_langues ;
 		if (!$marc_liste_langues) $marc_liste_langues=new marc_list('lang');
-	
-		if(!$this->source_id){
+		
+		if(empty($this->source_id)){
 			$requete = "SELECT source_id FROM external_count WHERE rid=".addslashes($this->id);
 			$myQuery = pmb_mysql_query($requete);
-			$this->source_id = pmb_mysql_result($myQuery, 0, 0);
+			if(pmb_mysql_num_rows($myQuery)) {
+				$this->source_id = pmb_mysql_result($myQuery, 0, 0);
+			}
 		}
-	
-		$rqt = "select ufield,field_order,usubfield,subfield_order,value from entrepot_source_".$this->source_id." where recid='".addslashes($this->id)."' and ufield like '101' group by ufield,usubfield,field_order,subfield_order,value order by recid,field_order,subfield_order";
-		$res_sql=pmb_mysql_query($rqt);
-	
+		
 		$langues = array();
 		$languesorg = array();
-	
-		//$subfield=array("0"=>"a","1"=>"c");
-	
-		while ($l=pmb_mysql_fetch_object($res_sql)) {
-			if ($l->usubfield == 'a') {
-				if (isset($marc_liste_langues->table[$l->value])) {
-					$langues[] = array(
-						'code' => $l->value,
-						'langue' => $marc_liste_langues->table[$l->value]
-					) ;
+		if(!empty($this->source_id)){
+			$rqt = "select ufield,field_order,usubfield,subfield_order,value from entrepot_source_".$this->source_id." where recid='".addslashes($this->id)."' and ufield like '101' group by ufield,usubfield,field_order,subfield_order,value order by recid,field_order,subfield_order";
+			$res_sql=pmb_mysql_query($rqt);
+			
+			//$subfield=array("0"=>"a","1"=>"c");
+			
+			while ($l=pmb_mysql_fetch_object($res_sql)) {
+				if ($l->usubfield == 'a') {
+					if (isset($marc_liste_langues->table[$l->value])) {
+						$langues[] = array(
+								'code' => $l->value,
+								'langue' => $marc_liste_langues->table[$l->value]
+						) ;
+					}
+				}
+				if ($l->usubfield == 'c') {
+					if (isset($marc_liste_langues->table[$l->value])) {
+						$languesorg[] = array(
+								'code' => $l->value,
+								'langue' => $marc_liste_langues->table[$l->value]
+						) ;
+					}
 				}
 			}
-			if ($l->usubfield == 'c') {
-				if (isset($marc_liste_langues->table[$l->value])) {
-					$languesorg[] = array(
-						'code' => $l->value,
-						'langue' => $marc_liste_langues->table[$l->value]
-					) ;
-				}
-			}
-		}	
+		}
 		$this->langues['langues'] = $langues;
 		$this->langues['languesorg'] = $languesorg;
 	}

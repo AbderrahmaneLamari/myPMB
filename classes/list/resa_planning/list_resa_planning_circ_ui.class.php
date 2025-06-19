@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_resa_planning_circ_ui.class.php,v 1.5.2.1 2021/09/21 16:43:40 dgoron Exp $
+// $Id: list_resa_planning_circ_ui.class.php,v 1.9.4.1 2023/03/29 12:34:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -30,7 +30,6 @@ class list_resa_planning_circ_ui extends list_resa_planning_ui {
     
 	protected function init_default_columns() {
 	    global $pmb_lecteurs_localises;
-	    global $pmb_location_resa_planning;
 		
 		$this->add_column('record');
 		$this->add_column('empr');
@@ -43,7 +42,7 @@ class list_resa_planning_circ_ui extends list_resa_planning_ui {
 		$this->add_column('resa_qty');
 		$this->add_column('resa_validee');
 		$this->add_column('resa_confirmee');
-		if ($pmb_location_resa_planning=='1') {
+		if ($this->get_locations_number() > 1) {
 		    $this->add_column('resa_loc_retrait');
 		}
 		$this->add_column_selection();
@@ -80,14 +79,14 @@ class list_resa_planning_circ_ui extends list_resa_planning_ui {
 	            if($object->resa_validee) {
 	                $content .= $object->aff_resa_date_debut;
 	            } else {
-	                $content .= "<input type='date' id='".$this->objects_type."_form_resa_date_debut_".$object->id_resa."' name='".$this->objects_type."_form_resa_date_debut_".$object->id_resa."' value='".$object->resa_date_debut."'  onchange='func_callback(".$object->id_resa.", this.value, 1);' />";
+	                $content .= "<input type='date' id='".$this->objects_type."_resa_date_debut_".$object->id_resa."' name='".$this->objects_type."_resa_date_debut[".$object->id_resa."]' value='".$object->resa_date_debut."'  onchange='func_callback(".$object->id_resa.", this.value, 1);' />";
 	            }
 	            break;
 	        case 'resa_date_fin':
 	            if($object->resa_validee) {
 	                $content .= $object->aff_resa_date_fin;
 	            } else {
-	                $content .= "<input type='date' id='".$this->objects_type."_form_resa_date_fin_".$object->id_resa."' name='".$this->objects_type."_form_resa_date_fin_".$object->id_resa."' value='".$object->resa_date_fin."' onchange='func_callback(".$object->id_resa.", this.value, 2);' />";
+	                $content .= "<input type='date' id='".$this->objects_type."_resa_date_fin_".$object->id_resa."' name='".$this->objects_type."_resa_date_fin[".$object->id_resa."]' value='".$object->resa_date_fin."' onchange='func_callback(".$object->id_resa.", this.value, 2);' />";
 	            }
 	            break;
 	        default :
@@ -110,39 +109,36 @@ class list_resa_planning_circ_ui extends list_resa_planning_ui {
 	    return "<div class='center'><input type='checkbox' id='resa_check_!!id!!' data-resa-id-empr='!!resa_idempr!!' name='resa_check[!!id!!]' class='".$this->objects_type."_selection' value='!!id!!'></div>";
 	}
 	
-	protected function get_selection_actions() {
-	    global $msg;
-	    
-	    if(!isset($this->selection_actions)) {
-	        $validate_link = array(
-	            'href' => static::get_controller_url_base()."&resa_action=val_resa"
-	        );
-	        $unvalidate_link = array(
-	            'href' => static::get_controller_url_base()."&resa_action=raz_val_resa"
-	        );
-	        $send_confirmation_link = array(
-	            'href' => static::get_controller_url_base()."&resa_action=conf_resa"
-	        );
-	        $raz_confirmation_link = array(
-	            'href' => static::get_controller_url_base()."&resa_action=raz_conf_resa"
-	        );
-	        $to_resa_link = array(
-	            'href' => static::get_controller_url_base()."&resa_action=to_resa"
-	        );
-	        $delete_link = array(
-	            'href' => static::get_controller_url_base()."&resa_action=suppr_resa",
-	            'confirm' => $msg['resa_valider_suppression_confirm']
-	        );
-	        $this->selection_actions = array(
-	            $this->get_selection_action('validate', $msg['resa_planning_bt_val'], 'tick.png', $validate_link),
-	            $this->get_selection_action('unvalidate', $msg['resa_planning_bt_raz_val'], 'cross.png', $unvalidate_link),
-	            $this->get_selection_action('send_confirmation', $msg['resa_planning_bt_conf'], 'mail.png', $send_confirmation_link),
-	            $this->get_selection_action('raz_confirmation', $msg['resa_planning_bt_raz_conf'], 'cross.png', $raz_confirmation_link),
-	            $this->get_selection_action('to_resa', $msg['resa_planning_bt_to_resa'], 'doc.gif', $to_resa_link),
-	            $this->get_selection_action('delete', $msg['63'], 'interdit.gif', $delete_link)
-	        );
-	    }
-	    return $this->selection_actions;
+	protected function init_default_selection_actions() {
+		global $msg;
+		
+		parent::init_default_selection_actions();
+		
+		$validate_link = array(
+				'href' => static::get_controller_url_base()."&resa_action=val_resa"
+		);
+		$unvalidate_link = array(
+				'href' => static::get_controller_url_base()."&resa_action=raz_val_resa"
+		);
+		$send_confirmation_link = array(
+				'href' => static::get_controller_url_base()."&resa_action=conf_resa"
+		);
+		$raz_confirmation_link = array(
+				'href' => static::get_controller_url_base()."&resa_action=raz_conf_resa"
+		);
+		$to_resa_link = array(
+				'href' => static::get_controller_url_base()."&resa_action=to_resa"
+		);
+		$delete_link = array(
+				'href' => static::get_controller_url_base()."&resa_action=suppr_resa",
+				'confirm' => $msg['resa_valider_suppression_confirm']
+		);
+		$this->add_selection_action('validate', $msg['resa_planning_bt_val'], 'tick.png', $validate_link);
+		$this->add_selection_action('unvalidate', $msg['resa_planning_bt_raz_val'], 'cross.png', $unvalidate_link);
+		$this->add_selection_action('send_confirmation', $msg['resa_planning_bt_conf'], 'mail.png', $send_confirmation_link);
+		$this->add_selection_action('raz_confirmation', $msg['resa_planning_bt_raz_conf'], 'cross.png', $raz_confirmation_link);
+		$this->add_selection_action('to_resa', $msg['resa_planning_bt_to_resa'], 'doc.gif', $to_resa_link);
+		$this->add_selection_action('delete', $msg['63'], 'interdit.gif', $delete_link);
 	}
 	
 	protected function get_selection_mode() {
@@ -210,6 +206,7 @@ class list_resa_planning_circ_ui extends list_resa_planning_ui {
 							});
 							domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
 							dom.byId('".$this->objects_type."_selected_objects_form').submit();
+							domConstruct.destroy(dom.byId('".$this->objects_type."_selected_objects_form'));
 							"
 						    : "")."
 						".(isset($action['link']['openPopUp']) && $action['link']['openPopUp'] ? "openPopUp('".$action['link']['openPopUp']."&selected_objects='+selection.join(','), '".$action['link']['openPopUpTitle']."'); return false;" : "")."

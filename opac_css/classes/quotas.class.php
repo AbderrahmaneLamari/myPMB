@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: quotas.class.php,v 1.41 2021/05/17 21:01:25 dgoron Exp $
+// $Id: quotas.class.php,v 1.41.6.1 2023/08/31 12:56:45 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -28,7 +28,7 @@ class quotas {
 	
 	public function parse_file() {
 		// 		global $_parsed_quotas_;
-		global $charset;
+	    global $charset, $default_tmp_storage_engine;
 		
 		// Gestion de fichier subst
 		$p_descriptor_subst=substr($this->descriptor,0,-4)."_subst.xml";
@@ -67,7 +67,7 @@ class quotas {
 				if (isset($p_elt["TABLE"][0]["TYPE"]) && ($p_elt["TABLE"][0]["TYPE"]=="marc_list")) {
 					$ml=new marc_list($elt["TABLE"]);
 					reset($ml->table);
-					$requete="create temporary table ".$elt["TABLE"]." (id varchar(255),libelle varchar(255)) ENGINE=MyISAM ";
+					$requete="create temporary table ".$elt["TABLE"]." (id varchar(255),libelle varchar(255)) ENGINE={$default_tmp_storage_engine} ";
 					pmb_mysql_query($requete);
 					foreach ($ml->table as $key => $val) {
 						$requete="insert into ".$elt["TABLE"]." (id,libelle) values('".addslashes($key)."','".addslashes($val)."')";

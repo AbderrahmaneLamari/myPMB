@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesEmpr.class.php,v 1.34 2020/11/26 10:25:43 dbellamy Exp $
+// $Id: pmbesEmpr.class.php,v 1.35.2.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -17,18 +17,6 @@ require_once $class_path."/parametres_perso.class.php";
 require_once $base_path."/circ/pret_func.inc.php";
 
 class pmbesEmpr extends external_services_api_class {
-	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	// Permet de surcharger les messages avec ceux du web services si un subst est présent
 	public function merge_msg() {
@@ -987,7 +975,7 @@ class pmbesEmpr extends external_services_api_class {
 		return $this->build_ok($droit);
 	}			
 	
-	public function add_in_caddie($empr_cb='', $empr_id=0, $caddie_id) {
+	public function add_in_caddie($empr_cb='', $empr_id=0, $caddie_id=0) {
 		
 		global $msg;
 		
@@ -1024,7 +1012,7 @@ class pmbesEmpr extends external_services_api_class {
 		return $this->build_ok();
 	}	
 	
-	public function pointe_in_caddie($empr_cb='', $empr_id=0, $caddie_id) {
+	public function pointe_in_caddie($empr_cb='', $empr_id=0, $caddie_id=0) {
 	
 		global $msg;
 		
@@ -1061,7 +1049,7 @@ class pmbesEmpr extends external_services_api_class {
 		return $this->build_ok();
 	}	
 	
-	public function is_in_caddie($empr_cb='', $empr_id=0, $caddie_id) {
+	public function is_in_caddie($empr_cb='', $empr_id=0, $caddie_id=0) {
 		
 		global $msg;
 		

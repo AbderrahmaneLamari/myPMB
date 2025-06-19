@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: requester.class.php,v 1.12.10.1 2022/01/14 13:54:33 dgoron Exp $
+// $Id: requester.class.php,v 1.14 2022/03/31 14:17:55 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,7 +34,33 @@ class requester {
 		$this->t_fct_grp = $tmp['REQ_FUNCTION_GROUP'];
 	}
 
-
+	public function getForm() {
+		global $req_add_content_form, $msg;
+		
+		$content_form = $req_add_content_form;
+		
+		$interface_form = new interface_admin_form('req_modif');
+		$interface_form->set_label($msg['req_form_tit_add']);
+		
+		$num_classement=0;
+		$combo_clas= gen_liste ("SELECT idproc_classement,libproc_classement FROM procs_classements ORDER BY libproc_classement ", "idproc_classement", "libproc_classement", "form_classement", "", $num_classement, 0, $msg['proc_clas_aucun'],0, $msg['proc_clas_aucun']) ;
+		$content_form = str_replace('!!classement!!', $combo_clas, $content_form);
+		
+		$content_form = str_replace('!!req_name!!', '', $content_form);
+		$content_form = str_replace('!!req_type!!',$this->getTypeSelector('1','req_typeChg();'), $content_form);
+		$content_form = str_replace('!!req_univ!!',$this->getUnivSelector('1','req_univChg();'), $content_form);
+		$content_form = str_replace('!!req_comm!!','', $content_form);
+		$content_form = str_replace('!!req_code!!','', $content_form);
+		$content_form = str_replace('!!req_auth!!', request::getAutorisationsForm(), $content_form);
+		
+		//Seulement de l'ajout
+		$interface_form->set_object_id(0)
+		->set_content_form($content_form)
+		->set_table_name('procs')
+		->set_field_focus('req_name');
+		return $interface_form->get_display();
+	}
+	
 	//Retourne un selecteur pour choix des univers
 	public function getUnivSelector($selected=0, $change='') {
 		
@@ -1115,6 +1141,7 @@ class reqParser {
 		unset($this->t);
 		$this->cur_id=0;
 		
+		$m = array();
 		$rx = "/<?xml.*encoding=[\'\"](.*?)[\'\"].*?>/m";
 		if (preg_match($rx, $xml, $m)) $encoding = strtoupper($m[1]);
 			else $encoding = "ISO-8859-1";
@@ -1196,18 +1223,18 @@ class reqParser {
 			case 'REQ_FUNCTION':
 				$this->t['REQ_FUNCTION'][$att['id']]['name']=$att['name'];
 				$this->t['REQ_FUNCTION'][$att['id']]['group']=$att['group'];
-				$this->t['REQ_FUNCTION'][$att['id']]['parenthesis']= $att['parenthesis'];
+				$this->t['REQ_FUNCTION'][$att['id']]['parenthesis']= (isset($att['parenthesis']) ? $att['parenthesis'] : '');
 				$this->t['REQ_FUNCTION'][$att['id']]['remove']= $att['remove'];
-				$this->t['REQ_FUNCTION'][$att['id']]['filter']= $att['filter'];
+				$this->t['REQ_FUNCTION'][$att['id']]['filter']= (isset($att['filter']) ? $att['filter'] : '');
 				$this->cur_fct=$att['id'];
 				break;
 			case 'FCT_PARAM':
 				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['order']= $att['order'];
 				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['content']= $att['content'];
-				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['optional']= $att['optional'];
-				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['value']= $att['value'];
-				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['before_sep']= $att['before_sep'];
-				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['repeat_from']= $att['repeat_from'];
+				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['optional']= (isset($att['optional']) ? $att['optional'] : '');
+				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['value']= (isset($att['value']) ? $att['value'] : '');
+				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['before_sep']= (isset($att['before_sep']) ? $att['before_sep'] : '');
+				$this->t['REQ_FUNCTION'][$this->cur_fct]['param'][$att['order']]['repeat_from']= (isset($att['repeat_from']) ? $att['repeat_from'] : '');
 				break;				
 			default :
 				break;

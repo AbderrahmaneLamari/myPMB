@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: alter.php,v 1.22.2.1 2021/12/23 08:07:31 dgoron Exp $
+// $Id: alter.php,v 1.24 2022/12/20 15:26:22 qvarin Exp $
 
 // définition du minimum nécéssaire 
 $base_path="../..";                            
@@ -111,6 +111,9 @@ switch ($deb_version_pmb_bdd) {
 		break ;
 	case "v5" :
 		include ("./alter_v5.inc.php") ;
+		break ;
+	case "v6" :
+		include ("./alter_v6.inc.php") ;
 		break ;
 }
 

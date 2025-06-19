@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sip2_trame.class.php,v 1.4.6.1 2021/08/25 08:38:49 mbertin Exp $
+// $Id: sip2_trame.class.php,v 1.6.2.1 2023/06/15 13:04:48 qvarin Exp $
 
 define("UNKNOWN_ORIGIN"				, 1);
 define("UNKNOWN_MESSAGE_ID"			, 2);
@@ -185,14 +185,16 @@ class sip2_trame {
 		//Ajout des champs fixes
 		$fixedf=$this->message_structure["FIXEDFIELDS"];
 		for ($i=0; $i<count($fixedf); $i++) {
-			$trame.=$this->message_values[$fixedf[$i]];
+		    $value = str_replace(["\n\r", "\n", "\r"], " ", $this->message_values[$fixedf[$i]]);
+		    $trame.=$value;
 		}
 		//Champs identifiés
 		$fields=$this->message_structure["FIELDS"];
 		for ($i=0; $i<count($fields); $i++) {
-			if ($this->message_values[$fields[$i]]) {
-				for ($j=0; $j<count($this->message_values[$fields[$i]]); $j++) {
-					$trame.=$this->proto->fields[$fields[$i]]["IDENTIFIER"].$this->message_values[$fields[$i]][$j]."|";
+			if (isset($this->message_values[$fields[$i]]) && is_countable($this->message_values[$fields[$i]])) {
+			    for ($j=0; $j<count($this->message_values[$fields[$i]]); $j++) {
+			        $value = str_replace(["\n\r", "\n", "\r"], " ", $this->message_values[$fields[$i]][$j]);
+			        $trame.=$this->proto->fields[$fields[$i]]["IDENTIFIER"].$value."|";
 				}
 			}
 		}

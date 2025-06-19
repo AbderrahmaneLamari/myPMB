@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes_actions.tpl.php,v 1.24 2021/04/21 16:58:29 dgoron Exp $
+// $Id: demandes_actions.tpl.php,v 1.24.6.1 2023/12/28 11:16:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
 global $msg, $current_module;
 global $pmb_gestion_devise;
-global $js_liste_action, $content_liste_action, $form_liste_action, $js_modif_action, $content_form_modif_action, $form_consult_action, $content_form_add_docnum, $form_see_docnum;
+global $js_liste_action, $content_liste_action, $form_liste_action, $js_modif_action, $form_consult_action, $form_see_docnum;
 
 $js_liste_action = "
 	<script src='./javascript/demandes.js' type='text/javascript'></script>
@@ -104,86 +104,6 @@ $js_modif_action = "
 </script>
 ";
 
-$content_form_modif_action = "
-<div class='row'>
-	<div class='colonne3'>
-		<label class='etiquette'>".$msg['demandes_action_type']."</label>
-	</div>
-	<div class='colonne3'>
-		<label class='etiquette'>".$msg['demandes_action_statut']."</label>
-	</div>
-	<div class='colonne3'>&nbsp;</div>
-</div>
-<div class='row'>
-	<div class='colonne3'>
-		!!select_type!!
-		!!type_action!!
-	</div>
-	<div class='colonne3'>
-		!!select_statut!!
-	</div>
-	<div class='colonne3'>&nbsp;</div>
-</div>
-<div class='row'>
-	<label class='etiquette'>".$msg['demandes_action_sujet']."</label>
-</div>
-<div class='row'>
-	<input type='text' class='saisie-50em' name='sujet' id='sujet' value='!!sujet!!' />
-</div>
-<div class='row'>
-	<label class='etiquette'>".$msg['demandes_action_detail']."</label>
-</div>
-<div class='row'>
-	<textarea id='detail' name='detail' cols='50' rows='4' wrap='virtual'>!!detail!!</textarea>
-</div>
-<div class='row'>
-		<label class='etiquette'>".$msg['demandes_action_privacy']."</label>
-		<input type='checkbox' name='ck_prive' id='ck_prive' value='1' !!ck_prive!! />
-</div>
-<div class='row'>
-	<div class='colonne3'>
-		<label class='etiquette'>".$msg['demandes_action_date']."</label>
-	</div>
-	<div class='colonne3'>
-		<label class='etiquette'>".$msg['demandes_action_date_butoir']."</label>
-	</div>
-	<div class='colonne3'>&nbsp;</div>
-</div>
-<div class='row'>
-	<div class='colonne3'>
-		<input type='date' id='date_debut' name='date_debut' value='!!date_debut!!' />
-	</div>
-	<div class='colonne3'>
-		<input type='date' id='date_fin' name='date_fin' value='!!date_fin!!' />
-	</div>
-	<div class='colonne3'>&nbsp;</div>
-</div>
-<div class='row'>
-	<div class='colonne3'>
-		<label class='etiquette'>".$msg['demandes_action_time_elapsed']." (".$msg['demandes_action_time_unit'].")</label>
-	</div>			
-	<div class='colonne3'>
-		<label class='etiquette'>".sprintf($msg['demandes_action_cout'],$pmb_gestion_devise)."</label>
-	</div>
-	<div class='colonne3'>
-		<label class='etiquette'>".$msg['demandes_action_progression']."</label>
-	</div>
-</div>
-<div class='row'>
-	<div class='colonne3'>
-		<input type='text' class='saisie-20em' name='time_elapsed' id='time_elapsed' value='!!time_elapsed!!' />
-	</div>			
-	<div class='colonne3'>
-		<input type='text' class='saisie-10em' name='cout' id='cout' value='!!cout!!' />
-	</div>
-	<div class='colonne3'>
-		<input type='text' class='saisie-10em' name='progression' id='progression' value='!!progression!!' />
-	</div>
-</div>
-<div class='row'></div>
-<input type='hidden' id='iddemande' name='iddemande' value='!!iddemande!!'/>
-";
-
 $form_consult_action = "
 <h2>!!path!!</h2>
 <script src='./javascript/demandes.js' type='text/javascript'></script>
@@ -268,36 +188,6 @@ $form_consult_action = "
 	</div>
 	<div class='row'></div>
 </form>
-";
-
-$content_form_add_docnum = "
-<input type='hidden' id='idaction' name='idaction' value='!!idaction!!'/>
-<div class='row'>
-	<label class='etiquette' for='f_nom'>".$msg['explnum_nom']."</label>
-</div>
-<div class='row'>
-	<input type='text' id='f_nom' name='f_nom' class='saisie-80em'  value='!!nom!!' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='f_fichier'>".$msg['explnum_fichier']."</label>
-</div>
-<div class='row'>
-	<input type='file' id='f_fichier' name='f_fichier' class='saisie-80em' size='65' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='f_url'>".$msg['demandes_url_docnum']."</label>
-</div>
-<div class='row'>
-	<input type='text' id='f_url' name='f_url' class='saisie-80em' size='65' value='!!url_doc!!'/>
-</div>
-<div class='row'>
-	<input type='checkbox' name='ck_prive' id='ck_prive' value='1' !!ck_prive!! />
-	<label for='ck_prive' class='etiquette'>".$msg['demandes_note_privacy']."</label>
-</div>
-<div class='row'>
-	<input type='checkbox' name='ck_rapport' id='ck_rapport' value='1' !!ck_rapport!!/>
-	<label for='ck_rapport' class='etiquette'>".$msg['demandes_docnum_rapport']."</label>
-</div>
 ";
 
 $form_see_docnum = "

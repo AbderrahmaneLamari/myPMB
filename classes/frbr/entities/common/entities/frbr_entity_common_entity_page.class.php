@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_common_entity_page.class.php,v 1.17 2019/06/13 15:26:51 btafforeau Exp $
+// $Id: frbr_entity_common_entity_page.class.php,v 1.18 2022/02/11 11:31:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/frbr/frbr_entities.class.php");
 require_once($class_path."/opac_views.class.php");
 require_once($class_path."/encoding_normalize.class.php");
@@ -235,7 +236,7 @@ class frbr_entity_common_entity_page extends frbr_entity_common_entity {
 	}
 	
 	protected function get_backbones_list_form(){
-		global $msg, $charset, $base_path;
+		global $msg, $charset;
 	
 		$form = "";
 		$form.="
@@ -386,8 +387,7 @@ class frbr_entity_common_entity_page extends frbr_entity_common_entity {
 	 * Suppression
 	 */
 	public static function delete($id=0){
-		global $msg;
-		$id += 0;
+		$id = intval($id);
 		if($id) {
 			//suppression des datanodes associés
 			$query = "SELECT id_datanode FROM frbr_datanodes WHERE datanode_num_page = '".$id."'";
@@ -562,7 +562,7 @@ class frbr_entity_common_entity_page extends frbr_entity_common_entity {
 	}
 	
 	public static function get_class_name_from_id($id_page) {
-		$id_page+=0;
+		$id_page = intval($id_page);
 		$class_name = '';
 		$query = '	SELECT page_entity
 					FROM frbr_pages
@@ -620,7 +620,7 @@ class frbr_entity_common_entity_page extends frbr_entity_common_entity {
 						SET place_visibility = "'.(isset($this->parameters->{$cadre_type}) ? $this->parameters->{$cadre_type}->value : 0).'" 
 						WHERE place_num_page = "'.$this->id.'"
 						AND place_cadre_type = "'.$cadre_type.'"';
-			$result = pmb_mysql_query($query);
+			pmb_mysql_query($query);
 		}
 	}
 }

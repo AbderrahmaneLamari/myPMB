@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_main.inc.php,v 1.45.2.1 2022/01/19 13:37:17 dgoron Exp $
+// $Id: ajax_main.inc.php,v 1.47 2022/04/15 12:16:06 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $sub, $action, $type, $form, $msg, $charset, $PMBuserid;
-global $id, $watch_id, $num_watch, $item_id, $notice_id, $class, $autoloader, $deflt_docwatch_watch_filter_deleted;
+global $id, $watch_id, $num_watch, $item_id, $notice_id, $class, $deflt_docwatch_watch_filter_deleted;
 global $title, $ttl, $logo_url, $desc, $owner, $allowed_users, $parent;
 global $record_status, $record_types, $indexation_lang, $record_default_lang, $watch_record_is_new;
 global $article_type, $article_parent, $article_status, $section_type, $section_parent, $section_status, $boolean_expression;
@@ -214,10 +214,6 @@ switch($sub) {
 		switch($action){
 			case "get_items":
 				if($watch_id){
-					if(!isset($autoloader) || !is_object($autoloader)){
-						$autoloader = new autoloader();
-					}
-					$autoloader->add_register("docwatch",true);
 					$docwatch_watch = new docwatch_watch($watch_id);
 					$docwatch_watch->sync();
 					$docwatch_watch->fetch_items();
@@ -400,10 +396,6 @@ switch($sub) {
 				}
 				break;
 			case "get_form" :
-				if(!isset($autoloader) || !is_object($autoloader)){
-					$autoloader = new autoloader();
-				}
-				$autoloader->add_register("docwatch",true);
 				$id = intval($id);
 				if($id){
 					$query = "select id_datasource,datasource_type from docwatch_datasources where id_datasource = '".$id."'";
@@ -422,10 +414,6 @@ switch($sub) {
 				}
 				break;
 			case "get_selector_form" :
-				if(!isset($autoloader) || !is_object($autoloader)){
-					$autoloader = new autoloader();
-				}
-				$autoloader->add_register("docwatch",true);
 				$id = intval($id);
 				if($id){
 					$query = "select id_selector,selector_type from docwatch_selectors where id_selector= '".$id."'";
@@ -444,10 +432,6 @@ switch($sub) {
 				}
 				break;
 			case "get_sub_selector_form" :
-				if(!isset($autoloader) || !is_object($autoloader)){
-					$autoloader = new autoloader();
-				}
-				$autoloader->add_register("docwatch",true);
 				$id = intval($id);
 				if($id){
 					$query = "select id_selector,selector_type from docwatch_selectors where id_selector= '".$id."'";
@@ -466,10 +450,6 @@ switch($sub) {
 				}
 				break;
 			case "save_source" :
-				if(!isset($autoloader) || !is_object($autoloader)){
-					$autoloader = new autoloader();
-				}
-				$autoloader->add_register("docwatch",true);
 				if(class_exists($className)){
 					$docwatch_datasource = new $className($id_datasource);
 					//TODO: Comme pour la veille
@@ -489,10 +469,6 @@ switch($sub) {
 				}
 				break;
 			case "duplicate_source" :
-				if(!isset($autoloader) || !is_object($autoloader)){
-					$autoloader = new autoloader();
-				}
-				$autoloader->add_register("docwatch",true);
 				if(class_exists($className)){
 					$docwatch_datasource = new $className($id_duplicated_datasource);
 					$docwatch_datasource->set_id(0);

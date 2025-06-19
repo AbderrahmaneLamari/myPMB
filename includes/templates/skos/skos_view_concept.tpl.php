@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: skos_view_concept.tpl.php,v 1.4.2.1 2021/09/14 12:48:17 dgoron Exp $
+// $Id: skos_view_concept.tpl.php,v 1.5 2021/09/14 12:46:44 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 global $skos_view_concept_concept_in_list_with_all_links;

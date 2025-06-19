@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_explnum_licence_rights_ui.class.php,v 1.1 2021/04/16 07:59:13 dgoron Exp $
+// $Id: list_configuration_explnum_licence_rights_ui.class.php,v 1.2 2022/10/06 11:57:40 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -40,19 +40,8 @@ class list_configuration_explnum_licence_rights_ui extends list_configuration_ex
 		);
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['licence']) {
-			$filters[] = 'explnum_licence_right_explnum_licence_num = "'.$this->filters['licence'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('licence', 'explnum_licence_right_explnum_licence_num', 'integer');
 	}
 	
 	protected function get_edition_link($object) {

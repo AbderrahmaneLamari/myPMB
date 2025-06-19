@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: map_controler.js,v 1.84.2.1 2021/12/02 07:39:49 dgoron Exp $
+// $Id: map_controler.js,v 1.87.4.1 2023/08/09 08:52:11 qvarin Exp $
 
 const TYPE_RECORD = 11;
 const TYPE_LOCATION = 15;
@@ -158,6 +158,9 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
                         request.post(this.layersURL, {
                             'data': "search_id=" + this.searchId + "&wkt_map_hold=" + geom,
                             'handleAs': "application/json",
+                            'headers': {
+                               'X-Requested-With': ''
+                            }
                         }).then(callbackLayers);
 
                     } else {
@@ -168,6 +171,9 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
                                 request.post(this.dataLayers[i].data_url, {
                                     'data': "indice=" + i + "&search_id=" + this.searchId + "&wkt_map_hold=" + geom,
                                     'handleAs': "application/json",
+                                    'headers': {
+                                       'X-Requested-With': ''
+                                    }
                                 }).then(callbackHolds);
                             } else {
                                 this.drawLayer(this.dataLayers[i], i);
@@ -537,41 +543,10 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
             }
             for (var i = 0; i < toHighlight.length; i++) {
                 this.highlightNotice(toHighlight[i]);
-                this.highlightFeatures(this.featureByNotice[toHighlight[i]], "rgba(0,0,0,0.3)");
+//                this.highlightFeatures(this.featureByNotice[toHighlight[i]], "rgba(0,0,0,0.3)");
 
             }
-
-        },
-        /*
-         * Fonction de clonage des features, r�cup�re la g�ometrie & les propri�t�s de base (les ids et le layer sont chang�s afin d'�viter tout bug) 
-         * 
-         */
-        cloneFeature: function (feature) {
-            var clonedObj = {};
-            for (var key in feature) {
-                if (key == 'layer') {
-                    clonedObj[key] = null;
-                }
-                else if (key == 'geometry') {
-                    clonedObj[key] = {};
-                    for (var key2 in feature[key])
-                    {
-                        if (key2 == 'id') {
-                            clonedObj[key][key2] = 'new id' + feature[key][key2];
-                        }
-                        else {
-                            clonedObj[key][key2] = feature[key][key2];
-                        }
-                    }
-                }
-                else if (key == '_sketch') {
-                    //Nothing
-                }
-                else {
-                    clonedObj[key] = feature[key];
-                }
-            }
-            return clonedObj;
+        	this.highlightFeatures([e.feature], "rgba(0,0,0,0.3)");
         },
         downlightRecord: function (e) {
             var indiceFeature = e.feature.id.split('_');
@@ -580,9 +555,11 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
             var index = this.hoveredFeature.indexOf(e.feature);
             this.hoveredFeature.splice(index, 1);
             for (var i = 0; i < listeIds.length; i++) {
-                this.destroyEmpriseById(listeIds[i]);
+//                this.destroyEmpriseById(listeIds[i]);
                 this.downlightNotice(listeIds[i]);
             }
+            this.destroyEmpriseByFeatures([e.feature]);
+            
         },
         downlightAll: function () {
             var style = {fillColor: "#0000ff", strokeColor: "#0000ff", strokeWidth: 1, fillOpacity: 0.4};
@@ -626,7 +603,9 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
                 }
                 var style = {fillColor: color, strokeWidth: 1, strokeColor: color, fillOpacity: 0.7, title: libelle};
                 for (var i = 0; i < arrayFeature.length; i++) {
-                    var clonedFeature = this.cloneFeature(arrayFeature[i]);
+                	//on utilise la fonction native de l'objet feature
+                	//c'est plus propre pour la duplication des components (pas de conflit d'id, pas d'emprise qui disparait)
+                    var clonedFeature = arrayFeature[i].clone();
                     var numLayer = arrayFeature[i].layer.name.split('_');
                     var numFeature = arrayFeature[i].id.split('_');
                     clonedFeature.id = numLayer[numLayer.length - 1] + '_' + numFeature[numFeature.length - 1];
@@ -642,7 +621,6 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
          * Appell�e � l'arr�t du survol d'une notice dans le dom, supprime toute les features du layer d'highlight 
          */
         downlightHolds: function (e) {
-
             var patternNombre = /\d+/g;
             var style = {fillColor: "#0000ff", strokeColor: "#0000ff", strokeWidth: 1, fillOpacity: 0.4};
             var idNot = e.currentTarget.getAttribute('id').match(patternNombre)[0];
@@ -654,7 +632,6 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
          * prend en param�tre un id de notice
          */
         highlightNotice: function (idNotice) {
-        	
             if (dom.byId('el'+idNotice+'_'+this.hashIds[idNotice]+'Parent') != null) {
                 domStyle.set(dom.byId('el'+idNotice+'_'+this.hashIds[idNotice]+'Parent'), "border", "1px red solid");
                 domStyle.set(dom.byId('el'+idNotice+'_'+this.hashIds[idNotice]+'Child'), "border", "1px red solid");
@@ -673,25 +650,33 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
         destroyEmpriseById: function (id) {
             if (this.layerHighlight != null) {
                 var arrayFeat = this.featureByNotice[id];
-                if (arrayFeat) {
-                    var idHighlighted = [];
-                    var arrayHigh = [];
-
-                    for (var i = 0; i < arrayFeat.length; i++) {
-                        var id = arrayFeat[i].id.split('_');
-                        var idLayer = arrayFeat[i].layer.name.split('_');
-                        idHighlighted.push({
-                            'idFeature': id[id.length - 1],
-                            'idLayer': idLayer[idLayer.length - 1]
-                        });
-                    }
-
-                    for (var i = 0; i < idHighlighted.length; i++) {
-                        if (this.map.olMap.getLayersByName('highlight')[0].getFeatureById(idHighlighted[i].idLayer + '_' + idHighlighted[i].idFeature) != null) {
-                            this.map.olMap.getLayersByName('highlight')[0].getFeatureById(idHighlighted[i].idLayer + '_' + idHighlighted[i].idFeature).destroy();
-                        }
-                    }
-                }
+                this.destroyEmpriseByFeatures(arrayFeat);
+            }
+        },
+        /**
+         * destruction d'une emprise en fonction des features et pas un id de notice
+         */
+        destroyEmpriseByFeatures: function (arrayFeat) {
+            if (this.layerHighlight != null) {
+	        	if (arrayFeat) {
+	                var idHighlighted = [];
+	                var arrayHigh = [];
+	
+	                for (var i = 0; i < arrayFeat.length; i++) {
+	                    var id = arrayFeat[i].id.split('_');
+	                    var idLayer = arrayFeat[i].layer.name.split('_');
+	                    idHighlighted.push({
+	                        'idFeature': id[id.length - 1],
+	                        'idLayer': idLayer[idLayer.length - 1]
+	                    });
+	                }
+	
+	                for (var i = 0; i < idHighlighted.length; i++) {
+	                    if (this.map.olMap.getLayersByName('highlight')[0].getFeatureById(idHighlighted[i].idLayer + '_' + idHighlighted[i].idFeature) != null) {
+	                        this.map.olMap.getLayersByName('highlight')[0].getFeatureById(idHighlighted[i].idLayer + '_' + idHighlighted[i].idFeature).destroy();
+	                    }
+	                }
+	            }
             }
         },
         /*
@@ -2611,7 +2596,6 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
             this.inherited(arguments);
         },
         callbackCluster: function (i, zoomLevel, data) {
-            //console.log('CallbackCluster indice:', i, ' zoom level: ', zoomLevel);
             if (!this.featuresByZoom) {
                 this.featuresByZoom = {};
             }
@@ -2654,11 +2638,9 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
             this.printByZoomLevel(zoomLevel, i);
         },
         printByZoomLevel: function (zoomLevel, i) {
-            //console.log('i, print by zoomlvl', i);
             var currentLayer = this.map.olMap.getLayersByName(this.dataLayers[i].name + "_" + i)[0];
             currentLayer.removeAllFeatures();
             //this.map.olMap.layers[i].destroyFeatures();
-            //console.log('features zoom length', this.featuresByZoom[zoomLevel][i].length);
             var features = new Array();
             if (this.featuresByZoom[zoomLevel][i]) {
                 currentLayer.addFeatures(this.featuresByZoom[zoomLevel][i]);
@@ -2682,7 +2664,6 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
         zoomEnd: function (event) {
             if (this.cluster) {
                 this.showPatience();
-                //console.log('moveEnd', event);
                 var bounds = this.map.olMap.calculateBounds();
                 var geom = bounds.toGeometry();
                 geom = geom.transform(this.projTo, this.projFrom);
@@ -2705,6 +2686,9 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
                         request.post(this.dataLayers[i].data_url, {
                             'data': "indice=" + i + "&search_id=" + this.searchId + "&wkt_map_hold=" + geom + "&zoom_level=" + event.object.zoom + "&cluster=" + this.cluster,
                             'handleAs': "json",
+                            'headers': {
+                               'X-Requested-With': ''
+                            }
                         }).then(callbackCluster);
                     }
                 }
@@ -2732,6 +2716,9 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
                 request.post(this.dataLayers[i].data_url, {
                     'data': "indice=" + i + "&search_id=" + this.searchId + "&wkt_map_hold=" + geom + "&zoom_level=" + this.map.olMap.zoom + "&cluster=" + this.cluster,
                     'handleAs': "json",
+                    'headers': {
+                       'X-Requested-With': ''
+                    }
                 }).then(callbackHolds);
             }
         },
@@ -2931,6 +2918,9 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
         	if (selectAddress.style.display != "none") {
         		request(uri, {
 					handleAs: 'json',
+                    headers: {
+                       'X-Requested-With': ''
+                    }
 				}).then(function(data) {
 					if (!indice) {
 						indice = 0;
@@ -2955,12 +2945,12 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
          * @param query
          */
         listerAdresses: function(query) {
-        	var callbackClickAddress = lang.hitch(this, this.highlightAddress);
-        	addressSearched = dom.byId('pt_1_search_address').value;
-        	citySearched = dom.byId('pt_1_search_city').value;
-        	postcodeSearched = dom.byId('pt_1_search_postcode').value;
-        	uri = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&polygon_text=1&accept-language=fr-FR";
-        	
+        	let callbackClickAddress = lang.hitch(this, this.highlightAddress);
+        	let addressSearched = dom.byId('pt_1_search_address').value;
+        	let citySearched = dom.byId('pt_1_search_city').value;
+        	let postcodeSearched = dom.byId('pt_1_search_postcode').value;
+        	let uri = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&polygon_text=1&accept-language=fr-FR";
+
         	if (addressSearched != "") {
     			uri += "&q=" + addressSearched + " " + citySearched + " " + postcodeSearched;
         	} else {
@@ -2971,37 +2961,41 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
         			uri += "&postalcode=" + postcodeSearched;
         		}
         	}
-        	
+
         	if (uri) {
         		query = encodeURI(uri);
+
         		request(query, {
-					handleAs: 'json',
-				}).then(function(data) {
-					selectAddress = dom.byId("searchResultList");
+                 	handleAs: 'json',
+                 	headers: {
+                        'X-Requested-With': ''
+                    },
+                }).then(function(data) {
+					let selectAddress = dom.byId("searchResultList");
 					selectAddress.style.display = "block";
 					while (selectAddress.hasChildNodes()) {  
 						selectAddress.removeChild(selectAddress.firstChild);
 					}
-					for (var i = 0; i < data.length; i++) {
-						newSearch = document.createElement('div');
+					for (let i = 0; i < data.length; i++) {
+						let newSearch = document.createElement('div');
 						newSearch.setAttribute('id', 'searchResult' + i);
 						newSearch.setAttribute('class', 'searchResult');
 						selectAddress.appendChild(newSearch);
-						
-						newAddress = document.createElement('span');
+
+						let newAddress = document.createElement('span');
 						newAddress.setAttribute('name', 'resultAddress');
 						newAddress.innerHTML = data[i].display_name;
 						newSearch.appendChild(newAddress);
-						
+
 						on(dom.byId('searchResult' + i), 'click', callbackClickAddress);
 					}
-					
+
 					if (data.length == 0) {
 						selectAddress.style.display = "none";
 						if (dom.byId("pt_1").lastChild.nodeName == "H2") {
 							dom.byId("pt_1").removeChild(dom.byId("pt_1").lastChild);
 						}
-						noResult = document.createElement("h2");
+						let noResult = document.createElement("h2");
 						noResult.innerHTML = pmbDojo.messages.getMessage("carto", "carto_research_no_result");
 						dom.byId("pt_1").appendChild(noResult);
 					} else {
@@ -3086,7 +3080,11 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
         	lon = lonlat['lon'];
         	lat = lonlat['lat'];
         	var deferred = new Deferred();
-        	request("https://nominatim.openstreetmap.org/reverse?format=json&lat="+lat+"&lon="+lon).then(function(data) {
+        	request("https://nominatim.openstreetmap.org/reverse?format=json&lat="+lat+"&lon="+lon, {
+                headers: {
+                    'X-Requested-With': ''
+                }
+            }).then(function(data) {
 				if (data) {
 					deferred.resolve(data);
 				}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ScanRequest.php,v 1.17 2019/07/05 13:25:14 btafforeau Exp $
+// $Id: ScanRequest.php,v 1.18 2023/02/13 13:20:35 jparis Exp $
 namespace Sabre\PMB\ScanRequest;
 
 use Sabre\DAV;
@@ -73,7 +73,8 @@ class ScanRequest extends Collection {
 	}
 	
 	public function getLastModified() {
-		return $this->scan_request->get_update_date();
+	    $last = new \Datetime($this->scan_request->get_update_date());
+	    return $last->format("U");
 	}
 
 	public function create_scan_request_file($notice_id, $bulletin_id, $name, $data = null,$from_music="") {

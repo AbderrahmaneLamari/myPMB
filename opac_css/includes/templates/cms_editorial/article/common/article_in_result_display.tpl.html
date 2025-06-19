@@ -1,0 +1,45 @@
+<!-- $Id: article_in_result_display.tpl.html,v 1.1.2.2 2023/04/27 09:40:14 qvarin Exp $ -->
+
+<div id="article_container_{{ article.id }}" class="parentArtCourte uk-clearfix">
+    {% block article_picture_tdoc %}
+        <div class="vignetteimgArt">
+            {% block article_picture %}
+                    {% if article.logo.small %}
+                        <div class="vignetteDocArt">
+                            <img class="vignetteArt" src= "{{ article.logo.small }}" alt="{{ article.title }}" />
+                        </div>
+                    {% endif %} 
+            {% endblock %}
+        </div>
+    {% endblock %}
+
+    {% block article_content %}
+            <!-- Contenu de la rubrique -->
+            <div class="article_corps">
+                <div class="descr_article_corps">
+                    {% block article_title %}
+                        <div class="title_artCourte">
+                            <h3>
+                            {% if article.link %}
+                                <a href="{{ article.link }}">
+                            {% endif %}
+                                {{ article.title }}
+                            {% if article.permalink %}
+                                </a>
+                            {% endif %}
+                            </h3>
+                        </div>
+                    {% endblock %}
+
+                    {% block article_resume %}
+                        {% if article.resume %}
+                            <div class="resume_artCourte">
+                                <span>{{ article.resume | strip_tags  | limitstring 250 }}</span>
+                            </div>
+                        {% endif %}
+                    {% endblock %}
+                </div>
+            </div>
+    {% endblock %}
+    <div class='clear'></div>
+</div>

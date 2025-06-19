@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette.class.php,v 1.229.2.9 2021/12/08 15:40:40 dgoron Exp $
+// $Id: bannette.class.php,v 1.241.4.6 2024/01/05 10:06:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -26,10 +26,12 @@ require_once($class_path."/categories.class.php");
 require_once($class_path."/bannette_facettes.class.php");
 require_once($class_path."/bannette_descriptors.class.php");
 require_once($class_path."/bannette_equations.class.php");
+require_once($class_path."/bannette_diffusion.class.php");
 require_once($class_path."/bannette_tpl.class.php");
 require_once($class_path."/caddie.class.php");
 require_once($class_path."/campaigns/campaign.class.php");
 require_once($class_path.'/elements_list/elements_records_list_ui.class.php');
+require_once($class_path.'/audit.class.php');
 
 // définition de la classe de gestion des 'bannettes'
 class bannette {
@@ -76,6 +78,7 @@ class bannette {
 	public $group_pperso=0;
 	public $display_notice_in_every_group=1;
 	public $archive_number=0;
+	public $diffusions_history=0;
 	public $group_type = 0;
 	public $statut_not_account=0;
 	public $associated_campaign=0;
@@ -98,6 +101,7 @@ class bannette {
 	public $bannette_aff_notice_number = 1; //Afficher le nombre de notices envoyées dans le mail
 	protected $bannette_equations;
 	protected $equations_notices = array();
+	protected $bannette_diffusion;
 	protected static $instances;
 	protected static $lang_messages;
 	
@@ -136,7 +140,7 @@ class bannette {
 			$requete .= "date_last_remplissage, date_format(date_last_remplissage, '".$msg["format_date_heure"]."') as aff_date_last_remplissage, ";
 			$requete .= "date_last_envoi,date_last_envoi as date_last_envoi_sql, date_format(date_last_envoi, '".$msg["format_date_heure"]."') as aff_date_last_envoi, ";
 			$requete .= "proprio_bannette,bannette_auto,periodicite,diffusion_email, nb_notices_diff, update_type, entete_mail, bannette_tpl_num, piedpage_mail, notice_display_type, notice_tpl, django_directory, num_panier, ";
-			$requete .= "limite_type, limite_nombre, typeexport, prefixe_fichier, param_export, group_type, group_pperso, display_notice_in_every_group, archive_number, ";
+			$requete .= "limite_type, limite_nombre, typeexport, prefixe_fichier, param_export, group_type, group_pperso, display_notice_in_every_group, archive_number, bannette_diffusions_history, ";
 			$requete .= "document_generate, document_notice_display_type, document_notice_tpl, document_django_directory, document_insert_docnum, document_group, document_add_summary, bannette_opac_accueil, bannette_aff_notice_number ";
 			$requete .= "FROM bannettes WHERE id_bannette='".$this->id_bannette."' " ;
 			$result = pmb_mysql_query($requete) or die ($requete."<br /> in bannette.class.php : ".pmb_mysql_error());
@@ -158,34 +162,35 @@ class bannette {
 				$this->aff_date_last_remplissage	= $temp->aff_date_last_remplissage ;
 				$this->aff_date_last_envoi	= $temp->aff_date_last_envoi ;	
 				$this->date_last_envoi_sql	= $temp->date_last_envoi_sql;
-				$this->proprio_bannette		= $temp->proprio_bannette ;	
-				$this->bannette_auto		= $temp->bannette_auto ;
-				$this->periodicite			= $temp->periodicite ;
-				$this->diffusion_email		= $temp->diffusion_email ;	
+				$this->proprio_bannette		= $temp->proprio_bannette;	
+				$this->bannette_auto		= $temp->bannette_auto;
+				$this->periodicite			= $temp->periodicite;
+				$this->diffusion_email		= $temp->diffusion_email;	
 				$this->nb_notices_diff 		= $temp->nb_notices_diff;
-				$this->update_type			= $temp->update_type ;
-				$this->num_panier			= $temp->num_panier ;
-				$this->limite_type 			= $temp->limite_type ;
-				$this->limite_nombre 		= $temp->limite_nombre ;
-				$this->typeexport 			= $temp->typeexport ;
-				$this->prefixe_fichier 		= $temp->prefixe_fichier ;
-				$this->group_pperso 		= $temp->group_pperso ;
+				$this->update_type			= $temp->update_type;
+				$this->num_panier			= $temp->num_panier;
+				$this->limite_type 			= $temp->limite_type;
+				$this->limite_nombre 		= $temp->limite_nombre;
+				$this->typeexport 			= $temp->typeexport;
+				$this->prefixe_fichier 		= $temp->prefixe_fichier;
+				$this->group_pperso 		= $temp->group_pperso;
 				$this->group_type 			= $temp->group_type;
 				$this->display_notice_in_every_group=$temp->display_notice_in_every_group;
-				$this->statut_not_account 	= $temp->statut_not_account ;
-				$this->associated_campaign 	= $temp->associated_campaign ;
-				$this->num_sender 			= $temp->bannette_num_sender ;
-				$this->archive_number 		= $temp->archive_number ;
+				$this->statut_not_account 	= $temp->statut_not_account;
+				$this->associated_campaign 	= $temp->associated_campaign;
+				$this->num_sender 			= $temp->bannette_num_sender;
+				$this->archive_number 		= $temp->archive_number;
+				$this->diffusions_history	= $temp->bannette_diffusions_history;
 				$this->document_generate 	= $temp->document_generate ;
 				$this->document_notice_display_type	= $temp->document_notice_display_type;
 				$this->document_notice_tpl	= $temp->document_notice_tpl;
 				$this->document_django_directory = $temp->document_django_directory;
-				$this->document_insert_docnum= $temp->document_insert_docnum ;
-				$this->document_group 		= $temp->document_group ;
-				$this->document_add_summary = $temp->document_add_summary ;
-				$this->bannette_opac_accueil= $temp->bannette_opac_accueil ;
+				$this->document_insert_docnum= $temp->document_insert_docnum;
+				$this->document_group 		= $temp->document_group;
+				$this->document_add_summary = $temp->document_add_summary;
+				$this->bannette_opac_accueil= $temp->bannette_opac_accueil;
 				$this->bannette_aff_notice_number= $temp->bannette_aff_notice_number;
-				$this->param_export			= unserialize($temp->param_export) ;
+				$this->param_export			= unserialize($temp->param_export);
 				$this->compte_elements();
 				$requete = "SELECt nom_classement FROM classements WHERE id_classement='".$this->num_classement."'" ;
 				$resultclass = pmb_mysql_query($requete) or die ($requete."<br /> in bannette.class.php : ".pmb_mysql_error());
@@ -346,6 +351,18 @@ class bannette {
 		return $content_form;
 	}
 	
+	protected function get_diffusions_history_content_form($type="pro") {
+		global $dsi_bannette_diffusions_history_content_form;
+		
+		if ($type=="pro") {
+			$content_form = $dsi_bannette_diffusions_history_content_form;
+			$content_form = str_replace('!!diffusions_history!!', ($this->diffusions_history ? "checked='checked'" : ""), $content_form);
+		} else {
+			$content_form = "";
+		}
+		return $content_form;
+	}
+	
 	protected function get_options_content_form($type="pro") {
 		global $msg, $charset;
 		global $nom_prenom_abo;
@@ -362,6 +379,7 @@ class bannette {
 		$content_form = str_replace('!!date_last_envoi!!', $date_last_envoi, $content_form);
 		
 		$content_form = str_replace('!!archive!!', $this->get_archive_content_form($type), $content_form);
+		$content_form = str_replace('!!diffusions_history!!', $this->get_diffusions_history_content_form($type), $content_form);
 		if ($type=="pro") {
 			$content_form = str_replace('!!proprio_bannette!!', htmlentities($msg['dsi_ban_no_proprio'],ENT_QUOTES, $charset), $content_form);
 		} else {
@@ -417,7 +435,7 @@ class bannette {
 		
 		$content_form = $dsi_bannette_export_content_form;
 		$exp = start_export::get_exports();
-		$liste_exports = "<select name='typeexport' onchange=\"if(this.selectedIndex==0) document.getElementById('liste_parametre').style.display='none'; else document.getElementById('liste_parametre').style.display=''; \">" ;
+		$liste_exports = "<select id='typeexport' name='typeexport' onchange=\"if(this.selectedIndex==0) document.getElementById('liste_parametre').style.display='none'; else document.getElementById('liste_parametre').style.display=''; \">" ;
 		if (!$this->typeexport) $liste_exports .= "<option value='' selected>".$msg['dsi_ban_noexport']."</option>";
 		else $liste_exports .= "<option value=''>".$msg['dsi_ban_noexport']."</option>";
 		for ($i=0;$i<count($exp);$i++) {
@@ -548,7 +566,7 @@ class bannette {
 		global $categorie_lecteurs, $groupe_lecteurs;
 		global $update_type, $form_date_last_envoi, $num_panier;
 		global $limite_type, $limite_nombre, $typeexport, $prefixe_fichier;
-		global $group_pperso, $display_notice_in_every_group, $archive_number, $group_type;
+		global $group_pperso, $display_notice_in_every_group, $archive_number, $diffusions_history, $group_type;
 		global $document_generate, $document_notice_display_type, $document_notice_tpl, $document_django_directory, $document_insert_docnum, $document_group, $document_add_summary;
 		global $bannette_opac_accueil,$bannette_tpl_num, $bannette_aff_notice_number;
 		global $genere_lien, $mere, $fille, $notice_mere, $notice_fille, $art_link, $bull_link, $perio_link, $bulletinage, $notice_art, $notice_perio;
@@ -582,6 +600,7 @@ class bannette {
 		$this->group_pperso 		= stripslashes($group_pperso);
 		$this->display_notice_in_every_group = intval($display_notice_in_every_group);
 		$this->archive_number		= intval($archive_number);
+		$this->diffusions_history	= intval($diffusions_history);
 		$this->group_type 			= intval($group_type);
 		$this->document_generate 	= intval($document_generate);
 		$this->document_notice_display_type	= intval($document_notice_display_type);
@@ -611,6 +630,8 @@ class bannette {
 	//		save 
 	// ---------------------------------------------------------------
 	public function save() {
+//		global $pmb_type_audit;
+		
 		if ($this->id_bannette) {
 			// update
 			$req = "UPDATE bannettes set ";
@@ -647,6 +668,7 @@ class bannette {
 		$req.="group_pperso='".$this->group_pperso."',";
 		$req.="display_notice_in_every_group='".$this->display_notice_in_every_group."',";
 		$req.="archive_number='".$this->archive_number."',";
+		$req.="bannette_diffusions_history='".$this->diffusions_history."',";
 		$req.="param_export='".addslashes(serialize($this->param_export))."',";
 		$req.="document_generate='".$this->document_generate."',";
 		$req.="document_notice_display_type='".$this->document_notice_display_type."',";
@@ -661,14 +683,19 @@ class bannette {
 			else $req.="date_last_envoi='".construitdateheuremysql($this->date_last_envoi)."' ";
 		$req.=$clause ;
 		$res = pmb_mysql_query($req);
-		if (!$this->id_bannette) $this->id_bannette = pmb_mysql_insert_id() ;
+		if (!$this->id_bannette) {
+			$this->id_bannette = pmb_mysql_insert_id();
+//			if($pmb_type_audit) audit::insert_creation(AUDIT_BANNETTE,$this->id_bannette);
+		} else {
+//			if($pmb_type_audit) audit::insert_modif(AUDIT_BANNETTE,$this->id_bannette);
+		}
 
 		$del = "delete from bannette_empr_groupes where empr_groupe_num_bannette = '".$this->id_bannette."'";
 		pmb_mysql_query($del);
 		
 		if(!empty($this->groupe_lecteurs) && is_array($this->groupe_lecteurs)) {
     		for($i=0 ; $i<count($this->groupe_lecteurs) ; $i++){
-    			$id_groupe=$this->groupe_lecteurs[$i]*1;
+    			$id_groupe = intval($this->groupe_lecteurs[$i]);
     			$rqt = "insert into bannette_empr_groupes set empr_groupe_num_bannette = '".$this->id_bannette."', empr_groupe_num_groupe = '".$id_groupe."' ";
     			pmb_mysql_query($rqt);
     		}
@@ -689,7 +716,7 @@ class bannette {
 				}		
 			}
 			for($i=0 ; $i<count($this->categorie_lecteurs) ; $i++){
-				$id_categ=$this->categorie_lecteurs[$i]*1;
+				$id_categ = intval($this->categorie_lecteurs[$i]);
 				$rqt = "insert into bannette_empr_categs set empr_categ_num_bannette = '".$this->id_bannette."', empr_categ_num_categ = '".$id_categ."' ";
 				pmb_mysql_query($rqt);
 			}
@@ -712,6 +739,8 @@ class bannette {
 		pmb_mysql_query($requete);
 		$requete = "delete from bannette_contenu WHERE num_bannette='$this->id_bannette'";
 		pmb_mysql_query($requete);
+		$requete = "DELETE FROM bannettes_diffusions WHERE diffusion_num_bannette = ".$this->id_bannette;
+		pmb_mysql_query($requete);
 		$requete = "delete from bannettes WHERE id_bannette='$this->id_bannette'";
 		pmb_mysql_query($requete);
 	
@@ -724,6 +753,8 @@ class bannette {
 		pmb_mysql_query($del);
 		$del = "delete from bannette_empr_categs where empr_categ_num_bannette = '".$this->id_bannette."'";
 		pmb_mysql_query($del);
+		
+//		audit::delete_audit(AUDIT_BANNETTE, $this->id_bannette);
 	}
 	
 	protected function get_records_over_days() {
@@ -740,7 +771,7 @@ class bannette {
 	protected function get_records_limit() {
 		$tab = array();
 		// selection des ## dernières notices, celles qu'il faut absolument garder
-		$requete = "select num_notice from bannette_contenu, notices WHERE num_bannette='".$this->id_bannette."' and notice_id=num_notice order by date_ajout DESC, update_date DESC ";
+		$requete = "select num_notice from bannette_contenu, notices WHERE num_bannette='".$this->id_bannette."' and notice_id=num_notice order by date_ajout DESC, ".$this->get_date_used()." DESC ";
 		$requete .= " limit $this->limite_nombre ";
 		$res = pmb_mysql_query($requete);
 		while ($obj=pmb_mysql_fetch_object($res)) {
@@ -761,7 +792,9 @@ class bannette {
 	//		purger() : après remplissage, vider ce qui dépasse selon le type de cumul de la bannette 
 	// ---------------------------------------------------------------
 	public function purger() {
+//		global $msg;
 		global $gestion_acces_active,$gestion_acces_empr_notice;
+//		global $pmb_type_audit;
 		
 		//purge pour les bannettes privees des notices ne devant pas etre diffusees 
 		if ($this->proprio_bannette && $gestion_acces_active==1 && $gestion_acces_empr_notice==1){
@@ -769,19 +802,28 @@ class bannette {
 			$dom_2 = $ac->setDomain(2);
 			$acces_j = $dom_2->getJoin($this->proprio_bannette,'4=0','num_notice');
 			
-			$q="delete from bannette_contenu using bannette_contenu $acces_j WHERE num_bannette='$this->id_bannette' ";
-			pmb_mysql_query($q);
+			if($this->diffusions_history) {
+				$query = "select num_notice from bannette_contenu $acces_j WHERE num_bannette='$this->id_bannette'";
+				$this->get_bannette_diffusion()->add_deleted_records($this->get_elements_from_query($query), 'access_rights');
+			}
+			
+			$query="delete from bannette_contenu using bannette_contenu $acces_j WHERE num_bannette='$this->id_bannette' ";
+			pmb_mysql_query($query);
 		}
 		
 		//purge des notices ne répondant plus aux équations de recherche
 		if(!empty($this->equations_notices)) {
 			$notice_suppr=implode(",",$this->equations_notices);
 			if ($this->num_panier) {
-				$requete = "delete from caddie_content WHERE caddie_id='$this->num_panier' and object_id not in (".$notice_suppr.") ";
-				pmb_mysql_query($requete);
+				$query = "delete from caddie_content WHERE caddie_id='$this->num_panier' and object_id not in (".$notice_suppr.") ";
+				pmb_mysql_query($query);
 			}
-			$requete = "delete from bannette_contenu WHERE num_bannette='$this->id_bannette' and num_notice not in (".$notice_suppr.") ";
-			pmb_mysql_query($requete);
+			if($this->diffusions_history) {
+				$query = "select num_notice from bannette_contenu WHERE num_bannette='".$this->id_bannette."' and num_notice not in (".$notice_suppr.")";
+				$this->get_bannette_diffusion()->add_deleted_records($this->get_elements_from_query($query), 'equations');
+			}
+			$query = "delete from bannette_contenu WHERE num_bannette='$this->id_bannette' and num_notice not in (".$notice_suppr.") ";
+			pmb_mysql_query($query);
 		}
 		
 		$records = array();
@@ -796,25 +838,43 @@ class bannette {
 		if(count($records)) {
 			$notice_suppr=implode(",",$records);
 			if ($this->num_panier) {
-				$requete = "delete from caddie_content WHERE caddie_id='$this->num_panier' and object_id not in (".$notice_suppr.") ";
-				pmb_mysql_query($requete);
+				$query = "delete from caddie_content WHERE caddie_id='$this->num_panier' and object_id not in (".$notice_suppr.") ";
+				pmb_mysql_query($query);
 			}
-			$requete = "delete from bannette_contenu WHERE num_bannette='$this->id_bannette' and num_notice not in (".$notice_suppr.") ";
-			pmb_mysql_query($requete);
+			if($this->diffusions_history) {
+				$query = "select num_notice from bannette_contenu WHERE num_bannette='".$this->id_bannette."' and num_notice not in (".$notice_suppr.")";
+				$this->get_bannette_diffusion()->add_deleted_records($this->get_elements_from_query($query), 'cumulative_limit');
+			}
+			$query = "delete from bannette_contenu WHERE num_bannette='$this->id_bannette' and num_notice not in (".$notice_suppr.")";
+			pmb_mysql_query($query);
 		}
 		$this->compte_elements() ;
+//		if($pmb_type_audit) {
+//			audit::insert_modif(AUDIT_BANNETTE,$this->id_bannette, $msg['dsi_ban_purger']);
+//		}
 	}
 
 	// ---------------------------------------------------------------
 	//		vider() : vider le contenu de la bannette 
 	// ---------------------------------------------------------------
 	public function vider() {
-		$requete = "delete from bannette_contenu WHERE num_bannette='".$this->id_bannette."'";
-		pmb_mysql_query($requete);
-		$requete = "delete from caddie_content WHERE caddie_id='".$this->num_panier."'";
-		pmb_mysql_query($requete);
+//		global $pmb_type_audit, $msg;
+		
+		if($this->diffusions_history) {
+			$query = "select num_notice from bannette_contenu WHERE num_bannette='".$this->id_bannette."'";
+			$this->get_bannette_diffusion()->add_deleted_records($this->get_elements_from_query($query), 'empty');
+		}
+		
+		$query = "delete from bannette_contenu WHERE num_bannette='".$this->id_bannette."'";
+		pmb_mysql_query($query);
+		$query = "delete from caddie_content WHERE caddie_id='".$this->num_panier."'";
+		pmb_mysql_query($query);
 	
 		$this->compte_elements() ;
+		
+//		if($pmb_type_audit) {
+//			audit::insert_modif(AUDIT_BANNETTE,$this->id_bannette, $msg['dsi_ban_vider']);
+//		}
 	}
 
 	public function put_equations_notices($table) {
@@ -828,12 +888,27 @@ class bannette {
 		}
 	}
 	
+	public function get_records_filtered_equation($query) {
+	    $records_filtered_equation = [];
+	    if($query) {
+	        $result = pmb_mysql_query($query);
+	        if(pmb_mysql_num_rows($result)) {
+	            while($row = pmb_mysql_fetch_object($result)) {
+	                $records_filtered_equation[] = $row->notice_id;
+	            }
+	        }
+	    }
+	    return $records_filtered_equation;
+	}
+	
 	// ---------------------------------------------------------------
 	//		remplir() : remplir la bannette à partir des équations 
 	// ---------------------------------------------------------------
 	public function remplir() {
+//		global $msg;
 		global $pmb_allow_term_troncat_search, $opac_allow_term_troncat_search, $pmb_search_exclude_fields, $opac_exclude_fields;
 		global $dsi_private_bannette_search_equation;
+//		global $pmb_type_audit;
 		global $search;
 		
 		//On doit prendre en compte les paramètres OPAC si bannette privée
@@ -852,6 +927,7 @@ class bannette {
     	
 		$nb_equations = count($equations);
 		for ($i = 0; $i < $nb_equations; $i++) {
+		    $records_filtered_equation = array();
 			// pour chaque équation ajouter les notices trouvées au contenu de la bannette
 			$equ = new equation ($equations[$i]) ;
 			
@@ -870,16 +946,25 @@ class bannette {
 			
 			if($search_class->is_created_temporary_table($table)) {
 				$this->put_equations_notices($table);
-				if($this->statut_not_account) 
-					$temp_requete = "insert ignore into bannette_contenu (num_bannette, num_notice) (select ".$this->id_bannette." , notices.notice_id from $table , notices where notices.$colonne_update_create>='".$this->date_last_envoi."' and $table.notice_id=notices.notice_id )" ;
-				else 
-					$temp_requete = "insert ignore into bannette_contenu (num_bannette, num_notice) (select ".$this->id_bannette." , notices.notice_id from $table , notices, notice_statut where notices.$colonne_update_create>='".$this->date_last_envoi."' and $table.notice_id=notices.notice_id and statut=id_notice_statut and ((notice_visible_opac=1 and notice_visible_opac_abon=0) or (notice_visible_opac_abon=1 and notice_visible_opac=1))) " ;
-				@pmb_mysql_query($temp_requete);
+				if($this->statut_not_account) {
+					$temp_requete = "select ".$this->id_bannette." , notices.notice_id from $table , notices where notices.$colonne_update_create>='".$this->date_last_envoi."' and $table.notice_id=notices.notice_id" ;
+				} else {
+					$temp_requete = "select ".$this->id_bannette." , notices.notice_id from $table , notices, notice_statut where notices.$colonne_update_create>='".$this->date_last_envoi."' and $table.notice_id=notices.notice_id and statut=id_notice_statut and ((notice_visible_opac=1 and notice_visible_opac_abon=0) or (notice_visible_opac_abon=1 and notice_visible_opac=1))" ;
+				}
+				if($this->diffusions_history) {
+				    $records_filtered_equation = $this->get_records_filtered_equation($temp_requete);
+				}
+				pmb_mysql_query("insert ignore into bannette_contenu (num_bannette, num_notice) (".$temp_requete.")");
 			
 				$temp_requete = "drop table $table " ;
 				pmb_mysql_query($temp_requete);
 			}
 			$res_affichage .= "<li>".$equ->human_query."</li>" ;
+			if($this->diffusions_history) {
+				// $search_class->make_human_query() => permet d'obtenir la human_query reellement exécutée
+				// $equ->human_query => résultat de ce qui est censé s'exécuter
+			    $this->get_bannette_diffusion()->add_equation(array('name' => $equ->nom_equation, 'human_query' => $search_class->make_human_query(), 'records' => $records_filtered_equation));
+			}
 		}
 		
 		// remplissage du panier avec le contenu de la bannette
@@ -898,6 +983,9 @@ class bannette {
 		$this->compte_elements() ;
 		$temp_requete = "update bannettes set date_last_remplissage=sysdate() where id_bannette='".$this->id_bannette."' " ;
 		pmb_mysql_query($temp_requete);
+//		if($pmb_type_audit) {
+//			audit::insert_modif(AUDIT_BANNETTE,$this->id_bannette, $msg['dsi_ban_remplir']);
+//		}
 		$this->purger();
 		return $res_affichage ;
 	}
@@ -1139,7 +1227,7 @@ class bannette {
 		$this->set_records_globals();
 		$this->set_output_format('mail');
 		$this->build_lists(1);
-		$display = "<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><meta charset=\"".$charset."\" /></head>".$this->get_css_style()."</head><body>";
+		$display = "<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><meta charset=\"".$charset."\" />".$this->get_css_style()."</head><body>";
 		if(($this->bannette_tpl_num) || (($this->proprio_bannette)&&($this->get_private_bannette_tpl()))){
 			if($this->bannette_aff_notice_number){
 				$display .= "<span class=\"dsi_hide_for_emails\"><hr />!!dsi_diff_n_notices!!</span>";
@@ -1254,7 +1342,7 @@ class bannette {
 		return $formatted_text;
 	}
 			
-	protected function get_formatted_text($text, $empr) {
+	protected function get_formatted_text($text, $empr=null) {
 		global $lang;
 		global $opac_url_base;
 		global $opac_connexion_phrase;
@@ -1264,7 +1352,7 @@ class bannette {
 		$formatted_text = str_replace("!!nb_notice!!", $this->nb_notices, $formatted_text);
 		$formatted_text = str_replace("!!public!!",$this->comment_public,$formatted_text);
 		$formatted_text = str_replace("!!equation!!",$this->bannette_equations->get_text(),$formatted_text);
-		if(is_object($empr)) {
+		if(!empty($empr) && is_object($empr)) {
 			$lang_messages = static::get_lang_messages($empr->empr_lang);
 			$code = md5($opac_connexion_phrase.$empr->empr_login.$dates);
 			$login = $empr->empr_login;
@@ -1292,7 +1380,7 @@ class bannette {
 		return $formatted_text;
 	}
 	
-	protected function get_formatted_mail($empr) {
+	protected function get_formatted_mail($empr=null) {
 		$text = $this->get_display_mail();
 		$formatted_mail = $this->get_formatted_text($text, $empr);
 		return $formatted_mail;
@@ -1320,13 +1408,22 @@ class bannette {
 	
 	public function diffuser() {
 		global $msg, $charset, $base_path, $opac_connexion_phrase, $pmb_mail_delay, $opac_url_base, $lang, $include_path;
-		
+		global $dbh;
 		global $PMBusernom;
 		global $PMBuserprenom;
 		global $PMBuseremail;
 		global $dsi_send_empr_date_expiration;
-	
-		if (!$this->nb_notices && $this->diffusion_email) return $msg['dsi_ban_empty']."<br />"; // On demande à diffuser le contenu et la bannette vide : pas question d'envoyer du vide
+//		global $pmb_type_audit;
+		
+		if (!$this->nb_notices && $this->diffusion_email) {
+		    if($this->diffusions_history) {
+		        $this->get_bannette_diffusion()->set_num_bannette($this->id_bannette)
+		        ->set_mail_object(strip_tags($this->get_formatted_text($this->comment_public)))
+		        ->set_mail_content($this->get_formatted_mail());
+		        $this->get_bannette_diffusion()->save();
+		    }
+		    return $msg['dsi_ban_empty']."<br />"; // On demande à diffuser le contenu et la bannette vide : pas question d'envoyer du vide
+		}
 		
 		// purge des archives au dela de $this->archive_number ou si a 0
 		$this->clean_archive();
@@ -1348,9 +1445,6 @@ class bannette {
 		$nb_no_email=0;
 		$no_email = '';
 		$echec_email = '';
-		
-		$headers  = "MIME-Version: 1.0\n";
-		$headers .= "Content-type: text/html; charset=".$charset."\n";
 		
 		if($this->associated_campaign) {
 			$campaign = new campaign();
@@ -1396,22 +1490,43 @@ class bannette {
 					
 					$mail_content = $this->get_formatted_mail($empr);
 					$mail_object = strip_tags($this->get_formatted_text($this->comment_public, $empr));
-					if($this->associated_campaign) {
-						$res_envoi = $campaign->send_mail($empr->id_empr, $empr->empr_prenom." ".$empr->empr_nom, $emaildest,$mail_object,$mail_content,$sender_name, $sender_mail, $headers, "", "", 0, $pieces_jointes, "", "", true);
-					} else {
-						$res_envoi = @mailpmb($empr->empr_prenom." ".$empr->empr_nom, $emaildest,$mail_object,$mail_content,$sender_name, $sender_mail, $headers, "", "", 0, $pieces_jointes, "", "", true);
+					
+					$mail_dsi = new mail_dsi();
+					$mail_dsi->set_mail_to_id($empr->id_empr)
+							->set_mail_object($mail_object)
+							->set_mail_content($mail_content)
+							->set_mail_from_id($this->num_sender)
+							->set_mail_attachments($pieces_jointes);
+					if(!empty($this->associated_campaign)) {
+						$mail_dsi->set_associated_campaign($this->associated_campaign)
+								->set_associated_num_campaign($campaign->get_id());
 					}
-					if ($pmb_mail_delay*1) sleep((int)$pmb_mail_delay*1/1000);
+					$res_envoi = $mail_dsi->send_mail();
+					if ($pmb_mail_delay*1) {
+					    sleep((int)$pmb_mail_delay*1/1000);
+					    if(!pmb_mysql_ping($dbh)) {
+					        $dbh = connection_mysql();
+					    }
+					}
 					if ($res_envoi) { 
 						$nb_dest++;
 					} else {
 						$nb_echec++;
 						$echec_email .= "- ".$empr->empr_nom." ".$empr->empr_prenom."<br />" ;
+						if($this->diffusions_history) {
+							$this->get_bannette_diffusion()->add_failed_recipient($empr->id_empr);
+						}
 					}
 				}
 			} else {
 				$nb_no_email++;
 				$no_email .= "- ".$empr->empr_nom." ".$empr->empr_prenom."<br />" ;
+				if($this->diffusions_history) {
+					$this->get_bannette_diffusion()->add_failed_recipient($empr->id_empr);
+				}
+			}
+			if($this->diffusions_history) {
+				$this->get_bannette_diffusion()->add_recipient($empr->id_empr);
 			}
 		}
 		// remplissage du panier avec le contenu de la bannette
@@ -1426,6 +1541,17 @@ class bannette {
 		$temp_requete = "update bannettes set date_last_envoi=sysdate() where id_bannette='".$this->id_bannette."' " ;
 		$res = pmb_mysql_query($temp_requete);
 	
+//		if($pmb_type_audit) {
+//			audit::insert_modif(AUDIT_BANNETTE,$this->id_bannette, $msg['dsi_ban_diffuser']);
+//		}
+		if($this->diffusions_history) {
+			$this->get_bannette_diffusion()->set_records($this->get_elements());
+			$this->get_bannette_diffusion()->set_num_bannette($this->id_bannette)
+					->set_mail_object(strip_tags($this->get_formatted_text($this->comment_public)))
+					->set_mail_content($this->get_formatted_mail());
+			$this->get_bannette_diffusion()->save();
+		}
+				
 		$res_envoi = $msg["dsi_dif_res_dif"]."<ul><li>".$msg["dsi_dif_res_dif_mail_ok"].": $nb_dest </li>";
 		if ($nb_echec) 
 			$res_envoi .= "<li>".$msg["dsi_dif_res_dif_mail_echec"].": $nb_echec <blockquote>$echec_email</blockquote></li>" ;
@@ -1474,7 +1600,7 @@ class bannette {
 
 		$liste=array();
 		$liste_group = array();
-		$result = @pmb_mysql_query($requete);
+		$result = pmb_mysql_query($requete);
 		if(pmb_mysql_num_rows($result)) {
 			while ($temp = pmb_mysql_fetch_object($result)) {
 				if($this->group_pperso) {			
@@ -1922,18 +2048,31 @@ class bannette {
 		return $entete ;
 	}
 
+	protected function get_elements_from_query($query) {
+		$elements = array();
+		$result = pmb_mysql_query($query);
+		if(pmb_mysql_num_rows($result)) {
+			while ($res = pmb_mysql_fetch_object($result)) {
+				$elements[]=$res->num_notice ;
+			}
+		}
+		return $elements;
+	}
+	
+	protected function get_elements() {
+		$query = "SELECT num_notice from bannette_contenu WHERE num_bannette='".$this->id_bannette."' " ;
+		//initialisation du tableau à chaque fois que cette fonction est appelée pour éviter un mauvais cumul
+		$elements = $this->get_elements_from_query($query);
+		$this->nb_notices = count($elements);
+		return $elements;
+	}
+	
 	// ---------------------------------------------------------------
 	//		compte_elements() : méthode pour pouvoir recompter en dehors !
 	// ---------------------------------------------------------------
 	public function compte_elements() {
-		$req_nb = "SELECT num_notice from bannette_contenu WHERE num_bannette='".$this->id_bannette."' " ;
-		$res_nb = pmb_mysql_query($req_nb);
-		$this->nb_notices = pmb_mysql_num_rows($res_nb);
 		//initialisation du tableau à chaque fois que cette fonction est appelée pour éviter un mauvais cumul
-		$this->liste_id_notice = array();
-		while ($res = pmb_mysql_fetch_object($res_nb)) {
-			$this->liste_id_notice[]=$res->num_notice ;
-		}
+		$this->liste_id_notice = $this->get_elements();
 		
 		$req_nb = "SELECT count(1) as nb_abonnes from bannette_abon WHERE num_bannette='".$this->id_bannette."' " ;
 		$res_nb = pmb_mysql_query($req_nb);
@@ -2018,7 +2157,7 @@ class bannette {
 	public function get_private_bannette_tpl() {
 		global $dsi_private_bannette_tpl;
 		
-		return $dsi_private_bannette_tpl+0;
+		return intval($dsi_private_bannette_tpl);
 	}
 	
 	public function get_instance_bannette_facette() {
@@ -2164,6 +2303,13 @@ class bannette {
 	public function get_render_comment_public() {
 		$empr = $this->get_empr_informations($_SESSION["id_empr_session"]);
 		return $this->get_formatted_text($this->comment_public, $empr);
+	}
+	
+	public function get_bannette_diffusion() {
+		if(!isset($this->bannette_diffusion)) {
+			$this->bannette_diffusion = new bannette_diffusion();
+		}
+		return $this->bannette_diffusion;
 	}
 	
 	public static function has_rights($id_bannette) {

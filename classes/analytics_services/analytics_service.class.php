@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: analytics_service.class.php,v 1.1.2.2 2021/07/21 09:48:57 dgoron Exp $
+// $Id: analytics_service.class.php,v 1.1.8.1 2023/07/07 14:55:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -63,19 +63,38 @@ class analytics_service{
 		return $class_name::get_parameters_content_form($this->parameters);
 	}
 	
+	public function get_content_form() {
+		global $msg, $charset;
+		global $analytics_service_calculate_button;
+		
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('analytics_service_name', 'analytics_service_name')
+		->add_input_node('hidden', $this->name);
+		$interface_content_form->add_element('display_label')
+		->add_html_node($this->name." (".$this->get_label().")");
+		$interface_content_form->add_element('analytics_service_active', 'analytics_service_active')
+		->add_input_node('boolean', $this->active)
+		->set_class('switch');
+		$interface_content_form->add_element('calculate_button')
+		->add_html_node($analytics_service_calculate_button);
+		$interface_content_form->add_element('parameters')
+		->add_html_node($this->get_parameters_content_form());
+		$interface_content_form->add_element('template_description')
+		->add_html_node('<hr />'.htmlentities($msg['analytics_service_template_description'], ENT_QUOTES, $charset));
+		$interface_content_form->add_element('analytics_service_template', 'analytics_service_template')
+		->add_textarea_node($this->template)
+		->set_cols(120)
+		->set_rows(40);
+		$interface_content_form->add_element('analytics_service_consent_template', 'analytics_service_consent_template')
+		->add_textarea_node($this->consent_template)
+		->set_cols(120)
+		->set_rows(10);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $analytics_service_content_form;
-		
-		$content_form = $analytics_service_content_form;
-		$content_form = str_replace('!!name!!', $this->name, $content_form);
-		$content_form = str_replace('!!display_label!!', $this->name." (".$this->get_label().")", $content_form);
-		$content_form = str_replace('!!active_checked!!', ($this->active ? "checked='checked'" : ""), $content_form);
-		$content_form = str_replace('!!parameters!!', $this->get_parameters_content_form(), $content_form);
-		$content_form = str_replace('!!template!!', $this->template, $content_form);
-		$content_form = str_replace('!!consent_template!!', $this->consent_template, $content_form);
 		$interface_form = new interface_form('analytics_service_form');
-		
-		$interface_form->set_content_form($content_form);
+		$interface_form->set_content_form($this->get_content_form());
 		return $interface_form->get_display();
 	}
 	

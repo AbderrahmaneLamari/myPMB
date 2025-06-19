@@ -2,6 +2,237 @@
 ************************************************************************************************************************
 ************************************************************************************************************************
 ************************************************************************************************************************
+*                                    CHANGE_LOG_5.0.13                                                           *
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
+
+****************************
+Les numéros indiqués ici (#000000) sont utilisés en interne par PMB Services pour son développement.
+
+*******************
+ANOMALIES
+
+--------------
+Administration
+--------------
+
+#97518 : Correction de failles XSS
+Sécurisation de paramètres injectables dans le fichier export_z3950.php 
+
+#100307 : Champs personnalisés : numéro d'ordre
+Assurons-nous que l'ordre soit bien une valeur entière lors de l'enregistrement du champ personnalisé.
+
+#124226 : Correction des url de vignettes de documents numériques dans le nettoyage de base
+Suite à la précédente évolution sur le transfert des vignettes de documents numérique de la base vers le serveur, les URL générées n'étaient pas correctes pour les webservices ou les imports/exports. On ne stocke plus les url en base, on passe systématiquement par vig_num.php.
+
+---------
+Autorités
+---------
+
+#111861 : Impression permutée du thésaurus 
+Correction sur le découpage des termes en impression permutée.
+
+#119407 : [Autorités] Correction dans le nombre de résultats de concept
+
+#126548 : Correction dans le remplacement d'autorités personnalisées
+Dans le remplacement des autorités perso, on utilisait l'identifiant du type d'autorité et non celui de l'autorité. Conséquence : les remplacements ne correspondaient pas aux autorités sélectionnées. C'est corrigé.
+
+---------
+Catalogue
+---------
+
+#96822 : [Recherche] Opérateur sauf (~)
+Correction sur la prise en compte de cet opérateur de recherche.
+
+#97152 : [Résultat de recherche] Réservations de bulletins
+Correction sur la réservation de bulletins depuis un résultat de recherche.
+
+#105666 : Personnalisation du réduit de notice
+Correction d'affichage lorsque celui-ci contient du HTML.
+
+#106369 : Nouvelle demande de numérisation
+Élimination des balises HTML lors de la récupération du titre de la notice.
+
+#116606 : [Exemplarisation] Numérotation auto des bulletins
+Correction sur la numérotation automatique au niveau des exemplaires de bulletin.
+Message affiché : "Ce code-barres est déjà utilisé !"
+
+#120336 : [Catalogue] Correction : Afficher les vignettes des documents numériques
+
+-----------
+Circulation
+-----------
+
+#97510 : Correction d'une faille de sécurité (upload de fichier)
+Ajout d'une vérification sur le mimetype sur l'upload de fichier pour la photographie d'un lecteur.
+
+#98225 : [Demandes de numérisation] Titres contenant des guillemets
+La notice ou le bulletin n'était pas affiché en édition lorsque le titre contenait un guillemet.
+
+#115566 : [priorite_email = 3] Réservation Validée / Non confirmée
+Les réservations ne doivent pas être automatiquement confirmées lorsque la valeur du priorite_email est à 3.
+
+#116580 : [Plugin Drive] Blocage de l'envoi du mail + confirmation de la résa
+Confirmer la réservation même si l'envoi du mail est bloqué par le plugin lorsque le paramètre priorite_email est différent de 3.
+
+------
+Divers
+------
+
+#107037 : Correction faille XSS sur le nom du module
+En gestion principalement, la méthode qui fait le nettoyage du nom de fichier pour déterminer quelle classe CSS correspondant au module il faut rajouter était un peu laxiste !
+On s'assure de bien renvoyer ce qu'il faut ou ne rien renvoyer du tout.
+
+#115088 : Correction injection SQL dans la recherche externe 
+Sécurisation du paramètre source du formulaire de recherche externe.
+
+#121059 : [Mailing] Chargement des vignettes de documents numériques
+Correction sur le chargement des vignettes dans les mailings ainsi que lorsque aucun répertoire n'est défini pour stocker la vignette d'un document numérique.
+
+---
+DSI
+---
+
+#116469 : [Bannettes] Formatage de l'objet du mail
+Correction sur la présence de motifs dans l'objet du mail de DSI.
+
+--------
+Editions
+--------
+
+#99686 : [Actions personnalisables] Sous-requête + limit SQL
+Correction sur l'exécution de procédure avec une notion de "limit" SQL dans une sous-requête.
+
+----
+OPAC
+----
+
+#99277 : Afficher ou masquer les boutons "Mes alertes" et "Mes alertes personnalisées" en OPAC
+
+#99934 : Affichage des images avec le style Solo
+Les images à l'opac, avec le style solo n'étaient plus affichées avec les dernières versions de Firefox.
+
+#101993 : [RMC] Cote de l'exemplaire
+Correction du critère de recherche sur la cote de l'exemplaire.
+
+#103735 : [Facettes] Navigation par mots-clés
+L'affinage sur une valeur de facette ne fonctionnait pas suite à une recherche dans les mots-clés.
+
+#104117 : Cookie de consentement en secure si l'HTTPS est activé
+Correction pour que l'option secure du cookie soit activée si l'OPAC est en HTTPS
+
+#105661 : [Réservation] Article de périodique
+Correction sur l'impossibilité de réserver un article de périodique.
+
+#115244 : [Inscription OPAC / Mail] Lien de validation
+Contexte : validation d'un compte sans changement de statut.
+Le compte était supprimé lorsque le lecteur re-cliquait une seconde fois sur le lien de validation transmis dans le mail.
+
+#119920 : [Affichage des vignettes] Image vide
+Le calcul de l'image vide en fonction du niveau bibliographique et du type de document ne fonctionnait pas sur l'entrée getimage.php lorsque l'identifiant de la notice n'était pas transmis.
+
+#120774 : [Connecteur Amazon / cURL] Configuration du proxy 
+Prise en compte d'un éventuel proxy paramétré lors de la récupération de données via cURL.
+
+#121122 : [Connecteur Amazon / cURL] Récupération vignette
+Ne pas traiter la réponse HTTP lorsque celle-ci  n'est pas en 200.
+
+#123151 : [Visionneuse / PDF] Icône de téléchargement
+Affectation du nom de fichier par défaut lors du téléchargement du document numérique à la place du nom donné par défaut "document.pdf". 
+
+#127502 : [Faille de sécurité] Formulaire de mot de passe oublié
++Modifications apportées :+
+- Suppression de l'affichage en liste lorsque plusieurs comptes ont le même email.
+- Ajout du nom/prénom de l'emprunteur dans le template du mail.
+- Vérification côté client/serveur de l'email.
+- Revue des messages à l'affichage du formulaire et à la soumission. (Une retraduction des messages est nécessaire.)
+- Correction de la méthode "is_valid_mail" en PHP/JavaScript 
+- Possibilité d'ajouter la localisation dans le mail via le paterne suivant : "!!localisation!!"
+
+-------
+Portail
+-------
+
+#100519 : [Construction portail] Mauvaise construction du chaînage
+Prise en compte d'une éventuelle construction de portail défaillante provoquant un dépassement de mémoire PHP.
+
+
+*******************
+EVOLUTIONS
+
+--------------
+Administration
+--------------
+
+#114717 : [Statistiques OPAC] Conservation du pays de l'usager
+Conservation du pays dans les logs pour les statistiques.
+Nouvelle fonction disponible : #empr_pays()
+
+#123460 : Nettoyage de base : Déplacement par lot des vignettes de documents numériques vers le répertoire d'upload
+
+---------
+Autorités
+---------
+
+#106444 : Exporter le champ "Catégorie inutilisable en indexation (non descripteur)" à l'impression d'un thésaurus
+Désormais dans l'export XML, la balise <INDEXATION>NON</INDEXATION> ou <INDEXATION>OUI</INDEXATION> indiquera si le descripteur est utilisable en indexation.
+
+---------
+Catalogue
+---------
+
+#108228 : Numéro d'ordre sur les thésaurus
+Ajout d'un numéro d'ordre sur les thésaurus pour l'ordonnancement des catégories auto-complétées.
+
+------
+Divers
+------
+
+#118310 : Paramètre pour définir le répertoire de stockage des vignettes de document numérique
+nom du paramètre "pmb_docnum_img_folder_id"
+
+#118556 : Stockage des vignettes de documents numériques dans le répertoire d'upload défini
+Si le paramètre "pmb_docnum_img_folder_id" est défini, à la consultation d'un document, sa vignette sera copiée dans le répertoire d'upload. Une action générale sera possible dans le nettoyage de base. 
+
+#119066 : Enrichissement de l'indexation des champs personnalisés de type "sélection d'autorités"
+Pour les champs perso de type "sélection d'autorités", on indexe avec :
+- les renvois voir pour les catégories
+- les libellés alternatifs pour les concepts
+
+----
+OPAC
+----
+
+#99780 : Permalien d'un plan de classement
+Affichage de toutes les indexations décimales :
+- ./index.php?lvl=indexint_see
+Affichage des indexations décimales selon un plan de classement :
+- ./index.php?lvl=indexint_see&pclass={{identifiant}}
+
+#106734 : Ajout d'un captcha sur l'envoi de mail en OPAC (print.php)
+
+#123275 : Affichage des vignettes de documents numériques en cache
+
+
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
+*                                    CHANGE_LOG_5.0.12                                                           *
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
+
+SANS OBJET
+
+
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
+************************************************************************************************************************
 *                                    CHANGE_LOG_5.0.11                                                           *
 ************************************************************************************************************************
 ************************************************************************************************************************

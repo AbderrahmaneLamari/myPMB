@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: elements_list_ui.class.php,v 1.21.6.1 2021/11/05 10:54:13 qvarin Exp $
+// $Id: elements_list_ui.class.php,v 1.22 2021/11/05 11:05:18 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

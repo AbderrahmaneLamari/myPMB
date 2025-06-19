@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes_notes.class.php,v 1.18 2021/03/30 16:40:35 dgoron Exp $
+// $Id: demandes_notes.class.php,v 1.20 2022/08/01 06:44:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($include_path."/mail.inc.php");
 require_once("$class_path/audit.class.php");
 require_once("$include_path/templates/demandes_notes.tpl.php");
@@ -197,7 +198,7 @@ class demandes_notes {
 		
 		$dialog='';
 		if(sizeof($notes)){
-			foreach($notes as $idNote=>$note){
+			foreach($notes as $note){
 				
 				//Utilisateur ou lecteur ? 
 				if($note->notes_type_user==="1"){
@@ -346,36 +347,18 @@ class demandes_notes {
 	 * Alerte par mail
 	 */	
 	public function send_alert_by_mail($idsender){
-		global $msg, $empr_nom, $empr_prenom, $empr_mail,$opac_url_base,$pmb_url_base,$demandes_email_generic;
-		
-		if ($demandes_email_generic) {
-			$deg=explode(",",$demandes_email_generic);
-			if (($deg[0]==2)||($deg[0]==3)) {
-				$bcc=$deg[1];
-			} else $bcc="";
-		}
-		
-		$contenu = sprintf($msg['demandes_note_mail_new'],$empr_prenom." ".$empr_nom." " ,$this->libelle_action,$this->libelle_demande).'<br />';
-		$contenu.=$this->contenu.'<br />';
-		$lien_opac='<a href="'.$opac_url_base.'empr.php?tab=request&lvl=list_dmde&sub=open_demande&iddemande='.$this->num_demande.'&last_modified='.$this->num_action.'#fin">'.$msg['demandes_see_last_note'].'</a>';
-		$lien_gestion='<a href="'.$pmb_url_base.'demandes.php?categ=gestion&act=see_dmde&iddemande='.$this->num_demande.'&last_modified='.$this->num_action.'#fin">'.$msg['demandes_see_last_note'].'</a>';
-		$objet = $msg['demandes_note_mail_new_object'];
-		
-		$headers  = "MIME-Version: 1.0\n";
-		$headers .= "Content-type: text/html; charset=iso-8859-1";
-		
 		//Envoi du mail aux autres documentalistes concernés par la demande
-		$req = "SELECT user_email, prenom,nom FROM users
+		$req = "SELECT userid, user_email, prenom,nom FROM users
 		JOIN demandes_users ON num_user=userid
 		WHERE num_demande='".$this->num_demande."' AND num_user !='".$idsender."'";
 		$res = pmb_mysql_query($req);
 		
 		while(($user = pmb_mysql_fetch_object($res))){	
 			if($user->user_email){
-				if($user->prenom){
-					$user->nom=$user->prenom.' '.$user->nom;
-				}
-				$envoi_OK = mailpmb($user->nom,$user->user_email,$objet,$contenu.$lien_gestion,$empr_prenom." ".$empr_nom,$empr_mail,$headers,"", $bcc );
+				$mail_opac_user_demande_note = new mail_opac_user_demande_note();
+				$mail_opac_user_demande_note->set_mail_to_id($user->userid);
+				$mail_opac_user_demande_note->set_demande_note($this);
+				$mail_opac_user_demande_note->send_mail();
 			}
 		}
 	}

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: alter_v2.inc.php,v 1.72.16.1 2021/12/23 08:07:31 dgoron Exp $
+// $Id: alter_v2.inc.php,v 1.73 2021/12/23 08:02:50 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

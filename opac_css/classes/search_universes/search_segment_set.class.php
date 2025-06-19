@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_set.class.php,v 1.9 2020/03/13 09:06:22 qvarin Exp $
+// $Id: search_segment_set.class.php,v 1.11.4.5 2023/10/03 13:53:16 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -20,6 +20,8 @@ class search_segment_set {
 	protected $type;
 		
 	protected $segment_label;
+
+	protected $table_tempo;
 	
 	/**
 	 * @var search|search_authorities
@@ -43,7 +45,7 @@ class search_segment_set {
 			$result = pmb_mysql_query($query);
 			if (pmb_mysql_num_rows($result)) {
 				$row = pmb_mysql_fetch_assoc($result);
-				$this->data_set = stripslashes($row['search_segment_set']);
+				$this->data_set = $row['search_segment_set'];
 				$this->segment_label = $row['search_segment_label'];
 				$this->type = $row['search_segment_type'];
 			}
@@ -112,6 +114,12 @@ class search_segment_set {
 	            case TYPE_EXTERNAL :
 	                $this->search_instance = new search('search_fields_unimarc_gestion');
 	                break;
+	            case TYPE_ANIMATION :
+	                $this->search_instance = new search('search_fields_animations');
+	                break;
+	            case TYPE_CMS_EDITORIAL :
+	                $this->search_instance = new search('search_fields_cms_editorial');
+	                break;
 	            default :
 	                $this->search_instance = new search_authorities('search_fields_authorities_gestion');
 	                break;
@@ -145,6 +153,10 @@ class search_segment_set {
 	                return 'subcollection';
 	            case TYPE_TITRE_UNIFORME :
 	                return 'titre_uniforme';
+	            case TYPE_ANIMATION :
+	                return 'animations';
+	            case TYPE_CMS_EDITORIAL :
+	                return 'cms_editorial';
 	            default :
 	                if (intval($this->type) > 1000) {
 	                    $id_authperso = (intval($this->type) - 1000);
@@ -159,10 +171,16 @@ class search_segment_set {
 	//Permet de savoir si nous avons des notices ou des autorit�s ?
 	public function get_entity_type_segment(){
 	    if (isset($this->type)) {
-	        if($this->type == TYPE_NOTICE){
-	            return 'record';
+	        switch ($this->type) {
+	            case TYPE_NOTICE;
+    	            return 'record';
+	            case TYPE_ANIMATION;
+    	            return 'animations';
+	            case TYPE_CMS_EDITORIAL;
+    	            return 'cms_editorial';
+	            default:
+        	        return 'authority';
 	        }
-	        return 'authority';
 	    }
 	}
 	
@@ -182,7 +200,7 @@ class search_segment_set {
 			$this->data_set = combine_search::simple_search_to_mc(stripslashes('*'), true, $this->type, $this->search_instance);
 			$this->search_instance->pull();
 		}
-		
+
 		$this->search_instance->json_decode_search($this->data_set);
 		$this->table_tempo = $this->search_instance->make_search($prefix);
 		
@@ -195,5 +213,29 @@ class search_segment_set {
 	
 	public function set_search_instance(&$search_instance) {
 	    $this->search_instance = $search_instance;
+	}
+	
+	public function get_dynamic_params(){
+	    global $search;
+	    $this->get_search_instance();
+	    $dynamic_params = [];
+	    if (!empty($this->data_set)) {
+	        $this->search_instance->push();
+	        $this->search_instance->json_decode_search(stripslashes($this->data_set));
+	        for ($i = 0 ; $i < count($search) ; $i++) {
+	            if ($search[$i] == "s_12") {
+	                global ${"fieldvar_".$i."_s_12"};
+	                if (!empty( ${"fieldvar_".$i."_s_12"}) && is_array( ${"fieldvar_".$i."_s_12"}) &&  isset(${"fieldvar_".$i."_s_12"}[1])) {
+	                    $fielvar = ${"fieldvar_".$i."_s_12"}[1];
+	                    global ${$fielvar};
+	                    if (${$fielvar}) {
+	                        $dynamic_params[$fielvar] = ${$fielvar};
+	                    }
+	                }
+	            }
+	        }
+	        $this->search_instance->pull();
+	    }
+	    return $dynamic_params;
 	}
 }

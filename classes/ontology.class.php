@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ontology.class.php,v 1.8.8.1 2022/01/04 12:48:22 dgoron Exp $
+// $Id: ontology.class.php,v 1.19 2023/02/17 13:46:29 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -15,6 +15,7 @@ class ontology {
 	protected $name = "";
 	protected $description = "";
 	protected $storage_id = 0;
+	protected $pmb_name = "";
 	protected $creation_date;
 	protected $ontopmbstore_params = array(/* db */
 		'db_name' => DATA_BASE,
@@ -50,6 +51,7 @@ class ontology {
 		"pmb_onto"	=> "http://www.pmbservices.fr/ontology_description#"
 	);
 	protected $ontology_base_uri = "";
+	protected $handler = null;
 	
 	public function __construct($id=0){
 		$this->id = intval($id);
@@ -69,10 +71,19 @@ class ontology {
 		return $this->description;
 	}
 	
+	public function get_handler()
+	{
+	    if($this->handler !== null){
+	        return $this->handler;
+	    }
+	    $this->handler = new onto_handler(null, "arc2", $this->ontostore_params, "arc2", $this->datastore_params,$this->namespaces,'http://www.w3.org/2000/01/rdf-schema#label');
+        return $this->handler;
+	}
+	
 	private function fetch_datas(){
 		global $opac_url_base;
 		if($this->id){
-			$query = "select id_ontology, ontology_name, ontology_description, ontology_creation_date, ontology_storage_id from ontologies where id_ontology = ".$this->id;
+			$query = "select id_ontology, ontology_name, ontology_description, ontology_creation_date, ontology_storage_id, ontology_pmb_name from ontologies where id_ontology = ".$this->id;
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
 				$row = pmb_mysql_fetch_object($result);
@@ -81,6 +92,7 @@ class ontology {
 				$this->description = $row->ontology_description;
 				$this->creation_date = DateTime::createFromFormat("Y-m-d H:i:s", $row->ontology_creation_date);
 				$this->storage_id = $row->ontology_storage_id;
+				$this->pmb_name = $row->ontology_pmb_name;
 			}
 			$this->ontostore_params = array(
 				/* db */
@@ -115,9 +127,9 @@ class ontology {
 	
 	public function get_form(){
 		global $msg,$charset,$ontology_form;
-		$form = str_replace("!!id!!",$this->id,$ontology_form);
-		$form = str_replace("!!name!!",$this->name,$form);
-		$form = str_replace("!!description!!",$this->description,$form);
+		$form = str_replace("!!id!!",htmlentities($this->id,ENT_QUOTES,$charset),$ontology_form);
+		$form = str_replace("!!name!!",htmlentities($this->name,ENT_QUOTES,$charset),$form);
+		$form = str_replace("!!description!!",htmlentities($this->description,ENT_QUOTES,$charset),$form);
 		$storages = new storages();
 		$form = str_replace("!!onto_upload_directory!!",$storages->get_item_form($this->storage_id),$form);
 		
@@ -136,7 +148,9 @@ class ontology {
 		$this->id = intval($ontology_id);
 		$this->name = stripslashes($ontology_name);
 		$this->description = stripslashes($ontology_description);
-		$this->storage_id = $storage_method+0;
+		$this->storage_id = intval($storage_method);
+		// Pour l'instant, ca marche comme ça !
+		$this->pmb_name = 'ontology'.$this->id;
 	}
 	
 	public function save(){
@@ -152,11 +166,15 @@ class ontology {
 		$query.= "
 			ontology_name = '".addslashes($this->name)."',
 			ontology_description = '".addslashes($this->description)."',
-			ontology_storage_id = '".addslashes($this->storage_id)."'";
+			ontology_storage_id = '".addslashes($this->storage_id)."',
+		    ontology_pmb_name = '".addslashes($this->pmb_name)."'";
 		
 		pmb_mysql_query($query.$where);
 		if(!$this->id){
 			$this->id = pmb_mysql_insert_id();
+			$this->pmb_name = "ontology".$this->id;
+			$query = "update ontologies set ontology_pmb_name = '".addslashes($this->pmb_name)."' where id_ontology = ".$this->id;
+			pmb_mysql_query($query);
 			$this->ontostore_params = array(
 				/* db */
 				'db_name' => DATA_BASE,
@@ -207,8 +225,8 @@ class ontology {
 		// Table de champs
 		$query = "create table if not exists ontology".$this->id."_fields_global_index(
 			id_item int unsigned not null default 0,
-			code_champ int(3) unsigned not null default 0,
-			code_ss_champ int(3) unsigned not null default 0,
+			code_champ int unsigned not null default 0,
+			code_ss_champ int unsigned not null default 0,
 			ordre int(4) unsigned not null default 0,
 			value text not null,
 			pond int(4) unsigned not null default 100,
@@ -247,7 +265,7 @@ class ontology {
 		$this->ontostore->query($query,$this->ontopmbnamespaces);				
 		$query = "insert into <pmb> {
 			<".$this->ontology_base_uri."> rdf:type owl:Ontology .
-			<".$this->ontology_base_uri."> pmb:name 'ontology".$this->id."' .
+			<".$this->ontology_base_uri."> pmb:name '".$this->pmb_name."' .
 			<".$this->ontology_base_uri."> dct:title '".addslashes(clean_string($this->name))."' .
 			<".$this->ontology_base_uri."> dct:creation '".addslashes(clean_string($opac_biblio_name))."' .
 			<".$this->ontology_base_uri."> dct:modified '".date("c")."' .
@@ -282,11 +300,35 @@ class ontology {
 			'user_input'=>'',
 			'ontology_id'=>$this->id,
 			'item_uri' => "",
+		    'onto_name' => $this->name,
 			'base_resource'=> $base_resource
 		));
 		$onto_ui = new onto_ui($include_path."/ontologies/ontologies_pmb.rdf", "arc2", $this->ontopmbstore_params, "arc2", $this->ontostore_params,$this->ontopmbnamespaces,'http://www.w3.org/2000/01/rdf-schema#label',$params);
 		$onto_ui->proceed();
 	}
+	
+	public function exec_onto_query($query)
+	{
+	    $store = new onto_store_arc2($this->ontostore_params);
+	    $store->set_namespaces($this->ontopmbnamespaces);
+	    $store->query($query);
+	    if($store->num_rows()>0){
+	        return $store->get_result();
+	    }
+	    return false;
+	}
+	
+	public function exec_data_query($query)
+	{
+	    $store = new onto_store_arc2($this->datastore_params);
+	    $store->set_namespaces($this->ontopmbnamespaces);
+	    $store->query($query);
+	    if($store->num_rows()>0){
+	        return $store->get_result();
+	    }
+	    return false;
+	}
+	
 	
 	public function exec_onto_selector_framework($params = array()){
 		global $include_path;
@@ -373,7 +415,7 @@ class ontology {
 		$onto_store_config = $this->datastore_params;
 		$onto_store_config['endpoint_features'] = array('select','insert');	
 		$store = ARC2::getStoreEndpoint( $onto_store_config);
-		$store->go();
+		$store->go(true);
 	}
 	
 	public function get_onto_endpoint(){
@@ -387,9 +429,9 @@ class ontology {
 		
 		$onto_store_config = $this->ontostore_params;
 		
-		$onto_store_config['endpoint_features'] = array('select');	
+		$onto_store_config['endpoint_features'] = array('select',"delete");	
 		$store = ARC2::getStoreEndpoint( $onto_store_config);
-		$store->go();
+		$store->go(true);
 	}
 	
 	public function draw_onto(){
@@ -524,7 +566,7 @@ class ontology {
 	}
 	
 	public function set_storage_id($id){
-		$this->storage_id = $id*1;
+		$this->storage_id = intval($id);
 	}
 	
 	private function init_datastore(){
@@ -536,5 +578,21 @@ class ontology {
 		if(!isset($this->ontostore) || !$this->ontostore){
 			$this->ontostore = new onto_store_arc2($this->ontostore_params);
 		}
+	}
+	
+	public function get_available_segments()
+	{
+	    $segments = [];
+	    foreach($this->get_classes() as $uri => $class){
+	        if($this->get_handler()->class_is_indexed($uri)){
+	           $segments[10000+intval(onto_common_uri::get_id($uri))] = $class;
+	        }
+	    }
+	    return $segments;
+	}  
+	
+	public function get_onto()
+	{
+	    return $this->get_handler()->get_ontology();
 	}
 }

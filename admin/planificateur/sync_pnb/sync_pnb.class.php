@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sync_pnb.class.php,v 1.28.2.1 2021/07/06 12:24:56 dbellamy Exp $
+// $Id: sync_pnb.class.php,v 1.29.4.3 2023/12/14 14:03:21 jparis Exp $
 
 global $class_path, $include_path;
 require_once($include_path."/parser.inc.php");
@@ -154,41 +154,53 @@ class sync_pnb extends scheduler_task {
 	 * et recuperation de la liste des prets enregistres au niveau du WS dilicom
 	 */
 	private function get_loan_status() {
-		
 		if(empty($this->orders)) {
 			return;
 		}
 		
-		$returnEndedLoan = 1;
-		
+		$line_ids = array();
 		foreach($this->orders as $pnb_order_line_id => $order) {
-			
-			$loan_status = dilicom::get_instance()->get_loan_status([$pnb_order_line_id], $returnEndedLoan);
-			
-			//Recuperation du nb de jetons restants / commande
-			if(isset($loan_status['loanResponseLine'][0]['nta'])) {
-				$this->orders[$pnb_order_line_id]['pnb_current_nta'] = $loan_status['loanResponseLine'][0]['nta'];
-			}
-			//Recuperation du nb de prets simultanes possibles / commande
-			if(isset($loan_status['loanResponseLine'][0]['nus1'])) {
-				$this->orders[$pnb_order_line_id]['pnb_current_nus1'] = $loan_status['loanResponseLine'][0]['nus1'];
-			}
-			//Recuperation de la liste des prets
-			if(!empty($loan_status['loanResponseLine'][0]['pnbLoanList'])) {
-				foreach($loan_status['loanResponseLine'][0]['pnbLoanList'] as $ws_loan) {
-					$this->ws_loans[$ws_loan['loanId']] = $ws_loan;
-				}
-			}
-			
-			$this->listen_commande(array(&$this,"traite_commande"));
-			if($this->statut == WAITING) {
-				$this->send_command(RUNNING);
-			}
-			if ($this->statut == RUNNING) {
-				continue;
-			}
+		    $line_ids[] = $pnb_order_line_id;
+		    if(count($line_ids) === 10) {
+		        $this->call_dilicom($line_ids);
+		        $line_ids = [];
+		    }
 		}
 		
+		if(count($line_ids)) {
+		    $this->call_dilicom($line_ids);
+		}
+	}
+	
+	protected function call_dilicom($line_ids) {
+	    $returnEndedLoan = 1;
+	    $response = dilicom::get_instance()->get_loan_status($line_ids, $returnEndedLoan);
+	    if(is_array($response) && count($response["loanResponseLine"])) {
+	        foreach ($response["loanResponseLine"] as $response_line) {
+	            //Recuperation du nb de jetons restants / commande
+	            if(isset($response_line['nta'])) {
+	                $this->orders[$response_line["orderLineId"]]['pnb_current_nta'] = $response_line['nta'];
+	            }
+	            //Recuperation du nb de prets simultanes possibles / commande
+	            if(isset($response_line['nus1'])) {
+	                $this->orders[$response_line["orderLineId"]]['pnb_current_nus1'] = $response_line['nus1'];
+	            }
+	            //Recuperation de la liste des prets
+	            if(!empty($response_line['pnbLoanList'])) {
+	                foreach($response_line['pnbLoanList'] as $ws_loan) {
+	                    $this->ws_loans[$ws_loan['loanId']] = $ws_loan;
+	                }
+	            }
+	            
+	            $this->listen_commande(array(&$this,"traite_commande"));
+	            if($this->statut == WAITING) {
+	                $this->send_command(RUNNING);
+	            }
+	            if ($this->statut == RUNNING) {
+	                continue;
+	            }
+	        }
+	    }
 	}
 	
 	
@@ -350,6 +362,9 @@ class sync_pnb extends scheduler_task {
 	 */
 	private function clean_loans() {
 		
+	    //Suppression des prets qui ne sont plus references dans la table pnb_loans
+	    $q = "delete ignore from pret where pret_pnb_flag=1 and pret_idexpl not in (select pnb_loan_num_expl from pnb_loans)";
+	    pmb_mysql_query($q);
 		
 		if(empty($this->loans_to_delete)) {
 			return;

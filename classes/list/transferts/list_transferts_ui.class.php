@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_transferts_ui.class.php,v 1.25.2.6 2021/12/23 15:49:51 dgoron Exp $
+// $Id: list_transferts_ui.class.php,v 1.37.2.4 2023/09/29 07:24:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -21,6 +21,8 @@ class list_transferts_ui extends list_ui {
 	protected $cp;
 	
 	protected $displayed_cp;
+	
+	protected $override_environment_filters;
 	
 	protected function _get_query_base() {
 		$query = 'select id_transfert from transferts
@@ -46,29 +48,39 @@ class list_transferts_ui extends list_ui {
 	 */
 	public function init_filters($filters=array()) {
 		global $deflt_docs_location;
+		
+		$this->override_environment_filters = array();
+		if(isset($filters['etat_demande'])) {
+			$this->override_environment_filters['etat_demande'] = $filters['etat_demande'];
+		}
+		if(empty($this->filters)) {
+			$this->filters = array(
+					'site_origine' => $deflt_docs_location,
+					'site_destination' => 0
+			);
+		}
+		$this->filters['f_etat_date'] = '';
+		$this->filters['f_etat_dispo'] = '';
 		/**
 		 * etat_transfert => (0 = non fini)
 		 * etat_demande => (0 = non validée, 1 = validée, 2 = envoyée, 3 = aller fini, 4 = refus)
 		 * type_transfert => (1 = aller-retour)
 		 */
-		$this->filters = array(
-				'site_origine' => $deflt_docs_location,
-				'site_destination' => 0,
-				'f_etat_date' => '',
-				'f_etat_dispo' => '',
-				'etat_transfert' => -1,
-				'etat_demande' => -1,
-				'type_transfert' => '',
-				'sens_transfert' => -1,
-				'cb' => ''
-		);
+		$this->filters['etat_transfert'] = -1;
+		$this->filters['etat_demande'] = -1;
+		$this->filters['type_transfert'] = '';
+		
+		$this->filters['sens_transfert'] = -1;
+		$this->filters['cb'] = '';
 		parent::init_filters($filters);
 	}
 	
 	protected function init_override_filters() {
 		global $deflt_docs_location;
 		
-		$this->filters['site_origine'] = $deflt_docs_location;
+		if($this->filters['site_origine'] == static::FILTER_USER_PREFERENCE) {
+			$this->filters['site_origine'] = $deflt_docs_location;
+		}
 	}
 	
 	/**
@@ -93,6 +105,7 @@ class list_transferts_ui extends list_ui {
 					'formatted_date_refus' => 'transferts_circ_date_refus',
 					'formatted_date_reception' => 'transferts_circ_date_reception',
 					'formatted_date_retour' => 'transferts_circ_date_retour',
+					'formatted_date_acceptee' => 'transferts_circ_date_validation',
 					'motif' => 'transferts_circ_motif',
 					'motif_refus' => 'transferts_circ_motif_refus',
 					'transfert_ask_user_num' => 'transferts_edition_ask_user',
@@ -131,106 +144,141 @@ class list_transferts_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'id':
+	            return 'id_transfert';
+	        case 'record' :
+	            return '';
+	        case 'section':
+	            return 'section_libelle';
+	        case 'cote':
+	            return 'expl_cote';
+	        case 'location':
+	            return 'expl_location';
+	        case 'cb':
+	            return 'expl_cb';
+	        case 'statut':
+	            return 'statut_libelle';
+	        case 'empr':
+	            return "concat(empr_nom,' ',empr_prenom)";
+	        case 'expl_owner':
+	            return "lender_libelle";
+	        case 'source':
+	            return "loco.location_libelle";
+	        case 'destination':
+	            return "locd.location_libelle";
+	        case 'formatted_date_creation':
+	            if(static::class == 'list_transferts_demandes_ui') {
+	                return "transferts_demande.date_creation";
+	            } else {
+	                return "transferts.date_creation";
+	            }
+	            return '';
+	        case 'formatted_date_reception':
+	            return "date_reception";
+	        case 'formatted_date_envoyee':
+	            return "date_envoyee";
+	        case 'formatted_date_refus':
+	            return "date_visualisee";
+	        case 'formatted_date_acceptee':
+	            return "date_visualisee";
+	        case 'motif_refus':
+	            return "motif_refus";
+	        case 'transfert_ask_formatted_date':
+	            return "transfert_ask_date";
+	        case 'formatted_bt_date_retour':
+	        case 'date_retour':
+	            return "date_retour";
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
+	}
+	
+	protected function set_filter_environment_from_form() {
+		global $sub, $action;
 		
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'id':
-					$order .= 'id_transfert';
-					break;
-				case 'record' :
-					break;
-				case 'section':
-					$order .= 'section_libelle';
-					break;
-				case 'cote':
-					$order .= 'expl_cote';
-					break;
-				case 'location':
-					$order .= 'expl_location';
-					break;
-				case 'cb':
-					$order .= 'expl_cb';
-					break;
-				case 'statut':
-					$order .= 'statut_libelle';
-					break;
-				case 'empr':
-					$order .= "concat(empr_nom,' ',empr_prenom)";
-					break;
-				case 'expl_owner':
-					$order .= "lender_libelle";
-					break;
-				case 'source':
-					$order .= "loco.location_libelle";
-					break;
-				case 'destination':
-					$order .= "locd.location_libelle";
-					break;
-				case 'formatted_date_creation':
-					if(static::class == 'list_transferts_demandes_ui') {
-						$order .= "transferts_demande.date_creation";
-					} else {
-						$order .= "transferts.date_creation";
+		if(!isset($this->override_environment_filters)) {
+			$this->override_environment_filters = array();
+		}
+		if(!empty($action)) {
+			switch ($sub) {
+				case 'valid':
+					if($action == 'aff_refus') {
+						// get environment validation
+						$this->filters = array_merge($_SESSION['list_transferts_validation_ui_filter'], $this->override_environment_filters);
 					}
 					break;
-				case 'formatted_date_reception':
-					$order .= "date_reception";
+				case 'envoi':
+					if($action == 'aff_refus') {
+						// get environment envoi
+						$this->filters = array_merge($_SESSION['list_transferts_envoi_ui_filter'], $this->override_environment_filters);
+					}
 					break;
-				case 'formatted_date_envoyee':
-					$order .= "date_envoyee";
-					break;
-				case 'formatted_date_refus':
-					$order .= "date_visualisee";
-					break;
-				case 'motif_refus':
-					$order .= "motif_refus";
-					break;
-				case 'transfert_ask_formatted_date':
-					$order .= "transfert_ask_date";
-					break;
-				case 'formatted_bt_date_retour':
-				case 'date_retour':
-					$order .= "date_retour";
-					break;
-				default :
-					$order .= parent::_get_query_order();
+				case 'departs' :
+					if($action == 'aff_refus') {
+						// get environment envoi
+						$this->filters = array_merge($_SESSION['list_transferts_validation_ui_filter'], $this->override_environment_filters);
+					}
 					break;
 			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order); 
-			} else {
-				return "";
+		}
+	}
+	
+	protected function set_filter_selection_from_form() {
+		global $sub, $action;
+		
+		$numeros = '';
+		$transferts_ui_selection = $this->objects_type.'_selection';
+		if(!empty($action)) {
+			switch ($sub) {
+				case 'valid':
+					if($action == 'aff_refus') {
+						if(!empty($GLOBALS['transferts_validation_ui_selection'])) {
+							$transferts_ui_selection = 'transferts_validation_ui_selection';
+						}
+					}
+					break;
+				case 'envoi':
+					if($action == 'aff_refus') {
+						if(!empty($GLOBALS['transferts_envoi_ui_selection'])) {
+							$transferts_ui_selection = 'transferts_envoi_ui_selection';
+						}
+					}
+					break;
+				case 'departs' :
+					if($action == 'aff_refus') {
+						if(!empty($GLOBALS['transferts_validation_ui_selection'])) {
+							$transferts_ui_selection = 'transferts_validation_ui_selection';
+						} elseif(!empty($GLOBALS['transferts_envoi_ui_selection'])) {
+							$transferts_ui_selection = 'transferts_envoi_ui_selection';
+						}
+					}
+					break;
 			}
-		}	
+		}
+		global ${$transferts_ui_selection};
+		if(!empty(${$transferts_ui_selection})) {
+			$numeros = implode(',', ${$transferts_ui_selection});
+		}
+		$this->filters['ids'] = '';
+		if($numeros) {
+			$this->filters['ids'] = $numeros;
+		}
 	}
 	
 	/**
 	 * Filtres provenant du formulaire
 	 */
 	public function set_filters_from_form() {
+		$this->set_filter_environment_from_form();
+		$this->set_filter_selection_from_form();
 		$this->set_filter_from_form('site_origine', 'integer');
 		$this->set_filter_from_form('site_destination', 'integer');
 		$this->set_filter_from_form('f_etat_date', 'integer');
 		$this->set_filter_from_form('f_etat_dispo', 'integer');
-		$numeros = '';
-		foreach ($_REQUEST as $k => $v) {
-			//si c'est une case a cocher d'une liste
-			if ((substr($k,0,4)=="sel_") && ($v=="1")) {
-				//le no de transfert
-				$numeros .= substr($k,4,strlen($k)) . ",";
-			}
-		}
-		$this->filters['ids'] = '';
-		if($numeros) {
-			//on enleve la derniere virgule
-			$numeros =  substr($numeros, 0, strlen($numeros)-1);
-			$this->filters['ids'] = $numeros;
-		}
 		$this->set_filter_from_form('cb');
 		parent::set_filters_from_form();
 	}
@@ -254,6 +302,7 @@ class list_transferts_ui extends list_ui {
 	protected function get_search_filter_site_origine() {
 		global $msg;
 		$query = "SELECT idlocation as id, location_libelle as label FROM docs_location ORDER BY label";
+		$query = $this->_get_query_search_override_filter('site_origine', $query);
 		return $this->get_search_filter_simple_selection($query, 'site_origine', $msg["all_location"]);
 	}
 	
@@ -290,75 +339,58 @@ class list_transferts_ui extends list_ui {
 		return "<input type='text' name='".$this->objects_type."_cb' value='".htmlentities($this->filters['cb'], ENT_QUOTES, $charset)."' />"; 	
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
+	protected function _add_query_filters() {
 		global $transferts_nb_jours_alerte;
 		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['site_origine']) {
-			$filters [] = 'num_location_source = "'.$this->filters['site_origine'].'"';
-		}
-		if($this->filters['site_destination']) {
-			$filters [] = 'num_location_dest = "'.$this->filters['site_destination'].'"';
-		}
+		$this->_add_query_filter_simple_restriction('site_origine', 'num_location_source', 'integer');
+		$this->_add_query_filter_simple_restriction('site_destination', 'num_location_dest', 'integer');
 		if($this->filters['f_etat_date']) {
 			switch ($this->filters['f_etat_date']) {
 				case "1":
-					$filters [] = "(DATEDIFF(DATE_ADD(date_retour,INTERVAL -" . $transferts_nb_jours_alerte . " DAY),CURDATE())<=0
+					$this->query_filters [] = "(DATEDIFF(DATE_ADD(date_retour,INTERVAL -" . $transferts_nb_jours_alerte . " DAY),CURDATE())<=0
 							AND DATEDIFF(date_retour,CURDATE())>=0)";
 					break;
 				case "2":
-					$filters [] = "DATEDIFF(date_retour,CURDATE())<0";
+					$this->query_filters [] = "DATEDIFF(date_retour,CURDATE())<0";
 					break;
 			}
 		}
 		if($this->filters['f_etat_dispo']) {
 			switch ($this->filters['f_etat_dispo']) {
 				case 1 : // pas en pret et non réservé
-					$filters [] = "if(id_resa, resa_confirmee=0, 1) and if(pret_idexpl,0 ,1) ";
+					$this->query_filters [] = "if(id_resa, resa_confirmee=0, 1) and if(pret_idexpl,0 ,1) ";
 					break;
 				case 2 : // en pret et réservé seulement
-					$filters [] = "( if(id_resa, resa_confirmee=1, 0) OR if(pret_idexpl,1 ,0) ) ";
+					$this->query_filters [] = "( if(id_resa, resa_confirmee=1, 0) OR if(pret_idexpl,1 ,0) ) ";
 					break;
 			}
 		}
 		if($this->filters['etat_transfert'] !== '' && $this->filters['etat_transfert'] !== -1) {
-			$filters [] = 'etat_transfert = "'.$this->filters['etat_transfert'].'"';
+			$this->query_filters [] = 'etat_transfert = "'.$this->filters['etat_transfert'].'"';
 		}
 		if(is_array($this->filters['etat_demande'])) {
-			$filters [] = 'etat_demande IN ('.implode(',', $this->filters['etat_demande']).')';
+			$this->query_filters [] = 'etat_demande IN ('.implode(',', $this->filters['etat_demande']).')';
 		} elseif($this->filters['etat_demande'] !== '' && $this->filters['etat_demande'] !== -1) {
-			$filters [] = 'etat_demande = "'.$this->filters['etat_demande'].'"';
+			$this->query_filters [] = 'etat_demande = "'.$this->filters['etat_demande'].'"';
 		}
 		if($this->filters['type_transfert'] !== '' && $this->filters['type_transfert'] !== -1) {
-			$filters [] = 'type_transfert = "'.$this->filters['type_transfert'].'"';
+			$this->query_filters [] = 'type_transfert = "'.$this->filters['type_transfert'].'"';
 		}
 		if($this->filters['ids']) {
-			$filters [] = 'id_transfert IN ('.$this->filters['ids'].')';
+			$this->query_filters [] = 'id_transfert IN ('.$this->filters['ids'].')';
 		}
-		if($this->filters['cb']) {
-			$filters [] = 'exemplaires.expl_cb = "'.$this->filters['cb'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+		$this->_add_query_filter_simple_restriction('cb', 'exemplaires.expl_cb');
 	}
 	
 	/**
 	 * Fonction de callback
 	 * @param object $a
 	 * @param object $b
+	 * * @param number $index
 	 */
-	protected function _compare_objects($a, $b) {
-	    if($this->applied_sort[0]['by']) {
-	        $sort_by = $this->applied_sort[0]['by'];
+	protected function _compare_objects($a, $b, $index=0) {
+	    if($this->applied_sort[$index]['by']) {
+	        $sort_by = $this->applied_sort[$index]['by'];
 			switch($sort_by) {
 				case 'formatted_date_creation':
 					return strcmp($a->get_date_creation(), $b->get_date_creation());
@@ -370,6 +402,9 @@ class list_transferts_ui extends list_ui {
 					return strcmp($a->get_transfert_demande()->get_date_envoyee(), $b->get_transfert_demande()->get_date_envoyee());
 					break;
 				case 'formatted_date_refus':
+					return strcmp($a->get_transfert_demande()->get_date_visualisee(), $b->get_transfert_demande()->get_date_visualisee());
+					break;
+				case 'formatted_date_acceptee':
 					return strcmp($a->get_transfert_demande()->get_date_visualisee(), $b->get_transfert_demande()->get_date_visualisee());
 					break;
 				case 'transfert_ask_formatted_date':
@@ -386,7 +421,7 @@ class list_transferts_ui extends list_ui {
 					return strcmp($a->get_date_retour(), $b->get_date_retour());
 					break;
 				default :
-					return parent::_compare_objects($a, $b);
+				    return parent::_compare_objects($a, $b, $index);
 					break;
 			}
 		}
@@ -457,8 +492,6 @@ class list_transferts_ui extends list_ui {
 		global $msg;
 		global $base_path;
 		
-		$content = '';
-		
 		$is_cp_property = false;
 		if(isset($this->displayed_cp) && is_array($this->displayed_cp)) {
 			$is_cp_property = array_search($property, $this->displayed_cp);
@@ -472,18 +505,18 @@ class list_transferts_ui extends list_ui {
 			}
 			$aff_column=$this->cp->get_formatted_output($values, $is_cp_property);
 			if (!$aff_column) $aff_column="&nbsp;";
-			$content .= $aff_column;
+			return $aff_column;
 		} else {
 			switch($property) {
+				case 'record':
+					return $this->_get_object_property_record($object); // conservation du HTML
 				case 'cb':
-					$content .= aff_exemplaire($object->get_exemplaire()->{$property});
-					break;
+					return aff_exemplaire($object->get_exemplaire()->{$property});
 				case 'statut':
 					$docs_statut = new docs_statut($object->get_exemplaire()->statut_id);
-					$content .= aff_statut_exemplaire($docs_statut->libelle.'###'.$object->get_exemplaire()->expl_id);
-					break;
+					return aff_statut_exemplaire($docs_statut->libelle.'###'.$object->get_exemplaire()->expl_id);
 				case 'empr':
-					//TODO
+					$content = '';
 					$id_resa = $object->get_transfert_demande()->get_resa_trans();
 					if($id_resa) {
 						$query = "select id_empr, empr_cb from empr join resa on id_empr = resa_idempr where id_resa = ".$id_resa;
@@ -499,33 +532,27 @@ class list_transferts_ui extends list_ui {
 							}
 						}
 					}
-					break;
+					return $content;
 				case 'formatted_date_reception':
-					$content .= $object->get_transfert_demande()->get_formatted_date_reception();
-					break;
+					return $object->get_transfert_demande()->get_formatted_date_reception();
 				case 'formatted_date_envoyee':
-					$content .= $object->get_transfert_demande()->get_formatted_date_envoyee();
-					break;
+					return $object->get_transfert_demande()->get_formatted_date_envoyee();
 				case 'formatted_date_refus':
-					$content .= $object->get_transfert_demande()->get_formatted_date_visualisee();
-					break;
+					return $object->get_transfert_demande()->get_formatted_date_visualisee();
+				case 'formatted_date_acceptee':
+					return $object->get_transfert_demande()->get_formatted_date_visualisee();
 				case 'transfert_ask_user_num':
 				case 'transfert_send_user_num':
-					$content .= user::get_param(call_user_func_array(array($object, "get_".$property), array()), 'username');
-					break;
+					return user::get_param(call_user_func_array(array($object, "get_".$property), array()), 'username');
 				case 'transfert_bt_relancer':
-					$content .= "<input type='button' class='bouton' value='".$msg["transferts_circ_btRelancer"]."' onclick='document.location=\"./circ.php?categ=trans&sub=refus&action=aff_redem&transid=".$object->get_id()."\"'>";
-					break;
+					return "<input type='button' class='bouton' value='".$msg["transferts_circ_btRelancer"]."' onclick='document.location=\"./circ.php?categ=trans&sub=refus&action=aff_redem&transid=".$object->get_id()."\"'>";
 				case 'formatted_bt_date_retour':
-					$content .= "<input type='button' class='bouton' name='bt_date_retour_".$object->get_id()."' value='".$object->get_formatted_date_retour()."' onClick=\"var reg=new RegExp('(-)', 'g'); openPopUp('".$base_path."/select.php?what=calendrier&caller=".$this->get_form_name()."&date_caller='+".$this->get_form_name().".date_retour_".$object->get_id().".value.replace(reg,'')+'&param1=date_retour_".$object->get_id()."&param2=bt_date_retour_".$object->get_id()."&auto_submit=NO&date_anterieure=YES&after=chgDate%28id_value,".$object->get_id()."%29', 'calendar')\" />
+					return "<input type='button' class='bouton' name='bt_date_retour_".$object->get_id()."' value='".$object->get_formatted_date_retour()."' onClick=\"var reg=new RegExp('(-)', 'g'); openPopUp('".$base_path."/select.php?what=calendrier&caller=".$this->get_form_name()."&date_caller='+".$this->get_form_name().".date_retour_".$object->get_id().".value.replace(reg,'')+'&param1=date_retour_".$object->get_id()."&param2=bt_date_retour_".$object->get_id()."&auto_submit=NO&date_anterieure=YES&after=chgDate%28id_value,".$object->get_id()."%29', 'calendar')\" />
 						<input type='hidden' name='date_retour_".$object->get_id()."' value='".$object->get_date_retour()."' />";
-					break;
 				default :
-					$content .= parent::get_cell_content($object, $property);
-					break;
+					return parent::get_cell_content($object, $property);
 			}	
 		}
-		return $content;
 	}
 	
 	protected function get_edition_link() {
@@ -634,15 +661,6 @@ class list_transferts_ui extends list_ui {
 		return $content_form;
 	}
 	
-	protected function add_column_sel_button() {
-		$this->columns[] = array(
-				'property' => '',
-				'label' => "<div class='center'><input type='button' class='bouton' name='+' onclick='SelAll(document.".$this->get_form_name().");' value='+'></div>",
-				'html' => "<div class='center'><input type='checkbox' name='sel_!!id!!' value='1'></div>",
-                'exportable' => false
-		);
-	}
-	
 	public function get_display_list() {
 		global $current_module;
 		global $list_transferts_ui_script_case_a_cocher;
@@ -658,13 +676,14 @@ class list_transferts_ui extends list_ui {
 			if(count($this->objects)) {
 				//Récupération du script JS de tris
 				$display .= $this->get_js_sort_script_sort();
+				$display .= $this->pager_top();
 				//Affichage de la liste des objets
 				$display .= "<table id='".$this->objects_type."_list' class='list_ui_list ".$this->objects_type."_list'>";
 				$display .= $this->get_display_header_list();
 				$display .= $this->get_display_content_list();
 				$display .= "</table><br />";
 				$display .= $this->get_display_selection_actions();
-				$display .= $this->pager();
+				$display .= $this->pager_bottom();
 			} else {
 				$display .= $this->get_display_no_results();
 			}
@@ -749,6 +768,47 @@ class list_transferts_ui extends list_ui {
 			}
 		}
 		return $f_etat_dispo;
+	}
+	
+	protected function get_selection_mode() {
+		return 'button';
+	}
+	
+	protected function add_event_on_selection_action($action=array()) {
+		global $current_module;
+		
+		if($current_module == 'circ') {
+			$display = "
+				on(dom.byId('".$this->objects_type."_selection_action_".$action['name']."_link'), 'click', function(event) {
+					var selection = new Array();
+					query('.".$this->objects_type."_selection:checked').forEach(function(node) {
+						selection.push(node.value);
+					});
+					if(selection.length) {
+						var confirm_msg = '".(isset($action['link']['confirm']) ? addslashes($action['link']['confirm']) : '')."';
+						if(!confirm_msg || confirm(confirm_msg)) {
+							if(document.getElementById('statut_reception') && document.getElementById('statut_reception_list')) {
+				                var e = document.getElementById('statut_reception');
+				                document.getElementById('statut_reception_list').value = e.options[e.selectedIndex].value;
+				            }
+				            if(document.getElementById('section_reception') && document.getElementById('section_reception_list')) {
+				                var e = document.getElementById('section_reception');
+				                document.getElementById('section_reception_list').value = e.options[e.selectedIndex].value;
+				            }
+							document.".$this->get_form_name().".action.value = 'aff_".$action['name']."';
+							document.".$this->get_form_name().".submit();
+						}
+					} else {
+						alert('".addslashes($this->get_error_message_empty_selection($action))."');
+						event.preventDefault();
+						return false;
+					}
+				});
+			";
+		} else {
+			$display = parent::add_event_on_selection_action($action);
+		}
+		return $display;
 	}
 	
 	public static function get_ajax_controller_url_base() {

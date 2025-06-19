@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contact_form.class.php,v 1.2 2021/05/06 13:40:04 dgoron Exp $
+// $Id: contact_form.class.php,v 1.5.4.1 2023/10/10 07:43:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $base_path, $class_path, $include_path;
 require_once($class_path."/contact_forms/contact_form_parameters.class.php");
 require_once($class_path."/contact_forms/contact_form_objects.class.php");
 require_once($class_path."/contact_forms/contact_form_object.class.php");
@@ -42,6 +43,11 @@ class contact_form {
 	protected $messages;
 	
 	/**
+	 * Tableau des messages d'erreur par champ
+	 */
+	protected $fields_errors;
+	
+	/**
 	 * Envoyé (Oui / Non)
 	 * @var Boolean
 	 */
@@ -69,6 +75,7 @@ class contact_form {
 		$this->parameters = $contact_form_parameters->get_parameters();
 		$this->form_fields = new stdClass();
 		$this->messages = array();
+		$this->fields_errors = array();
 		$this->sended = false;
 	}
 	
@@ -145,8 +152,14 @@ class contact_form {
 	public function get_form() {
 		global $msg, $charset;
 		global $contact_form_form_tpl;
+		global $contact_form_show_errors;
+		global $contact_form_show_fields_errors;
 		
-		$form = $contact_form_form_tpl;
+		$form = $contact_form_show_errors;
+		if(!empty($this->parameters['display_fields_errors'])) {
+		    $form = $contact_form_show_fields_errors;
+		}
+		$form .= $contact_form_form_tpl;
 		$contact_form_recipients = new contact_form_recipients($this->id, $this->parameters['recipients_mode']);
 		$form = str_replace("!!id!!", $this->id, $form);
 		$form = str_replace("!!recipients!!", $contact_form_recipients->get_form(), $form);
@@ -166,7 +179,11 @@ class contact_form {
 		    $form = str_replace("!!objects_selector!!", 
 		                          htmlentities($msg['contact_form_object_other'], ENT_QUOTES, $charset)."
                                 <input type='hidden' name='contact_form_objects' value='0' />
-                                <script type='text/javascript'>contact_form_object_free_entry_only();</script>"
+                                <script type='text/javascript'>
+									addLoadEvent(function() {
+										contact_form_object_free_entry_only();
+									});
+								</script>"
             , $form);
 		}
 		
@@ -186,6 +203,7 @@ class contact_form {
 		$securimage = new Securimage();
 		if (!$securimage->check($this->form_fields->contact_form_verifcode)) {
 			$this->messages[] = $msg['contact_form_verifcode_mandatory'];
+			$this->fields_errors["contact_form_verifcode"] = $msg['contact_form_verifcode_mandatory'];
 		}
 		//Remove random value
 		$_SESSION['image_random_value'] = '';
@@ -199,20 +217,24 @@ class contact_form {
 		}
 		if(!isset($this->form_fields->contact_form_recipients) || ($this->form_fields->contact_form_recipients === '')) {
 			$this->messages[] = $msg['contact_form_recipient_mandatory'];
+			$this->fields_errors["contact_form_recipients"] = $msg['contact_form_recipient_mandatory'];
 		}
 		if(is_array($this->parameters['fields'])) {
 			foreach ($this->parameters['fields'] as $name=>$field) {
 				$property = 'contact_form_parameter_'.$name;
 				if($field['mandatory'] && (empty($this->form_fields->{$property}) || (trim($this->form_fields->{$property}) == ''))) {
 					$this->messages[] = $msg[$property.'_mandatory'];
+					$this->fields_errors[$property] = $msg[$property.'_mandatory'];
 				}
 			}
 		}
 		if(!$this->form_fields->contact_form_objects && empty($this->form_fields->contact_form_object_free_entry)) {
 		    $this->messages[] = $msg['contact_form_object_mandatory'];
+		    $this->fields_errors["contact_form_objects"] = $msg['contact_form_object_mandatory'];
 		}
 		if(!trim($this->form_fields->contact_form_text)) {
 			$this->messages[] = $msg['contact_form_text_mandatory'];
+			$this->fields_errors["contact_form_text"] = $msg['contact_form_text_mandatory'];
 		}
 		if(count($this->messages)) {
 			return false;
@@ -225,47 +247,21 @@ class contact_form {
 	 * Envoi de mail
 	 */
 	public function send_mail() {
-		global $msg, $charset;
+		global $msg;
 		
-		$contact_form_recipients = new contact_form_recipients($this->id, $this->parameters['recipients_mode']);
-		$recipients = $contact_form_recipients->get_recipients();
-		$recipient_info = $recipients[$this->parameters['recipients_mode']][$this->form_fields->contact_form_recipients];
-		$transmitter_info = array();
-		if(!empty($this->form_fields->contact_form_parameter_name)) {
-			$transmitter_info['name'] = $this->form_fields->contact_form_parameter_name." ".$this->form_fields->contact_form_parameter_firstname;
-		} else {
-			$transmitter_info['name'] = $this->form_fields->contact_form_parameter_email;
-		}
-		$transmitter_info['email'] = $this->form_fields->contact_form_parameter_email;
-		if(!is_valid_mail($transmitter_info['email'])){
+		$mail_opac_contact_form = new mail_opac_contact_form();
+		$mail_opac_contact_form->set_contact_form($this);
+		if(!is_valid_mail($this->form_fields->contact_form_parameter_email)){
 		    $this->messages[] = $msg['contact_form_error_email_adress'];
 		}
-		if($this->form_fields->contact_form_objects) {
-		    $contact_form_object = new contact_form_object($this->form_fields->contact_form_objects);
-		    $object_label = $contact_form_object->get_translated_label();
-		} else {
-		    $object_label = $this->form_fields->contact_form_object_free_entry;
-		}
-		$attachments = array();
-		if(!empty($this->form_fields->contact_form_parameter_attachments)) {
-		    foreach ($this->form_fields->contact_form_parameter_attachments as $parameter_attachment) {
-		        if(empty($parameter_attachment->has_error)) {
-		            $attachments[] = array(
-		                'contenu' => file_get_contents($parameter_attachment->location),
-		                'nomfichier' => $parameter_attachment->name
-		            );
-		        }
-		    }
-		}
-		$content = h2o($this->parameters['email_content'])->render(array('contact_form' => $this->form_fields));
-		$headers  = "MIME-Version: 1.0\n";
-		$headers .= "Content-type: text/html; charset=".$charset."\n";
-		$this->sended = mailpmb($recipient_info['name'], $recipient_info['email'], $object_label, $content, $recipient_info['name'], $recipient_info['email'], $headers, $recipient_info['copy_email'],"",0,$attachments,$transmitter_info['name'], $transmitter_info['email']);
+		$this->sended = $mail_opac_contact_form->send_mail();
 		if($this->sended) {
 			$this->messages[] = $msg['contact_form_send_success_msg'];
 			if($this->parameters['confirm_email']) {
-			    $sended_copy = mailpmb($transmitter_info['name'], $transmitter_info['email'], $object_label." ".$msg['contact_form_send_copy_suffix'], $content, $recipient_info['name'], ($recipient_info['transmitter_email'] ? $recipient_info['transmitter_email'] : $recipient_info['email']), $headers, "", "", 0, $attachments);
-				if($sended_copy) {
+			    $mail_opac_contact_form_confirm = new mail_opac_contact_form_confirm();
+			    $mail_opac_contact_form_confirm->set_contact_form($this);
+			    $sended_copy = $mail_opac_contact_form_confirm->send_mail();
+			    if($sended_copy) {
 					$this->messages[] = $msg['contact_form_send_copy_success_msg'];
 				} else {
 					$this->messages[] = $msg['contact_form_send_copy_error_msg'];
@@ -312,6 +308,10 @@ class contact_form {
 	
 	public function get_messages() {
 		return $this->messages;
+	}
+	
+	public function get_fields_errors() {
+		return $this->fields_errors;
 	}
 	
 	public function set_messages($messages) {

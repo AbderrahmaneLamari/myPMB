@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: z3950_func.inc.php,v 1.19.10.1 2022/01/10 08:35:26 dgoron Exp $
+// $Id: z3950_func.inc.php,v 1.20 2022/01/10 08:31:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

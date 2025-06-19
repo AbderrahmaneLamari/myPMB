@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: caddie.class.php,v 1.115.2.2 2021/12/22 14:56:30 dgoron Exp $
+// $Id: caddie.class.php,v 1.129.4.3 2023/09/22 08:54:13 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Digitalsignature\Models\DocnumCertifier;
 
 // définition de la classe de gestion des paniers
 global $class_path, $include_path;
@@ -29,7 +31,7 @@ require_once ($class_path."/event/events/event_display_overload.class.php");
 class caddie extends caddie_root {
 	// propriétés
 	public $idcaddie ;
-	public $type = ''			;	// Type de panier (EXPL = exemplaire, BULL = bulletin, NOTI = notice)
+	public $type = ''			;	// Type de panier (EXPL = exemplaire, BULL = bulletin, NOTI = notice, EXPLNUM = document numérique)
 	public $item_base = 0		;	// nombre d'enregistrements issus/connus dans la base PMB dans le panier
 	public $nb_item_base_pointe = 0	;	// nombre d'enregistrements pointés issus/connus dans la base PMB dans le panier
 	public $nb_item_blob = 0 		;	// nombre d'enregistrements inconnus dans la base PMB dans le panier
@@ -105,9 +107,9 @@ class caddie extends caddie_root {
 		}
 	}
 	
-	protected function get_template_form() {
-		global $cart_form;
-		return $cart_form;
+	protected function get_template_content_form() {
+		global $cart_content_form;
+		return $cart_content_form;
 	}
 	
 	protected function get_warning_delete() {
@@ -139,7 +141,7 @@ class caddie extends caddie_root {
 	}
 	
 	public static function get_types() {
-		return array('NOTI', 'EXPL', 'BULL');
+		return array('NOTI', 'EXPL', 'BULL'/*, 'EXPLNUM'*/);
 	}
 	
 	protected function has_selected_option_type_form($type) {
@@ -153,31 +155,6 @@ class caddie extends caddie_root {
 			return true;
 		}
 		return false;
-	}
-	
-	// formulaire
-	public function get_form($form_action="", $form_cancel="", $form_duplicate="") {
-		global $msg, $charset;
-		global $liaison_tpl;
-		global $current_print;
-		
-		$form = parent::get_form($form_action, $form_cancel, $form_duplicate);
-		$form=str_replace('!!cart_type!!', $this->get_type_form(), $form);
-		if ($this->get_idcaddie()) {
-			$info_liaisons = $this->get_links_form();
-			$message_delete_warning = "";
-			if($info_liaisons){
-				$liaison_tpl=str_replace("<!-- info_liaisons -->",$info_liaisons,$liaison_tpl);
-				$form = str_replace('<!-- liaisons -->', $liaison_tpl, $form);
-				$message_delete_warning = $this->get_warning_delete();
-			}
-			$button_delete = "<input type='button' class='bouton' value=' ".$msg['supprimer']." ' onClick=\"javascript:confirmation_delete(".$this->get_idcaddie().",'".htmlentities(addslashes($this->name),ENT_QUOTES, $charset)."')\" />";
-			$form = str_replace('!!button_delete!!', $button_delete, $form);
-			$form .= confirmation_delete("./catalog.php?categ=caddie&action=del_cart&idcaddie=",$message_delete_warning);
-		} else {
-			$form = str_replace('!!button_delete!!', '', $form);
-		}
-		return $form;
 	}
 	
 	// Liaisons pour le panier
@@ -437,7 +414,43 @@ class caddie extends caddie_root {
 			}
 			if ($this->type=="EXPL" && $object_type=="EXPL") {
 				$rqt_expl = "select expl_id from exemplaires where expl_id='$item' ";
-			} // fin if NOTI / BULL
+			} // fin if EXPL / EXPL
+			
+			// panier de documents numériques :
+			//		Notice reçue :
+			//			on stocke tous les documents numériques associés à la notice
+			//				voir le pb de notice de dépouillement
+			if ($this->type=="EXPLNUM" && $object_type=="NOTI") {
+				$rqt_mono_serial_bull_analysis = "select niveau_biblio, niveau_hierar from notices where notice_id = '$item' ";
+				$res_mono_serial_bull_analysis = pmb_mysql_query($rqt_mono_serial_bull_analysis);
+				$row_mono_serial_bull_analysis = pmb_mysql_fetch_object($res_mono_serial_bull_analysis);
+				// monographie
+				if ($row_mono_serial_bull_analysis->niveau_biblio=="m" && $row_mono_serial_bull_analysis->niveau_hierar=="0")
+					$rqt_expl = "select explnum_id from explnum where explnum_notice='$item' ";
+				// périodique : notice mère
+				if ($row_mono_serial_bull_analysis->niveau_biblio=="s" && $row_mono_serial_bull_analysis->niveau_hierar=="1")
+					$rqt_expl = "select explnum_id from explnum, bulletins where bulletin_notice='$item' and explnum_bulletin=bulletin_id ";
+				// périodique : notice de dépouillement (analytique)
+				if ($row_mono_serial_bull_analysis->niveau_biblio=="a" && $row_mono_serial_bull_analysis->niveau_hierar=="2")
+					$rqt_expl = "select explnum_id from explnum, analysis where analysis_notice='$item' and analysis_bulletin=explnum_bulletin ";
+				// bulletin : notice de bulletin
+				if ($row_mono_serial_bull_analysis->niveau_biblio=="b" && $row_mono_serial_bull_analysis->niveau_hierar=="2")
+					$rqt_expl = "select explnum_id from explnum, bulletins where num_notice='$item' and bulletin_id=explnum_bulletin ";
+			}
+			//		EXPL reçu :
+			//			on stocke le document numérique
+			//				voir le pb d'expl de bulletin
+			if ($this->type=="EXPLNUM" && $object_type=="EXPL") {
+				$rqt_mono_bull = "select expl_notice, expl_bulletin from exemplaires where expl_id='$item' ";
+				$res_mono_bull = pmb_mysql_query($rqt_mono_bull);
+				$row_mono_bull = pmb_mysql_fetch_object($res_mono_bull);
+				// expl de monographie
+				if ($row_mono_bull->expl_notice && !$row_mono_bull->expl_bulletin)
+					$rqt_expl = "select explnum_id from explnum join exemplaires on exemplaires.expl_notice = explnum.explnum_notice and explnum.explnum_bulletin = 0 WHERE expl_id='$item' ";
+				// expl de bulletin
+				if (!$row_mono_bull->expl_notice && $row_mono_bull->expl_bulletin)
+					$rqt_expl = "select explnum_id from explnum join exemplaires on exemplaires.expl_bulletin = explnum.explnum_bulletin and explnum.explnum_notice = 0 where expl_id='$item' ";
+			} // fin if EXPLNUM / EXPL
 			
 			if ($rqt_expl) {
 				$res_expl = pmb_mysql_query($rqt_expl);
@@ -483,42 +496,59 @@ class caddie extends caddie_root {
 		switch ($this->type) {
 			case "EXPL" :
 				if (!$this->verif_expl_item($item)) {
-					if ($forcage['source_id']) {
-						exemplaire::save_to_agnostic_warehouse(array(0=>$item),$forcage['source_id']);
-					}
-					if (exemplaire::del_expl($item)) {
-						return CADDIE_ITEM_SUPPR_BASE_OK ;
+					if($this->has_del_item_base_rights($item, TYPE_EXPL)){
+						if ($forcage['source_id']) {
+							exemplaire::save_to_agnostic_warehouse(array(0=>$item),$forcage['source_id']);
+						}
+						if (exemplaire::del_expl($item)) {
+							return CADDIE_ITEM_SUPPR_BASE_OK ;
+						} else {
+							return 0 ;
+						}
 					} else {
-						return 0 ;
+						return CADDIE_ITEM_NO_DELETION_RIGHTS;
 					}
 				} else return CADDIE_ITEM_EXPL_PRET ;
 				break ;
 			case "BULL" :
 				if (!$this->verif_bull_item($item,$forcage)) {
-					// aucun prêt d'exemplaire de ce bulletin en cours, on supprime :
-					$myBulletinage = new bulletinage($item);
-					$myBulletinage->delete();	
-					
-					return CADDIE_ITEM_SUPPR_BASE_OK ;
+					if($this->has_del_item_base_rights($item, TYPE_BULLETIN)){
+						// aucun prêt d'exemplaire de ce bulletin en cours, on supprime :
+						$myBulletinage = new bulletinage($item);
+						$myBulletinage->delete();
+						
+						return CADDIE_ITEM_SUPPR_BASE_OK ;
+					} else {
+						return CADDIE_ITEM_NO_DELETION_RIGHTS;
+					}
 				} else return CADDIE_ITEM_BULL_USED ;
 				break ;
 			case "NOTI" :
 				if (!$this->verif_noti_item($item,$forcage)) {
-					if ($forcage['source_id']) {
-						notice::save_to_agnostic_warehouse(array(0=>$item),$forcage['source_id']);
+					if($this->has_del_item_base_rights($item, TYPE_NOTICE)){
+						if ($forcage['source_id']) {
+							notice::save_to_agnostic_warehouse(array(0=>$item),$forcage['source_id']);
+						}
+						$requete="SELECT niveau_biblio, niveau_hierar FROM notices WHERE notice_id='".$item."'";
+						$res=pmb_mysql_query($requete);
+						if(pmb_mysql_num_rows($res) && (pmb_mysql_result($res,0,0) == "s") && (pmb_mysql_result($res,0,1) == "1")){
+							$myBulletinage = new serial($item);
+							$myBulletinage->serial_delete();
+						}else{
+							notice::del_notice($item);
+						}
+						return CADDIE_ITEM_SUPPR_BASE_OK ;
+					} else {
+						return CADDIE_ITEM_NO_DELETION_RIGHTS;
 					}
-					$requete="SELECT niveau_biblio, niveau_hierar FROM notices WHERE notice_id='".$item."'";
-					$res=pmb_mysql_query($requete);
-					if(pmb_mysql_num_rows($res) && (pmb_mysql_result($res,0,0) == "s") && (pmb_mysql_result($res,0,1) == "1")){
-						$myBulletinage = new serial($item);
-						$myBulletinage->serial_delete();
-					}else{
-						notice::del_notice($item);
-					}
-					return CADDIE_ITEM_SUPPR_BASE_OK ;
 				} else return CADDIE_ITEM_NOTI_USED ;
 				break ;
-			}
+			case "EXPLNUM":
+				if (!$this->verif_explnum_item($item,$forcage)) {
+					
+				} else return CADDIE_ITEM_EXPLNUM_USED ;
+				break;
+		}
 						
 		return CADDIE_ITEM_OK ;
 	}
@@ -548,23 +578,62 @@ class caddie extends caddie_root {
 		$this->compte_items();
 	}
 
+	protected function get_query_explnum_from_item($item=0) {
+		$query = "select explnum_id, explnum_notice as numnotice, explnum_bulletin, explnum_data, explnum_extfichier, explnum_nomfichier, length(explnum_data) as taille ";
+		if ($this->type=="NOTI") {
+			$query .= " FROM explnum WHERE ";
+			$query .= " explnum_notice=$item ";
+		} elseif ($this->type=="BULL") {
+			$query .= " FROM explnum JOIN bulletins on bulletin_id=explnum_bulletin WHERE ";
+			$query .= " explnum_bulletin=$item ";
+		} elseif ($this->type=="EXPLNUM") {
+			$query .= " FROM explnum WHERE ";
+			$query .= " explnum_id=$item ";
+		} else return ''; // pas encore de document numérique attaché à un exemplaire
+		$query .= " and ((explnum_data is not null and explnum_data!='') OR (explnum_nomfichier is not null and explnum_nomfichier!=''))";
+		return $query;
+	}
+	
+	public function sign_docnum($item, $id_signature) {
+	    global $charset, $msg;
+	    
+	    $query = $this->get_query_explnum_from_item($item);
+	    $result = pmb_mysql_query($query);
+	    $certifier = new DocnumCertifier(null);
+	    $ret = '';
+	    while ($rows = pmb_mysql_fetch_assoc($result)) {
+    	    $explnum = new explnum($rows["explnum_id"]);
+    	    $certifier->setEntity($explnum);
+	        $isSign = $msg['caddie_already_signed_docnum'];
+    	    if(!$certifier->checkSignExists()) {
+    	        $isSign = $msg['caddie_signed_docnum'];
+        	    $certifier->sign($id_signature);
+        	    if(!$certifier->checkSignExists()) {
+        	        $isSign = $msg['caddie_not_signed_docnum'];
+        	    }
+    	    }
+    	    $ret .= "<li>". htmlentities($explnum->explnum_nomfichier, ENT_QUOTES, $charset). " - " . $isSign . "</li>";
+	    }
+	    
+	    unset($certifier);
+	    if (!empty($ret)) {
+	        return "<blockquote><ul>".$ret."</ul></blockquote>";
+	    } else {
+	        return;
+	    }
+	}
+	
 	// Export des documents numérique d'un item 
-	public function export_doc_num($item=0,$chemin) {
+	public function export_doc_num($item=0,$chemin='') {
 		global $charset, $msg;
 		
+		if ($this->type=="EXPL") {
+			return; // pas encore de document numérique attaché à un exemplaire
+		}
+		$ret = '';
 		$pattern_nom_fichier_doc_num="!!explnumid!!_!!idnotice!!_!!idbulletin!!_!!indicedocnum!!_!!nomdoc!!";
 		
-		if ($this->type=="NOTI") {
-			$requete = "select explnum_id, explnum_notice as numnotice, explnum_bulletin, explnum_data, explnum_extfichier, explnum_nomfichier, length(explnum_data) as taille ";
-			$requete .= " FROM explnum WHERE ";
-			$requete .= " explnum_notice=$item ";
-		} elseif ($this->type=="BULL") {
-			$requete = "select explnum_id, bulletin_notice as numnotice, explnum_bulletin, explnum_data, explnum_extfichier, explnum_nomfichier, length(explnum_data) as taille ";
-			$requete .= " FROM explnum JOIN bulletins on bulletin_id=explnum_bulletin WHERE ";
-			$requete .= " explnum_bulletin=$item ";
-		} else return; // pas encore de document numérique attaché à un exemplaire
-		$requete .= " and ((explnum_data is not null and explnum_data!='') OR (explnum_nomfichier is not null and explnum_nomfichier!=''))";
-	
+		$requete = $this->get_query_explnum_from_item($item);
 		$result = pmb_mysql_query($requete) or die(pmb_mysql_error()."<br />$requete");
 		for($i=0;$i<pmb_mysql_num_rows($result);$i++) {
 			$t=pmb_mysql_fetch_object($result);
@@ -582,12 +651,62 @@ class caddie extends caddie_root {
 				$explnum = new explnum($t->explnum_id);
 				fwrite($hf, $explnum->get_file_content());
 				fclose($hf);
-				$ret = "<li>".$msg['caddie_expdocnum_wtrue']." <a href=\"".$chemin.$nomfic."\">".htmlentities($nomfic, ENT_QUOTES, $charset)."</a></li>";
+				$ret .= "<li>".$msg['caddie_expdocnum_wtrue']." <a href=\"".$chemin.$nomfic."\">".htmlentities($nomfic, ENT_QUOTES, $charset)."</a></li>";
 			} else {
-				$ret = "<li><i>".$msg['caddie_expdocnum_wfalse']." ".htmlentities($nomfic, ENT_QUOTES, $charset)."</i></li>";
+				$ret .= "<li><i>".$msg['caddie_expdocnum_wfalse']." ".htmlentities($nomfic, ENT_QUOTES, $charset)."</i></li>";
 			}
 		}
 		if (!empty($ret)) return "<blockquote>".$msg['caddie_expdocnum_dir']." ".htmlentities($chemin, ENT_QUOTES, $charset)."<br /><ul>".$ret."</ul></blockquote>";
+		else return;
+	}
+	
+	// Suppression des documents numérique d'un item
+	public function delete_doc_num($item=0) {
+		global $charset, $msg;
+		global $gestion_acces_active, $gestion_acces_user_notice, $PMBuserid;
+		
+		if ($this->type=="EXPL") {
+			return; // pas encore de document numérique attaché à un exemplaire
+		}
+		$acces_m=1;
+		if ($gestion_acces_active==1 && $gestion_acces_user_notice==1) {
+			if ($gestion_acces_active==1 && $gestion_acces_user_notice==1) {
+				$ac= new acces();
+				$dom_1= $ac->setDomain(1);
+				if($this->type == "NOTI") {
+					$acces_m = $dom_1->getRights($PMBuserid,$item,8);
+				} elseif($this->type == "BULL") {
+					$query = "select bulletin_notice, num_notice from bulletins where bulletin_id =".$item;
+					$result = pmb_mysql_query($query);
+					$row = pmb_mysql_fetch_object($result);
+					if($row->num_notice) {
+						$acces_m = $dom_1->getRights($PMBuserid,$row->num_notice,8);
+					} else {
+						$acces_m = $dom_1->getRights($PMBuserid,$row->bulletin_notice,8);
+					}
+				} elseif($this->type == "EXPLNUM") {
+					$acces_m=0;
+				}
+			}
+		}
+		$ret = '';
+		$requete = $this->get_query_explnum_from_item($item);
+		$result = pmb_mysql_query($requete) or die(pmb_mysql_error()."<br />$requete");
+		for($i=0;$i<pmb_mysql_num_rows($result);$i++) {
+			$t=pmb_mysql_fetch_object($result);
+			$explnum = new explnum($t->explnum_id);
+			
+		    $docnumCertifier = new DocnumCertifier($explnum);
+		    $hasSigned = $docnumCertifier->checkSignExists();
+			
+			if($acces_m && !$hasSigned) {
+				$explnum->delete();
+				$ret .= "<li>".$msg['caddie_deldocnum_wtrue']." ".htmlentities($explnum->explnum_nomfichier, ENT_QUOTES, $charset)."</li>";
+			} else {
+				$ret .= "<li><i>".$msg['caddie_deldocnum_wfalse']." ".htmlentities($explnum->explnum_nomfichier, ENT_QUOTES, $charset)."</i></li>";
+			}
+		}
+		if (!empty($ret)) return "<blockquote><ul>".$ret."</ul></blockquote>";
 		else return;
 	}
 
@@ -615,7 +734,7 @@ class caddie extends caddie_root {
 				
 			if ($deja_item) {
 				$requete = "update caddie_content set flag='1' where caddie_id='".$this->idcaddie."' and object_id='".$item."' ";
-				$result = pmb_mysql_query($requete);
+				pmb_mysql_query($requete);
 				$this->compte_items();
 			} else return CADDIE_ITEM_INEXISTANT;
 		} else {
@@ -703,6 +822,22 @@ class caddie extends caddie_root {
 					$rqt_expl = "select bulletin_id from bulletins where num_notice='$item' ";
 			}
 				
+			// panier de documents numériques :
+			//		EXPL reçu :
+			//			on stocke le document numérique
+			//				voir le pb d'expl de bulletin
+			if ($this->type=="EXPLNUM" && $object_type=="EXPL") {
+				$rqt_mono_bull = "select expl_notice, expl_bulletin from exemplaires where expl_id='$item' ";
+				$res_mono_bull = pmb_mysql_query($rqt_mono_bull);
+				$row_mono_bull = pmb_mysql_fetch_object($res_mono_bull);
+				// expl de monographie
+				if ($row_mono_bull->expl_notice && !$row_mono_bull->expl_bulletin)
+					$rqt_expl = "select explnum_id from explnum join exemplaires on exemplaires.expl_notice = explnum.explnum_notice and explnum.explnum_bulletin = 0 WHERE expl_id='$item' ";
+				// expl de bulletin
+				if (!$row_mono_bull->expl_notice && $row_mono_bull->expl_bulletin)
+					$rqt_expl = "select explnum_id from explnum join exemplaires on exemplaires.expl_bulletin = explnum.explnum_bulletin and explnum.explnum_notice = 0 where expl_id='$item' ";
+			} // fin if EXPLNUM / EXPL
+			
 			if ($rqt_expl) {
 				$res_expl = pmb_mysql_query($rqt_expl);
 				for($i=0;$i<pmb_mysql_num_rows($res_expl);$i++) {
@@ -840,6 +975,7 @@ class caddie extends caddie_root {
 	}
 	
 	public function verif_noti_item($noti,$forcage=array()) {
+	    
 		if ($noti) {
 			if ($this->type=="BULL") {
 				$query = "select count(1) from analysis where analysis_notice=".$noti." limit 1 ";
@@ -883,28 +1019,23 @@ class caddie extends caddie_root {
 				$result = pmb_mysql_query($query);
 				if (pmb_mysql_result($result, 0, 0) && !$forcage['notice_perio_modele']) return 1 ;
 			}
+			
+			//Pour les signatures electroniques
+			if(DocnumCertifier::hasSignedDocnumFromNoticeId($noti)) {			    
+                return 1;
+			}
 		}
 		return 0 ;
 	}
 	
-	static public function show_actions($id_caddie = 0, $type_caddie = 'NOTI') {
-		global $cart_action_selector,$cart_action_selector_line;
-
-		$array_actions = self::get_array_actions($id_caddie, $type_caddie);
-		//On crée les lignes du menu
-		$lines = '';
-		if(is_array($array_actions) && count($array_actions)){
-			foreach($array_actions as $item_action){
-				$tmp_line = str_replace('!!cart_action_selector_line_location!!',$item_action['location'],$cart_action_selector_line);
-				$tmp_line = str_replace('!!cart_action_selector_line_msg!!',$item_action['msg'],$tmp_line);
-				$lines.= $tmp_line;
-			}
-		}
-		
-		//On récupère le template
-		$to_show = str_replace('!!cart_action_selector_lines!!',$lines,$cart_action_selector);
-		
-		return $to_show;
+	public function verif_explnum_item($explnum,$forcage=array()) {
+	    //Pour les signatures electroniques
+        $explnum = new explnum($explnum);
+        $docnumCertifier = new DocnumCertifier($explnum);
+        if($docnumCertifier->checkSignExists()) {
+	        return 1;
+        }
+		return 0;
 	}
 	
 	public static function get_array_actions($id_caddie = 0, $type_caddie = 'NOTI', $actions_to_remove = array()) {
@@ -913,46 +1044,52 @@ class caddie extends caddie_root {
 		
 		$array_actions = array();
 		if (empty($actions_to_remove['edit_cart'])) { 
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_edit_panier"], 'location' => './catalog.php?categ=caddie&sub=gestion&quoi=panier&action=edit_cart&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_edit_panier"], 'location' => static::get_constructed_link('gestion', 'panier', 'edit_cart', $id_caddie, '&item=0'));
+		}
+		if (empty($actions_to_remove['pointage_raz'])) {
+			$array_actions[] = array('msg' => $msg["caddie_menu_pointage_raz"], 'location' => static::get_constructed_link('pointage', 'raz', '', $id_caddie));
 		}
 		if (empty($actions_to_remove['supprpanier'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_suppr_panier"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=supprpanier&action=choix_quoi&object_type=NOTI&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_suppr_panier"], 'location' => static::get_constructed_link('action', 'supprpanier', 'choix_quoi', $id_caddie, '&object_type=NOTI&item=0'));
 		}
 		if (empty($actions_to_remove['transfert'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_transfert"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=transfert&action=transfert&object_type=NOTI&idcaddie='.$id_caddie.'&item=');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_transfert"], 'location' => static::get_constructed_link('action', 'transfert', 'transfert', $id_caddie, '&object_type=NOTI&item=0'));
 		}
 		if (empty($actions_to_remove['edition'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_edition"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=edition&action=choix_quoi&object_type=NOTI&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_edition"], 'location' => static::get_constructed_link('action', 'edition', 'choix_quoi', $id_caddie, '&object_type=NOTI&item=0'));
 		}
 		if ($type_caddie == "EXPL" && empty($actions_to_remove['impr_cote'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_impr_cote"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=impr_cote&action=choix_quoi&object_type=EXPL&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_impr_cote"], 'location' => static::get_constructed_link('action', 'impr_cote', 'choix_quoi', $id_caddie, '&object_type=EXPL&item=0'));
 		}
 		if (empty($actions_to_remove['export'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_export"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=export&action=choix_quoi&object_type=NOTI&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_export"], 'location' => static::get_constructed_link('action', 'export', 'choix_quoi', $id_caddie, '&object_type=NOTI&item=0'));
 		}
 		if (empty($actions_to_remove['expdocnum'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_exp_docnum"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=expdocnum&action=choix_quoi&object_type=NOTI&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_exp_docnum"], 'location' => static::get_constructed_link('action', 'docnum', 'choix_quoi', $id_caddie, '&object_type=NOTI&item=0'));
 		}
 		if (empty($actions_to_remove['selection'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_selection"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=selection&action=&object_type=NOTI&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_selection"], 'location' => static::get_constructed_link('action', 'selection', '', $id_caddie, '&object_type=NOTI&item=0'));
 		}
 		$evt_handler = events_handler::get_instance();
 		$event = new event_users_group("users_group", "get_autorisation_del_base");
 		$evt_handler->send($event);
 		if(!$event->get_error_message() && empty($actions_to_remove['supprbase'])){
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_suppr_base"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=supprbase&action=choix_quoi&object_type=NOTI&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_suppr_base"], 'location' => static::get_constructed_link('action', 'supprbase', 'choix_quoi', $id_caddie, '&object_type=NOTI&item=0'));
 		}
 		if (empty($actions_to_remove['reindex'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_reindex"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=reindex&action=choix_quoi&object_type=NOTI&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_reindex"], 'location' => static::get_constructed_link('action', 'reindex', 'choix_quoi', $id_caddie, '&object_type=NOTI&item=0'));
 		}
 		if($gestion_acces_active && empty($actions_to_remove['access_rights'])){
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_access_rights"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=access_rights&action=choix_quoi&object_type=NOTI&idcaddie='.$id_caddie.'&item=0');
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_access_rights"], 'location' => static::get_constructed_link('action', 'access_rights', 'choix_quoi', $id_caddie, '&object_type=NOTI&item=0'));
 		}
 		if((SESSrights & CIRCULATION_AUTH) && $pmb_scan_request_activate && empty($actions_to_remove['scan_request'])){
-			$array_actions[] = array('msg' => $msg["scan_request_record_button"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=scan_request&action=choix_quoi&object_type=NOTI&idcaddie='.$id_caddie);
+			$array_actions[] = array('msg' => $msg["scan_request_record_button"], 'location' => static::get_constructed_link('action', 'scan_request', 'choix_quoi', $id_caddie, '&object_type=NOTI'));
 		}
 		if ($pmb_transferts_actif && empty($actions_to_remove['transfert_to_locations'])) {
-			$array_actions[] = array('msg' => $msg["caddie_menu_action_transfert_to_location"], 'location' => './catalog.php?categ=caddie&sub=action&quelle=transfert_to_location&action=choix_quoi&object_type=EXPL&idcaddie='.$id_caddie);
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_transfert_to_location"], 'location' => static::get_constructed_link('action', 'transfert_to_location', 'choix_quoi', $id_caddie, '&object_type=EXPL'));
+		}
+		if($type_caddie == "EXPL" && empty($actions_to_remove['print_barcode'])){
+			$array_actions[] = array('msg' => $msg["caddie_menu_action_print_barcode"], 'location' => static::get_constructed_link('action', 'print_barcode', 'choix_quoi', $id_caddie, '&object_type=EXPL'));
 		}
 		$event = new event_display_overload("caddie_action", "add_array_caddie_action");
 		$event->set_entity_id($id_caddie);
@@ -997,6 +1134,7 @@ class caddie extends caddie_root {
 		$final_query=str_replace("CADDIE(NOTI)",$by,$query);
 		$final_query=str_replace("CADDIE(EXPL)",$by,$final_query);
 		$final_query=str_replace("CADDIE(BULL)",$by,$final_query);
+		$final_query=str_replace("CADDIE(EXPLNUM)",$by,$final_query);
 		return $final_query;
 	}
 	
@@ -1017,6 +1155,9 @@ class caddie extends caddie_root {
 			case 'BULL':
 				return new list_caddie_content_ui(array(), array(), array('by' => 'bulletin_titre', 'asc_desc' => 'asc'));
 				break;
+			case 'EXPLNUM':
+				return new list_caddie_content_ui(array(), array(), array('by' => 'explnum_nom', 'asc_desc' => 'asc'));
+				break;
 			case 'NOTI':
 			case 'EXPL':
 			default:
@@ -1029,7 +1170,7 @@ class caddie extends caddie_root {
 		global $msg;
 		
 		if(!$action) $action = "./catalog/caddie/action/edit.php?idcaddie=".$this->get_idcaddie();
-		if(!$action_cancel) $action_cancel = "./catalog.php?categ=caddie&sub=action&quelle=edition&action=&idcaddie=0" ;
+		if(!$action_cancel) $action_cancel = static::get_constructed_link('action', 'edition');
 		$form = parent::get_edition_form($action, $action_cancel);
 		$sel_notice_tpl=notice_tpl_gen::gen_tpl_select("notice_tpl",0,'',1,1);
 		$suppl = "";
@@ -1174,6 +1315,10 @@ class caddie extends caddie_root {
 					$from = " caddie_content left join bulletins on bulletin_id = object_id ";
 					$order_by = " date_date " ;
 					break ;
+				case "EXPLNUM":
+					$from = " caddie_content left join explnum on explnum_id=object_id left join notices on notice_id = explnum_notice ";
+					$order_by = " explnum_nom " ;
+					break ;
 			}
 	
 			$requete = "SELECT * FROM $from where caddie_id='".$this->get_idcaddie()."' ".static::get_query_filters();
@@ -1212,7 +1357,8 @@ class caddie extends caddie_root {
 			return;
 		} else {
 			print $this->get_js_script_cart_objects('catalog');
-	
+			//on ne charge pas le contenu des notices (vignettes,...) pour optimiser l'affichages des paniers
+			elements_records_list_ui::enable_lazy_loading();
 			// en fonction du type de caddie on affiche ce qu'il faut
 			if ($this->type=="NOTI") {
 				// boucle de parcours des notices trouvées
@@ -1222,6 +1368,7 @@ class caddie extends caddie_root {
 				//Affichage du lien impression et panier
 				if (($rec_history)&&($_SESSION["CURRENT"]!==false)) {
 					$current=$_SESSION["CURRENT"];
+					$tri_id_info = $_SESSION["tri"] ? "&sort_id=".$_SESSION["tri"] : "";
 					print "&nbsp;<a href='#' onClick=\"openPopUp('./print_cart.php?current_print=$current&action=print_prepare','print'); return false;\"><img src='".get_url_icon('basket_small_20x20.gif')."' border='0' class='center' alt=\"".$msg["histo_add_to_cart"]."\" title=\"".$msg["histo_add_to_cart"]."\"></a>&nbsp;<a href='#' onClick=\"openPopUp('./print.php?current_print=$current&action_print=print_prepare','print',500,600,-2,-2,'scrollbars=yes,menubar=0'); return false;\"><img src='".get_url_icon('print.gif')."' border='0' class='center' alt=\"".$msg["histo_print"]."\" title=\"".$msg["histo_print"]."\"/></a>";
 					print "&nbsp;<a href='#' onClick=\"openPopUp('./download.php?current_download=$current&action_download=download_prepare".$tri_id_info."','download'); return false;\"><img src='".get_url_icon('upload_docnum.gif')."' border='0' class='center' alt=\"".$msg["docnum_download"]."\" title=\"".$msg["docnum_download"]."\"/></a>";
 					if ($nbr_lignes<=$pmb_nb_max_tri) {
@@ -1234,6 +1381,7 @@ class caddie extends caddie_root {
 				$elements_records_caddie_list_ui->set_show_resa(0);
 				$elements_records_caddie_list_ui->set_show_resa_planning(0);
 				$elements_records_caddie_list_ui->set_draggable(0);
+				$elements_records_caddie_list_ui->set_ajax_mode(1);
 				elements_records_caddie_list_ui::set_url_base($url_base);
 				elements_records_caddie_list_ui::set_idcaddie($this->get_idcaddie());
 				elements_records_caddie_list_ui::set_no_del($no_del);
@@ -1249,7 +1397,7 @@ class caddie extends caddie_root {
 				// début de liste
 				print $begin_result_liste;
 				print caddie::show_actions($this->get_idcaddie(),$this->type);
-				foreach ($liste as $cle => $expl) {
+				foreach ($liste as $expl) {
 					if (!$expl['content']) {
 						if($stuff = get_expl_info($expl['object_id'])) {
 							if (!$no_point) {
@@ -1298,7 +1446,7 @@ class caddie extends caddie_root {
 				// début de liste
 				print $begin_result_liste;
 				print caddie::show_actions($this->get_idcaddie(),$this->type);
-				foreach ($liste as $cle => $expl) {
+				foreach ($liste as $expl) {
 					if (!$no_del) $show_del=1; else $show_del=0;
 					if($bull_aff = show_bulletinage_info($expl['object_id'], 0 , $show_del, $expl['flag'],1)) {
 						print pmb_bidi($bull_aff);
@@ -1323,6 +1471,17 @@ class caddie extends caddie_root {
 				} // fin de liste
 				print $end_result_liste;
 			} // fin si BULL
+			if ($this->type=="EXPLNUM") {
+				// boucle de parcours des documents numériques trouvés
+				// inclusion du javascript de gestion des listes dépliables
+				// début de liste
+				print $begin_result_liste;
+				print caddie::show_actions($this->get_idcaddie(),$this->type);
+				foreach ($liste as $explnum) {
+					// TODO : Affichage d'un document numérique
+				} // fin de liste
+				print $end_result_liste;
+			} // fin si EXPLNUM
 		}
 		print "<br />".$nav_bar ;
 		return;
@@ -1403,6 +1562,8 @@ class caddie extends caddie_root {
 				$form = str_replace('<!--suppr_link-->', $sources_form, $form);
 			}elseif($this->type == 'BULL'){
 				$form = str_replace('<!--suppr_link-->', $bull_liked_suppr_form, $form);
+			}elseif($this->type == 'EXPLNUM'){
+				$form = str_replace('<!--suppr_link-->', '', $form);
 			}
 		}
 		if ($aff_choix_dep) $form = str_replace('!!bull_not_ou_dep!!',$cart_choix_quoi_not_ou_dep,$form);
@@ -1450,6 +1611,28 @@ class caddie extends caddie_root {
 					}
 				}
 			}
+		}elseif($this->type=='EXPLNUM'){
+			$requete="SELECT explnum_notice, explnum_bulletin FROM explnum WHERE explnum_id='".$object."' ";
+			$res=pmb_mysql_query($requete);
+			if(pmb_mysql_num_rows($res)){
+				$row=pmb_mysql_fetch_object($res);
+				if($row->explnum_notice){
+					notice::majNoticesTotal($row->explnum_notice);
+				}else{
+					$requete="SELECT bulletin_titre, num_notice FROM bulletins WHERE bulletin_id='".$row->explnum_bulletin."'";
+					$res2=pmb_mysql_query($requete);
+					if(pmb_mysql_num_rows($res2)){
+						$element=pmb_mysql_fetch_object($res2);
+						if(trim($element->bulletin_titre)){
+							$requete="UPDATE bulletins SET index_titre=' ".addslashes(strip_empty_words($element->bulletin_titre))." ' WHERE bulletin_id='".$row->explnum_bulletin."'";
+							pmb_mysql_query($requete);
+						}
+						if($element->num_notice){
+							notice::majNoticesTotal($element->num_notice);
+						}
+					}
+				}
+			}
 		}
 	}
 	
@@ -1475,23 +1658,32 @@ class caddie extends caddie_root {
 		if($supp_notice_perio_modele) $forcage['notice_perio_modele']=1; else $forcage['notice_perio_modele']=0;
 		if($supp_bulletin_linked_expl_num) $forcage['bulletin_linked_expl_num']=1; else $forcage['bulletin_linked_expl_num']=0;
 		
-		$res_aff_suppr_base = '';
-		foreach ($liste as $cle => $object) {
+		$res_aff_suppr_base = array();
+		foreach ($liste as $object) {
 			// le formulaire demande de suprimmer toutes les notices liées à celle-ci
 			if($supp_notice_linked_cascade) {
 				$forcage['notice_linked']=1;
 				$liste_linked=notice::get_list_child($object);
 				foreach($liste_linked as $object) {
-					if ($this->del_item_base($object,$forcage)==CADDIE_ITEM_SUPPR_BASE_OK)
+					$del_item_base = $this->del_item_base($object,$forcage);
+					if ($del_item_base == CADDIE_ITEM_SUPPR_BASE_OK) {
 						$this->del_item_all_caddies ($object, $this->type) ;
-					else {
-						$res_aff_suppr_base .= aff_cart_unique_object ($object, $this->type, $url_base="./catalog.php?categ=caddie&sub=gestion&quoi=panier&idcaddie=".$this->idcaddie) ;
+					} else {
+						if(empty($res_aff_suppr_base[$del_item_base])) {
+							$res_aff_suppr_base[$del_item_base] = array();
+						}
+						$res_aff_suppr_base[$del_item_base][] = aff_cart_unique_object ($object, $this->type, $url_base="./catalog.php?categ=caddie&sub=gestion&quoi=panier&idcaddie=".$this->idcaddie) ;
 					}
 				}
 			} else {
-				if ($this->del_item_base($object,$forcage)==CADDIE_ITEM_SUPPR_BASE_OK) $this->del_item_all_caddies ($object, $this->type) ;
-				else {
-					$res_aff_suppr_base .= aff_cart_unique_object ($object, $this->type, $url_base="./catalog.php?categ=caddie&sub=gestion&quoi=panier&idcaddie=".$this->idcaddie) ;
+				$del_item_base = $this->del_item_base($object,$forcage);
+				if ($del_item_base == CADDIE_ITEM_SUPPR_BASE_OK) {
+					$this->del_item_all_caddies ($object, $this->type);
+				} else {
+					if(empty($res_aff_suppr_base[$del_item_base])) {
+						$res_aff_suppr_base[$del_item_base] = array();
+					}
+					$res_aff_suppr_base[$del_item_base][] = aff_cart_unique_object ($object, $this->type, $url_base="./catalog.php?categ=caddie&sub=gestion&quoi=panier&idcaddie=".$this->idcaddie) ;
 				}
 			}
 		}
@@ -1526,5 +1718,29 @@ class caddie extends caddie_root {
 	
 	public function set_idcaddie($idcaddie) {
 	    $this->idcaddie = intval($idcaddie);
+	}
+	
+	public static function get_constructed_link($sub='', $sub_categ='', $action='', $idcaddie=0, $args_others='') {
+		global $base_path;
+		
+		$link = $base_path."/catalog.php?categ=caddie&sub=".$sub;
+		if($sub_categ) {
+			switch ($sub) {
+				case 'gestion':
+					$link .= "&quoi=".$sub_categ;
+					break;
+				case 'collecte':
+				case 'pointage':
+					$link .= "&moyen=".$sub_categ;
+					break;
+				case 'action':
+					$link .= "&quelle=".$sub_categ;
+					break;
+			}
+		}
+		if($action) $link .= "&action=".$action;
+		if($args_others) $link .= $args_others;
+		if($idcaddie) $link .= "&idcaddie=".$idcaddie;
+		return $link;
 	}
 } // fin de déclaration de la classe caddie

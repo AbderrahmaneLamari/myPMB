@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_floating_date_ui.class.php,v 1.3.2.3 2021/07/27 14:59:40 qvarin Exp $
+// $Id: onto_common_datatype_floating_date_ui.class.php,v 1.6 2021/07/27 15:02:21 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

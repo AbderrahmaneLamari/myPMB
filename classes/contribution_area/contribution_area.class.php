@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area.class.php,v 1.42.2.1 2021/06/28 12:13:00 qvarin Exp $
+// $Id: contribution_area.class.php,v 1.46 2022/12/20 10:23:03 qvarin Exp $
 if (stristr($_SERVER ['REQUEST_URI'], ".class.php"))
 	die("no access");
 
@@ -354,22 +354,25 @@ class contribution_area {
 	}
 	
 	public function get_graph_store_data() {
-		$area_linked_entities = $this->get_attachment_detail($this->get_area_uri());
-		return $area_linked_entities;
+	    return $this->get_attachment_detail($this->get_area_uri(false));
 	}
 
-	private function get_attachment_detail($source_uri,$source_id=""){
+	private function get_attachment_detail($source_uri, $source_id="") {
 		$details = array();
-		$attachments = $this->get_attachment($source_uri);
+		$attachments = $this->get_attachment("<{$source_uri}>");
 		for($i=0 ; $i<count($attachments) ; $i++){
 			$infos = $this->get_infos($attachments[$i]->dest);
-			 
+			if (empty($infos)) {
+			    continue;
+			}
+			
 			if(!empty($attachments[$i]->name)){
+			    $property = $this->get_property_attachment($source_uri, $attachments[$i]);
 				$node = array(
 					'type' => 'attachment',
 					'name' => $attachments[$i]->name,
 					'id' => $attachments[$i]->identifier,
-					'entityType' => $infos['entityType'],
+				    'entityType' => $property['flag'] ?? $infos['entityType'],
 				    'question' => !empty($attachments[$i]->question) ? $attachments[$i]->question : '',
 				    'comment' => !empty($attachments[$i]->comment) ? $attachments[$i]->comment : '',
 				);
@@ -390,9 +393,31 @@ class contribution_area {
 				}
 			}
 			$details[] = $infos;
-			$details = array_merge($details, $this->get_attachment_detail('<'.$attachments[$i]->dest.'>', $infos['id']));
+			$details = array_merge($details, $this->get_attachment_detail($attachments[$i]->dest, $infos['id']));
+			
 		}
 		return $details;
+	}
+	
+	/**
+	 * Retourne la première propriété qui matche avec un noeud d'attache et le formulaire
+	 * 
+	 * @param string $form_uri
+	 * @param string $attachment
+	 * @return array
+	 */
+	private function get_property_attachment($form_uri, $attachment) {
+	    $formInfo = $this->get_infos($form_uri);
+	    $matches = array_filter(contribution_area_forms_controller::get_store_data(), function ($item) use($formInfo, $attachment) {
+	        if (!is_array($item) || $item['type'] != "property") {
+	            return false;
+	        }
+	        if ($item['form_id'] != $formInfo['eltId'] && $item['parent_type'] != $formInfo['entityType']) {
+	            return false;
+	        }
+	        return $item['name'] == $attachment->name;
+	    });
+        return !empty($matches) ? array_shift($matches) : [];
 	}
 	
 	private function get_attachment($source_uri){
@@ -414,8 +439,7 @@ class contribution_area {
 				}
 			}
 		}');
-
-		if($result){
+		if ($result) {
 			$attachments = self::$graphstore->get_result();
 		}
 		return $attachments;
@@ -490,6 +514,9 @@ class contribution_area {
 					case 'http://www.pmbservices.fr/ontology#response' :
 						$infos['response'] = $results[$i]->o;
 						break;
+					case 'http://www.pmbservices.fr/ontology#orderResponse' :
+						$infos['orderResponse'] = $results[$i]->o;
+						break;
 					case 'http://www.pmbservices.fr/ontology#equation' :
 						$infos['equation'] = $results[$i]->o;
 						break;
@@ -550,6 +577,7 @@ class contribution_area {
 		}		
 		$query.='
 		}';
+		
 		$result = self::$graphstore->query($query);
 		if(!$result){
 			var_dump(self::$graphstore->get_errors());
@@ -639,9 +667,11 @@ class contribution_area {
 	private function get_uri($object,$attachment=false){
 		if($attachment){
 			$uri = "http://www.pmbservices.fr/ca/Attachement#!!id!!";
-			$id = $object->type.$object->id;
-			if($object->type == 'attachment'){
-				$id = $object->entityType.$object->id;
+			if ($object->type == 'attachment') {
+			    // Petit hack horrible à mettre à la poubelle, mais bon ça marche
+			    $id = is_array($object->entityType) ? "Array{$object->id}" : $object->entityType.$object->id;
+			} else {
+    			$id = $object->type.$object->id;
 			}
 			return str_replace('!!id!!',$id,$uri);
 		}
@@ -733,7 +763,8 @@ class contribution_area {
 				break;	
 			case 'attachment':
 				//l'URI du noeud en cours
-				$node_uri = str_replace('!!id!!',$data->entityType.$data->id,$attachment_uri);
+			    $id = is_array($data->entityType) ? "Array{$data->id}" : $data->entityType.$data->id;
+			    $node_uri = str_replace('!!id!!', $id, $attachment_uri);
 				//le type de noeud
 				$node_type = 'ca:Attachment';
 // 				//Propriétés communes é tous
@@ -769,9 +800,9 @@ class contribution_area {
 			);
 		}
 		$assertions[]  =array(
-				'subject' => $node_uri,
-				'predicat' => 'pmb:entity',
-				'value' => '"'.addslashes($data->entityType).'"'
+		    'subject' => $node_uri,
+		    'predicat' => 'pmb:entity',
+		    'value' => is_array($data->entityType) ? '"'.addslashes(encoding_normalize::json_encode($data->entityType)).'"' : '"'.addslashes($data->entityType).'"'
 		);
 		
 		if(isset($data->startScenario)){
@@ -814,6 +845,14 @@ class contribution_area {
 			);
 		}
 
+		if(isset($data->orderResponse)){
+			$assertions[]  =array(
+					'subject' => $node_uri,
+					'predicat' => 'pmb:orderResponse',
+			    'value' => '"'.addslashes($data->orderResponse).'"'
+			);
+		}
+
 		if(isset($data->comment)){
 			$assertions[]  =array(
 					'subject' => $node_uri,
@@ -833,8 +872,9 @@ class contribution_area {
 		return $assertions;
 	}
 	
-	public function get_area_uri(){
-		return "<http://www.pmbservices.fr/ca/Area#".$this->id.">";
+	public function get_area_uri($formated = true) {
+	    $uri = "http://www.pmbservices.fr/ca/Area#{$this->id}";
+        return $formated ? "<{$uri}>" : $uri;
 	}
 	
 	/**
@@ -1187,9 +1227,13 @@ class contribution_area {
 	    $data = json_decode(preg_replace('/:\s*(\-?\d+(\.\d+)?([e|E][\-|\+]\d+)?)/', ': "$1"', stripslashes($data)));
 	    
 	    // On modifie les "identifier"
-	    $link = array();
+	    $newNodeId = array();
 	    foreach ($data as $node) {
+	        unset($node->x, $node->y);
+	        
 	        $new_id = $this->generate_identifier();
+	        $newNodeId[$node->id] = $new_id;
+	        
 	        if ('form' === $node->type && "true" === $duplicate_forms) {
 	            $form = new contribution_area_form($node->entityType, $node->eltId);
 	            $form->generate_duplication_form();
@@ -1197,15 +1241,30 @@ class contribution_area {
 	            $node->name = $form->get_name();
 	            $node->comment = $form->get_comment();
 	        }
+	        
             computed_field::duplicate_all_computed_field($source_area_id, $node->id, $new_id, $this->id);
-	        $link[$node->id] = $new_id;
 	        $node->id = $new_id;
 	    }
 	    
 	    // Modifie les id des parent avec les nouveaux "identifier"
 	    foreach ($data as $node) {
-	        if (!empty($node->parent) && $link[$node->parent]) {
-	            $node->parent = $link[$node->parent];
+	        if (!empty($node->parent) && $newNodeId[$node->parent]) {
+	            $node->parent = $newNodeId[$node->parent];
+	        }
+	        
+	        if ('scenario' === $node->type && !empty($node->parentScenario)) {
+	            if (!empty($newNodeId[$node->parentScenario])) {
+	                $node->parentScenario = $newNodeId[$node->parentScenario];
+	            } else {
+    	            $newParentScenario = clone $node;
+    	            $newParentScenario->displayed = false;
+    	            unset($newParentScenario->parentScenario, $newParentScenario->parent);
+    	            
+    	            $newParentScenario->id = $this->generate_identifier();
+    	            $node->parentScenario = $newParentScenario->id;
+    	            
+    	            $data[] = $newParentScenario;
+	            }
 	        }
 	    }
 	    

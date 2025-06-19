@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: MessagesStore.js,v 1.2.16.1 2021/10/06 12:32:34 dgoron Exp $
+// $Id: MessagesStore.js,v 1.3 2021/10/06 12:30:23 dgoron Exp $
 
 
 define(["dojo/_base/declare", "apps/pmb/Store", "dojo/topic", "dojo/_base/lang","dojo/request/xhr", "dojo/store/Memory"], function(declare, PMBStore, topic, lang, xhr, Memory){

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_selector.class.php,v 1.19.10.1 2022/01/03 11:45:55 dgoron Exp $
+// $Id: cms_module_common_selector.class.php,v 1.21 2022/02/18 09:09:43 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -29,9 +29,9 @@ class cms_module_common_selector extends cms_module_root{
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
 				$row = pmb_mysql_fetch_object($result);
-				$this->id = $row->id_cadre_content+0;
+				$this->id = (int) $row->id_cadre_content;
 				$this->hash = $row->cadre_content_hash;
-				$this->cadre_parent = $row->cadre_content_num_cadre+0;
+				$this->cadre_parent = (int) $row->cadre_content_num_cadre;
 				$this->unserialize($row->cadre_content_data);
 			}
 			//on va chercher les infos des sous-sélecteurs...
@@ -39,9 +39,9 @@ class cms_module_common_selector extends cms_module_root{
 			$result = pmb_mysql_query($query);
 			if(pmb_mysql_num_rows($result)){
 				while($row=pmb_mysql_fetch_object($result)){
-				//	$this->sub_selectors[$row->cadre_content_object] = $row->id_cadre_content+0;				
+				    //	$this->sub_selectors[$row->cadre_content_object] = (int) $row->id_cadre_content;				
 					$this->sub_selectors[] = array(
-						'id' => $row->id_cadre_content+0,
+					    'id' => (int) $row->id_cadre_content,
 						'name' => $row->cadre_content_object
 					);	
 				}

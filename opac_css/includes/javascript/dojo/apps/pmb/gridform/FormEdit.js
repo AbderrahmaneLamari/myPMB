@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // + 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormEdit.js,v 1.5.2.1 2021/06/30 09:25:20 qvarin Exp $
+// $Id: FormEdit.js,v 1.6 2021/06/30 09:25:29 gneveu Exp $
 
 
 define(['dojo/_base/declare', 

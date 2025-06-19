@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: alerts_resa.class.php,v 1.1 2020/12/24 11:01:54 dgoron Exp $
+// $Id: alerts_resa.class.php,v 1.2 2022/02/11 09:39:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -128,7 +128,7 @@ class alerts_resa extends alerts {
 		global $pmb_resa_planning, $pmb_resa_planning_toresa, $deflt_resas_location, $deflt_docs_location;
 		
 		if($pmb_resa_planning) {
-			$pmb_resa_planning_toresa+=0;
+			$pmb_resa_planning_toresa = intval($pmb_resa_planning_toresa);
 			if ($deflt_resas_location) {
 				$expl_loc = $deflt_resas_location;
 			} else {

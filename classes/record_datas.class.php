@@ -2,9 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: record_datas.class.php,v 1.31.2.1 2022/01/03 15:49:33 dgoron Exp $
+// $Id: record_datas.class.php,v 1.40.2.4 2023/12/27 13:52:40 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Common\Helper\GlobalContext;
+use Pmb\Common\Helper\UrlEntities;
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 global $class_path, $base_path, $tdoc, $fonction_auteur;
 
@@ -102,6 +106,12 @@ class record_datas {
 	 * @var parametres_perso
 	 */
 	private $p_perso = null;
+
+	/**
+	 * identifiant du statut de la notice
+	 * @var string
+	 */
+	private $id_statut_notice = 0;
 
 	/**
 	 * Libellé du statut de la notice
@@ -548,6 +558,7 @@ class record_datas {
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)) {
 			$this->notice = pmb_mysql_fetch_object($result);
+			pmb_mysql_free_result($result);
 		}
 	}
 	
@@ -593,6 +604,8 @@ class record_datas {
 					$result = pmb_mysql_query($query);
 					if (pmb_mysql_num_rows($result)) {
 						$parent = pmb_mysql_fetch_object($result);
+						pmb_mysql_free_result($result);
+						
 						$this->parent['title'] = $parent->tit1;
 						$this->parent['id'] = $parent->notice_id;
 						$this->parent['bulletin_id'] = $parent->bulletin_id;
@@ -761,20 +774,21 @@ class record_datas {
 		global $gestion_acces_active,$gestion_acces_user_notice, $gestion_acces_user_docnum;
 
 		if (isset($this->notice->statut)) {
-		    $query = "SELECT opac_libelle, notice_visible_opac, expl_visible_opac, notice_visible_opac_abon, expl_visible_opac_abon, explnum_visible_opac, explnum_visible_opac_abon, notice_scan_request_opac, notice_scan_request_opac_abon FROM notice_statut WHERE id_notice_statut='".$this->notice->statut."' ";
+		    $query = "SELECT id_notice_statut, gestion_libelle, notice_visible_gestion FROM notice_statut WHERE id_notice_statut='".$this->notice->statut."' ";
 		    $result = pmb_mysql_query($query);
 		    if(pmb_mysql_num_rows($result)) {
 		        $statut_temp = pmb_mysql_fetch_object($result);
 		        
-		        $this->statut_notice =        $statut_temp->opac_libelle;
-		        $this->visu_notice =          $statut_temp->notice_visible_opac;
-		        $this->visu_notice_abon =     $statut_temp->notice_visible_opac_abon;
-		        $this->visu_expl =            $statut_temp->expl_visible_opac;
-		        $this->visu_expl_abon =       $statut_temp->expl_visible_opac_abon;
-		        $this->visu_explnum =         $statut_temp->explnum_visible_opac;
-		        $this->visu_explnum_abon =    $statut_temp->explnum_visible_opac_abon;
-		        $this->visu_scan_request =		$statut_temp->notice_scan_request_opac;
-		        $this->visu_scan_request_abon =	$statut_temp->notice_scan_request_opac_abon;
+		        $this->id_statut_notice = $statut_temp->id_notice_statut;
+		        $this->statut_notice =        $statut_temp->gestion_libelle;
+		        $this->visu_notice =          $statut_temp->notice_visible_gestion;
+		        $this->visu_notice_abon =     0;
+		        $this->visu_expl =            1;
+		        $this->visu_expl_abon =       0;
+		        $this->visu_explnum =         1;
+		        $this->visu_explnum_abon =    0;
+		        $this->visu_scan_request =		1;
+		        $this->visu_scan_request_abon =	0;
 		        
 		        if ($hide_explnum) {
 		            $this->visu_explnum=0;
@@ -858,7 +872,7 @@ class record_datas {
 						'rejete' => $notice->author_rejete,
 						'date' => $notice->author_date,
 						'type' => $notice->author_type,
-						'fonction_aff' => ($notice->responsability_fonction ? $fonction_auteur[$notice->responsability_fonction] : ''),
+						'fonction_aff' => ($notice->responsability_fonction && !empty($fonction_auteur[$notice->responsability_fonction]) ? $fonction_auteur[$notice->responsability_fonction] : ''),
 						'auteur_isbd' => $auteur_isbd,
 						'auteur_titre' => $auteur_titre,
 						'info_bulle' => $info_bulle,
@@ -949,6 +963,15 @@ class record_datas {
 			if ($auteurs_liste) $this->auteurs_secondaires = $auteurs_liste;
 		}
 		return $this->auteurs_secondaires;
+	}
+	
+	/**
+	 * Retourne l'identiiant du statut de la notice
+	 *
+	 * @return string
+	 */
+	public function get_id_statut_notice() {
+		return $this->id_statut_notice;
 	}
 	
 	/**
@@ -1047,28 +1070,30 @@ class record_datas {
 				while ($row = pmb_mysql_fetch_object($result)) {
 					/* @var $object categorie */
 					$object = authorities_collection::get_authority(AUT_TABLE_CATEG, $row->num_noeud);
-					$format_label = $object->libelle;
-					
-					// On ajoute les parents si nécessaire
-					if (!$thesaurus_categories_show_only_last) {
-						$parent_id = $object->parent_id;
-						while ($parent_id && ($parent_id != 1) && (!in_array($parent_id, array($object->thes->num_noeud_racine, $object->thes->num_noeud_nonclasses, $object->thes->num_noeud_orphelins)))) {
-							$parent = authorities_collection::get_authority(AUT_TABLE_CATEG, $parent_id);
-							$format_label = $parent->libelle.':'.$format_label;
-							$parent_id = $parent->parent_id;
+					if ($object->id) {
+						$format_label = $object->libelle;
+						
+						// On ajoute les parents si nécessaire
+						if (!$thesaurus_categories_show_only_last) {
+							$parent_id = $object->parent_id;
+							while ($parent_id && ($parent_id != 1) && (!in_array($parent_id, array($object->thes->num_noeud_racine, $object->thes->num_noeud_nonclasses, $object->thes->num_noeud_orphelins)))) {
+								$parent = authorities_collection::get_authority(AUT_TABLE_CATEG, $parent_id);
+								$format_label = $parent->libelle.':'.$format_label;
+								$parent_id = $parent->parent_id;
+							}
 						}
+						$authority = new authority(0, $row->num_noeud, AUT_TABLE_CATEG);
+						
+						$categorie = array(
+								'object' => $object,
+								'format_label' => $format_label,
+								'p_perso' => $authority->get_p_perso()
+						);
+						if (!$thesaurus_categories_affichage_ordre) {
+							$sort_array[$object->thes->id_thesaurus][] = strtoupper(convert_diacrit($format_label));
+						}
+						$this->categories[$object->thes->id_thesaurus][] = $categorie;
 					}
-					$authority = new authority(0, $row->num_noeud, AUT_TABLE_CATEG);
-					
-					$categorie = array(
-							'object' => $object,
-							'format_label' => $format_label,
-							'p_perso' => $authority->get_p_perso()
-					);
-					if (!$thesaurus_categories_affichage_ordre) {
-						$sort_array[$object->thes->id_thesaurus][] = strtoupper(convert_diacrit($format_label));
-					}
-					$this->categories[$object->thes->id_thesaurus][] = $categorie;
 				}
 				// On tri par ordre alphabétique
 				if (!$thesaurus_categories_affichage_ordre) {
@@ -1514,7 +1539,7 @@ class record_datas {
 	public function get_tdoc() {
 		if (!$this->tdoc) {
 			global $tdoc;
-			$this->tdoc = $tdoc->table[$this->get_typdoc()];
+			$this->tdoc = (!empty($tdoc->table[$this->get_typdoc()]))? $tdoc->table[$this->get_typdoc()] : "";
 		}
 		return $this->tdoc;
 	}
@@ -1773,12 +1798,17 @@ class record_datas {
 	 */
 	public function get_permalink() {
 		if (!$this->permalink) {
-			if($this->notice->niveau_biblio != "b"){
-				$this->permalink = $this->get_parameter_value('url_base')."catalog.php?categ=isbd&id=".$this->id;
-			}else{
+
+			$id = $this->id;
+		    $url = UrlEntities::getPermalink(TYPE_NOTICE);
+
+			if ($this->notice->niveau_biblio == "b") {
 				$bull = $this->get_bul_info();
-				$this->permalink = $this->get_parameter_value('url_base')."catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=".$bull['bulletin_id'];
+				$id = $bull['bulletin_id'];
+				$url = UrlEntities::getPermalink(TYPE_BULLETIN);
 			}
+
+			$this->permalink = GlobalContext::urlBase() . str_replace("!!id!!", intval($id), $url);
 		}
 		return $this->permalink;
 	}
@@ -2014,15 +2044,12 @@ class record_datas {
 	 * @return string
 	 */
 	public function get_picture_url() {
-		if (!$this->picture_url && ($this->get_code() || $this->get_thumbnail_url())) {
-			if ($this->get_parameter_value('show_book_pics')=='1' && ($this->get_parameter_value('book_pics_url') || $this->get_thumbnail_url())) {
-				$this->picture_url = getimage_url($this->get_code(), $this->get_thumbnail_url());
-			}
-		}
-		if (!$this->picture_url) {
-			$this->picture_url = notice::get_picture_url_no_image($this->get_niveau_biblio(), $this->get_typdoc());
-		}
-		return $this->picture_url;
+	    global $pmb_url_base;
+	    if (empty($this->picture_url)) {
+	        $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+	        $this->picture_url = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $this->id);
+	    }
+	    return $this->picture_url;
 	}
 	
 	/**
@@ -2724,7 +2751,7 @@ class record_datas {
 	    $result = pmb_mysql_query($query);
 	    while ($row = pmb_mysql_fetch_object($result)) {
 	        $lenders[] = array(
-	            'label' => $row->location_libelle
+        		'label' => $row->lender_libelle
 	        );
 	    }
 	    return $lenders;
@@ -2806,5 +2833,142 @@ class record_datas {
 		$parameter_name = 'pmb_'.$name;
 		global ${$parameter_name};
 		return ${$parameter_name};
+	}
+	
+	/**
+	 * Retourne les infos de documents numériques associés à la notice
+	 * @return array
+	 */
+	public function get_explnums_datas() {
+	    if (!isset($this->explnums_datas)) {
+	        global $msg;
+	        
+	        $this->explnums_datas = array(
+	            'nb_explnums' => 0,
+	            'explnums' => array(),
+	        );
+	        
+	        //Ne pas lancer la requête SQL suivante si l'identifiant de la notice n'est pas connu
+	        if(!$this->id) {
+	            return $this->explnums_datas;
+	        }
+	        
+	        global $_mimetypes_bymimetype_, $_mimetypes_byext_ ;
+	        if (!is_array($_mimetypes_bymimetype_) || !count($_mimetypes_bymimetype_)) {
+	            create_tableau_mimetype();
+	        }
+	        
+	        $this->get_bul_info();
+	        
+	        // récupération du nombre d'exemplaires
+	        $query = "SELECT explnum_id, explnum_notice, explnum_bulletin, explnum_nom, explnum_mimetype, explnum_url, explnum_vignette, explnum_nomfichier, explnum_extfichier, explnum_docnum_statut,
+				explnum_create_date,
+				DATE_FORMAT(explnum_create_date,'".$msg['format_date']."') as formated_create_date,
+				explnum_update_date, DATE_FORMAT(explnum_update_date,'".$msg['format_date']."') as formated_update_date,
+				explnum_file_size
+				FROM explnum WHERE ";
+	        if ($this->get_niveau_biblio() != 'b') {
+	            $query .= "explnum_notice='".$this->id."' ";
+	        } else {
+	            $query .= "explnum_bulletin='".$this->parent['bulletin_id']."' or explnum_notice='".$this->id."' ";
+	        }
+	        
+	        $query.= "union SELECT explnum_id, explnum_notice, explnum_bulletin, explnum_nom, explnum_mimetype, explnum_url, explnum_vignette, explnum_nomfichier, explnum_extfichier, explnum_docnum_statut,
+				explnum_create_date, DATE_FORMAT(explnum_create_date,'".$msg['format_date']."') as formated_create_date,
+				explnum_update_date, DATE_FORMAT(explnum_update_date,'".$msg['format_date']."') as formated_update_date,
+				explnum_file_size
+				FROM explnum, bulletins
+				WHERE bulletin_id = explnum_bulletin
+				AND bulletins.num_notice='".$this->id."'";
+	        if ($this->get_parameter_value('explnum_order')) {
+	            $query .= " order by ".$this->get_parameter_value('explnum_order');
+	        } else {
+	            $query .= " order by explnum_mimetype, explnum_nom, explnum_id ";
+	        }
+	        $res = pmb_mysql_query($query);
+	        
+	        if (pmb_mysql_num_rows($res)) {
+	            // on récupère les données des exemplaires
+	            while (($expl = pmb_mysql_fetch_object($res))) {
+	                // mémorisation des localisations
+	                $locations = array();
+	                $ids_loc = array();
+	                $requete_loc = "SELECT num_location, location_libelle FROM explnum_location JOIN docs_location ON num_location=idlocation WHERE location_visible_opac = 1 AND num_explnum=".$expl->explnum_id;
+	                $result_loc = pmb_mysql_query($requete_loc);
+	                if (pmb_mysql_num_rows($result_loc)) {
+	                    while($loc = pmb_mysql_fetch_object($result_loc)) {
+	                        $locations[] = array(
+	                            'id' => $loc->num_location,
+	                            'label' => $loc->location_libelle
+	                        );
+	                        $ids_loc[] = $loc->num_location;
+	                    }
+	                }
+                    $this->explnums_datas['nb_explnums']++;
+                    $explnum_datas = array(
+                        'id' => $expl->explnum_id,
+                        'expl_location'	=> $ids_loc,
+                        'name' => $expl->explnum_nom,
+                        'mimetype' => $expl->explnum_mimetype,
+                        'url' => $expl->explnum_url,
+                        'filename' => $expl->explnum_nomfichier,
+                        'extension' => $expl->explnum_extfichier,
+                        'locations' => $locations,
+                        'statut' => $expl->explnum_docnum_statut,
+                        'consultation' => true,
+                        'create_date' => $expl->explnum_create_date,
+                        'formated_create_date' => $expl->formated_create_date,
+                        'update_date' => $expl->explnum_update_date,
+                        'formated_update_date' => $expl->formated_update_date,
+                        'file_size' => $expl->explnum_file_size,
+                        'id_notice' => $this->id,
+                        'id_bulletin' => (isset($this->parent['bulletin_id']) ? $this->parent['bulletin_id'] : ''),
+                        'lenders' => $this->get_lenders(false)
+                    );
+                    
+                    $explnum_datas['has_vignette'] = true;
+                    $explnum_datas['thumbnail_url'] = $this->get_parameter_value('url_base').'vig_num.php?explnum_id='.$expl->explnum_id;
+                    $explnum_datas['access_datas'] = array(
+                        'script' => '',
+                        'href' => '#',
+                        'onclick' => ''
+                    );
+                    $explnum_datas['access_datas']['href'] = $this->get_parameter_value('url_base').'doc_num.php?explnum_id='.$expl->explnum_id;
+                    
+                    $explnum_datas['p_perso'] = new parametres_perso("explnum");
+                    $explnum_datas['p_perso']->get_values($expl->explnum_id);
+                    
+                    if ($_mimetypes_byext_[$expl->explnum_extfichier]["label"]) {
+                        $explnum_datas['mimetype_label'] = $_mimetypes_byext_[$expl->explnum_extfichier]["label"] ;
+                    } elseif ($_mimetypes_bymimetype_[$expl->explnum_mimetype]["label"]) {
+                        $explnum_datas['mimetype_label'] = $_mimetypes_bymimetype_[$expl->explnum_mimetype]["label"] ;
+                    } else {
+                        $explnum_datas['mimetype_label'] = $expl->explnum_mimetype ;
+                    }
+                    
+                    $this->explnums_datas['explnums'][] = $explnum_datas;
+	            }
+	        }
+	    }
+	    return $this->explnums_datas;
+	}
+
+	static public function get_liens_opac() {
+		return UrlEntities::getOPACLink();
+	}
+	
+	/**
+	 * recherche l'identifiant du bulletin associe a la notice
+	 * @return number
+	 */
+	public function get_bull_id() {
+	    $bull_id = 0;
+	    $query = "SELECT bulletin_id FROM bulletins WHERE num_notice = $this->id";
+	    $result = pmb_mysql_query($query);
+	    if (pmb_mysql_num_rows($result)) {
+	        $row = pmb_mysql_fetch_assoc($result);
+	        $bull_id = $row["bulletin_id"];
+	    }
+	    return $bull_id;
 	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_watcheslist_view_django_by_categories.class.php,v 1.8.12.1 2022/01/18 20:37:40 dgoron Exp $
+// $Id: cms_module_watcheslist_view_django_by_categories.class.php,v 1.10 2022/02/18 08:53:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -82,7 +82,7 @@ class cms_module_watcheslist_view_django_by_categories extends cms_module_common
 		$categories = array();		
 		for($i=0 ; $i<count($datas['watches']) ; $i++){
 			if($datas['watches'][$i]['category']){
-				$categories[] = $datas['watches'][$i]['category']['id']*1;
+				$categories[] = (int) $datas['watches'][$i]['category']['id'];
 			}else{
 				$newdatas['watches'][]=$datas['watches'][$i];
 			}

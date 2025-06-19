@@ -1,6 +1,6 @@
 {% extends 'gabarit.html' %}
 
-<!-- $Id: concept.html,v 1.14 2019/07/04 12:12:55 btafforeau Exp $ -->
+<!-- $Id: concept.html,v 1.14.8.1 2023/03/10 16:00:24 tsamson Exp $ -->
 
 {% block header %}
 	<h1><span>{{ msg.detail_concept }}</span></h1>
@@ -25,7 +25,7 @@
 {% endblock %}
 {% block map %}
 	{% if authority.map.map %}
-		<div class="map_notice">
+		<div id="map_notice" class="map_notice">
 			{{ authority.map.map }}
 		</div>
 	{% endif %}

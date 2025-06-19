@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
-// © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sorttable.js,v 1.2 2018/06/29 08:25:11 plmrozowski Exp $
+// $Id: sorttable.js,v 1.3 2022/11/30 10:25:54 tsamson Exp $
 
 /*
   SortTable
@@ -187,7 +187,7 @@ if(typeof sorttable == "undefined"){
 	    for (var i=0; i<table.tBodies[0].rows.length; i++) {
 	      text = sorttable.getInnerText(table.tBodies[0].rows[i].cells[column]);
 	      if (text != '') {
-	        if (text.match(/^-?[£$¤]?[\d,.]+%?$/)) {
+	        if (text.match(/^-?[ï¿½$ï¿½]?[\d,.]+%?$/)) {
 	          return sorttable.sort_numeric;
 	        }
 	        // check for a date: dd/mm/yyyy or dd/mm/yy 
@@ -225,6 +225,9 @@ if(typeof sorttable == "undefined"){
 	
 	    if (node.getAttribute && node.getAttribute("sorttable_customkey") != null) {
 	      return node.getAttribute("sorttable_customkey");
+	    }// a hack just a little dirty but it makes coffee (passage des input dojo a des input date)
+	    else if (node.nodeName.toLowerCase() == 'input' && node.getAttribute("type") == "date" && !hasInputs) {
+    		return node.value.replace(/^\s+|\s+$/g, '');
 	    }
 	    else if (typeof node.textContent != 'undefined' && !hasInputs) {
 	      return node.textContent.replace(/^\s+|\s+$/g, '');

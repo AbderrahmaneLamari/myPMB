@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contact_form_parameters.class.php,v 1.5 2021/03/23 08:43:33 dgoron Exp $
+// $Id: contact_form_parameters.class.php,v 1.6 2022/09/02 08:36:38 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -47,7 +47,8 @@ class contact_form_parameters {
 				'recipients_mode' => 'by_persons',
                 'email_object_free_entry' => 0,
                 'email_content' => $this->_get_email_content_template(),
-				'confirm_email' => 1
+				'confirm_email' => 1,
+				'display_fields_errors' => 0,
 		);
 	}
 	
@@ -80,6 +81,9 @@ class contact_form_parameters {
     				}
     				if($parameters['confirm_email'] == 0) {
     					$this->parameters['confirm_email'] = 0;
+    				}
+    				if($parameters['display_fields_errors']) {
+    				    $this->parameters['display_fields_errors'] = $parameters['display_fields_errors'];
     				}
 				} else {
 				    $this->updated_in_database = false;
@@ -182,6 +186,10 @@ class contact_form_parameters {
 			<td><i>".htmlentities($msg['admin_opac_contact_form_parameter_permalink'], ENT_QUOTES, $charset)."</i></td>
 			<td>".$this->_get_display_permalink()."</td>
 		</tr>
+		<tr class='odd'>
+			<td><i>".htmlentities($msg['admin_opac_contact_form_parameter_display_fields_errors'], ENT_QUOTES, $charset)."</i></td>
+			<td>".$this->_get_display_toggle('display_fields_errors')."</td>
+		</tr>
 		";
 		return $display;
 	}
@@ -234,6 +242,7 @@ class contact_form_parameters {
 		global $parameter_email_object_free_entry;
 		global $parameter_email_content;
 		global $parameter_confirm_email;
+		global $parameter_display_fields_errors;
 		
 		if(is_array($parameter_fields)) {
 			foreach ($this->parameters['fields'] as $name=>$field) {
@@ -251,6 +260,7 @@ class contact_form_parameters {
 		}
 		$this->parameters['recipients_mode'] = $parameter_recipients_mode;
 		$this->parameters['email_object_free_entry'] = ($parameter_email_object_free_entry ? 1 : 0);
+		$this->parameters['display_fields_errors'] = ($parameter_display_fields_errors ? 1 : 0);
 		if(trim($parameter_email_content)) {
 			$this->parameters['email_content'] = stripslashes($parameter_email_content);
 		} else {

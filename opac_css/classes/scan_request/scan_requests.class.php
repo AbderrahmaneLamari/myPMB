@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scan_requests.class.php,v 1.7.8.1 2021/12/27 08:20:54 dgoron Exp $
+// $Id: scan_requests.class.php,v 1.8.4.1 2023/08/02 09:41:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -56,6 +56,17 @@ class scan_requests {
 		} else {
 			return $msg['scan_request_list_empty'];
 		}
+	}
+	
+	public function get_display_header_list() {
+	    global $include_path;
+	    
+	    $tpl = $include_path.'/templates/scan_request/scan_requests_header_list.tpl.html';
+	    if (file_exists($include_path.'/templates/scan_request/scan_requests_header_list_subst.tpl.html')) {
+	        $tpl = $include_path.'/templates/scan_request/scan_requests_header_list_subst.tpl.html';
+	    }
+	    $h2o = H2o_collection::get_instance($tpl);
+	    return $h2o->render(array('scan_requests' => $this));
 	}
 	
 	public function get_scan_requests() {

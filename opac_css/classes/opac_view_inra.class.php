@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: opac_view_inra.class.php,v 1.4.10.1 2021/08/12 13:37:08 dgoron Exp $
+// $Id: opac_view_inra.class.php,v 1.5 2021/08/12 13:34:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

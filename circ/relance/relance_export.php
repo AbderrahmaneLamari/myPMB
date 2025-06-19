@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: relance_export.php,v 1.8.4.1 2022/01/10 10:35:58 dgoron Exp $
+// $Id: relance_export.php,v 1.10 2022/09/30 13:59:42 dgoron Exp $
 
 //Affichage des recouvrements pour un lecteur, format Excel HTML
 
@@ -49,6 +49,9 @@ $export_relance_tpl="<!DOCTYPE html><html lang='".get_iso_lang_code()."'><head><
 			<th>".$msg["relance_export_empr_frais_relance"]."</th>
 			<th>".$msg["relance_export_expl_titre"]."</th>
 			<th>".$msg["relance_export_expl_cb"]."</th>
+			<th>".$msg["relance_export_expl_cote"]."</th>
+			<th>".$msg["relance_export_expl_codestat"]."</th>
+			<th>".$msg["relance_export_expl_section"]."</th>
 			<th>".$msg["relance_export_expl_pret_date"]."</th>
 			<th>".$msg["relance_export_expl_pret_retour"]."</th>
 			<th>".$msg["relance_export_expl_niveau_relance"]."</th>
@@ -136,10 +139,10 @@ function get_relance($id_empr){
 		niveau_relance,
 		date_relance,
 		printed,		
-		tdoc_libelle, section_libelle, location_libelle, trim(concat(ifnull(notices_m.tit1,''),ifnull(notices_s.tit1,''),' ',ifnull(bulletin_numero,''), if (mention_date!='', concat(' (',mention_date,')') ,''))) as tit, ".$dates_resa_sql.", " ;
+		tdoc_libelle, section_libelle, location_libelle, codestat_libelle, trim(concat(ifnull(notices_m.tit1,''),ifnull(notices_s.tit1,''),' ',ifnull(bulletin_numero,''), if (mention_date!='', concat(' (',mention_date,')') ,''))) as tit, ".$dates_resa_sql.", " ;
 		$requete.= " notices_m.tparent_id, notices_m.tnvol " ; 
-		$requete.= " FROM (((exemplaires LEFT JOIN notices AS notices_m ON expl_notice = notices_m.notice_id ) LEFT JOIN bulletins ON expl_bulletin = bulletins.bulletin_id) LEFT JOIN notices AS notices_s ON bulletin_notice = notices_s.notice_id), docs_type, docs_section, docs_location, pret ";
-		$requete.= " WHERE expl_id='".$liste->expl."' and expl_typdoc = idtyp_doc and expl_section = idsection and expl_location = idlocation and pret_idexpl = expl_id  ";
+		$requete.= " FROM (((exemplaires LEFT JOIN notices AS notices_m ON expl_notice = notices_m.notice_id ) LEFT JOIN bulletins ON expl_bulletin = bulletins.bulletin_id) LEFT JOIN notices AS notices_s ON bulletin_notice = notices_s.notice_id), docs_type, docs_section, docs_location, docs_codestat, pret ";
+		$requete.= " WHERE expl_id='".$liste->expl."' and expl_typdoc = idtyp_doc and expl_section = idsection and expl_location = idlocation and expl_codestat = idcode and pret_idexpl = expl_id  ";
 		$res_det_expl = pmb_mysql_query($requete) ;
 		$expl = pmb_mysql_fetch_object($res_det_expl);
 				
@@ -163,6 +166,9 @@ function get_relance($id_empr){
 			$info_empr
 			<td>".htmlentities($expl->tit,ENT_QUOTES,$charset)."</td>
 			<td>".htmlentities($expl->expl_cb,ENT_QUOTES,$charset)."</td>
+			<td>".htmlentities($expl->expl_cote,ENT_QUOTES,$charset)."</td>
+			<td>".htmlentities($expl->codestat_libelle,ENT_QUOTES,$charset)."</td>
+			<td>".htmlentities($expl->section_libelle,ENT_QUOTES,$charset)."</td>
 			<td>".format_date($expl->pret_date)."</td>
 			<td>".format_date($expl->pret_retour)."</td>
 			<td>".$expl->niveau_relance."</td>

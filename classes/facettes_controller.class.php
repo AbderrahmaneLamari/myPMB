@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facettes_controller.class.php,v 1.14 2021/04/15 09:01:06 dgoron Exp $
+// $Id: facettes_controller.class.php,v 1.15 2022/04/29 15:17:09 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -184,6 +184,9 @@ class facettes_controller extends lists_controller {
 	}
 	
 	public static function get_facette_search_opac_instance($type='notices', $is_external=false) {
+	    if (empty($type)) {
+	        $type = "notices";
+	    }
 	    if (strpos($type, "authperso") !== false) {
 	        return new facette_authperso_search_opac($type, $is_external);
 	    }

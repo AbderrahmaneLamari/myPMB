@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: animations.php,v 1.24 2021/05/03 07:59:40 dgoron Exp $
+// $Id: animations.php,v 1.25 2022/07/28 12:35:46 jparis Exp $
 
 // définition du minimum nécessaire
 
@@ -58,3 +58,5 @@ switch ($categ) {
 
 print $animations_layout_end;
 print $footer;
+
+html_builder();

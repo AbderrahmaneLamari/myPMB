@@ -12,7 +12,7 @@ while (!feof($fp)) {
 	$line=fgets($fp,4096);
 	if ($l>0) {
 		$line=rtrim($line);
-	
+
 		$cols=explode("\t",$line);
 		fwrite($fw,"<entry code=\"".$cols[0]."\">".$cols[2]."</entry>\n");
 	}
@@ -20,4 +20,5 @@ while (!feof($fp)) {
 }
 fwrite($fw,"</XMLlist>");
 fclose($fw);
+fclose($fp);
 ?>

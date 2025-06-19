@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: move_empr.js,v 1.10 2020/10/21 17:09:51 dgoron Exp $
+// $Id: move_empr.js,v 1.11 2022/04/20 14:56:46 dgoron Exp $
 
 grid_type = 'readers';
 
@@ -81,6 +81,9 @@ function move_empr_parse_dom(rel) {
 		sgl.onchange = function(e) {
 			get_pos();
 			init_movables(relative);
+			if(typeof calculate_type_abts != 'undefined') {
+				calculate_type_abts(sgl);
+			}
 		}
 		sgl.style.display = "block";
 		sgl.value = sl.value;

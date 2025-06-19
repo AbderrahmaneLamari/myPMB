@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: reciproc_pperso.class.php,v 1.1.2.2 2021/12/06 11:05:39 gneveu Exp $
+// $Id: reciproc_pperso.class.php,v 1.3 2021/12/06 11:09:01 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

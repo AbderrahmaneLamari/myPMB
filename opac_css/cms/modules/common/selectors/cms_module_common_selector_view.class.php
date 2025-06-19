@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_selector_view.class.php,v 1.4.2.1 2021/10/22 13:19:08 btafforeau Exp $
+// $Id: cms_module_common_selector_view.class.php,v 1.5 2021/10/22 13:27:11 btafforeau Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 //require_once($base_path."/cms/modules/common/selectors/cms_module_selector.class.php");

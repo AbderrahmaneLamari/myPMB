@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: manifest.xml,v 1.11.2.2 2021/10/13 12:23:15 qvarin Exp $ -->
+$Id: manifest.xml,v 1.13.4.1 2023/06/26 14:55:15 rtigero Exp $ -->
 
 <manifest>
 	<name lang="fr_FR">Liste de rubriques</name>
@@ -27,6 +27,7 @@ $Id: manifest.xml,v 1.11.2.2 2021/10/13 12:23:15 qvarin Exp $ -->
 			<datasource conditionParam="thesaurus_concepts_active">cms_module_common_datasource_sections_by_concepts</datasource>
 			<datasource>cms_module_common_datasource_searchsections</datasource>
 			<datasource>cms_module_common_datasource_sections_by_section_categories</datasource>
+			<datasource>cms_module_common_datasource_sections_by_section_cp</datasource>
 		</datasources>
 		<filters>
 			<filter>cms_module_common_filter_sections_by_all_cp</filter>

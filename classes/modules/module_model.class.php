@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: module_model.class.php,v 1.3.2.1 2021/10/26 09:33:36 dgoron Exp $
+// $Id: module_model.class.php,v 1.5.4.1 2023/06/28 07:57:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -64,22 +64,24 @@ class module_model {
 		$this->destination_link = $data->module_destination_link;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('module_destination_link', 'module_destination_link')
+		->add_input_node('text', $this->destination_link);
+		$interface_content_form->add_element('module_name')
+		->add_input_node('hidden', $this->name);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $msg, $charset;
-		global $module_content_form;
+		global $msg;
 		
 		$this->_init_destination_link();
 		
-		$content_form = $module_content_form;
-		$content_form = str_replace('!!name!!', $this->name, $content_form);
-		
-		$interface_form = new interface_account_form('module_form');
+		$interface_form = new interface_form('module_form');
 		$interface_form->set_label($msg['module_form_edit']." : ".$this->name);
-		
-		$content_form = str_replace('!!destination_link!!', htmlentities($this->destination_link, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('modules');
 		return $interface_form->get_display();
 	}

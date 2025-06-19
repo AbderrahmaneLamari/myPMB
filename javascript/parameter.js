@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: parameter.js,v 1.1.2.2 2021/11/16 13:53:08 dgoron Exp $
+// $Id: parameter.js,v 1.1 2021/11/16 13:47:27 dgoron Exp $
 
 function parameter_update(type_param, sstype_param, valeur_param) {
 	var request = new http_request();

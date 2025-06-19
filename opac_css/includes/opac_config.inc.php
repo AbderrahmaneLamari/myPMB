@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: opac_config.inc.php,v 1.17 2021/04/20 13:04:26 dgoron Exp $
+// $Id: opac_config.inc.php,v 1.17.6.1 2023/04/07 13:53:58 dbellamy Exp $
 
 // fichier de configuration de l'OPAC PMB
 // the lang is set in start.inc.php why this piece of code?
@@ -36,4 +36,8 @@ $CACHE_ENGINE = 'apcu';//Type de moteur de cache php utilisé
 $CACHE_MAXTIME = 86400;//Duree de mise en cache
 $KEY_CACHE_FILE_XML = 'key_cache_file_xml'.md5(str_replace('/opac_css', '', getcwd()));//Prefix pour la cle des variables en cache pour les fichiers XML
 		
+//Variables MYSQL
+$SQL_MOTOR_TYPE = '';
+$SQL_VARIABLES = "sql_mode=''";
+
 @include_once("includes/opac_config_local.inc.php") ;

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: export.php,v 1.9.8.1 2021/12/24 13:44:18 dgoron Exp $
+// $Id: export.php,v 1.10 2021/12/24 13:42:29 dgoron Exp $
 
 // définition du minimum nécéssaire 
 $base_path=".";                            

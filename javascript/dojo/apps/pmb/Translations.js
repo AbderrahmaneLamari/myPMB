@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Translations.js,v 1.4 2018/11/21 21:11:00 dgoron Exp $
+// $Id: Translations.js,v 1.4.12.3 2023/11/16 13:17:13 dgoron Exp $
 
 define([
         "dojo/_base/declare",
@@ -57,12 +57,29 @@ define([
 			domAttr.set(cloneNode, 'id', lang+'_'+node.id);
 			domAttr.set(cloneNode, 'name', lang+'_'+node.name);
 			if(this.data[domAttr.get(node, 'data-translation-fieldname')] && this.data[domAttr.get(node, 'data-translation-fieldname')][lang]) {
-				domAttr.set(cloneNode, 'value', this.data[domAttr.get(node, 'data-translation-fieldname')][lang]);
+				if(cloneNode.type == 'textarea') {
+					cloneNode.innerHTML = this.data[domAttr.get(node, 'data-translation-fieldname')][lang];
+				} else {
+					domAttr.set(cloneNode, 'value', this.data[domAttr.get(node, 'data-translation-fieldname')][lang]);
+				}
 			} else {
 				domAttr.set(cloneNode, 'value', '');
 			}
 			domConstruct.place(cloneNode, div_field);
 			return div_field;
+		},
+		hasDisplayTranslation: function(node, language) {
+			if(language.is_current_lang == true) {
+				if(this.data[domAttr.get(node, 'data-translation-fieldname')] && this.data[domAttr.get(node, 'data-translation-fieldname')][language.code]) {
+					let translated_value = this.data[domAttr.get(node, 'data-translation-fieldname')][language.code];
+					if(node.value == translated_value) {
+						return false;
+					}
+				} else {
+					return false;
+				}
+			}
+			return true;
 		},
 		getDisplayTranslations: function(node) {
 //			this.getTranslations(domAttr.get(node, 'data-translation-tablename'), domAttr.get(node, 'node.data-translation-fieldname'));
@@ -71,8 +88,10 @@ define([
 			domAttr.set(translations, 'class', 'row translations');
 			domAttr.set(translations, 'style', 'display: none;');
 			this.languages.forEach(lang.hitch(this, function(language) {
-				domConstruct.place(this.getTranslationLabel(language.label), translations);
-				domConstruct.place(this.getTranslationField(node, language.code), translations);
+				if(this.hasDisplayTranslation(node, language)) {
+					domConstruct.place(this.getTranslationLabel(language.label), translations);
+					domConstruct.place(this.getTranslationField(node, language.code), translations);
+				}
 			}));
 			return translations;
 		},

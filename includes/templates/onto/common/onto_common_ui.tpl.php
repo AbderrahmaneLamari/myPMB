@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_ui.tpl.php,v 1.6 2019/10/14 09:28:44 btafforeau Exp $
+// $Id: onto_common_ui.tpl.php,v 1.7 2022/11/10 15:02:54 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -12,7 +12,8 @@ $ontology_tpl['list']='
 <div class="row">
 	<script type="javascript" src="./javascript/sorttable.js"></script>
 	<table class="sortable">
-		<tr>
+		<tr>	
+            <th></th>
 			<th>!!list_header!!</th>
 		</tr>
 		!!list_content!!
@@ -26,6 +27,11 @@ $ontology_tpl['list']='
 
 $ontology_tpl['list_line']='
 <tr>
+    <td style="text-align:center; width:25px;">
+		<a title="'.$msg['authority_list_see_label'].'" href="!!list_line_link_see!!">
+			<i class="fa fa-eye"></i>
+		</a>
+	</td>
 	<td>
 		<a href="!!list_line_href!!">!!list_line_libelle!!</a>
 	</td>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_thumbnail.class.php,v 1.1.2.4 2021/08/06 10:33:42 qvarin Exp $
+// $Id: onto_contribution_datatype_thumbnail.class.php,v 1.5.4.1 2023/12/28 14:52:03 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -41,7 +41,6 @@ class onto_contribution_datatype_thumbnail extends onto_common_datatype_file {
 		}
 		//TODO: Revoir si on ajoute la suppression de la vignette
 		if(count($file)) {
-			$blob =  base64_encode(construire_vignette("","",$file['tmp_name'][0]['value']));
 			
 			$filename = "vign_".md5(microtime())."_".$file['name'][0]['value'];
 			$upload_directory = new upload_folder($pmb_contribution_opac_docnum_directory);
@@ -52,8 +51,8 @@ class onto_contribution_datatype_thumbnail extends onto_common_datatype_file {
 			    mkdir($rep_path.$path, 0777, true);
 			}
 			$complete_path = $path.$filename;
-			file_put_contents($rep_path.$complete_path, $blob);
-			
+            $image = imagecreatefromstring(file_get_contents($file['tmp_name'][0]['value']));
+            imagepng($image, $rep_path.$complete_path);
 			$values[] = array(
 			    'value' => json_encode(["name"=>  $file['name'][0]['value'], "id_upload_directory" => $pmb_contribution_opac_docnum_directory, "path" => $complete_path]),
 				'type' => $_POST[$var_name][0]['type']

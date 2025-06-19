@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: alerts_pnb.class.php,v 1.1 2020/12/24 11:01:54 dgoron Exp $
+// $Id: alerts_pnb.class.php,v 1.2 2022/02/11 09:39:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,8 +22,8 @@ class alerts_pnb extends alerts {
 		
 		$this->data = array();
 		
-		$pmb_pnb_alert_end_offers+=0;
-		$pmb_pnb_alert_staturation_offers+=0;
+		$pmb_pnb_alert_end_offers = intval($pmb_pnb_alert_end_offers);
+		$pmb_pnb_alert_staturation_offers = intval($pmb_pnb_alert_staturation_offers);
 		
 		$query = "SELECT pnb_order_line_id FROM pnb_orders WHERE
 			DATE_ADD(pnb_order_offer_date_end, INTERVAL - " . $pmb_pnb_alert_end_offers . " DAY) < NOW() ";

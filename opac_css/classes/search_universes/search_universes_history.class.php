@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_universes_history.class.php,v 1.7.2.4 2021/12/07 07:40:41 gneveu Exp $
+// $Id: search_universes_history.class.php,v 1.13 2022/09/22 09:22:05 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -101,6 +101,7 @@ class search_universes_history {
             $_SESSION["search_universes".$n]["universe_rmc"] = (!empty($user_rmc) ? $user_rmc :  "");
             $_SESSION["search_universes".$n]["universe_id"] = $universe_id;
             $_SESSION["search_universes".$n]["opac_view"] = (isset($_SESSION["opac_view"]) ? $_SESSION["opac_view"] : "default_opac");
+            $_SESSION["search_universes".$n]["dynamic_params"] = search_universe::$segments_dynamic_params;
         }
         if ($lvl == "search_segment") {
             if (!isset($_SESSION["search_universes".$search_index]["segments"])) {
@@ -177,6 +178,8 @@ class search_universes_history {
     public static function get_start_search() {
         global $search_index;
         global $segment_json_search;
+        global $shared_serialized_search;
+        global $shared_query;
 
         if (!empty($search_index)) {
             static::init_universe_query_from_history();
@@ -186,6 +189,8 @@ class search_universes_history {
         $type = (!empty($_SESSION["search_universes".$search_index]["universe_rmc"]) ? "extended" : "simple");
         $query = (!empty($_SESSION["search_universes".$search_index]["universe_rmc"]) ? $_SESSION["search_universes".$search_index]["universe_rmc"] : (!empty($_SESSION["search_universes".$search_index]["universe_query"]) ? $_SESSION["search_universes".$search_index]["universe_query"] : "*"));
         $launch_search = true;
+        
+        $dynamic_params = (!empty($_SESSION["search_universes".$search_index]["dynamic_params"]) ? $_SESSION["search_universes".$search_index]["dynamic_params"] : []);
         
         if (!empty($search_index) && !empty($segment_json_search)) {
             //pagination ou affinage ou historique, on relance pas la recherche dans l'univers
@@ -197,6 +202,9 @@ class search_universes_history {
             "launch_search" => $launch_search,
             "segment_json_search" => $segment_json_search,
             "search_index" => $search_index,
+            "dynamic_params" => $dynamic_params,
+            "shared_serialized_search" => isset($shared_serialized_search) ? urldecode($shared_serialized_search) : "",
+            "shared_query" => isset($shared_query) ? urldecode($shared_query) : "",
         ];
         
     }

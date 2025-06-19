@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_transferts_statutsdef_ui.class.php,v 1.1 2021/02/04 08:13:12 dgoron Exp $
+// $Id: list_configuration_transferts_statutsdef_ui.class.php,v 1.1.8.1 2023/03/07 15:35:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -23,23 +23,14 @@ class list_configuration_transferts_statutsdef_ui extends list_configuration_tra
 		);
 	}
 	
-	protected function get_cell_content($object, $property) {
+	protected function _get_object_property_statut_libelle($object) {
 		global $msg;
 		
-		$content = '';
-		switch($property) {
-			case 'statut_libelle':
-				if ($object->statut_libelle) {
-					$content .= $object->statut_libelle;
-				} else {
-					$content .= $msg["admin_transferts_statut_transfert_non_defini"];
-				}
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
+		if ($object->statut_libelle) {
+			return $object->statut_libelle;
+		} else {
+			return $msg["admin_transferts_statut_transfert_non_defini"];
 		}
-		return $content;
 	}
 	
 	protected function get_edition_link($object) {

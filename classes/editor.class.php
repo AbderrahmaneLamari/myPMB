@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: editor.class.php,v 1.112.2.1 2021/10/21 06:39:37 dgoron Exp $
+// $Id: editor.class.php,v 1.116 2023/02/14 15:47:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+use Pmb\Ark\Entities\ArkEntityPmb;
 // definition de la classe de gestion des 'editeurs'
 if ( ! defined( 'PUBLISHER_CLASS' ) ) {
   define( 'PUBLISHER_CLASS', 1 );
@@ -83,6 +84,8 @@ class editeur {
 			$result = pmb_mysql_query($requete);
 			if(pmb_mysql_num_rows($result)) {
 				$row = pmb_mysql_fetch_object($result);
+				pmb_mysql_free_result($result);
+				
 				$this->id 	= $row->ed_id;
 				$this->name = $row->ed_name;
 				$this->adr1 = $row->ed_adr1;
@@ -93,11 +96,14 @@ class editeur {
 				$this->web = $row->ed_web;
 				$this->ed_comment = $row->ed_comment;
 				$this->supplier = new entites($row->ed_num_entite);
+				
 				$result = entites::get_coordonnees($row->ed_num_entite,1);
 				if(pmb_mysql_num_rows($result)){
 					$row = pmb_mysql_fetch_object($result);
+					pmb_mysql_free_result($result);
 					$this->supplier->coords_invoice = $row;
 				}
+				
 				$this->authority = authorities_collection::get_authority(AUT_TABLE_AUTHORITY, 0, [ 'num_object' => $this->id, 'type_object' => AUT_TABLE_PUBLISHERS]);
 				$this->num_statut = $this->authority->get_num_statut();
 				if($this->web) {
@@ -400,6 +406,7 @@ class editeur {
 	public function replace($by,$link_save=0) {
 		global $msg;
 		global $pmb_synchro_rdf;
+		global $pmb_ark_activate;
 	
 		if((!$by)||(!$this->id)) {
 			// pas de valeur de remplacement !!!
@@ -446,7 +453,15 @@ class editeur {
 	
 		// nettoyage indexation
 		indexation_authority::delete_all_index($this->id, "authorities", "id_authority", AUT_TABLE_PUBLISHERS);
-		
+		if ($pmb_ark_activate) {
+		    $idReplaced = authority::get_authority_id_from_entity($this->id, AUT_TABLE_PUBLISHERS);
+		    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_PUBLISHERS);
+		    if ($idReplaced && $idReplacing) {
+		        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+		        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+		        $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		    }
+		}
 		// effacement de l'identifiant unique d'autorité
 		$authority = new authority(0, $this->id, AUT_TABLE_PUBLISHERS);
 		$authority->delete();
@@ -624,21 +639,24 @@ class editeur {
 		    $binary = 'BINARY';
 		} 
 		$query = "SELECT ed_id FROM publishers WHERE " . $binary . " ed_name='${key}' and ed_ville = '${ville}' ";
-		$result = @pmb_mysql_query($query);
+		$result = pmb_mysql_query($query);
 		if(!$result) die("can't SELECT publisher ".$query);
 		// resultat
 	
 		// recuperation du resultat de la recherche
-		$tediteur  = pmb_mysql_fetch_object($result);
-		// et recuperation eventuelle de l'id
-		if($tediteur->ed_id)
-			return $tediteur->ed_id;
+		if(pmb_mysql_num_rows($result)) {
+			$tediteur  = pmb_mysql_fetch_object($result);
+			// et recuperation eventuelle de l'id
+			if($tediteur->ed_id) {
+				return $tediteur->ed_id;
+			}
+		}
 	
 		// id non-recuperee, il faut creer la forme.
 		$query = 'INSERT INTO publishers SET ed_name="'.$key.'", ed_ville = "'.$ville.'", ed_adr1 = "'.$adr.'", ed_comment="'.$ed_comment.'", ed_adr2="'.$adr2.
 		'", ed_cp="'.$cp.'", ed_pays="'.$pays.'", ed_web="'.$web.'", index_publisher=" '.strip_empty_chars($key).' " ';
 	
-		$result = @pmb_mysql_query($query);
+		$result = pmb_mysql_query($query);
 		if(!$result) die("can't INSERT into publisher : ".$query);
 		$id=pmb_mysql_insert_id();
 		

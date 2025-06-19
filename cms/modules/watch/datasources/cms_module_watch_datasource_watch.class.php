@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_watch_datasource_watch.class.php,v 1.4.16.1 2022/01/18 15:29:50 dgoron Exp $
+// $Id: cms_module_watch_datasource_watch.class.php,v 1.5 2022/01/18 15:27:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

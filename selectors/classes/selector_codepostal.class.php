@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_codepostal.class.php,v 1.3.8.1 2021/10/20 11:57:44 dgoron Exp $
+// $Id: selector_codepostal.class.php,v 1.4 2021/10/20 11:51:35 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

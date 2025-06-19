@@ -2,9 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc.inc.php,v 1.139.2.3 2022/01/10 11:27:49 dgoron Exp $
+// $Id: misc.inc.php,v 1.165.2.7 2023/12/19 08:38:15 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+use Pmb\Common\Helper\Portal;
+use Pmb\Common\Library\CSRF\CollectionCSRF;
+use Pmb\Common\Library\CSRF\ParserCSRF;
+use Pmb\Common\Library\Image\Image;
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 global $class_path, $include_path;
 require_once "$include_path/apache_functions.inc.php";
@@ -22,9 +28,19 @@ if (!function_exists('is_countable')) {
 	}
 }
 
-//Fonction pour gérer les images demandés par PMB
-function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0, $noticecode=0, $url_image=0, $docnum_id = 0){
-    global $pmb_notice_img_folder_id, $pmb_authority_img_folder_id, $pmb_docnum_img_folder_id, $opac_url_base;
+function isimage_cache_white_pixel($hash_location) {
+	global $base_path;
+
+	$image = file_get_contents($hash_location);
+	if(file_get_contents($base_path.'/images/white_pixel.jpg') == $image || file_get_contents($base_path.'/images/white_pixel_2x2.png') == $image) {
+		return true;
+	}
+	return false;
+}
+
+//Fonction pour gérer les images demandées par PMB
+function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0, $noticecode=0, $url_image=0){
+    global $pmb_notice_img_folder_id, $pmb_authority_img_folder_id, $opac_url_base;
 
 	global $opac_img_cache_folder;
 
@@ -43,9 +59,6 @@ function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0,
 	}elseif($authority_id){
 		$imgpmb_name="img_authority_".$authority_id;
 		$imgpmb_test=$pmb_authority_img_folder_id;
-	}elseif($docnum_id){
-	    $imgpmb_name="img_docnum_".$docnum_id;
-		$imgpmb_test=$pmb_docnum_img_folder_id;
 	}
 
 	if(!$stop && $imgpmb_name && $imgpmb_test){
@@ -62,10 +75,25 @@ function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0,
 					$hash_location = "";
 				}
 			}else{
-				//Gestion de l'existance du fichier non géré, comme c'était le cas avant
+				//Gestion de l'existence du fichier non gérée, comme c'était le cas avant
 			}
 			$stop = true;
 		}
+	}
+
+	if ($url_image && !$location) {
+	    $location = $url_image;
+	    if($img_cache_folder && file_exists($location)){
+	        $hash = md5($opac_url_base.$location);
+	        $hash_location = $img_cache_folder.$hash.".png";
+	        if(file_exists($hash_location)){
+	            $location = $hash_location;
+	            $hash_location = "";
+	        }
+	        $stop = true;
+	    } else {
+	        $location = "";
+	    }
 	}
 
 	if(!$stop && $img_cache_folder){
@@ -79,7 +107,6 @@ function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0,
 		if($url_image){
 			$hash_image.=$url_image;
 		}
-
 		if($hash_image){
 			$hash=md5($hash_image);
 			$image_rep_cache=$img_cache_folder.$hash.".png";
@@ -88,7 +115,7 @@ function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0,
 			$image_empty_rep_cache=$img_cache_folder.$hash_img_empty.".png";
 			if(file_exists($image_empty_rep_cache)){
 				$location = $image_empty_rep_cache;
-			}elseif(file_exists($image_rep_cache)){
+			}elseif(file_exists($image_rep_cache) && !isimage_cache_white_pixel($image_rep_cache)){
 				$location = $image_rep_cache;
 			}else{
 				//on teste l'existence de répertoire de cache pour éviter les erreurs et les liens cassés
@@ -105,23 +132,40 @@ function getimage_cache($notice_id=0, $etagere_id=0, $authority_id=0, $vigurl=0,
 }
 
 function getimage_url($code = "", $vigurl = "", $no_cache = false, $entity_id = "") {
-	global $opac_url_base, $opac_book_pics_url, $pmb_opac_url, $pmb_url_base;
+    global $base_path, $opac_url_base, $opac_book_pics_url, $pmb_opac_url, $pmb_url_base, $opac_show_book_pics;
 	global $pmb_img_cache_folder, $pmb_img_cache_url, $opac_img_cache_folder, $opac_img_cache_url;
-	global $use_opac_url_base;
-	
+	global $use_opac_url_base, $no_use_img_cache;
+
 	$url_return = $notice_id = $etagere_id = $authority_id = $noticecode = $url_image = "" ;
 
 	$url_image = $opac_book_pics_url;
-	$prefix=$opac_url_base;
+	if(!empty($use_opac_url_base)){
+		$prefix=$opac_url_base;
+	} else {
+		$prefix=$base_path.'/';
+	}
 	$img_cache_folder = $opac_img_cache_folder;
 	$img_cache_url = $opac_img_cache_url;
 	$cached_in_opac = 1;
 
 	if($code){
 		$noticecode = pmb_preg_replace('/-|\.| /', '', $code);
+		if (empty($entity_id)) {
+		    $entity_id = notice::get_notice_id_from_cb($code);
+		}
 	}else{
 		$noticecode = "";
 	}
+
+    if ($opac_show_book_pics) {
+        if ($entity_id) {
+	        $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+	        $url = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $entity_id);
+	        if ($url) {
+	            return $url;
+	        }
+	    }
+    }
 
 	$for_cut="";
 	$out = array();
@@ -176,7 +220,7 @@ function getimage_url($code = "", $vigurl = "", $no_cache = false, $entity_id = 
 
 	if(!$url_return){
 		$url_return = $prefix."getimage.php?url_image=".urlencode($url_image)."&noticecode=!!noticecode!!&entity_id=".$entity_id."&vigurl=".urlencode($vigurl);
-		if(!empty($use_opac_url_base)){
+		if(!empty($no_use_img_cache)){
 			$url_return .="&no_caching=1";
 		}
 		$url_return = str_replace("!!noticecode!!", $noticecode, $url_return);
@@ -186,22 +230,14 @@ function getimage_url($code = "", $vigurl = "", $no_cache = false, $entity_id = 
 
 //Fonction de récupération d'une URL vignette
 function get_vignette($notice_id, $no_cache=false, $from_export=false) {
-	global $opac_book_pics_url, $opac_show_book_pics;
+	global $opac_show_book_pics;
 
 	$url_image_ok = "";
-	$requete="select code,thumbnail_url from notices where notice_id=$notice_id";
-	$res=pmb_mysql_query($requete);
-	if ($res) {
-		$notice=pmb_mysql_fetch_object($res);
-		if ($from_export && $notice->thumbnail_url) {
-			return $notice->thumbnail_url;
-		} elseif ($notice->code || $notice->thumbnail_url) {
-			if ($opac_show_book_pics=='1' && ($opac_book_pics_url || $notice->thumbnail_url)) {
-				$url_image_ok = getimage_url($notice->code, $notice->thumbnail_url, $no_cache);
-			}
-		}
+	if ($opac_show_book_pics=='1') {
+	    $thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+	    $url_image_ok = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $notice_id);
 	}
-	if(!$url_image_ok){
+	if(!$url_image_ok && !$from_export){
 		$url_image_ok = get_url_icon("vide.png", 1);
 	}
 	return $url_image_ok;
@@ -625,7 +661,7 @@ function do_image(&$entree, $code, $depliable ) {
 	global $opac_show_book_pics ;
 	global $opac_book_pics_url ;
 	global $opac_book_pics_msg;
-	
+
 	$image = "" ;
 	if ($code <> "") {
 		if ($opac_show_book_pics=='1' && $opac_book_pics_url) {
@@ -1228,7 +1264,7 @@ function add_value_session($code,$value, $in_array = true) {
 		session_start();
 	}
 	if ($in_array) {
-		if (is_array($_SESSION[$code]) && count($_SESSION[$code])) {
+	    if (!empty($_SESSION[$code]) && is_array($_SESSION[$code])) {
 			if(!in_array($value, $_SESSION[$code])) {
 				$_SESSION[$code][] = $value;
 			}
@@ -1313,12 +1349,16 @@ function compresscss($content,$file,$relocate=true){
 	return $content;
 }
 
-function get_url_icon($icon, $use_opac_url_base=0) {
+function get_url_icon($icon, $force_opac_url_base=0) {
 	global $base_path;
 	global $opac_url_base, $css;
+	global $use_opac_url_base;
 
-	if($use_opac_url_base) $url_base = $opac_url_base;
-	else $url_base = $base_path."/";
+	if($force_opac_url_base || !empty($use_opac_url_base)) {
+		$url_base = $opac_url_base;
+	} else {
+		$url_base = $base_path."/";
+	}
 
 	$icon_name = str_replace(array('.svg', '.png', '.jpg', '.gif'), '', $icon);
 
@@ -1332,7 +1372,7 @@ function get_url_icon($icon, $use_opac_url_base=0) {
 	if($url = search_url_icon_type("images/".$icon_name)){
 		return $url_base.$url;
 	}
-	return $url_base."images/".$icon;
+	return "";
 
 }
 
@@ -1354,7 +1394,7 @@ function search_url_icon_type($icon) {
 	return '';
 }
 
-function gen_where_in($field, $elts, &$table_tempo_name=''){
+function gen_temporary_table_where_in($elts, $table_name=''){
 	global $memo_tempo_table_to_rebuild;
 
 	if(!isset($memo_tempo_table_to_rebuild)) $memo_tempo_table_to_rebuild = array();
@@ -1365,17 +1405,26 @@ function gen_where_in($field, $elts, &$table_tempo_name=''){
 		$elts = explode(',', $elts);
 	}
 	if(!count($elts)) $elts = array();
-	if(!$table_tempo_name) $table_tempo_name = 'where_in_table'.md5(uniqid("",true));
+	if(!$table_name) $table_name = 'where_in_table'.md5(uniqid("",true));
 	$field_id = 'where_in_id';
 
-	$rqt = 'create temporary table IF NOT EXISTS '.$table_tempo_name.' ('.$field_id.' int, index using btree('.$field_id.')) engine=memory ';
+	$rqt = 'create temporary table IF NOT EXISTS '.$table_name.' ('.$field_id.' int, index using btree('.$field_id.')) engine=memory ';
 	pmb_mysql_query($rqt);
 	$memo_tempo_table_to_rebuild[] = $rqt;
 	if(count($elts)) {
-		$rqt = 'INSERT INTO '.$table_tempo_name.' ('.$field_id.') VALUES ('.implode('),(',$elts).')';
+		$rqt = 'INSERT INTO '.$table_name.' ('.$field_id.') VALUES ('.implode('),(',$elts).')';
 		$memo_tempo_table_to_rebuild[] = $rqt;
 		pmb_mysql_query($rqt);
 	}
+	return $table_name;
+}
+
+function gen_where_in($field, $elts, &$table_tempo_name=''){
+
+	if(!$table_tempo_name) $table_tempo_name = 'where_in_table'.md5(uniqid("",true));
+	$field_id = 'where_in_id';
+
+	$table_tempo_name = gen_temporary_table_where_in($elts, $table_tempo_name);
 	$field_id = $table_tempo_name.'.'.$field_id;
 	return ' join '.$table_tempo_name.' on '.$field.'='.$field_id.' ';
 }
@@ -1405,11 +1454,11 @@ function aff_pagination ($url_base="", $nbr_lignes=0, $nb_per_page=0, $page=0, $
 	global $msg,$charset, $base_path;
 	global $opac_items_pagination_custom;
 
-	
+
 	$page = intval($page);
 	$nbr_lignes = intval($nbr_lignes);
 	$nb_per_page = intval($nb_per_page);
-	
+
 	$nbepages = ceil($nbr_lignes/$nb_per_page);
 	$suivante = $page+1;
 	$precedente = $page-1;
@@ -1606,60 +1655,91 @@ function jscript_unload_question() {
 }
 
 function cms_build_info($params = array()) {
-    global $cms_build_activate, $base_path, $pageid, $lvl, $tab, $search_type_asked;    
+    global $cms_build_activate, $base_path, $pageid, $lvl, $tab, $search_type_asked;
     global $log, $infos_notice, $infos_expl, $nb_results_tab;
     global $cms_active, $class_path, $opac_compress_css, $charset, $footer, $opac_parse_html;
-    
+
     $cms_build_info = $params;
     $cms_build_info_string = '';
     if ($cms_build_activate == -1) {
         unset($_SESSION["cms_build_activate"]);
-    } elseif ($cms_build_activate || $_SESSION["cms_build_activate"]) { // issu de la gestion   
-        if (isset($pageid) && $pageid) {
-            require_once($base_path."/classes/cms/cms_pages.class.php");
-            $cms_page = new cms_page($pageid);
-            $cms_build_info['page'] = $cms_page->get_env();
+    } elseif ($cms_build_activate || $_SESSION["cms_build_activate"]) { // issu de la gestion
+
+        if ($cms_active == 1) {
+            if (isset($pageid) && $pageid) {
+                require_once($base_path."/classes/cms/cms_pages.class.php");
+                $cms_page = new cms_page($pageid);
+                $cms_build_info['page'] = $cms_page->get_env();
+            }
+            $cms_build_info['session'] = $_SESSION;
+            $cms_build_info['post'] = $_POST;
+            $cms_build_info['get'] = $_GET;
+            $cms_build_info['lvl'] = $lvl;
+            $cms_build_info['tab'] = $tab;
+            $cms_build_info['log'] = $log;
+            $cms_build_info['infos_notice'] = $infos_notice;
+            $cms_build_info['infos_expl'] = $infos_expl;
+            $cms_build_info['nb_results_tab'] = $nb_results_tab;
+            $cms_build_info['search_type_asked'] = $search_type_asked;
+            $cms_build_info_string = "<input type='hidden' id='cms_build_info' name='cms_build_info' value='" . rawurlencode(serialize(pmb_base64_encode($cms_build_info))) . "' />";
+            $cms_build_info_string.= "
+            	<script type='text/javascript'>
+            		if(window.top.window.cms_opac_loaded){
+            			window.onload = function() {
+            				window.top.window.cms_opac_loaded('" . $_SERVER['REQUEST_URI'] . "');
+            			}
+            		}
+            	</script>
+        	";
+        } else if ($cms_active == 2) {
+            $cms_build_info = array();
+            $cms_build_info['post'] = $_POST;
+            $cms_build_info['get'] = $_GET;
+            $cms_build_info['type'] = Portal::getTypePage();
+            $cms_build_info['subType'] = Portal::getSubTypePage();
+            if (!class_exists("shorturls")) {
+                require_once("{$class_path}/shorturl/shorturls.class.php");
+            }
+            $shorturls = shorturls::get_class_by_context_of_page();
+            if (!empty($shorturls)) {
+                $cms_build_info['shorturl'] = $shorturls->get_shorturl('permalink');
+            }
+
+            $cms_build_info_string = "<input type='hidden' id='cms_build_info' name='cms_build_info' value='" . encoding_normalize::json_encode($cms_build_info) . "' />";
         }
-        $cms_build_info['session'] = $_SESSION;
-        $cms_build_info['post'] = $_POST;
-        $cms_build_info['get'] = $_GET;
-        $cms_build_info['lvl'] = $lvl;
-        $cms_build_info['tab'] = $tab;
-        $cms_build_info['log'] = $log;
-        $cms_build_info['infos_notice'] = $infos_notice;
-        $cms_build_info['infos_expl'] = $infos_expl;
-        $cms_build_info['nb_results_tab'] = $nb_results_tab;
-        $cms_build_info['search_type_asked'] = $search_type_asked;
-        $cms_build_info_string = "<input type='hidden' id='cms_build_info' name='cms_build_info' value='" . rawurlencode(serialize(pmb_base64_encode($cms_build_info))) . "' />";
-        $cms_build_info_string.= "
-        	<script type='text/javascript'>
-        		if(window.top.window.cms_opac_loaded){
-        			window.onload = function() {
-        				window.top.window.cms_opac_loaded('" . $_SERVER['REQUEST_URI'] . "');
-        			}
-        		}
-        	</script>
-    	";        
+
         $_SESSION["cms_build_activate"] = "1";
-    }	
-    
-    print str_replace("!!cms_build_info!!", $cms_build_info_string, $footer);	
-    
+    }
+
+    print str_replace("!!cms_build_info!!", $cms_build_info_string, $footer);
+
     $htmltoparse = '';
-    if($opac_parse_html || $cms_active){
-        if($opac_parse_html){
-            $htmltoparse= parseHTML(ob_get_contents());
-        }else{
-            $htmltoparse= ob_get_contents();
-        }
-        
-        ob_end_clean();
-        if ($cms_active) {
+    if ($opac_parse_html || $cms_active) {
+
+		$htmltoparse = ob_get_contents();
+		if ($opac_parse_html) {
+			$htmltoparse = parseHTML($htmltoparse);
+		}
+		ob_end_clean();
+
+		$htmltoparse = Image::transformHTML($htmltoparse);
+
+        if ($cms_active == 1) {
             require_once($base_path."/classes/cms/cms_build.class.php");
             $cms=new cms_build();
             $htmltoparse = $cms->transform_html($htmltoparse);
+        } else if ($cms_active == 2) {
+
+            $data = new \stdClass();
+            $data->html = $htmltoparse;
+
+            $cmsController = new \Pmb\CMS\Opac\Controller\CmsController($data);
+            $htmltoparse = $cmsController->proceed();
         }
-        
+
+        $parserCSRF = new ParserCSRF();
+        $htmltoparse = $parserCSRF->parseHTML($htmltoparse);
+
         //Compression CSS
         if($opac_compress_css == 1 && !$cms_active){
             if($charset=='utf-8') $htmltoparse = preg_replace('/[\x00-\x08\x10\x0B\x0C\x0E-\x19\x7F]'.
@@ -1739,7 +1819,7 @@ function get_content_type($filepath) {
 
 function get_input_date_time_inter($name, $id = '', $date_begin = '', $time_begin = '', $date_end = '', $time_end = '', $required = false, $onchange='') {
     global $msg;
-    
+
     if (strpos($_SERVER['HTTP_USER_AGENT'], 'Firefox')) {
         $version = get_browser_version($_SERVER['HTTP_USER_AGENT']);
         if (!$version || ((int) $version < 57)) {
@@ -1782,7 +1862,7 @@ function get_input_date_time_inter($name, $id = '', $date_begin = '', $time_begi
 
 function get_input_date($name, $id = '', $value='', $required = false, $onchange='') {
     global $msg;
-    
+
     if (strpos($_SERVER['HTTP_USER_AGENT'], 'Firefox')) {
         $version = get_browser_version($_SERVER['HTTP_USER_AGENT']);
         if (!$version || ((int) $version < 57)) {
@@ -1825,7 +1905,7 @@ function get_input_date($name, $id = '', $value='', $required = false, $onchange
 }
 
 function get_browser_version($u_agent, $ub = "Firefox") {
-    
+
     $matches = array();
     $known = array('Version', $ub, 'other');
     $pattern = '#(?<browser>' . implode('|', $known) . ')[/ ]+(?<version>[0-9.|a-zA-Z.]*)#';
@@ -1851,18 +1931,29 @@ function get_browser_version($u_agent, $ub = "Firefox") {
     }
     return $version;
 }
+
 /**
- * Test la validité d'un email
- * 
+ * Tester la validité d'un email
+ *
  * @param string $mail
  * @return boolean
  */
 function is_valid_mail($mail){
-    //Regex qui contrôle que le début de l'email n'a pas de caractères sépciaux : (^(([^<>()\[\]\\.,;:\s@\"]+(\.[^<>()\[\]\\.,;:\s@\"]+)*)|(\"\.+\"))
-    //Si le domaine est une Ip : (\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])
-    //ou un nom de domaine : ([a-zA-Z\-0-9]+\.)
-    //contrôle la longeur et l'extension du domaine
-    $regex = "/(^(([^<>()\[\]\\.,;:\s@\"]+(\.[^<>()\[\]\\.,;:\s@\"]+)*)|(\"\.+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$)/";
+	/**
+	 * Exemple :
+	 *
+	 * Valide mail :
+	 * 	mail@email.my-website.co.us
+	 * 	mail@127.0.0.1
+	 * 	mail@i.ua
+	 *
+	 * Invalide mail :
+	 * 	mail@my-website.com:7777
+	 * 	%@mail.com
+	 * 	'@mail.com
+	 * 	"............"@mail.com
+	 */
+    $regex = "/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@[0-9a-z]([a-z0-9\-_\.]+)*[0-9a-z]$/";
     return pmb_preg_match($regex, $mail);
 }
 
@@ -1873,23 +1964,23 @@ function is_valid_mail($mail){
  * @return string
  */
 function format_value_nl2br($message) {
-    
+
     switch (true) {
         //     <p>exemple</p>\n -> <p>exemple</p>
         case (preg_match("/>\n/", $message) != false):
             $message = str_replace(">\n", ">", $message);
             break;
-            
+
         //     <p>exemple</p>\r\n -> <p>exemple</p>
         case (preg_match("/>\r\n/", $message) != false):
             $message = str_replace(">\r\n", ">", $message);
             break;
-            
+
         case (preg_match("/>".PHP_EOL."/", $message) != false):
             $message = str_replace(">".PHP_EOL, ">", $message);
             break;
     }
-    
+
     return $message;
 }
 
@@ -1898,3 +1989,83 @@ function mysql_set_wait_timeout($val_second=120) {
     $sql = "set wait_timeout = $val_second";
     pmb_mysql_query($sql);
 }
+
+function get_hidden_global_var($type='POST') {
+	global $charset;
+
+	$hidden_html = '';
+	if(count($_POST)) {
+		foreach ($_POST as $name=>$value) {
+			if(is_string($value)) {
+				$hidden_html .= sprintf("<input type='hidden' name='%s' value='%s' />",
+						htmlentities($name, ENT_QUOTES, $charset),
+						htmlentities($value, ENT_QUOTES, $charset));
+			} elseif(is_array($value)) {
+				foreach ($value as $sub_key=>$sub_value) {
+					if(is_string($sub_value)) {
+						$hidden_html .= sprintf("<input type='hidden' name='%s[%s]' value='%s' />",
+								htmlentities($name, ENT_QUOTES, $charset),
+								htmlentities($sub_key, ENT_QUOTES, $charset),
+								htmlentities($sub_value, ENT_QUOTES, $charset));
+					}
+				}
+			}
+		}
+	}
+	return $hidden_html;
+}
+
+function printPasswordNoCompliant() {
+    global $msg;
+    global $lvl, $allow_pwd, $ext_auth;
+
+    $done = false;
+
+    // Mot de passe OK >> pas de message
+    if(!$done && empty($_SESSION['password_no_longer_compliant']) ) {
+        $done = true;
+    }
+    // Page modification mot de passe >> pas de message
+    if(!$done && ("change_password" == $lvl)) {
+        if (isset($_SESSION['password_no_longer_compliant'])) {
+            unset($_SESSION['password_no_longer_compliant']);
+        }
+        $done = true;
+    }
+    // Changement mot de passe non autorisé >> pas de message
+    if(!$done && !$allow_pwd) {
+        $done = true;
+    }
+    //Authentification externe >> pas de message
+    if(!$done && ($ext_auth || !empty($_SESSION['ext_auth'])) ) {
+        $done = true;
+    }
+
+    if ( !$done ) {
+        print '<script>
+            // Si on est dans une iframe, on fait rien
+            if (parent.location == window.location) {
+                if (confirm(reverse_html_entities("' . $msg['password_no_longer_compliant'] . '"))) {
+                     window.location = "./empr.php?lvl=change_password";
+                }
+            }
+        </script>';
+        unset($_SESSION['password_no_longer_compliant']);
+    }
+}
+
+/**
+ *
+ * @param string $redirect
+ * @return boolean
+ */
+function verify_csrf(string $redirect = "") {
+    global $opac_parse_html, $cms_active;
+    if (!$opac_parse_html && !$cms_active) {
+        return true;
+    }
+
+    global $csrf_token, $opac_url_base;
+    return (new CollectionCSRF())->valideToken($csrf_token ?? "", $redirect, $opac_url_base);
+}
+

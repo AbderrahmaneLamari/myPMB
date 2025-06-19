@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: SearchUniverseFormManager.js,v 1.1.2.1 2021/11/03 15:48:49 tsamson Exp $
+// $Id: SearchUniverseFormManager.js,v 1.2 2021/11/03 15:59:23 tsamson Exp $
 
 define(['dojo/_base/declare',
 		'apps/search/search_universe/SearchFormManager',

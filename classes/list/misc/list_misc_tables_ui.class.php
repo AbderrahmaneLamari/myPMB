@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_misc_tables_ui.class.php,v 1.4.2.1 2021/09/21 16:43:41 dgoron Exp $
+// $Id: list_misc_tables_ui.class.php,v 1.7 2022/09/30 11:41:57 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -41,7 +41,7 @@ class list_misc_tables_ui extends list_ui {
 		parent::init_filters($filters);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'Table');
 	}
 	

@@ -2,13 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes.tpl.php,v 1.40 2021/04/28 06:52:35 dgoron Exp $
+// $Id: demandes.tpl.php,v 1.40.6.1 2024/01/05 15:32:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
 global $msg, $current_module, $form_filtre_demande, $current_module, $pmb_lecteurs_localises, $form_liste_demande;
-global $form_modif_demande, $form_consult_dmde, $form_liste_docnum, $form_reponse_final, $reponse_finale, $charset, $form_linked_record, $form_consult_linked_record, $faq_active;
-global $categ, $idetat, $sub, $iduser;
+global $form_modif_demande, $form_consult_dmde, $form_liste_docnum, $form_reponse_final, $reponse_finale, $charset, $form_consult_linked_record;
 
 $form_filtre_demande = "
  <script type='text/javascript'>
@@ -199,94 +198,7 @@ $form_modif_demande = "
 	<input type='hidden' id='act' name='act' />
 	<input type='hidden' id='iddemande' name='iddemande' value='!!iddemande!!'/>
 	<div class='form-contenu'>
-		<div class='row'>
-			<div class='colonne2'>		
-				<label class='etiquette'>".$msg['demandes_theme']."</label>
-			</div>
-			<div class='colonne2'>
-				<label class='etiquette'>".$msg['demandes_type']."</label>
-			</div>
-		</div>
-		<div class='row'>
-			<div class='colonne2'>
-				!!select_theme!!
-			</div>
-			<div class='colonne2'>
-				!!select_type!!
-			</div>
-		</div>
-			<div class='row'>
-			<div class='colonne2'>
-				<label class='etiquette'>".$msg['demandes_etat']."</label>
-			</div>
-			<div class='colonne2'>
-				<label class='etiquette'>".$msg['demandes_progression']."</label>
-			</div>
-		</div>
-		<div class='row'>
-			<div class='colonne2'>
-				!!select_etat!!
-			</div>
-			<div class='colonne2'>
-				<input type='text' class='saisie-10em' name='progression' id='progression' value='!!progression!!' />
-			</div>
-		</div>	
-		<div class='row'>
-			<label class='etiquette'>".$msg['demandes_titre']."</label>
-		</div>
-		<div class='row'>
-			<input class='saisie-50em' type='text' id='titre' name='titre' value='!!titre!!' />
-		</div>
-		<div class='row'>
-			<label class='etiquette'>".$msg['demandes_sujet']."</label>
-		</div>
-		<div class='row'>
-			<textarea id='sujet' name='sujet' cols='55' rows='4' wrap='virtual'>!!sujet!!</textarea>
-		</div>
-		<div class='row'>
-			<div class='colonne3'>
-				<label class='etiquette'>".$msg['demandes_date_dmde']."</label>
-			</div>
-			<div class='colonne3'>
-				<label class='etiquette'>".$msg['demandes_date_prevue']."</label>
-			</div>
-			<div class='colonne3'>
-				<label class='etiquette'>".$msg['demandes_date_butoir']."</label>
-			</div>
-		</div>
-		<div class='row'>
-			<div class='colonne3'>
-				<input type='date' id='date_debut' name='date_debut' value='!!date_debut!!' />
-			</div>
-			<div class='colonne3'>
-				<input type='date' id='date_prevue' name='date_prevue' value='!!date_prevue!!' />
-			</div>
-			<div class='colonne3'>
-				<input type='date' id='date_fin' name='date_fin' value='!!date_fin!!' />
-			</div>
-		</div>
-		<div class='row'>
-			<div class='colonne3'>
-				<label class='etiquette'>".$msg['demandes_demandeur']."</label>
-			</div>
-			<div class='colonne3'>
-				<label class='etiquette'>".$msg['demandes_attribution']."</label>
-			</div>
-			<div class='colonne3'>&nbsp;</div>
-		</div>
-		<div class='row'>
-			<div class='colonne3'>
-				<input type='hidden' id='idempr' name='idempr' value='!!idempr!!' />
-				<input type='text' id='empr_txt' name='empr_txt' class='saisie-20emr' value='!!empr_txt!!' completion='empr' autfield='idempr' autocomplete='off' tabindex='1'/>
-				<input type='button' class='bouton_small' value='...' onclick=\"openPopUp('./select.php?what=origine&caller=modif_dmde&param1=idempr&param2=empr_txt&deb_rech='+".pmb_escape()."(this.form.empr_txt.value)+'&filtre=ONLY_EMPR', 'selector')\" />
-				<input type='button' class='bouton_small' value='X' onclick=\"this.form.idempr.value='0';this.form.empr_txt.value='';\"/>	
-			</div>
-			<div class='colonne3'>
-				!!select_user!!
-			</div>
-			<div class='colonne3'>&nbsp;</div>
-		</div>
-		!!form_linked_record!!
+		!!content_form!!
 		<div class='row'></div>
 		!!champs_perso!!
 		<div class='row'></div>
@@ -591,17 +503,7 @@ $reponse_finale = "
 	</form>	
 ";
 
-$form_linked_record = "
-		<div class='row'>
-			<label class='etiquette'>".$msg['demandes_linked_record']."</label>
-		</div>
-		<input id='linked_record_label' class='saisie-80emr' type='text' autexclude='0' autfield='linked_record_id' completion='notice' value='!!linked_record!!' name='linked_record_label' autocomplete='off'>
-		<input class='bouton' type='button' onclick='openPopUp(\"./select.php?what=notice&caller=modif_dmde&param1=linked_record_id&param2=linked_record_label&no_display=0\", \"selector_notice\")' value='...'>
-		<input class='bouton' type='button' onclick='this.form.linked_record_label.value=\"\"; this.form.linked_record_id.value=\"0\";' value='X'>
-		<input id='linked_record_id' type='hidden' value='!!linked_record_id!!' name='linked_record_id'>";
-
 $form_consult_linked_record = "
 				<label class='etiquette'>".$msg['demandes_linked_record']." : </label>
 				!!linked_record_icon!!
 				<a href='!!linked_record_link!!' title='!!linked_record!!'>!!linked_record!!</a>";
-?>

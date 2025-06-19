@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: autorites.inc.php,v 1.26 2021/05/03 07:59:40 dgoron Exp $
+// $Id: autorites.inc.php,v 1.26.6.2 2023/12/27 08:07:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -13,7 +13,9 @@ if (!isset($user_input)) $user_input = '';
 
 if($pmb_javascript_office_editor){
 	print $pmb_javascript_office_editor;
-	print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+	print "<script type='text/javascript'>
+        pmb_include('$base_path/javascript/tinyMCE_interface.js');
+    </script>";
 }
 
 switch($categ) {
@@ -42,7 +44,7 @@ switch($categ) {
 		if (SESSrights & CONCEPTS_AUTH) include('./autorites/onto/main.inc.php');
 		break;
 	case 'semantique':
-		if (SESSrights & THESAURUS_AUTH) include('./autorites/semantique/semantique_main.inc.php');
+		include('./autorites/semantique/semantique_main.inc.php');
 		break;
 	case 'titres_uniformes':
 		include('./autorites/titres_uniformes/titres_uniformes.inc.php');

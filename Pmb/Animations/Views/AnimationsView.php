@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: AnimationsView.php,v 1.6 2021/03/11 13:41:40 qvarin Exp $
+// $Id: AnimationsView.php,v 1.6.6.1 2023/09/04 14:36:36 tsamson Exp $
 
 namespace Pmb\Animations\Views;
 
@@ -37,7 +37,9 @@ class AnimationsView
         }
         $content .= "<script type='text/javascript'>var \$data = " . \encoding_normalize::json_encode($this->data) . ";</script>";
         $content .= "<script type='text/javascript' src='" . $this->distPath . $this->name . ".js'></script>";
-        $content .= "<script type='text/javascript' src='" . $javascript_path . "/tinyMCE_interface.js'></script>";
+        $content .= "<script type='text/javascript'>
+            pmb_include('$javascript_path/tinyMCE_interface.js');
+        </script>";
         $content .= $pmb_javascript_office_editor;
         return $content;
     }

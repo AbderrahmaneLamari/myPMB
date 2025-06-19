@@ -2,13 +2,12 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: elements_records_list_ui.class.php,v 1.12 2019/08/26 08:36:37 btafforeau Exp $
+// $Id: elements_records_list_ui.class.php,v 1.12.8.2 2023/09/22 08:54:13 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/elements_list/elements_list_ui.class.php');
-// require_once($class_path.'/serial_display.class.php');
-// require_once($class_path.'/mono_display.class.php');
 
 /**
  * Classe d'affichage d'un onglet qui affiche une liste de notices
@@ -48,6 +47,7 @@ class elements_records_list_ui extends elements_list_ui {
 	protected $draggable;
 	protected $no_link;
 	protected $ajax_mode;
+	protected static $lazy_loading = false;
 	
 	public function __construct($contents, $nb_results, $mixed, $groups=array(), $nb_filtered_results = 0) {
 		static::init_links();
@@ -58,16 +58,16 @@ class elements_records_list_ui extends elements_list_ui {
 	
 	protected static function init_links() {
 		if(!isset(static::$link_initialized)) {
-			static::$link = './catalog.php?categ=isbd&id=!!id!!';
-			static::$link_expl = './catalog.php?categ=edit_expl&id=!!notice_id!!&cb=!!expl_cb!!&expl_id=!!expl_id!!';
-			static::$link_explnum = './catalog.php?categ=edit_explnum&id=!!notice_id!!&explnum_id=!!explnum_id!!';
-			static::$link_serial = './catalog.php?categ=serials&sub=view&serial_id=!!id!!';
-			static::$link_analysis = './catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=!!bul_id!!&art_to_show=!!id!!';
-			static::$link_bulletin = './catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=!!id!!';
+			static::$link = notice::get_pattern_link();
+			static::$link_expl = exemplaire::get_pattern_link();
+			static::$link_explnum = explnum::get_pattern_link();
+			static::$link_serial = serial::get_pattern_link();
+			static::$link_analysis = analysis::get_pattern_link();
+			static::$link_bulletin = bulletinage::get_pattern_link();
 			static::$link_explnum_serial = "./catalog.php?categ=serials&sub=explnum_form&serial_id=!!serial_id!!&explnum_id=!!explnum_id!!";
 			static::$link_explnum_analysis = "./catalog.php?categ=serials&sub=analysis&action=explnum_form&bul_id=!!bul_id!!&analysis_id=!!analysis_id!!&explnum_id=!!explnum_id!!";
 			static::$link_explnum_bulletin = "./catalog.php?categ=serials&sub=bulletinage&action=explnum_form&bul_id=!!bul_id!!&explnum_id=!!explnum_id!!";
-			static::$link_notice_bulletin = './catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=!!id!!';
+			static::$link_notice_bulletin = bulletinage::get_pattern_link();
 			static::$link_delete_cart = '';
 			static::$link_initialized = 1;
 		}
@@ -97,6 +97,9 @@ class elements_records_list_ui extends elements_list_ui {
 		$element_id = (int) $element_id;
 		$result = pmb_mysql_query("SELECT niveau_biblio FROM notices WHERE notice_id=".$element_id);
 		$niveau_biblio = pmb_mysql_result($result, 0, 'niveau_biblio');
+		if (static::$lazy_loading) {
+		    $recherche_ajax_mode = 1;
+		}
 		switch($niveau_biblio) {
 			case 'm' :
 				// notice de monographie
@@ -109,7 +112,7 @@ class elements_records_list_ui extends elements_list_ui {
 			case 'a' :
 				// on a affaire à un article
 				// function serial_display ($id, $level='1', $action_serial='', $action_analysis='', $action_bulletin='', $lien_suppr_cart="", $lien_explnum="", $bouton_explnum=1,$print=0,$show_explnum=1, $show_statut=0, $show_opac_hidden_fields=true, $draggable=0 ) {
-				$display = new serial_display($element_id, $this->get_level(), static::get_link_serial(), static::get_link_analysis(), static::get_link_bulletin(), static::get_link_delete_cart(), static::get_link_explnum_analysis(), $this->button_explnum, $this->print, $this->show_explnum, $this->show_statut, $this->show_opac_hidden_fields, $this->draggable,($this->ajax_mode ? $recherche_ajax_mode : 0), $this->anti_loop, $this->no_link, $this->show_map, 0, $this->show_abo_actif, $this->show_expl, $this->context_parameters);
+			    $display = new serial_display($element_id, $this->get_level(), static::get_link_serial(), static::get_link_analysis(), static::get_link_bulletin(), static::get_link_delete_cart(), static::get_link_explnum_analysis(), $this->button_explnum, $this->print, $this->show_explnum, $this->show_statut, $this->show_opac_hidden_fields, $this->draggable,($this->ajax_mode ? $recherche_ajax_mode : 0), $this->anti_loop, $this->no_link, $this->show_map, 0, $this->show_abo_actif, $this->show_expl, $this->context_parameters);
 				break;
 			case 'b' :
 				// on a affaire à un bulletin
@@ -348,5 +351,13 @@ class elements_records_list_ui extends elements_list_ui {
 	
 	public function set_ajax_mode($ajax_mode) {
 		$this->ajax_mode = $ajax_mode;
+	}
+	
+	public static function enable_lazy_loading() {
+	    static::$lazy_loading = true;
+	}
+	
+	public static function disable_lazy_loading() {
+	    static::$lazy_loading = false;
 	}
 }

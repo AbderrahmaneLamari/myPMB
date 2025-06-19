@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: external_services_caches.class.php,v 1.10.10.2 2021/12/27 12:55:17 dgoron Exp $
+// $Id: external_services_caches.class.php,v 1.14 2022/03/25 09:05:41 dgoron Exp $
 
 define("CACHE_TYPE_NOTICE", 1);
 define("CACHE_TYPE_OPACEMPRSESSION", 2);
@@ -43,8 +43,8 @@ class external_services_cache {
 		}
 
 		//Allons chercher les valeurs
-		$limit_from +=0;
-		$limit_count+=0;
+		$limit_from = intval($limit_from);
+		$limit_count = intval($limit_count);
 		if ($limit_from !== false && $limit_count) {
 			$limit = " LIMIT ".$limit_from.','.$limit_count;
 		}
@@ -67,8 +67,8 @@ class external_services_cache {
 		}
 
 		//Allons chercher les valeurs
-		$limit_from +=0;
-		$limit_count+=0;
+		$limit_from = intval($limit_from);
+		$limit_count = intval($limit_count);
 		if ($limit_from !== false && $limit_count) {
 			$limit = " LIMIT ".$limit_from.','.$limit_count;
 		}
@@ -87,8 +87,8 @@ class external_services_cache {
 		}
 		
 		//Allons chercher les valeurs
-		$limit_from +=0;
-		$limit_count+=0;
+		$limit_from = intval($limit_from);
+		$limit_count = intval($limit_count);
 		if ($limit_from !== false && $limit_count) {
 			$limit = " LIMIT ".$limit_from.','.$limit_count;
 		}
@@ -146,20 +146,20 @@ class external_services_cache {
 			$information = $object_type.", '".$object_format."', '".$object_owner."', NOW(), NOW() + INTERVAL ".$this->cache_duration." SECOND, ''";
 			$values = implode(", ".$information."),(", $someobjects);
 			$values = '('.$values.','.$information.")";
-			$sql = "INSERT INTO ".$this->table_name." (es_cache_objectref, es_cache_objecttype, es_cache_objectformat, es_cache_owner, es_cache_creationdate, es_cache_expirationdate, es_cache_content) VALUES ".$values;
+			$sql = "INSERT IGNORE INTO ".$this->table_name." (es_cache_objectref, es_cache_objecttype, es_cache_objectformat, es_cache_owner, es_cache_creationdate, es_cache_expirationdate, es_cache_content) VALUES ".$values;
 			pmb_mysql_query($sql);
 		}
 	}
 
 	//Cette fonction remplit le cache à partir d'une sous requête renvoyant uniquement une colonne
 	public function encache_objectref_list_from_select($object_type, $object_owner, $object_format, $ref_select) {
-		$sql = "INSERT INTO ".$this->table_name." (es_cache_objectref, es_cache_objecttype, es_cache_objectformat, es_cache_owner, es_cache_creationdate, es_cache_expirationdate) SELECT subquery.* , ".$object_type.", '".addslashes($object_format)."', '".addslashes($object_owner)."', NOW(), NOW() + INTERVAL ".$this->cache_duration." SECOND FROM (".$ref_select.") as subquery";
+		$sql = "INSERT IGNORE INTO ".$this->table_name." (es_cache_objectref, es_cache_objecttype, es_cache_objectformat, es_cache_owner, es_cache_creationdate, es_cache_expirationdate) SELECT subquery.* , ".$object_type.", '".addslashes($object_format)."', '".addslashes($object_owner)."', NOW(), NOW() + INTERVAL ".$this->cache_duration." SECOND FROM (".$ref_select.") as subquery";
 		pmb_mysql_query($sql);		
 	}
 	
 	//Cette fonction remplit le cache à partir d'une sous requête renvoyant uniquement deux colonnes
 	public function encache_objectref_list_from_select_with_content($object_type, $object_owner, $object_format, $ref_select) {
-		$sql = "INSERT INTO ".$this->table_name." (es_cache_objectref, es_cache_content, es_cache_objecttype, es_cache_objectformat, es_cache_owner, es_cache_creationdate, es_cache_expirationdate) SELECT subquery.* , ".$object_type.", '".addslashes($object_format)."', '".addslashes($object_owner)."', NOW(), NOW() + INTERVAL ".$this->cache_duration." SECOND FROM (".$ref_select.") as subquery";	
+		$sql = "INSERT IGNORE INTO ".$this->table_name." (es_cache_objectref, es_cache_content, es_cache_objecttype, es_cache_objectformat, es_cache_owner, es_cache_creationdate, es_cache_expirationdate) SELECT subquery.* , ".$object_type.", '".addslashes($object_format)."', '".addslashes($object_owner)."', NOW(), NOW() + INTERVAL ".$this->cache_duration." SECOND FROM (".$ref_select.") as subquery";	
 		pmb_mysql_query($sql);
 	}
 	
@@ -208,7 +208,7 @@ class external_services_cache {
 				$values[] = "(".$object_ref.",'".addslashes($object_content)."',".$object_type.", '".$object_format."', '".$object_owner."', NOW(), NOW() + INTERVAL ".$this->cache_duration." SECOND)";
 			}
 			$valuee = implode(',', $values);
-			$sql = "INSERT INTO ".$this->table_name." (es_cache_objectref, es_cache_content, es_cache_objecttype, es_cache_objectformat, es_cache_owner, es_cache_creationdate, es_cache_expirationdate) VALUES ".$valuee;
+			$sql = "INSERT IGNORE INTO ".$this->table_name." (es_cache_objectref, es_cache_content, es_cache_objecttype, es_cache_objectformat, es_cache_owner, es_cache_creationdate, es_cache_expirationdate) VALUES ".$valuee;
 			pmb_mysql_query($sql);
 		}		
 	}

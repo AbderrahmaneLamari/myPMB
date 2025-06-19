@@ -2,7 +2,7 @@
 
 <!DOCTYPE XMLlist SYSTEM "../../XMLlist.dtd">
 <!-- liste des codes langue en UNIMARC (français)
-$Id: lang.xml,v 1.7.12.1 2021/08/02 15:09:59 dgoron Exp $ -->
+$Id: lang.xml,v 1.8 2021/08/02 15:06:50 dgoron Exp $ -->
 <XMLlist>	
 	<entry code="ace">Achinese</entry>
 	<entry code="ach">Acholi</entry>

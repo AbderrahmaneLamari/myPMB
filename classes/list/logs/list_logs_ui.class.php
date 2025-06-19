@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_logs_ui.class.php,v 1.1.2.9 2021/11/26 12:52:43 dgoron Exp $
+// $Id: list_logs_ui.class.php,v 1.12.4.2 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -51,7 +51,7 @@ class list_logs_ui extends list_ui {
 		parent::init_filters($filters);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'service');
 	}
 	
@@ -90,32 +90,20 @@ class list_logs_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-		
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'service' :
-				case 'type' :
-				case 'label' :
-				case 'message' :
-				case 'date' :
-				case 'url' :
-					$order .= 'log_'.$sort_by;
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}	
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'service' :
+	        case 'type' :
+	        case 'label' :
+	        case 'message' :
+	        case 'date' :
+	        case 'url' :
+	            return 'log_'.$sort_by;
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -189,34 +177,21 @@ class list_logs_ui extends list_ui {
 		return $this->get_search_filter_interval_date('date');
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if(is_array($this->filters['services']) && count($this->filters['services'])) {
-			$filters [] = 'log_service IN ("'.implode('","', $this->filters['services']).'")';
-		}
-		if(is_array($this->filters['types']) && count($this->filters['types'])) {
-			$filters [] = 'log_type IN ("'.implode('","', $this->filters['types']).'")';
-		}
-		if(is_array($this->filters['modules']) && count($this->filters['modules'])) {
-			$filters [] = 'log_module IN ("'.implode('","', $this->filters['modules']).'")';
-		}
-		if($this->filters['date_start']) {
-			$filters [] = 'log_date >= "'.$this->filters['date_start'].'"';
-		}
-		if($this->filters['date_end']) {
-			$filters [] = 'log_date <= "'.$this->filters['date_end'].' 23:59:59"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_multiple_restriction('services', 'log_service');
+		$this->_add_query_filter_multiple_restriction('types', 'log_type');
+		$this->_add_query_filter_multiple_restriction('modules', 'log_module');
+		$this->_add_query_filter_interval_restriction('date', 'log_date', 'datetime');
+	}
+	
+	protected function get_display_others_actions() {
+		global $msg;
+		return "
+			<div id='list_ui_others_actions' class='list_ui_others_actions ".$this->objects_type."_others_actions'>
+				<span class='right list_ui_other_action_logs_clean ".$this->objects_type."_other_action_logs_clean'>
+					<input type='button' class='bouton' value=\"".$msg['logs_clean']."\" onClick=\"document.location='".static::get_controller_url_base()."&action=clean';\" />
+				</span>
+			</div>";
 	}
 	
 	protected function _get_object_property_type($object) {

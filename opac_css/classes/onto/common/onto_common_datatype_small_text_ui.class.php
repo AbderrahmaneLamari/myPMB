@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_small_text_ui.class.php,v 1.8.2.4 2021/10/05 12:20:41 jparis Exp $
+// $Id: onto_common_datatype_small_text_ui.class.php,v 1.13 2022/06/08 14:14:13 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+require_once $class_path.'/onto/common/onto_common_datatype_ui.class.php';
 
 /**
  * class onto_common_datatype_small_text_ui

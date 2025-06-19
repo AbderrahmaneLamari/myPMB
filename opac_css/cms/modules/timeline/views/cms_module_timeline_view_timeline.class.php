@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_timeline_view_timeline.class.php,v 1.5 2021/02/12 11:58:25 dbellamy Exp $
+// $Id: cms_module_timeline_view_timeline.class.php,v 1.5.6.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -13,8 +13,8 @@ class cms_module_timeline_view_timeline extends cms_module_common_view {
 		parent::__construct($id);
 		
 		$this->default_template = "
-<p>{{record.header}}</p>
-<blockquote>{{record.content}}</blockquote>
+<div>{{record.header}}</div>
+<div>{{record.content}}</div>
 ";
 	}
 	
@@ -90,7 +90,7 @@ class cms_module_timeline_view_timeline extends cms_module_common_view {
 			);
 		}
 		$html = '<div id="'.$this->get_module_dom_id().'_timeline" style="height:'.$this->parameters['height'].'px;"></div>';
-		$html.= "<script type='text/javascript'>
+		$html.= "<script>
 		var timeline = new TL.Timeline('".$this->get_module_dom_id()."_timeline', ".encoding_normalize::json_encode($json).", {
 			start_at_end : ".($this->parameters['last_event']? 'true': 'false' ) .",
             language : 'fr',

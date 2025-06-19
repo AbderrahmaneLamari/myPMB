@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: fr_FR.xml,v 1.7.12.1 2021/09/17 13:43:02 rtigero Exp $ -->
+$Id: fr_FR.xml,v 1.11 2022/05/11 15:26:02 rtigero Exp $ -->
 
 <!DOCTYPE XMLlist SYSTEM "../../../includes/XMLlist.dtd" >
 <XMLlist>
@@ -69,4 +69,17 @@ $Id: fr_FR.xml,v 1.7.12.1 2021/09/17 13:43:02 rtigero Exp $ -->
 <entry code="self_checkout_bibloto_empr_cb">Le code-barres de l'emprunteur</entry>
 <entry code="self_checkout_bibloto_confirm">Confirme le prêt</entry>
 
+
+<entry code="print_loans_description">Permet d'obtenir le template d'impression d'un ticket de prêt</entry>
+<entry code="print_loans_inputs_description">Le paramètre expl_cb est optionnel. S'il n'est pas fourni, le template affichant tous les prêts en cours est renvoyé</entry>
+<entry code="print_loans_outputs_description"></entry>
+<entry code="print_loans_empr_cb">Le code-barres de l'emprunteur</entry>
+<entry code="print_loans_expl_cb">Le code-barres de l'exemplaire</entry>
+<entry code="print_loans_tpl_result">Template d'impression de ticket</entry>
+
+<entry code="get_printers_config_description">Permet d'obtenir les valeurs des paramètres de configuration des imprimantes</entry>
+<entry code="print_loans_outputs_description"></entry>
+<entry code="get_printers_config_result">Tableau des paramètres d'imprimante</entry>
+<entry code="get_printers_config_printer_name">IP du serveur d'impression</entry>
+<entry code="get_printers_config_printer_list">Liste des imprimantes configurées</entry>
 </XMLlist>

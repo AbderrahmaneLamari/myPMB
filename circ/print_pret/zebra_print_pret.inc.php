@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: zebra_print_pret.inc.php,v 1.12.8.1 2021/12/09 09:04:06 dgoron Exp $
+// $Id: zebra_print_pret.inc.php,v 1.13 2021/12/09 09:00:58 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

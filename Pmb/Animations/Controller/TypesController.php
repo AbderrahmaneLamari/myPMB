@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: TypesController.php,v 1.1.2.1 2022/01/18 09:12:42 qvarin Exp $
+// $Id: TypesController.php,v 1.2 2022/01/18 09:44:21 qvarin Exp $
 namespace Pmb\Animations\Controller;
 
 use Pmb\Common\Views\VueJsView;

@@ -4,7 +4,9 @@
 // © 2006 mental works / www.mental-works.com contact@mental-works.com
 // 	complètement repris et corrigé par PMB Services 
 // +-------------------------------------------------+
-// $Id: addtags.php,v 1.33.2.1 2022/01/03 10:36:10 dgoron Exp $
+// $Id: addtags.php,v 1.34.4.1 2023/04/18 13:10:16 qvarin Exp $
+
+use Pmb\Common\Library\CSRF\ParserCSRF;
 
 $base_path=".";
 require_once($base_path."/includes/init.inc.php");
@@ -73,6 +75,8 @@ if ($opac_allow_add_tag==1) {
 	if (file_exists($base_path.'/includes/ext_auth.inc.php')) require_once($base_path.'/includes/ext_auth.inc.php');
 	$log_ok=connexion_empr();
 }
+
+ob_start();
 
 print $popup_header;
 print "
@@ -146,6 +150,11 @@ if($pmb_logs_activate){
 }	
 print $popup_footer;
 
+$htmltoparse = ob_get_contents();
+ob_end_clean();
+
+$parserCSRF = new ParserCSRF();
+print $parserCSRF->parseHTML($htmltoparse);
+
 /* Fermeture de la connexion */
 pmb_mysql_close();
-		

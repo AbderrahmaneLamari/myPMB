@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bul_expl_update.inc.php,v 1.38 2020/07/28 10:05:09 dgoron Exp $
+// $Id: bul_expl_update.inc.php,v 1.39.4.1 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -97,29 +97,11 @@ if ($acces_m==0) {
 	}
 		
 	// Mise a jour de la table notices_mots_global_index pour toutes les notices en relation avec l'exemplaire
-	$req_maj="SELECT bulletin_notice,num_notice, analysis_notice FROM bulletins LEFT JOIN analysis ON analysis_bulletin=bulletin_id WHERE bulletin_id='".$expl_bulletin."'";
-	$res_maj=pmb_mysql_query($req_maj);
-	if($res_maj && pmb_mysql_num_rows($res_maj)){
-		$first=true;//Pour la premiere ligne de résultat on doit indexer aussi la notice de périodique et de bulletin au besoin
-		while ( $ligne=pmb_mysql_fetch_object($res_maj) ) {
-			if($first){
-				if($ligne->bulletin_notice){
-					notice::majNoticesMotsGlobalIndex($ligne->bulletin_notice,'expl');
-				}
-				if($ligne->num_notice){
-					notice::majNoticesMotsGlobalIndex($ligne->num_notice,'expl');
-				}
-			}
-			if($ligne->analysis_notice){
-				notice::majNoticesMotsGlobalIndex($ligne->analysis_notice,'expl');
-			}
-			$first=false;
-		}
-	}
+	exemplaire::majNoticesMotsGlobalIndex($expl_id);
 	
 	$id_form = md5(microtime());
 	print "<div class='row'><div class='msg-perio'>".$msg['maj_encours']."</div></div>";
-	$retour = "./catalog.php?categ=serials&sub=view&sub=bulletinage&action=view&bul_id=$expl_bulletin";
+	$retour = "./catalog.php?categ=serials&sub=view&sub=bulletinage&action=view&bul_id=" . intval($expl_bulletin);
 	
 	if (isset($pointage) && $pointage) {
 		$templates="<script type='text/javascript'>

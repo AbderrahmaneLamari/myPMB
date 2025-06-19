@@ -2,12 +2,14 @@
 // +-------------------------------------------------+
 // � 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities.class.php,v 1.13.2.2 2021/12/02 16:14:34 gneveu Exp $
+// $Id: entities.class.php,v 1.19.2.3 2023/12/27 13:52:40 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class entities{
     public static $entities;
+    
+    public static $isbd;
     
     public static function get_entities() {
     	return array(
@@ -25,7 +27,8 @@ class entities{
     			TYPE_AUTHPERSO,
     			TYPE_CMS_SECTION,
     			TYPE_CMS_ARTICLE,
-    			TYPE_CONCEPT
+    			TYPE_CONCEPT,
+    			TYPE_ANIMATION
     	);
     }
     
@@ -47,7 +50,8 @@ class entities{
 	    		TYPE_AUTHPERSO => $msg['search_by_authperso_title'],
 	    		TYPE_CMS_SECTION => $msg['cms_menu_editorial_section'],
 	    		TYPE_CMS_ARTICLE => $msg['cms_menu_editorial_article'],
-	    		TYPE_CONCEPT => $msg['search_concept_title']
+	    		TYPE_CONCEPT => $msg['search_concept_title'],
+	           TYPE_ANIMATION => $msg['selvars_animation_name']
 	    );
 	    return $entities;
 	}
@@ -92,6 +96,13 @@ class entities{
 				return 'authperso';
 			case TYPE_EXTERNAL :
 				return 'notices_externes';
+			case TYPE_ONTOLOGY:
+			    return 'ontologies';
+			case TYPE_ANIMATION:
+			    return 'animations';
+		}
+		if ($type > 10000) {
+		    return 'ontologies'.($type - 10000);
 		}
 		if ($type > 1000) {
 		    return 'authperso_'.($type - 1000);
@@ -208,7 +219,10 @@ class entities{
 	        case "titre_uniforme" :
 	            return TYPE_TITRE_UNIFORME;
 	        case "indexint" :
-	            return TYPE_INDEXINT;
+	        	return TYPE_INDEXINT;
+	        case "serie" :
+	        case "series" :
+	        	return TYPE_SERIE;
 // 	        case "" :
 // 	            return TYPE_CONCEPT;
 	        case "authperso" :
@@ -223,10 +237,138 @@ class entities{
 	        case "notice" ;
 	        case "record" :
 	            return notice::get_notice_title($id);
+	        case "bulletin" :
+	            $notice_id = bulletinage::get_notice_id_from_id($id);
+	            return notice::get_notice_title($notice_id);
 	        case "authority" :
 	        default:
 	            $authority = authorities_collection::get_authority($type, $id);
 	            return $authority->get_isbd();
 	    }
+	}
+	
+	/**
+	 * Liste les methodes, utile pour les web
+	 * @return []
+	 */
+	public static function get_methods_infos($object) {
+	    $methods_tab = [];
+	    if (is_object($object)) {
+	        $rc = new ReflectionClass($object);
+	        $methods = $rc->getMethods(ReflectionMethod::IS_PUBLIC);
+	        $excluded_methods = [
+	            "__construct",
+	            "get_instance",
+	            "__get",
+	            "__set",
+	            "__call",
+	        ];
+	        foreach ($methods as $method) {
+	            if (!in_array($method->getName(), $excluded_methods)) {
+	                $doc = $method->getDocComment();
+	                $doc = substr($doc, 0, strpos($doc, "@"));
+	                $doc = str_replace(["/", "*"], "", $doc);
+	                $methods_tab[] = [$method->getName(), trim($doc)];
+	            }
+	        }
+	        sort($methods_tab);
+	    }
+	    return $methods_tab;
+	}
+	
+	/**
+	 * Liste les proprietes, utile pour les web
+	 * @return []
+	 */
+	public static function get_properties_infos($object) {
+	    $properties_tab = [];
+	    if (is_object($object)) {
+	        $rc = new ReflectionClass($object);
+	        $properties = $rc->getProperties();
+	        $excluded_properties = [];
+	        foreach ($properties as $property) {
+	            if (!in_array($property->getName(), $excluded_properties)) {
+	                $doc = $property->getDocComment();
+	                $doc = substr($doc, 0, strpos($doc, "@"));
+	                $doc = str_replace(["/", "*"], "", $doc);
+	                $properties_tab[] = [$property->getName(), trim($doc)];
+	            }
+	        }
+	        sort($properties_tab);
+	    }
+	    return $properties_tab;
+	}
+	
+	public static function get_entity_type_from_entity($entity) {
+	    switch ($entity) {
+	        case 'categories' :
+	        case 'categorie' :
+	        case 'category' :
+	        case 'categ_see':
+	            return TYPE_CATEGORY;
+	        case 'authors':
+	        case 'author' :
+	        case 'auteur' :
+	        case 'auteurs' :
+	        case 'author_see':
+	            return TYPE_AUTHOR;
+	        case 'editeur' :
+	        case 'editeurs' :
+	        case 'publisher' :
+	        case 'publishers':
+	        case 'publisher_see':
+	            return TYPE_PUBLISHER;
+	        case 'work':
+	        case 'works':
+	        case 'titre_uniforme':
+	        case 'titres_uniformes':
+	        case 'titre_uniforme_see':
+	            return TYPE_TITRE_UNIFORME;
+	        case 'collections':
+	        case 'collection':
+	        case 'coll_see':
+	            return TYPE_COLLECTION;
+	        case 'subcoll_see':
+	        case 'subcollection':
+	        case 'subcollections':
+	            return TYPE_SUBCOLLECTION;
+	        case 'indexint':
+	        case 'indexint_see':
+	            return TYPE_INDEXINT;
+	        case 'serie':
+	        case 'series':
+	        case 'serie_see':
+	            return TYPE_SERIE;
+	        case 'concept':
+	        case 'concepts':
+	        case 'concept_see' :
+	            return TYPE_CONCEPT;
+	        case 'notice':
+	        case 'notices':
+	        case 'records':
+	        case 'record':
+	        case 'notice_display':
+	            return TYPE_NOTICE;
+            case 'animations' :
+            case 'animation' :
+                return 'animations';
+	        case 'authperso_see':
+	        default:
+	            if(strpos($entity, 'authperso') !== false) {
+	                return TYPE_AUTHPERSO;
+	            }
+	            break;
+	    }
+	    return $entity;
+	}
+	
+	public static function get_isbd($id, $type) {
+		$id = intval($id);
+		$type = intval($type);
+		if(empty(static::$isbd[$type][$id])) {
+			$entity = new entity($id, $type);
+			static::$isbd[$type][$id] = $entity->get_isbd();
+		}
+		return static::$isbd[$type][$id];
 	}
 }

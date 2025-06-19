@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: thesaurus.class.php,v 1.31.2.1 2021/11/30 09:27:45 dgoron Exp $
+// $Id: thesaurus.class.php,v 1.33.4.2 2023/10/27 08:59:56 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -23,6 +23,9 @@ class thesaurus {
 	public $num_noeud_orphelins = 0; 			// Index Noeud orphelins du thesaurus
 	public $num_noeud_nonclasses = 0; 			// Index Noeud nonclasses du thesaurus 
 	 
+	protected static $fullThesaurusList = null;
+    protected static $thesaurusList = null;
+
 	private static $instances =array();
 	
 	// Constructeur.
@@ -63,11 +66,33 @@ class thesaurus {
 		else $this->num_noeud_nonclasses=0;
 	}
 
-	public function get_form() {
-		global $msg, $charset;
-		global $thes_form;
+	protected function get_js_form() {
+		global $thes_js_form;
+		
+		$js_form = $thes_js_form;
+		if(($this->id_thesaurus) && static::hasCateg($this->id_thesaurus)){
+			$js_form = str_replace('!!thesaurus_as_categ!!', "oui", $js_form);
+		}else{
+			$js_form = str_replace('!!thesaurus_as_categ!!', "non", $js_form);
+		}
+		return $js_form;
+	}
+	
+	public function get_content_form() {
+		global $charset;
 		global $include_path;
 		global $lang;
+		
+		$interface_content_form = new interface_content_form(static::class);
+		
+		if($this->id_thesaurus) {	//modification
+			$interface_content_form->add_element('numero_thesaurus', '38')
+			->add_html_node($this->id_thesaurus);
+		}
+		$interface_content_form->add_element('libelle_thesaurus', '103')
+		->add_input_node('text', $this->libelle_thesaurus)
+		->set_class('saisie-80em')
+		->set_attributes(array('data-translation-fieldname' => 'libelle_thesaurus'));
 		
 		//Récuperation de la liste des langues définies pour l'interface
 		$langages = new XMLlist("$include_path/messages/languages.xml", 1);
@@ -82,19 +107,8 @@ class thesaurus {
 		}
 		
 		if($this->id_thesaurus) {	//modification
-			$title = $msg['thes_modification'];
-			$delete_button = "<input type='button' class='bouton' value='$msg[63]' onClick=\"confirm_delete();\">";
-				
-			$identifiant_thesaurus = "<div class='row'><label class='etiquette' >".$msg[38]."</label></div>";
-			$identifiant_thesaurus.= "<div class='row'><input type='text' class='saisie-5emd' id='numero_thesaurus' name='numero_thesaurus' readonly='readonly' value='".$this->id_thesaurus."' /></div>";
-		
 			$langue_defaut = htmlentities(addslashes($lg[$this->langue_defaut]),ENT_QUOTES, $charset);
 		} else {	//creation
-			$title = $msg['thes_creation'];
-			$delete_button = '';
-		
-			$identifiant_thesaurus = '';
-		
 			$langue_defaut = "<select class='saisie-30em' id='langue_defaut' name='langue_defaut' >";
 			foreach($lg1 as $key=>$value){
 				$langue_defaut.= "<option value='".$key."' ";
@@ -102,29 +116,30 @@ class thesaurus {
 				$langue_defaut.= " >".htmlentities(addslashes($value),ENT_QUOTES, $charset)."</option>";
 			}
 			$langue_defaut.= "</select>";
-		
 		}
+		$interface_content_form->add_element('langue_defaut', 'thes_langue_defaut')
+		->add_html_node($langue_defaut);
 		
-		$form = $thes_form;
-		if(($this->id_thesaurus) && static::hasCateg($this->id_thesaurus)){
-			$form = str_replace('!!thesaurus_as_categ!!', "oui", $form);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
+		
+		$form = $this->get_js_form();
+		
+		$interface_form = new interface_autorites_form('thes_form');
+		if(!$this->id_thesaurus){
+			$interface_form->set_label($msg['thes_creation']);
 		}else{
-			$form = str_replace('!!thesaurus_as_categ!!', "non", $form);
+			$interface_form->set_label($msg['thes_modification']);
 		}
-		
-		$form = str_replace('!!id_thes!!', $this->id_thesaurus, $form);
-		$form = str_replace('!!form_title!!', $title, $form);
-		$form = str_replace('!!identifiant_thesaurus!!', $identifiant_thesaurus, $form);
-		$form = str_replace('!!libelle_thesaurus!!', $this->libelle_thesaurus, $form);
-		$form = str_replace('!!langue_defaut!!', $langue_defaut, $form);
-		$form = str_replace('!!update_url!!', "./autorites.php?categ=categories&sub=thes_update&id_thes=".$this->id_thesaurus, $form);
-		$form = str_replace('!!delete_url!!', "./autorites.php?categ=categories&sub=thes_delete&id_thes=".$this->id_thesaurus, $form);
-		$form = str_replace('!!cancel_url!!', "./autorites.php?categ=categories&sub=thes", $form);
-		$form = str_replace('!!delete_button!!', $delete_button, $form);
-		
-		$translation = new translation($this->id_thesaurus, 'thesaurus');
-		$form .= $translation->connect('thes_form');
-		
+		$interface_form->set_object_id($this->id_thesaurus)
+		->set_confirm_delete_msg($msg['confirm_suppr'])
+		->set_content_form($this->get_content_form())
+		->set_table_name('thesaurus')
+		->set_field_focus('libelle_thesaurus');
+		$form .= $interface_form->get_display();
 		return $form;
 	}
 	
@@ -369,15 +384,60 @@ class thesaurus {
 	}
 	
 	
-	//retourne la liste des thesaurus dans un tableau associé id_thesaurus=>libelle_thesaurus
-	public static function getThesaurusList(){
-		$list_thes = array();
-		$q = "select id_thesaurus, libelle_thesaurus from thesaurus where 1 ORDER BY 2";
+	/**
+	 *  Retourne une liste des thesaurus et de leur propriétés
+	 *
+	 * @return [
+	 *     id_thesaurus => [
+	 *         id_thesaurus        => 'Identifiant thesaurus',
+	 *         libelle_thesaurus   => 'Nom du Thesaurus',
+	 *         langue_defaut       => 'Langue par defaut (fr_FR, ...)',
+	 *         active              => 'Active (O/1)',
+	 *         opac_active         => 'Active en OPAC (O/1)',
+	 *         num_noeud_racine    => 'Identifiant noeud racine',
+	 *         thesaurus_order     => 'Ordre d'affichage',
+	 *     ]
+	 * ]
+	 */
+	public static function getFullThesaurusList()
+	{
+	    if(!is_null(static::$fullThesaurusList)) {
+	        return static::$fullThesaurusList;
+	    }
+	    static::$fullThesaurusList = [];
+	    $q = "select * from thesaurus";
 		$r = pmb_mysql_query($q);
-		while ($row = @pmb_mysql_fetch_object($r)){
-			$list_thes[$row->id_thesaurus] = $row->libelle_thesaurus;
+	    if(!pmb_mysql_num_rows($r)) {
+	        return static::$fullThesaurusList = [];
+	    }
+	    while ($row = pmb_mysql_fetch_assoc($r)){
+	        static::$fullThesaurusList[$row['id_thesaurus']] = $row;
+	    }
+	    return static::$fullThesaurusList;
+	}
+
+
+	//
+	/**
+	 * Retourne une liste simplifiee des thesaurus triee par libelle
+	 *
+	 * @return [
+	 *     id_thesaurus => 'libelle_thesaurus'
+	 * ]
+	 */
+	public static function getThesaurusList()
+	{
+	    if( !is_null(static::$thesaurusList)) {
+	        return static::$thesaurusList;
+	    }
+        static::$thesaurusList = [];
+
+	    static::getFullThesaurusList();
+	    foreach(static::$fullThesaurusList as $k => $v) {
+	        static::$thesaurusList[$k] = $v['libelle_thesaurus'];
 		}
-		return $list_thes;
+	    asort(static::$thesaurusList, SORT_STRING);
+	    return static::$thesaurusList;
 	}
 	
 	//retourne du selecteur de thesaurus

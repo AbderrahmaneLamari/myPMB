@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_faq_questions_ui.class.php,v 1.8.2.1 2021/09/21 16:43:41 dgoron Exp $
+// $Id: list_faq_questions_ui.class.php,v 1.11.2.1 2023/03/24 07:55:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -152,28 +152,10 @@ class list_faq_questions_ui extends list_ui {
 		return $display_search_form;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['theme']) {
-			$filters [] = 'faq_question_num_theme = "'.$this->filters['theme'].'"';
-		}
-		if($this->filters['type']) {
-			$filters [] = 'faq_question_num_type = "'.$this->filters['type'].'"';
-		}
-		if($this->filters['status']) {
-			$filters [] = 'faq_question_statut = "'.$this->filters['status'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('theme', 'faq_question_num_theme', 'integer');
+		$this->_add_query_filter_simple_restriction('type', 'faq_question_num_type', 'integer');
+		$this->_add_query_filter_simple_restriction('status', 'faq_question_statut', 'integer');
 	}
 	
 	protected function _get_object_property_theme($object) {
@@ -189,31 +171,23 @@ class list_faq_questions_ui extends list_ui {
 		return $msg['faq_question_statut_visible_'.$object->statut];
 	}
 	
-	protected function get_cell_content($object, $property) {
-		$content = '';
-		switch($property) {
-			case 'question':
-				$question = strip_tags($object->question);
-				if(strlen($question) > 200){
-					$question = substr($question,0,200)."[...]";
-				}
-				$content .= $question;
-				break;
-			case 'answer':
-				$answer = strip_tags($object->answer);
-				if(strlen($answer) > 200){
-					$answer = substr($answer,0,200)."[...]";
-				}
-				$content .= $answer;
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
+	protected function _get_object_property_question($object) {
+		$question = strip_tags($object->question);
+		if(strlen($question) > 200){
+			$question = substr($question,0,200)."[...]";
 		}
-		return $content;
+		return $question;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function _get_object_property_answer($object) {
+		$answer = strip_tags($object->answer);
+		if(strlen($answer) > 200){
+			$answer = substr($answer,0,200)."[...]";
+		}
+		return $answer;
+	}
+	
+	protected function get_default_attributes_format_cell($object, $property) {
 		$attributes = array();
 		$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=edit&id=".$object->id."\"";
 		switch($property) {
@@ -233,9 +207,7 @@ class list_faq_questions_ui extends list_ui {
 				
 				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	public function get_error_message_empty_list() {
@@ -261,6 +233,28 @@ class list_faq_questions_ui extends list_ui {
 		global $msg;
 		
 		return $this->get_button('new', $msg['faq_add_new_question']);
+	}
+	
+	protected function _get_query_human_theme() {
+		if(!empty($this->filters['theme'])) {
+			return $this->get_themes()->getLabel($this->filters['theme']);
+		}
+		return '';
+	}
+	
+	protected function _get_query_human_type() {
+		if(!empty($this->filters['type'])) {
+			return $this->get_types()->getLabel($this->filters['type']);
+		}
+		return '';
+	}
+	
+	protected function _get_query_human_status() {
+		global $msg;
+		if(!empty($this->filters['status'])) {
+			return $msg['faq_question_statut_visible_'.$this->filters['status']];
+		}
+		return '';
 	}
 	
 	protected function get_display_others_actions() {

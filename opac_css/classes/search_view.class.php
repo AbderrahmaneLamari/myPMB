@@ -2,12 +2,13 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_view.class.php,v 1.29.2.3 2021/09/03 09:35:59 tsamson Exp $
+// $Id: search_view.class.php,v 1.36.4.2 2023/10/17 14:03:22 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $base_path, $include_path;
 
+use Pmb\Searchform\Views\SearchAutocompleteView;
 require_once($base_path."/includes/simple_search.inc.php");
 
 global $opac_search_other_function;
@@ -169,6 +170,7 @@ class search_view {
 		global $opac_focus_user_query;
 		global $opac_search_other_function;
 		global $opac_recherches_pliables, $charset;
+		global $opac_search_autocomplete;
 
 		$form = "
 		<form name='search_input' action='".($opac_autolevel2 ? static::format_url("lvl=more_results&autolevel1=1") : static::format_url("lvl=search_result"))."' method='post' onSubmit=\"if (search_input.user_query.value.length == 0) { search_input.user_query.value='*'; return true; }\">
@@ -176,17 +178,22 @@ class search_view {
 			".($opac_search_other_function ? search_other_function_filters() : '')."
 			<br />
 			<input type='hidden' name='surligne' value='!!surligne!!'/>";
-		if($opac_simple_search_suggestions){
-			$form .= "
-				<input type='text' name='user_query' id='user_query_lib' class='text_query' value=\"" . htmlentities(stripslashes(static::$user_query),ENT_QUOTES,$charset) . "\" size='65' expand_mode='2' completion='suggestions' word_only='no'/>\n";
-		}else{
-			$form .= "
-				<input type='text' name='user_query' class='text_query' value=\"". htmlentities(stripslashes(static::$user_query),ENT_QUOTES,$charset) ."\" size='65' />\n";
-		}
-		$form .= "
-				<input type='submit' name='ok' value='".$msg["142"]."' class='boutonrechercher'/>\n";
+			$help_button = "";
 		if ($opac_show_help) {
-			$form .= "<input type='button' value='$msg[search_help]' class='bouton button_search_help' onClick='window.open(\"$base_path/help.php?whatis=simple_search\", \"search_help\", \"scrollbars=yes, toolbar=no, dependent=yes, width=400, height=400, resizable=yes\"); return false' />\n";
+			$help_button = "<input type='button' value='$msg[search_help]' class='bouton button_search_help' onClick='window.open(\"$base_path/help.php?whatis=simple_search\", \"search_help\", \"scrollbars=yes, toolbar=no, dependent=yes, width=400, height=400, resizable=yes\"); return false' />\n";
+		}
+		$submit_button = "<input type='submit' name='ok' value='".$msg["142"]."' class='boutonrechercher'/>\n";
+		if($opac_search_autocomplete) {
+			$form .= static::get_autocomplete_input($submit_button . $help_button);
+		} else {
+			if($opac_simple_search_suggestions){
+				$form .= "
+					<input type='text' name='user_query' id='user_query_lib' class='text_query' value=\"" . htmlentities(stripslashes(static::$user_query),ENT_QUOTES,$charset) . "\" size='65' expand_mode='2' completion='suggestions' word_only='no'/>\n";
+			}else{
+				$form .= "
+					<input type='text' name='user_query' id='user_query_lib' class='text_query' value=\"". htmlentities(stripslashes(static::$user_query),ENT_QUOTES,$charset) ."\" size='65' />\n";
+				}
+			$form .= $submit_button . $help_button;
 		}
 		switch ($opac_recherches_pliables) {
 			case '1':
@@ -215,8 +222,10 @@ class search_view {
 		$form .= "</form>
 		<script type='text/javascript' src='".$include_path."/javascript/ajax.js'></script>
 		<script type='text/javascript'>\n
-			".($opac_focus_user_query ? 'document.forms["search_input"].elements["user_query"].focus();' : '')."
-			".($opac_simple_search_suggestions ? "ajax_parse_dom();" : "")."
+                if (document.forms['search_input'] && document.forms['search_input'].elements['user_query']) {
+                    ".($opac_focus_user_query ? 'document.forms["search_input"].elements["user_query"].focus();' : '')."
+					".($opac_simple_search_suggestions ? 'ajax_pack_element(document.forms["search_input"].elements["user_query"]);' : '')."
+                }
 		</script>";
 		return $form;
 	}
@@ -281,7 +290,7 @@ class search_view {
 		if ($opac_show_help) {
 			$form .= "<input type='button' title='".$msg['search_help']."' value='".$msg['search_help']."' class='bouton button_search_help' onClick='window.open(\"$base_path/help.php?whatis=simple_search\", \"search_help\", \"scrollbars=yes, toolbar=no, dependent=yes, width=400, height=400, resizable=yes\"); return false' />\n";
 		}
-		$form .= static::do_ou_chercher();
+		$form .= "<div id='external_search_zone'>".static::do_ou_chercher()."</div>";
 		$form .= "
 			<br /><a href='javascript:expandAll()'><img class='img_plusplus' src='".get_url_icon("expand_all.gif")."' style='border:0px' id='expandall'></a>&nbsp;<a href='javascript:collapseAll()'><img class='img_moinsmoins' src='".get_url_icon("collapse_all.gif")."' style='border:0px' id='collapseall'></a>
 			<div id='external_simple_search_zone'><!--!!sources!!--></div>
@@ -329,7 +338,9 @@ class search_view {
 		global $page_search;
 		global $opac_thesaurus;
 		global $id_thes;
-			
+		
+		$page_search = intval($page_search);
+		
 		//recuperation du thesaurus session
 		if(!$id_thes) $id_thes = thesaurus::getSessionThesaurusId();
 		else thesaurus::setSessionThesaurusId($id_thes);
@@ -1162,7 +1173,7 @@ class search_view {
 		return $complement;
 	}
 	
-	public static function get_display_search_tabs_form($value='',$css) {
+	public static function get_display_search_tabs_form($value='', $css = "") {
 		global $msg, $charset;
 		global $css;
 		global $es;
@@ -1607,9 +1618,27 @@ class search_view {
 	    $form .= "</form>
 		<script type='text/javascript' src='".$include_path."/javascript/ajax.js'></script>
 		<script type='text/javascript'>\n
-			".($opac_focus_user_query ? 'document.forms["search_input"].elements["user_query"].focus();' : '')."
-			".($opac_simple_search_suggestions ? "ajax_parse_dom();" : "")."
+			if (document.forms['search_input'] && document.forms['search_input'].elements['user_query']) {
+				".($opac_focus_user_query ? 'document.forms["search_input"].elements["user_query"].focus();' : '')."
+				".($opac_simple_search_suggestions ? 'ajax_pack_element(document.forms["search_input"].elements["user_query"]);' : '')."
+			}
 		</script>";
 	    return $form;
+	}
+	private static function get_autocomplete_input($html = "")
+	{
+		global $msg, $charset;
+	    $searchView = new SearchAutocompleteView("searchform/searchautocomplete", [
+	        "input_id" => "user_query_lib",
+			"input_name" => "user_query",
+	        "input_value" => htmlentities(stripslashes(static::$user_query),ENT_QUOTES,$charset),
+	        "input_class" => "text_query",
+	        "input_size" => "65",
+	        "input_placeholder" => $msg["autolevel1_search"],
+	        "show_entities" => 1,
+			"form_id" => "search_input",
+			"html" => $html
+	    ]);
+	    return $searchView->render();
 	}
 }

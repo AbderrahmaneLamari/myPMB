@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_multilingual_qualified_ui.class.php,v 1.3.2.1 2021/07/15 16:08:24 moble Exp $
+// $Id: onto_common_datatype_multilingual_qualified_ui.class.php,v 1.5 2021/07/15 15:59:19 moble Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

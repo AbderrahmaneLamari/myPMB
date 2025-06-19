@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette_abon.class.php,v 1.5 2020/11/04 10:40:46 dgoron Exp $
+// $Id: bannette_abon.class.php,v 1.6 2022/01/31 07:37:21 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -17,8 +17,8 @@ class bannette_abon{
 	protected $groups;
 	
 	public function __construct($num_bannette=0,$num_empr=0) {
-		$this->num_bannette = $num_bannette+0;
-		$this->num_empr = $num_empr+0;
+		$this->num_bannette = intval($num_bannette);
+		$this->num_empr = intval($num_empr);
 		$this->fetch_data();
 	}
 	
@@ -64,8 +64,6 @@ class bannette_abon{
 	
 	// retourne un tableau des bannettes possibles de l'abonné : les privées / les publiques : celles de sa catégorie et/ou celles auxquelles il est abonné
 	public function tableau_gerer_bannette($priv_pub='PUB') {
-		global $msg;
-	
 		$query = "select empr_categ, libelle from empr join empr_categ on empr.empr_categ = empr_categ.id_categ_empr where id_empr =".$this->num_empr;
 		$result = pmb_mysql_query($query);
 		$empr_categ = pmb_mysql_result($result, 0, 'empr_categ');

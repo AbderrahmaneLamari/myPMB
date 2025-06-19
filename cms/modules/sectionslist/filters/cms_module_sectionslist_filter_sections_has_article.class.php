@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_sectionslist_filter_sections_has_article.class.php,v 1.1.2.1 2021/10/11 13:27:46 qvarin Exp $
+// $Id: cms_module_sectionslist_filter_sections_has_article.class.php,v 1.2 2021/10/11 13:37:11 qvarin Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class cms_module_sectionslist_filter_sections_has_article extends cms_module_common_filter

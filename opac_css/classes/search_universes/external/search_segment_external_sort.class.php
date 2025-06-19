@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_external_sort.class.php,v 1.1.4.3 2021/08/03 09:20:33 dgoron Exp $
+// $Id: search_segment_external_sort.class.php,v 1.4 2022/05/13 10:09:55 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once "$class_path/fields/sort_fields.class.php";
 require_once "$class_path/search_universes/search_segment_sort.class.php";
 
@@ -47,7 +48,7 @@ class search_segment_external_sort extends search_segment_sort{
 	        if ($query) {
 	            $query .= " UNION ";
 	        }
-	        $query .= "SELECT recid AS notice_id, ".$this->ajoutIfNull($desTable["TABLEFIELD"][0])." AS $nomChp FROM $name ";
+	        $query .= "SELECT recid AS notice_id, SUBSTRING(".$this->ajoutIfNull($desTable["TABLEFIELD"][0]).", 1, 255) AS $nomChp FROM $name ";
 	        //
 	        //On ajout les éventuelles liaisons
 	        //
@@ -77,12 +78,7 @@ class search_segment_external_sort extends search_segment_sort{
 	        if (isset($desTable["GROUPBY"])) {
 	            if (isset($desTable["ORDERBY"])) {
 	                // Si ORDER BY, on passe par une table temporaire car sinon il n'est pas pris en compte par le group by
-	                $sql = "DROP TEMPORARY TABLE IF EXISTS ".$nomTable."_groupby";
-	                pmb_mysql_query($sql);
-	                $temporary2_sql = "CREATE TEMPORARY TABLE ".$nomTable."_groupby ENGINE=MyISAM (".$query.")";
-	                
-	                pmb_mysql_query($temporary2_sql);
-	                pmb_mysql_query("alter table ".$nomTable."_groupby add index(notice_id)");
+	            	$this->gen_temporary_table($nomTable."_groupby", 'notice_id', $nomChp, $query);
 	                
 	                $query = "SELECT * FROM ".$nomTable."_groupby";
 	                $query .= " GROUP BY ".$desTable["GROUPBY"][0]["value"];
@@ -95,12 +91,7 @@ class search_segment_external_sort extends search_segment_sort{
 	    //
 	    //On met le tout dans une table temporaire
 	    //
-	    $sql = "DROP TEMPORARY TABLE IF EXISTS ".$nomTable."_update";
-	    pmb_mysql_query($sql);
-	    $temporary2_sql = "CREATE TEMPORARY TABLE ".$nomTable."_update ENGINE=MyISAM (SELECT * FROM (".$query.") AS temp)";
-	    
-	    pmb_mysql_query($temporary2_sql);
-	    pmb_mysql_query("alter table ".$nomTable."_update add index(notice_id)");
+	    $this->gen_temporary_table($nomTable."_update", 'notice_id', $nomChp, "SELECT * FROM (".$query.") AS temp");
 	    
 	    //
 	    //Et on rempli la table tri_tempo avec les éléments de la table temporaire

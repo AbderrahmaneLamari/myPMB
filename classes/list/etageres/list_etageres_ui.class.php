@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_etageres_ui.class.php,v 1.13.2.2 2021/10/01 13:05:54 dgoron Exp $
+// $Id: list_etageres_ui.class.php,v 1.16.4.2 2023/09/04 14:36:35 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -38,7 +38,7 @@ class list_etageres_ui extends list_ui {
 		parent::init_filters($filters);
 	}
 	
-	public function init_applied_group($applied_group=array()) {
+	protected function init_default_applied_group() {
 		$this->applied_group = array(0 => 'classement_label');
 	}
 	
@@ -122,26 +122,32 @@ class list_etageres_ui extends list_ui {
 		return pmb_mysql_result($res, 0, 0);
 	}
 	
+	protected function _get_object_property_validity($object) {
+		global $msg;
+		
+		if($object->validite) {
+			return $msg['etagere_visible_date_all'];
+		} else {
+			return $msg['etagere_visible_date_du']." ".$object->validite_date_deb_f." ".$msg['etagere_visible_date_fin']." ".$object->validite_date_fin_f;
+		}
+	}
+	
 	protected function get_cell_content($object, $property) {
-		global $msg, $opac_url_base;
+		global $opac_url_base;
 		
 		$content = '';
 		switch($property) {
 			case 'name':
 				$content .= "<strong>".$object->name."</strong>".($object->comment?" (".$object->comment.")":"");
 				break;
-			case 'validity':
-				if($object->validite) {
-					$content .= $msg['etagere_visible_date_all'];
-				} else {
-					$content .= $msg['etagere_visible_date_du']." ".$object->validite_date_deb_f." ".$msg['etagere_visible_date_fin']." ".$object->validite_date_fin_f;
-				}
-				break;
 			case 'home_visibility':
 				if($object->visible_accueil) {
 					$content .= "X";
 				}
 				$content .= "<br /><a href='".$opac_url_base."index.php?lvl=etagere_see&id=".$object->idetagere."' target=_blank>".$opac_url_base."index.php?lvl=etagere_see&id=".$object->idetagere."</a>";
+				break;
+			case 'classement_selector':
+				$content .= $object->get_classement_selector(); //conservation de l'interprétation du HTML
 				break;
 			default :
 				$content .= parent::get_cell_content($object, $property);
@@ -150,24 +156,18 @@ class list_etageres_ui extends list_ui {
 		return $content;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		global $sub;
 		
-		$onclick="";
 		switch($property) {
 			case 'name':
 			case 'comment_gestion':
 			case 'nb_paniers':
 			case 'validity':
-				$onclick = "document.location=\"".static::get_controller_url_base()."&sub=".($sub ? $sub : "edit_etagere")."&action=edit_etagere&idetagere=".$object->idetagere."\"";
-				break;
+				return array(
+						'onclick' => "document.location=\"".static::get_controller_url_base()."&sub=".($sub ? $sub : "edit_etagere")."&action=edit_etagere&idetagere=".$object->idetagere."\"",
+				);
 		}
-		$attributes = array(
-				'onclick' => $onclick,
-		);
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	public function get_display_list() {
@@ -179,7 +179,9 @@ class list_etageres_ui extends list_ui {
 			//Récupération du script JS de filtres rapides
 			$display .= $this->get_js_fast_filters_script();
 		}
-		$display .= "<script src='./javascript/classementGen.js' type='text/javascript'></script>";
+		$display .= "<script type='text/javascript'>
+            pmb_include('./javascript/classementGen.js');
+        </script>";
 		if($sub != 'constitution') {
 			$display .= "
 			<div class='row'>

@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: envoi.inc.php,v 1.14.2.1 2021/07/30 14:48:34 dgoron Exp $
+// $Id: envoi.inc.php,v 1.16 2022/10/04 09:20:22 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $sub, $action, $msg, $database_window_title;
-global $transferts_validation_actif, $deflt_docs_location, $nb_per_page;
+global $transferts_validation_actif, $nb_per_page;
 global $site_destination, $liste_transfert, $form_cb_expl, $motif_refus;
 global $transferts_envoi_erreur, $transferts_envoi_OK;
 
@@ -64,10 +64,10 @@ if ($action=="") {
 	}
 	
 	if ($transferts_validation_actif=="1") {
-		$list_transferts_envoi_ui = new list_transferts_envoi_ui(array('etat_transfert' => 0, 'etat_demande' => 1, 'site_origine' => $deflt_docs_location));
+		$list_transferts_envoi_ui = new list_transferts_envoi_ui(array('etat_transfert' => 0, 'etat_demande' => 1));
 		print $list_transferts_envoi_ui->get_display_list();
 	} else {
-		$list_transferts_envoi_ui = new list_transferts_envoi_ui(array('etat_transfert' => 0, 'etat_demande' => array(0,1), 'site_origine' => $deflt_docs_location));
+		$list_transferts_envoi_ui = new list_transferts_envoi_ui(array('etat_transfert' => 0, 'etat_demande' => array(0,1)));
 		print $list_transferts_envoi_ui->get_display_list();
 	}
 }

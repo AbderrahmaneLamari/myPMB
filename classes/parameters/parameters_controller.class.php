@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: parameters_controller.class.php,v 1.2.2.2 2021/10/26 09:46:30 dgoron Exp $
+// $Id: parameters_controller.class.php,v 1.4 2021/10/26 09:44:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

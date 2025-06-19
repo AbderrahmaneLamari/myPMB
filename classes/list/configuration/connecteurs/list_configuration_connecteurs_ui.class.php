@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_connecteurs_ui.class.php,v 1.3.2.1 2021/10/22 08:27:18 btafforeau Exp $
+// $Id: list_configuration_connecteurs_ui.class.php,v 1.4 2021/10/22 08:29:05 btafforeau Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

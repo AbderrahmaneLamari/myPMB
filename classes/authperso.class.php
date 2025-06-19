@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authperso.class.php,v 1.104.2.9 2022/01/03 15:49:26 dgoron Exp $
+// $Id: authperso.class.php,v 1.120.2.3 2023/11/16 13:17:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Ark\Entities\ArkEntityPmb;
 
 global $javascript_path; // pas compris pourquoi, sinon fait planter connector_out
 global $class_path, $include_path,$base_path;
@@ -62,11 +64,13 @@ class authperso {
 	public function __construct($id=0,$id_auth=0) {
 		$id = intval($id);
 		$id_auth = intval($id_auth);
-		if(!$id && $id_auth){			
-			$req="select * from authperso_authorities,authperso where id_authperso=authperso_authority_authperso_num and id_authperso_authority=". $id_auth;
-			$res = pmb_mysql_query($req);
-			if(($r=pmb_mysql_fetch_object($res))) {
-				$id=$r->authperso_authority_authperso_num;
+		if(!$id && $id_auth) {
+			$query = "SELECT authperso_authority_authperso_num FROM authperso_authorities, authperso WHERE id_authperso=authperso_authority_authperso_num AND id_authperso_authority={$id_auth} LIMIT 1";
+			$result = pmb_mysql_query($query);
+			if(pmb_mysql_num_rows($result)){
+			    $row = pmb_mysql_fetch_object($result);
+			    $id = $row->authperso_authority_authperso_num;
+			    pmb_mysql_free_result($result);
 			}
 		}
 		$this->id=$id;
@@ -108,24 +112,29 @@ class authperso {
 		$req="select * from authperso where id_authperso=". $this->id." order by authperso_name";
 		$resultat=pmb_mysql_query($req);	
 		if (pmb_mysql_num_rows($resultat)) {
-			$r=pmb_mysql_fetch_object($resultat);		
-			$this->info['id']= $r->id_authperso;	
-			$this->info['name']= $r->authperso_name;
-			$this->info['onglet_num']= $r->authperso_notice_onglet_num;			
-			$this->info['isbd_script']= $r->authperso_isbd_script;			
-			$this->info['opac_search']= $r->authperso_opac_search;			
-			$this->info['opac_multi_search']= $r->authperso_opac_multi_search;				
-			$this->info['gestion_search']= $r->authperso_gestion_search;			
-			$this->info['gestion_multi_search']= $r->authperso_gestion_multi_search;		
-			$this->info['comment']= $r->authperso_comment;
-			$this->info['event']= $r->authperso_oeuvre_event;
-			$this->info['responsability_authperso']= $r->authperso_responsability_authperso;
-			$this->info['onglet_name']="";
-			$req="SELECT * FROM notice_onglet where id_onglet=".$r->authperso_notice_onglet_num;
+			$r=pmb_mysql_fetch_object($resultat);
+			$this->info=array(
+			    'id' => $r->id_authperso,
+			    'name' => translation::get_translated_text($r->id_authperso, 'authperso', 'authperso_name', $r->authperso_name),
+			    'onglet_num' => $r->authperso_notice_onglet_num,
+			    'isbd_script' => $r->authperso_isbd_script,
+			    'opac_search' => $r->authperso_opac_search,
+			    'opac_multi_search' => $r->authperso_opac_multi_search,
+			    'gestion_search' => $r->authperso_gestion_search,
+			    'gestion_multi_search' => $r->authperso_gestion_multi_search,
+			    'comment' => $r->authperso_comment,
+			    'event' => $r->authperso_oeuvre_event,
+			    'responsability_authperso' => $r->authperso_responsability_authperso,
+			    'onglet_name' => ''
+			);
+			pmb_mysql_free_result($resultat);
+			
+			$req="SELECT onglet_name FROM notice_onglet where id_onglet=".$r->authperso_notice_onglet_num;
 			$resultat=pmb_mysql_query($req);
 			if (pmb_mysql_num_rows($resultat)) {
 				$r_onglet=pmb_mysql_fetch_object($resultat);	
-				$this->info['onglet_name']= $r_onglet->onglet_name;						
+				$this->info['onglet_name']= $r_onglet->onglet_name;
+				pmb_mysql_free_result($resultat);
 			}	
 		}		
 		$req="select * from authperso_custom where num_type=". $this->id." order by ordre";		
@@ -133,7 +142,8 @@ class authperso {
 		$i=0;
 		if (pmb_mysql_num_rows($resultat)) {
 			while($r=pmb_mysql_fetch_object($resultat)){	
-				$this->info['fields'][$i]['id']= $r->idchamp;	
+			    $this->info['fields'][$i]= array();
+			    $this->info['fields'][$i]['id']= $r->idchamp;	
 				$this->info['fields'][$i]['name']= $r->name;	
 				$this->info['fields'][$i]['label']= $r->titre;	
 				$this->info['fields'][$i]['type']= $r->type ;
@@ -151,6 +161,7 @@ class authperso {
 				$this->info['fields'][$i]['OPTIONS'] = [_parser_text_no_function_("<?xml version='1.0' encoding='".$charset."'?>\n".$r->options, "OPTIONS")];
 				$i++;
 			}
+			pmb_mysql_free_result($resultat);
 		}
 	}
 	
@@ -160,7 +171,7 @@ class authperso {
 	
 	public function get_info_fields($id=0){
 		$info= array();
-		$id = (int) $id;
+		$id = intval($id);
 		if($id){
 			$req="select * from authperso_authorities,authperso where id_authperso=authperso_authority_authperso_num and id_authperso_authority=". $id;
 			$res = pmb_mysql_query($req);
@@ -171,7 +182,8 @@ class authperso {
 			}
 		}
 		foreach($this->info['fields'] as $field){
-			$info[$field['id']]['id']= $field['id'];
+		    $info[$field['id']]= array();
+		    $info[$field['id']]['id']= $field['id'];
 			$info[$field['id']]['name']= $field['name'];
 			$info[$field['id']]['label']= $field['label'];
 			$info[$field['id']]['type']= $field['type'];
@@ -238,6 +250,7 @@ class authperso {
 		global $url_base;
 		global $authority_statut;
 		global $nb_per_page_gestion;
+		global $pmb_perso_sep;
 		
 		$sorted_authperso = array();
 		if(!$form_only) {
@@ -299,8 +312,14 @@ class authperso {
 				//$this->info['fields'][$i]['data'][$id][$field['name']]
 				$statut_class_html = $authority->get_display_statut_class_html();
 				foreach($this->info['fields'] as $field){
-					$data_label = $field['data'][$id]['values'][0]['format_value'];
-					$auth_line.= "<td onmousedown=\"document.location='".static::format_url("&sub=authperso_form&id=".$id."&amp;user_input=!!user_input_url!!&amp;nbr_lignes=".$nbr_lignes."&amp;page=".$page)."';\" title='' style='vertical-align:top'>";
+					$data_labels = array();
+					if(is_array($field['data'][$id]['values']) && is_countable($field['data'][$id]['values'])) {
+						foreach ($field['data'][$id]['values'] as $data_value) {
+							$data_labels[] = $data_value['format_value'];
+						}
+					}
+					$data_label = implode($pmb_perso_sep, $data_labels);
+					$auth_line.= "<td sorttable_customkey='".strip_tags($data_label)."' onmousedown=\"document.location='".static::format_url("&sub=authperso_form&id=".$id."&amp;user_input=!!user_input_url!!&amp;nbr_lignes=".$nbr_lignes."&amp;page=".$page)."';\" title='' style='vertical-align:top'>";
 					//$auth_line.= "<td onmousedown=\"document.location='./autorites.php?categ=see&sub=authperso&id=$id';\" title='' valign='top'>";
 					$auth_line.= $statut_class_html.$data_label."</td>";
 					$statut_class_html = '';
@@ -438,39 +457,45 @@ class authperso {
 	    return self::$custom_pperso_instances[$authperso_num];
 	}
 	
-	public static function get_isbd($id){
+	public static function get_isbd($id) {
 		global $base_path;
 
-		$id = (int) $id;
-		if(!$id) return '';
+		$id = intval($id);
+		if (!$id) {
+			return '';
+		}
+		
 		$isbd = '';
 		$req = "select * from authperso_authorities,authperso where id_authperso=authperso_authority_authperso_num and id_authperso_authority=". $id;
 		$res = pmb_mysql_query($req);
-		if(($r = pmb_mysql_fetch_object($res))) {			
+		if (pmb_mysql_num_rows($res)) {			
+			$r = pmb_mysql_fetch_object($res);
+			pmb_mysql_free_result($res);
+			
 			$p_perso = self::get_custom_pperso_instance($r->authperso_authority_authperso_num);
 			$p_perso->get_out_values($id);
 			$authperso_fields = $p_perso->values;
-			if($r->authperso_isbd_script){
+			if ($r->authperso_isbd_script) {
 				$index_concept = new index_concept($id, TYPE_AUTHPERSO);	
 				$authperso_fields['index_concepts'] = $index_concept->get_data();
 				
-				if(!file_exists($base_path.'/temp/'.LOCATION.'_authperso_isbd_'.$r->authperso_authority_authperso_num)){
+				if (!file_exists($base_path.'/temp/'.LOCATION.'_authperso_isbd_'.$r->authperso_authority_authperso_num)) {
 					file_put_contents($base_path.'/temp/'.LOCATION.'_authperso_isbd_'.$r->authperso_authority_authperso_num, $r->authperso_isbd_script);
 				}
-				$h2o = H2o_collection::get_instance(
-				    $base_path.'/temp/'.LOCATION.'_authperso_isbd_'.$r->authperso_authority_authperso_num,
-				    [
+				
+				$h2o = H2o_collection::get_instance($base_path.'/temp/'.LOCATION.'_authperso_isbd_'.$r->authperso_authority_authperso_num, [
 				        'id_authperso_authority' => $r->id_authperso_authority
 				    ] 
 				);
 				$isbd = $h2o->render($authperso_fields);
-			}else{
-			    if(!empty($authperso_fields)) {
+			} else {
+			    if (!empty($authperso_fields)) {
 			        $format_values = array();
-    				foreach ($authperso_fields as $field){					
+    				foreach ($authperso_fields as $field) {					
     				    $format_values[] = $field['values'][0]['format_value'];
     				}
-    				$isbd.= implode(".  ", $format_values);
+    				
+    				$isbd .= implode(".  ", $format_values);
 			    }
 			}	
 		}
@@ -931,6 +956,7 @@ class authperso {
 	
 	public function replace($id,$by,$link_save=0) {
 		global $msg;
+		global $pmb_ark_activate;
 		
 		$id = (int) $id;
 		$by = (int) $by;
@@ -956,21 +982,23 @@ class authperso {
 		// remplacement dans les notices
 		$requete = "UPDATE notices_authperso SET notice_authperso_authority_num='$by' WHERE notice_authperso_authority_num='$id' ";
 		@pmb_mysql_query($requete);
-
-		vedette_composee::replace($this->id +1000, $id, $by);
+		
+		vedette_composee::replace(TYPE_AUTHPERSO, $id, $by);
 		
 		//Remplacement dans les champs persos sélecteur d'autorité
-		aut_pperso::replace_pperso(AUT_TABLE_AUTHPERSO, $this->id, $by);
+		aut_pperso::replace_pperso(AUT_TABLE_AUTHPERSO, $id, $by);
 		
-		// effacement de 
+		if ($pmb_ark_activate) {
+		    $idReplaced = authority::get_authority_id_from_entity($id, AUT_TABLE_AUTHPERSO);
+		    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_AUTHPERSO);
+		    if ($idReplaced && $idReplacing) {
+		        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+		        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+		        $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		    }
+		}
 		$this->delete($id);		
-		
-		// effacement de l'identifiant unique d'autorité
-		$authority = new authority(0, $id, AUT_TABLE_AUTHPERSO);
-		$authority->delete();
-		
 		$this->update_global_index($by);
-		
 	}	
 	
 	public static function import($data) {
@@ -978,9 +1006,14 @@ class authperso {
 	}	
 	
 	public function get_ajax_list($user_input){
+	    global $autexclude;
+	    
 		$values=array();
 		$search_word = str_replace('*','%',$user_input);
 		$req = "select * from authperso_authorities where ( authperso_infos_global like '".addslashes($search_word)."%' or authperso_index_infos_global like ' ".addslashes($user_input)."%' ) and  authperso_authority_authperso_num= ".$this->id;
+		if (isset($autexclude) && !empty($autexclude)) {
+		    $req .= " and id_authperso_authority != " . intval($autexclude);
+		}
 		$req .= " order by authperso_index_infos_global limit 20";
 		$res = pmb_mysql_query($req);
 		while(($r=pmb_mysql_fetch_object($res))) {
@@ -995,9 +1028,12 @@ class authperso {
 		$req = "SELECT * FROM authperso_authorities 
 		        JOIN authperso ON authperso_authorities.authperso_authority_authperso_num = authperso.id_authperso 
 		        WHERE (authperso_infos_global LIKE '".addslashes($search_word)."%' OR authperso_index_infos_global LIKE ' ".addslashes($user_input)."%') 
-		        AND authperso.authperso_oeuvre_event = 1
-		        AND authperso_authority_authperso_num = $oeuvre_event_type
-		        ORDER BY authperso_index_infos_global limit 20";
+		        AND authperso.authperso_oeuvre_event = 1";
+		
+		if(!empty($oeuvre_event_type)) {
+			$req .= " AND authperso_authority_authperso_num = $oeuvre_event_type";
+		}
+		$req .= " ORDER BY authperso_index_infos_global limit 20";
 		$res = pmb_mysql_query($req);
 		while ($r = pmb_mysql_fetch_object($res)) {
 			$values[$r->id_authperso_authority] = strip_tags(static::get_isbd($r->id_authperso_authority));
@@ -1211,7 +1247,7 @@ class authpersos {
 			while($r=pmb_mysql_fetch_object($resultat)){
 				$authpersos[]=array(
 						"id" => $r->id_authperso,
-						"name" => $r->authperso_name,
+				        "name" => translation::get_translated_text($r->id_authperso, 'authperso', 'authperso_name', $r->authperso_name),
 				);
 			}
 		}

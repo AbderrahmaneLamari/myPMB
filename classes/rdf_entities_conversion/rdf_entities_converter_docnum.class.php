@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: rdf_entities_converter_docnum.class.php,v 1.1 2021/01/20 14:52:21 qvarin Exp $
+// $Id: rdf_entities_converter_docnum.class.php,v 1.3 2022/06/02 14:04:36 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-require_once($class_path.'/rdf_entities_conversion/rdf_entities_converter_docnum.class.php');
+require_once($class_path.'/rdf_entities_conversion/rdf_entities_converter.class.php');
 require_once($class_path.'/explnum.class.php');
 
 class rdf_entities_converter_docnum extends rdf_entities_converter {
@@ -23,12 +23,13 @@ class rdf_entities_converter_docnum extends rdf_entities_converter {
     
     protected function init_map_fields() {
         $this->map_fields = array_merge(parent::init_map_fields(), array(
+            'explnum_id' => 'http://www.pmbservices.fr/ontology#identifier' ,
             'niveau_biblio' => 'http://www.pmbservices.fr/ontology#bibliographical_lvl' ,
-            //'explnum_vignette' => 'http://www.pmbservices.fr/ontology#thumbnail',
             'explnum_nom' => 'http://www.pmbservices.fr/ontology#label',
             'explnum_docnum_statut' => 'http://www.pmbservices.fr/ontology#has_docnum_status',
             'explnum_repertoire' => 'http://www.pmbservices.fr/ontology#upload_directory',
-            'explnum_nomfichier' => 'http://www.pmbservices.fr/ontology#docnum_file'
+            'explnum_nomfichier' => 'http://www.pmbservices.fr/ontology#docnum_file',
+		    "explnum_vignette" => "http://www.pmbservices.fr/ontology#thumbnail_url"
         ));
         return $this->map_fields;
     }
@@ -68,8 +69,76 @@ class rdf_entities_converter_docnum extends rdf_entities_converter {
     }
     
     protected function init_special_fields() {
-        $this->special_fields = array_merge(parent::init_special_fields(), array());
+        $this->special_fields = array_merge(parent::init_special_fields(), array(
+            'http://www.pmbservices.fr/ontology#thumbnail' => array(
+                "method" => array($this,"get_thumbnail_data"),
+                "arguments" => array()
+            ),
+            'http://www.pmbservices.fr/ontology#thumbnail_url' => array(
+                "method" => array($this, "convert_thumbnail_url"),
+                "arguments" => array()
+            )
+        ));
         return $this->special_fields;
     }
     
+    public function get_thumbnail_data()
+    {
+        global $pmb_contribution_opac_docnum_directory;
+        
+        if (empty($this->entity_id)) {
+            return false;
+        }
+        
+        // On récupère noter blob
+        $query = 'SELECT explnum_vignette FROM ' . $this->table_name . ' WHERE explnum_id = ' . $this->entity_id;
+        $result = pmb_mysql_query($query);
+        if (pmb_mysql_num_rows($result)) {
+            $blob = pmb_mysql_result($result, 0, 0);
+        }
+        
+        $filename = "temp_vign_".md5(microtime());
+        $upload_directory = new upload_folder($pmb_contribution_opac_docnum_directory);
+        $rep_path = $upload_directory->repertoire_path;
+        $path = "temp/thumbnail/";
+        
+        // Vérifie si le répertoire existe :
+        if (!is_dir($rep_path.$path)) {
+            mkdir($rep_path.$path, 0777, true);
+        }
+        $complete_path = $path.$filename;
+        file_put_contents($rep_path.$complete_path, base64_encode($blob));
+
+        $thumbnail_data = [
+            'path' => $complete_path,
+            'name' => $filename,
+            'id_upload_directory' => $pmb_contribution_opac_docnum_directory,
+        ];
+        
+        return new onto_assertion($this->uri, "http://www.pmbservices.fr/ontology#thumbnail", json_encode($thumbnail_data), "http://www.w3.org/2000/01/rdf-schema#Literal", array('type'=>"literal"));
+    }
+    
+    protected function convert_thumbnail_url(){
+        global $pmb_contribution_opac_docnum_directory;
+        $assertions = $this->get_assertions();
+        if (!$assertions) return '';
+        
+        $assert = rdf_entities_converter::get_assertion_with_predicate_from_assertions("http://www.pmbservices.fr/ontology#thumbnail_url", $assertions);
+        $blob = $assert->get_object();
+        if (!$blob) return '';
+
+        $filename = "temp_vign_".md5(microtime());
+        $upload_directory = new upload_folder($pmb_contribution_opac_docnum_directory);
+        $rep_path = $upload_directory->repertoire_path;
+        $path = "/temp/thumbnail/";
+        
+        // Vérifie si le répertoire existe :
+        if (!is_dir($rep_path.$path)) {
+            mkdir($rep_path.$path, 0777, true);
+        }
+        $complete_path = $path.$filename;
+        file_put_contents($rep_path.$complete_path, $blob);
+        
+        $assert->set_object($filename);
+    }
 }

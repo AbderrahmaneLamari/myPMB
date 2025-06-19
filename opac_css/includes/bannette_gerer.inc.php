@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bannette_gerer.inc.php,v 1.17.2.1 2021/11/19 09:23:44 dgoron Exp $
+// $Id: bannette_gerer.inc.php,v 1.18 2021/11/19 09:20:12 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

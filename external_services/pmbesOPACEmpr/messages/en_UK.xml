@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: en_UK.xml,v 1.8 2021/02/25 13:47:42 dbellamy Exp $ -->
+$Id: en_UK.xml,v 1.9 2022/10/19 14:02:17 dgoron Exp $ -->
 
 <!DOCTYPE XMLlist SYSTEM "../../../includes/XMLlist.dtd">
 <XMLlist>
@@ -153,6 +153,7 @@ $Id: en_UK.xml,v 1.8 2021/02/25 13:47:42 dbellamy Exp $ -->
     	check_quota (quotas violation : See additional message) 
     	check_resa_exists (Document already reserved by this reader)
     	check_allready_loaned (Document already borrowed by this reader)
+    	check_waiting_already_loaned (Document returned by this reader less than x days ago)
     	check_statut (No loanable document)
     	check_doc_dispo (Document available, but not reservable)
     	check_localisation_expl (Document not reservable in the authorised location)

@@ -1,0 +1,52 @@
+/* barre de recherche */
+
+.pmb_search {
+    max-width: 1000px!important;
+    margin-bottom: 44px!important;
+}
+
+.research_inputs {
+    position: relative;
+    display: block;
+    margin: 24px auto 4px;
+}
+
+.research_inputs .bouton {
+    font: var(--font-link);
+    padding: 11px 24px 10px 24px;
+    border-radius: 44px;
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    transition: var(--transition);
+    text-align: center;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    height: 48px;
+}
+
+.search_other_link {
+    font: var(--font-resume);
+    display: inline-block;
+    color: var(--c-fourthly);
+    text-decoration: underline;
+    margin-left: 12px;
+ }
+
+ /* surmenu */
+
+ .pmb_surmenu {
+    padding: 12px;
+ }
+
+ .pmb_user button {
+    gap: 8px;
+ }
+
+ .pmb_user span,
+ #pmb_histo a {
+    color: var(--c-black);
+    font-family: var(--font);
+    font-weight: 400;
+    font-size: 1.6rem;
+ }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: manual_categorisation.inc.php,v 1.10.4.2 2022/01/10 08:35:26 dgoron Exp $
+// $Id: manual_categorisation.inc.php,v 1.13 2022/08/10 07:29:59 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -32,7 +32,7 @@ function get_manual_categorisation_form($tableau_600 = array(), $tableau_601 = a
 
 	$vedettes = array();
 	//600
-	if (!empty($tableau_600['info_600_a'])) {
+	if( !empty($tableau_600['info_600_a']) && is_array($tableau_600['info_600_a']) ) {
     	for ($i=0, $count=count($tableau_600['info_600_a']); $i<$count; $i++) {
     		$apieces = array();
     		$apieces = array_merge($apieces, $tableau_600['info_600_a'][$i]);
@@ -52,7 +52,7 @@ function get_manual_categorisation_form($tableau_600 = array(), $tableau_601 = a
     	}
 	}
 	//601
-	if (!empty($tableau_601['info_601_a'])) {
+	if( !empty($tableau_601['info_601_a']) && is_array($tableau_601['info_601_a']) ) {
     	for ($i=0, $count=count($tableau_601['info_601_a']); $i<$count; $i++) {
     		$apieces = array();
     		$apieces = array_merge($apieces, $tableau_601['info_601_a'][$i]);
@@ -73,7 +73,7 @@ function get_manual_categorisation_form($tableau_600 = array(), $tableau_601 = a
     	}
 	}
 	//602
-	if (!empty($tableau_602['info_602_a'])) {	    
+	if( !empty($tableau_602['info_602_a']) && is_array($tableau_602['info_602_a']) ) {
     	for ($i=0, $count=count($tableau_602['info_602_a']); $i<$count; $i++) {
     		$apieces = array();
     		$apieces = array_merge($apieces, $tableau_602['info_602_a'][$i]);
@@ -88,7 +88,7 @@ function get_manual_categorisation_form($tableau_600 = array(), $tableau_601 = a
     	}
 	}
 	//604
-	if (!empty($tableau_604['info_604_a'])) {	    
+	if( !empty($tableau_604['info_604_a']) && is_array($tableau_604['info_604_a']) ) {
     	for ($i=0, $count=count($tableau_604['info_604_a']); $i<$count; $i++) {
     		$apieces = array();
     		$apieces = array_merge($apieces, $tableau_604['info_604_a'][$i]);
@@ -105,7 +105,7 @@ function get_manual_categorisation_form($tableau_600 = array(), $tableau_601 = a
     	}
 	}
 	//605
-	if (!empty($tableau_605['info_605_a'])) {
+	if( !empty($tableau_605['info_605_a']) && is_array($tableau_605['info_605_a']) ) {
     	for ($i=0, $count=count($tableau_605['info_605_a']); $i<$count; $i++) {
     		$apieces = array();
     		$apieces = array_merge($apieces, $tableau_605['info_605_a'][$i]);
@@ -130,7 +130,7 @@ function get_manual_categorisation_form($tableau_600 = array(), $tableau_601 = a
     	}
 	}
 	//606
-	if (!empty($tableau_606['info_606_a'])) {
+	if( !empty($tableau_606['info_606_a']) && is_array($tableau_606['info_606_a']) ) {
     	for ($i=0, $count=count($tableau_606['info_606_a']); $i<$count; $i++) {
     		$apieces = array();
     		$apieces = array_merge($apieces, $tableau_606['info_606_a'][$i]);
@@ -143,7 +143,7 @@ function get_manual_categorisation_form($tableau_600 = array(), $tableau_601 = a
     	}
 	}
 	//607
-	if (!empty($tableau_607['info_607_a'])) {	    
+	if( !empty($tableau_607['info_607_a']) && is_array($tableau_607['info_607_a']) ) {
     	for ($i=0, $count=count($tableau_607['info_607_a']); $i<$count; $i++) {
     		$apieces = array();
     		$apieces = array_merge($apieces, $tableau_607['info_607_a'][$i]);
@@ -156,7 +156,7 @@ function get_manual_categorisation_form($tableau_600 = array(), $tableau_601 = a
     	}
 	}
 	//608
-	if (!empty($tableau_608['info_608_a'])) {	    
+	if( !empty($tableau_608['info_608_a']) && is_array($tableau_608['info_608_a']) ) {
     	for ($i=0, $count=count($tableau_608['info_608_a']); $i<$count; $i++) {
     		$apieces = array();
     		$apieces = array_merge($apieces, $tableau_608['info_608_a'][$i]);

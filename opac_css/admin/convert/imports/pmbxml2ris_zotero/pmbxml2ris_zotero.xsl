@@ -12,7 +12,7 @@
 <xsl:template match="notice">
 	<xsl:call-template name="subtype"/>
 	<xsl:call-template name="titre"/>
-	<xsl:call-template name="perio_titre"/>	
+	<xsl:call-template name="perio_titre"/>
 	<xsl:call-template name="bulletin_vol"/>
 	<xsl:call-template name="bulletin_num"/>
 	<xsl:call-template name="pagination"/>
@@ -23,9 +23,12 @@
 	<xsl:call-template name="resume"/>
 	<xsl:call-template name="editeur"/>
 	<xsl:call-template name="keywords"/>
-	<xsl:call-template name="doi"/>	
+	<xsl:call-template name="doi"/>
 	<xsl:call-template name="pubmedid"/>
 	<xsl:call-template name="notes"/>
+	<xsl:call-template name="associated_url"/>
+	<xsl:call-template name="permalink"/>
+	<xsl:call-template name="docnum_urls"/>
 	<xsl:text>ER - &#010;</xsl:text>
 	<xsl:text>&#010;</xsl:text>
 </xsl:template>
@@ -46,150 +49,150 @@
 
 
 <xsl:template name="titre">
-		<xsl:if test="f[@c='200']/s[@c='a']">	
+		<xsl:if test="f[@c='200']/s[@c='a']">
 			<xsl:text>TI  - </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='200']/s[@c='a'])"/>			
+			<xsl:value-of select="normalize-space(f[@c='200']/s[@c='a'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
 </xsl:template>
-<xsl:template name="auteur"> 
+<xsl:template name="auteur">
 		<xsl:if test="f[@c='700']/s[@c='a']">
 			<xsl:choose>
 				<xsl:when test=" f[@c='700']/s[@c='b']">
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="concat(normalize-space(f[@c='700']/s[@c='a']),', ',normalize-space(f[@c='700']/s[@c='b']))"/>			
+					<xsl:value-of select="concat(normalize-space(f[@c='700']/s[@c='a']),', ',normalize-space(f[@c='700']/s[@c='b']))"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="normalize-space(f[@c='700']/s[@c='a'])"/>			
+					<xsl:value-of select="normalize-space(f[@c='700']/s[@c='a'])"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:otherwise>
-			</xsl:choose>			
-		</xsl:if> 
+			</xsl:choose>
+		</xsl:if>
 		<xsl:for-each select="f[@c='701']">
 			<xsl:choose>
 				<xsl:when test=" s[@c='b']">
 					<xsl:text>AU  - </xsl:text>
-					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='b']))"/>			
+					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='b']))"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:text>AU  - </xsl:text>
-					<xsl:value-of select="normalize-space(s[@c='a'])"/>			
+					<xsl:value-of select="normalize-space(s[@c='a'])"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:otherwise>
-			</xsl:choose>	
+			</xsl:choose>
 		</xsl:for-each>
 		<xsl:for-each select="f[@c='702']">
 			<xsl:choose>
 				<xsl:when test=" s[@c='b']">
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='b']))"/>			
+					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='b']))"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="normalize-space(s[@c='a'])"/>			
+					<xsl:value-of select="normalize-space(s[@c='a'])"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:otherwise>
-			</xsl:choose>	
-		</xsl:for-each> 
+			</xsl:choose>
+		</xsl:for-each>
 		<xsl:if test="f[@c='710']/s[@c='a']">
 			<xsl:choose>
 				<xsl:when test=" ((f[@c='710']/s[@c='K']!='') and (f[@c='710']/s[@c='M']!='')) ">
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="concat(normalize-space(f[@c='710']/s[@c='a']),', ',normalize-space(f[@c='710']/s[@c='K']),', ',normalize-space(f[@c='710']/s[@c='M']))"/>			
+					<xsl:value-of select="concat(normalize-space(f[@c='710']/s[@c='a']),', ',normalize-space(f[@c='710']/s[@c='K']),', ',normalize-space(f[@c='710']/s[@c='M']))"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:when>
 				<xsl:when test="((s[@c='K']!='') and (s[@c='M']=''))">
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="concat(normalize-space(f[@c='710']/s[@c='a']),', ',normalize-space(f[@c='710']/s[@c='K']))"/>			
+					<xsl:value-of select="concat(normalize-space(f[@c='710']/s[@c='a']),', ',normalize-space(f[@c='710']/s[@c='K']))"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="normalize-space(f[@c='710']/s[@c='a'])"/>			
+					<xsl:value-of select="normalize-space(f[@c='710']/s[@c='a'])"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:otherwise>
-			</xsl:choose>			
-		</xsl:if> 
+			</xsl:choose>
+		</xsl:if>
 		<xsl:for-each select="f[@c='711']">
 			<xsl:choose>
 				<xsl:when test=" ((s[@c='K']!='') and (s[@c='M']!='')) ">
 					<xsl:text>AU  - </xsl:text>
-					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='K']),', ',normalize-space(s[@c='M']))"/>			
+					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='K']),', ',normalize-space(s[@c='M']))"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:when>
 				<xsl:when test=" ((s[@c='K']!='') and (s[@c='M']='')) ">
 					<xsl:text>AU  - </xsl:text>
-					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='K']))"/>			
+					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='K']))"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:text>AU  - </xsl:text>
-					<xsl:value-of select="normalize-space(s[@c='a'])"/>			
+					<xsl:value-of select="normalize-space(s[@c='a'])"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:otherwise>
-			</xsl:choose>	
+			</xsl:choose>
 		</xsl:for-each>
 		<xsl:for-each select="f[@c='712']">
 			<xsl:choose>
 				<xsl:when test=" ((s[@c='K']!='') and (s[@c='M']!='')) ">
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='K']),', ',normalize-space(s[@c='M']))"/>			
+					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='K']),', ',normalize-space(s[@c='M']))"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:when>
 				<xsl:when test=" ((s[@c='K']!='') and (s[@c='M']='')) ">
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='K']))"/>			
+					<xsl:value-of select="concat(normalize-space(s[@c='a']),', ',normalize-space(s[@c='K']))"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:when>
 				<xsl:otherwise>
 					<xsl:text>A1  - </xsl:text>
-					<xsl:value-of select="normalize-space(s[@c='a'])"/>			
+					<xsl:value-of select="normalize-space(s[@c='a'])"/>
 					<xsl:text>&#010;</xsl:text>
 				</xsl:otherwise>
-			</xsl:choose>	
-		</xsl:for-each> 
+			</xsl:choose>
+		</xsl:for-each>
 </xsl:template>
 <xsl:template name="editeur">
-		<xsl:if test="f[@c='210']/s[@c='c']">	
+		<xsl:if test="f[@c='210']/s[@c='c']">
 			<xsl:text>PB  - </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='210']/s[@c='c'])"/>			
+			<xsl:value-of select="normalize-space(f[@c='210']/s[@c='c'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
 </xsl:template>
 <xsl:template name="date">
-		<xsl:if test="f[@c='210']/s[@c='d']">	
+		<xsl:if test="f[@c='210']/s[@c='d']">
 			<xsl:text>PY  - </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='210']/s[@c='d'])"/>	
+			<xsl:value-of select="normalize-space(f[@c='210']/s[@c='d'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
-		<xsl:if test="f[@c='463']/s[@c='d']">	
+		<xsl:if test="f[@c='463']/s[@c='d']">
 			<xsl:text>DA  - </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='463']/s[@c='d'])"/>	
+			<xsl:value-of select="normalize-space(f[@c='463']/s[@c='d'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
 </xsl:template>
 <xsl:template name="resume">
-		<xsl:if test="f[@c='330']/s[@c='a']">	
+		<xsl:if test="f[@c='330']/s[@c='a']">
 			<xsl:text>AB  - </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='330']/s[@c='a'])"/>			
+			<xsl:value-of select="normalize-space(f[@c='330']/s[@c='a'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
 </xsl:template>
 <xsl:template name="pubmedid">
-		<xsl:if test="f[@c='900']/s[@c='n'] = 'pmi_xref_dbase_id'">	
+		<xsl:if test="f[@c='900']/s[@c='n'] = 'pmi_xref_dbase_id'">
 			<xsl:text>N1  - PubMed ID: </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='900'][s[@c='n'] = 'pmi_xref_dbase_id']/s[@c='a'])"/>			
+			<xsl:value-of select="normalize-space(f[@c='900'][s[@c='n'] = 'pmi_xref_dbase_id']/s[@c='a'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
 </xsl:template>
 <xsl:template name="doi">
-		<xsl:if test="f[@c='900']/s[@c='n'] = 'pmi_doi_identifier'">	
+		<xsl:if test="f[@c='900']/s[@c='n'] = 'pmi_doi_identifier'">
 			<xsl:text>N1  - doi: </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='900'][s[@c='n'] = 'pmi_doi_identifier']/s[@c='a'])"/>		
+			<xsl:value-of select="normalize-space(f[@c='900'][s[@c='n'] = 'pmi_doi_identifier']/s[@c='a'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
 </xsl:template>
@@ -197,7 +200,7 @@
 	<xsl:choose>
 		<xsl:when test="f[@c='900']/s[@c='n'] = 'subtype'">
 			<xsl:text>TY  - </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='900'][s[@c='n'] = 'subtype']/s[@c='a'])"/>			
+			<xsl:value-of select="normalize-space(f[@c='900'][s[@c='n'] = 'subtype']/s[@c='a'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:when>
 		<xsl:when test="bl = 'a' and hl = '2'">
@@ -241,17 +244,17 @@
 <xsl:template name="pagination">
 	<xsl:if test="f[@c='215']/s[@c='a']">
 	<xsl:choose>
-		<xsl:when test="substring-after(normalize-space(f[@c='215']/s[@c='a']),'-')">	
+		<xsl:when test="substring-after(normalize-space(f[@c='215']/s[@c='a']),'-')">
 			<xsl:text>SP  - </xsl:text>
-			<xsl:value-of select="substring-before(normalize-space(f[@c='215']/s[@c='a']),'-')"/>			
+			<xsl:value-of select="substring-before(normalize-space(f[@c='215']/s[@c='a']),'-')"/>
 			<xsl:text>&#010;</xsl:text>
 			<xsl:text>EP  - </xsl:text>
-			<xsl:value-of select="substring-after(normalize-space(f[@c='215']/s[@c='a']),'-')"/>			
+			<xsl:value-of select="substring-after(normalize-space(f[@c='215']/s[@c='a']),'-')"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:when>
 		<xsl:otherwise>
 			<xsl:text>SP  - </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='215']/s[@c='a'])"/>			
+			<xsl:value-of select="normalize-space(f[@c='215']/s[@c='a'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:otherwise>
 	</xsl:choose>
@@ -268,48 +271,48 @@
 </xsl:template>
 <xsl:template name="bulletin_vol">
 		<xsl:choose>
-			<xsl:when test="substring-before(normalize-space(f[@c='463']/s[@c='v']),', ')">	
+			<xsl:when test="substring-before(normalize-space(f[@c='463']/s[@c='v']),', ')">
 				<xsl:text>VL  - </xsl:text>
-				<xsl:value-of select="substring-after(substring-before(normalize-space(f[@c='463']/s[@c='v']),', '),'vol. ')"/>			
+				<xsl:value-of select="substring-after(substring-before(normalize-space(f[@c='463']/s[@c='v']),', '),'vol. ')"/>
 				<xsl:text>&#010;</xsl:text>
 			</xsl:when>
-			<xsl:when test="substring-after(normalize-space(f[@c='463']/s[@c='v']),'vol. ')">	
+			<xsl:when test="substring-after(normalize-space(f[@c='463']/s[@c='v']),'vol. ')">
 				<xsl:text>VL  - </xsl:text>
-				<xsl:value-of select="substring-after(normalize-space(f[@c='463']/s[@c='v']),'vol. ')"/>			
+				<xsl:value-of select="substring-after(normalize-space(f[@c='463']/s[@c='v']),'vol. ')"/>
 				<xsl:text>&#010;</xsl:text>
 			</xsl:when>
 		</xsl:choose>
 </xsl:template>
 <xsl:template name="bulletin_num">
 		<xsl:choose>
-			<xsl:when test="substring-after(normalize-space(f[@c='463']/s[@c='v']),'no. ')">	
+			<xsl:when test="substring-after(normalize-space(f[@c='463']/s[@c='v']),'no. ')">
 				<xsl:text>IS  - </xsl:text>
-				<xsl:value-of select="substring-after(normalize-space(f[@c='463']/s[@c='v']),'no. ')"/>			
+				<xsl:value-of select="substring-after(normalize-space(f[@c='463']/s[@c='v']),'no. ')"/>
 				<xsl:text>&#010;</xsl:text>
 			</xsl:when>
-			<xsl:when test="substring-after(normalize-space(f[@c='463']/s[@c='v']),'n° ')">	
+			<xsl:when test="substring-after(normalize-space(f[@c='463']/s[@c='v']),'n° ')">
 				<xsl:text>IS  - </xsl:text>
-				<xsl:value-of select="substring-after(normalize-space(f[@c='463']/s[@c='v']),'n° ')"/>			
+				<xsl:value-of select="substring-after(normalize-space(f[@c='463']/s[@c='v']),'n° ')"/>
 				<xsl:text>&#010;</xsl:text>
 			</xsl:when>
-			<xsl:when test="normalize-space(f[@c='463']/s[@c='v'])">	
+			<xsl:when test="normalize-space(f[@c='463']/s[@c='v'])">
 				<xsl:text>IS  - </xsl:text>
-				<xsl:value-of select="normalize-space(f[@c='463']/s[@c='v'])"/>			
+				<xsl:value-of select="normalize-space(f[@c='463']/s[@c='v'])"/>
 				<xsl:text>&#010;</xsl:text>
 			</xsl:when>
 		</xsl:choose>
 </xsl:template>
 <xsl:template name="perio_titre">
-		<xsl:if test="f[@c='461']/s[@c='t']">	
+		<xsl:if test="f[@c='461']/s[@c='t']">
 			<xsl:text>JF  - </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='461']/s[@c='t'])"/>			
+			<xsl:value-of select="normalize-space(f[@c='461']/s[@c='t'])"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
 </xsl:template>
 <xsl:template name="perio_issn">
-		<xsl:if test="f[@c='461']/s[@c='x']">	
+		<xsl:if test="f[@c='461']/s[@c='x']">
 			<xsl:text>SN  - </xsl:text>
-			<xsl:value-of select="normalize-space(f[@c='461']/s[@c='x'])"/>		
+			<xsl:value-of select="normalize-space(f[@c='461']/s[@c='x'])"/>
 			<xsl:text> (ISSN)</xsl:text>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
@@ -318,14 +321,14 @@
 	<xsl:for-each select="f[@c='606']/s[@c='a']">
 		<xsl:if test="contains(../s[@c='9'][2],'fr_FR')">
 			<xsl:text>KW  - </xsl:text>
-			<xsl:value-of select="normalize-space(.)"/>	
-			<xsl:text>&#010;</xsl:text>	
+			<xsl:value-of select="normalize-space(.)"/>
+			<xsl:text>&#010;</xsl:text>
 		</xsl:if>
 	</xsl:for-each>
 	<xsl:for-each select="f[@c='610']/s[@c='a']">
 		<xsl:call-template name="explose_kw">
 			<xsl:with-param name="motcle" select="normalize-space(.)"/>
-		</xsl:call-template>		
+		</xsl:call-template>
 	</xsl:for-each>
 </xsl:template>
 <xsl:template name="explose_kw">
@@ -333,7 +336,7 @@
 	<xsl:choose>
 		<xsl:when test="substring-after($motcle,' ; ')">
 			<xsl:text>KW  - </xsl:text>
-			<xsl:value-of select="substring-before($motcle,' ; ')"/>	
+			<xsl:value-of select="substring-before($motcle,' ; ')"/>
 			<xsl:text>&#010;</xsl:text>
 			<xsl:call-template name="explose_kw">
 					<xsl:with-param name="motcle" select="substring-after($motcle,' ; ')"/>
@@ -344,13 +347,13 @@
 			<xsl:value-of select="$motcle"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:otherwise>
-	</xsl:choose>				
+	</xsl:choose>
 </xsl:template>
 <xsl:template name="notes">
 		<xsl:for-each select="f[@c='300']/s[@c='a']">
 			<xsl:call-template name="explose_note">
 				<xsl:with-param name="contenu" select="."/>
-			</xsl:call-template>		
+			</xsl:call-template>
 		</xsl:for-each>
 </xsl:template>
 <xsl:template name="explose_note">
@@ -358,7 +361,7 @@
 	<xsl:choose>
 		<xsl:when test="substring-after($contenu,'&#010;')">
 			<xsl:text>N1  - </xsl:text>
-			<xsl:value-of select="substring-before($contenu,'&#010;')"/>	
+			<xsl:value-of select="substring-before($contenu,'&#010;')"/>
 			<xsl:text>&#010;</xsl:text>
 			<xsl:call-template name="explose_note">
 					<xsl:with-param name="contenu" select="substring-after($contenu,'&#010;')"/>
@@ -369,6 +372,29 @@
 			<xsl:value-of select="$contenu"/>
 			<xsl:text>&#010;</xsl:text>
 		</xsl:otherwise>
-	</xsl:choose>				
+	</xsl:choose>
+</xsl:template>
+<xsl:template name="associated_url">
+		<xsl:if test="f[@c='856']/s[@c='u']">	
+			<xsl:text>UR  - </xsl:text>
+			<xsl:value-of select="normalize-space(f[@c='856']/s[@c='u'])"/>		
+			<xsl:text>&#010;</xsl:text>
+		</xsl:if>
+</xsl:template>
+<xsl:template name="permalink">
+		<xsl:for-each select="f[@c='001']">
+			<xsl:text>UR  - </xsl:text>
+			<xsl:value-of select="$opac_url_base"/>
+			<xsl:text>index.php?lvl=notice_display&amp;id=</xsl:text>
+			<xsl:value-of select='.'/>
+			<xsl:text>&#010;</xsl:text>
+		</xsl:for-each>
+</xsl:template>
+<xsl:template name="docnum_urls">
+		<xsl:for-each select="f[@c='897']/s[@c='a']">
+			<xsl:text>L3  - </xsl:text>
+			<xsl:value-of select="."/>
+			<xsl:text>&#010;</xsl:text>
+		</xsl:for-each>
 </xsl:template>
 </xsl:stylesheet>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_controller.class.php,v 1.8.2.1 2021/10/08 09:00:04 tsamson Exp $
+// $Id: selector_controller.class.php,v 1.11.4.3 2023/04/27 09:40:13 qvarin Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -23,7 +23,6 @@ class selector_controller {
 		global $what, $caller;
 		global $bt_ajouter;
 		global $search_xml_file, $search_field_id;
-		
 		switch($what) {
 			case 'auteur':
 				if ((!(SESSrights & AUTORITES_AUTH)) || $caller == "search_form"){
@@ -115,6 +114,9 @@ class selector_controller {
 			case 'emprunteur':
 				$selector = new selector_empr($this->user_input);
 				break;
+			case 'emprunteurs':
+				$selector = new selector_emprs($this->user_input);
+				break;
 			case 'notice':
 				$selector = new selector_notice($this->user_input);
 				break;
@@ -161,7 +163,7 @@ class selector_controller {
 				$selector = new selector_ontology($this->user_input);
 				break;
 			case 'ontologies' :
-// 				include('./selectors/ontologies.inc.php');
+			    $selector = new selector_ontologies($this->user_input);
 				break;
 			case 'abts' :
 				$selector = new selector_abts($this->user_input);
@@ -184,6 +186,12 @@ class selector_controller {
 			case 'sort' :
 			    $selector = new selector_sort($this->user_input);
 			    break;
+			case 'animations':
+				$selector = new selector_animations($this->user_input);
+				break;
+			case 'cms_editorial':
+				$selector = new selector_cms_editorial($this->user_input);
+				break;
 			default:
 				break;
 		}

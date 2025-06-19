@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_bannette.class.php,v 1.3 2015/04/09 16:19:51 arenou Exp $
+// $Id: cms_module_common_datasource_records_bannette.class.php,v 1.4 2022/09/06 07:52:19 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 require_once($include_path."/bannette_func.inc.php");
@@ -12,7 +12,9 @@ class cms_module_common_datasource_records_bannette extends cms_module_common_da
 	public function __construct($id=0){
 		parent::__construct($id);
 		$this->limitable = true;
+		$this->paging = true;
 	}
+	
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
 	 */
@@ -48,14 +50,16 @@ class cms_module_common_datasource_records_bannette extends cms_module_common_da
 					}
 				}
 			}
-			$records = $this->filter_datas("notices",$records);
-			if($this->parameters['nb_max_elements'] > 0){
-				$records = array_slice($records, 0, $this->parameters['nb_max_elements']);
+			
+			$return["title"] = "Liste de Notices";
+			$return["records"] = $this->filter_datas("notices", $records);
+			
+			if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+			    $return["paging"] = $this->inject_paginator($return['records']);
+			    $return['records'] = $this->cut_paging_list($return['records'], $return["paging"]);
+			} else if($this->parameters['nb_max_elements'] > 0){
+			    $return["records"] = array_slice($return["records"], 0, $this->parameters['nb_max_elements']);
 			}
-			$return = array(
-					'title'=> 'Liste de Notices',
-					'records' => $records
-			);
 			
 			return $return;
 		}

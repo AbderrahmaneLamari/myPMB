@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: html_helper.class.php,v 1.3 2021/02/16 14:44:21 dbellamy Exp $
+// $Id: html_helper.class.php,v 1.3.6.3 2023/11/02 15:34:45 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
 	die("no access");
@@ -75,6 +75,10 @@ class HtmlHelper {
 	 */
 	protected function readAndSortFiles(string $dir, string $extension) 
 	{
+	    if (!is_dir($dir)) {
+	        return [];
+	    }
+
 		$handle = @opendir($dir);
 		$files = [];
 		if(!$handle) {
@@ -167,6 +171,64 @@ class HtmlHelper {
 		return $this->css_content;
 		
 	}
-	
+
+    /**
+     * Retourne les feuilles de style et fichiers js associes de l'opac pour l'envoi d'une dsi
+     *
+     * @param string $style
+     *
+     * @return string
+     */
+    public function getStyleOpac(string $style)
+    {
+        global $base_path, $opac_url_base;
+
+        $opac_url_styles = $opac_url_base. "styles";
+        $dir = $base_path."/opac_css/styles";
+        $content = "";
+
+        // Lecture fichier disable dans le repertoire common
+        if(is_file($dir.'/common/disable') && is_readable($dir.'/common/disable')) {
+            $s = file_get_contents($dir.'/common/disable');
+            $t = explode(PHP_EOL, $s);
+            if(is_array($t)) {
+                foreach($t as $v) {
+                    if($v) {
+                        $this->common_disabled_files[] = $dir.'/common/'.trim($v);
+                    }
+                }
+            }
+        }
+
+        // inclusion des feuilles de style communes
+        $css_files = static::readAndSortFiles($dir.'/common/', '.css');
+        foreach($css_files as $css_file){
+            $time = @filemtime($css_file);
+            $content.= PHP_EOL.'<link rel="stylesheet" type="text/css" href="' . $opac_url_styles . str_replace($dir, "", $css_file) . '?' . $time . '" />';
+        }
+
+        // inclusion des fichiers js communs
+        $js_files = static::readAndSortFiles($dir.'/common/javascript', '.js');
+        foreach($js_files as $js_file) {
+            $time = @filemtime($js_file);
+            $content.= PHP_EOL."<script src='" . $opac_url_styles . str_replace($dir, "", $js_file) . "?".$time."' ></script>";
+        }
+
+        // inclusion des feuilles de style issues du style demande
+        $css_files = static::readAndSortFiles($dir.'/'.$style.'/', '.css');
+        foreach($css_files as $css_file){
+            $time = @filemtime($css_file);
+            $content.= PHP_EOL.'<link rel="stylesheet" type="text/css" href="' . $opac_url_styles . str_replace($dir, "", $css_file) . '?'.$time.'" />';
+        }
+
+        // inclusion des fichiers js issus du style demande
+        $js_files = static::readAndSortFiles($dir.'/'.$style.'/javascript/', '.js');
+        foreach($js_files as $js_file) {
+            $time = @filemtime($js_file);
+            $content.= PHP_EOL."<script src='" . $opac_url_styles . str_replace($dir, "", $js_file) . "?".$time."' ></script>";
+        }
+
+        return $content;
+    }
 }
 

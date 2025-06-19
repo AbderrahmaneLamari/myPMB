@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_cms_editorial_publication_state_ui.class.php,v 1.2 2021/04/19 07:10:23 dgoron Exp $
+// $Id: list_configuration_cms_editorial_publication_state_ui.class.php,v 1.3 2022/07/27 10:31:44 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -41,11 +41,13 @@ class list_configuration_cms_editorial_publication_state_ui extends list_configu
 	}
 	
 	protected function get_cell_content($object, $property) {
+		global $charset;
+		
 		$content = '';
 		switch($property) {
 			case 'label':
 				$content .= "<span class='".$object->class_html."'  style='margin-right: 3px;'><img src='".get_url_icon('spacer.gif')."' width='10' height='10' /></span>";
-				$content .= $object->label;
+				$content .= htmlentities($object->label, ENT_QUOTES, $charset);
 				break;
 			default :
 				$content .= parent::get_cell_content($object, $property);

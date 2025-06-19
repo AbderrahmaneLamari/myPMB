@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: DocsLocationModel.php,v 1.5 2021/03/03 13:17:03 jlaurent Exp $
+// $Id: DocsLocationModel.php,v 1.6 2022/12/14 15:06:04 gneveu Exp $
 
 namespace Pmb\Common\Models;
 
@@ -45,5 +45,18 @@ class DocsLocationModel extends Model
         }
         
         return $infosLoc;
+    }
+    
+    public static function getLocationAnimation ($animationId) {
+        $query = "
+            SELECT * FROM docs_location 
+            JOIN anim_animation_locations 
+            ON docs_location.idlocation = anim_animation_locations.num_location 
+            WHERE num_animation = " . intval($animationId);
+        $result = pmb_mysql_query($query);
+        if (pmb_mysql_num_rows($result)) {
+            return pmb_mysql_fetch_assoc($result);
+        }
+        return null;
     }
 }

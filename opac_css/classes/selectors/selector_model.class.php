@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_model.class.php,v 1.1.2.4 2021/11/19 14:45:19 dgoron Exp $
+// $Id: selector_model.class.php,v 1.4.4.1 2023/07/06 13:47:39 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -78,20 +78,23 @@ class selector_model {
 		return $content_form;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('selector_parameters_opac', 'selector_parameters_tabs')
+		->add_html_node($this->get_parameters_tabs_content_form());
+		$interface_content_form->add_element('selector_display_modes', 'selector_display_modes')
+		->add_html_node($this->get_display_modes_content_form());
+		$interface_content_form->add_element('selector_name')
+		->add_input_node('hidden', $this->name);
+		
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $selector_content_form;
-		
-		$content_form = $selector_content_form;
-		$content_form = str_replace('!!name!!', $this->name, $content_form);
-		
-		$interface_form = new interface_account_form('selector_form');
+		$interface_form = new interface_form('selector_form');
 		$interface_form->set_label($this->label);
-		
-		$content_form = str_replace('!!parameters_tabs!!', $this->get_parameters_tabs_content_form(), $content_form);
-		$content_form = str_replace('!!display_modes!!', $this->get_display_modes_content_form(), $content_form);
-		
 		$interface_form->set_object_id($this->id)
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('selectors');
 		return $interface_form->get_display();
 	}

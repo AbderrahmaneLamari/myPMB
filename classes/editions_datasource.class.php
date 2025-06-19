@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: editions_datasource.class.php,v 1.7.8.1 2022/01/07 14:02:04 dgoron Exp $
+// $Id: editions_datasource.class.php,v 1.8.4.2 2023/03/03 08:06:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,7 +12,8 @@ class editions_datasource {
 	public $struct_format = array();
 	public $filename = "datasources";
 	public $datasource = "";
-	
+	protected $custom_parameters_instance;
+
 	public function __construct($datasource=""){
 		$this->datasource = $datasource;
 		$this->fetch_datas();
@@ -69,6 +70,165 @@ class editions_datasource {
 					}
 				}
 			}
+			$this->fetch_custom_fields_datas();
+		}
+	}
+	
+	protected function get_prefix_custom_fields() {
+		switch ($this->datasource) {
+			case 'items':
+				return 'expl';
+			case 'categories':
+				return 'categ';
+			case 'lenders':
+				return 'empr';
+			case 'explnum':
+				return 'explnum';
+			case 'notices':
+				return 'notices';
+		}
+	}
+	
+	protected function get_reference_key_custom_fields() {
+		switch ($this->datasource) {
+			case 'items':
+				return 'exemplaires.expl_id';
+			case 'categories':
+				return 'noeuds.num_noeud';
+			case 'lenders':
+				return 'empr.id_empr';
+			case 'explnum':
+				return 'explnum.explnum_id';
+			case 'notices':
+				return 'notices.notice_id';
+		}
+	}
+	
+	/**
+	 * Retourne l'instance de parametres_perso
+	 * @param string $type
+	 */
+	protected function get_custom_parameters_instance($prefix) {
+		if(!isset($this->custom_parameters_instance[$prefix])) {
+			switch($prefix) {
+				case 'pret':
+					$this->custom_parameters_instance[$prefix] = new pret_parametres_perso($prefix);
+					break;
+				default:
+					$this->custom_parameters_instance[$prefix] = new parametres_perso($prefix);
+					break;
+			}
+		}
+		return $this->custom_parameters_instance[$prefix];
+	}
+	
+	protected function allow_custom_field($field) {
+		switch ($field['TYPE']) {
+			case 'comment':
+			case 'date_box':
+			case 'html':
+			case 'list':
+			case 'marclist':
+			case 'query_auth':
+			case 'query_list':
+			case 'text':
+			case 'url':
+				return true;
+			default:
+				return false;
+		}
+	}
+	
+	protected function get_type_from_custom_field($field) {
+		switch ($field['DATATYPE']) {
+			case 'small_text':
+				return 'text';
+			default:
+				if($field['TYPE'] == 'date_inter') {
+					return 'date';
+				}
+				return $field['DATATYPE'];
+		}
+	}
+	
+	protected function get_input_type_from_custom_field($field) {
+		switch ($field['TYPE']) {
+			case 'list':
+			case 'marclist':
+			case 'query_list':
+				return 'list';
+			case 'date_box':
+			case 'date_inter':
+				return 'date';
+			case 'query_auth':
+				return 'auth';
+			default:
+				return 'text';
+		}
+	}
+	
+	/**
+	 * Chargement des champs personnalisés
+	 */
+	protected function fetch_custom_fields_datas() {
+		$prefix = $this->get_prefix_custom_fields();
+		if($prefix) {
+			$t_fields = $this->get_custom_parameters_instance($prefix)->t_fields;
+			foreach ($t_fields as $field) {
+				if($this->allow_custom_field($field)) {
+					$id = $prefix.'_custom_field_'.$field['NAME'];
+					$idchamp = $this->get_custom_parameters_instance($prefix)->get_field_id_from_name($field['NAME']);
+					$field_prefix = $prefix.'_custom_'.$field['NAME'];
+					$this->struct_format[$id] = array(
+							'field' => $field_prefix.'_values.'.$prefix.'_custom_'.$field['DATATYPE'].' AS '.$field_prefix.'_'.$field['DATATYPE'],
+							'id' => $id,
+							'label' => $field['TITRE'],
+							'type' => $this->get_type_from_custom_field($field),
+							'repeat' => $field['OPTIONS'][0]['REPEATABLE'][0]['value'],
+							'field_alias' => $field_prefix.'_'.$field['DATATYPE'],
+							'input' => $this->get_input_type_from_custom_field($field)
+					);
+					$reference_key = $this->get_reference_key_custom_fields();
+					$this->struct_format[$id]['join'] = 'left join '.$prefix.'_custom_values AS '.$field_prefix.'_values ON '.$field_prefix.'_values.'.$prefix.'_custom_origine = '.$reference_key.' AND '.$field_prefix.'_values.'.$prefix.'_custom_champ = '.$idchamp;
+					$this->struct_format[$id]['field_join'] = '';
+					$this->struct_format[$id]['field_group'] = $reference_key;
+					$this->struct_format[$id]['authorized_null'] = '';
+					switch ($field['TYPE']) {
+						case 'list':
+							$this->struct_format[$id]['value_type'] = 'custom_query';
+							$this->struct_format[$id]['value_object']=array(
+									"select ".$prefix."_custom_list_value as id, ".$prefix."_custom_list_lib as list_value from ".$prefix."_custom_lists where ".$prefix."_custom_champ=$idchamp order by ordre"
+							);
+							break;
+						case 'query_list':
+							if(!empty($field['OPTIONS'][0]['QUERY'][0]['value'])) {
+								$this->struct_format[$id]['value_type'] = 'custom_query';
+								$this->struct_format[$id]['value_object']=array(
+										$field['OPTIONS'][0]['QUERY'][0]['value']
+								);
+							}
+							break;
+						case 'marclist':
+							if(!empty($field['OPTIONS'][0]['DATA_TYPE'][0]['value'])) {
+								$this->struct_format[$id]['value_type'] = 'custom_xml';
+								$this->struct_format[$id]['value_object']=array(
+										$field['OPTIONS'][0]['DATA_TYPE'][0]['value']
+								);
+							}
+							break;
+						case 'date_box':
+							break;
+						case 'query_auth':
+							if(!empty($field['OPTIONS'][0]['DATA_TYPE'][0]['value'])) {
+								$this->struct_format[$id]['value_type'] = '';
+								$this->struct_format[$id]['value_object']=$field;
+							}
+							break;
+						default:
+							break;
+					}
+				}
+			}
 		}
 	}
 	
@@ -97,6 +257,21 @@ class editions_datasource {
 		return $tab_return;
 	}
 	
+	public function  get_list_custom_xml($array){
+		global $class_path;
+		$tab_return=array();
+		if(!empty($array) && is_array($array)) {
+			require_once("$class_path/marc_table.class.php");
+			$list = new marc_list($array[0]);
+			if(count ($list->table)){
+				foreach ( $list->table as $key => $value ) {
+					$tab_return[$key] = $value;
+				}
+			}
+		}
+		return $tab_return;
+	}
+	
 	public function  get_list_enum($object){
 		$tab_return=array();
 		$vals = $object->item(0)->getElementsByTagName("value");
@@ -112,6 +287,7 @@ class editions_datasource {
 		$tab_return=array();
 		$query=$object->item(0)->nodeValue;
 		if($query){
+			$matches = array();
 			if(preg_match_all("/!!(.*?)!!/",$query,$matches)){//Pour le cas ou j'ai besoin de message dans la requete
 				if(count($matches[1])){
 					foreach ( $matches[1] as $value ) {
@@ -129,6 +305,22 @@ class editions_datasource {
 		return $tab_return;
 	}
 	
+	public function get_list_custom_query($array){
+		$tab_return=array();
+		if(!empty($array) && is_array($array)) {
+			$query=$array[0];
+			if($query){
+				$result = pmb_mysql_query($query);
+				if(pmb_mysql_num_rows($result)){
+					while($row = pmb_mysql_fetch_array($result)){
+						$tab_return[$row[0]] = $row[1];
+					}
+				}
+			}
+		}
+		return $tab_return;
+	}
+	
 	public function get_datas($params,$params_values){
 		$datas = $label = array();
 		//on commence par les libellé...
@@ -137,7 +329,6 @@ class editions_datasource {
 		}
 		$datas[]=$label;
 		$requete=$this->generate_query($params,$params_values);
-		
 		$result = pmb_mysql_query($requete);
 		if(pmb_mysql_num_rows($result)){
 			while($row = pmb_mysql_fetch_row($result)){
@@ -147,7 +338,7 @@ class editions_datasource {
 						//Si le champs des résultats ne fait pas partie des champs à afficher je ne le mets pas dans les résultats 
 						//(passe ici pour le cas où on filtre sur un champ avec un alias)
 					}elseif(isset($this->struct_format[$params['fields']['content'][$i]]['value_type']) && $this->struct_format[$params['fields']['content'][$i]]['value_type'] && $this->struct_format[$params['fields']['content'][$i]]['value_type'] != "query"){
-						if($tmp=$this->struct_format[$params['fields']['content'][$i]]['value'][$val]){//Si j'ai la correspondance
+						if(isset($this->struct_format[$params['fields']['content'][$i]]['value'][$val]) && $tmp=$this->struct_format[$params['fields']['content'][$i]]['value'][$val]){//Si j'ai la correspondance
 							$values[] =  $tmp;
 						}else{
 							if(($sep=$this->struct_format[$params['fields']['content'][$i]]['repeat'])){//Si le résultat est répété avec un séparateur
@@ -200,6 +391,9 @@ class editions_datasource {
 					if($this->struct_format[$field]['input'] == "list"){
 						require_once($class_path."/editions_state_filter_list.class.php");
 						$filter = new editions_state_filter_list($this->struct_format[$field],$params_values['filters'][$field]);
+					}elseif($this->struct_format[$field]['input'] == "auth"){
+						require_once($class_path."/editions_state_filter_auth.class.php");
+						$filter = new editions_state_filter_auth($this->struct_format[$field],$params_values['filters'][$field]);
 					}else{
 						$class = "editions_state_filter_".$this->struct_format[$field]['type'];
 						require_once($class_path."/".$class.".class.php");
@@ -286,6 +480,7 @@ class editions_datasource {
 	public function get_label($val){
 		global $msg,$charset;
 		$val_return="";
+		$matches = array();
 		if(preg_match("/^msg:(.*)/",$val,$matches)){
 			$val_return=$msg[$matches[1]];
 		}else{
@@ -298,5 +493,4 @@ class editions_datasource {
 		}
 		return $val_return;
 	}
-	
 }

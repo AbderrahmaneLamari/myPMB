@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: transferts_edition_controller.class.php,v 1.4 2020/11/05 10:02:21 dgoron Exp $
+// $Id: transferts_edition_controller.class.php,v 1.4.6.1 2023/12/15 14:45:47 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -24,6 +24,8 @@ class transferts_edition_controller extends lists_controller {
 				return new static::$list_ui_class_name(array('etat_transfert' => 0, 'etat_demande' => 3, 'type_transfert' => 1), array(), array('by' => 'cote'));
 			case "reception":
 				return new static::$list_ui_class_name(array('etat_transfert' => 0, 'etat_demande' => 2), array(), array('by' => 'cote'));
+			case "refus":
+			    return new static::$list_ui_class_name(array('etat_transfert' => 0, 'etat_demande' => 4, 'type_transfert' => 1), array(), array('by' => 'cote'));
 		}
 	}
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_toolkit.class.php,v 1.6 2019/06/13 15:26:51 btafforeau Exp $
+// $Id: cms_toolkit.class.php,v 1.6.10.4 2023/12/04 15:37:52 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -45,6 +45,8 @@ class cms_toolkit{
 			$title .= $this->get_jquery_title();
 		} elseif(substr($this->name, 0, 5) == 'uikit') {
 			$title .= $this->get_uikit_title();
+		} elseif($this->name == 'dsfr') {
+		    $title .= $this->get_dsfr_title();
 		} else {
 			$title .= " / ";
 			if(isset($this->data['components'])) {
@@ -71,6 +73,8 @@ class cms_toolkit{
 			$form .= $this->get_jquery_form_content();
 		} elseif(substr($this->name, 0, 5) == 'uikit') {
 			$form .= $this->get_uikit_form_content();
+		} elseif($this->name == 'dsfr') {
+		    $form .= $this->get_dsfr_form_content();
 		} else {
 			$form .= $this->get_form_content();
 		}
@@ -109,6 +113,8 @@ class cms_toolkit{
 			$headers = $this->jquery_load();
 		} elseif(substr($this->name, 0, 5) == 'uikit') {
 			$headers = $this->uikit_load();
+		} elseif($this->name == 'dsfr') {
+		    $headers = $this->dsfr_load();
 		} else {
 			$headers = $this->generic_load();
 		}
@@ -129,7 +135,7 @@ class cms_toolkit{
 	}
 	
 	public function set_active($active) {
-	    $this->active = (int) $active;
+		$this->active = intval($active);
 	}
 	
 	public function set_data($data) {
@@ -152,14 +158,10 @@ class cms_toolkit{
 		global $msg;
 		global $base_path;
 	
-		if(!isset($this->data['components'])) $this->data['components'] = array();
-	
-		$form_content = "
-		<div class='row'>
-			<label class='etiquette'>".$msg["cms_toolkit_data_components_selection"]."&nbsp;</label>
-		</div>
-		<div class='row'>";
-	
+		if(!isset($this->data['components'])) {
+		    $this->data['components'] = array();
+		}
+		$form_content = "";
 		$components = array();
 		if(file_exists($base_path.'/opac_css/styles/common/toolkits/'.$this->name.'/js/components')){
 			$dh = opendir($base_path.'/opac_css/styles/common/toolkits/'.$this->name.'/js/components');
@@ -173,14 +175,14 @@ class cms_toolkit{
 		asort($components);
 		if(count($components)) {
 			$js_components = "
-				<script type='text/javascript'>
+				<script>
 					function cms_toolkit_uikit_components_checkboxes(do_check) {
 						var components = document.forms['cms_toolkits_form'].elements['cms_toolkits[".$this->name."][data][components][]'];
 						var components_cnt  = (typeof(components.length) != 'undefined') ? components.length : 0;
 						if(components_cnt) {
 							for (var i = 0; i < components_cnt; i++) {
 								components[i].checked = do_check;
-							} // end for
+							}
 						}
 					}
 				</script>
@@ -189,10 +191,15 @@ class cms_toolkit{
 			foreach ($components as $component) {
 				$js_components .= "<input type='checkbox' id='cms_toolkit_".$this->name."_data_component_".$component."' name='cms_toolkits[".$this->name."][data][components][]' value='".$component."' ".(in_array($component, $this->data['components']) ? "checked='checked'" : "")." />".$component."<br />";
 			}
-			$form_content .= $js_components;
+
+			$form_content = "
+                <div class='row'>
+                    <label class='etiquette'>".$msg["cms_toolkit_data_components_selection"]."&nbsp;</label>
+                </div>
+                <div class='row'>".
+                    $js_components.
+                "</div>";
 		}
-		$form_content .=
-		"</div>";
 		return $form_content;
 	}
 	
@@ -207,27 +214,28 @@ class cms_toolkit{
 				while(($component = readdir($dh)) !== false){
 					if(strpos($component, '.min.js')){
 						if(file_exists($base_path."/styles/".$css."/toolkits/".$this->name."/js/".$component)){
-							$headers[] = "<script type='text/javascript' src='".$base_path."/styles/".$css."/toolkits/".$this->name."/js/".$component."'></script>";
+							$headers[] = "<script src='".$base_path."/styles/".$css."/toolkits/".$this->name."/js/".$component."'></script>";
 						} else {
-							$headers[] = "<script type='text/javascript' src='".$base_path."/styles/common/toolkits/".$this->name."/js/".$component."'></script>";
+							$headers[] = "<script src='".$base_path."/styles/common/toolkits/".$this->name."/js/".$component."'></script>";
 						}
 						if(file_exists($base_path."/styles/common/toolkits/".$this->name."/css/".str_replace('.min.js', '.min.css', $component))){
 							$headers[]= "<link rel='stylesheet' type='text/css' href='".$base_path."/styles/common/toolkits/".$this->name."/css/".str_replace('.min.js', '.min.css', $component)."'/>";
 						}
 					}
 				}
+				sort($headers);
 			}
 			if(isset($this->data['components']) && count($this->data['components'])) {
 				asort($this->data['components']); //Hack pour gérer les dépendances
 				foreach ($this->data['components'] as $component) {
 					if(file_exists($base_path."/styles/common/toolkits/".$this->name."/js/components/".$component.".min.js")){
 						if(file_exists($base_path."/styles/".$css."/toolkits/".$this->name."/js/components/".$component.".min.js")){
-							$headers[] = "<script type='text/javascript' src='".$base_path."/styles/".$css."/toolkits/".$this->name."/js/components/".$component.".min.js'></script>";
+							$headers[] = "<script src='".$base_path."/styles/".$css."/toolkits/".$this->name."/js/components/".$component.".min.js'></script>";
 						} else {
-							$headers[] = "<script type='text/javascript' src='".$base_path."/styles/common/toolkits/".$this->name."/js/components/".$component.".min.js'></script>";
+							$headers[] = "<script src='".$base_path."/styles/common/toolkits/".$this->name."/js/components/".$component.".min.js'></script>";
 						}
-						if(file_exists($base_path."/styles/common/toolkits/".$this->name."/css/components/".$component.$css_suffix.".min.css")){
-							$headers[]= "<link rel='stylesheet' type='text/css' href='".$base_path."/styles/common/toolkits/".$this->name."/css/components/".$component.$css_suffix.".min.css'/>";
+						if(file_exists($base_path."/styles/common/toolkits/".$this->name."/css/components/".$component.".min.css")){
+							$headers[]= "<link rel='stylesheet' type='text/css' href='".$base_path."/styles/common/toolkits/".$this->name."/css/components/".$component.".min.css'/>";
 						}
 					}
 				}
@@ -254,8 +262,12 @@ class cms_toolkit{
 		global $msg;
 		global $base_path;
 	
-		if(!isset($this->data['version'])) $this->data['version'] = 'jquery-2.1.1';
-		if(!isset($this->data['components'])) $this->data['components'] = array();
+		if(!isset($this->data['version'])) {
+		    $this->data['version'] = 'jquery-2.1.1';
+		}
+		if(!isset($this->data['components'])) {
+		    $this->data['components'] = array();
+		}
 		
 		$jquery_form_content = "
 		<div class='row'>
@@ -314,16 +326,16 @@ class cms_toolkit{
 		if($this->active) {
 			$headers[] = "<!-- Inclusion JQuery pour uikit -->";
 			$headers[] = "<!--[if (!IE)|(gt IE 8)]><!-->
-				<script type='text/javascript' src='".$base_path."/styles/common/toolkits/".$this->name."/versions/".$this->data['version'].".min.js'></script>
+				<script src='".$base_path."/styles/common/toolkits/".$this->name."/versions/".$this->data['version'].".min.js'></script>
 				<!--<![endif]-->
 				
 				<!--[if lte IE 8]>
-				  <script type='text/javascript' src='".$base_path."/styles/common/toolkits/".$this->name."/components/jquery-1.9.1.min.js'></script>
+				  <script src='".$base_path."/styles/common/toolkits/".$this->name."/components/jquery-1.9.1.min.js'></script>
 				<![endif]-->";
 			if(isset($this->data['components']) && count($this->data['components'])) {
 				foreach ($this->data['components'] as $component) {
 					if(file_exists($base_path."/styles/common/toolkits/".$this->name."/components/".$component.".min.js")){
-						$headers[] = "<script type='text/javascript' src='".$base_path."/styles/common/toolkits/".$this->name."/components/".$component.".min.js'></script>";
+						$headers[] = "<script src='".$base_path."/styles/common/toolkits/".$this->name."/components/".$component.".min.js'></script>";
 					}
 				}
 			}
@@ -358,8 +370,12 @@ class cms_toolkit{
 		global $msg;
 		global $base_path;
 	
-		if(!isset($this->data['them'])) $this->data['them'] = 'uikit';
-		if(!isset($this->data['components'])) $this->data['components'] = array();
+		if(!isset($this->data['them'])) {
+		    $this->data['them'] = 'uikit';
+		}
+		if(!isset($this->data['components'])) {
+		    $this->data['components'] = array();
+		}
 		
 		$uikit_form_content = "
 		<div class='row'>
@@ -375,12 +391,7 @@ class cms_toolkit{
 				<option value='uikit.gradient' ".($this->data['them'] == 'uikit.gradient' ? "selected='selected'" : "").">".$msg['cms_toolkit_uikit_data_them_uikit.gradient']."</option>
 				<option value='uikit.almost-flat' ".($this->data['them'] == 'uikit.almost-flat' ? "selected='selected'" : "").">".$msg['cms_toolkit_uikit_data_them_uikit.almost-flat']."</option>
 			</select>
-		</div>
-		<div class='row'>&nbsp;</div>
-		<div class='row'>
-			<label class='etiquette'>".$msg["cms_toolkit_uikit_data_components_selection"]."&nbsp;</label>
-		</div>
-		<div class='row'>";
+		</div>";
 	
 		$components = array();
 		if(file_exists($base_path.'/opac_css/styles/common/toolkits/'.$this->name.'/js/components')){
@@ -395,15 +406,15 @@ class cms_toolkit{
 		asort($components);
 		if(count($components)) {
 			$js_components = "
-				<script type='text/javascript'>
+				<script>
 					function cms_toolkit_components_checkboxes(do_check) {
 						var components = document.forms['cms_toolkits_form'].elements['cms_toolkits[".$this->name."][data][components][]'];
 						var components_cnt  = (typeof(components.length) != 'undefined') ? components.length : 0;
 						if(components_cnt) {
 							for (var i = 0; i < components_cnt; i++) {
 								components[i].checked = do_check;
-							} // end for
-						}		
+							}		
+						}
 					}
 				</script>
 				<button data-dojo-type='dijit/form/Button' onClick=\"cms_toolkit_components_checkboxes(true); return false;\">".$msg['tout_cocher_checkbox']."</button>
@@ -411,10 +422,12 @@ class cms_toolkit{
 			foreach ($components as $component) {
 				$js_components .= "<input type='checkbox' id='cms_toolkit_".$this->name."_data_component_".$component."' name='cms_toolkits[".$this->name."][data][components][]' value='".$component."' ".(in_array($component, $this->data['components']) ? "checked='checked'" : "")." />".$component."<br />";
 			}
-			$uikit_form_content .= $js_components;
+    		$uikit_form_content .= "
+    		<div class='row'>
+    		<label class='etiquette'>".$msg["cms_toolkit_uikit_data_components_selection"]."&nbsp;</label>
+    		</div>
+    		<div class='row'>".$js_components."</div>";
 		}
-		$uikit_form_content .=
-		"</div>";
 		return $uikit_form_content;
 	}
 	
@@ -424,7 +437,7 @@ class cms_toolkit{
 		
 		$headers = array();
 		if($this->active) {
-			$headers[] = "<script type='text/javascript' src='".$base_path."/styles/common/toolkits/".$this->name."/js/uikit.min.js'></script>";
+			$headers[] = "<script src='".$base_path."/styles/common/toolkits/".$this->name."/js/uikit.min.js'></script>";
 			if(file_exists($base_path."/styles/".$css."/toolkits/".$this->name."/css/".$this->data['them'].".min.css")){
 				$headers[] = "<link rel='stylesheet' type='text/css' href='".$base_path."/styles/".$css."/toolkits/".$this->name."/css/".$this->data['them'].".min.css'/>";
 			}else{
@@ -440,9 +453,9 @@ class cms_toolkit{
 				foreach ($this->data['components'] as $component) {
 					if(file_exists($base_path."/styles/common/toolkits/".$this->name."/js/components/".$component.".min.js")){
 						if(file_exists($base_path."/styles/".$css."/toolkits/".$this->name."/js/components/".$component.".min.js")){
-							$headers[] = "<script type='text/javascript' src='".$base_path."/styles/".$css."/toolkits/".$this->name."/js/components/".$component.".min.js'></script>";
+							$headers[] = "<script src='".$base_path."/styles/".$css."/toolkits/".$this->name."/js/components/".$component.".min.js'></script>";
 						} else {
-							$headers[] = "<script type='text/javascript' src='".$base_path."/styles/common/toolkits/".$this->name."/js/components/".$component.".min.js'></script>";
+							$headers[] = "<script src='".$base_path."/styles/common/toolkits/".$this->name."/js/components/".$component.".min.js'></script>";
 						}
 						if(file_exists($base_path."/styles/common/toolkits/".$this->name."/css/components/".$component.$css_suffix.".min.css")){
 							$headers[]= "<link rel='stylesheet' type='text/css' href='".$base_path."/styles/common/toolkits/".$this->name."/css/components/".$component.$css_suffix.".min.css'/>";
@@ -452,6 +465,64 @@ class cms_toolkit{
 			}
 		}
 		return $headers;
+	}
+	
+	/********************************************/
+	/***************** DSFR ********************/
+	/********************************************/
+	
+	protected function get_dsfr_title(){
+	    global $msg;
+	    
+	    $dsfr_title = "";
+	    if($this->active && isset($this->data['version'])) {
+	        $dsfr_title = " / ".$msg['cms_toolkit_jquery_data_version']." ".substr($this->data['version'], 5);
+	    }
+	    return $dsfr_title;
+	}
+	
+	protected function get_dsfr_form_content(){
+	    global $msg;
+	    
+	    if(!isset($this->data['version'])) {
+	        $this->data['version'] = 'dsfr-1.10.0';
+	    }
+	    if(!isset($this->data['components'])) {
+	        $this->data['components'] = array();
+	    }
+	    $dsfr_form_content = "
+		<div class='row'>
+			".$msg["cms_toolkit_dsfr_information"]."
+		</div>
+		<div class='row'>&nbsp;</div>";
+	    return $dsfr_form_content;
+	}
+	
+	public function dsfr_load() {
+	    global $base_path;
+	    global $css;
+	    
+	    $headers = array();
+	    if($this->active) {
+	        if(file_exists($base_path."/styles/".$css."/toolkits/".$this->name."/dsfr.min.css")){
+	            $css_path = $base_path."/styles/".$css."/toolkits/".$this->name."/dsfr.min.css";
+	        }else{
+	            $css_path = $base_path."/styles/common/toolkits/".$this->name."/dsfr.min.css";
+	        }
+	        $vide_cache=@filemtime($css_path);
+	        $headers[] = "<link rel='stylesheet' type='text/css' href='".$css_path."?".$vide_cache."'/>";
+	        
+	        if(file_exists($base_path."/styles/".$css."/toolkits/".$this->name."/utility/utility.min.css")){
+	            $css_path = $base_path."/styles/".$css."/toolkits/".$this->name."/utility/utility.min.css";
+	        }else{
+	            $css_path = $base_path."/styles/common/toolkits/".$this->name."/utility/utility.min.css";
+	        }
+	        $vide_cache=@filemtime($css_path);
+	        $headers[] = "<link rel='stylesheet' type='text/css' href='".$css_path."?".$vide_cache."'/>";
+	        $headers[] = "<script type='module' src='".$base_path."/styles/common/toolkits/".$this->name."/dsfr.module.min.js'></script>";
+	        $headers[] = "<script type='text/javascript' nomodule src='".$base_path."/styles/common/toolkits/".$this->name."/dsfr.nomodule.min.js'></script>";
+	    }
+	    return $headers;
 	}
 	
 }

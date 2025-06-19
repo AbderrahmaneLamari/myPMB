@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_tabs_admin_ui.class.php,v 1.2.2.1 2021/08/04 07:06:13 dgoron Exp $
+// $Id: list_tabs_admin_ui.class.php,v 1.8.4.1 2023/09/15 15:44:05 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,7 +16,8 @@ class list_tabs_admin_ui extends list_tabs_ui {
 		global $pmb_gestion_financiere, $pmb_gestion_abonnement, $pmb_gestion_tarif_prets, $pmb_gestion_amende;
 		global $pmb_planificateur_allow, $pmb_selfservice_allow, $acquisition_active;
 		global $pmb_transferts_actif, $gestion_acces_active, $pmb_javascript_office_editor;
-		global $demandes_active, $faq_active, $pmb_scan_request_activate;
+		global $demandes_active, $faq_active, $pmb_scan_request_activate, $pmb_ark_activate;
+		global $pmb_digital_signature_activate;
 		
 		//Administration
 		$this->add_tab('7', 'docs', 'admin_menu_exemplaires');
@@ -34,6 +35,10 @@ class list_tabs_admin_ui extends list_tabs_ui {
 		if($animations_active){
 			$this->add_tab('7', 'animations', 'animations', '');
 		}
+		if($pmb_digital_signature_activate){
+			$this->add_tab('7', 'digital_signature', 'digital_signature', 'admin_digital_signature');
+		}
+		$this->add_tab('7', 'thumbnail', 'admin_vignette_menu', 'admin_thumbnail');
 		
 		//OPAC
 		$this->add_tab('opac_admin_menu', 'infopages', 'infopages_admin_menu');
@@ -115,6 +120,12 @@ class list_tabs_admin_ui extends list_tabs_ui {
 		if($pmb_scan_request_activate) {
 			$this->add_tab('admin_menu_modules', 'scan_request', 'admin_menu_scan_request');
 		}
+		if($pmb_ark_activate) {
+			$this->add_tab('admin_menu_modules', 'ark', 'admin_menu_ark');
+		}
+		$this->add_tab('admin_menu_modules', 'interface', 'interface', 'modules');
+		$this->add_tab('admin_menu_modules', 'mails', 'mails', 'configuration');
+		$this->add_tab('admin_menu_modules', 'supervision', 'supervision', 'mails');
 	}
 	
 	protected function is_active_tab($label_code, $categ, $sub='') {

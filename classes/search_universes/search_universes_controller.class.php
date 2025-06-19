@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_universes_controller.class.php,v 1.29 2021/05/10 13:09:27 jlaurent Exp $
+// $Id: search_universes_controller.class.php,v 1.30.4.2 2023/09/08 09:35:13 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($class_path.'/search_universes/search_universe.class.php');
 require_once($class_path.'/search_universes/search_segment.class.php');
 require_once($class_path.'/facettes_controller.class.php');
@@ -55,7 +56,7 @@ class search_universes_controller {
     public function get_tree_interface(){
     	global $charset;
     	global $search_universe_tree_interface;
-    	$data = array();
+    	
     	$search_universe_tree_interface = str_replace('!!parameters!!', htmlentities(encoding_normalize::json_encode($this->get_data()), ENT_QUOTES, $charset), $search_universe_tree_interface);
     	return $search_universe_tree_interface;
     }
@@ -92,7 +93,6 @@ class search_universes_controller {
     }
     
     public function get_data() {
-    	global $base_url;
     	global $base_path;
     	global $msg;
     	
@@ -280,7 +280,7 @@ class search_universes_controller {
     	switch($action) {
     		case 'edit':
     			$search_segment = search_segment::get_instance($id);
-    			print $search_segment->get_form(true); //true == form_ajax
+    			print encoding_normalize::utf8_normalize($search_segment->get_form(true)); //true == form_ajax
     			break;
     		case 'save':
     		    $search_segment = search_segment::get_instance($id);
@@ -368,15 +368,29 @@ class search_universes_controller {
     		    $search_segment = search_segment::get_instance($id);
     			$num_universe = $search_segment->get_num_universe();
     			$response = array(
-    					'entity' => array(
-    							'type' => 'universe',
-    							'id' => $num_universe
-    					)
-    			);
-    			$response['status'] = search_segment::delete($id);
-    			$response['tree_data'] = $this->get_data();
-    			print encoding_normalize::json_encode($response);
-    			break;
+					'entity' => array(
+						'type' => 'universe',
+						'id' => $num_universe
+					)
+				);
+				$response['status'] = search_segment::delete($id);
+				$response['tree_data'] = $this->get_data();
+				print encoding_normalize::json_encode($response);
+				break;
+			case 'duplicate':
+				global $selected_universes;
+				$search_segment = search_segment::get_instance($id);
+				$duplicated = $search_segment->duplicate(explode(",", $selected_universes));
+				$response = array(
+					"status" => true,
+					"entity" => array(
+						"type" => "universe",
+						"id" => $duplicated->get_id()
+					)
+				);
+				$response['tree_data'] = $this->get_data();
+				print encoding_normalize::json_encode($response);
+				break;
     		default:
     			break;
     	}
@@ -388,7 +402,7 @@ class search_universes_controller {
     	switch($action) {
     		case 'edit':
     			$search_universe = new search_universe($id);
-    			print $search_universe->get_form(true);
+    			print encoding_normalize::utf8_normalize($search_universe->get_form(true));
     			break;
     		case 'save':
     			$search_universe= new search_universe($id);
@@ -414,6 +428,19 @@ class search_universes_controller {
     			$response['tree_data'] = $this->get_data();
     			print encoding_normalize::json_encode($response);
     			break;
+			case "duplicate":
+				$search_universe = new search_universe($id);
+				$duplicated = $search_universe->duplicate();
+				$response = array(
+					"status" => true,
+					"entity" => array(
+						"type" => "universe",
+						"id" => $duplicated->get_id()
+					)
+				);
+				$response['tree_data'] = $this->get_data();
+				print encoding_normalize::json_encode($response);
+				break;
     	}
     }
     
@@ -482,11 +509,11 @@ class search_universes_controller {
     	switch ($action) {
     	    case 'add' :
     	        $segment_search = new search_segment_search_perso($segment_id);
-    	        print $segment_search->get_search_form();    	        
+    	        print encoding_normalize::utf8_normalize($segment_search->get_search_form());    	        
     	        break;
     		case 'edit' :
     		    $search_persopac = new search_persopac($id);
-    			print $search_persopac->do_form();
+    		    print encoding_normalize::utf8_normalize($search_persopac->do_form());
     			break;
     		case 'save' :
     		    $search_persopac = new search_persopac($id);

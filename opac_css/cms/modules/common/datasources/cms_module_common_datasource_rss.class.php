@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_rss.class.php,v 1.18.2.1 2022/01/19 15:06:19 dgoron Exp $
+// $Id: cms_module_common_datasource_rss.class.php,v 1.20 2022/04/08 12:11:56 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -82,7 +82,7 @@ class cms_module_common_datasource_rss extends cms_module_common_datasource{
 			}
 			
 			$actual_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-			if ($actual_url != $url) {
+			if (!empty($url) && $actual_url != $url) {
     			$content = $aCurl->get($url);
     			$flux = $content->body;
     			if ($flux && $content->headers['Status-Code'] == 200) {

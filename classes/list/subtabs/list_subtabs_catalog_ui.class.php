@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_subtabs_catalog_ui.class.php,v 1.5.2.2 2021/09/21 11:34:17 dgoron Exp $
+// $Id: list_subtabs_catalog_ui.class.php,v 1.9 2022/06/15 12:05:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -78,6 +78,27 @@ class list_subtabs_catalog_ui extends list_subtabs_ui {
 				break;
 		}
 		return $title;
+	}
+	
+	protected function is_selected_tab($object) {
+		global $sub;
+	
+		switch (static::$categ) {
+			case 'search':
+				if(!empty($sub) && $sub != 'launch') {
+					return parent::is_selected_tab($object);
+				} else {
+					if(!empty($object->get_url_extra()) && strpos($object->get_url_extra(), '&mode=7') !== false) {
+						return ongletSelect("categ=".static::$categ.'&mode=7');
+					} elseif(!empty($object->get_url_extra()) && strpos($object->get_url_extra(), '&mode=8') !== false) {
+						return ongletSelect("categ=".static::$categ.'&mode=8');
+					} else {
+						return ongletSelect("categ=".static::$categ.(!empty($object->get_url_extra()) ? $object->get_url_extra() : ''));
+					}
+				}
+			default:
+				return parent::is_selected_tab($object);
+		}
 	}
 	
 	public function get_sub_title() {
@@ -169,7 +190,7 @@ class list_subtabs_catalog_ui extends list_subtabs_ui {
 						$this->add_subtab($sub, 'caddie_menu_action_edition', '', '&quelle=edition');
 						$this->add_subtab($sub, 'caddie_menu_action_impr_cote', '', '&quelle=impr_cote');
 						$this->add_subtab($sub, 'caddie_menu_action_export', '', '&quelle=export');
-						$this->add_subtab($sub, 'caddie_menu_action_exp_docnum', '', '&quelle=expdocnum');
+						$this->add_subtab($sub, 'caddie_menu_action_exp_docnum', '', '&quelle=docnum');
 						$this->add_subtab($sub, 'caddie_menu_action_selection', '', '&quelle=selection');
 						// On déclenche un événement sur la supression
 						require_once($class_path.'/event/events/event_users_group.class.php');

@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: google_book.class.php,v 1.10 2020/08/18 05:53:31 dgoron Exp $
+// $Id: google_book.class.php,v 1.11 2022/02/16 13:33:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $class_path,$base_path, $include_path;
+global $class_path;
 require_once($class_path."/connecteurs.class.php");
 require_once($class_path."/curl.class.php");
 
@@ -69,6 +69,8 @@ class google_book extends connector {
     
     public function make_serialized_source_properties($source_id) {
     	global $width,$height;
+    	
+    	$t=array();
     	$t["width"] = (int) $width;
     	$t["height"] = (int) $height;
     	
@@ -99,6 +101,7 @@ class google_book extends connector {
 	}
 	
 	public function getTypeOfEnrichment($source_id){
+		$type = array();
 		$type['type'] = array(
 			"books"
 		);		

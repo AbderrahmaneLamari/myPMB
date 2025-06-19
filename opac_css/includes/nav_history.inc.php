@@ -2,9 +2,10 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nav_history.inc.php,v 1.1.2.5 2021/11/17 14:22:54 qvarin Exp $
+// $Id: nav_history.inc.php,v 1.5 2022/02/07 09:01:58 jparis Exp $
 
 use Pmb\Common\Opac\Views\VueJsView;
+use Pmb\Common\Helper\Portal;
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -13,12 +14,9 @@ global $opac_nav_history_activated;
 if ($opac_nav_history_activated) {
 
     if (strpos($_SERVER["REQUEST_URI"], "ajax.php") === false) {
-        global $base_path;
-        
         //nav_history
-        require_once "$base_path/cms/modules/common/datasources/cms_module_common_datasource_typepage_opac.class.php";
-        $_SESSION["current_nav_page"] = cms_module_common_datasource_typepage_opac::get_label(cms_module_common_datasource_typepage_opac::get_type_page());
-        $_SESSION["current_nav_sub_page"] = cms_module_common_datasource_typepage_opac::get_label(cms_module_common_datasource_typepage_opac::get_subtype_page());
+        $_SESSION["current_nav_page"] = Portal::getLabel(Portal::getTypePage());
+        $_SESSION["current_nav_sub_page"] = Portal::getLabel(Portal::getSubTypePage());
     }
     
     global $id_empr, $navId;

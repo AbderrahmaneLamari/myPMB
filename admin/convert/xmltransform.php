@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: xmltransform.php,v 1.33 2019/12/30 15:58:51 btafforeau Exp $
+// $Id: xmltransform.php,v 1.35.2.1 2023/12/21 14:49:01 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "xmltransform.php")) die("no access");
+
+global $base_path, $include_path;
 
 if (version_compare(PHP_VERSION,'5','>=') && extension_loaded('xsl')) {
 	require_once($include_path.'/xslt-php4-to-php5.inc.php');
@@ -16,7 +18,7 @@ require_once ("$base_path/admin/convert/xml_unimarc.class.php");
 
 //Conversion par une feuille de style XSLT
 function perform_xslt($xml, $s, $islast, $isfirst, $param_path) {
-	global $base_path, $charset;
+	global $base_path, $charset, $opac_url_base;
 	$transform="$base_path/admin/convert/imports/".$param_path."/".$s['XSLFILE'][0]['value'];
 	
 	//Si c'est la première transformation, on rajoute les entêtes
@@ -47,12 +49,14 @@ function perform_xslt($xml, $s, $islast, $isfirst, $param_path) {
 	}
 
 	// Traite le document
-	if ($result = @xslt_process($xh, 'arg:/_xml', 'arg:/_xsl', NULL, array("/_xml" => $xml, "/_xsl" => $xsl))) {
+	$r=array();
+	if ($result = @xslt_process($xh, 'arg:/_xml', 'arg:/_xsl', NULL, array("/_xml" => $xml, "/_xsl" => $xsl), array("opac_url_base" => $opac_url_base))) {
 		$r['VALID']=true;
 		$r['DATA']=$result;
 		$r['ERROR']="";
 		//Si c'est la dernière transformation, on supprime les entêtes et l'élément root
 		if ($islast) {
+			$m = array();
 			$p = preg_match("/<".$s['TNOTICEELEMENT'][0]['value']."(?:\ [^>]*|)>/", $r["DATA"], $m, PREG_OFFSET_CAPTURE);
 			if ($p) {
 				$r['DATA'] = "  ".substr($r['DATA'], $m[0][1]);
@@ -79,12 +83,13 @@ function perform_xslt($xml, $s, $islast, $isfirst, $param_path) {
 
 //Conversion XML en iso2709
 function toiso($notice, $s, $islast, $isfirst, $param_path) {
+	$r = array();
 	$x2i = new xml_unimarc();
 	$x2i -> XMLtoiso2709_notice($notice,(isset($s['ENCODING']) ? $s['ENCODING'] : ''));
-	if($x2i->warning_msg[0]){
+	if(!empty($x2i->warning_msg[0])){
 		$r['WARNING']=$x2i->warning_msg[0];
 	}
-	if ($x2i->n_valid==0) {
+	if (!empty($x2i->n_valid==0)) {
 		$r['VALID']=false;
 		$r['DATA']="";
 		$r['ERROR']=$x2i->error_msg[0];
@@ -100,6 +105,8 @@ function toiso($notice, $s, $islast, $isfirst, $param_path) {
 function isotoxml($notice, $s, $islast, $isfirst, $param_path) {
 	global $charset;
 	global $output_params;
+	
+	$r = array();
 	$i2x = new xml_unimarc();
 	$i2x->iso2709toXML_notice($notice,$s['FORMAT']);
 	if ($i2x->n_valid == 0) {
@@ -123,6 +130,13 @@ function isotoxml($notice, $s, $islast, $isfirst, $param_path) {
 //Conversion texte en XML
 function texttoxml($notice, $s, $islast, $isfirst, $param_path) {
 	global $cols, $charset;
+	
+	//initialisations de tableaux utilisés plus loin
+	$rep_field = array();
+	$rep_subfield = array();
+	$vput = array();
+	$sep = array();
+	$vpt = array();
 	
 	eval("\$spt=\"".$s["SEPARATOR"][0]["value"]."\";");
 	$fields=explode($spt,$notice);
@@ -227,7 +241,7 @@ function texttoxml($notice, $s, $islast, $isfirst, $param_path) {
 				if ($s["DELIMITEDBY"][0]["value"]) {
 					$fields[$ids[$j]-1]=trim($fields[$ids[$j]-1],$s["DELIMITEDBY"][0]["value"]);
 				}
-				if ($s["ESCAPED"][0]["value"]=="yes") {
+				if ($s["ESCAPED"][0]['value']=="yes") {
 					$fields[$ids[$j]-1]=stripslashes($fields[$ids[$j]-1]);
 				}
 				$vpte=$fields[$ids[$j]-1];
@@ -323,6 +337,7 @@ function texttoxml($notice, $s, $islast, $isfirst, $param_path) {
 		}
 		$param["f"][]=$f;
 	}*/
+	$r=array();
 	$r['DATA']=@array_to_xml($param,"notice");
 	if ($r['DATA']) {
 		//Si ce n'est pas la dernière transformation, on rajoute des tags root et l'entête

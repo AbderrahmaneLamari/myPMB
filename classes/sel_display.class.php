@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sel_display.class.php,v 1.27.4.2 2022/01/21 14:38:48 dgoron Exp $
+// $Id: sel_display.class.php,v 1.29 2022/01/21 14:36:29 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

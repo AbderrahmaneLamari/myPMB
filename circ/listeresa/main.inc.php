@@ -2,14 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.68.2.3 2021/10/21 13:07:36 dgoron Exp $
+// $Id: main.inc.php,v 1.72.4.1 2023/06/02 13:07:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $include_path, $msg, $charset, $action, $sub, $id, $PMBuserid;
 global $form_cb_expl, $impression_confirmation;
 global $pmb_transferts_actif, $transfert_id_resa, $cb_trans;
-global $pmb_lecteurs_localises, $deflt_resas_location, $f_loc;
 
 if(!isset($suppr_id_resa)) $suppr_id_resa = array();
 
@@ -298,7 +297,7 @@ switch($action) {
 	default:
 	    $evth = events_handler::get_instance();
 	    $evt = new event_list_ui("listeresa", $action);
-	    $evt->set_resa_id($suppr_id_resa);
+	    $evt->set_object_id($suppr_id_resa);
 	    $evth->send($evt);
 	    break;
 }
@@ -323,24 +322,10 @@ switch($sub) {
 	default:
 	case 'encours':
 		list_reservations_circ_ui::set_globals_from_selected_filters();
-		if(!isset($f_loc) || $f_loc=="") {
-			if ($pmb_lecteurs_localises){
-				$f_loc = $deflt_resas_location;
-			} else {
-				$f_loc = 0;
-			}
-		}
-		
-		get_cb_expl("", $msg[661], $msg['resa_pointage_doc'], "./circ.php?categ=listeresa&sub=$sub&action=valide_cb&f_loc=$f_loc");
-
-		//un message à afficher
-		print $msg_a_pointer ;
-		
-		//on affiche la liste
-		echo $resa_liste_jscript_GESTION_INFO_GESTION;
 		
 		require_once($class_path."/reservations/reservations_circ_controller.class.php");
 		reservations_circ_controller::set_ancre($ancre);
+		reservations_circ_controller::set_msg_a_pointer($msg_a_pointer);
 		reservations_circ_controller::proceed($id);
 		break;
 }

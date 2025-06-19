@@ -2,13 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: domain.inc.php,v 1.10.4.1 2021/12/22 14:18:44 dgoron Exp $
+// $Id: domain.inc.php,v 1.12 2022/12/26 13:19:15 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $class_path, $include_path, $database_window_title, $action, $msg, $charset, $id, $ac, $dom, $chk_rights;
-global $admin_layout;
+global $class_path, $include_path, $action, $msg, $charset, $id, $ac, $dom, $chk_rights;
 
+require_once($class_path."/acces/acces_profiles_controller.class.php");
 require_once("$class_path/acces.class.php");
 require_once("$include_path/templates/acces.tpl.php");
 
@@ -16,32 +16,10 @@ require_once("$include_path/templates/acces.tpl.php");
 if (!$id) return;
 if (!$ac) {
 	$ac= new acces();
-	$t_cat= $ac->getCatalog();
 }
 if (empty($dom)) {
 	$dom=$ac->setDomain($id);
 }
-
-
-echo window_title($database_window_title.$msg[7].$msg[1003].$msg[1001]);
-//construction menu
-$admin_menu_acces = "<h1>".htmlentities($msg["admin_menu_acces"], ENT_QUOTES, $charset)."<span>&nbsp;&gt;&nbsp;!!menu_sous_rub!!</span></h1>";
-$admin_menu_acces.= "<div class='hmenu'>";
-foreach($t_cat as $k=>$v) {
-	$lib=htmlentities($v['comment'], ENT_QUOTES, $charset);
-	$admin_menu_acces.= '<span';
-	if ($id==$k) {
-		$admin_menu_acces.= " class='selected'";
-		$menu_sous_rub=$lib;
-	}
-	$admin_menu_acces.= "><a href='./admin.php?categ=acces&sub=domain&action=view&id=".$k."'>$lib</a></span>";
-}
-unset($v);
-$admin_menu_acces.= "</div>";
-$admin_menu_acces=str_replace('!!menu_sous_rub!!',$menu_sous_rub, $admin_menu_acces);
-$admin_layout = str_replace('!!menu_contextuel!!', $admin_menu_acces, $admin_layout);
-print $admin_layout;
-		
 
 function show_domain($id,$maj=false) {
 	global $msg, $charset;
@@ -49,16 +27,7 @@ function show_domain($id,$maj=false) {
 	global $dom_view_form, $dom_glo_rights_form,$maj_form; 
 	
 	$form = $dom_view_form;
-	
-	//affichage lien roles utilisateurs
-	$txt = htmlentities($dom->getComment('user_prf_lib'),ENT_QUOTES,$charset);
-	$row = "<tr style=\"cursor:pointer;\" onmousedown=\"document.location='./admin.php?categ=acces&sub=user_prf&action=list&id=$id';\" ";
-	$row.= "onmouseout=\"this.className='even'\" onmouseover=\"this.className='surbrillance'\" class=\"even\"><td><strong>$txt</strong></td></tr>";
-	//affichage lien profils ressources
-	$txt = htmlentities($dom->getComment('res_prf_lib'),ENT_QUOTES,$charset);
-	$row.= "<tr style=\"cursor:pointer;\" onmousedown=\"document.location='./admin.php?categ=acces&sub=res_prf&action=list&id=$id';\" ";
-	$row.= "onmouseout=\"this.className='odd'\" onmouseover=\"this.className='surbrillance'\" class=\"odd\"><td><strong>$txt</strong></td></tr>";
-	$form = str_replace ('<!-- rows -->', $row, $form);
+	$form = str_replace ('<!-- rows -->', acces_profiles_controller::get_display_table_links($id), $form);
 	
 	//affichage droits
 	$r_header = $msg['dom_rights_lib'];

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_date.class.php,v 1.2.10.1 2021/07/27 13:55:26 qvarin Exp $
+// $Id: onto_common_datatype_date.class.php,v 1.3 2021/07/27 13:57:26 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

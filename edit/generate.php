@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: generate.php,v 1.20.2.1 2021/11/16 08:27:50 dgoron Exp $
+// $Id: generate.php,v 1.21 2021/11/16 08:27:13 dgoron Exp $
 
 //modifié 12/2007 François CEROVETTI pour affichage code en clair avec police vectorielle.
 // lire exemple de valeurs adaptées à 65 etiquettes AVERY A4 plus bas:

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mono_display_expl.class.php,v 1.27.2.1 2022/01/04 09:32:38 dgoron Exp $
+// $Id: mono_display_expl.class.php,v 1.28 2022/01/04 09:23:42 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

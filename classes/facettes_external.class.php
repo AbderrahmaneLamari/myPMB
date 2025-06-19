@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facettes_external.class.php,v 1.17 2020/03/17 13:07:07 qvarin Exp $
+// $Id: facettes_external.class.php,v 1.18 2022/02/10 10:46:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/facettes_root.class.php");
 
 class facettes_external extends facettes_root {
@@ -53,8 +54,8 @@ class facettes_external extends facettes_root {
 	}
 	
 	public static function get_sub_queries($id_critere, $id_ss_critere, $values=array()) {
-		$id_critere += 0;
-		$id_ss_critere += 0;
+		$id_critere = intval($id_critere);
+		$id_ss_critere = intval($id_ss_critere);
 		$type='notices_externes';
 		self::parse_xml_file($type);
 		$unimarcFields = array();
@@ -301,7 +302,6 @@ class facettes_external extends facettes_root {
 	}
 	
 	protected static function get_link_back($reinit_compare=false) {
-		global $base_path;
 		if($reinit_compare) {
 			$link = "facettes_external_reinit_compare();";
 		} else {
@@ -373,8 +373,8 @@ class facettes_external extends facettes_root {
 	}
 	
 	public static function get_formatted_value($id_critere, $id_ss_critere, $value) {
-		$id_critere += 0;
-		$id_ss_critere += 0;
+		$id_critere = intval($id_critere);
+		$id_ss_critere = intval($id_ss_critere);
 		$fields = static::$fields['notices_externes']['FIELD'];
 		if(is_array($fields)) {
 			foreach ($fields as $field) {

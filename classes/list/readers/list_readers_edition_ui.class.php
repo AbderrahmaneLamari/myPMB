@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_readers_edition_ui.class.php,v 1.15.2.2 2021/09/18 13:48:09 dgoron Exp $
+// $Id: list_readers_edition_ui.class.php,v 1.19.4.2 2023/09/20 07:35:05 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -83,119 +83,94 @@ class list_readers_edition_ui extends list_readers_ui {
 		return "<h1>".$msg["1120"].": ".$this->get_sub_title()."</h1>";
 	}
 	
-	protected function get_selection_actions() {
+	protected function init_default_selection_actions() {
 		global $msg;
 		global $sub;
+		global $empr_relance_adhesion;
 		global $empr_show_caddie;
 		
-		if(!isset($this->selection_actions)) {
-			$this->selection_actions = array();
-			switch ($sub) {
-				case 'categ_change':
-					$link = array(
-						'href' => static::get_controller_url_base()."&categ_action=change_categ_empr",
-						'confirm' => $msg["empr_categ_confirm_change"]
-					);
-					$this->selection_actions[] = $this->get_selection_action('change_categ', $msg["save_change_categ"], 'group_by_grey.png', $link);
-					break;
-				case 'limite':
-				case 'depasse':
-					$link = array(
-						'href' => static::get_controller_url_base()."&action=print_all"
-					);
-					$this->selection_actions[] = $this->get_selection_action('print_all_relances', $msg["print_all_relances"], 'doc.gif', $link);
-					break;
-			}
-			if ($empr_show_caddie) {
-				$link = array();
-				$link['openPopUp'] = "./cart.php?object_type=EMPR&action=add_empr_".$sub."&sub_action=add";
-				$link['openPopUpTitle'] = 'cart';
-				$this->selection_actions[] = $this->get_selection_action('add_empr_cart', $msg['add_empr_cart'], 'basket_20x20.gif', $link);
-			}
+		switch ($sub) {
+			case 'categ_change':
+				$link = array(
+					'href' => static::get_controller_url_base()."&categ_action=change_categ_empr",
+					'confirm' => $msg["empr_categ_confirm_change"]
+				);
+				$this->add_selection_action('change_categ', $msg["save_change_categ"], 'group_by_grey.png', $link);
+				break;
+			case 'limite':
+			case 'depasse':
+				$link = array(
+					'href' => static::get_controller_url_base()."&action=print",
+                    'confirm' => ($empr_relance_adhesion ? $msg["readers_relances_send_confirm"] : $msg["readers_relances_print_confirm"])
+				);
+				$this->add_selection_action('print_relances', ($empr_relance_adhesion ? $msg["readers_relances_send"] : $msg["readers_relances_print"]), 'doc.gif', $link);
+				break;
 		}
-		return $this->selection_actions;
+		if ($empr_show_caddie) {
+			$link = array(
+					'openPopUp' => "./cart.php?object_type=EMPR&action=add_empr_".$sub."&sub_action=add",
+					'openPopUpTitle' => 'cart'
+			);
+			$this->add_selection_action('add_empr_cart', $msg['add_empr_cart'], 'basket_20x20.gif', $link);
+		}
 	}
 	
 	protected function get_selection_mode() {
 		return "button";
 	}
 		
-	/**
-	 * Affichage d'une colonne
-	 * @param object $object
-	 * @param string $property
-	 */
-	protected function get_display_cell($object, $property) {
-		$display = '';
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch ($property) {
 			case 'relance':
 			case 'categ_change':
-				$attributes = array();
-				break;
+				return array();
 			default:
-				$attributes = array(
-					'onclick' => "document.location=\"".$this->get_edition_link($object)."\";"
+				return array(
+						'onclick' => "document.location=\"".$this->get_edition_link($object)."\";"
 				);
-				break;
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
-	protected function add_event_on_selection_action($action=array()) {
-		global $msg;
+	protected function get_search_buttons_extension() {
+	    global $msg, $charset;
+	    global $empr_relance_adhesion;
+	    
+	    if(count($this->objects)) {
+            $action = array(
+    	            'name' => 'print_all_relances',
+                    'link' => array(
+                        'href' => static::get_controller_url_base()."&action=print_all",
+                        'confirm' => ($empr_relance_adhesion ? $msg['readers_all_relances_send_confirm'] : $msg['readers_all_relances_print_confirm'])
+                    )
+            );
+            if($empr_relance_adhesion) {
+                $label = $msg['readers_all_relances_send'];
+            } else {
+                $label = $msg['readers_all_relances_print'];
+            }
+            return "
+    			<input type='button' class='bouton' id='".$this->objects_type."_global_action_print_all_relances_link' value='".htmlentities($label, ENT_QUOTES, $charset)."' />
+    			".$this->add_event_on_global_action($action);
+	    }
+	    return "";
+	}
 	
-		$display = "
-			on(dom.byId('".$this->objects_type."_selection_action_".$action['name']."_link'), 'click', function() {
-				var selection = new Array();
-				query('.".$this->objects_type."_selection:checked').forEach(function(node) {
-					selection.push(node.value);
+	protected function get_inheritance_nodes_selected_objects_form($action=array()) {
+		return "
+			var categ_change = new Array();
+			query('.".$this->objects_type."_categ_change').forEach(function(node) {
+				categ_change.push(node);
+			});
+			categ_change.forEach(function(selector_node) {
+				var empr_id = selector_node.getAttribute('data-empr-id');
+				var selected_categs_hidden = domConstruct.create('input', {
+					type : 'hidden',
+					name : '".$this->objects_type."_categ_change['+empr_id+']',
+					value : selector_node.value
 				});
-				var categ_change = new Array();
-				query('.".$this->objects_type."_categ_change').forEach(function(node) {
-					categ_change.push(node);
-				});
-				if(selection.length) {
-					var confirm_msg = '".(isset($action['link']['confirm']) ? addslashes($action['link']['confirm']) : '')."';
-					if(!confirm_msg || confirm(confirm_msg)) {
-						".(isset($action['link']['href']) && $action['link']['href'] ? "
-							var selected_objects_form = domConstruct.create('form', {
-								action : '".$action['link']['href']."',
-								name : '".$this->objects_type."_selected_objects_form',
-								id : '".$this->objects_type."_selected_objects_form',
-								method : 'POST'
-							});
-							selection.forEach(function(selected_option) {
-								var selected_objects_hidden = domConstruct.create('input', {
-									type : 'hidden',
-									name : '".$this->get_name_selected_objects()."[]',
-									value : selected_option
-								});
-								domConstruct.place(selected_objects_hidden, selected_objects_form);
-							});
-							categ_change.forEach(function(selector_node) {
-								var empr_id = selector_node.getAttribute('data-empr-id');
-								var selected_categs_hidden = domConstruct.create('input', {
-									type : 'hidden',
-									name : '".$this->objects_type."_categ_change['+empr_id+']',
-									value : selector_node.value
-								});
-								domConstruct.place(selected_categs_hidden, selected_objects_form);
-							});	
-							domConstruct.place(selected_objects_form, dom.byId('list_ui_selection_actions'));
-							dom.byId('".$this->objects_type."_selected_objects_form').submit();
-							"
-						: "")."
-						".(isset($action['link']['openPopUp']) && $action['link']['openPopUp'] ? "openPopUp('".$action['link']['openPopUp']."&selected_objects='+selection.join(','), '".$action['link']['openPopUpTitle']."'); return false;" : "")."
-						".(isset($action['link']['onClick']) && $action['link']['onClick'] ? $action['link']['onClick']."(selection); return false;" : "")."
-					}
-				} else {
-					alert('".addslashes($msg['list_ui_no_selected'])."');
-				}
+				domConstruct.place(selected_categs_hidden, selected_objects_form);
 			});
 		";
-		return $display;
 	}
 	
 	protected function get_display_others_actions() {

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: webdav.class.php,v 1.34 2021/01/13 14:24:58 btafforeau Exp $
+// $Id: webdav.class.php,v 1.36 2022/09/14 14:38:51 dbellamy Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path, $include_path, $base_path;
@@ -28,7 +28,6 @@ require_once($class_path.'/nomenclature/nomenclature_record_formation.class.php'
 require_once($class_path.'/nomenclature/nomenclature_nomenclature.class.php');
 require_once($class_path.'/nomenclature/nomenclature_musicstand.class.php');
 require_once($class_path.'/authperso_authority.class.php');
-require_once($class_path."/autoloader.class.php");
 require_once($class_path."/concept.class.php");
 require_once($class_path."/index_concept.class.php");
 require_once($class_path."/titre_uniforme.class.php");
@@ -383,10 +382,7 @@ class webdav_source extends connecteur_out_source {
 		$result.="				
 			</div>
 			<div class='row'>&nbsp;</div>
-			<script src=\"./javascript/select.js\" type='text/javascript'></script>
-			<script src=\"./javascript/upload.js\" type='text/javascript'></script>";
-				//Intégration de la gestion de l'interface de l'upload
-
+			<script src=\"./javascript/select.js\" type='text/javascript'></script>";
 		
 		//statut docunum
 		$result.="

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_docs_location_ui.class.php,v 1.4 2021/04/19 07:10:06 dgoron Exp $
+// $Id: list_configuration_docs_location_ui.class.php,v 1.4.6.1 2023/03/24 07:55:33 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -32,21 +32,20 @@ class list_configuration_docs_location_ui extends list_configuration_docs_ui {
 		$this->set_setting_column('location_visible_opac', 'datatype', 'boolean');
 	}
 	
-	protected function get_cell_content($object, $property) {
-		$content = '';
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch($property) {
 			case 'location_libelle':
 				if ($object->locdoc_owner) {
-					$content .= "<i>".$object->location_libelle."</i>";
+					return array(
+							'style' => 'font-style:italic;'
+					);
 				} else {
-					$content .= "<strong>".$object->location_libelle."</strong>";
+					return array(
+							'style' => 'font-weight:bold;'
+					);
 				}
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
 		}
-		return $content;
+		return parent::get_default_attributes_format_cell($object, $property);
 	}
 	
 	protected function get_edition_link($object) {

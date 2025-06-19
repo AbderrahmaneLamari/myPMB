@@ -2,32 +2,19 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesSearch.class.php,v 1.42.2.3 2021/09/13 08:34:11 rtigero Exp $
+// $Id: pmbesSearch.class.php,v 1.47.4.1 2023/03/16 10:52:51 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $base_path, $class_path, $include_path;
+global $class_path;
 global $charset, $msg, $lang;
 global $pmb_external_service_session_duration;
-global $search, $explicit_search;
+global $search;
 
 require_once $class_path."/external_services.class.php";
 require_once $class_path."/external_services_common.class.php";
 
 class pmbesSearch extends external_services_api_class {
-
-
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
 	
 	public function update_session_date($session_id) {
 		$sql = "UPDATE es_searchsessions SET es_searchsession_lastseendate = NOW() WHERE es_searchsession_id = '".addslashes($session_id)."'";
@@ -224,7 +211,7 @@ class pmbesSearch extends external_services_api_class {
 	 */
 	public function getAdvancedSearchField($field_id, $search_realm, $vlang, $fetch_values, $search_object=NULL, $nocache=false) {
 		
-		$result = external_services_common::getAdvancedSearchField($field_id, $search_realm, $vlang, $fetch_values);
+		$result = external_services_common::getAdvancedSearchField($field_id, $search_realm, $vlang, $fetch_values, $search_object, $nocache);
 		return utf8_normalize($result);
 	}
 	
@@ -484,8 +471,8 @@ class pmbesSearch extends external_services_api_class {
 	}
 	
 	public function listFacets($searchId, $fields = array(), $filters = array()) {
-        global $lang;
-	    
+	    global $lang, $msg;
+        
 		object_to_array($fields);
  		object_to_array($filters);
 		$facets = array();
@@ -525,6 +512,38 @@ class pmbesSearch extends external_services_api_class {
 						}
 						$query .= " and lang in ('','".$lang."','".substr($lang,0,2)."')";
 						$query .= " and id_notice in (".implode(',', $notice_ids).") group by value";
+						
+						if (isset($field['type_sort']) && $field['type_sort'] == 0) {
+						    $query .= " ORDER BY nb_records";
+						} elseif (!empty($field['datatype_sort'])) {
+						    switch ($field['datatype_sort']) {
+						        case "date":
+						            $query .= " ORDER BY STR_TO_DATE(value,'".$msg['format_date']."')";
+                                    break;
+                                    
+						        case "num":
+						            $query .= " ORDER BY value*1";
+                                    break;
+						        
+						        default:
+						            $query .= " ORDER BY value";
+                                    break;
+						    }
+						}
+						
+						if (isset($field['order_sort'])) {						    
+    						if (0 == $field['order_sort']) {
+    						    $query .= " ASC";						    
+    						} else {
+    						    $query .= " DESC";						    
+    						}
+						}
+						
+						
+						if(isset($field['nb_result']) &&  0 < $field['nb_result']){
+						    $query .= " LIMIT"." ".intval($field['nb_result']);
+						}
+						
 						$result = pmb_mysql_query($query);
 						while($row = pmb_mysql_fetch_object($result)) {
 							$facets[] = array(

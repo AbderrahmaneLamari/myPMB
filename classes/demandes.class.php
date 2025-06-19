@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes.class.php,v 1.77 2021/06/01 07:42:25 dgoron Exp $
+// $Id: demandes.class.php,v 1.78.4.3 2024/01/05 15:32:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -52,6 +52,7 @@ class demandes {
 	public $reponse_finale='';
 	public $dmde_read_opac=0;
 	public $num_faq_question = 0;
+	public $num_user;
 	
 	/**
 	 * Identifiant de la notice liée
@@ -157,13 +158,12 @@ class demandes {
 				$this->users[$i]['id'] = $user->num_user;
 				$this->users[$i]['statut'] = $user->users_statut;
 				$i++;
-			}					
+			}
 		} else {
 			$this->num_user = array();
 			$workflow = new workflow('ACTIONS');
 			$this->allowed_actions = $workflow->getTypeList();
 			$allowed_actions = array();
-			
 			foreach($this->allowed_actions as $allowed_action){
 				$allowed_action['active'] = 1;
 				$allowed_actions[] = $allowed_action;
@@ -221,34 +221,105 @@ class demandes {
 		}
 	}
 	
+	public function get_content_form(){
+	    global $charset;
+	    
+	    if(!$this->id_demande){
+	        $this->date_demande = date("Y-m-d",time());
+	        $this->date_prevue = date("Y-m-d",time());
+	        $this->deadline_demande = date("Y-m-d",time());
+	    }
+	    
+	    $themes = new demandes_themes('demandes_theme','id_theme','libelle_theme',$this->theme_demande);
+	    $types = new demandes_types('demandes_type','id_type','libelle_type',$this->type_demande);
+	    
+	    $interface_content_form = new interface_content_form(static::class);
+	    $interface_content_form->add_element('id_theme', 'demandes_theme')
+	    ->set_class('colonne2')
+	    ->add_html_node($themes->getListSelector($this->theme_demande));
+	    
+	    $interface_content_form->add_element('id_type', 'demandes_type')
+	    ->set_class('colonne2')
+	    ->add_html_node($types->getListSelector($this->type_demande));
+	    
+	    if(!$this->id_demande){
+	        $interface_content_form->add_element('etat', 'demandes_etat')
+	        ->set_class('colonne2')
+	        ->add_html_node($this->getStateSelector());
+	    } else {
+	        $interface_content_form->add_element('etat', 'demandes_etat')
+	        ->set_class('colonne2')
+	        ->add_html_node($this->workflow->getStateCommentById($this->etat_demande));
+	    }
+	    
+	    $interface_content_form->add_element('progression', 'demandes_progression')
+	    ->set_class('colonne2')
+	    ->add_input_node('integer', $this->progression);
+	    
+	    $interface_content_form->add_element('titre', 'demandes_titre')
+	    ->add_input_node('text', $this->titre_demande);
+	    
+	    $interface_content_form->add_element('sujet', 'demandes_sujet')
+	    ->add_textarea_node($this->sujet_demande, 55, 4)
+	    ->set_attributes(array('wrap' => 'virtual'));
+	    
+	    $interface_content_form->add_element('date_debut', 'demandes_date_dmde')
+	    ->set_class('colonne3')
+	    ->add_input_node('date', $this->date_demande);
+	    
+	    $interface_content_form->add_element('date_prevue', 'demandes_date_prevue')
+	    ->set_class('colonne3')
+	    ->add_input_node('date', $this->date_prevue);
+	    
+	    $interface_content_form->add_element('date_fin', 'demandes_date_butoir')
+	    ->set_class('colonne3')
+	    ->add_input_node('date', $this->deadline_demande);
+	    
+	    $nom_demandeur = '';
+	    if ($this->num_demandeur) {
+    	    $carac_empr = $this->getCaracEmpr($this->num_demandeur);
+    	    $nom_demandeur = $carac_empr['nom'];
+	    }
+	    $demandeur_html_node = " 
+            <input type='hidden' id='idempr' name='idempr' value='".$this->num_demandeur."' />
+			<input type='text' id='empr_txt' name='empr_txt' class='saisie-20emr' value='".htmlentities($nom_demandeur, ENT_QUOTES, $charset)."' completion='empr' autfield='idempr' autocomplete='off' tabindex='1'/>
+			<input type='button' class='bouton_small' value='...' onclick=\"openPopUp('./select.php?what=origine&caller=modif_dmde&param1=idempr&param2=empr_txt&deb_rech='+".pmb_escape()."(this.form.empr_txt.value)+'&filtre=ONLY_EMPR', 'selector')\" />
+			<input type='button' class='bouton_small' value='X' onclick=\"this.form.idempr.value='0';this.form.empr_txt.value='';\"/>";
+	    $interface_content_form->add_element('empr_txt', 'demandes_demandeur')
+	    ->set_class('colonne3')
+	    ->add_html_node($demandeur_html_node);
+	    
+	    $interface_content_form->add_element('demandes_ui_search_filter_affectation', 'demandes_attribution')
+	    ->set_class('colonne3')
+	    ->add_html_node($this->getUsersSelector('',false,true));
+	    
+	    if ($this->num_linked_notice) {
+	        $display = new mono_display($this->num_linked_notice, 0, '', 0, '', '', '',0, 0, 0, 0,"", 0, false, true);
+	        $linked_record = strip_tags($display->result);
+	    } else {
+	        $linked_record = '';
+	    }
+	    $linked_record_html_node = "
+            <input id='linked_record_label' class='saisie-80emr' type='text' autexclude='0' autfield='linked_record_id' completion='notice' value='".htmlentities($linked_record, ENT_QUOTES, $charset)."' name='linked_record_label' autocomplete='off'>
+		<input class='bouton' type='button' onclick='openPopUp(\"./select.php?what=notice&caller=modif_dmde&param1=linked_record_id&param2=linked_record_label&no_display=0\", \"selector_notice\")' value='...'>
+		<input class='bouton' type='button' onclick='this.form.linked_record_label.value=\"\"; this.form.linked_record_id.value=\"0\";' value='X'>
+		<input id='linked_record_id' type='hidden' value='".htmlentities($this->num_linked_notice, ENT_QUOTES, $charset)."' name='linked_record_id'>";
+	    
+	    $interface_content_form->add_element('linked_record_label', 'demandes_linked_record')
+	    ->add_html_node($linked_record_html_node);
+	    
+	    return $interface_content_form->get_display();
+	    
+	}
 	/*
 	 * Formulaire de création d'une demande
 	 */
 	public function show_modif_form(){
-		global $form_modif_demande, $msg, $charset, $form_linked_record;
+		global $form_modif_demande, $msg, $charset;
 		
-		$themes = new demandes_themes('demandes_theme','id_theme','libelle_theme',$this->theme_demande);
-		$types = new demandes_types('demandes_type','id_type','libelle_type',$this->type_demande);
-		
+		$form_modif_demande = str_replace('!!content_form!!', $this->get_content_form(), $form_modif_demande);
 		if(!$this->id_demande){
 			$form_modif_demande = str_replace('!!form_title!!',htmlentities($msg['demandes_creation'],ENT_QUOTES,$charset),$form_modif_demande);
-			$form_modif_demande = str_replace('!!empr_txt!!','',$form_modif_demande);
-			$form_modif_demande = str_replace('!!select_etat!!',$this->getStateSelector(),$form_modif_demande);
-			
-			$date = formatdate(today());
-			$date_debut=date("Y-m-d",time());
-			$date_dmde = "<input type='button' class='bouton' id='date_debut_btn' name='date_debut_btn' value='!!date_debut_btn!!' 
-				onClick=\"openPopUp('./select.php?what=calendrier&caller=modif_dmde&date_caller=!!date_debut!!&param1=date_debut&param2=date_debut_btn&auto_submit=NO&date_anterieure=YES', 'calendar')\"/>";
-			$form_modif_demande = str_replace('!!date_demande!!',$date_dmde,$form_modif_demande);
-			
-			$form_modif_demande = str_replace('!!date_fin_btn!!',$date,$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_debut_btn!!',$date,$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_debut!!',$date_debut,$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_fin!!',$date_debut,$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_prevue!!',$date_debut,$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_prevue_btn!!',$date,$form_modif_demande);
-			
-			
 			$form_modif_demande = str_replace('!!btn_suppr!!','',$form_modif_demande);		
 			$act_cancel = "document.location='./demandes.php?categ=list'";
 			$act_form = "./demandes.php?categ=list";
@@ -257,42 +328,12 @@ class demandes {
 			$btn_suppr = "<input type='submit' class='bouton' value='$msg[63]' onclick='this.form.act.value=\"suppr\"; return confirm_delete();' />";			
 			$form_modif_demande = str_replace('!!form_title!!',htmlentities(sprintf($msg['demandes_modification'],' : '.$this->titre_demande),ENT_QUOTES,$charset),$form_modif_demande);
 			$form_modif_demande = str_replace('!!btn_suppr!!',$btn_suppr,$form_modif_demande);
-			
-			$carac_empr = $this->getCaracEmpr($this->num_demandeur);
-			$nom = $carac_empr['nom'];
-			$form_modif_demande = str_replace('!!empr_txt!!',htmlentities($nom,ENT_QUOTES,$charset),$form_modif_demande);
-			
-			$form_modif_demande = str_replace('!!select_etat!!',$this->workflow->getStateCommentById($this->etat_demande),$form_modif_demande);
-			
-			$form_modif_demande = str_replace('!!date_fin_btn!!',formatdate($this->deadline_demande),$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_demande!!',formatdate($this->date_demande),$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_debut!!',htmlentities($this->date_demande,ENT_QUOTES,$charset),$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_fin!!',htmlentities($this->deadline_demande,ENT_QUOTES,$charset),$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_prevue_btn!!',formatdate($this->date_prevue),$form_modif_demande);
-			$form_modif_demande = str_replace('!!date_prevue!!',htmlentities($this->date_prevue,ENT_QUOTES,$charset),$form_modif_demande);
-
 			$act_cancel = "document.location='./demandes.php?categ=gestion&act=see_dmde&iddemande=$this->id_demande'";
 			$act_form = "./demandes.php?categ=gestion";
 
 		}
 		$form_modif_demande = str_replace('!!iddemande!!',$this->id_demande,$form_modif_demande);
 		$form_modif_demande = str_replace('!!idempr!!',$this->num_demandeur,$form_modif_demande);
-		$form_modif_demande = str_replace('!!titre!!',htmlentities($this->titre_demande,ENT_QUOTES,$charset),$form_modif_demande);
-		$form_modif_demande = str_replace('!!sujet!!',htmlentities($this->sujet_demande,ENT_QUOTES,$charset),$form_modif_demande);
-		$form_modif_demande = str_replace('!!progression!!',htmlentities($this->progression,ENT_QUOTES,$charset),$form_modif_demande);
-		$form_modif_demande = str_replace('!!select_theme!!',$themes->getListSelector($this->theme_demande),$form_modif_demande);
-		$form_modif_demande = str_replace('!!select_type!!',$types->getListSelector($this->type_demande),$form_modif_demande);
-		$form_modif_demande = str_replace('!!select_user!!',$this->getUsersSelector('',false,true),$form_modif_demande);
-		
-		$form_modif_demande = str_replace('!!form_linked_record!!', $form_linked_record, $form_modif_demande);
-		if ($this->num_linked_notice) {
-			$display = new mono_display($this->num_linked_notice, 0, '', 0, '', '', '',0, 0, 0, 0,"", 0, false, true);
-			$form_modif_demande = str_replace('!!linked_record!!', htmlentities($display->result, ENT_QUOTES, $charset), $form_modif_demande);
-			$form_modif_demande = str_replace('!!linked_record_id!!', htmlentities($this->num_linked_notice, ENT_QUOTES, $charset), $form_modif_demande);
-		} else {
-			$form_modif_demande = str_replace('!!linked_record!!', "", $form_modif_demande);
-			$form_modif_demande = str_replace('!!linked_record_id!!', 0, $form_modif_demande);
-		}
 		
 		$perso = '';
 		$p_perso=new parametres_perso("demandes");
@@ -615,8 +656,8 @@ class demandes {
 		//CREATION de la notice associée
 		if($demandes_notice_auto === "1"){
 			$query = "INSERT INTO notices SET
-			tit1='".$this->notice->tit1."',
-			n_contenu='".$this->notice->n_contenu."',
+			tit1='".addslashes($this->notice->tit1)."',
+			n_contenu='".addslashes($this->notice->n_contenu)."',
 			statut ='".$this->notice->statut."',
 			create_date='".date('Y-m-d H:i:s')."'";
 			
@@ -796,8 +837,8 @@ class demandes {
 		global $charset,$msg, $iduser;
 		
 		if($multiple)
-			$mul = " name='iduser[]' multiple ";
-		else $mul = " name='iduser' ";
+			$mul = " id='iduser' name='iduser[]' multiple ";
+		else $mul = " id='iduser' name='iduser' ";
 		
 		if(!$this->id_demande){
 			$req="select TRIM(concat(prenom,' ',nom)) as name, userid, 0 as actif, username
@@ -1406,8 +1447,8 @@ class demandes {
 		
 		// creation notice à partir de la demande
 		$req = "insert into notices set
-				tit1='".$this->titre_demande."',
-				n_contenu='".$this->sujet_demande."',
+				tit1='".addslashes($this->titre_demande)."',
+				n_contenu='".addslashes($this->sujet_demande)."',
 				statut ='".$demandes_statut_notice."'
 				";				
 				pmb_mysql_query($req);
@@ -1544,7 +1585,9 @@ class demandes {
 		
 		if($pmb_javascript_office_editor){
 			print $pmb_javascript_office_editor;
-			print "<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+			print "<script type='text/javascript'>
+                pmb_include('$base_path/javascript/tinyMCE_interface.js');
+            </script>";
 		}
 		
 		$form_reponse_final = str_replace('!!titre_dmde!!',htmlentities($this->titre_demande,ENT_QUOTES,$charset),$form_reponse_final);

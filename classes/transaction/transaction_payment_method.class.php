@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: transaction_payment_method.class.php,v 1.5 2021/02/03 08:27:54 dgoron Exp $
+// $Id: transaction_payment_method.class.php,v 1.5.6.1 2023/06/28 07:57:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -30,12 +30,15 @@ class transaction_payment_method {
 		}
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('f_name', 'transaction_payment_method_form_name')
+		->add_input_node('text', $this->name);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form(){
-		global $msg, $charset;
-		global $transaction_payment_method_content_form;
-		
-		$content_form = $transaction_payment_method_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('transaction_payment_method');
 		if(!$this->id){
@@ -43,11 +46,9 @@ class transaction_payment_method {
 		}else{
 			$interface_form->set_label($msg['transaction_payment_method_form_titre_edit']);
 		}
-		$content_form = str_replace('!!name!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg["transaction_payment_method_form_delete_question"])
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('transaction_payment_methods')
 		->set_field_focus('f_name');
 		return $interface_form->get_display();

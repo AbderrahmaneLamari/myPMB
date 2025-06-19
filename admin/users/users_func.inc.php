@@ -2,29 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: users_func.inc.php,v 1.61 2021/05/17 21:01:25 dgoron Exp $
+// $Id: users_func.inc.php,v 1.62 2022/04/01 12:27:44 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $class_path;
 require_once("$class_path/entites.class.php");
 require_once("$class_path/coordonnees.class.php");
-
-function show_users() {
-    global $msg;
-    
-    print "<div class='row'>
-	<input class='bouton' type='button' value=' $msg[85] ' onClick=\"document.location='./admin.php?categ=users&sub=users&action=add'\" />
-	</div>";
-    // affichage du tableau des utilisateurs
-    $list_users_ui = new list_users_ui();
-    print $list_users_ui->get_display_list();
-	
-	print "<div class='row'>
-		<input class='bouton' type='button' value=' $msg[85] ' onClick=\"document.location='./admin.php?categ=users&sub=users&action=add'\" />
-		</div>";
-
-}
-	
 	
 function get_coordonnees_etab($user_id='0', $field_values=array(), $current_field=0, $form_name='') {
 

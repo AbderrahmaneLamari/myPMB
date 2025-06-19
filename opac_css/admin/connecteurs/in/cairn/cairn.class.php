@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cairn.class.php,v 1.9 2019/12/30 15:58:50 btafforeau Exp $
+// $Id: cairn.class.php,v 1.9.6.1 2023/05/30 08:57:21 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -150,10 +150,11 @@ class cairn extends oai {
 	//Formulaire des propriétés générales	
 	public function get_property_form() {
 		global $charset;
-		$this->fetch_global_properties();
-		//Affichage du formulaire en fonction de $this->parameters
 		
-		$r="<script type='text/javascript'>
+		$r = parent::get_property_form();
+		
+		//Affichage du formulaire en fonction de $this->parameters
+		$r .= "<script type='text/javascript'>
 				function generate_id_pmb () {
 					var id_cairn =  document.getElementById('id_cairn');
 					if (id_cairn.value) {
@@ -190,10 +191,10 @@ class cairn extends oai {
 	}
 	
 	public function make_serialized_properties() {
-		global $id_pmb, $id_cairn;
+		global $sets_completion, $id_pmb, $id_cairn;
 		//Mise en forme des paramètres à partir de variables globales (mettre le résultat dans $this->parameters)
 		$param = array();
-	
+		$param['sets_completion']=$sets_completion ?? 0;
 		$param['id_pmb']=$id_pmb;
 		$param['id_cairn']=$id_cairn;
 		$this->parameters = serialize($param);
@@ -205,15 +206,13 @@ class cairn extends oai {
 	}
 	
 	public function source_get_property_form($source_id) {
-    	global $charset;
-    	
-    	$params=$this->get_source_params($source_id);
+    	$params = $this->get_source_params($source_id);
     	$vars = array();
-		if ($params["PARAMETERS"]) {
+		if (!empty($params["PARAMETERS"])) {
 			//Affichage du formulaire avec $params["PARAMETERS"]
-			$vars=unserialize($params["PARAMETERS"]);
+			$vars = unserialize($params["PARAMETERS"]);
 		}
-		if (!$vars['url']) {
+		if (empty($vars['url'])) {
 			$vars['url'] = 'http://oai.cairn.info/oai.php';
 		}
 		self::$sources_params[$source_id]["PARAMETERS"] = serialize($vars);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: storage.class.php,v 1.11.2.4 2022/01/19 13:37:17 dgoron Exp $
+// $Id: storage.class.php,v 1.15 2022/01/19 13:35:16 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

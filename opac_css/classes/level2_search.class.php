@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: level2_search.class.php,v 1.7 2019/02/12 11:30:44 dgoron Exp $
+// $Id: level2_search.class.php,v 1.7.12.1 2023/12/08 15:19:38 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -61,6 +61,7 @@ class level2_search {
 		global $include_path;
 		global $opac_allow_affiliate_search;
 		global $search_result_affiliate_lvl2_head;
+		global $search_result_affiliate_lvl2_footer;
 		global $opac_search_other_function;
 		global $catal_navbar;
 		global $pmb_logs_activate;
@@ -83,7 +84,9 @@ class level2_search {
 		    $display = $this->get_display_elements_list();
 		    print $this->get_search_title();
 			print '<div id="resultatrech_liste">' . $display . '</div>';
-			if($opac_allow_affiliate_search) print $catal_navbar;
+			if($opac_allow_affiliate_search) {
+			    print $catal_navbar . $search_result_affiliate_lvl2_footer;
+			}
 			else print "</div></div>";
 			if ($this->type == 'extended') print "</div>"; // un div en +
 		}else{

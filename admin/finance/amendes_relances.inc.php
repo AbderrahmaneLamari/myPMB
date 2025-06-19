@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: amendes_relances.inc.php,v 1.15 2021/03/12 13:21:14 dgoron Exp $
+// $Id: amendes_relances.inc.php,v 1.15.6.1 2023/07/10 12:50:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -10,7 +10,6 @@ global $class_path, $include_path, $msg, $charset, $action, $lang;
 global $pmb_gestion_amende;
 global $quota, $elements;
 global $relance_1, $relance_2, $relance_3, $statut_perdu;
-global $finance_amende_relance_content_form;
 global $finance_relance_1, $finance_relance_2, $finance_relance_3, $finance_statut_perdu;
 
 //Gestion des amendes
@@ -127,21 +126,17 @@ if ($pmb_gestion_amende==1) {
 				//Formulaire de mise à jour
 				$interface_form = new interface_admin_form('finance_amende_form');
 				$interface_form->set_label($msg["finance_amende_relance_parameters"]);
-				$content_form=$finance_amende_relance_content_form;
-				$content_form=str_replace("!!relance_1!!",htmlentities($finance_relance_1,ENT_QUOTES,$charset),$content_form);
-				$content_form=str_replace("!!relance_2!!",htmlentities($finance_relance_2,ENT_QUOTES,$charset),$content_form);
-				$content_form=str_replace("!!relance_3!!",htmlentities($finance_relance_3,ENT_QUOTES,$charset),$content_form);
-				$requete="select idstatut,statut_libelle from docs_statut order by statut_libelle";
-				$resultat=pmb_mysql_query($requete);
-				$list_statut="<select name='statut_perdu' id='statut_perdu'>\n";
-				while ($r=pmb_mysql_fetch_object($resultat)) {
-					$list_statut.="<option value='".$r->idstatut."' ";
-					if ($r->idstatut==$finance_statut_perdu) $list_statut.="selected='selected' ";
-					$list_statut.=">".htmlentities($r->statut_libelle,ENT_QUOTES,$charset)."</option>\n";
-				}
-				$list_statut.="</select>\n";
-				$content_form=str_replace("!!statut_perdu!!",$list_statut,$content_form);
-				$interface_form->set_content_form($content_form);
+				
+				$interface_content_form = new interface_content_form();
+				$interface_content_form->add_element('relance_1', 'finance_relance_1')
+				->add_input_node('float', $finance_relance_1);
+				$interface_content_form->add_element('relance_2', 'finance_relance_2')
+				->add_input_node('float', $finance_relance_2);
+				$interface_content_form->add_element('relance_3', 'finance_relance_3')
+				->add_input_node('float', $finance_relance_3);
+				$interface_content_form->add_element('statut_perdu', 'finance_statut_perdu')
+				->add_query_node('select', 'select idstatut as id,statut_libelle as label from docs_statut order by label', $finance_statut_perdu);
+				$interface_form->set_content_form($interface_content_form->get_display());
 				print $interface_form->get_display_parameters();
 				break;
 			default:

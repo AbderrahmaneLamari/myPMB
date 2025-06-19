@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: veille.class.php,v 1.9.2.3 2021/10/26 10:56:04 gneveu Exp $
+// $Id: veille.class.php,v 1.13.4.1 2023/08/29 06:55:25 dgoron Exp $
 
 global $class_path;
 require_once($class_path."/curl.class.php");
@@ -27,8 +27,6 @@ class veille extends connector {
     
     //Formulaire des propriétés générales
     public function source_get_property_form($source_id) {
-        global $PMBuserid, $msg, $charset;
-        
         $params=$this->get_source_params($source_id);
         //Affichage du formulaire en fonction de $this->parameters
         $sources_watches='';
@@ -42,22 +40,17 @@ class veille extends connector {
         $form = '';
         
         $docwatch_watches = new docwatch_watches(0);
-        if (count($docwatch_watches)){
+        if (! empty($docwatch_watches) && is_countable($docwatch_watches->watches) && count($docwatch_watches->watches)) {
             $form .=
             "<div class='row'>
-                    <div class='colonne3'>
-                        <label for='sources_watches'>".$this->msg['sources_watches_label']."</label>
-                    </div>";
-            
-            $form .=
-            "<div class='colonne_suite'>
-                        <select multiple name='sources_watches[]' id='sources_watches'>
-                    </div>
-                </div>";
-            $form .= self::get_selector($docwatch_watches,$sources_watches);
-            
-            $form .=  "</select>";
-            $form .=  "</div>";
+                <div class='colonne3'>
+                    <label for='sources_watches'>" . $this->msg['sources_watches_label'] . "</label>
+                </div>
+                <div class='colonne_suite'>
+                        <select multiple name='sources_watches[]' id='sources_watches'>";
+            $form .= self::get_selector($docwatch_watches, $sources_watches);
+            $form .= "</select>";
+            $form .= "</div>";
         }
         
         
@@ -87,14 +80,15 @@ class veille extends connector {
     
     public static function get_selector($docwatch_watches, $sources_watches){
         global $msg, $charset;
-        $form .= self::compute_rubrique($docwatch_watches, $sources_watches);
         
-        //Affichage des noeuds racines
-        $form .= "<optgroup label='".htmlentities($msg['root'], ENT_QUOTES, $charset)."'>";
-        foreach ($docwatch_watches->watches as $fluxRacine){
-            $form .="<option ".(in_array($fluxRacine->id, $sources_watches) ? 'selected=\'selected\'' : '')." value='".$fluxRacine->id."'>".$fluxRacine->title."</option>";
+        $form = self::compute_rubrique($docwatch_watches, $sources_watches);
+        
+        // Affichage des noeuds racines
+        $form .= "<optgroup label='" . htmlentities($msg['root'], ENT_QUOTES, $charset) . "'>";
+        foreach ($docwatch_watches->watches as $fluxRacine) {
+            $form .= "<option " . (!empty($sources_watches) && in_array($fluxRacine->id, $sources_watches) ? 'selected=\'selected\'' : '') . " value='" . $fluxRacine->id . "'>" . $fluxRacine->title . "</option>";
         }
-        
+        $form .= "</optgroup>";
         return $form;
         
     }
@@ -102,15 +96,17 @@ class veille extends connector {
     public static function compute_rubrique($docwatch_watches, $sources_watches){
         global $charset;
         
-        foreach ($docwatch_watches->children as $rubrique){
+        $form = '';
+        foreach ($docwatch_watches->children as $rubrique) {
             $form .= "<optgroup label='".htmlentities($rubrique->title, ENT_QUOTES, $charset)."'>";
             
-            if (count($rubrique->children)){
+            if (count($rubrique->children)) {
                 $form .= self::compute_rubrique($rubrique,$sources_watches);
             }
-            foreach ($rubrique->watches as $flux){
-                $form .="<option ".(in_array($flux->id, $sources_watches) ? 'selected=\'selected\'' : '')." value='".$flux->id."'>".$flux->title."</option>";
+            foreach ($rubrique->watches as $flux) {
+                $form .= "<option " . (!empty($sources_watches) && in_array($flux->id, $sources_watches) ? 'selected=\'selected\'' : '') . " value='" . $flux->id . "'>" . $flux->title . "</option>";
             }
+            $form .= "</optgroup>";
         }
         return $form;
     }
@@ -170,6 +166,7 @@ class veille extends connector {
         
         $date_import=date("Y-m-d H:i:s",time());
         //Insertion de l'entï¿½te
+        $n_header=array();
         $n_header["rs"]="*";
         $n_header["ru"]="*";
         $n_header["el"]="*";

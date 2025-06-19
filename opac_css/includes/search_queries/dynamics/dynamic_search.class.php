@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: dynamic_search.class.php,v 1.4.8.1 2021/08/17 10:05:38 qvarin Exp $
+// $Id: dynamic_search.class.php,v 1.5 2021/08/17 10:11:27 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

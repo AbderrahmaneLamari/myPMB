@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_rent_invoices_ui.class.php,v 1.9.2.1 2021/09/18 09:18:31 dgoron Exp $
+// $Id: list_rent_invoices_ui.class.php,v 1.12.4.1 2023/03/24 07:55:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -140,43 +140,14 @@ class list_rent_invoices_ui extends list_rent_ui {
 		return $this->get_search_filter_interval_date('date');
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		$filters[] = 'account_num_exercice = "'.$this->filters['exercice'].'"';
-		
-		if($this->filters['type']) {
-			$filters [] = 'account_type = "'.addslashes($this->filters['type']).'"';
-		}
-		if($this->filters['num_publisher']) {
-			$filters [] = 'account_num_publisher = "'.$this->filters['num_publisher'].'"';
-		}
-		if($this->filters['num_supplier']) {
-			$filters [] = 'account_num_supplier = "'.$this->filters['num_supplier'].'"';
-		}
-		if($this->filters['num_pricing_system']) {
-			$filters [] = 'account_num_pricing_system = "'.$this->filters['num_pricing_system'].'"';
-		}
-		if($this->filters['status']) {
-			$filters [] = 'invoice_status = "'.$this->filters['status'].'"';
-		}
-		if($this->filters['date_start']) {
-			$filters [] = 'invoice_date >= "'.$this->filters['date_start'].'"';
-		}
-		if($this->filters['date_end']) {
-			$filters [] = 'invoice_date <= "'.$this->filters['date_end'].' 23:59:59"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);		
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('exercice', 'account_num_exercice', 'integer');
+		$this->_add_query_filter_simple_restriction('type', 'account_type');
+		$this->_add_query_filter_simple_restriction('num_publisher', 'account_num_publisher', 'integer');
+		$this->_add_query_filter_simple_restriction('num_supplier', 'account_num_supplier', 'integer');
+		$this->_add_query_filter_simple_restriction('num_pricing_system', 'account_num_pricing_system', 'integer');
+		$this->_add_query_filter_simple_restriction('status', 'invoice_status', 'integer');
+		$this->_add_query_filter_interval_restriction('date', 'invoice_date', 'datetime');
 	}
 	
 	protected function _get_object_property_num_publisher($object) {
@@ -229,14 +200,12 @@ class list_rent_invoices_ui extends list_rent_ui {
 		return $this->get_display_query_human($humans);
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		global $id_bibli;
 		
 		$attributes = array();
 		$attributes['onclick'] = "window.location=\"".static::get_controller_url_base()."&action=edit&id_bibli=".$id_bibli."&id=".$object->get_id()."\"";
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		return $attributes;
 	}
 	
 	protected function init_default_selection_actions() {

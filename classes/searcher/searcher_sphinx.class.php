@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_sphinx.class.php,v 1.28.2.3 2021/07/01 14:49:54 btafforeau Exp $
+// $Id: searcher_sphinx.class.php,v 1.33 2023/01/02 15:25:50 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once $class_path.'/sphinx/api/sphinxapi.php';
 require_once $class_path.'/filter_results.class.php';
 require_once $class_path.'/sort.class.php';
@@ -14,7 +15,7 @@ class searcher_sphinx {
 	protected $user_query = '';
 	protected $sphinx_query = '';
 	protected $bypass = 10000;
-	protected $maxmatches = 100000;
+	protected $maxmatches = 50000;
 	//A REDEFINIR
 	protected $index_name = 'records';
 	protected $objects_ids;
@@ -46,6 +47,9 @@ class searcher_sphinx {
 	protected $keep_empty_words = 0;
 	
 	protected $details = [];
+	
+	protected $context_parameters;
+	
 	public function __construct($user_query) {
 	    global $sphinx_mysql_connect, $sphinx_pert_calc_method;
 	   
@@ -395,5 +399,21 @@ class searcher_sphinx {
 	
 	public function get_sphinx_indexes() {
 	    return $this->sphinx_base->getIndexes()[$this->index_name]['fields'];
+	}
+	
+	public function get_context_parameters() {
+		return $this->context_parameters;
+	}
+	
+	public function set_context_parameters($context_parameters=array()) {
+		$this->context_parameters = $context_parameters;
+	}
+	
+	public function add_context_parameter($key, $value) {
+		$this->context_parameters[$key] = $value;
+	}
+	
+	public function delete_context_parameter($key) {
+		unset($this->context_parameters[$key]);
 	}
 }

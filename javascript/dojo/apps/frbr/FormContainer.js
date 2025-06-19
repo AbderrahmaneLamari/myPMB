@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: FormContainer.js,v 1.14 2020/05/18 15:12:39 tsamson Exp $
+// $Id: FormContainer.js,v 1.15 2022/06/27 14:39:30 rtigero Exp $
 
 
 define(["dojo/_base/declare", 
@@ -94,7 +94,6 @@ define(["dojo/_base/declare",
 //			}));
 //		},
 		nodeSaved : function(response) {
-			console.log(response);
 			topic.publish('FormContainer', 'updateTree', response);
 			var item = {id : response.type+'_'+response.status, page : this.numPage, type : response.type};
 			this.requestContent(item);

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: contribution_area_scenario.class.php,v 1.15 2021/02/02 11:41:38 gneveu Exp $
+// $Id: contribution_area_scenario.class.php,v 1.17 2022/03/22 14:04:05 gneveu Exp $
 if (stristr($_SERVER ['REQUEST_URI'], ".class.php"))
 	die("no access");
 
@@ -46,6 +46,12 @@ class contribution_area_scenario {
 	 * @var string
 	 */
 	protected $response;
+
+	/**
+	 * Ordre de l'attachment
+	 * @var string
+	 */
+	protected $orderResponse;
 		
 	/**
 	 * Id du scenario
@@ -159,7 +165,13 @@ class contribution_area_scenario {
 		}
 		
 		if(count($this->forms) > 1){
-			usort($this->forms, array($this, 'sort_forms'));
+			//usort($this->forms, array($this, 'sort_forms'));
+		    usort($this->forms,  function($a,$b){
+		        if ($a["orderResponse"] == $b["orderResponse"]) {
+		            return 0;
+		        }
+		        return (intval($a["orderResponse"]) < intval($b["orderResponse"])) ? -1 : 1;
+		    });
 		}
 		
 		return $this->forms;
@@ -179,6 +191,7 @@ class contribution_area_scenario {
 		$this->name = isset($infos['name']) ? $infos['name'] : '';
 		$this->question = isset($infos['question']) ? $infos['question'] : '';
 		$this->response = isset($infos['response']) ? $infos['response'] : '';
+		$this->orderResponse = isset($infos['orderResponse']) ? $infos['orderResponse'] : '';
 		$this->entity_type = isset($infos['entityType']) ? $infos['entityType'] : '' ;
 		$this->equation = isset($infos['equation']) ? $infos['equation'] : '';
 	}
@@ -202,6 +215,13 @@ class contribution_area_scenario {
 			$this->get_infos();
 		}
 		return $this->response;
+	}
+
+	public function get_orderResponse() {
+	    if (!isset($this->orderResponse)) {
+			$this->get_infos();
+		}
+		return $this->orderResponse;
 	}
 		
 	public function get_id() {

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatch_watch.class.php,v 1.15.2.2 2022/01/20 10:35:39 dgoron Exp $
+// $Id: docwatch_watch.class.php,v 1.18 2022/02/11 15:50:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -166,7 +166,7 @@ class docwatch_watch extends docwatch_root{
 				if($result && pmb_mysql_num_rows($result)){
 					$this->datasources = array();
 					while ($row=pmb_mysql_fetch_object($result)) {
-						$this->datasources[$row->id_datasource+0] = $row->datasource_type;
+						$this->datasources[intval($row->id_datasource)] = $row->datasource_type;
 					}
 				}
 			}
@@ -419,7 +419,7 @@ class docwatch_watch extends docwatch_root{
 	}
 	
 	public function set_id($id) {
-		$this->id = $id+0;
+		$this->id = intval($id);
 	}
 	
 	public function get_title() {
@@ -443,7 +443,7 @@ class docwatch_watch extends docwatch_root{
 	}
 	
 	public function set_owner($owner) {
-		$this->owner = $owner+0;
+		$this->owner = intval($owner);
 	}
 	 
 	public function get_allowed_users() {
@@ -452,7 +452,7 @@ class docwatch_watch extends docwatch_root{
 	
 	public function set_allowed_users($allowed_users) {
 		foreach ($allowed_users as $key => $value){
-			$allowed_users[$key] = $value+0;
+			$allowed_users[$key] = intval($value);
 		}
 		$this->allowed_users = $allowed_users;
 	}
@@ -462,7 +462,7 @@ class docwatch_watch extends docwatch_root{
 	}
 	
 	public function set_num_category($num_category) {
-		$this->num_category = $num_category+0;
+		$this->num_category = intval($num_category);
 	}
 	
 	public function set_items($items) {

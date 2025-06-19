@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_readers_circ_ui.class.php,v 1.12 2020/11/09 09:06:50 dgoron Exp $
+// $Id: list_readers_circ_ui.class.php,v 1.13.4.1 2023/03/24 08:24:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/emprunteur.class.php");
 
 class list_readers_circ_ui extends list_readers_ui {
@@ -36,26 +37,23 @@ class list_readers_circ_ui extends list_readers_ui {
     	return "";
     }
     
-	protected function get_display_cell($object, $property) {
-	    global $id_notice, $id_bulletin, $type_resa, $groupID;
-	    // si on est en résa on a un id de notice ou de bulletin
-	    if ($id_notice || $id_bulletin) {
-	        //type_resa : on est en prévision
-	        if ($type_resa) {
-	            $onmousedown = "document.location=\"./circ.php?categ=resa_planning&resa_action=add_resa&id_empr=".$object->id."&groupID=$groupID&id_notice=$id_notice&id_bulletin=$id_bulletin\";";
-	        } else {
-	            $onmousedown = "document.location=\"./circ.php?categ=resa&id_empr=".$object->id."&groupID=$groupID&id_notice=$id_notice&id_bulletin=$id_bulletin\";";
-	        }
-	    } else {
-	        $onmousedown = "if(event.ctrlKey || event.metaKey) { window.open(\"./circ.php?categ=pret&form_cb=".$object->cb."\",\"_blank\"); } else { document.location=\"./circ.php?categ=pret&form_cb=".$object->cb."\"; }";
-	    }
-	    $attributes = array(
-	    		'onmousedown' => $onmousedown
-	    );
-	    $content = $this->get_cell_content($object, $property);
-	    $display = $this->get_display_format_cell($content, $property, $attributes);
-	    return $display;
-	}
+    protected function get_default_attributes_format_cell($object, $property) {
+    	global $id_notice, $id_bulletin, $type_resa, $groupID;
+    	// si on est en résa on a un id de notice ou de bulletin
+    	if ($id_notice || $id_bulletin) {
+    		//type_resa : on est en prévision
+    		if ($type_resa) {
+    			$onclick = "document.location=\"./circ.php?categ=resa_planning&resa_action=add_resa&id_empr=".$object->id."&groupID=$groupID&id_notice=$id_notice&id_bulletin=$id_bulletin\";";
+    		} else {
+    			$onclick = "document.location=\"./circ.php?categ=resa&id_empr=".$object->id."&groupID=$groupID&id_notice=$id_notice&id_bulletin=$id_bulletin\";";
+    		}
+    	} else {
+    		$onclick = "if(event.ctrlKey || event.metaKey) { window.open(\"./circ.php?categ=pret&form_cb=".$object->cb."\",\"_blank\"); } else { document.location=\"./circ.php?categ=pret&form_cb=".$object->cb."\"; }";
+    	}
+    	return array(
+    			'onclick' => $onclick
+    	);
+    }
 	
 	protected function init_default_columns() {
 	    global $empr_show_caddie;

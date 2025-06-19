@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: responsabilities.class.php,v 1.3.2.3 2021/10/06 13:16:50 jparis Exp $
+// $Id: responsabilities.class.php,v 1.6 2021/10/06 13:19:09 jparis Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
     die("no access");
 

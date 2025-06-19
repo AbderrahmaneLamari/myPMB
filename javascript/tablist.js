@@ -1,5 +1,5 @@
 // gestion des listes "collapsibles" en Javascript
-// $Id: tablist.js,v 1.43.2.1 2021/09/29 11:26:22 dgoron Exp $
+// $Id: tablist.js,v 1.44.4.1 2023/09/01 15:20:54 tsamson Exp $
 
 if(!base_path) var base_path = '.';
 var imgOpened = new Image();
@@ -58,8 +58,9 @@ function expandAll_ajax_callback(text,el) {
 	var whichEl = document.getElementById(el + 'Child');
   	whichEl.innerHTML = text ;
   	if(typeof(dojo) == "object"){
-  		
-  		dojo.parser.parse(whichEl);
+  		if (dijit.registry.byId(whichEl) == "undefined") {
+			dojo.parser.parse(whichEl);
+		}
   		require(['dojo/dom-construct', 'dojo/query'], function(domConstruct, query){
 			query('script', whichEl).forEach(function(node) {
 				domConstruct.create('script', {
@@ -250,15 +251,26 @@ function initIt() {
  			} catch(e) {
  			}
  		}
+ 		let elId = tempColl[i].id.substring(0,tempColl[i].id.indexOf('Child'));
 		if (tempColl[i].getAttribute('startOpen') == 'Yes' ) {
 			if(localStorageItem != null && !isNaN(localStorageItem) && !localStorageItem) {
 	 			collapseBase (tempColl[i].id.substring(0,tempColl[i].id.indexOf('Child')));
 	 		} else {
-	 			expandBase (tempColl[i].id.substring(0,tempColl[i].id.indexOf('Child')), true);
+ 				if (tempColl[i].hasAttribute('data-expand-ajax')) {
+					let expandImg = document.getElementById(elId + 'Img');
+					expandBase_ajax(elId,true,expandImg.getAttribute('param'));
+				} else {
+					expandBase(elId, true);
+				}
 	 		}
 	 	} else {
 	 		if(localStorageItem != null && !isNaN(localStorageItem) && localStorageItem) {
-	 			expandBase (tempColl[i].id.substring(0,tempColl[i].id.indexOf('Child')), true);
+	 			if (tempColl[i].hasAttribute('data-expand-ajax')) {
+					let expandImg = document.getElementById(elId + 'Img');
+					expandBase_ajax(elId,true,expandImg.getAttribute('param'));
+				} else {
+					expandBase(elId, true);
+				}
 	 		} else {
 	 			tempColl[i].style.display = 'none';
 	 		}

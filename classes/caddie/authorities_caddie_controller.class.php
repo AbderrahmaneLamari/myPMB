@@ -3,10 +3,9 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: authorities_caddie_controller.class.php,v 1.41.2.1 2021/10/11 13:59:54 dgoron Exp $
+// $Id: authorities_caddie_controller.class.php,v 1.44.4.2 2023/09/04 14:36:35 tsamson Exp $
 
-if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
-    die("no access");
+if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path;
 require_once($class_path."/caddie/caddie_root_controller.class.php");
@@ -102,7 +101,7 @@ class authorities_caddie_controller extends caddie_root_controller {
     public static function get_aff_editable_paniers($item = 0) {
         global $msg;
         global $action;
-        static::$lien_origine = "./autorites.php?categ=caddie&sub=gestion&quoi=panier";
+        static::$lien_origine = static::get_constructed_link('gestion', 'panier');
         static::$action_click = "";
         $lien_edition_panier_cst = "<input type=button class=bouton value='$msg[caddie_editer]' onclick=\"document.location='" . static::$lien_origine . "&action=edit_cart&idcaddie=!!idcaddie!!';\" />";
         static::$object_type = "AUTHORS";
@@ -114,7 +113,9 @@ class authorities_caddie_controller extends caddie_root_controller {
         $display .= "<hr />";
         $display .= confirmation_delete(static::$lien_origine . "&action=del_cart&object_type=" . static::$object_type . "&item=$item&idcaddie=");
         $display .= static::get_display_list("editable");
-        $display .= "<script src='./javascript/classementGen.js' type='text/javascript'></script>";
+        $display .= "<script type='text/javascript'>
+            pmb_include('./javascript/classementGen.js');
+        </script>";
         $display .= "<div class='row'><hr />";
         if ($item && $action != "save_cart") {
             $display .= "<input type='submit' value='" . $msg["print_cart_add"] . "' class='bouton'/>&nbsp;<input type='button' value='" . $msg["print_cancel"] . "' class='bouton' onClick='self.close();'/>&nbsp;";
@@ -244,9 +245,9 @@ class authorities_caddie_controller extends caddie_root_controller {
                     print $myCart->aff_cart_nb_items();
                     if ($sub == 'action') {
                         echo "<hr /><input type='button' class='bouton' value='" . $msg["caddie_menu_action_suppr_panier"] . "' onclick='document.location=&quot;./autorites.php?categ=caddie&amp;sub=action&amp;quelle=supprpanier&amp;action=choix_quoi&amp;object_type=".static::$object_type."&amp;idcaddie=".$idcaddie."&amp;item=&amp;elt_flag=" . $elt_flag . "&amp;elt_no_flag=" . $elt_no_flag . "&quot;' />",
-                        "&nbsp;<input type='button' class='bouton' value='".$msg["caddie_menu_action_edit_panier"]."' onclick=\"document.location='./autorites.php?categ=caddie&sub=gestion&quoi=panier&action=edit_cart&idcaddie=".$idcaddie."&item=0'\" />",
+                        "&nbsp;<input type='button' class='bouton' value='".$msg["caddie_menu_action_edit_panier"]."' onclick=\"document.location='".static::get_constructed_link('gestion', 'panier', 'edit_cart', $idcaddie, '&item=0')."'\" />",
                         "&nbsp;<input type='button' class='bouton' value='".$msg["caddie_supprimer"]."' onclick=\"confirmation_delete(".$myCart->get_idcaddie().",'".htmlentities(addslashes($myCart->name),ENT_QUOTES, $charset)."')\" />",
-                        confirmation_delete("./autorites.php?categ=caddie&sub=gestion&action=del_cart&idcaddie=");
+                        confirmation_delete(static::get_constructed_link('gestion', '', 'del_cart')."&idcaddie=");
                     }
                     break;
                 default:
@@ -331,8 +332,9 @@ class authorities_caddie_controller extends caddie_root_controller {
                 			<td class='classement60'>
                 				<input type='checkbox' id='id_".$ca->idcaddie."' name='caddie[".$ca->idcaddie."]' value='".$ca->idcaddie."' />
                 				&nbsp;
-                				<a href='javascript:document.getElementById(\"id_".$ca->idcaddie."\").checked=true;document.forms[\"print_options\"].submit();' />
-                				<strong>".$ca->name."</strong>");
+                				<a href='javascript:document.getElementById(\"id_".$ca->idcaddie."\").checked=true;document.forms[\"print_options\"].submit();'>
+                				<strong>".$ca->name."</strong>
+								</a>");
                 if ($ca->comment) {
                     $print_cart[$ctype]["classement_list"][$ca->caddie_classement]["cart_list"].= pmb_bidi("
                     			<br/>
@@ -371,10 +373,10 @@ class authorities_caddie_controller extends caddie_root_controller {
         print pmb_bidi("
         			<div class='row'>
         				<a href='javascript:expandAll()'>
-        					<img src='".get_url_icon('expand_all.gif')."' id='expandall' style='border:0px'>
+        					<img src='".get_url_icon('expand_all.gif')."' id='expandall' style='border:0px' />
         				</a>
                         <a href='javascript:collapseAll()'>
-        					<img src='".get_url_icon('collapse_all.gif')."' id='collapseall' style='border:0px'>
+        					<img src='".get_url_icon('collapse_all.gif')."' id='collapseall' style='border:0px' />
         				</a>".$msg['caddie_add_search']."
         			</div>");
 
@@ -510,15 +512,19 @@ class authorities_caddie_controller extends caddie_root_controller {
                     break;
             }
         }
+        if (!isset($environement['selected_objects'])) {
+        	$environement['selected_objects'] = array();
+        }
         if ($environement["caddie"]) {
             foreach ($environement["caddie"] as $environement_caddie) {
                 $c = static::get_object_instance($environement_caddie);
                 $nb_items_before = $c->nb_item;
                 if (isset($requete) && $requete) {
-	                $resultat = @pmb_mysql_query($requete);               
-	                print pmb_mysql_error();
+	                $resultat = pmb_mysql_query($requete);
 	                while (($r = pmb_mysql_fetch_object($resultat))) {
-	                	$c->add_item($r->id_authority, $object_type);
+	                	if ($environement["pager"] != 2 || in_array($r->id_authority, $environement['selected_objects'])) {
+	                		$c->add_item($r->id_authority, $object_type);
+	                	}
 	                }
                 } else { 
                     $simple_search_results = [];

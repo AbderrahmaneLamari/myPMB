@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: map_controler.js,v 1.17 2019/09/19 17:00:04 ngantier Exp $
+// $Id: map_controler.js,v 1.19 2022/09/23 09:50:50 tsamson Exp $
 
 const TYPE_RECORD = 11;
 const TYPE_LOCATION = 15;
@@ -550,41 +550,10 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
 				}
 				for(var i=0 ; i<toHighlight.length ; i++){
 					this.highlightNotice(toHighlight[i]);
-                	this.highlightFeatures(this.featureByNotice[toHighlight[i]], "rgba(0,0,0,0.3)");
+//                    this.highlightFeatures(this.featureByNotice[toHighlight[i]], "rgba(0,0,0,0.3)");
 					
 				}
-			
-		},
-		/*
-		 * Fonction de clonage des features, r�cup�re la g�ometrie & les propri�t�s de base (les ids et le layer sont chang�s afin d'�viter tout bug) 
-		 * 
-		 */
-		cloneFeature:function(feature){
-		var clonedObj = {};
-		  for(var key in feature){
-			  if(key == 'layer'){
-				  clonedObj[key]= null;
-			  }
-			  else if(key == 'geometry'){
-				  clonedObj[key] = {};
-				  for(var key2 in feature[key])
-					  {
-						  if(key2 == 'id'){
-							  clonedObj[key][key2]= 'new id'+feature[key][key2];
-						  }
-						  else{
-							  clonedObj[key][key2]= feature[key][key2];  
-						  }
-					  }
-			  }
-			  else if(key == '_sketch'){
-				  //Nothing
-			  }
-			  else{
-				  clonedObj[key] = feature[key];
-			  }
-		  }
-		  return clonedObj;
+        	this.highlightFeatures([e.feature], "rgba(0,0,0,0.3)");
 		},
 			
 		downlightRecord:function(e){
@@ -594,11 +563,12 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
 			var index = this.hoveredFeature.indexOf(e.feature);
 			this.hoveredFeature.splice(index, 1);
 				for(var i=0 ; i<listeIds.length ; i++){
-				this.destroyEmpriseById(listeIds[i]);
+//                this.destroyEmpriseById(listeIds[i]);
 					this.downlightNotice(listeIds[i]);
 				}
-		},
+            this.destroyEmpriseByFeatures([e.feature]);
 		
+        },
 		downlightAll:function(){
 			var style = {fillColor: "#0000ff", strokeColor: "#0000ff", strokeWidth: 1, fillOpacity: 0.4};
 			if(this.layerHighlight==null){
@@ -646,7 +616,9 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
 				}
 				var style = {fillColor: color, strokeWidth: 1, strokeColor: color, fillOpacity: 0.7, title: libelle};
 				for(var i=0 ; i<arrayFeature.length ; i++){
-					var clonedFeature = this.cloneFeature(arrayFeature[i]);
+                	//on utilise la fonction native de l'objet feature
+                	//c'est plus propre pour la duplication des components (pas de conflit d'id, pas d'emprise qui disparait)
+					var clonedFeature = arrayFeature[i].clone();
 					var numLayer = arrayFeature[i].layer.name.split('_');
 					var numFeature = arrayFeature[i].id.split('_');		
 					clonedFeature.id = numLayer[numLayer.length-1]+'_'+numFeature[numFeature.length-1];				
@@ -703,6 +675,14 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
 		destroyEmpriseById:function(id){
 			if(this.layerHighlight!=null){
 				var arrayFeat = this.featureByNotice[id];	
+                this.destroyEmpriseByFeatures(arrayFeat);
+            }
+        },
+        /**
+         * destruction d'une emprise en fonction des features et pas un id de notice
+         */
+        destroyEmpriseByFeatures: function (arrayFeat) {
+            if (this.layerHighlight != null) {
 				if(arrayFeat){
 					var idHighlighted = [];
 					var arrayHigh = [];

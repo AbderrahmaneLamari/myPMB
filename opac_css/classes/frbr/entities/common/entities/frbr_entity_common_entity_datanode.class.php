@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_common_entity_datanode.class.php,v 1.21.2.1 2022/01/21 13:32:39 tsamson Exp $
+// $Id: frbr_entity_common_entity_datanode.class.php,v 1.23 2022/02/11 11:31:00 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/frbr/frbr_entities.class.php");
 require_once($class_path."/frbr/entities/common/filters/frbr_entity_common_children_filter.class.php");
 
@@ -202,8 +203,6 @@ class frbr_entity_common_entity_datanode extends frbr_entity_common_entity {
 	}
 	
 	protected function get_filters_list_form(){
-		global $base_path;
-		
 		$form = "";
 		$form.="
  			<hr/>
@@ -252,8 +251,6 @@ class frbr_entity_common_entity_datanode extends frbr_entity_common_entity {
 	}
 	
 	protected function get_sorting_list_form(){
-		global $base_path;
-		
 		$form = "";
 		$form.="
  			<hr/>
@@ -271,7 +268,6 @@ class frbr_entity_common_entity_datanode extends frbr_entity_common_entity {
 	}
 	
 	public function get_parameters_form($no_child = false) {
-		global $msg;
 		$parameters_form = "
 			<div class='row'>";
 		$parameters_form .= $this->get_authperso_parameter_form();
@@ -449,8 +445,7 @@ class frbr_entity_common_entity_datanode extends frbr_entity_common_entity {
 	 * Suppression
 	 */
 	public static function delete($id=0, $recursive = false){
-		global $msg;
-		$id += 0;
+		$id = intval($id);
 		if($id) {
 			if ($recursive) {
 				//cadres
@@ -564,7 +559,7 @@ class frbr_entity_common_entity_datanode extends frbr_entity_common_entity {
 	}
 	
 	public static function get_class_name_from_id($id_datanode) {
-		$id_datanode+=0;
+		$id_datanode = intval($id_datanode);
 		$class_name = '';
 		$query = '	SELECT datanode_object
 					FROM frbr_datanodes
@@ -671,7 +666,7 @@ class frbr_entity_common_entity_datanode extends frbr_entity_common_entity {
 	}
 	
 	public static function have_cadre_visible_in_graph($id) {
-		$id += 0;
+		$id = intval($id);
 		if ($id) {
 			$query = '	SELECT id_cadre
 						FROM frbr_cadres
@@ -752,7 +747,7 @@ class frbr_entity_common_entity_datanode extends frbr_entity_common_entity {
 	 * @return frbr_entity_common_entity_datanode|NULL
 	 */
 	public static function get_instance($id) {
-		$id += 0;
+		$id = intval($id);
 	    if (isset(static::$datanode_instances[$id])) {
 	        return static::$datanode_instances[$id];
 	    }

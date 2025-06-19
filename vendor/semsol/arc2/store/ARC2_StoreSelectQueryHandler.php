@@ -51,7 +51,7 @@ class ARC2_StoreSelectQueryHandler extends ARC2_StoreQueryHandler
         $r = $this->getFinalQueryResult($q_sql, $tmp_tbl);
         /* remove intermediate results */
         if (!$this->cache_results) {
-            $this->getDBObjectFromARC2Class()->simpleQuery('DROP TABLE IF EXISTS '.$tmp_tbl);
+            $this->store->a['db_object']->simpleQuery('DROP TABLE IF EXISTS '.$tmp_tbl);
         }
 
         return $r;

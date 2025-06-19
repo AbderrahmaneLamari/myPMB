@@ -2,10 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_level1.inc.php,v 1.7 2021/05/18 05:56:35 dgoron Exp $
+// $Id: ajax_level1.inc.php,v 1.7.6.2 2024/01/04 08:57:51 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
+global $base_path, $class_path;
+global $autolevel1, $segment_id;
 
 require_once($class_path."/level1_search.class.php");
 require_once($class_path."/facette_search.class.php");
@@ -32,6 +34,8 @@ if (isset($segment_id) && $segment_id) {
     
     //On génère le bloc !
     $result=facettes::do_level1();
-    print $result;
+    
+    session_write_close();
+    
+    print encoding_normalize::utf8_normalize($result);
 }
-?>

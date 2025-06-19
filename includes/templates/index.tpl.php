@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: index.tpl.php,v 1.37 2021/02/10 16:36:12 dbellamy Exp $
+// $Id: index.tpl.php,v 1.39 2022/09/14 14:53:12 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -28,7 +28,7 @@ if (count($_tableau_databases)>1) {
 	$login_form .= "<script type='text/javascript' src='./javascript/http_request.js'></script>
 	<script type='text/javascript' src='./javascript/change_db.js'></script>
 	<div class='row'>
-		<label class='etiquette' for='database'>$msg[choix_database]</label>
+		<label class='etiquette' for='database'>".$msg['choix_database']."</label>
 	</div>
 	<div class='row'><select name='database' class='liste_choix_db_login' onchange='change_db(this.options[this.selectedIndex].value);'>";
 	for ($idatabase=0;$idatabase<count($_tableau_databases);$idatabase++){
@@ -71,7 +71,7 @@ $login_form .= "<div class='row'>
 
 $login_form_demo = "
 <div id='login-box'>
-            <h1>$msg[demo] $msg[1001]</h1>
+            <h1>".$msg['demo']." $msg[1001]</h1>
         <form class='form-$current_module' id='login' method='post' action='./main.php'>
         <div class='form-contenu'>
             <div class='row'>
@@ -194,7 +194,7 @@ $index_header.="
 ";
 
 $extra_version ="
-<div id='extra'>".$msg['sauv_misc_restaure_db']." : <span id='extra_bdd'>".LOCATION."</span> / ".sprintf($msg["print_n_notices"],'<span id=\'extra_nb_docs\'>'.$pmb_nb_documents.'</span>')."
+<div id='extra'>".$msg['sauv_misc_restaure_db']." : <span id='extra_bdd'>".htmlentities(LOCATION, ENT_QUOTES, $charset)."</span> / ".sprintf($msg["print_n_notices"],'<span id=\'extra_nb_docs\'>'.$pmb_nb_documents.'</span>')."
 </div>
 ";
 

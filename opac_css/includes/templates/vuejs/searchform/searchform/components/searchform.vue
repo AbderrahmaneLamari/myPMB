@@ -1,6 +1,6 @@
 <template>
 	<!-- Composant root du formulaire RMC -->
-	<form class="form_criteria_rmc" name="search_form" :action="form_url" method="post">
+	<form class="form_criteria_rmc" name="search_form" :action="form_url" method="post" @submit="$root.$emit('beforeSubmit')">
 		<template v-for="(field_id, i) in search.SEARCH">
 			<searchcriteria 
 				:searchData="search"
@@ -20,7 +20,7 @@
 		</template>
 		<input v-for="(value, name) in hidden" type="hidden" :name="name" :id="name" :value="value" />
 		<div class="rmc_row">
-			<input id="search_form_submit" class="bouton" type="submit" @click="sendSearch(this)" :value="pmb.getMessage('searchform', 'sendSearch')"/>
+			<input id="search_form_submit" class="bouton" type="submit" :value="pmb.getMessage('searchform', 'sendSearch')"  @click="sendSearch()"/>
 			<input id="search_help_rmc_responsive" class="bouton button_search_help" type="button" 
 				onclick="window.open('./help.php?whatis=search_multi', 'search_help', 'scrollbars=yes, toolbar=no, dependent=yes, width=400, height=400, resizable=yes'); return false" 
 				:value="pmb.getMessage('searchform', 'search_help')"
@@ -122,8 +122,11 @@ export default {
 				}
 			}
 		},
-		sendSearch: function (button) {
-			return valid_form_extented_search();
+		sendSearch: function() {
+			if(typeof valid_form_extented_search == "function") {
+				valid_form_extented_search();
+			}
+			return true;
 		}
 	}
 }

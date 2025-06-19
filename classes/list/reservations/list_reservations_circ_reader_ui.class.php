@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_reservations_circ_reader_ui.class.php,v 1.10.2.1 2021/10/01 13:05:54 dgoron Exp $
+// $Id: list_reservations_circ_reader_ui.class.php,v 1.15 2022/10/13 07:34:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,6 +16,9 @@ class list_reservations_circ_reader_ui extends list_reservations_circ_ui {
 		$resa = new reservation($row->resa_idempr, $row->resa_idnotice, $row->resa_idbulletin, $row->resa_cb);
 		$resa->set_on_empr_fiche(true);
 		$resa->get_resa_cb();
+		if($resa->confirmee) {
+			$this->flag_resa_confirme = true;
+		}
 		return $resa;
 	}
 	
@@ -71,7 +74,18 @@ class list_reservations_circ_reader_ui extends list_reservations_circ_ui {
 	
 	protected function init_default_settings() {
 		parent::init_default_settings();
+		$this->set_setting_display('search_form', 'visible', false);
 		$this->set_setting_display('search_form', 'export_icons', false);
+		$this->set_setting_display('query', 'human', false);
+		$this->set_setting_display('pager', 'visible', false);
+		
+		//Oublions le deffered pour l'instant
+		$this->set_setting_display('objects_list', 'deffered_load', false);
+	}
+	
+	protected function init_default_pager() {
+		parent::init_default_pager();
+		$this->pager['all_on_page'] = true;
 	}
 	
 	protected function get_cell_content($object, $property) {
@@ -101,7 +115,6 @@ class list_reservations_circ_reader_ui extends list_reservations_circ_ui {
 	        case 'resa_confirmee':
 	        	if($object->confirmee) {
 	        		$content .= "<span style='color:red'>X</span>";
-	        		$this->flag_resa_confirme = true;
 	        	}
 	        	break;
 	        case 'resa_delete':
@@ -114,46 +127,49 @@ class list_reservations_circ_reader_ui extends list_reservations_circ_ui {
 	    return $content;
 	}
 	
-	/**
-	 * Affiche la liste
-	 */
-	public function get_display_list() {
-	    
-	    //Récupération du script JS de tris
-	    $display = $this->get_js_sort_script_sort();
-	    if($this->get_setting('display', 'objects_list', 'fast_filters')) {
-	    	//Récupération du script JS de filtres rapides
-	    	$display .= $this->get_js_fast_filters_script();
-	    }
-	    
-	    //Affichage de la liste des objets
-	    $display .= $this->get_display_objects_list();
-	    $display .= $this->pager();
-	    return $display;
+	public function get_display_search_form() {
+		return '';
 	}
 	
 	protected function get_display_html_content_selection() {
 		return "<div class='center'><input type='checkbox' id='ids_resa_!!id!!' name='ids_resa[!!id!!]' class='".$this->objects_type."_selection' value='!!id!!'></div>";
 	}
 	
-	protected function get_selection_actions() {
+	protected function init_default_selection_actions() {
 		global $msg;
 		
-		if(!isset($this->selection_actions)) {
-			$this->selection_actions = array();
-			if($this->flag_resa_confirme) {
-				$do_pret_link = array(
-						'href' => static::get_controller_url_base()."&sub=do_pret_resa&id_empr=".$this->filters['id_empr'],
-						'confirm' => ''
-				);
-				$this->selection_actions[] = $this->get_selection_action('do_pret', $msg['empr_do_pret_resa'], '', $do_pret_link);
-			}
+		$this->selection_actions = array();
+		if($this->flag_resa_confirme) {
+			$do_pret_link = array(
+					'href' => static::get_controller_url_base()."&sub=do_pret_resa&id_empr=".$this->filters['id_empr'],
+					'confirm' => ''
+			);
+			$this->add_selection_action('do_pret', $msg['empr_do_pret_resa'], '', $do_pret_link);
 		}
-		return $this->selection_actions;
 	}
 	
 	protected function get_name_selected_objects() {
 		return "ids_resa";
+	}
+	
+	protected static function get_name_selected_objects_from_form() {
+		return "ids_resa";
+	}
+	
+	protected function get_js_sort_script_sort() {
+		return "<script type='text/javascript' src='./javascript/sorttable.js'></script>";	
+	}
+	
+	protected function _cell_is_sortable($name) {
+		return false;
+	}
+	
+	protected function get_uid_objects_list() {
+		return $this->objects_type."_".$this->filters['id_empr']."_list";
+	}
+	
+	protected function get_class_objects_list() {
+		return parent::get_class_objects_list()." sortable";
 	}
 	
 	public static function get_controller_url_base() {

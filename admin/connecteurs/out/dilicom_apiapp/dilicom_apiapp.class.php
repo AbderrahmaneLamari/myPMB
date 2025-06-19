@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: dilicom_apiapp.class.php,v 1.4.2.1 2021/08/06 07:46:29 dbellamy Exp $
+// $Id: dilicom_apiapp.class.php,v 1.5.4.1 2023/05/25 12:35:36 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -221,6 +221,9 @@ class dilicom_apiapp extends connecteur_out {
 	        $contributors = $this->get_contributor($loan['notice']);
 	        $categoryClil = $this->get_category_clil($loan['offers_data']);
     	   
+	        $productFormDetails = $loan['offers_data']['Product']['DescriptiveDetail']['ProductFormDetail'];
+	        $productFormDetails = is_array($productFormDetails) ? $productFormDetails : [$productFormDetails];
+
 	        $loans_formated[] = [
     	        "loanId"                   => $loan['pnb_loan']["pnb_loan_loanid"],
 	            "userId"                   => $loan['pnb_loan']["pnb_loan_num_loaner"],
@@ -240,7 +243,7 @@ class dilicom_apiapp extends connecteur_out {
 	            "frontCoverMedium"         => $loan['notice']->thumbnail_url,
 	            "loanerGln"                => $pmb_pnb_param_login,
 	            "contributors"             => $contributors, //facultatif
-	            "productFormDetails"       => $loan['offers_data']['Product']['DescriptiveDetail']['ProductFormDetail'] // obligatoire
+	            "productFormDetails"       => $productFormDetails, // obligatoire
             ];
 	    }
 	    return ["loans" => $loans_formated];

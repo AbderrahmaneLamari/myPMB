@@ -2,26 +2,16 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: accounting_devis_controller.class.php,v 1.3 2020/11/05 09:39:48 dgoron Exp $
+// $Id: accounting_devis_controller.class.php,v 1.4 2022/06/29 08:38:50 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/accounting/accounting_controller.class.php");
 
 class accounting_devis_controller extends accounting_controller {
 	
 	protected static $list_ui_class_name = 'list_accounting_devis_ui';
-	
-	protected static function get_list_ui_instance($filters=array(), $pager=array(), $applied_sort=array()) {
-	    global $accounting_devis_ui_user_input;
-	    global $accounting_devis_ui_status;
-	    
-	    $filters = array();
-	    $filters['user_input'] = stripslashes($accounting_devis_ui_user_input);
-	    $filters['status'] = $accounting_devis_ui_status;
-	    
-	    return new static::$list_ui_class_name($filters);
-	}
 	
 	public static function proceed($id=0) {
         global $action;

@@ -69,6 +69,14 @@
 								<input id="mailingObject" type="text" class='saisie-40em'>
 							</div>					
 						</div>
+						<div id="el1Child_5">
+							<div id="el1Child_5a">
+								<label class='etiquette'>{{ pmb.getMessage("animation", "mailing_attachment_mail") }} :</label>
+							</div>
+							<div id="el1Child_5b">
+								<input id="mailingAttachment" name="mailingAttachment" type="file" @change="setAttachmentFilename($event)">
+							</div>					
+						</div>
 						<div id="el1Child_1">
 							<div id="el1Child_1a">
 								<label class='etiquette'>{{ pmb.getMessage("animation", "mailing_body_mail") }} :</label>
@@ -271,6 +279,10 @@
 
 				let url = "./ajax.php?module=animations&categ=mailing&action=sendManualMail";
 				var data = new FormData();
+				
+				var file = document.getElementById("mailingAttachment") ? document.getElementById("mailingAttachment").files[0] : "";
+				data.append('attachmentFile', file); 
+				
 				data.append('data', JSON.stringify(this.dataMail));
 				
 				fetch(url, {
@@ -308,7 +320,11 @@
 				var patt = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 				var res = patt.test(mail);
 				return res;
-			}
+			},
+			
+			setAttachmentFilename : function(event) {
+				this.dataMail.filename = event.target.files[0].name;
+			},
 		}
 	}
 </script>

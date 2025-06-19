@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_parameters_pdf_ui.class.php,v 1.3.2.1 2021/06/30 07:45:10 dgoron Exp $
+// $Id: list_parameters_pdf_ui.class.php,v 1.4 2021/06/30 07:44:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

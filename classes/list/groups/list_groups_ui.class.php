@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_groups_ui.class.php,v 1.9.2.2 2021/11/30 09:28:06 dgoron Exp $
+// $Id: list_groups_ui.class.php,v 1.12.4.3 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -12,7 +12,7 @@ require_once($class_path."/group.class.php");
 class list_groups_ui extends list_ui {
 	
 	protected function _get_query_base() {
-		$query = 'SELECT id_groupe FROM groupe';
+		$query = 'SELECT DISTINCT id_groupe FROM groupe';
 		return $query;
 	}
 	
@@ -113,30 +113,17 @@ class list_groups_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-	
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'id':
-					$order .= 'id_groupe';
-					break;
-				case 'libelle' :
-					$order .= 'libelle_groupe';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'id':
+	            return 'id_groupe';
+	        case 'libelle' :
+	            return 'libelle_groupe';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	/**
@@ -153,9 +140,7 @@ class list_groups_ui extends list_ui {
 	}
 	
 	protected function get_search_filter_name() {
-		global $msg;
-		
-		return "<input class='saisie-80em' id='".$this->objects_type."_name' type='text' name='".$this->objects_type."_name' value=\"".$this->filters['name']."\" title='$msg[3001]' />";
+		return $this->get_search_filter_simple_text('name');
 	}
 	
 	protected function get_search_filter_locations() {
@@ -213,18 +198,12 @@ class list_groups_ui extends list_ui {
 		return $filter_query;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		global $base_path;
 		
 		$attributes = array();
-		switch($property) {
-			default:
-				$attributes['onclick'] = "window.location=\"".$base_path."/circ.php?categ=groups&action=showgroup&groupID=".$object->id."\"";
-				break;
-		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
+		$attributes['onclick'] = "window.location=\"".$base_path."/circ.php?categ=groups&action=showgroup&groupID=".$object->id."\"";
+		return $attributes;
 	}
 	
 	public function get_error_message_empty_list() {

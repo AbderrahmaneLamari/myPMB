@@ -1,0 +1,49 @@
+.pmb_rub_solo .pmb_container>*,
+.pmb_cp_container>* {
+    margin-bottom: 16px;
+}
+
+.pmb_solo .pmb_img {
+    max-width: 30rem;
+    height: fit-content;
+    margin-right: 24px;
+    border-radius: 1.6rem;
+    overflow: hidden;
+}
+
+.pmb_cp_links a {
+    text-decoration: underline;
+    color: var(--c-primary);
+    transition: var(--transition);
+    margin: 4px 0;
+    display: block;
+}
+
+.pmb_cp_links a:hover {
+    transition: var(--transition);
+    color: var(--c-thirdly);
+}
+
+.pmb_solo .pmb_date {
+    margin-bottom: 16px;
+}
+
+.pmb_solo .pmb_date {
+    margin-bottom: 16px;
+}
+
+.pmb_solo .pmb_button {
+    margin: 16px 0 24px;
+    display: inline-block;
+}
+
+@media (max-width: 768px) {
+
+    .pmb_content_solo_container {
+        flex-direction: column;
+    }
+
+    .pmb_content_solo_container .pmb_img {
+        margin-bottom: 8px;
+    }
+}

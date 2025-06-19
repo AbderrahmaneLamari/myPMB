@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatch_watches.class.php,v 1.7.10.1 2021/12/22 14:18:44 dgoron Exp $
+// $Id: docwatch_watches.class.php,v 1.9 2022/02/11 09:39:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -80,8 +80,8 @@ class docwatch_watches extends docwatch_root{
 	
 	public static function contains_boolean_expression($item_id, $watch_id) {
 		$contains = true;
-		$item_id += 0;
-		$watch_id += 0;
+		$item_id = intval($item_id);
+		$watch_id = intval($watch_id);
 		$query = "select watch_boolean_expression from docwatch_watches where id_watch =".$watch_id;
 		$result = pmb_mysql_query($query);
 		$row = pmb_mysql_fetch_object($result);

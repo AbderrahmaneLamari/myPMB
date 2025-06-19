@@ -2,8 +2,9 @@
 // +-------------------------------------------------+
 // © 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: images.class.php,v 1.13 2019/09/16 09:10:43 arenou Exp $
+// $Id: images.class.php,v 1.14 2022/03/07 14:35:10 dgoron Exp $
 
+global $visionneuse_path;
 require_once($visionneuse_path."/classes/mimetypes/affichage.class.php");
 
 class images extends affichage{
@@ -24,7 +25,6 @@ class images extends affichage{
     }
     
     public function fetchDisplay(){
-    	global $base_path;
     	//le titre
     	$this->toDisplay["titre"] = $this->doc->titre;
     	//l'image
@@ -149,6 +149,10 @@ class images extends affichage{
     }
      
     public function getTabParam(){
+    	if(!isset($this->parameters['size_x'])) $this->parameters['size_x'] = '';
+    	if(!isset($this->parameters['size_y'])) $this->parameters['size_y'] = '';
+    	if(!isset($this->parameters['watermark'])) $this->parameters['watermark'] = '';
+    	if(!isset($this->parameters['transparence'])) $this->parameters['transparence'] = '';
 		$this->tabParam = array(
 			"size_x"=>array("type"=>"text","name"=>"size_x","value"=>$this->parameters['size_x'],"desc"=>"Largeur maximale de l'image"),
 			"size_y"=>array("type"=>"text","name"=>"size_y","value"=>$this->parameters['size_y'],"desc"=>"Hauteur maximale de l'image"),

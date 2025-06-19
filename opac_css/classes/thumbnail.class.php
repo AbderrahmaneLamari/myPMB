@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: thumbnail.class.php,v 1.4.8.1 2021/12/11 09:47:04 tsamson Exp $
+// $Id: thumbnail.class.php,v 1.7 2022/04/12 07:27:18 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -70,17 +70,15 @@ class thumbnail {
 	}
 	
 	public static function get_thumbnail_url($object_id, $object_type) {
+	    global $opac_url_base;
 	    $object_id = intval($object_id);
-	    $thumbnail_url = "getimage.php?noticecode=&vigurl=";
+	    $thumbnail_url = $opac_url_base."getimage.php?noticecode=&vigurl=";
 	    switch ($object_type) {
 	        case 'shelve':
 	            $thumbnail_url .= "&etagere_id=".$object_id;
 	            break;
 	        case 'authority':
 	            $thumbnail_url .= "&authority_id=".$object_id;
-	            break;
-	        case 'docnum':
-	            $thumbnail_url .= "&docnum_id=".$object_id;
 	            break;
 	        case 'record':
 	        default:

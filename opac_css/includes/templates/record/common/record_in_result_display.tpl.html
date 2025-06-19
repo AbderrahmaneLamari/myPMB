@@ -1,4 +1,4 @@
-<!-- $Id: record_in_result_display.tpl.html,v 1.62 2019/11/07 14:41:14 ngantier Exp $ -->
+<!-- $Id: record_in_result_display.tpl.html,v 1.62.6.1 2023/04/24 14:13:01 dgoron Exp $ -->
 
 <div id="record_container_{{ record.id }}" class="parentNotCourte uk-clearfix">
 	{% block record_case_traitement %}
@@ -124,7 +124,7 @@
 	{% endblock %}
 	
 	{% block record_aside_content %}
-		<div class="panier_avis_notCourte">
+		<div class="panier_avis_notCourte" data-highlight="off">
 			{% block record_new %}
 				{% if record.new %}
 					<!-- Statut particulier (nouveaute)-->
@@ -244,7 +244,7 @@
 	{% endblock %}
 
 	{% block record_footer %}
-		<div class="footer_notice">
+		<div class="footer_notice" data-highlight="off">
 			{% block record_pnb_availability %}
 				{% if record.availability.availability != 'none' %}
 					{% if record.availability.availability != 'empty' %}

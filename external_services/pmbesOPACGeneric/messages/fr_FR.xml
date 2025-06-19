@@ -4,7 +4,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: fr_FR.xml,v 1.8 2021/02/25 13:47:41 dbellamy Exp $ -->
+$Id: fr_FR.xml,v 1.8.6.1 2023/03/15 09:31:54 dbellamy Exp $ -->
 
 <!DOCTYPE XMLlist SYSTEM "../../../includes/XMLlist.dtd">
 <XMLlist>
@@ -18,7 +18,8 @@ $Id: fr_FR.xml,v 1.8 2021/02/25 13:47:41 dbellamy Exp $ -->
     <entry code="list_shelves_OPACUserId">Id emprunteur
         -1: Ne pas tenir compte
         0: Emprunteur anonyme
-        x: Id emprunteur</entry>
+        x: Id emprunteur
+    </entry>
     <entry code="list_shelves_shelves">Tableau d'étagères</entry>
     
     <!-- retrieve_shelf_content -->
@@ -28,7 +29,8 @@ $Id: fr_FR.xml,v 1.8 2021/02/25 13:47:41 dbellamy Exp $ -->
     <entry code="retrieve_shelf_content_OPACUserId">Id emprunteur, pour vérifier les droits d'accès sur les notices.
         -1: Ne pas tenir compte
         0: Emprunteur anonyme
-        x: Id emprunteur</entry>
+        x: Id emprunteur
+    </entry>
     <entry code="retrieve_shelf_content_self_id">Id étagère</entry>
     <entry code="retrieve_shelf_content_shelf_content">Ids des notices</entry>
 
@@ -98,13 +100,44 @@ $Id: fr_FR.xml,v 1.8 2021/02/25 13:47:41 dbellamy Exp $ -->
         codstatdoc_995 -&gt; Code stat d'exemplaire
         diacritique -&gt; Caractères diacritiques
         nivbiblio -&gt; Niveau bibliographique
-        relationtypeup -&gt; Lien entre notice fille -> mère
-        relationtypedown -&gt; Lien entre notice mère -> fille
-        relationtype_aut -&gt; Lien entre autorité mère -> fille
-        relationtype_autup -&gt; Lien entre autorité fille -> mère
-        relationtypeup_unimarc -&gt; Code unimarc du champ pour les liens fille -> mère
-        relationtypedown_unimarc -&gt; Code unimarc du champ pour les liens mère -> fille
+        relationtypeup -&gt; Lien entre notice fille -&gt; mère
+        relationtypedown -&gt; Lien entre notice mère -&gt; fille
+        relationtype_aut -&gt; Lien entre autorité mère -&gt; fille
+        relationtype_autup -&gt; Lien entre autorité fille -&gt; mère
+        relationtypeup_unimarc -&gt; Code unimarc du champ pour les liens fille -&gt; mère
+        relationtypedown_unimarc -&gt; Code unimarc du champ pour les liens mère -&gt; fille 
 	</entry>
     <entry code="get_marc_table_result">Tableau avec les associations [code] =&gt; Libellé/valeur</entry>
+
+    <!-- selector -->
+    <entry code="selector_get_description">Fonctions de sélection</entry>
+    <entry code="selector_get_inputs_description">Description des entrées</entry>
+    <entry code="selector_get_inputs_type">Type de données :
+        categories -&gt; Catégories
+        authors -&gt; Auteurs
+        authors_person -&gt; Auteurs de type personne
+        congres_name -&gt; Auteurs de type congrès
+        collectivite_name -&gt;
+        Auteurs de type collectivité
+        publishers -&gt; Editeurs
+        titres_uniformes -&gt; Titres uniformes
+        collections -&gt; Collections
+        subcollections -&gt; Sous-collections
+        indexint -&gt; Indexations décimales
+        serie -&gt; Séries
+    </entry>
+    <entry code="selector_get_inputs_search">Contenu à chercher</entry>
+    <entry code="selector_get_inputs_filter">Filtre de limitation :
+        categories -&gt; Liste des thésaurus à explorer
+    </entry>
+    <entry code="selector_get_inputs_exclude">Filtre d'exclusion :
+        Ids à exclure (séparés par une ,)
+        sauf categories -&gt; Id à exclure
+    </entry>
+    <entry code="selector_get_outputs_description">Description des retours</entry>
+    <entry code="selector_get_outputs_results">Tableau de résultats</entry>
+    <entry code="selector_get_outputs_id">Identifiant</entry>
+    <entry code="selector_get_outputs_label">Libellé</entry>
+    <entry code="selector_get_outputs_short_label">Libellé court (catégories)</entry>
 
 </XMLlist>

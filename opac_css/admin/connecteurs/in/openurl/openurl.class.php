@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: openurl.class.php,v 1.11 2019/07/23 09:30:38 btafforeau Exp $
+// $Id: openurl.class.php,v 1.12 2022/02/16 13:33:54 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -444,10 +444,11 @@ class openurl extends connector {
     	global $res_allow,$res_parameter;
     	global $rfr_allow,$rfr_parameter;
 
+    	$t = array();
     	$t['libelle'] = $libelle ? stripslashes($libelle) : "OpenURL";
     	$t['source_name'] = $source_name ? stripslashes($source_name) : "OpenURL";
-    	$t['iwidth']=$iwidth+0;
-    	$t['iheight']=$iheight+0;
+    	$t['iwidth'] = (int) $iwidth;
+    	$t['iheight'] = (int) $iheight;
     	$t['infobulle'] = $infobulle ? stripslashes($infobulle) : "";
 //      	if (($_FILES["conf_file"])&&(!$_FILES["conf_file"]["error"])) {
 //			$file_params = file_get_contents($_FILES["conf_file"]["tmp_name"]);
@@ -579,6 +580,7 @@ class openurl extends connector {
 	}
 	
 	public function getTypeOfEnrichment($notice_id,$source_id){
+		$type = array();
 		$libelle = '';
 		$infobulle = '';
 		$params=$this->get_source_params($source_id);

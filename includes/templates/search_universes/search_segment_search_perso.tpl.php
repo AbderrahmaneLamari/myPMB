@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment_search_perso.tpl.php,v 1.8.2.1 2021/10/13 12:59:20 tsamson Exp $
+// $Id: search_segment_search_perso.tpl.php,v 1.9 2021/10/13 13:16:27 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mailing.class.php,v 1.9 2020/10/01 08:48:40 dgoron Exp $
+// $Id: mailing.class.php,v 1.9.6.1 2023/03/16 14:56:43 dgoron Exp $
 
 global $class_path;
 require_once($class_path."/scheduler/scheduler_task.class.php");
@@ -59,17 +59,17 @@ class mailing extends scheduler_task {
 				    }
 				    
 				    if (is_array($result) && count($result)) {
-				        $this->report[] = "<tr><td>
+				    	$content_report = "
 								<h1>$msg[empr_mailing_titre_resultat]</h1>
 								<strong>$msg[admin_mailtpl_sel]</strong>
 								".htmlentities($result["name"],ENT_QUOTES,$charset)."<br />
 								<strong>$msg[empr_mailing_form_obj_mail]</strong>
 								".htmlentities($result["object_mail"],ENT_QUOTES,$charset)."<br />
 								".(count($this->attachments) ? "<strong>".$this->msg['planificateur_attachments']."</strong> ".$this->get_display_attachments() : '')."<br />
-								".(count($this->attachments_errors) ? "<strong>".$this->msg['planificateur_attachments_errors']."</strong> ".implode(', ',$this->attachments_errors) : '')."
-								</td></tr>";
+								".(count($this->attachments_errors) ? "<strong>".$this->msg['planificateur_attachments_errors']."</strong> ".implode(', ',$this->attachments_errors) : '');
+				    	$this->add_content_report($content_report);
 				        
-				        $tpl_report = "<tr><td>
+				        $tpl_report = "
 								<strong>$msg[empr_mailing_resultat_envoi]</strong>";
 				        $msg['empr_mailing_recap_comptes'] = str_replace("!!total_envoyes!!", $result["nb_mail_sended"], $msg['empr_mailing_recap_comptes']) ;
 				        $msg['empr_mailing_recap_comptes'] = str_replace("!!total!!", $result["nb_mail"], $msg['empr_mailing_recap_comptes']) ;
@@ -92,9 +92,7 @@ class mailing extends scheduler_task {
 						//DG - #76725 Je le laisse commenté pour la raison suivante :
 						// Si l'on dépointe les mails non envoyés (erreur sur l'adresse mail) sur une tâche auto fréquente, il y a des risques de devenir SPAMMEUR
 //						$mailing->reset_flag_not_sended();
-				        $tpl_report .= "</td></tr>";
-				        
-				        $this->report[] = $tpl_report;
+				        $this->add_content_report($tpl_report);
 				        $this->update_progression(100);
 				    }
 				}

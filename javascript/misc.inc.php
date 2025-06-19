@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc.inc.php,v 1.17 2020/11/05 10:48:22 dgoron Exp $
+// $Id: misc.inc.php,v 1.18 2022/03/18 08:33:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -13,12 +13,12 @@ if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 // ----------------------------------------------------
 function window_title($title='PMB') {
 	$title = pmb_preg_replace('/\"/m', "'", $title);
-	return "<script type='text/javascript'>document.title=\"$title\";window.status=\"$title\";</script>";
-	}
+	return "<script type='text/javascript'>document.title=\"$title\";</script>";
+}
 
 function form_focus($form, $element) {
 	return "<script type='text/javascript'>document.forms['$form'].elements['$element'].focus();</script>";
-	}
+}
 
 function confirmation_delete($url,$entete_message = "") {
 	
@@ -28,8 +28,8 @@ function confirmation_delete($url,$entete_message = "") {
 		function confirmation_delete(param,element) {
         		result = confirm(\"".$entete_message."\\n".$msg['confirm_suppr_de']." '\"+element+\"' ?\");
         		if(result) document.location = \"$url\"+param ;
-   			}</script>";
-	}
+   		}</script>";
+}
 
 function reverse_html_entities() {
 	return "<script type='text/javascript'>
@@ -156,7 +156,7 @@ function reverse_html_entities() {
 		
 		}
 		</script>";
-	}
+}
 
 function jscript_checkbox() {
 	

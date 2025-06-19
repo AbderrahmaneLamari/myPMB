@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggestions_map.class.php,v 1.15.4.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: suggestions_map.class.php,v 1.17.2.2 2023/09/28 09:07:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -31,8 +31,6 @@ class suggestions_map {
 	 
 	//Constructeur.	 
 	public function __construct() {
-		
-		global $dbh;
 		global $include_path;
 		global $charset;
 		
@@ -74,10 +72,9 @@ class suggestions_map {
 */		
 		
 		//Tableau des flux definis
-		if ($xml_subst) {
+		if (!empty($xml_subst)) {
 			$param_subst=_parser_text_no_function_($xml_subst, "SUGGESTS");
 			$this->workflow=$param_subst['WORKFLOW'][0];
-			
 		} else {
 			$this->workflow=$param['WORKFLOW'][0];
 		}
@@ -152,7 +149,6 @@ class suggestions_map {
 					$allowed_to_states[$allowed_from_states[$i]][]=$allowed_transitions[$i]['TOSTATE'][$j]['NAME'];
 				}
 			}
-			
 		}
 
 		$work_from_states=array();
@@ -176,7 +172,6 @@ class suggestions_map {
 				}
 			}
 		}
-
 		return TRUE;
 	}
 	
@@ -233,13 +228,15 @@ class suggestions_map {
 	//Retourne le tableau des actions associees a un etat
 	public function getState_ACTION($state_name) {
 		
+		if(! array_key_exists("ACTION", $this->states[$state_name])) {
+			return array();
+		}
 		return $this->states[$state_name]['ACTION'];
 	}
 
 
 	//Construction du sélecteur en fonction de la liste des états possibles
 	public function getStateSelector($selected=0) {
-		
 		global $msg, $charset;
 			
 		$selector="<select class='saisie-25em' id='statut' name='statut' onchange=\"submit();\" >";
@@ -277,8 +274,6 @@ class suggestions_map {
 
 	//Construction de la liste des boutons en fonction de l'état en cours
 	public function getButtonList($state='-1') {
-		global $msg, $charset;
-		
 		if (!$state) $state='-1';
 		$button_list="";
 		if ($state == '-1') { //Tous états possibles
@@ -312,17 +307,14 @@ class suggestions_map {
 			}
 						
 		}
-				
 		return $button_list;
 	}
-
 
 	public function getButtonList_MERGE() {
 		global $msg;
 		
 		return "<input type='button' class='bouton_small' value='$msg[acquisition_sug_bt_fus]' onClick=\"chk_MERGE(); \" />";
 	}
-	
 
 	public function getButtonList_VALIDATED() {
 		global $msg;
@@ -330,34 +322,29 @@ class suggestions_map {
 		return "<input type='button' class='bouton_small' value='$msg[acquisition_sug_bt_val]' onClick=\"chk_VALIDATED();\" />";
 	}
 
-
 	public function getButtonList_REJECTED() {
 		global $msg;
 		
 		return "<input type='button' class='bouton_small' value='$msg[acquisition_sug_bt_rej]' onClick=\"chk_REJECTED(); \" />";
 	}
-	
 
 	public function getButtonList_CONFIRMED() {
 		global $msg;
 	
 		return "<input type='button' class='bouton_small' value='$msg[acquisition_sug_bt_con]' onClick=\"chk_CONFIRMED(); \" />";
 	}
-	
 
 	public function getButtonList_GIVENUP() {
 		global $msg;
 		
 		return "<input type='button' class='bouton_small' value='$msg[acquisition_sug_bt_aba]' onClick=\"chk_GIVENUP(); \" />";
 	}
-	
 
 	public function getButtonList_ORDERED() {
 		global $msg;
 		
 		return "<input type='button' class='bouton_small' value='$msg[acquisition_sug_bt_cde]' onClick=\"chk_ORDERED(); \" />";
 	}
-	
 
 	public function getButtonList_ESTIMATED() {
 		global $msg;
@@ -365,20 +352,17 @@ class suggestions_map {
 		return "<input type='button' class='bouton_small' value='$msg[acquisition_sug_bt_dev]' onClick=\"chk_ESTIMATED(); \" />";
 	}
 
-
 	public function getButtonList_RECEIVED() {
 		global $msg;
 		
 		return "<input type='button' class='bouton_small' value='$msg[acquisition_sug_bt_rec]' onClick=\"chk_RECEIVED(); \" />";
 	}
-	
 
 	public function getButtonList_FILED() {
 		global $msg;
 		
 		return "<input type='button' class='bouton_small' value='$msg[acquisition_sug_bt_arc]' onClick=\"chk_FILED(); \" />";
 	}
-
 	
 	public function getButtonList_TODO($state='-1') {
 		global $msg;
@@ -403,8 +387,7 @@ class suggestions_map {
 		return "";
 	}	
 
-
-	public function getCategModifier($state='-1', $num_categ='-1', $nb_per_page) {
+	public function getCategModifier($state='-1', $num_categ='-1', $nb_per_page=0) {
 		global $msg, $charset;
 		
 		$selector = "<label class='etiquette' >".htmlentities($msg['acquisition_sug_sel_categ'],ENT_QUOTES, $charset)."</label>&nbsp;"; 
@@ -445,7 +428,6 @@ class suggestions_map {
 		return "";
 	}	
 
-
 	public function getButtonList_DELETED($state='-1') {
 		global $msg;
 
@@ -468,7 +450,6 @@ class suggestions_map {
 		}
 		return "";
 	}	
-
 
 	//Retourne le bouton supprimer dans le formulaire de modification
 	public function getButton_DELETED($state,$id_bibli,$id_sug) {
@@ -496,7 +477,6 @@ class suggestions_map {
 		return "";
 	}	
 
-
 	//Retourne le bouton cataloguer dans le formulaire de modification
 	public function getButton_CATALOG($state,$id_bibli,$id_sug) {
 		global $msg;
@@ -513,13 +493,11 @@ class suggestions_map {
 		return "";
 	}	
 	
-	
 	//Retourne un masque pour tenir compte des statuts archives 
 	public function getMask_FILED() {
 		$mask=(int)($this->states['FILED']['ID']);
 		return $mask;
 	}
-
 
 	//Retourne le commentaire Texte associe a un etat
 	public function getTextComment($state) {
@@ -544,7 +522,6 @@ class suggestions_map {
 		return $comment;
 	}
 
-
 	//Retourne le commentaire PDF associe a un etat
 	public function getPdfComment($state) {
 		global $msg,$charset;
@@ -557,9 +534,8 @@ class suggestions_map {
 		return $comment;
 	}
 
-
 	//Construction de la liste des boutons en fonction de l'état en cours
-	public function getScriptList($state='-1', $num_categ='-1',$nb_per_page) {
+	public function getScriptList($state='-1', $num_categ='-1',$nb_per_page=0) {
 		global $msg, $charset;
 		
 		$script_list="";
@@ -571,26 +547,22 @@ class suggestions_map {
 			foreach($this->states as $name=>$value) {
 				eval('$script_list.= $this->getScriptList_'.$name.'('.$num_categ.', '.$nb_per_page.');');
 			}
-				
 		} else {
-		
 			$state_name=$this->id_to_name[$state];
 			$tostates=$this->transitions[$state_name];
 			
-			if ($this->getState_MERGE[$state_name]!='NO') {
+			if ($this->getState_MERGE($state_name)!='NO') {
 				$script_list.= $this->getScriptList_MERGE($num_categ, $nb_per_page);
 			}
 			
-			foreach($tostates as $id=>$name) {
+			foreach($tostates as $name) {
 				eval('$script_list.= $this->getScriptList_'.$name.'('.$num_categ.', '.$nb_per_page.');');
-			}
-						
+			}			
 		}
 		return $script_list;
 	}
 
-
-	public function getScriptList_MERGE($num_categ='-1',$nb_per_page) {
+	public function getScriptList_MERGE($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 		
 		$script = "
@@ -608,9 +580,8 @@ class suggestions_map {
 		
 		return $script;
 	}
-	
 
-	public function getScriptList_VALIDATED($num_categ='-1',$nb_per_page) {
+	public function getScriptList_VALIDATED($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 		
 		$script = "
@@ -629,8 +600,7 @@ class suggestions_map {
 		return $script;
 	}
 
-
-	public function getScriptList_REJECTED($num_categ='-1',$nb_per_page) {
+	public function getScriptList_REJECTED($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 
 		$script = "
@@ -648,9 +618,8 @@ class suggestions_map {
 
 		return $script;		
 	}
-	
 
-	public function getScriptList_CONFIRMED($num_categ='-1',$nb_per_page) {
+	public function getScriptList_CONFIRMED($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 		
 		$script = "
@@ -668,9 +637,8 @@ class suggestions_map {
 
 		return $script;		
 	}
-	
 
-	public function getScriptList_GIVENUP($num_categ='-1',$nb_per_page) {
+	public function getScriptList_GIVENUP($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 		
 		$script = "
@@ -688,15 +656,13 @@ class suggestions_map {
 	
 		return $script;		
 	}
-	
 
-	public function getScriptList_ORDERED($num_categ='-1',$nb_per_page) {
+	public function getScriptList_ORDERED($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 		global $acquisition_sugg_to_cde;
 		
 		if ($acquisition_sugg_to_cde) {
-					
-			$script.="
+			return "
 				//Commande les éléments cochés
 				function chk_ORDERED() {
 					if(!verifChk(1)) return false;
@@ -708,10 +674,8 @@ class suggestions_map {
 					}
 					return false;
 				}";
-	
-		} else {			
-				
-			$script.="
+		} else {
+			return "
 				//Commande les éléments cochés
 				function chk_ORDERED() {
 					if(!verifChk(1)) return false;
@@ -724,18 +688,14 @@ class suggestions_map {
 					return false;
 				}";
 		}
-
-		return $script;		
 	}
-	
 
-	public function getScriptList_ESTIMATED($num_categ='-1',$nb_per_page) {
+	public function getScriptList_ESTIMATED($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 		global $acquisition_sugg_to_cde;
 		
 		if ($acquisition_sugg_to_cde) {
-					
-			$script.="
+			return "
 				//Devise les éléments cochés
 				function chk_ESTIMATED() {
 					if(!verifChk(1)) return false;
@@ -747,10 +707,8 @@ class suggestions_map {
 					}
 					return false;
 				}";
-	
 		} else {			
-				
-			$script.="
+			return "
 				//Devise les éléments cochés
 				function chk_ESTIMATED() {
 					if(!verifChk(1)) return false;
@@ -763,12 +721,9 @@ class suggestions_map {
 					return false;
 				}";
 		}
-
-		return $script;		
 	}
-	
 
-	public function getScriptList_RECEIVED($num_categ='-1',$nb_per_page) {
+	public function getScriptList_RECEIVED($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 		
 		$script = "
@@ -786,9 +741,8 @@ class suggestions_map {
 
 		return $script;		
 	}
-	
 
-	public function getScriptList_FILED($num_categ='-1',$nb_per_page) {
+	public function getScriptList_FILED($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 
 		$script = "
@@ -806,9 +760,8 @@ class suggestions_map {
 
 		return $script;		
 	}
-
 	
-	public function getScriptList_TODO($num_categ='-1',$nb_per_page) {
+	public function getScriptList_TODO($num_categ='-1',$nb_per_page=0) {
 		global $msg;
 
 		$script = "
@@ -826,7 +779,6 @@ class suggestions_map {
 
 		return $script;		
 	}	
-
 
 	public function getScriptList_DELETED() {
 		global $msg;
@@ -846,7 +798,6 @@ class suggestions_map {
 		
 		return $script;
 	}	
-
 
 	//Effectue une transition 
 	public function doTransition($toname,$chk){
@@ -868,7 +819,9 @@ class suggestions_map {
 						} else {
 							$sug->statut = (int)($this->getState_ID($toname));
 						}
-						if ($acquisition_email_sugg && $this->mail_on_transition[$state_name][$this->getStateNameFromId($sug->statut)]=='YES') $this->sendmail($sug);
+						if ($acquisition_email_sugg && $this->mail_on_transition[$state_name][$this->getStateNameFromId($sug->statut)]=='YES') {
+						    $this->sendmail($sug);
+						}
 					}
 					$sug->save();
 	
@@ -877,7 +830,7 @@ class suggestions_map {
 		}
 		
 		$this->has_unimarc = false;
-		foreach($chk as $key=>$id_sug){
+		foreach($chk as $id_sug){
 			
 			if ($id_sug) {
 	
@@ -890,7 +843,7 @@ class suggestions_map {
 					
 					if (is_array($tab_action)){
 						
-						foreach($tab_action as $dummykey=>$action){
+						foreach($tab_action as $action){
 		
 							switch ($action['NAME']) {
 								
@@ -900,7 +853,7 @@ class suggestions_map {
 									break;
 									
 								case 'DELETE' :
-									$sug->delete();
+								    suggestions::delete($id_sug);
 									suggestions_origine::delete($id_sug);	
 									break;
 								
@@ -915,7 +868,7 @@ class suggestions_map {
 				} else { //statut inexistant
 				
 					if ($toname == 'DELETE'){ //Si transition = DELETE, on supprime la suggestion
-						$sug->delete();
+					    suggestions::delete($id_sug);
 						suggestions_origine::delete($id_sug);	
 					}
 					
@@ -923,7 +876,6 @@ class suggestions_map {
 			}
 		}
 	}
-	
 	
 	//Change la categorie pour un tableau de suggestions
 	public function changeCateg($chk, $to_categ) {
@@ -937,18 +889,15 @@ class suggestions_map {
 		}
 	}
 
-
 	//Retourne l'id de l'etat de depart	
 	public function getFirstStateId() {
 		return $this->getState_ID($this->firststate);
 	}
 
-
 	//Retourne le nom de l'etat a partir de l'id
 	public function getStateNameFromId($state_id) {
 		$mask = $this->getMask_FILED();
 		if (($state_id & $mask)==$mask ) $state_id=$mask;
-		
 		return $this->id_to_name[$state_id];
 	}
 
@@ -1030,12 +979,9 @@ class suggestions_map {
 					$tomail = $row->origine;			
 					break;
 			}	
-		
 			if($tomail != '') {
 				mailpmb($tonom, $tomail, $objet, $corps, $biblio_name, $biblio_email,"Content-Type: text/plain; charset=\"$charset\"\n", "", "");
 			}
 		}
 	}
 }
-
-?>

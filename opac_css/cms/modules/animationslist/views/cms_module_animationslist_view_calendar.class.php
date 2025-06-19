@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_animationslist_view_calendar.class.php,v 1.1 2021/04/01 15:37:10 btafforeau Exp $
+// $Id: cms_module_animationslist_view_calendar.class.php,v 1.3 2023/01/03 15:02:45 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,19 +11,51 @@ use Pmb\Animations\Models\AnimationStatusModel;
 
 class cms_module_animationslist_view_calendar extends cms_module_common_view {
 	
+    public const COLOR_STATUT = "statut";
+    public const COLOR_CALENDAR = "calendar";
+    
 	public function __construct($id = 0) {
 		$this->use_dojo = true;
 		parent::__construct($id);
 	}
 
 	public function get_form() {
-		$form = "
+	    $form = "
         <div class='row'>
 			<div class='colonne3'>
-				<label for='cms_module_animationslist_view_calendar_nb_displayed_animations_under'>".$this->format_text($this->msg['cms_module_animationslist_view_calendar_nb_displayed_animations_under'])."</label>
+				<label for='".$this->get_form_value_name("nb_displayed_animations_under")."'>".$this->format_text($this->msg['cms_module_animationslist_view_calendar_nb_displayed_animations_under'])."</label>
 			</div>
 			<div class='colonne-suite'>
-				<input type='text' name='cms_module_animationslist_view_calendar_nb_displayed_animations_under' value='".$this->format_text($this->parameters['nb_displayed_animations_under'])."'/>
+				<input type='text' name='".$this->get_form_value_name("nb_displayed_animations_under")."' value='".$this->format_text($this->parameters['nb_displayed_animations_under'] ?? "")."'/>
+			</div>
+		</div>
+        <div class='row'>
+			<div class='colonne3'>
+				<label for='cms_module_animationslist_view_calendar_color'>".$this->format_text($this->msg['cms_module_animationslist_view_calendar_color'])."</label>
+			</div>
+			<div class='colonne-suite'>
+                <input type='radio' id='calendar_color_statut' value='statut' name='".$this->get_form_value_name("calendar_color")."'
+                    ".(!empty($this->parameters["calendar_color"]) && $this->parameters["calendar_color"] == "statut" ? "checked": "")."/>
+                <label for='calendar_color'>".$this->format_text($this->msg['calendar_color_statut'])."</label>
+                <input type='radio' id='calendar_color_calendar' value='calendar' name='".$this->get_form_value_name("calendar_color")."'
+                    ".(!empty($this->parameters["calendar_color"]) && $this->parameters["calendar_color"] == "calendar" ? "checked": "")."/>
+                <label for='calendar_color'>".$this->format_text($this->msg['calendar_color_calendar'])."</label>
+			</div>
+		</div>
+		<div class='row'>
+			<div class='colonne3'>
+				<label for=''>".$this->format_text($this->msg['cms_module_animationslist_view_calendar_link_animation'])."</label>
+			</div>
+			<div class='colonne-suite'>
+				  ". $this->get_constructor_link_form('animation') ."
+			</div>
+		</div>
+		<div class='row'>
+			<div class='colonne3'>
+				<label for=''>".$this->format_text($this->msg['cms_module_animationslist_view_calendar_link_animationslist'])."</label>
+			</div>
+			<div class='colonne-suite'>
+				    ". $this->get_constructor_link_form('animationslist') ."
 			</div>
 		</div>";
 		
@@ -31,11 +63,11 @@ class cms_module_animationslist_view_calendar extends cms_module_common_view {
 	}
 	
 	public function save_form() {
-	    global $cms_module_animationslist_view_calendar_nb_displayed_animations_under;
 		
-		$this->save_constructor_link_form('animation');
-		$this->save_constructor_link_form('animationslist');
-		$this->parameters['nb_displayed_animations_under'] = (int) $cms_module_animationslist_view_calendar_nb_displayed_animations_under;
+	    $this->save_constructor_link_form('animation');
+	    $this->save_constructor_link_form('animationslist');
+		$this->parameters['nb_displayed_animations_under'] = intval($this->get_value_from_form("nb_displayed_animations_under"));
+		$this->parameters['calendar_color'] = $this->get_value_from_form("calendar_color");
 		
 		return parent::save_form();
 	}
@@ -75,15 +107,26 @@ class cms_module_animationslist_view_calendar extends cms_module_common_view {
 			    if (!empty($animation->event->startDate)) {
  					if (!in_array($title, $calendar)) {
  					    $calendar[] = $title;
- 					    $status = new AnimationStatusModel($animation->numStatus);
- 					    $color = $status->color;
+ 					    
+ 					    // On choisi la couleur du calendrier
+ 					    if (self::COLOR_CALENDAR == $this->parameters["calendar_color"]) {
+ 					        $animation->fetchCalendar();
+ 					        $color = $animation->calendar->color;
+ 					        $color_key = $animation->numCalendar;
+ 					    } else {
+ 					        $animation->fetchStatus();
+ 					        $color = $animation->status->color;
+ 					        $color_key = $animation->numStatus;
+ 					    }
+ 					    $animation->color_key = $color_key;
+ 					    
 						$legend .= "
 							<div style='float:left;'>
 								<div style='float:left;width:1em;height:1em;background-color:$color'></div>
 								<div style='float:left;'>&nbsp;".$this->format_text($title)."&nbsp;&nbsp;</div>
 							</div>";
 					}
-					$styles[$animation->numStatus] = $color;
+					$styles[$color_key] = $color;
 					$start_time = new DateTime($animation->event->startDate);
 					$end_time = new DateTime($animation->event->endDate);
 					if ($nb_displayed < $this->parameters['nb_displayed_animations_under'] && ($start_time->getTimestamp() >= $date_time || $end_time->getTimestamp() >= $date_time)) {
@@ -115,7 +158,7 @@ class cms_module_animationslist_view_calendar extends cms_module_common_view {
 		$html_to_display .= "</style>";
 		$html_to_display .= $legend . $animations_list;
 		
-		$json_animations = encoding_normalize::json_encode($this->utf8_encode($animations));
+		$json_animations = encoding_normalize::json_encode($animations);
 		if (empty($json_animations)) {
 		    $json_animations = [];
 		}
@@ -163,20 +206,19 @@ class cms_module_animationslist_view_calendar extends cms_module_common_view {
 			case 'get_css':
 				$response['content-type'] = 'text/css';
 				$response['content'] = "
-#".$this->get_module_dom_id()." td.cms_module_animationslist_animation_day {
-	background : green;		
-}
-#".$this->get_module_dom_id()." ul.cms_module_animationslist_view_calendar_animationslist li {
-	display : block;
-}
-
-#".$this->get_module_dom_id()." ul.cms_module_animationslist_view_calendar_animationslist li a {
-	display : inline;
-	background : none;
-	border : none;
-	color : inherit !important;
-}";
-				
+                    #".$this->get_module_dom_id()." td.cms_module_animationslist_animation_day {
+                    	background : green;		
+                    }
+                    #".$this->get_module_dom_id()." ul.cms_module_animationslist_view_calendar_animationslist li {
+                    	display : block;
+                    }
+                    
+                    #".$this->get_module_dom_id()." ul.cms_module_animationslist_view_calendar_animationslist li a {
+                    	display : inline;
+                    	background : none;
+                    	border : none;
+                    	color : inherit !important;
+                    }";
 				break;			
 			case 'get_js':
 				$response['content-type'] = 'application/javascript';

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_root.class.php,v 1.65.2.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: cms_module_root.class.php,v 1.68 2023/01/03 15:02:45 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -665,6 +665,7 @@ class cms_module_root {
 	            break;
 	        case "article" :
 	        case "section" :
+	        case "animationslist":
 	        default :
 	            $link = "./index.php?lvl=cmspage&pageid=$page_id&$var=$value";
 	            break;
@@ -885,5 +886,9 @@ class cms_module_root {
 	    $this->id=0;
 	    $this->hash = '';
 	    $this->get_hash();
+	}
+	
+	public function get_parameters() {
+	    return $this->parameters;
 	}
 }

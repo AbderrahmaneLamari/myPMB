@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: map_location_cms_controler.js,v 1.2 2019/09/20 14:04:21 btafforeau Exp $
+// $Id: map_location_cms_controler.js,v 1.3 2022/09/23 09:50:50 tsamson Exp $
 
 const TYPE_RECORD = 11;
 const TYPE_LOCATION = 15;
@@ -62,7 +62,9 @@ define(["dojo/_base/declare", "apps/pmb/PMBDialog", "dojo/dom", "dojox/widget/St
 				}
 				var style = {fillColor: color, strokeWidth: 1, strokeColor: color, fillOpacity: 0.7, title: ''};
 				for(var i=0 ; i<arrayFeature.length ; i++){
-					var clonedFeature = this.cloneFeature(arrayFeature[i]);
+                	//on utilise la fonction native de l'objet feature
+                	//c'est plus propre pour la duplication des components (pas de conflit d'id, pas d'emprise qui disparait)
+					var clonedFeature = arrayFeature[i].clone();
 					var numLayer = arrayFeature[i].layer.name.split('_');
 					var numFeature = arrayFeature[i].id.split('_');		
 					clonedFeature.id = numLayer[numLayer.length-1]+'_'+numFeature[numFeature.length-1];				

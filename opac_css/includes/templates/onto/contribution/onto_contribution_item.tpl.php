@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_item.tpl.php,v 1.10.2.1 2021/06/30 09:25:20 qvarin Exp $
+// $Id: onto_contribution_item.tpl.php,v 1.11 2021/06/30 09:25:29 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 

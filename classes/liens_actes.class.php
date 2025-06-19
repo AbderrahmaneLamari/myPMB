@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: liens_actes.class.php,v 1.14 2017/07/10 13:55:21 dgoron Exp $
+// $Id: liens_actes.class.php,v 1.15 2022/02/10 10:46:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -21,8 +21,8 @@ class liens_actes{
 	 
 	//Constructeur.	 
 	public function __construct($num_acte= 0, $num_acte_lie= 0 ) {
-		$this->num_acte = $num_acte+0;
-		$this->num_acte_lie = $num_acte_lie+0;
+		$this->num_acte = intval($num_acte);
+		$this->num_acte_lie = intval($num_acte_lie);
 		if (!$this->num_acte || !$this->num_acte_lie) die ("Erreur de création liens_actes");
 
 		$q = "select count(1) from liens_actes where num_acte = '".$this->num_acte."' and num_acte_lie = '".$this->num_acte_lie."' ";
@@ -35,9 +35,9 @@ class liens_actes{
 
 	//supprime un lien entre actes de la base
 	public static function delete($num_acte) {
-		$num_acte += 0;
+		$num_acte = intval($num_acte);
 		$q = "delete from liens_actes where num_acte = '".$num_acte."' or num_acte_lie = '".$num_acte."' ";
-		$r = pmb_mysql_query($q);
+		pmb_mysql_query($q);
 	}
 
 	//recherche l'acte pere de l'acte passé en paramètre

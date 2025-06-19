@@ -2,15 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: txt2pmbxml.class.php,v 1.2 2019/07/11 10:24:50 btafforeau Exp $
+// $Id: txt2pmbxml.class.php,v 1.3 2022/04/21 07:34:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $base_path;
 require_once($base_path."/admin/convert/convert.class.php");
 
 class txt2pmbxml extends convert {
 
-		
 	public static function convert_data($notice, $s, $islast, $isfirst, $param_path) {
 		global $TabSupport,$TabFonction,$TabLangue,$TabMonth,$sf,$charset;
 		
@@ -152,6 +152,7 @@ class txt2pmbxml extends convert {
 		//-----------------------début de la notice---------------------------- 
 		$data="<notice>\n<rs>n</rs>\n";
 		
+		$f = array();
 		//Explosion des champs dans un tableau
 		$lignes=explode("\n",$notice);
 		$before=false;
@@ -165,11 +166,11 @@ class txt2pmbxml extends convert {
 					if (substr($contenu,0,3)=="#_#") {
 						$f["URL"][0]=substr($contenu,3,strlen($contenu)-6);
 					} else {
-						$contenu_explode = explode("/",$contenu);
+						$contenu_explode=explode("/",$contenu);
 						for ($j=0; $j<count($contenu_explode); $j++) {
 						    $contenu_explode[$j]=trim($contenu_explode[$j]);
 						}
-						$f[$index] = $contenu_explode;
+						$f[$index]=$contenu_explode;
 					}
 				}
 				$ligne=explode(": ",trim($lignes[$i]));
@@ -187,6 +188,7 @@ class txt2pmbxml extends convert {
 				$f[$sf["titre"]][0]="objet";
 				$is_notice_objet=true;
 			} else  {
+				$r = array();
 				$r['VALID'] = false;
 				$r['ERROR'] = "Le champ titre est vide ou inexistant";
 				$r['DATA'] = "";
@@ -338,7 +340,7 @@ class txt2pmbxml extends convert {
 			if ($f[$sf["article_nom_revue"]][0]) {
 				if ($f[$sf["article_nom_revue"]][0][strlen($f[$sf["article_nom_revue"]][0])-1]!="'") {
 					$espace=" ";
-				} else $espcae="";
+				} else $espace="";
 				$article=$f[$sf["article_nom_revue"]][0];
 			} else {
 				$article="";
@@ -376,31 +378,19 @@ class txt2pmbxml extends convert {
 		
 		//Collation
 		if (($f[$sf["collation_pagination"]][0])&&($f[$sf["support_physique"]][0]!="périodique")) {
-			$data.="<f c='215'>\n";
-				$data.="<s c='a'>".htmlspecialchars($f[$sf["collation_pagination"]][0],ENT_QUOTES,$charset)."</s>\n";
-			$data.="</f>\n";
+			$data.=static::get_converted_field_uni('215', 'a', $f[$sf["collation_pagination"]][0]);
 		}
 		
 		//Notes
-		if ($f[$sf["notes"]][0]) {
-			$data.="<f c='300'>\n";
-				$data.="<s c='a'>".htmlspecialchars($f[$sf["notes"]][0],ENT_QUOTES,$charset)."</s>\n";
-			$data.="</f>\n";
-		}
+		$data.=static::get_converted_field_uni('300', 'a', $f[$sf["notes"]][0]);
 		
 		//Note de contenu
-		if ($f[$sf["notes_contenu"]][0]) {
-			$data.="<f c='327'>\n";
-				$data.="<s c='a'>".htmlspecialchars($f[$sf["notes_contenu"]][0],ENT_QUOTES,$charset)."</s>\n";
-			$data.="</f>\n";
-		}
+		$data.=static::get_converted_field_uni('327', 'a', $f[$sf["notes_contenu"]][0]);
 		
 		//Résumé
 		if ($f[$sf["resume"]][0]) {
 			$resume=implode("/",$f[$sf["resume"]]);
-			$data.="<f c='330'>\n";
-				$data.="<s c='a'>".htmlspecialchars($resume,ENT_QUOTES,$charset)."</s>\n";
-			$data.="</f>\n";
+			$data.=static::get_converted_field_uni('330', 'a', $resume);
 		}
 		
 		//Collection et sous collection
@@ -441,60 +431,40 @@ class txt2pmbxml extends convert {
 		//Thésaurus
 		if (($f[$sf["descripteurs"]][0])&&(!$is_notice_objet)) {
 			for ($i=0; $i<count($f[$sf["descripteurs"]]); $i++) {
-				$data.="<f c='606'>\n";
-				$data.="<s c='a'>".htmlspecialchars($f[$sf["descripteurs"]][$i],ENT_QUOTES,$charset)."</s>\n";
-				$data.="</f>\n";
+				$data.=static::get_converted_field_uni('606', 'a', $f[$sf["descripteurs"]][$i]);
 			}
 		}
 		
 		//URL
-		if ($f["URL"][0]) {
-			$data.="<f c='856'>\n";
-			$data.="<s c='u'>".htmlspecialchars($f["URL"][0],ENT_QUOTES,$charset)."</s>\n";
-			$data.="</f>\n";
-		}
+		$data.=static::get_converted_field_uni('856', 'u', $f["URL"][0]);
 		
 		//Origine
-		if ($f[$sf["origine"]][0]) {
-			$data.="<f c='801'>\n";
-			$data.="<s c='b'>".htmlspecialchars($f[$sf["origine"]][0],ENT_QUOTES,$charset)."</s>\n";
-			$data.="</f>\n";
-		}
+		$data.=static::get_converted_field_uni('801', 'b', $f[$sf["origine"]][0]);
 		
 		//Champs bizarres en 90x
 		//Thèmes
 		if ($f[$sf["themes"]][0]) {
 			for ($i=0; $i<count($f[$sf["themes"]]); $i++) {
-				$data.="<f c='900'>\n";
-				$data.="<s c='a'>".htmlspecialchars($f[$sf["themes"]][$i],ENT_QUOTES,$charset)."</s>\n";
-				$data.="</f>\n";
+				$data.=static::get_converted_field_uni('900', 'a', $f[$sf["themes"]][$i]);
 			}
 		}
 		
 		//Genre ou forme
 		if ($f[$sf["genre"]][0]) {
 			for ($i=0; $i<count($f[$sf["genre"]]); $i++) {
-				$data.="<f c='901'>\n";
-				$data.="<s c='a'>".htmlspecialchars($f[$sf["genre"]][$i],ENT_QUOTES,$charset)."</s>\n";
-				$data.="</f>\n";
+				$data.=static::get_converted_field_uni('901', 'a', $f[$sf["genre"]][$i]);
 			}
 		}
 		
 		//Discipline
 		if ($f[$sf["discipline"]][0]) {
 			for ($i=0; $i<count($f[$sf["discipline"]]); $i++) {
-				$data.="<f c='902'>\n";
-				$data.="<s c='a'>".htmlspecialchars($f[$sf["discipline"]][$i],ENT_QUOTES,$charset)."</s>\n";
-				$data.="</f>\n";
+				$data.=static::get_converted_field_uni('902', 'a', $f[$sf["discipline"]][$i]);
 			}
 		}
 		
 		//Année de péremption
-		if ($f[$sf["annee_peremption"]][0]) {
-			$data.="<f c='903'>\n";
-			$data.="<s c='a'>".htmlspecialchars($f[$sf["annee_peremption"]][0],ENT_QUOTES,$charset)."</s>\n";
-			$data.="</f>\n";
-		}
+		$data.=static::get_converted_field_uni('903', 'a', $f[$sf["annee_peremption"]][0]);
 		
 		//Date de saisie
 		if ($f[$sf["date_saisie"]][0]) {
@@ -502,26 +472,17 @@ class txt2pmbxml extends convert {
 			$mois=substr($f[$sf["date_saisie"]][0],4,2);
 			$jour=substr($f[$sf["date_saisie"]][0],6,2);
 			if (checkdate($mois,$jour,$annee)) {
-				$date=$annee."-".$mois."-".$jour;
-				$data.="<f c='904'>\n";
-				$data.="<s c='a'>".$date."</s>\n";
-				$data.="</f>\n";
+				$data.=static::get_converted_field_uni('904', 'a', $annee."-".$mois."-".$jour);
 			}
 		}
 		
 		//Type de nature
-		if ($f[$sf["type_document"]][0]) {
-			$data.="<f c='905'>\n";
-			$data.="<s c='a'>".htmlspecialchars($f[$sf["type_document"]][0],ENT_QUOTES,$charset)."</s>\n";
-			$data.="</f>\n";
-		}
+		$data.=static::get_converted_field_uni('905', 'a', $f[$sf["type_document"]][0]);
 		
 		//Niveau
 		if ($f[$sf["niveau"]][0]) {
 			for ($i=0; $i<count($f[$sf["niveau"]]); $i++) {
-				$data.="<f c='906'>\n";
-				$data.="<s c='a'>".htmlspecialchars($f[$sf["niveau"]][$i],ENT_QUOTES,$charset)."</s>\n";
-				$data.="</f>\n";
+				$data.=static::get_converted_field_uni('906', 'a', $f[$sf["niveau"]][$i]);
 			}
 		}
 		
@@ -556,6 +517,7 @@ class txt2pmbxml extends convert {
 		}
 	
 		$data.="</notice>\n";
+		$r = array();
 		$r['VALID'] = true;
 		$r['ERROR'] = "";
 		$r['DATA'] = $data;

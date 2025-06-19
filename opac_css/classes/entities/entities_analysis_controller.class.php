@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_analysis_controller.class.php,v 1.1 2018/10/08 13:59:39 vtouchard Exp $
+// $Id: entities_analysis_controller.class.php,v 1.2.4.1 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once ($class_path."/entities/entities_records_controller.class.php");
 
 class entities_analysis_controller extends entities_records_controller {
@@ -63,19 +64,23 @@ class entities_analysis_controller extends entities_records_controller {
 	}
 	
 	public function proceed_form() {
+	    global $charset;
+	    
 		print $this->get_page_title();
 		$myAnalysis = $this->get_object_instance();
-		print "<div class='row'><div class='perio-barre'>".$this->get_link_parent()."<h3>".$myAnalysis->tit1."</h3></div></div><br />";
+		print "<div class='row'><div class='perio-barre'>".$this->get_link_parent()."<h3>".htmlentities($myAnalysis->tit1, ENT_QUOTES, $charset)."</h3></div></div><br />";
 		
 		print "<div class='row'>".$myAnalysis->analysis_form()."</div>";
 	}
 	
 	public function proceed_duplicate() {
+	    global $charset;
+	    
 		print $this->get_page_title(true);
 		$myAnalysis = $this->get_object_instance();
 		$myAnalysis->id = 0;
 		$myAnalysis->duplicate_from_id = $this->id;
-		print "<div class='row'><div class='perio-barre'>".$this->get_link_parent()."<h3>".$myAnalysis->tit1."</h3></div></div><br />";
+		print "<div class='row'><div class='perio-barre'>".$this->get_link_parent()."<h3>".htmlentities($myAnalysis->tit1, ENT_QUOTES, $charset)."</h3></div></div><br />";
 		
 		print "<div class='row'>".$myAnalysis->analysis_form()."</div>";
 	}
@@ -105,7 +110,7 @@ class entities_analysis_controller extends entities_records_controller {
 	}
 	
 	public function proceed_move() {
-		global $msg;
+		global $msg, $serial_header;
 		global $to_bul;
 		
 		$myAnalysis = $this->get_object_instance();
@@ -122,12 +127,14 @@ class entities_analysis_controller extends entities_records_controller {
 	}
 	
 	protected function get_permalink($id=0) {
-		if(!$id) $id = $this->bulletin_id;
-		return $this->url_base."&sub=bulletinage&action=view&bul_id=".$id;
+	    if(!$id) {
+	        $id = $this->bulletin_id;
+	    }
+		return $this->url_base."&sub=bulletinage&action=view&bul_id=" . intval($id);
 	}
 	
 	protected function get_link_parent() {
-		global $msg;
+	    global $msg, $charset;
 		
 		$myBul = new bulletinage($this->bulletin_id);
 		// lien vers la notice chapeau
@@ -135,7 +142,7 @@ class entities_analysis_controller extends entities_records_controller {
 		$link_parent .= $msg[4010]."</a>";
 		$link_parent .= "<img src='".get_url_icon('d.gif')."' class='align_middle' hspace=\"5\">";
 		$link_parent .= "<a href=\"".$this->url_base."&sub=view&serial_id=";
-		$link_parent .= $myBul->bulletin_notice."\">".$myBul->get_serial()->tit1.'</a>';
+		$link_parent .= $myBul->bulletin_notice."\">".htmlentities($myBul->get_serial()->tit1, ENT_QUOTES, $charset).'</a>';
 		$link_parent .= "<img src='".get_url_icon('d.gif')."' class='align_middle' hspace=\"5\">";
 		$link_parent .= "<a href=\"".$this->get_permalink()."\">";
 		if ($myBul->bulletin_numero) $link_parent .= $myBul->bulletin_numero." ";
@@ -146,10 +153,10 @@ class entities_analysis_controller extends entities_records_controller {
 	}
 	
 	public function set_serial_id($serial_id=0) {
-		$this->serial_id = $serial_id+0;
+	    $this->serial_id = (int) $serial_id;
 	}
 	
 	public function set_bulletin_id($bulletin_id=0) {
-		$this->bulletin_id = $bulletin_id+0;
+	    $this->bulletin_id = (int) $bulletin_id;
 	}
 }

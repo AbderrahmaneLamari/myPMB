@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_carousel_view_carousel.class.php,v 1.35 2021/02/12 11:58:25 dbellamy Exp $
+// $Id: cms_module_carousel_view_carousel.class.php,v 1.36 2022/02/18 08:53:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+global $include_path;
 require_once($include_path."/h2o/h2o.php");
 
 class cms_module_carousel_view_carousel extends cms_module_common_view_django{
@@ -138,7 +140,6 @@ class cms_module_carousel_view_carousel extends cms_module_common_view_django{
 		return $form;
 	}
 	
-	
 	public function save_form(){
 		global $cms_module_carousel_view_carousel_mode;
 		global $cms_module_carousel_view_carousel_speed;
@@ -152,10 +153,10 @@ class cms_module_carousel_view_carousel extends cms_module_common_view_django{
 		global $cms_module_carousel_view_carousel_pager;
 				
 		$this->parameters['mode'] = $cms_module_carousel_view_carousel_mode;
-		$this->parameters['speed'] = $cms_module_carousel_view_carousel_speed+0;
-		$this->parameters['pause'] = $cms_module_carousel_view_carousel_pause+0;
-		$this->parameters['display_quantity'] = $cms_module_carousel_view_carousel_display_quantity+0;
-		$this->parameters['slide_quantity'] = $cms_module_carousel_view_carousel_slide_quantity+0;
+		$this->parameters['speed'] = (int) $cms_module_carousel_view_carousel_speed;
+		$this->parameters['pause'] = (int) $cms_module_carousel_view_carousel_pause;
+		$this->parameters['display_quantity'] = (int) $cms_module_carousel_view_carousel_display_quantity;
+		$this->parameters['slide_quantity'] = (int) $cms_module_carousel_view_carousel_slide_quantity;
 		$this->parameters['autostart'] = $cms_module_carousel_view_carousel_autostart==1 ? true : false;
 		$this->parameters['css'] = stripslashes($cms_module_carousel_view_carousel_css);
 		$this->parameters['used_template'] = $cms_module_common_view_django_template_record_content;
@@ -165,9 +166,7 @@ class cms_module_carousel_view_carousel extends cms_module_common_view_django{
 		return parent::save_form();	
 	}
 	
-	
 	public function get_headers($datas=array()){
-		
 		global $base_path;
 		$headers = parent::get_headers($datas);
 		$headers[]= "<script src='".$base_path."/cms/modules/common/includes/javascript/jquery.bxSlider.min.js'></script>";
@@ -177,7 +176,6 @@ class cms_module_carousel_view_carousel extends cms_module_common_view_django{
 		}
 		return $headers;
 	}
-	
 	
 	public function render($datas){
 	    global $base_path;
@@ -264,7 +262,6 @@ class cms_module_carousel_view_carousel extends cms_module_common_view_django{
 		return str_replace("{{identifiant_dom_du_cadre}}",$this->get_module_dom_id(),$this->parameters['css']);
 	}
 
-	
 	protected function get_managed_template_form($cms_template){
 
 		$form ="";
@@ -348,7 +345,6 @@ class cms_module_carousel_view_carousel extends cms_module_common_view_django{
 		return $form;
 	}
 		
-	
 	public function save_manage_form($managed_datas){
 		global $cms_template;
 		global $cms_template_delete;
@@ -370,7 +366,6 @@ class cms_module_carousel_view_carousel extends cms_module_common_view_django{
 		return $managed_datas;
 	}	
 
-	
 	public function get_format_data_structure(){
 	    if (static::class == "cms_module_carousel_view_carousel") {
 			$datas = new cms_module_carousel_datasource_notices();

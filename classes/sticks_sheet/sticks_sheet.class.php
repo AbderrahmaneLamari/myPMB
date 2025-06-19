@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sticks_sheet.class.php,v 1.9.2.1 2022/01/21 08:46:17 dgoron Exp $
+// $Id: sticks_sheet.class.php,v 1.10 2022/01/21 08:37:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

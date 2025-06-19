@@ -2,12 +2,13 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: term_show.class.php,v 1.24 2021/05/25 12:22:03 dgoron Exp $
+// $Id: term_show.class.php,v 1.25 2022/02/11 11:31:01 dgoron Exp $
 //
 // Gestion de l'affichage d'un notice d'un terme du thésaurus
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/category.class.php");
 require_once($class_path."/thesaurus.class.php");
 require_once("$class_path/marc_table.class.php");
@@ -28,8 +29,8 @@ class term_show {
     	$this->term=$term;
     	$this->parent_link=$parent_link;
     	$this->url_for_term_show=$url_for_term_show;
-    	$this->keep_tilde=$keep_tilde+0;
-    	$this->id_thes = $id_thes+0;
+    	$this->keep_tilde=intval($keep_tilde);
+    	$this->id_thes = intval($id_thes);
 		$this->thes = new thesaurus($this->id_thes); 
     }
     
@@ -111,8 +112,6 @@ class term_show {
 		
 		global $charset;
 		global $msg;
-		global $lang;
-		global $dbh;
 		$pl=$this->parent_link;
 		global ${$pl};
 		
@@ -152,8 +151,6 @@ class term_show {
 		global $history,$history_thes;
 		global $charset;
 		global $msg;
-		global $dbh;
-		global $lang;
 		global $thesaurus_mode_pmb;
 		$pl=$this->parent_link;
 		global ${$pl};

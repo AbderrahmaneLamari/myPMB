@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_misc_tables_data_ui.class.php,v 1.1.2.2 2021/11/25 14:31:39 dgoron Exp $
+// $Id: list_misc_tables_data_ui.class.php,v 1.2.4.1 2023/09/29 06:47:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -106,20 +106,10 @@ class list_misc_tables_data_ui extends list_ui {
 	}
 	
 	/**
-	 * Tri SQL
+	 * Champ(s) du tri SQL
 	 */
-	protected function _get_query_order() {
-		
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			$order .= $sort_by;
-			if($order) {
-				return $this->_get_query_order_sql_build($order);
-			} else {
-				return "";
-			}
-		}	
+	protected function _get_query_field_order($sort_by) {
+	    return $sort_by;
 	}
 	
 	/**
@@ -140,21 +130,6 @@ class list_misc_tables_data_ui extends list_ui {
 		$this->set_setting_display('search_form', 'options', true);
 		$this->set_setting_display('objects_list', 'fast_filters', true);
 		$this->set_setting_column('default', 'fast_filter', 1);
-	}
-	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
 	}
 	
 	public static function set_table($table='') {

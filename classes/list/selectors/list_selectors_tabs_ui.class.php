@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_selectors_tabs_ui.class.php,v 1.1.2.7 2021/11/19 11:02:10 dgoron Exp $
+// $Id: list_selectors_tabs_ui.class.php,v 1.6 2021/11/19 11:00:26 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

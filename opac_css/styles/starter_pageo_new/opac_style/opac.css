@@ -1,0 +1,205 @@
+/*-----------
+- OPAC: OPAC -
+ -----------*/
+
+/* Cadre de l'opac caché car rarement utilisé */
+
+#navigator,
+#intro_bibli,
+#intro_message,
+#location,
+#categories,
+#etageres,
+#post_adress,
+#adresse,
+#footer_rss,
+#footer_link_sup,
+#footer_link_website,
+#footer_link_pmb,
+#accueil>h3,
+#accueil>p {
+    display: none;
+}
+
+/* popup
+---------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------*/
+
+
+#make_sugg table {
+    width: 480px;
+}
+
+#make_sugg .bouton {
+    font: var(--font-link);
+    padding: 11px 24px 10px 24px;
+    border-radius: 44px;
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    transition: var(--transition);
+    text-align: center;
+    display: inline-block;
+    margin-top: 16px;
+}
+
+#make_sugg .row,
+#make_sugg-container {
+    padding: 24px;
+}
+
+#make_sugg-container input[type="text"],
+#comment {
+    max-width: 80%;
+    margin-bottom: 0;
+    margin-left: 10px;
+}
+
+#make_sugg-container select {
+    max-width: 400px;
+}
+
+form#f {
+    margin-left: 10px;
+}
+
+.echelle_avis {
+    padding: 7px;
+}
+
+.alerte {
+    color: #ff0000;
+}
+
+#print_options {
+    margin-right: 10px;
+    margin-left: 10px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    padding: 15px;
+}
+
+#print_options input {
+    float: left;
+}
+
+#print_options label {
+    line-height: 13px;
+}
+
+#print_options b {
+    border-bottom: 1px solid #cccccc;
+    padding-bottom: 5px;
+    display: block;
+}
+
+#print_options blockquote {
+    margin-top: 5px;
+    text-align: justify;
+    margin-bottom: 15px;
+}
+
+#print_options blockquote input[name=emaildest] {
+    float: none;
+    display: block;
+}
+
+#print_options textarea {
+    margin-top: 5px;
+    max-width: 85%;
+}
+
+body#help_popup {
+    background-color: #ffffff;
+    background-repeat: repeat;
+    background-position: center top;
+    background-image: url("./images/fond.gif");
+}
+
+#help-container {
+    margin-bottom: 10px;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-top: 10px;
+    padding-bottom: 10px;
+    padding-top: 5px;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: #ffffff;
+    border: 2px solid #A8A8A8;
+}
+
+#help-container h2 {
+    margin-bottom: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-top: 0px;
+    border-bottom: 1px solid #cccccc;
+    clear: both;
+    padding-bottom: 5px;
+}
+
+#help-container p,
+#help-container ul {
+    margin-bottom: 10px;
+    margin-top: 0px;
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+.lien_ajout_avis a {
+    margin-left: 10px;
+}
+
+.form_liste_lecture {
+    padding: 10px 0px;
+}
+
+.form-contenu hr {
+    display: none;
+}
+
+form[name=export_form] input[type="radio"] {
+    margin-top: 5px;
+    margin-right: 3px;
+}
+
+#print_options {
+    margin-right: 10px;
+    margin-left: 10px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    padding: 15px;
+    line-height: 20px;
+}
+
+#print_options b {
+    border-bottom: 1px solid #cccccc;
+    padding-bottom: 5px;
+    display: block;
+}
+
+#print_options blockquote {
+    margin-top: 5px;
+    text-align: left;
+    margin-bottom: 15px;
+    margin: 5px 0px;
+    padding: 0px;
+}
+
+#print_options textarea {
+    margin-top: 5px;
+    max-width: 85%;
+}
+
+#print_options input {
+    float: left;
+    margin-top: 5px;
+}
+
+#print_options label {
+    line-height: 20px;
+    display: inline;
+}

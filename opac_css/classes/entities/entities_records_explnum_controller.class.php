@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_records_explnum_controller.class.php,v 1.1 2018/10/08 13:59:39 vtouchard Exp $
+// $Id: entities_records_explnum_controller.class.php,v 1.2 2022/02/16 12:38:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once ($class_path."/entities/entities_records_controller.class.php");
 
 class entities_records_explnum_controller extends entities_records_controller {
@@ -60,14 +61,14 @@ class entities_records_explnum_controller extends entities_records_controller {
 	
 	protected function get_permalink($id=0) {
 		if(!$id) $id = $this->record_id;
-		return "./catalog.php?categ=isbd&id=".$this->record_id;
+		return notice::get_permalink($id);
 	}
 	
 	public function set_record_id($record_id=0) {
-		$this->record_id = $record_id+0;
+	    $this->record_id = (int) $record_id;
 	}
 	
 	public function set_bulletin_id($bulletin_id=0) {
-		$this->bulletin_id = $bulletin_id+0;
+	    $this->bulletin_id = (int) $bulletin_id;
 	}
 }

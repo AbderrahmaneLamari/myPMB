@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bookreaderEPUB.class.php,v 1.14 2019/06/21 14:09:28 dgoron Exp $
+// $Id: bookreaderEPUB.class.php,v 1.17 2022/09/02 12:52:37 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -42,14 +42,14 @@ class bookreaderEPUB {
 		if (!file_exists($this->doc->driver->get_cached_filename("page_".$this->doc->id)."-".str_pad($page, $len,"0",STR_PAD_LEFT).".".$extension)) {
 			$resolution = $this->parameters['resolution_image'];
 			if ($format == "imagick") {
-				exec("pdftoppm -f $page -l $page -r ".$resolution." ".$this->doc->driver->get_cached_filename($this->doc->id).".pdf ".$this->doc->driver->get_cached_filename("page_".$this->doc->id));
+				exec("pdftoppm -f $page -l $page -r ".$resolution." -cropbox ".$this->doc->driver->get_cached_filename($this->doc->id).".pdf ".$this->doc->driver->get_cached_filename("page_".$this->doc->id));
 				$imagick = new Imagick();
 				$imagick->setResolution($resolution,$resolution);
 				$imagick->readImage($this->doc->driver->get_cached_filename("page_".$this->doc->id)."-".str_pad($page, $len, "0", STR_PAD_LEFT).".ppm");
 				$imagick->writeImage($this->doc->driver->get_cached_filename("page_".$this->doc->id)."-".str_pad($page, $len,"0",STR_PAD_LEFT).".png");
 				unlink($this->doc->driver->get_cached_filename("page_".$this->doc->id)."-".str_pad($page, $len, "0", STR_PAD_LEFT).".ppm");
 			} else {
-				exec("pdftoppm -f $page -l $page -r ".$resolution." -".$format." ".$this->doc->driver->get_cached_filename($this->doc->id).".pdf ".$this->doc->driver->get_cached_filename("page_".$this->doc->id));
+				exec("pdftoppm -f $page -l $page -r ".$resolution." -".$format." -cropbox ".$this->doc->driver->get_cached_filename($this->doc->id).".pdf ".$this->doc->driver->get_cached_filename("page_".$this->doc->id));
 			}
 		}
 		if (file_exists($this->doc->driver->get_cached_filename("page_".$this->doc->id)."-".str_pad($page, $len,"0",STR_PAD_LEFT).".".$extension)) {

@@ -1,8 +1,11 @@
 <?php
+use Pmb\Ark\Entities\ArkBulletin;
+use Pmb\Ark\Models\ArkModel;
+
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bulletin_display.inc.php,v 1.92.4.1 2021/12/28 10:30:20 dgoron Exp $
+// $Id: bulletin_display.inc.php,v 1.96 2022/09/13 09:31:46 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -481,6 +484,12 @@ while(($obj=pmb_mysql_fetch_array($resdep))) {
 					} else {
 						$template = $include_path."/templates/record/common/bulletin_without_record_extended_display.tpl.html";
 					}
+					//Gestion des arks
+					global $pmb_ark_activate;
+					if($pmb_ark_activate) {
+						$obj['ark_link'] = get_ark_link($obj['bulletin_id']);
+						// Permalien des bulletins
+					}
 					$h2o = H2o_collection::get_instance($template);
 					
 					print $h2o->render(array('bulletin' => $obj, 'parent' => $notice3, 'liens_opac' => $liens_opac, 'resas_datas' => $resas_datas, 'scan_request' => $scan_request));
@@ -636,6 +645,12 @@ function get_perio_link($id,$sens) {
 		}
 	}
 	return "";	
+}
+
+function get_ark_link($id) {
+	$arkBulletin = new ArkBulletin(intval($id));
+	$ark = ArkModel::getArkFromEntity($arkBulletin);
+	return $ark->getArkLink();
 }
 
 class XMLlist_perio extends XMLlist {

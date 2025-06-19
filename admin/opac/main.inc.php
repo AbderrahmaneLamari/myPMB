@@ -2,11 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.10.2.1 2021/07/21 09:48:58 dgoron Exp $
+// $Id: main.inc.php,v 1.12 2022/03/23 10:30:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 // page de switch recherche notice
+global $base_path, $class_path, $include_path, $sub, $lang, $id;
 
 // inclusions principales
 
@@ -33,7 +34,7 @@ switch($sub) {
 		require_once($class_path.'/modules/module_admin.class.php');
 		$module_admin = new module_admin();
 		$module_admin->set_url_base($base_path."/admin.php?categ=opac");
-	    if(!isset($id)) $id = 0;
+		$id = intval($id);
 	    $module_admin->set_object_id($id);
 		$module_admin->proceed_facets();
 		break;

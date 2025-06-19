@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Moment.php,v 1.11 2019/07/05 13:25:14 btafforeau Exp $
+// $Id: Moment.php,v 1.12 2022/04/15 12:16:06 dbellamy Exp $
 
 namespace Sabre\PMB\Music;
 
@@ -122,8 +122,6 @@ class Moment extends Collection {
 		global $base_path;
 		global $opac_url_base;
 		global $dbh;
-		$autoloader = new \autoloader();
-		$autoloader->add_register("onto_class",true);
 		$data_store_config = array(
 				/* db */
 				'db_name' => DATA_BASE,

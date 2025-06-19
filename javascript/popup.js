@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: popup.js,v 1.25.2.3 2021/11/17 08:36:21 dgoron Exp $
+// $Id: popup.js,v 1.29 2022/04/19 08:03:58 dgoron Exp $
 
 // openPopUp : permet d'afficher une popup de la taille et � la position donn�e
 //		la fonction gere aussi l'autoCentrage de la popup
@@ -15,7 +15,7 @@
 //MyTop :	entier indiquant la position gauche de la fenetre en pixels (-1 pour centrer, -2 pour laisser le navigateur g�rer)
 //MyParam :	Les parametres supplementaires pour la methode open (par def :infobar=no, status=no, scrollbars=no, menubar=no)
 //ForceSelectorDialog : forçage de l'ouverture en pop-up
-function openPopUp(MyFile,MyWindow,MyWidth,MyHeight,MyLeft,MyTop,MyParam,ForceSelectorDialog) {
+function openPopUp(MyFile,MyWindow,MyWidth,MyHeight,MyLeft,MyTop,MyParam,ForceSelectorDialog,ForceSelectorPopUp) {
 	var ns4 = (document.layers)? true:false;		//NS 4
 	var ie4 = (document.all)? true:false;			//IE 4
 	var dom = (document.getElementById)? true:false;	//DOM
@@ -24,6 +24,7 @@ function openPopUp(MyFile,MyWindow,MyWidth,MyHeight,MyLeft,MyTop,MyParam,ForceSe
 	//les valeurs par d�faut
 	MyParam = MyParam || 'infobar=no, status=no, scrollbars=yes, toolbar=no, menubar=no';
 	ForceSelectorDialog = ForceSelectorDialog || false;
+	ForceSelectorPopUp = ForceSelectorPopUp || false;
 	//MyTop = MyTop || -1;
 	MyTop=0;
 	//MyLeft = MyLeft || -1;
@@ -139,7 +140,7 @@ function openPopUp(MyFile,MyWindow,MyWidth,MyHeight,MyLeft,MyTop,MyParam,ForceSe
 
 	//on ajoute les parametres en plus 
 	var fParam = MyParam + ',' + fParam;
-	if(MyFile && (MyFile.indexOf('select.php') != -1)){
+	if(!ForceSelectorPopUp && MyFile && (MyFile.indexOf('select.php') != -1)){
 		require(["apps/pmb/PMBSelectorDialog", 
 		         "dojo/dom", 
 		         "dojo/io-query",
@@ -229,7 +230,7 @@ function openPopUp(MyFile,MyWindow,MyWidth,MyHeight,MyLeft,MyTop,MyParam,ForceSe
 	}
 }
 
-function openPopUpSelector(MyFile,ForceSelectorDialog) {
+function openPopUpSelector(MyFile,ForceSelectorDialog,ForceSelectorPopUp) {
 	switch(ForceSelectorDialog) {
 		case '1':
 			ForceSelectorDialog = true;
@@ -241,10 +242,21 @@ function openPopUpSelector(MyFile,ForceSelectorDialog) {
 			ForceSelectorDialog = ForceSelectorDialog || false;
 			break;
 	}
-	return openPopUp(MyFile,'selector',0,0,0,0,'',ForceSelectorDialog)
+	switch(ForceSelectorPopUp) {
+		case '1':
+			ForceSelectorPopUp = true;
+			break;
+		case '0':
+			ForceSelectorPopUp = false;
+			break;
+		default:
+			ForceSelectorPopUp = ForceSelectorPopUp || false;
+			break;
+	}
+	return openPopUp(MyFile,'selector',0,0,0,0,'',ForceSelectorDialog,ForceSelectorPopUp)
 }
 
-function openPopUpSelectorCategory(MyFile,ForceSelectorDialog) {
+function openPopUpSelectorCategory(MyFile,ForceSelectorDialog,ForceSelectorPopUp) {
 	switch(ForceSelectorDialog) {
 		case '1':
 			ForceSelectorDialog = true;
@@ -256,7 +268,18 @@ function openPopUpSelectorCategory(MyFile,ForceSelectorDialog) {
 			ForceSelectorDialog = ForceSelectorDialog || false;
 			break;
 	}
-	return openPopUp(MyFile,'selector_category',0,0,0,0,'',ForceSelectorDialog)
+	switch(ForceSelectorPopUp) {
+		case '1':
+			ForceSelectorPopUp = true;
+			break;
+		case '0':
+			ForceSelectorPopUp = false;
+			break;
+		default:
+			ForceSelectorPopUp = ForceSelectorPopUp || false;
+			break;
+	}
+	return openPopUp(MyFile,'selector_category',0,0,0,0,'',ForceSelectorDialog,ForceSelectorPopUp)
 }
 
 function getSelectedObjects(context) {

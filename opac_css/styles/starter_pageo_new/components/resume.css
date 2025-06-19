@@ -1,0 +1,79 @@
+.pmb_resume {
+    font: var(--font-resume);
+    color: var(--c-black);
+}
+
+.pmb_resume h3 { /* Entête 3 */
+    font: var(--font-subtitle);
+    color: var(--c-black);
+    margin: 16px 0 6px;
+}
+
+.pmb_resume h4 { /* Entête 4 */
+    font: var(--font-subtitle-variant);
+    color: var(--c-black);
+    margin: 16px 0 6px;
+}
+
+.pmb_resume h5 { /* Entête 5 */
+    font-family: var(--font);
+    font-size: 1.8rem;
+    line-height: 2rem;
+    color: var(--c-primary);
+    font-weight: 500;
+    margin: 16px 0 4px;
+}
+
+.pmb_resume h6 { /* Entête 6 */
+    font-family: var(--font);
+    font-size: 1.6rem;
+    line-height: 1.8rem;
+    color: var(--c-primary);
+    font-weight: bold;
+    margin: 16px 0 4px;
+}
+
+.pmb_resume a:not(.pmb_button)  { /* un lien */
+    color: var(--c-primary);
+    text-decoration: underline;
+    transition: var(--transition);
+}
+
+.pmb_resume a:not(.pmb_button):hover {
+    color: var(--c-thirdly);
+    transition: var(--transition);
+}
+
+em { /* italique */
+    color: var(--color-black);
+}
+
+.pmb_resume ul { /* liste à puces */
+    list-style: inside;
+    margin-left: 16px;
+    margin-bottom: 24px;
+}
+
+.pmb_resume ol { /* liste numérotée */
+    list-style: decimal;
+    margin-left: 32px;
+    margin-bottom: 24px;
+}
+
+.pmb_resume table { /* tableau */
+    border-collapse: initial;
+}
+
+.pmb_resume table td {
+    display: block;
+    width: 100%;
+}
+
+
+@media screen and (min-width:767px) {
+    .pmb_resume table td {
+        display: table-cell;
+        width: inherit;
+    }
+
+}

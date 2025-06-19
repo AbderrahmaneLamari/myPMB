@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: surligner.inc.php,v 1.31 2019/09/18 09:40:47 dgoron Exp $
+// $Id: surligner.inc.php,v 1.32 2022/11/03 11:45:36 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "inc.php")) die("no access");
 
@@ -66,7 +66,7 @@ if (!empty($user_query) && (trim($user_query) !== "*")) {
 $_SESSION['surligner_tableau'] = strip_tags(implode("','",$tableau));
 $_SESSION['surligner_tableau_l'] = strip_tags(implode("','",addslashes_array($tableau_l)));
 
-$_SESSION['surligner_codes'] = "";
+$_SESSION['surligner_codes'] = "window.codes = {};\n";
 $j=0;
 foreach($carac_spec->table as $key=>$val) {
 	$values=explode("|",substr($val,1,strlen($val)-2));
@@ -94,8 +94,10 @@ $inclure_recherche = "<script type='text/javascript' src='./includes/javascript/
 $inclure_recherche .= "<script type='text/javascript'>
 	var terms=new Array('".(isset($_SESSION['surligner_tableau'])?$_SESSION['surligner_tableau']:'')."');
 	var terms_litteraux=new Array('".(isset($_SESSION['surligner_tableau_l'])?$_SESSION['surligner_tableau_l']:'')."');
-	var codes=new Array();
-			
+	if (!codes) {
+		var codes = {};
+	}
+
 	function remplacer_carac(mot) {
 		var x;
 		var reg;				

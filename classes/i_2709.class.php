@@ -966,7 +966,11 @@ class iso2709_authorities extends iso2709 {
 
 		$this->guide_infos["nt"]=substr($this->application_codes,0,1);
 		$this->guide_infos["et"]=substr($this->application_codes,3,1);
-		$this->guide_infos["el"]=substr($this->supplementary,0,1);
+		if(substr($this->supplementary,0,1) != '#') {
+			$this->guide_infos["el"]=substr($this->supplementary,0,1);
+		} else {
+			$this->guide_infos["el"]=" ";
+		}
 	}
 	
 	public function create_guide_infos() {
@@ -1036,8 +1040,16 @@ class iso2709_notices extends iso2709 {
 
 		$this->guide_infos["dt"]=substr($this->application_codes,0,1);
 		$this->guide_infos["bl"]=substr($this->application_codes,1,1);
-		$this->guide_infos["hl"]=substr($this->application_codes,2,1);
-		$this->guide_infos["el"]=substr($this->supplementary,0,1);
+		if(substr($this->application_codes,2,1) != '#') {
+			$this->guide_infos["hl"]=substr($this->application_codes,2,1);
+		} else {
+			$this->guide_infos["hl"]="0";
+		}
+		if(substr($this->supplementary,0,1) != '#') {
+			$this->guide_infos["el"]=substr($this->supplementary,0,1);
+		} else {
+			$this->guide_infos["el"]=" ";
+		}
 		$this->guide_infos["ru"]=substr($this->supplementary,1,1);
 	}
 	

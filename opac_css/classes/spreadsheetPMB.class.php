@@ -6,7 +6,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: spreadsheetPMB.class.php,v 1.2 2019/10/22 09:03:48 jlaurent Exp $
+// $Id: spreadsheetPMB.class.php,v 1.2.6.1 2023/08/30 15:04:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,6 +22,7 @@ class spreadsheetPMB {
 		$cache_dir = $base_path."/temp/";
 		$this->clear_cache($cache_dir);
 		$this->objPHPSpreadsheet = new Spreadsheet();
+		$this->objPHPSpreadsheet->getActiveSheet()->getDefaultColumnDimension()->setWidth(18);
 		$this->active_sheet = 0;
 	}
 	
@@ -73,6 +74,7 @@ class spreadsheetPMB {
 			$value = iconv("CP1252", "UTF-8//TRANSLIT", $value);
 		}
 		if (trim($value)) {
+		    $value = html_entity_decode($value, ENT_COMPAT | ENT_HTML401 | ENT_QUOTES, 'utf-8');
 		    $this->objPHPSpreadsheet->setActiveSheetIndex($this->active_sheet)->setCellValueExplicitByColumnAndRow($col+1, $row+1, $value, DataType::TYPE_STRING);
 		}
 		if (count($styleArray)) {
@@ -97,7 +99,7 @@ class spreadsheetPMB {
 	public function download($filename){
 		//On force en xlsx pour compatibilité avec les tableurs
 		$extension = pathinfo($filename, PATHINFO_EXTENSION);
-		if ($extension = "xls") {
+		if ($extension == "xls") {
 			$filename = substr($filename,0,strlen($filename)-4).'.xlsx';
 		}
 		

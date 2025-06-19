@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes_notes.tpl.php,v 1.14 2021/03/30 16:34:04 dgoron Exp $
+// $Id: demandes_notes.tpl.php,v 1.14.6.1 2024/01/05 15:32:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $js_dialog_note, $msg, $content_dialog_note, $charset, $form_dialog_note, $form_table_note, $content_form_modif_note, $current_module;
+global $js_dialog_note, $msg, $content_dialog_note, $charset, $form_dialog_note, $form_table_note;
 
 $js_dialog_note="
 <script src='./javascript/tablist.js' type='text/javascript'></script>
@@ -73,40 +73,3 @@ function confirm_delete()
 </form>
 ";
 
-$content_form_modif_note="
-<input type='hidden' id='iduser' name='iduser' value='!!iduser!!'/>
-<input type='hidden' id='typeuser' name='typeuser' value='!!typeuser!!'/>
-<input type='hidden' id='idaction' name='idaction' value='!!idaction!!'/>
-<input type='hidden' id='iddemande' name='iddemande' value='!!iddemande!!'/>
-<div class='row'>
-	<label class='etiquette'>".$msg['demandes_note_date']."</label>
-</div>
-<div class='row'>
-	<input type='hidden' id='date_note' name='date_note' value='!!date_note!!' />
-	<input type='button' class='bouton' id='date_note_btn' name='date_note_btn' value='!!date_note_btn!!' onClick=\"openPopUp('./select.php?what=calendrier&caller=modif_note&date_caller=!!date_note!!&param1=date_note&param2=date_note_btn&auto_submit=NO&date_anterieure=YES', 'calendar')\"/>
-</div>
-<div class='row'>
-	<label class='etiquette'>".$msg['demandes_note_contenu']."</label>
-</div>
-<div class='row'>
-	<textarea id='contenu_note' style='width:99%' name='contenu_note'  rows='15' wrap='virtual'>!!contenu!!</textarea>
-</div>
-<div class='row'>
-	<input type='checkbox' name='ck_prive' id='ck_prive' value='1' !!ck_prive!! />
-	<label for ='ck_prive' class='etiquette'>".$msg['demandes_note_privacy']."</label>	
-</div>
-<div class='row'>
-	<input type='checkbox' name='ck_rapport' id='ck_rapport' value='1' !!ck_rapport!!/>
-	<label for='ck_rapport' class='etiquette'>".$msg['demandes_note_rapport']."</label>
-</div>
-<div class='row'>
-	<input type='checkbox' name='ck_vue' id='ck_vue' value='1' !!ck_vue!!/>
-	<label for='ck_vue' class='etiquette'>".$msg['demandes_note_vue']."</label>
-</div>
-<div class='row'>
-	<input type='checkbox' name='demande_end' id='demande_end' value='1' !!ck_final_note!!/>
-	<label class='etiquette'>".$msg['demandes_note_demande_end']."</label>
-</div>
-";
-
-?>

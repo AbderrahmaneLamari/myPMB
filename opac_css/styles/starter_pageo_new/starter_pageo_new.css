@@ -1,0 +1,92 @@
+/*----------------------------------------------------------------------------------
+- CE FICHIER DOIT AVOIR POUR NOM LE NOM INDIQUÉ DANS LE PARAMÈTRE DEFAULT_STYLE    -
+ ----------------------------------------------------------------------------------*/
+
+/*-----------------------
+- ORGANISATION DU PROJET -
+ -----------------------*/
+
+
+ /*-------------------------
+
+- FONTS: STOCKE LES FONTS  -
+
+ --------------------------*/
+
+ @import 'fonts/fonts.css';
+
+/*---------------------------------------------------------------------------
+- ESC_LA_ROCHELLE_2023.CSS : POINT D'ENTRÉE DE TOUTES LES FEUILLES DE STYLES -
+ ---------------------------------------------------------------------------*/
+
+/*---------------------------------
+- BASE :  INITIALISATION DU PROJET -
+ ---------------------------------*/
+
+@import 'base/base.css';
+@import 'base/grid.css';
+@import 'base/variables.css';
+
+/*-------------------------------------------------------------------------
+- COMPONENTS : COMPOSANTS RÉUTILISÉS DANS LES DIFFÉRENTES PAGES DU PORTAIL -
+-------------------------------------------------------------------------*/
+
+@import 'components/accessibility.css';
+@import 'components/button.css';
+@import 'components/calendar.css';
+@import 'components/shelves_records.css';
+@import 'components/events.css';
+@import 'components/breadcrumb.css';
+@import 'components/rss_veille.css';
+@import 'components/iframe.css';
+@import 'components/itemsolo.css';
+@import 'components/subsections.css';
+@import 'components/sitemap.css';
+@import 'components/portfolio.css';
+@import 'components/resume.css';
+@import 'components/title.css';
+
+/*------------------------------------------------------
+- LAYOUT : BLOC PRINCIPAUX PRÉSENT SUR TOUTES LES PAGES -
+ ------------------------------------------------------*/
+
+@import 'layouts/header/burger.css';
+@import 'layouts/header/cart.css';
+@import 'layouts/header/header.css';
+@import 'layouts/header/nav.css';
+@import 'layouts/header/burger.css';
+@import 'layouts/footer/anchor.css';
+@import 'layouts/footer/footer.css';
+@import 'layouts/footer/mobile_navbar.css';
+@import 'layouts/main.css';
+
+/*---------------------------------------------------------------------
+- opac_style : ÉLÉMENTS QUI SE RETROUVENT UNIQUEMENT SUR LES PAGES DE L'opac_style -
+ ---------------------------------------------------------------------*/
+
+@import 'opac_style/accessibility.css';
+@import 'opac_style/askmdp.css';
+@import 'opac_style/authority.css';
+@import 'opac_style/cart_page.css';
+@import 'opac_style/connexion.css';
+@import 'opac_style/contact.css';
+@import 'opac_style/cookies.css';
+@import 'opac_style/empr.css';
+@import 'opac_style/facette.css';
+@import 'opac_style/history.css';
+@import 'opac_style/inputs.css';
+@import 'opac_style/navbar.css';
+@import 'opac_style/opac.css';
+@import 'opac_style/record.css';
+@import 'opac_style/search_result.css';
+@import 'opac_style/search.css';
+@import 'opac_style/serial.css';
+@import 'opac_style/sort.css';
+@import 'opac_style/subscribe.css';
+@import 'opac_style/title.css';
+
+
+/*-------------------------------------------------------------------
+- PAGES : ÉLEMENTS QUI SE RETROUVENT UNIQUEMENT SUR LES PAGES PORTAIL -
+ ------------------------------------------------------------------*/
+@import 'pages/home.css';

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: last_records.inc.php,v 1.26.8.1 2022/01/13 15:02:04 dgoron Exp $
+// $Id: last_records.inc.php,v 1.27 2022/01/13 14:59:56 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sort.class.php,v 1.73.2.4 2022/01/03 10:21:11 tsamson Exp $
+// $Id: sort.class.php,v 1.82.2.3 2023/11/07 10:43:53 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -28,6 +28,7 @@ class dataSort {
 	//pour le parcours des tris
 	public $tabParcours;
 	public $posParcours;
+	public $nbResult;
 
 	public function __construct($sName,$tData) {
 		$this->sortName = $sName;
@@ -232,6 +233,7 @@ class dataSort {
 	 * Supprime un tri
 	 */
 	public function supprimeTri($idTri) {
+	    $tabParcours = array();
 		switch($this->typeData) {
 			case 'base':
 				// on vérifie que le tri existe bien
@@ -326,19 +328,22 @@ class sort {
 	public $champs_select; //champs éventuels à retourner dans la requête
 	public $table_select; //table éventuelle à retourner dans la requête
 	public $table_primary_key_select; //clé de la table éventuelle à retourner dans la requête
-	public $dSort; // objet d'acces aux informations 
+	public $dSort; // objet d'acces aux informations
 	private static $nb_instance = 1;
 
+	public $current_engine = 'memory'; //memory | MyISAM | InnoDB
 
 	/**
 	 * Applique le tri donné
-	 * @$sort_name nom du tri à appliquer
+	 *
+	 * @param string $sort_name nom du tri à appliquer
+	 * @param string $accesTri
 	 */
 	public function __construct($sort_name, $accesTri) {
 	    //On ne récupère l'id de l'authperso dans $sort_name, sinon on ne peut pas récupérer le fichier XML
 	    if (strpos($sort_name, "authperso") !== false) {
 	        $sort_name = "authperso";
-	    }
+	    } 
 		if ($sort_name) {
 			$sname = $sort_name;
 		} else {
@@ -375,7 +380,6 @@ class sort {
 		} else {
 		    $tris = $this->get_template_tris($type);
 		}
-		
 		$tris_form = str_replace("!!caller!!", $this->caller, $show_tris_form);
 		$callback = "parent.document.getElementById('history').style.display='none';";
 		switch ($this->caller){
@@ -444,7 +448,6 @@ class sort {
 	    global $show_popup_tris_form_segment;
 	    global $num_segment;
 	    
-	    
 	    if ($this->dSort->initParcoursTris($this) == 0 ) {
 	        //il n'y a pas de tris enregistrés
 	        //on renvoie un message pour le dire
@@ -482,7 +485,6 @@ class sort {
 	    $parity = 1;
 	    $tris = "";
 	    $result = [];
-	    
 	    //affichage des enregistrements de tris possibles
 	    while ($result = $this->dSort->parcoursTriSuivant()) {
 	        $tristemp = "";
@@ -493,7 +495,7 @@ class sort {
 	        } else {
                 $pair_impair = "odd";
 	        }
-	                
+
             //html d'une ligne
 	        switch ($this->caller) {
 	            case "etagere":
@@ -526,7 +528,6 @@ class sort {
             $tris .= $tristemp;
             $parity += 1;
 	    }
-	    
 	    return $tris;
 	}
 
@@ -638,7 +639,7 @@ class sort {
 					
 					for ($j = 0; $j < count($fields); $j++) {
 						//on parcours tous les champs (pour récuperer le nom)
-						if ($fields[$j]["ID"] == trim($tri_par1[2])) {
+					    if (isset($tri_par1[2]) && $fields[$j]["ID"] == trim($tri_par1[2])) {
 							//on est dans le bon champs
 							
 							//on determine le type et le sens du tri pour l'affichage							
@@ -660,7 +661,7 @@ class sort {
 							//la liste des champs sélectionnés
 							$liste_selectionnes .= "<option value='" . $tri_par1[0] . "_" . $tri_par1[1] . "_" . $tri_par1[2] . "'>";
 							//si champ perso, on a déjà le libellé
-							if(isset($fields[$j]['SOURCE']) && $fields[$j]['SOURCE'] == "cp") $name = $fields[$j]['LABEL'];
+							if(isset($fields[$j]['SOURCE']) && ($fields[$j]['SOURCE'] == "cp" || $fields[$j]['SOURCE'] == "onto")) $name = $fields[$j]['LABEL'];
 							else $name = $msg[$fields[$j]['NAME']]; 
 							$liste_selectionnes .= $debut . "" . htmlentities($name, ENT_QUOTES, $charset);
 							$liste_selectionnes .= "</option>\n";
@@ -675,11 +676,12 @@ class sort {
 				//on créé la liste des criteres restants
 				for ($j = 0; $j < count($fields); $j++) {
 					// sans les champs déja utilisés
+				    
 				    if ((isset($fields[$j]["UTILISE"]) && $fields[$j]["UTILISE"]!=true) || !isset($fields[$j]["UTILISE"])){
-						if ($this->visibility($fields[$j])) {
+				        if ($this->visibility($fields[$j])) {
 							//si champ perso, on a déjà le libellé
-							if(isset($fields[$j]['SOURCE']) && $fields[$j]['SOURCE'] == "cp") $name = $fields[$j]['LABEL'];
-							else $name = $msg[$fields[$j]['NAME']]; 
+				            if(isset($fields[$j]['SOURCE']) && ($fields[$j]['SOURCE'] == "cp" || $fields[$j]['SOURCE'] == "onto")) $name = $fields[$j]['LABEL'];
+				            else $name = $msg[$fields[$j]['NAME']]; 
 							$liste_criteres .= "<option value='c_" . $fields[$j]["TYPE"] . "_" . $fields[$j]["ID"] . "'>" . htmlentities($name, ENT_QUOTES, $charset) . "</option>\n"; 
 						}
 					}
@@ -692,8 +694,8 @@ class sort {
 			for ($j = 0; $j < count($fields); $j++) {
 				if ($this->visibility($fields[$j])) {
 					//si champ perso, on a déjà le libellé
-					if(isset($fields[$j]['SOURCE']) && $fields[$j]['SOURCE'] == "cp") $name = $fields[$j]['LABEL'];
-					else $name = $msg[$fields[$j]['NAME']]; 
+				    if(isset($fields[$j]['SOURCE']) && ($fields[$j]['SOURCE'] == "cp" || $fields[$j]['SOURCE'] == "onto")) $name = $fields[$j]['LABEL'];
+				    else $name = $msg[$fields[$j]['NAME']]; 
 					$liste_criteres .= "<option value='c_" . $fields[$j]["TYPE"] . "_" . $fields[$j]["ID"] . "'>" . htmlentities($name, ENT_QUOTES, $charset) . "</option>\n";
 				}
 			}
@@ -711,7 +713,7 @@ class sort {
 		$sel_form = str_replace("!!sel_form_action!!", $sel_form_actions, $sel_form);
 		$sel_form = str_replace("!!caller!!", $this->caller, $sel_form);
 		$sel_form = str_replace("!!sortname!!", $this->dSort->sortName, $sel_form);
-		$sel_form = str_replace("!!nom_tri!!", $nom_du_tri, $sel_form);
+		$sel_form = str_replace("!!nom_tri!!", htmlentities($nom_du_tri, ENT_QUOTES, $charset), $sel_form);
 		$sel_form = str_replace("!!liste_criteres!!", $liste_criteres, $sel_form);
 		$sel_form = str_replace("!!liste_selectionnes!!", $liste_selectionnes, $sel_form);
 		
@@ -845,6 +847,18 @@ class sort {
 	    return $trier_par;
 	}
 	
+	protected function gen_temporary_table($nomTable, $referenceKey, $nomChp, $selectTempo='') {
+		$cmd_table = "DROP TEMPORARY TABLE IF EXISTS ".$nomTable;
+		pmb_mysql_query($cmd_table);
+		$cmd_table = "CREATE TEMPORARY TABLE ".$nomTable ."(".$referenceKey." INT NOT NULL, ".$nomChp." varchar(255) not null default '') ENGINE=".$this->current_engine;
+		if($selectTempo) {
+			$cmd_table .= " (".$selectTempo.")";
+		}
+		pmb_mysql_query($cmd_table);
+		$cmd_table = "ALTER TABLE " . $nomTable . " ADD INDEX (" .$referenceKey.")";
+		pmb_mysql_query($cmd_table);
+	}
+	
 	/**
 	 * Applique le tri sélectionné
 	 * Renvoie la requete finale utilisant les criteres de tri
@@ -858,8 +872,8 @@ class sort {
 		//creation de la table de tri
 		//$cmd_table = "DROP TABLE " . $tableEnCours;
 		//pmb_mysql_query($cmd_table);
-		//$cmd_table = "CREATE TABLE " . $tableEnCours . " ENGINE=MyISAM (".$selectTempo.")";
-		$cmd_table = "CREATE TEMPORARY TABLE " . $tableEnCours . " ENGINE=MyISAM (".$selectTempo.")";
+		//$cmd_table = "CREATE TABLE " . $tableEnCours . " ENGINE=".$this->current_engine." (".$selectTempo.")";
+		$cmd_table = "CREATE TEMPORARY TABLE " . $tableEnCours . " ENGINE=".$this->current_engine." (".$selectTempo.")";
 		pmb_mysql_query($cmd_table);
 		$cmd_table = "ALTER TABLE " . $tableEnCours . " ADD PRIMARY KEY (" . $nomColonneIndex.")";
 		pmb_mysql_query($cmd_table);	
@@ -930,7 +944,7 @@ class sort {
     							for ($x = 0; $x < count($fields[$i]["TABLE"]); $x++) {
     								
     								$requete = $this->genereRequeteUpdate($fields[$i]["TABLE"][$x], $tableEnCours, $nomChamp, $nomColonneIndex);
-    								
+
     								//echo("updateSort:".$requete."<br />");
     								pmb_mysql_query($requete);
     								
@@ -1017,7 +1031,6 @@ class sort {
 				if ($orderby!="") $requete .= " ORDER BY " . $orderby;
 			}
     	}
-    	
  		return $requete;
 	}
 	
@@ -1207,22 +1220,24 @@ class sort {
 	 */
 	public function ajoutColonneTableTempo($nomTable, $nomCol,$type) {
 		
-		//d'abord on ajoute la colonne
-		$cmd_table = "ALTER TABLE " . $nomTable . " ADD " . $nomCol . " ";
+	    if (!pmb_mysql_num_rows(pmb_mysql_query("SHOW COLUMNS FROM ". $nomTable ." LIKE '". $nomCol ."'"))){
+			//d'abord on ajoute la colonne
+			$cmd_table = "ALTER TABLE " . $nomTable . " ADD " . $nomCol . " ";
 		
-		//en fonction du type on met le type mysql
-		switch($type) {
-			case "num":
-				$cmd_table .= "integer";
-				break;
-			case "text":
-			default:
-				$cmd_table .= "text";
-				break;
+			//en fonction du type on met le type mysql
+			switch($type) {
+				case "num":
+					$cmd_table .= "integer";
+					break;
+				case "text":
+				default:
+					$cmd_table .= "varchar(255)";
+					break;
+			}
+		
+			//execution de l'ajout de la colonne
+			pmb_mysql_query($cmd_table);
 		}
-		
-		//execution de l'ajout de la colonne
-		pmb_mysql_query($cmd_table);
 	}
 	
 	/**
@@ -1283,7 +1298,11 @@ class sort {
 					$extractinfo_sql .= " LEFT JOIN " . $desLink["TABLE"][0]['value'].($desLink["TABLE"][0]['value'] != $alias  ? " AS ".$alias : "");
 					$extractinfo_sql .= " ON (" . $nomTable . "." . $params_referencekey;
 					$extractinfo_sql .= "=" . $alias . "." . $desLink["REFERENCEFIELD"][0]['value'] . ") ";
-						
+
+					if (!isset($desLink["LINKRESTRICT"][0]['value'])) {
+					    $desLink["LINKRESTRICT"][0]['value'] = "";
+					}
+					
 					//Autres jointures
 					if(isset($desLink["LINK"])) {
 						for ($x = 0; $x <= count($desLink["LINK"]); $x++) {
@@ -1317,7 +1336,7 @@ class sort {
 			$temporary_sql = "CREATE TEMPORARY TABLE ".$nomTable."_marctype (
 				".$nomChp."_code varchar(255) not null default '',
 				".$nomChp."_label varchar(255) not null default ''
-			) ENGINE=MyISAM";
+			) ENGINE=".$this->current_engine;
 			pmb_mysql_query($temporary_sql);
 			
 			$temporary_insert_sql = "INSERT INTO ".$nomTable."_marctype VALUES ";
@@ -1347,7 +1366,7 @@ class sort {
 		
 		//SELECT de base pour la récupération des informations
 		//
-		$extractinfo_sql = "SELECT ".$this->params["REFERENCE"].'.'.$this->params["REFERENCEKEY"].", ".$this->ajoutIfNull($desTable["TABLEFIELD"][0])." AS ".$nomChp." FROM ".$nomTable.' LEFT JOIN '.$this->params["REFERENCE"].' ON ('.$this->params["REFERENCE"].'.'.$this->params["REFERENCEKEY"].' = '.$nomTable.'.'.$this->params["REFERENCEKEY"].')';
+		$extractinfo_sql = "SELECT ".$this->params["REFERENCE"].'.'.$this->params["REFERENCEKEY"].", SUBSTRING(".$this->ajoutIfNull($desTable["TABLEFIELD"][0]).", 1, 255) AS ".$nomChp." FROM ".$nomTable.' LEFT JOIN '.$this->params["REFERENCE"].' ON ('.$this->params["REFERENCE"].'.'.$this->params["REFERENCEKEY"].' = '.$nomTable.'.'.$this->params["REFERENCEKEY"].')';
 		
 		//
 		//On ajout les éventuelles liaisons
@@ -1377,12 +1396,7 @@ class sort {
 		if (isset($desTable["GROUPBY"])) {
 			if (isset($desTable["ORDERBY"])) {
 				// Si ORDER BY, on passe par une table temporaire car sinon il n'est pas pris en compte par le group by
-				$sql = "DROP TEMPORARY TABLE IF EXISTS ".$nomTable."_groupby";
-				pmb_mysql_query($sql);
-				$temporary2_sql = "CREATE TEMPORARY TABLE ".$nomTable."_groupby ENGINE=MyISAM (".$extractinfo_sql.")";
-					
-				pmb_mysql_query($temporary2_sql);
-				pmb_mysql_query("alter table ".$nomTable."_groupby add index(".$this->params["REFERENCEKEY"].")");
+				$this->gen_temporary_table($nomTable."_groupby", $this->params["REFERENCEKEY"], $nomChp, $extractinfo_sql);
 					
 				$extractinfo_sql = "SELECT * FROM ".$nomTable."_groupby";
 				$extractinfo_sql .= " GROUP BY ".$desTable["GROUPBY"][0]["value"];
@@ -1394,12 +1408,7 @@ class sort {
 		//
 		//On met le tout dans une table temporaire
 		//
-		$sql = "DROP TEMPORARY TABLE IF EXISTS ".$nomTable."_update";
-		pmb_mysql_query($sql);
-		$temporary2_sql = "CREATE TEMPORARY TABLE ".$nomTable."_update ENGINE=MyISAM (".$extractinfo_sql.")";
-		
-		pmb_mysql_query($temporary2_sql);
-		pmb_mysql_query("alter table ".$nomTable."_update add index(".$this->params["REFERENCEKEY"].")");
+		$this->gen_temporary_table($nomTable."_update", $this->params["REFERENCEKEY"], $nomChp, $extractinfo_sql);
 
 		//
 		//Et on rempli la table tri_tempo avec les éléments de la table temporaire
@@ -1445,6 +1454,11 @@ class sort {
 	public function parse() {
 		global $include_path;
 		global $id_authperso;
+		
+		if(strpos($this->dSort->sortName,'ontologies')!== false) {
+		    return $this->parse_ontology();
+		}
+		
 		$params_name = $this->dSort->sortName . "_params";
 		global ${$params_name};
 		$params = ${$params_name};
@@ -1460,7 +1474,6 @@ class sort {
 			} else if (file_exists($nomfichier)) {
 				$fp = fopen($nomfichier, "r");
 			}
-
 			if ($fp) {
 				//un fichier est ouvert donc on le lit
 				$xml = fread($fp, filesize($nomfichier));
@@ -1644,16 +1657,12 @@ class sort {
 		$requete = "
 			SELECT 
 				".$this->params['REFERENCE'].'.'.$this->params['REFERENCEKEY'].", 
-				".$this->ajoutIfNull($field['TABLEFIELD'])." AS ".$nomChp." 
+				SUBSTRING(".$this->ajoutIfNull($field['TABLEFIELD']).", 1, 255) AS ".$nomChp."
 			FROM ".$nomTable." LEFT JOIN ".$this->params['REFERENCE']." ON (".$this->params['REFERENCE'].".".$this->params['REFERENCEKEY']." = ".$nomTable.".".$this->params['REFERENCEKEY'].") 
 				".$field['REQ_SUITE'];
 
 		//On met le tout dans une table temporaire
-		$sql = "DROP TEMPORARY TABLE IF EXISTS ".$nomTable."_update";
-		pmb_mysql_query($sql);
-		$temporary2_sql = "CREATE TEMPORARY TABLE ".$nomTable."_update ENGINE=MyISAM (".$requete.")";
-		pmb_mysql_query($temporary2_sql);
-		pmb_mysql_query("alter table ".$nomTable."_update add index(".$this->params["REFERENCEKEY"].")");
+		$this->gen_temporary_table($nomTable."_update", $this->params["REFERENCEKEY"], $nomChp, $requete);
 	
 		//
 		//Et on rempli la table tri_tempo avec les éléments de la table temporaire
@@ -1687,19 +1696,12 @@ class sort {
 	    }
 	    
 	    //On met le tout dans une table temporaire
-	    $sql = "DROP TEMPORARY TABLE IF EXISTS ".$nomTable."_update";
-	    pmb_mysql_query($sql);
-	    $temporary2_sql = "CREATE TEMPORARY TABLE ".$nomTable."_update (
-            ".$this->params['REFERENCEKEY']." INTEGER,
-            ".$nomChp." TEXT
-        ) ENGINE=MyISAM";
-	    pmb_mysql_query($temporary2_sql);
-	    pmb_mysql_query("alter table ".$nomTable."_update add index(".$this->params['REFERENCEKEY'].")");
+	    $this->gen_temporary_table($nomTable."_update", $this->params['REFERENCEKEY'], $nomChp);
 	    
 	    foreach ($objects_ids as $object_id=>$authority_value) {
 	        $query = "INSERT INTO ".$nomTable."_update
                 SET ".$this->params['REFERENCEKEY']." = ".$object_id.",
-                ".$nomChp . " = '" .addslashes($authority_value)."'";
+                ".$nomChp . " = '" .addslashes(pmb_substr($authority_value, 0, 255))."'";
 	        pmb_mysql_query($query);
 	    }
 	    
@@ -1716,5 +1718,49 @@ class sort {
 	    $requete .= " AND ".$nomTable."_update.".$nomChp." != ''";
 	    
 	    return $requete;
+	}
+	
+	
+	private function parse_ontology() {
+	    
+	    $params_name = $this->dSort->sortName . "_params";
+	    global ${$params_name};
+	    $params = ${$params_name};
+	    if ($params) {
+	        $this->params = $params;
+	    }
+	    $this->params['REFERENCEKEY'] = 'id_item';
+	    $class_uri = onto_common_uri::get_uri(str_replace("ontologies","",$this->dSort->sortName));
+	    $ontology = new ontology(ontologies::get_ontology_id_from_class_uri($class_uri));
+	    
+	    $onto = $ontology->get_onto();
+	    foreach ($onto->get_classes() as $c) {
+	        if($class_uri != $c->uri){
+	            continue;
+	        }
+	        $class = $onto->get_class($c->uri);
+	        foreach ($class->get_properties() as $uri_property) {
+	            $property = $class->get_property($uri_property);
+	            switch ($property->pmb_datatype) {
+	                case "http://www.pmbservices.fr/ontology#integer";
+	                    $type = "num"; 
+    	                break;
+	                default : 
+                        $type = "text"; 
+	                    break;
+	            }
+	            $p_tri = array(
+	                'SOURCE' => 'onto',
+	                'TYPEFIELD' => $property->pmb_datatype,
+	                'ID' => onto_common_uri::get_id($property->uri),
+	                'TYPE' => $type,
+	                'NAME' => $property->pmb_name,
+	                'LABEL' => $property->get_label()
+	            );
+	            if (!empty($p_tri)) {
+	                $this->params['FIELD'][] = $p_tri;
+	            }
+	        }
+	    }
 	}
 }

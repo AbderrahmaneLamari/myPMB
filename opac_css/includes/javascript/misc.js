@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
-// � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
+// © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: misc.js,v 1.17.2.1 2021/08/25 13:17:19 rtigero Exp $
+// $Id: misc.js,v 1.20.4.3 2023/10/27 08:59:57 dbellamy Exp $
 
 
 function replace_texte(string,text,by) {
@@ -233,69 +233,6 @@ function html_entities(text) {
 
 }
 
-function get_ref(obj) {
-	if (typeof obj == "string") {
-		obj = document.getElementById(obj);
-	}
-	return obj;
-}
-
-function set_value_style(obj, style, value) {
-	get_ref(obj).style[style] = value;
-	
-	var url = "./ajax.php?module=ajax&categ=misc&fname=session";
-	var req = new http_request();
-	var params = "session_key="+obj+"_"+style;
-	if (value != "") {
-		params += "&session_value="+value;
-	}
-	req.request(url, true, params);
-}
-
-function get_value_style(obj, style) {
-	if (!document.getElementById)
-		return;
-
-	var obj = get_ref(obj);
-	var value = obj.style[style];
-	if (!value) {
-		if (document.defaultView) {
-			value = document.defaultView.getComputedStyle(obj, "").getPropertyValue(style);
-		} else if (obj.currentStyle) {
-			value = obj.currentStyle[style]
-		}
-	}
-	return value;
-}
-
-function set_font_size(i) {
-	var str = get_value_style('pmbopac','font-size');
-	var unit = str.substring(str.length-2);
-	var value = str.substring(0, str.length-2);
-	switch (i) {
-		case -1: //Reduce
-			set_value_style('pmbopac', 'fontSize', (value*0.9)+unit);
-			break;
-		case 0: //Reset
-			set_value_style('pmbopac', 'fontSize', '');
-			break;
-		case 1: //Large
-			set_value_style('pmbopac', 'fontSize', (value*1.1)+unit);
-			break;
-	}
-	if(document.getElementById('iframe_resume_panier')) {
-		set_iframe_font_size('iframe_resume_panier', 'cart_info_body');
-	}
-}
-
-function set_iframe_font_size(frameNodeId, bodyNodeId) {
-	var iframe = document.getElementById(frameNodeId);
-	var innerDoc = (iframe.contentDocument) ? iframe.contentDocument : iframe.contentWindow.document;
-	var cartBodyNode = innerDoc.getElementById(bodyNodeId);
-	get_ref(cartBodyNode).style['fontSize'] = get_value_style('pmbopac','font-size');
-}
-
-
 function empty_dojo_calendar_by_id(id){
 	require(["dijit/registry"], function(registry) {registry.byId(id).set('value',null);});
 }
@@ -332,10 +269,27 @@ function set_parent_focus(f_caller, id){
 	window.opener.document.forms[f_caller].elements[id].focus();
 }
 
-function is_valid_mail(mail){
-	var regex = /(^(([^<>()\[\]\\.,;:\s@\"]+(\.[^<>()\[\]\\.,;:\s@\"]+)*)|(\"\.+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$)/;
+/**
+ * Teste la validite d'un email
+ */
+function is_valid_mail(mail) {
+	/**
+	 * Exemple : 
+	 * 
+	 * Valide mail :
+	 * 	mail@email.my-website.co.us
+	 * 	mail@127.0.0.1
+	 * 	mail@i.ua
+	 * 
+	 * Invalide mail :
+	 * 	mail@my-website.com:7777
+	 * 	%@mail.com
+	 * 	'@mail.com
+	 * 	"............"@mail.com
+	 */
+	var regex = /^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@[0-9a-z]([a-z0-9\-_\.]+)*[0-9a-z]$/;
 	var result = mail.match(regex);
-	if(null == result){
+	if (null == result) {
 		return false;
 	}
 	return true;
@@ -382,14 +336,78 @@ function toggle_password(caller,id) {
 }
 
 /**
- * Masque un élément html si tous ces enfants sont non visibles
+ * Masque un element html si tous ces enfants sont non visibles
  */
 function hide_element_by_its_hidden_children(element_id) {
 	var element = document.getElementById(element_id);
-	for(let child of element.children) {
-		if(window.getComputedStyle(child).display != "none") {
-			return;
+	if(element) {
+		for(let child of element.children) {
+			if(window.getComputedStyle(child).display != "none") {
+				return;
+			}
 		}
+		element.style.display = "none";
 	}
-	element.style.display = "none";
+}
+
+/**
+ * methode pour inclure des fichiers js et eviter les balises <script type='text/javascript' src='nom_fichier.js'></script>
+ */
+function pmb_include(file) {
+    if (typeof window.filesList == 'undefined') {
+        window['filesList'] = [];
+    }
+    if (window.filesList.includes(file)) {
+        return;
+    }
+    let script = document.createElement('script');
+    script.src = file;
+    script.type = 'text/javascript';
+    script.defer = true;
+ 
+    document.getElementsByTagName('head').item(0).appendChild(script);
+    window.filesList.push(file);
+}
+/**
+ * Permet de transformer un noeud html en bouton
+ *
+ * @param {Node} node Noeud HTML
+ * @param {function} functionClick fonction appelee au click
+ */
+function convertToRGAAButton(node, functionClick) {
+
+  if (!(node instanceof Node)) {
+    return false;
+  }
+
+  node.setAttribute('role', 'button');
+  node.setAttribute('tabindex', '0');
+  node.setAttribute('aria-pressed', 'false');
+
+  node.addEventListener('keydown', (event) => {
+    if (
+      event instanceof KeyboardEvent &&
+      event.key !== "Enter" &&
+      event.key !== " "
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    node.setAttribute('aria-pressed', 'true');
+    functionClick(event);
+  });
+
+  node.addEventListener('keyup', (event) => {
+    if (
+      event instanceof KeyboardEvent &&
+      event.key !== "Enter" &&
+      event.key !== " "
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    node.setAttribute('aria-pressed', 'false');
+  });
 }

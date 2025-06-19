@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_watcheslist_selector_watches_by_categories.class.php,v 1.4.12.1 2022/01/18 20:37:41 dgoron Exp $
+// $Id: cms_module_watcheslist_selector_watches_by_categories.class.php,v 1.6 2022/02/18 08:53:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -41,7 +41,8 @@ class cms_module_watcheslist_selector_watches_by_categories extends cms_module_w
 				$sub_selector = $this->get_selected_sub_selector();
 				$sub_value = $sub_selector->get_value();
 				if(!is_array($sub_value) && $sub_value){
-					$sub_value = array($sub_value*1);
+					$sub_value = intval($sub_value);
+					$sub_value = array($sub_value);
 				}
 				if($this->parameters['get_children_categories']){
 					$sub_value =$this->get_children_categories($sub_value);
@@ -49,7 +50,7 @@ class cms_module_watcheslist_selector_watches_by_categories extends cms_module_w
 				if(count($sub_value)){
 					$temp = array();
 					foreach ($sub_value as $value) {
-						$temp[] = $value*1;
+						$temp[] = intval($value);
 					}
 					$sub_value = $temp;
 					$query = "select id_watch from docwatch_watches where watch_num_category in ('".implode("','",$sub_value)."')";

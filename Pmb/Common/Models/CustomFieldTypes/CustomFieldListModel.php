@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: CustomFieldListModel.php,v 1.4 2020/09/29 12:45:16 btafforeau Exp $
+// $Id: CustomFieldListModel.php,v 1.6 2023/02/15 15:05:02 qvarin Exp $
 namespace Pmb\Common\Models\CustomFieldTypes;
 
 use Pmb\Common\Helper\Helper;
@@ -27,7 +27,7 @@ class CustomFieldListModel extends Model
             if (! empty($customField['OPTIONS'][0]['DEFAULT_VALUE'][0]['value'])) {
                 $defaultValueId = 0;
                 if (! empty($customField['OPTIONS'][0]['DEFAULT_VALUE'][0]['value'])) {
-                    $query = "SELECT " . $prefix . "_custom_list_value AS id, " . $prefix . "_custom_list_lib AS libelle FROM " . $prefix . "_custom_lists WHERE " . $prefix . "_custom_champ = $idCustomField AND " . $prefix . "_custom_list_value = " . $customField['OPTIONS'][0]['DEFAULT_VALUE'][0]['value'] . " ORDER BY ordre";
+                    $query = "SELECT " . $prefix . "_custom_list_value AS id, " . $prefix . "_custom_list_lib AS libelle FROM " . $prefix . "_custom_lists WHERE " . $prefix . "_custom_champ = $idCustomField AND " . $prefix . "_custom_list_value = '" . addslashes($customField['OPTIONS'][0]['DEFAULT_VALUE'][0]['value']) . "' ORDER BY ordre";
                     $result = pmb_mysql_query($query);
                     if (pmb_mysql_num_rows($result)) {
                         while ($row = pmb_mysql_fetch_object($result)) {
@@ -122,11 +122,21 @@ class CustomFieldListModel extends Model
 
     public static function getListInformations($customField, $prefix, $champ)
     {
-        $query = "select " . $prefix . "_custom_list_value AS id, " . $prefix . "_custom_list_lib AS libelle FROM " . $prefix . "_custom_lists WHERE " . $prefix . "_custom_champ = $champ ORDER BY ordre";
+        $prefix = addslashes($prefix);
+        $champ = intval($champ);
+
+        $query = "SELECT "
+            . "{$prefix}_custom_list_value AS id, "
+            . "{$prefix}_custom_list_lib AS libelle, "
+            . "ordre "
+            . "FROM {$prefix}_custom_lists "
+            . "WHERE {$prefix}_custom_champ = {$champ} ORDER BY ordre";
+
         $result = pmb_mysql_query($query);
         if (pmb_mysql_num_rows($result)) {
             while ($row = pmb_mysql_fetch_object($result)) {
                 $customField['LIST_VALUES'][$row->id] = $row->libelle;
+                $customField['LIST_ORDER'][$row->id] = $row->ordre;
             }
         }
 

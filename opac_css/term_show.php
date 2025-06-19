@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: term_show.php,v 1.31 2019/05/09 10:35:37 ngantier Exp $
+// $Id: term_show.php,v 1.31.12.1 2023/10/17 14:03:22 tsamson Exp $
 $base_path=".";                            
 $base_auth = ""; 
 
@@ -31,8 +31,9 @@ $short_header= str_replace("!!liens_rss!!","",$short_header);
 $short_header= str_replace("<body>","<body class='searchTerm'>",$short_header);
 
 echo $short_header;
-
-echo $jscript_term;
+if (!isset($_POST["jscript_term"]) && !isset($_GET["jscript_term"])) {
+    echo $jscript_term;
+}
 
 
 function parent_link($categ_id,$categ_see) {

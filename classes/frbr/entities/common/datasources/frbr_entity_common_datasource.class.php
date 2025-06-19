@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_common_datasource.class.php,v 1.32.2.1 2021/07/15 07:59:56 tsamson Exp $
+// $Id: frbr_entity_common_datasource.class.php,v 1.34 2022/09/29 09:13:28 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -446,12 +446,14 @@ class frbr_entity_common_datasource extends frbr_entity_root {
 	private function clear_data($datas) {
 	    if ($this->entity_type == self::$main_entity_type) {
 	        foreach ($datas as $id => $data) {
-	            for($i = 0; $i < count($data); $i++) {
-	                if ($data[$i] == self::$main_entity_id) {
-	                    unset($data[$i]);
+	            if (is_array($data)) {
+	                for($i = 0; $i < count($data); $i++) {
+	                    if ($data[$i] == self::$main_entity_id) {
+	                        unset($data[$i]);
+	                    }
 	                }
+	                $datas[$id] = array_values($data);
 	            }
-	            $datas[$id] = array_values($data);
 	        }
 	    }
 	    return $datas;

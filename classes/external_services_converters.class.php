@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: external_services_converters.class.php,v 1.33.2.3 2022/01/03 15:49:26 dgoron Exp $
+// $Id: external_services_converters.class.php,v 1.36 2022/01/03 15:46:57 dgoron Exp $
 
 //
 //Convertisseurs et cacheur de formats des résultats des services externes

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: computed_field.class.php,v 1.16 2020/09/01 14:15:43 qvarin Exp $
+// $Id: computed_field.class.php,v 1.17 2022/05/24 08:53:14 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -272,5 +272,11 @@ class computed_field {
 	            }
 	        }
 	    }
+	}
+	public function get_id() {
+	    if(is_numeric($this->id)){
+	    	return $this->id;
+	    }
+	    return 0;
 	}
 }

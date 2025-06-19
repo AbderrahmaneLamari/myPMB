@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_achats.inc.php,v 1.27.4.1 2022/01/10 11:27:49 dgoron Exp $
+// $Id: func_achats.inc.php,v 1.28 2022/01/10 11:26:01 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

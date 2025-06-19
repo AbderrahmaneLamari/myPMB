@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_explnum_rep_ui.class.php,v 1.1 2021/01/12 08:10:05 dgoron Exp $
+// $Id: list_configuration_explnum_rep_ui.class.php,v 1.1.8.1 2023/03/24 07:55:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,22 +34,22 @@ class list_configuration_explnum_rep_ui extends list_configuration_explnum_ui {
 	}
 
 	protected function get_cell_content($object, $property) {
-		global $msg;
+		global $msg, $charset;
 		
 		$content = '';
 		switch($property) {
 			case 'repertoire_subfolder':
 				if($object->repertoire_hachage) {
-					$content .= $object->repertoire_subfolder;
+					$content .= htmlentities($object->repertoire_subfolder, ENT_QUOTES, $charset);
 				}
 				break;
 			case 'repertoire_navigation':
 			case 'repertoire_hachage':
 			case 'repertoire_utf8':
 				if($object->{$property}) {
-					$content .= $msg['upload_repertoire_yes'];
+					$content .= htmlentities($msg['upload_repertoire_yes'], ENT_QUOTES, $charset);
 				} else {
-					$content .= $msg['upload_repertoire_no'];
+					$content .= htmlentities($msg['upload_repertoire_no'], ENT_QUOTES, $charset);
 				}
 				break;
 			default :

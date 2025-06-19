@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: selector_query_list.class.php,v 1.3.8.1 2021/10/20 11:57:44 dgoron Exp $
+// $Id: selector_query_list.class.php,v 1.6 2022/12/22 10:57:26 dgoron Exp $
   
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -16,6 +16,8 @@ class selector_query_list extends selector {
 	protected $search_xml_file;
 	
 	protected $search_field_id;
+	
+	protected $search_terms;
 	
 	public function __construct($user_input=''){
 		parent::__construct($user_input);
@@ -33,25 +35,34 @@ class selector_query_list extends selector {
 		print $this->get_sel_footer_template();
 	}
 	
+	protected function is_search_terms_value($value) {
+		global $pmb_default_operator;
+		
+		$founded = false;
+		foreach ($this->search_terms as $term) {
+			if(preg_match('`'.str_replace('*', '', addslashes($term)).'`i', $value)) {
+				$founded = true;
+			} elseif($pmb_default_operator == 1) { //Operator AND
+				$founded = false;
+				break;
+			}
+		}
+		return $founded;
+	}
+	
 	protected function get_filter_result($list) {
-		foreach ($list as $key=>$value) {
-			if(!preg_match('`'.str_replace('*', '', addslashes($this->user_input)).'`i', $value)) {
-				unset($list[$key]);
+		$this->search_terms = explode(' ',strip_empty_chars(clean_string($this->user_input)));
+		if(!empty($this->search_terms) && count($this->search_terms)) {
+			foreach ($list as $key=>$value) {
+				if(!$this->is_search_terms_value($value)) {
+					unset($list[$key]);
+				}
 			}
 		}
 		return $list;
 	}
 	
 	protected function get_display_list() {
-		global $nb_per_page;
-		global $page;
-	
-		$display_list = '';
-		if(!$page) {
-			$debut = 0;
-		} else {
-			$debut = ($page-1)*$nb_per_page;
-		}
 		$p=explode('_', $this->search_field_id);
 		if($p[0] == 'f') {
 			$query=$this->search->fixedfields[$p[1]]["INPUT_OPTIONS"]["QUERY"][0]["value"];
@@ -73,7 +84,7 @@ class selector_query_list extends selector {
 			}
 			$this->nbr_lignes = count($list);
 			if($this->nbr_lignes) {
-				$list = array_slice($list, $debut, $nb_per_page, true);
+				$list = array_slice($list, $this->get_start_list(), $this->get_nb_per_page_list(), true);
 				foreach ($list as $key=>$element) {
 					$display_list .= $this->get_display_element($key, $element);
 				}

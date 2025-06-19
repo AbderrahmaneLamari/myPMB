@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: fiche_catalographique.inc.php,v 1.16.6.1 2021/12/08 12:59:07 dgoron Exp $
+// $Id: fiche_catalographique.inc.php,v 1.17 2021/12/08 12:56:22 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

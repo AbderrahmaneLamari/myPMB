@@ -8,17 +8,18 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
 {
     public static $files = array (
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
-        'a0edc8309cc5e1d60e3047b5df6b7052' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/functions_include.php',
-        '383eaff206634a77a1be54e64e6459c7' => __DIR__ . '/..' . '/sabre/uri/lib/functions.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
+        '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
-        'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
+        '383eaff206634a77a1be54e64e6459c7' => __DIR__ . '/..' . '/sabre/uri/lib/functions.php',
         '2b9d0f43f9552984cfa82fee95491826' => __DIR__ . '/..' . '/sabre/event/lib/coroutine.php',
         'd81bab31d3feb45bfe2f283ea3c8fdf7' => __DIR__ . '/..' . '/sabre/event/lib/Loop/functions.php',
         'a1cce3d26cc15c00fcd0b3354bd72c88' => __DIR__ . '/..' . '/sabre/event/lib/Promise/functions.php',
         '3569eecfeed3bcf0bad3c998a494ecb8' => __DIR__ . '/..' . '/sabre/xml/lib/Deserializer/functions.php',
         '93aa591bc4ca510c520999e34229ee79' => __DIR__ . '/..' . '/sabre/xml/lib/Serializer/functions.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
+        'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
+        '1f87db08236948d07391152dccb70f04' => __DIR__ . '/..' . '/google/apiclient-services/autoload.php',
         'abede361264e2ae69ec1eee813a101af' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/abs.php',
         '21a5860fbef5be28db5ddfbc3cca67c4' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acos.php',
         '1546e3f9d127f2a9bb2d1b6c31c26ef1' => __DIR__ . '/..' . '/markbaker/complex/classes/src/functions/acosh.php',
@@ -80,6 +81,7 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
         'ebdb698ed4152ae445614b69b5e4bb6a' => __DIR__ . '/..' . '/sabre/http/lib/functions.php',
         '71ecd0286a4e74fd8732297fb587023c' => __DIR__ . '/..' . '/thingengineer/mysqli-database-class/MysqliDb.php',
         'd383f1ec7b1e54a09cb53eb6fcf751e0' => __DIR__ . '/..' . '/thingengineer/mysqli-database-class/dbObject.php',
+        'a8d3953fd9959404dd22d3dfcd0a79f0' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
         '20540fee703fb26b5e46ea2c1cb78d78' => __DIR__ . '/..' . '/semsol/arc2/ARC2.php',
         'e98ae83aaf42bb653417458ae576b2d4' => __DIR__ . '/..' . '/semsol/arc2/ARC2_Class.php',
         'c1bf40f92dcf21e0b8a469c0c90a013a' => __DIR__ . '/..' . '/semsol/arc2/ARC2_getFormat.php',
@@ -87,16 +89,22 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
         'ee274324607689550f35d8b41e0249a5' => __DIR__ . '/..' . '/semsol/arc2/ARC2_Graph.php',
         '0a98b16bf36d5a42930e1567faf36d4a' => __DIR__ . '/..' . '/semsol/arc2/ARC2_Reader.php',
         '9a394445f90dac3d0543f751921bfbce' => __DIR__ . '/..' . '/semsol/arc2/ARC2_Resource.php',
+        'b686b8e46447868025a15ce5d0cb2634' => __DIR__ . '/..' . '/symfony/polyfill-php74/bootstrap.php',
     );
 
     public static $prefixLengthsPsr4 = array (
         'p' => 
         array (
-            'phpseclib\\' => 10,
+            'phpseclib3\\' => 11,
+        ),
+        'T' => 
+        array (
+            'TheNetworg\\OAuth2\\Client\\' => 25,
         ),
         'S' => 
         array (
             'Symfony\\Polyfill\\Php80\\' => 23,
+            'Symfony\\Polyfill\\Php74\\' => 23,
             'Symfony\\Contracts\\Service\\' => 26,
             'Symfony\\Contracts\\Cache\\' => 24,
             'Symfony\\Component\\VarExporter\\' => 30,
@@ -120,10 +128,12 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
             'Psr\\SimpleCache\\' => 16,
             'Psr\\Log\\' => 8,
             'Psr\\Http\\Message\\' => 17,
+            'Psr\\Http\\Client\\' => 16,
             'Psr\\Container\\' => 14,
             'Psr\\Cache\\' => 10,
             'Pmb\\' => 4,
             'PhpOffice\\PhpSpreadsheet\\' => 25,
+            'ParagonIE\\ConstantTime\\' => 23,
             'PHPMailer\\PHPMailer\\' => 20,
         ),
         'M' => 
@@ -131,12 +141,19 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
             'Monolog\\' => 8,
             'Matrix\\' => 7,
         ),
+        'L' => 
+        array (
+            'League\\OAuth2\\Client\\' => 21,
+        ),
         'G' => 
         array (
             'GuzzleHttp\\Psr7\\' => 16,
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
+            'Greew\\OAuth2\\Client\\Provider\\' => 29,
+            'Google\\Service\\' => 15,
             'Google\\Auth\\' => 12,
+            'Google\\' => 7,
         ),
         'F' => 
         array (
@@ -153,13 +170,21 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
     );
 
     public static $prefixDirsPsr4 = array (
-        'phpseclib\\' => 
+        'phpseclib3\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
+        ),
+        'TheNetworg\\OAuth2\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/thenetworg/oauth2-azure/src',
         ),
         'Symfony\\Polyfill\\Php80\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
+        ),
+        'Symfony\\Polyfill\\Php74\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php74',
         ),
         'Symfony\\Contracts\\Service\\' => 
         array (
@@ -239,7 +264,12 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
+        ),
+        'Psr\\Http\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-client/src',
         ),
         'Psr\\Container\\' => 
         array (
@@ -257,6 +287,10 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
         array (
             0 => __DIR__ . '/..' . '/phpoffice/phpspreadsheet/src/PhpSpreadsheet',
         ),
+        'ParagonIE\\ConstantTime\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/paragonie/constant_time_encoding/src',
+        ),
         'PHPMailer\\PHPMailer\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
@@ -268,6 +302,11 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
         'Matrix\\' => 
         array (
             0 => __DIR__ . '/..' . '/markbaker/matrix/classes/src',
+        ),
+        'League\\OAuth2\\Client\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/league/oauth2-client/src',
+            1 => __DIR__ . '/..' . '/league/oauth2-google/src',
         ),
         'GuzzleHttp\\Psr7\\' => 
         array (
@@ -281,9 +320,21 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
         ),
+        'Greew\\OAuth2\\Client\\Provider\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/greew/oauth2-azure-provider/src/Provider',
+        ),
+        'Google\\Service\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/google/apiclient-services/src',
+        ),
         'Google\\Auth\\' => 
         array (
             0 => __DIR__ . '/..' . '/google/auth/src',
+        ),
+        'Google\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/google/apiclient/src',
         ),
         'Firebase\\JWT\\' => 
         array (
@@ -305,17 +356,6 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
             'PHPRtfLite' => 
             array (
                 0 => __DIR__ . '/..' . '/phprtflite/phprtflite/lib',
-            ),
-        ),
-        'G' => 
-        array (
-            'Google_Service_' => 
-            array (
-                0 => __DIR__ . '/..' . '/google/apiclient-services/src',
-            ),
-            'Google_' => 
-            array (
-                0 => __DIR__ . '/..' . '/google/apiclient/src',
             ),
         ),
     );
@@ -372,9 +412,31 @@ class ComposerStaticInit605bb287155dd665eed8308db213ef9d
         'ARC2_TurtleParser' => __DIR__ . '/..' . '/semsol/arc2/parsers/ARC2_TurtleParser.php',
         'ARC2_TurtleSerializer' => __DIR__ . '/..' . '/semsol/arc2/serializers/ARC2_TurtleSerializer.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Datamatrix' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/barcodes/datamatrix.php',
-        'Google_Service_Exception' => __DIR__ . '/..' . '/google/apiclient/src/Google/Service/Exception.php',
-        'Google_Service_Resource' => __DIR__ . '/..' . '/google/apiclient/src/Google/Service/Resource.php',
+        'Google_AccessToken_Revoke' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_AccessToken_Verify' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_AuthHandler_AuthHandlerFactory' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_AuthHandler_Guzzle5AuthHandler' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_AuthHandler_Guzzle6AuthHandler' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_AuthHandler_Guzzle7AuthHandler' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Client' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Collection' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Exception' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Http_Batch' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Http_MediaFileUpload' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Http_REST' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Model' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Service' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Service_Exception' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Service_Resource' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Task_Composer' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Task_Exception' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Task_Retryable' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Task_Runner' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Google_Utils_UriTemplate' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        'Jumbojett\\OpenIDConnectClient' => __DIR__ . '/..' . '/jumbojett/openid-connect-php/src/OpenIDConnectClient.php',
+        'Jumbojett\\OpenIDConnectClientException' => __DIR__ . '/..' . '/jumbojett/openid-connect-php/src/OpenIDConnectClient.php',
         'PDF417' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/barcodes/pdf417.php',
         'QRcode' => __DIR__ . '/..' . '/tecnickcom/tcpdf/include/barcodes/qrcode.php',
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',

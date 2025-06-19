@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search.class.php,v 1.24 2020/11/17 15:27:53 dgoron Exp $
+// $Id: search.class.php,v 1.25 2022/03/21 08:00:39 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $include_path;
 require_once($include_path."/rec_history.inc.php");
 
 //Classe de gestion de la recherche spécial "facette"
@@ -93,7 +94,7 @@ class facette_search {
         $t_ids=array();
         $ids = '';
         if(is_array($filter_array)) {
-	        foreach ($filter_array as $k=>$v) {
+	        foreach ($filter_array as $v) {
 	            
 	            $filter_value = $v[1];
 	            $filter_field = $v[2];
@@ -124,10 +125,10 @@ class facette_search {
 	            
 	            //Opérateur "AND", on repart d'un tableau vide
 	            if($opac_facettes_operator == 'and') {
+	            	$t_ids=array();
                     if(!pmb_mysql_num_rows($rs)) {
                         break;
                     }
-                    $t_ids=array();
                     while ($o=pmb_mysql_fetch_object($rs)) {
                         $t_ids[]= $o->{'id_'.$prefix};
                     }
@@ -163,7 +164,7 @@ class facette_search {
     	$valeur = ${$valeur};
     	$item_literal_words = array();
     	if(is_array($valeur)) {
-	    	foreach ($valeur as $k=>$v) {
+	    	foreach ($valeur as $v) {
 		    	$filter_value = $v[1];
 		    	$filter_name = $v[0];
 		    	$filter_field = $v[2];
@@ -208,7 +209,7 @@ class facette_search {
     	$item_literal_words = array();
     	
     	if(is_array($valeur)) {
-	    	foreach ($valeur as $k=>$v) {
+	    	foreach ($valeur as $v) {
 		    	$filter_value = $v[1];
 		    	$filter_name = $v[0];
 	

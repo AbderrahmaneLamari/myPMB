@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: perso.inc.php,v 1.25.4.1 2022/01/10 10:59:02 dgoron Exp $
+// $Id: perso.inc.php,v 1.26.4.1 2023/08/31 12:56:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $recherche;
+global $recherche, $default_tmp_storage_engine;
 
 $base_url = "./select.php?what=perso&caller=$caller&p1=$p1&p2=$p2&perso_id=$perso_id&custom_prefixe=".$custom_prefixe."&dyn=$dyn&perso_name=$perso_name";
 
@@ -150,7 +150,7 @@ if ($type=="list") {
 	}
 	
 } else {
-	$requete="create temporary table temp_perso_list ENGINE=MyISAM ".$options['QUERY'][0]['value'];
+	$requete="create temporary table temp_perso_list ENGINE={$default_tmp_storage_engine} ".$options['QUERY'][0]['value'];
 	pmb_mysql_query($requete);
 	
 	$resultat=pmb_mysql_query("show columns from temp_perso_list");

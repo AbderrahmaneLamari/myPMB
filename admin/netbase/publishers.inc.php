@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: publishers.inc.php,v 1.19.8.1 2021/12/13 15:31:05 dgoron Exp $
+// $Id: publishers.inc.php,v 1.21 2022/02/28 13:44:49 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -21,10 +21,13 @@ print "<br /><br /><h2 class='center'>".htmlentities($msg["nettoyage_suppr_edite
 $requete="SELECT DISTINCT ed_id FROM publishers LEFT JOIN notices n1 ON n1.ed1_id=ed_id LEFT JOIN notices n2 ON n2.ed2_id=ed_id LEFT JOIN collections ON ed_id=collection_parent WHERE n1.notice_id IS NULL AND  n2.notice_id IS NULL AND collection_id IS NULL";
 $res=pmb_mysql_query($requete);
 $affected=0;
-if($affected = pmb_mysql_num_rows($res)){
+if(pmb_mysql_num_rows($res)){
 	while ($ligne = pmb_mysql_fetch_object($res)) {
 		$editeur = new editeur($ligne->ed_id);
-		$editeur->delete();
+		$deleted = $editeur->delete();
+		if(!$deleted) {
+			$affected++;
+		}
 	}
 }
 

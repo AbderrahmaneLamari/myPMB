@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: suggest.class.php,v 1.17.2.3 2021/12/29 08:07:52 jparis Exp $
+// $Id: suggest.class.php,v 1.21 2022/10/04 12:03:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
 	die("no access");
@@ -149,7 +149,6 @@ class suggest {
 		
 		if(count($this->arrayWords)){
 			foreach($this->arrayWords as $key=>$word){
-				$dmeta = new DoubleMetaPhone($word);
 				$distMax=2;
 				switch(count($this->arrayWords)){
 					case 1 : $maxSimilars=10;
@@ -178,12 +177,15 @@ class suggest {
 					AND lang IN ('','".$lang."') )";
 				pmb_mysql_query($qi_1);
 				
-				$qi_2 = "insert ignore into $temporary_table 
-					(SELECT id_word, word, levenshtein('".addslashes($word)."',word) as dist FROM words 
-					WHERE levenshtein('".$dmeta->primary." ".$dmeta->secondary."',double_metaphone) < ".$distMax."
-					AND lang IN ('','".$lang."')
-				)";
-				pmb_mysql_query($qi_2);
+				$dmeta = new DoubleMetaPhone($word);
+				if($dmeta->primary || $dmeta->secondary){
+					$qi_2 = "insert ignore into $temporary_table 
+						(SELECT id_word, word, levenshtein('".addslashes($word)."',word) as dist FROM words 
+						WHERE levenshtein('".$dmeta->primary." ".$dmeta->secondary."',double_metaphone) < ".$distMax."
+						AND lang IN ('','".$lang."')
+					)";
+					pmb_mysql_query($qi_2);
+				}
 								
 				$qr = "select distinct id_word, word, dist from $temporary_table join {$this->searchIndex} on num_word=id_word order by dist, word limit $maxSimilars";
 				$res=pmb_mysql_query($qr);
@@ -442,6 +444,7 @@ class suggest {
 //  listFoundWords($string) : renvoie un tableau des mots uniques trouvés en gras
 // ---------------------------------------------------------------------------------------------------
 	public function listFoundWords($string){
+		$arrayReturn = array();
 		preg_match_all("`<b>(.*?)<\/b>`",$string,$arrayReturn);
 		$arrayReturn = array_unique($arrayReturn[1]);
 		return $arrayReturn;

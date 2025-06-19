@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bulletin.inc.php,v 1.17.2.1 2022/01/18 10:26:05 dgoron Exp $
+// $Id: bulletin.inc.php,v 1.18 2022/01/18 10:20:30 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

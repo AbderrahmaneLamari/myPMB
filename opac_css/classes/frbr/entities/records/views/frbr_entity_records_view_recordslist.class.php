@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_records_view_recordslist.class.php,v 1.8.8.1 2021/08/09 13:25:54 tsamson Exp $
+// $Id: frbr_entity_records_view_recordslist.class.php,v 1.10 2022/09/16 09:43:23 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -37,10 +37,11 @@ class frbr_entity_records_view_recordslist extends frbr_entity_common_view_djang
                 }
 				$render_datas['records'][]= array(
 						'content' => record_display::get_display_in_result($record, (isset($this->parameters->django_directory) ? $this->parameters->django_directory : "")),
-                                                'works'=>$works,
-                                                'items'=>record_display::get_display_expl_list($record),
-                                                'explnums'=>record_display::get_display_explnums($record)
-                                );
+				        'object' => new record_datas($record),
+                        'works'=>$works,
+                        'items'=>record_display::get_display_expl_list($record),
+                        'explnums'=>record_display::get_display_explnums($record)
+                );
 			}
 		}
 		//on rappelle le tout...
@@ -61,11 +62,15 @@ class frbr_entity_records_view_recordslist extends frbr_entity_common_view_djang
 					'var' => "records[i].content",
 					'desc'=> $this->msg['frbr_entity_records_view_record_content_desc']
 				),
-                                array(
-                                        'var' => "records[i].works",
-                                        'desc' => $this->msg['frbr_entity_works_view_works_desc'],
-                                        'children' => $this->prefix_var_tree(titre_uniforme::get_format_data_structure(),"records[i].works[i]")
-                                )
+				array(
+					'var' => "records[i].object",
+					'desc'=> $this->msg['frbr_entity_records_view_record_object_desc']
+				),
+                array(
+                    'var' => "records[i].works",
+                    'desc' => $this->msg['frbr_entity_records_view_works_desc'],
+                    'children' => $this->prefix_var_tree(titre_uniforme::get_format_data_structure(),"records[i].works[i]")
+                )
 			)
 		);
 		$format = array_merge($format,parent::get_format_data_structure());

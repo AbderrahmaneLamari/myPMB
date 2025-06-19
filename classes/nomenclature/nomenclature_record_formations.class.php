@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_record_formations.class.php,v 1.24.4.1 2021/12/27 07:42:28 dgoron Exp $
+// $Id: nomenclature_record_formations.class.php,v 1.26.4.2 2023/11/09 10:17:10 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -57,6 +57,7 @@ class nomenclature_record_formations{
 				while($row = pmb_mysql_fetch_object($result)){
 					$this->add_record_formation( new nomenclature_record_formation($row->id_notice_nomenclature));	
 				}
+				pmb_mysql_free_result($result);
 			}
 		}
 	}
@@ -156,14 +157,19 @@ class nomenclature_record_formations{
 		$result = pmb_mysql_query($query);
 		if (pmb_mysql_num_rows($result)) {
 			while ($row = pmb_mysql_fetch_object($result)) {
-				notice_relations::update_nomenclature_rank($row->child_record_num_record, $this->id, $pmb_nomenclature_record_children_link, $rank);
+			    notice_relations::update_nomenclature_ranking($row->child_record_num_record, $this->id, $pmb_nomenclature_record_children_link, $rank);
 				$rank++;
 			}
 		}
 	}
 	
 	protected static function get_instruments_index_data($notice_id){
-	    if (empty(static::$instruments_index_data[$notice_id])) {
+		if (empty(static::$instruments_index_data[$notice_id])) {
+			if(isset(static::$instruments_index_data) && count(static::$instruments_index_data) > 500) {
+				// Parade pour éviter le dépassement de mémoire
+				static::$instruments_index_data = array();
+			}
+			
     	    $formations = new nomenclature_record_formations($notice_id);
     	    $nb = count($formations->record_formations);
     	    $index_data = [];
@@ -181,6 +187,9 @@ class nomenclature_record_formations{
     	    	}
     	    }
     	    static::$instruments_index_data[$notice_id] = $index_data;
+    	    $formations = null;
+    	    $index_data = null;
+    	    $data = null;
 	    }
 	    return static::$instruments_index_data[$notice_id];
 	}
@@ -197,9 +206,13 @@ class nomenclature_record_formations{
 	}
 	
 	protected static function get_voices_index_data($notice_id){
-	    if (empty(static::$voices_index_data[$notice_id])) {
+		if (empty(static::$voices_index_data[$notice_id])) {
+			if(isset(static::$voices_index_data) && count(static::$voices_index_data) > 500) {
+				// Parade pour éviter le dépassement de mémoire
+				static::$voices_index_data = array();
+			}
 	        $formations = new nomenclature_record_formations($notice_id);
-	        $nb = count($formations->record_formations);
+	        $nb = (is_countable($formations->record_formations) ? count($formations->record_formations) : 0);
 	        $index_data = [];
 	        $data = [];
 	        for($i=0 ; $i<$nb ; $i++){
@@ -215,6 +228,9 @@ class nomenclature_record_formations{
 	            }
 	        }
 	        static::$voices_index_data[$notice_id] = $index_data;
+	        $formations = null;
+	        $index_data = null;
+	        $data = null;
 	    }
 	    return static::$voices_index_data[$notice_id];
 	}

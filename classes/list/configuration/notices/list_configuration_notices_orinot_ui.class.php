@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_notices_orinot_ui.class.php,v 1.3 2021/01/12 07:23:35 dgoron Exp $
+// $Id: list_configuration_notices_orinot_ui.class.php,v 1.3.6.1 2023/03/24 07:55:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -24,23 +24,14 @@ class list_configuration_notices_orinot_ui extends list_configuration_notices_ui
 		);
 	}
 	
-	protected function get_cell_content($object, $property) {
+	protected function _get_object_property_orinot_diffusion($object) {
 		global $msg;
-	
-		$content = '';
-		switch($property) {
-			case 'orinot_diffusion':
-				if ($object->orinot_diffusion) {
-					$content .= $msg['orinot_diffusable_oui'];
-				} else {
-					$content .= $msg['orinot_diffusable_non'];
-				}
-				break;
-			default :
-				$content .= parent::get_cell_content($object, $property);
-				break;
+		
+		if ($object->orinot_diffusion) {
+			return $msg['orinot_diffusable_oui'];
+		} else {
+			return $msg['orinot_diffusable_non'];
 		}
-		return $content;
 	}
 	
 	protected function get_edition_link($object) {

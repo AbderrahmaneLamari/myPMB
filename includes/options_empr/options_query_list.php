@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: options_query_list.php,v 1.21.8.1 2021/07/02 08:59:14 dgoron Exp $
+// $Id: options_query_list.php,v 1.22 2021/07/02 08:55:22 dgoron Exp $
 
 //Gestion des otpions de type query_list
 

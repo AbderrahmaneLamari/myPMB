@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lettre_reader_resa_planning_PDF.class.php,v 1.5 2020/11/26 13:39:24 dgoron Exp $
+// $Id: lettre_reader_resa_planning_PDF.class.php,v 1.6 2022/07/18 16:36:55 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -39,7 +39,7 @@ class lettre_reader_resa_planning_PDF extends lettre_reader_resa_PDF {
 		$res = pmb_mysql_query($query);
 		$expl = pmb_mysql_fetch_object($res);
 	
-		$responsabilites = get_notice_authors($expl->notice_id) ;
+		$responsabilites = get_notice_authors(($expl->m_id+$expl->s_id)) ;
 		$header_aut= gen_authors_header($responsabilites);
 		$header_aut ? $auteur=" / ".$header_aut : $auteur="";
 	

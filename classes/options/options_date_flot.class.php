@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: options_date_flot.class.php,v 1.1 2021/05/10 07:03:49 dgoron Exp $
+// $Id: options_date_flot.class.php,v 1.2 2022/05/05 06:44:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -50,8 +50,8 @@ class options_date_flot extends options {
         	$this->parameters["DEFAULT_TODAY"][0]["value"]="";
         }
         $this->parameters['REPEATABLE'][0]['value'] = ($REPEATABLE ? 1 : 0);
-        $this->parameters['DURATION'][0]['value'] = stripslashes($DURATION*1);
-        $this->parameters['DURATION_D_M_Y'][0]['value'] = stripslashes($DURATION_D_M_Y*1);
+        $this->parameters['DURATION'][0]['value'] = intval($DURATION);
+        $this->parameters['DURATION_D_M_Y'][0]['value'] = intval($DURATION_D_M_Y);
     }
 }
 ?>

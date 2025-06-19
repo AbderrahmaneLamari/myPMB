@@ -2,12 +2,17 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_author.class.php,v 1.10 2019/08/08 06:42:15 jlaurent Exp $
+// $Id: cms_module_common_datasource_records_author.class.php,v 1.11 2022/09/06 07:52:19 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class cms_module_common_datasource_records_author extends cms_module_common_datasource_records_list{
 
+    public function __construct($id=0){
+        parent::__construct($id);
+        $this->paging = true;
+    }
+    
 	/*
 	 * On défini les sélecteurs utilisable pour cette source de donnée
 	 */
@@ -34,13 +39,21 @@ class cms_module_common_datasource_records_author extends cms_module_common_data
 						$records[] = $row->responsability_notice;
 					}
 				}
-				$return['records'] = $this->filter_datas("notices",$records);
+				$records = $this->filter_datas("notices",$records);
 			}
 
-			if (empty($return['records'])) return false;
+			if (empty($records)) {
+			    return false;
+			}
 			
-			$return = $this->sort_records($return['records']);
+			$return = $this->sort_records($records);
 			$return["title"] = "Du même auteur";
+			
+			if ($this->paging && isset($this->parameters['paging_activate']) && $this->parameters['paging_activate'] == "on") {
+			    $return["paging"] = $this->inject_paginator($return['records']);
+			    $return['records'] = $this->cut_paging_list($return['records'], $return["paging"]);
+			}
+			
 			return $return;
 		}
 		return false;

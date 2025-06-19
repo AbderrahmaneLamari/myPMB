@@ -2,10 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: index_includes.inc.php,v 1.205.2.5 2022/01/19 15:06:04 dgoron Exp $
+// $Id: index_includes.inc.php,v 1.217.2.8 2023/12/20 08:46:23 qvarin Exp $
 
+use Pmb\DSI\Models\Channel\Portal\PortalChannel;
 use Pmb\Animations\Opac\Controller\AnimationsController;
 use Pmb\Animations\Opac\Controller\RegistrationController;
+use Pmb\Common\Library\CSRF\ParserCSRF;
+use Pmb\DSI\Models\Diffusion;
+use Pmb\DSI\Opac\Controller\DiffusionsController;
+use Pmb\DSI\Orm\DiffusionOrm;
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -17,6 +22,7 @@ global $opac_contact_form, $faq_active, $opac_search_universes_activate, $pmb_co
 global $opac_contribution_area_activate, $allow_contribution, $opac_duration_session_auth, $animations_active;
 global $opac_quick_access, $opac_quick_access_logout;
 global $opac_show_liensbas, $opac_show_bandeau_2, $opac_show_bandeaugauche, $opac_facette_in_bandeau_2, $opac_accessibility, $opac_show_homeontop, $opac_biblio_main_header;
+global $nb_per_page_custom, $opac_items_pagination_custom;
 
 require_once($base_path."/includes/init.inc.php");
 
@@ -77,13 +83,13 @@ if ((!$lvl)&&(!$search_type_asked)&&($opac_first_page_params)) {
 	foreach ($params_to_load as $varname=>$value) {
 		${$varname}=$value;
 	}
-} 
+}
 
 if($opac_search_other_function){
 	require_once($include_path."/".$opac_search_other_function);
 }
 
-if (!isset($_SESSION["nb_sortnotices"]) || !$_SESSION["nb_sortnotices"]) $_SESSION["nb_sortnotices"]=0; 
+if (!isset($_SESSION["nb_sortnotices"]) || !$_SESSION["nb_sortnotices"]) $_SESSION["nb_sortnotices"]=0;
 
 //Mettre le tri de l'étagère en session avant l'affichage du sélecteur de tris
 if (($lvl=='etagere_see') && ($id)) {
@@ -96,7 +102,29 @@ if (($lvl=='etagere_see') && ($id)) {
 	$dSort->applyTri($r->id_tri);
 }
 
-//L'usager a demandé à voir plus de résultats dans sa liste paginée
+// L'usager a demandé à voir plus de résultats dans sa liste paginée, on fait un controle
+if (isset($nb_per_page_custom) && intval($nb_per_page_custom)) {
+	$nb_per_page_custom = intval($nb_per_page_custom);
+
+	if (!empty($opac_items_pagination_custom)) {
+		$items_pagination_custom = explode(",", $opac_items_pagination_custom);
+		$items_pagination_custom = array_map("intval", $items_pagination_custom);
+		$max_nb_per_page = max($items_pagination_custom);
+	} else {
+		$max_nb_per_page = 200;
+	}
+
+	if ($nb_per_page_custom > $max_nb_per_page) {
+		// On bloque au nombre max definie dans opac_items_pagination_custom
+		$nb_per_page_custom = $max_nb_per_page;
+	}
+	if ($nb_per_page_custom < 0) {
+		// On bloque les chiffres negatifs
+		$nb_per_page_custom = 0;
+	}
+}
+
+// L'usager a demandé à voir plus de résultats dans sa liste paginée
 if(isset($nb_per_page_custom) && intval($nb_per_page_custom)) {
 	$nb_per_page_custom=intval($nb_per_page_custom);
 	$opac_nb_aut_rec_per_page = $nb_per_page_custom;
@@ -130,7 +158,7 @@ if (file_exists($base_path.'/includes/ext_auth.inc.php')) require_once($base_pat
 require_once($base_path."/includes/ldap_auth.inc.php");
 
 // pour visualiser une notice issue de DSI avec une connexion auto
-if(isset($code)) {		
+if(isset($code)) {
 	// pour fonction de vérification de connexion
 	require_once($base_path.'/includes/empr_func.inc.php');
 	$log_ok=connexion_empr();
@@ -146,14 +174,22 @@ if (!empty($login) && $first_log && empty($direct_access)) {
 		if(!empty($_SERVER['REQUEST_URI'])) {
 			$parsed_uri = parse_url(substr($_SERVER['REQUEST_URI'], strrpos($_SERVER['REQUEST_URI'], '/')+1));
 			$parsed_query = array();
-			parse_str($parsed_uri['query'], $parsed_query);
+			parse_str($parsed_uri['query'] ?? "", $parsed_query);
+
 			unset($parsed_query['opac_view']); // Retirons la variable opac_view sauvegardée en session
 			$builded_uri_query = http_build_query($parsed_query);
 			$action = $parsed_uri['path'];
 			if(!empty($builded_uri_query)) {
 				$action .= "?".$builded_uri_query;
 			}
-			die("<script type='text/javascript'>document.location='".$base_path."/".$action."';</script>");
+			unset($_POST['login']);
+			unset($_POST['password']);
+			die("
+			<form action='".$base_path."/".$action."' method='post' name='myrefreshpageform'>
+				".get_hidden_global_var('POST')."
+			</form>
+			<script type='text/javascript'>document.forms['myrefreshpageform'].submit();</script>
+			");
 		} else {
 			die("<script type='text/javascript'>document.location='".$base_path."/empr.php';</script>");
 		}
@@ -162,13 +198,16 @@ if (!empty($login) && $first_log && empty($direct_access)) {
 
 // tentative de connexion echouée : redirection vers le formulaire de connexion
 if(isset($_POST['login']) && isset($_POST['password']) && !$log_ok) {
-    print "
-    <form action='".$base_path."/empr.php' method='post' name='myredirectform'>
-        <input type='text' name='login' value='".htmlentities($_POST['login'], ENT_QUOTES, $charset)."'><br />
-        <input type='password' name='password' value='".htmlentities($_POST['password'], ENT_QUOTES, $charset)."'/>
-        ".(!empty($_SESSION['opac_view']) ? "<input type='hidden' name='opac_view' value='".$_SESSION['opac_view']."'/>" : "")."
-    </form>
-    <script type='text/javascript'>document.forms['myredirectform'].submit();</script>";
+	$parseCSRF = new ParserCSRF();
+	print "
+	<form action='".$base_path."/empr.php' method='post' name='myredirectform'>
+		<input type='text' name='login' value='".htmlentities($_POST['login'], ENT_QUOTES, $charset)."'><br />
+		<input type='password' name='password' value='".htmlentities($_POST['password'], ENT_QUOTES, $charset)."'/>
+		".(!empty($_SESSION['opac_view']) ? "<input type='hidden' name='opac_view' value='".$_SESSION['opac_view']."'/>" : "")."
+		{$parseCSRF->generateHiddenField()}
+	</form>
+	<script type='text/javascript'>document.forms['myredirectform'].submit();</script>";
+	exit;
 }
 
 //Premier accès ??
@@ -190,15 +229,15 @@ $search_type=(isset($_SESSION["search_type"]) ? $_SESSION["search_type"] : '');
 //Si vidage historique des recherches demandé ?
 if(!isset($raz_history)) $raz_history = 0;
 if ($raz_history) {
-	
+
 	require_once($base_path."/includes/history_functions.inc.php");
-	
+
 	if ((isset($_POST['cases_suppr'])) && !empty($_POST['cases_suppr'])) {
 		$cases_a_suppr=$_POST['cases_suppr'];
 		$t = array();
-		
-		//remplissage du tableau temporaire  de l'historique des recherches $t, si une recherche est sélectionnée, la valeur l'élément du tableau temporaire sera à -1 
-		
+
+		//remplissage du tableau temporaire  de l'historique des recherches $t, si une recherche est sélectionnée, la valeur l'élément du tableau temporaire sera à -1
+
 		for ($i=1;$i<=$_SESSION["nb_queries"];$i++) {
 			$bool=false;
 			for ($j=0;$j<count($cases_a_suppr);$j++) {
@@ -214,7 +253,7 @@ if ($raz_history) {
 			}
 		}
 		//parcours du tableau temporaire, et réécriture des variables de session
-		
+
 		for ($i=count($t);$i>=1;$i--) {
 			if ($t[$i]=="-1") {
 				$t1=array();
@@ -248,12 +287,12 @@ if ($raz_history) {
 				}
 			}
 		}
-		
+
 		//si il ne subsiste plus d'historique de recherches, mise à null des variables de session
 		if ($_SESSION["nb_queries"]==0) {
 			$_SESSION["last_query"]="";
-		} 
-	} 
+		}
+	}
 }
 
 
@@ -282,25 +321,30 @@ if ($is_opac_included) {
 }
 
 //Enrichissement OPAC
-if($opac_notice_enrichment){
+if ($opac_notice_enrichment) {
 	require_once($base_path."/classes/enrichment.class.php");
 	$enrichment = new enrichment();
-	$std_header = str_replace("!!enrichment_headers!!",$enrichment->getHeaders(),$std_header);
-}else $std_header = str_replace("!!enrichment_headers!!","",$std_header);
+	$std_header = str_replace("!!enrichment_headers!!", $enrichment->getHeaders() ?? "", $std_header);
+} else {
+    $std_header = str_replace("!!enrichment_headers!!", "", $std_header);
+}
 
 // si $opac_show_homeontop est à 1 alors on affiche le lien retour à l'accueil sous le nom de la bibliothèque
-if ($opac_show_homeontop==1) $std_header= str_replace("!!home_on_top!!",$home_on_top,$std_header);
-else $std_header= str_replace("!!home_on_top!!","",$std_header);
+if ($opac_show_homeontop == 1) {
+    $std_header = str_replace("!!home_on_top!!", $home_on_top ?? "", $std_header);
+} else {
+    $std_header = str_replace("!!home_on_top!!", "", $std_header);
+}
 
 // mise à jour du contenu opac_biblio_main_header
-$std_header= str_replace("!!main_header!!",$opac_biblio_main_header,$std_header);
+$std_header = str_replace("!!main_header!!", $opac_biblio_main_header ?? "", $std_header);
 
 // RSS
-$std_header= str_replace("!!liens_rss!!",genere_link_rss(),$std_header);
+$std_header = str_replace("!!liens_rss!!", genere_link_rss() ?? "", $std_header);
 // l'image $logo_rss_si_rss est calculée par genere_link_rss() en global
-$liens_bas = str_replace("<!-- rss -->",$logo_rss_si_rss,$liens_bas);
+$liens_bas = str_replace("<!-- rss -->", $logo_rss_si_rss ?? "", $liens_bas);
 
-if($opac_parse_html || $cms_active){
+if ($opac_parse_html || $cms_active ){
 	ob_start();
 }
 
@@ -332,6 +376,7 @@ $link_to_print_search_result_spe = "<span class=\"printSearchResult\">
 </span>";
 
 if ((($opac_cart_allow)&&(!$opac_cart_only_for_subscriber))||(($opac_cart_allow)&&($_SESSION["user_code"]))) {
+    $id = intval($id);
 	if(!isset($id)) $id =0;
 	$add_cart_link="<span class=\"addCart\"><a href='cart_info.php?lvl=$lvl&id=$id' target='cart_info' title='".$msg["cart_add_result_in"]."'>".$msg["cart_add_result_in"]."</a></span>";
 	$add_cart_link_spe="<span class=\"addCart\"><a href='cart_info.php?lvl=$lvl&id=$id!!spe!!' target='cart_info' title='".$msg["cart_add_result_in"]."'>".$msg["cart_add_result_in"]."</a></span>";
@@ -357,7 +402,7 @@ $sendToVisionneuseByPost ="
 		oldAction=document.form_values.action;
 		document.form_values.action='visionneuse.php';
 		document.form_values.target='visionneuse';
-		document.form_values.submit();	
+		document.form_values.submit();
 	}
 </script>";
 
@@ -381,14 +426,12 @@ $sendToVisionneuseNoticeDisplay ="
 $sendToVisionneuseSegmentSearch ="
 <script type='text/javascript'>
 	function sendToVisionneuse(explnum_id){
-		oldAction=document.form_values.action;
-        
-        //a reprendre pour faire poster la recherche des segments dans la visionneuse
-		//document.form_values.action = \"visionneuse.php?mode=segment\"+(typeof(explnum_id) != 'undefined' ? '&explnum_id='+explnum_id : \"\");
-		//document.form_values.target = 'visionneuse';
-		//document.form_values.submit();
-	
-		document.getElementById('visionneuseIframe').src = 'visionneuse.php?'+(typeof(explnum_id) != 'undefined' ? 'explnum_id='+explnum_id+\"\" : '\'');
+		oldAction = document.form_values.action;
+
+        let formValues = document.querySelector(\"form[name='form_values']\");
+		formValues.action = \"visionneuse.php?mode=segment\"+(typeof(explnum_id) != 'undefined' ? '&explnum_id='+explnum_id : \"\");
+		formValues.target = 'visionneuse';
+		formValues.submit();
 	}
 </script>";
 
@@ -402,50 +445,50 @@ switch($lvl) {
 			if (@pmb_mysql_num_rows($r_author)) {
 				$author_type=pmb_mysql_result($r_author,0,0);
 				if($author_type == '71' || $author_type == '72') $author_type_aff=1;
-			}			
+			}
 		}
 		if($author_type_aff) require_once($base_path.'/includes/congres_see.inc.php');
 		else require_once($base_path.'/includes/author_see.inc.php');
 	break;
 	case 'categ_see':
 		require_once($base_path.'/includes/categ_see.inc.php');
-		break;		
+		break;
 	case 'indexint_see':
 		require_once($base_path.'/includes/indexint_see.inc.php');
-		break;		
+		break;
 	case 'coll_see':
 		require_once($base_path.'/includes/coll_see.inc.php');
-		break;		
+		break;
 	case 'more_results':
 		require_once($base_path.'/includes/more_results.inc.php');
-		break;		
+		break;
 	case 'notice_display':
 		require_once($base_path.'/includes/notice_display.inc.php');
 		break;
 	case 'bulletin_display':
 		require_once($base_path.'/includes/bulletin_display.inc.php');
-		break;			
+		break;
 	case 'publisher_see':
 		require_once($base_path.'/includes/publisher_see.inc.php');
-		break;	
+		break;
 	case 'titre_uniforme_see':
 		require_once($base_path.'/includes/titre_uniforme_see.inc.php');
-		break;		
+		break;
 	case 'serie_see':
 		require_once($base_path.'/includes/serie_see.inc.php');
-		break;		
+		break;
 	case 'search_result':
 		require_once($base_path.'/includes/search_result.inc.php');
-		break;		
+		break;
 	case 'subcoll_see':
 		require_once($base_path.'/includes/subcoll_see.inc.php');
 		break;
 	case 'search_history':
 		require_once($base_path.'/includes/search_history.inc.php');
-		break;	
+		break;
 	case 'etagere_see':
 		require_once($base_path.'/includes/etagere_see.inc.php');
-		break;	
+		break;
 	case 'etageres_see':
 		require_once($base_path.'/includes/etageres_see.inc.php');
 		break;
@@ -465,7 +508,7 @@ switch($lvl) {
 	case 'rss_see':
 		require_once($base_path.'/includes/rss_see.inc.php');
 		break;
-	case 'doc_command':	
+	case 'doc_command':
 		require_once($base_path.'/includes/doc_command.inc.php');
 		break;
 	case 'sort':
@@ -478,16 +521,16 @@ switch($lvl) {
 	case 'authperso_see':
 		require_once($base_path.'/includes/authperso_see.inc.php');
 		break;
-		
+
 	case 'information':
 		// Insertion page d'information
 		// Ceci permet d'afficher une page d'info supplémentaire en incluant un fichier.
 		// Ce fichier s'appelle sous la forme ./index.php?lvl=information&askedpage=NOM_DE_MON_FICHIER
 		// NOM_DE_MON_FICHIER peut être une URL si le serveur l'autorise
-		// NOM_DE_MON_FICHIER doit être déclaré dans les paramètres de l'OPAC de PMB : 
+		// NOM_DE_MON_FICHIER doit être déclaré dans les paramètres de l'OPAC de PMB :
 		// $opac_authorized_information_pages, tous les noms de fichiers autorisés séparés par une virgule
 		//
-		// Code pour tester la validité de la page demandée. Si la page ne figure pas dans les pages demandées : rien. 
+		// Code pour tester la validité de la page demandée. Si la page ne figure pas dans les pages demandées : rien.
 		if ($opac_authorized_information_pages) {
 			$array_pages = explode(",",$opac_authorized_information_pages);
 			$as=array_search($askedpage,$array_pages);
@@ -526,7 +569,7 @@ switch($lvl) {
 		}else{
 			$lvl = "index";
 		}
-		
+
 		break;
 	case 'concept_see':
 		require_once($base_path.'/includes/concept_see.inc.php');
@@ -584,7 +627,7 @@ switch($lvl) {
 	            print $msg['animation_registration_unauthorized'];
 	            break;
 	        }
-	        
+
             $obj = new stdClass();
             // Identifiant de l'emprunteur
             $obj->id_empr = !empty($id_empr) ? intval($id_empr) : 0;
@@ -601,11 +644,59 @@ switch($lvl) {
                 $numDaughtersAnimation = implode(',', $numDaughtersAnimation);
             }
             $obj->numDaughtersAnimation = !empty($numDaughtersAnimation) ? $numDaughtersAnimation : "";
-            
+
     	    $registration_controller = new RegistrationController($obj);
     	    $registration_controller->proceed($action);
 	    }
 	    break;
+	case 'onto_see':
+	    if($ontology_id){
+	       $ontology_id = intval($ontology_id);
+	        $ontology = new ontology($ontology_id);
+	        $ontology->exec_data_framework();
+	    }
+	    break;
+	case 'dsi':
+		global $action, $hist, $diff;
+		$hist = intval($hist);
+		$diff = intval($diff);
+		if($action == "unsubscribe") {
+			require_once($include_path . "/empr_func.inc.php");
+			$check = connexion_auto();
+			if(! $check) {
+				die ("Acc&egrave;s interdit");
+			}
+			global $id_diffusion, $emprlogin, $empr_type;
+			$id_diffusion = intval($id_diffusion);
+			if (! $id_diffusion) die ("Acc&egrave;s interdit");
+			$controller_data = new stdClass();
+			$controller_data->idEmpr = intval($emprlogin);
+			$controller_data->idDiffusion = intval($id_diffusion);
+			$controller_data->emprType = $empr_type;
+			$controller = new DiffusionsController($controller_data);
+			$controller->proceed($action);
+			return;
+		}
+		if ($dsi_active == 2 && DiffusionOrm::exist($diff)) {
+			$diffusion = new Diffusion($diff);
+			if($hist != 0) {
+				$diffusion->fetchDiffusionHistory();
+				for($i = 0; $i < $diffusion->diffusionHistory; $i++) {
+					if($diffusion->diffusionHistory[$i]->id == $hist) {
+						$history = $diffusion->diffusionHistory[$i];
+						break;
+					}
+				}
+			} else {
+				$history = $diffusion->getLastHistorySent(PortalChannel::class);
+			}
+			if (!empty($history)) {
+				$history->send();
+			} else {
+				die ("Acc&egrave;s interdit");
+			}
+		}
+		break;
 	default:
 		$lvl='index';
 		require_once($base_path.'/includes/index.inc.php');
@@ -615,7 +706,7 @@ switch($lvl) {
 if($pmb_logs_activate){
 	//Enregistrement du log
 	global $log, $infos_notice, $infos_expl, $nb_results_tab;
-	
+
 	if($_SESSION['user_code']) {
 		$res=pmb_mysql_query($log->get_empr_query());
 		if($res){
@@ -628,7 +719,7 @@ if($pmb_logs_activate){
 	$log->add_log('expl',$infos_expl);
 	$log->add_log('docs',$infos_notice);
 
-	//Enregistrement du nombre de résultats	
+	//Enregistrement du nombre de résultats
 	$log->add_log('nb_results', $nb_results_tab);
 
 	//Enregistrement multicritere
@@ -653,19 +744,19 @@ if($pmb_logs_activate){
 					default:
 						$search_file="search_simple_fields_unimarc";
 						break;
-				}			
+				}
 			}else $search_file = "";
 		}
-		$search_stat = new search($search_file);	
+		$search_stat = new search($search_file);
 		$log->add_log('multi_search', $search_stat->serialize_search());
 		$log->add_log('multi_human_query', $search_stat->make_human_query());
 	}
-	
+
 	//Enregistrement vue
 	if($opac_opac_view_activate){
 		$log->add_log('opac_view', $_SESSION["opac_view"]);
 	}
-	
+
 	$log->save();
 }
 
@@ -677,19 +768,20 @@ else $footer = str_replace("!!div_liens_bas!!",$liens_bas_disabled,$footer);
 if ($opac_show_bandeau_2==0) {
 	$bandeau_2_contains= "";
 } else {
-	$bandeau_2_contains= "<div id=\"bandeau_2\">!!contenu_bandeau_2!!</div>";	
+	$bandeau_2_contains= "<div id=\"bandeau_2\">!!contenu_bandeau_2!!</div>";
 }
 if (!isset($facettes_tpl)) $facettes_tpl = '';
+
 //affichage du bandeau de gauche si $opac_show_bandeaugauche = 1
 if ($opac_show_bandeaugauche==0) {
 	$footer= str_replace("!!contenu_bandeau!!",$bandeau_2_contains,$footer);
-	$footer= str_replace("!!contenu_bandeau_2!!",$opac_facette_in_bandeau_2?$lvl1.$facette:"",$footer); 
+	$footer= str_replace("!!contenu_bandeau_2!!",$opac_facette_in_bandeau_2?$lvl1.$facette:"",$footer);
 } else {
 	$footer = str_replace("!!contenu_bandeau!!","<div id=\"bandeau\">!!contenu_bandeau!!</div>".$bandeau_2_contains,$footer);
 	$home_on_left=str_replace("!!welcome_page!!",$msg["welcome_page"],$home_on_left);
 	$adresse=str_replace("!!common_tpl_address!!",$msg["common_tpl_address"],$adresse);
 	$adresse=str_replace("!!common_tpl_contact!!",$msg["common_tpl_contact"],$adresse);
-	
+
 	if($lvl=="more_results"){
 		$facette=str_replace("!!title_block_facette!!",$msg["label_title_facette"],$facette);
 		$facette=str_replace("!!lst_facette!!",($facettes_tpl == '' ? facettes::destroy_dom_node() : $facettes_tpl),$facette);
@@ -707,20 +799,20 @@ if ($opac_show_bandeaugauche==0) {
 			$faq = new faq($faq_page,0,$faq_filters);
 		}
 		$facette=$faq->get_facettes_filter();
-		$lvl1="";	
+		$lvl1="";
 	}else if($lvl=="search_segment"){
 	    $facette=str_replace("!!title_block_facette!!",$msg["label_title_facette"],$facette);
 		$facette=str_replace("!!lst_facette!!",($facettes_tpl == '' ? facettes::destroy_dom_node() : $facettes_tpl),$facette);
 		$lvl1=str_replace("!!lst_lvl1!!",$facettes_lvl1,$lvl1);
 	}else{
 		$facette="";
-		$lvl1="";		
+		$lvl1="";
 	}
-	
+
 	// loading the languages available in OPAC - martizva >> Eric
 	require_once($base_path.'/includes/languages.inc.php');
 	$home_on_left = str_replace("!!common_tpl_lang_select!!", show_select_languages("index.php"), $home_on_left);
-	
+
 	if (!$_SESSION["user_code"]) {
 		$loginform=str_replace('<!-- common_tpl_login_invite -->','<h3 class="login_invite">'.$msg['common_tpl_login_invite'].'</h3>',$loginform);
 		$loginform__ = genere_form_connexion_empr();
@@ -733,15 +825,18 @@ if ($opac_show_bandeaugauche==0) {
 		} else {
 			$loginform__.="<a href=\"empr.php\" id=\"empr_my_account\">".$msg["empr_my_account"]."</a><br />";
 		}
-		if(!$opac_quick_access_logout || !$opac_quick_access){	
+		if(!$opac_quick_access_logout || !$opac_quick_access){
 			$loginform__.="<a href=\"index.php?logout=1\" id=\"empr_logout_lnk\">".$msg["empr_logout"]."</a>";
 		}
-		
-	}	
+
+	}
 	$loginform = str_replace("!!login_form!!",$loginform__,$loginform);
 	$footer=str_replace("!!contenu_bandeau!!",($opac_accessibility ? $accessibility : "").$home_on_left.$loginform.$meteo.($opac_facette_in_bandeau_2?"":$lvl1.$facette).$adresse,$footer);
 	$footer= str_replace("!!contenu_bandeau_2!!",$opac_facette_in_bandeau_2?$lvl1.$facette:"",$footer);
-} 
+}
+
+printPasswordNoCompliant();
+
 cms_build_info(array(
     'input' => 'index.php',
 ));

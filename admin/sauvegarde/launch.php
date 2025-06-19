@@ -2,9 +2,10 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: launch.php,v 1.10 2019/08/20 09:18:41 btafforeau Exp $
+// $Id: launch.php,v 1.11 2022/07/27 10:31:44 jparis Exp $
 
 global $base_path, $base_auth, $base_title, $include_path, $msg, $tree, $container;
+global $charset;
 
 //Page de lancement d'un sauvegarde
 $base_path = "../..";
@@ -38,10 +39,12 @@ while ($res = pmb_mysql_fetch_object($resultat)) {
 }
 
 for ($i = 0; $i < count($sauvegardes); $i++) {
-    $tree .= "<input type=\"checkbox\" name=\"sauvegardes[]\" value=\"".$sauvegardes[$i]["ID"]."\"/>&nbsp;".$sauvegardes[$i]["NAME"]."<br />";
+	$tree .= sprintf("<input type='checkbox' name='sauvegardes[]' value='%s' />&nbsp; %s<br />",
+		htmlentities($sauvegardes[$i]["ID"], ENT_QUOTES, $charset),
+		htmlentities($sauvegardes[$i]["NAME"], ENT_QUOTES, $charset));
 }
-$container = str_replace("!!sauvegardes_tree!!", $tree, $container);
 
+$container = str_replace("!!sauvegardes_tree!!", $tree, $container);
 echo $container;
 echo "<script>self.focus();</script>\n</div>";
 ?>

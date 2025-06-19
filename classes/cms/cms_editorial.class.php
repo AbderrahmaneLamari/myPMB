@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_editorial.class.php,v 1.101.2.1 2021/10/27 13:15:57 rtigero Exp $
+// $Id: cms_editorial.class.php,v 1.105.4.1 2023/09/04 14:36:36 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($class_path."/cms/cms_root.class.php");
 require_once($class_path."/cms/cms_logo.class.php");
 require_once($class_path."/cms/cms_editorial_publications_states.class.php");
@@ -53,7 +54,7 @@ class cms_editorial extends cms_root {
 	public function __construct($id=0,$type="section",$num_parent=0){
 		$this->type = $type;
 		if($id){
-			$this->id = $id*1;
+			$this->id = intval($id);
 			$this->fetch_data_cache();
 			$this->logo = new cms_logo($this->id,$this->type);
 		}else{
@@ -207,7 +208,6 @@ class cms_editorial extends cms_root {
 		global $cms_editorial_form_dupli_button_tpl;
 		global $cms_editorial_form_audit_button_tpl;
 		global $msg;
-		global $lang;
 		global $base_path;
 		global $cms_editorial_form_editables;
 		global $pmb_editorial_dojo_editor,$pmb_javascript_office_editor;
@@ -287,7 +287,9 @@ class cms_editorial extends cms_root {
 					$form.= $pmb_javascript_office_editor ;
 				}
 				global $base_path;
-				$form.="<script type='text/javascript' src='".$base_path."/javascript/tinyMCE_interface.js'></script>";
+				$form.="<script type='text/javascript'>
+                    pmb_include('$base_path/javascript/tinyMCE_interface.js');
+                </script>";
 				if (strpos($pmb_javascript_office_editor,'cms_editorial_form_resume')) {
 				    if(!$cms_editorial_form_editables) {
     				    $form.= "<script type='text/javascript'>
@@ -435,9 +437,9 @@ class cms_editorial extends cms_root {
                 setTimeout(function(){ 
                     if(dijit.byId('section_tree')) {
                         if(data.type == 'article') {
-                            dijit.byId('section_tree').set('selectedItem', 'article_'+data.id);
+							cms_".$this->type."_find_node('article_'+data.id);
                         } else {
-                            dijit.byId('section_tree').set('selectedItem', data.id);
+							cms_".$this->type."_find_node(data.id);
                         }
 						setTimeout(function(){
                         	if(dijit.byId('section_tree').get('selectedItem')) {
@@ -462,9 +464,9 @@ class cms_editorial extends cms_root {
 					}
                     if(dijit.byId('section_tree')) {
                         if(data.type == 'article') {
-                            dijit.byId('section_tree').set('selectedItem', 'article_'+data.id);
+							cms_".$this->type."_find_node('article_'+data.id);
                         } else {
-                            dijit.byId('section_tree').set('selectedItem', data.id);
+							cms_".$this->type."_find_node(data.id);
                         }
                     }
 				}, 1000);
@@ -473,6 +475,22 @@ class cms_editorial extends cms_root {
 						document.getElementById('cms_editorial_content_saved').innerHTML='';
 					}
 				}, 4000);
+			}
+
+			function cms_".$this->type."_find_node(item) {
+				if(item) {
+					if(dijit.byId('section_tree')) {
+						let treeNodes = dijit.byId('section_tree').getNodesByItem(item);
+						if(typeof(treeNodes) != 'undefined' && treeNodes.length) {
+							let treeNode = treeNodes[0];
+							treeNode.domNode.style.display = 'block';
+							dijit.byId('section_tree').set('selectedItem', item);
+							setTimeout(function(){
+								treeNode.domNode.scrollIntoView();
+							}, 1500);
+						}
+					}
+				}
 			}
 		</script>";
 		$form = str_replace("!!cms_editorial_suite!!",$suite,$form);
@@ -484,7 +502,6 @@ class cms_editorial extends cms_root {
 	}
 	
 	protected function get_parent_field(){
-		global $msg;
 		global $cms_editorial_parent_field;
 		return str_replace("!!cms_editorial_form_parent_options!!",$this->get_parent_selector(),$cms_editorial_parent_field);
 	}
@@ -671,7 +688,7 @@ class cms_editorial extends cms_root {
 	public function maj_indexation($datatype='all') {
 		global $include_path;
 		global $base_path;
-		global $dbh, $champ_base;
+		global $champ_base;
 		//recuperation du fichier xml de configuration
 		if(empty($champ_base)) {
 			$file = $include_path."/indexation/editorial_content/".$this->type."_subst.xml";
@@ -691,7 +708,6 @@ class cms_editorial extends cms_root {
 		$temp_not=array();
 		$temp_not['t'][0][0]=$tableau['REFERENCE'][0]['value'] ;
 		$temp_ext=array();
-		$temp_marc=array();
 		$temp_callable = array();
 		$champ_trouve=false;
 		$tab_code_champ = array();
@@ -840,18 +856,18 @@ class cms_editorial extends cms_root {
 			//qu'est-ce qu'on efface?
 			if($datatype=="all") {
 				$req_del="delete from cms_editorial_words_global_index where num_obj='".$this->id."' and type = '".$this->type."'";
-				pmb_mysql_query($req_del,$dbh);
+				pmb_mysql_query($req_del);
 				//la table pour les recherche exacte
 				$req_del="delete from cms_editorial_fields_global_index where num_obj='".$this->id."' and type = '".$this->type."'";
-				pmb_mysql_query($req_del,$dbh);					
+				pmb_mysql_query($req_del);					
 			}else{
 				foreach ( $tab_code_champ as $subfields ) {
 					foreach($subfields as $subfield){
 						$req_del="delete from cms_editorial_words_global_index where num_obj='".$this->id."' and type = '".$this->type."' and code_champ='".$subfield['champ']."'";
-						pmb_mysql_query($req_del,$dbh);
+						pmb_mysql_query($req_del);
 						//la table pour les recherche exacte
 						$req_del="delete from cms_editorial_fields_global_index where num_obj='".$this->id."' and type = '".$this->type."' and code_champ='".$subfield['champ']."'";
-						pmb_mysql_query($req_del,$dbh);	
+						pmb_mysql_query($req_del);	
 						break;
 					}
 				}
@@ -860,10 +876,10 @@ class cms_editorial extends cms_root {
 				if(count($tab_pp)){
 					foreach ( $tab_pp as $id ) {
        					$req_del="delete from cms_editorial_words_global_index where num_obj='".$this->id."' and type = '".$this->type."' and code_champ='".$id."' ";
-       					pmb_mysql_query($req_del,$dbh);
+       					pmb_mysql_query($req_del);
 						//la table pour les recherche exacte
 						$req_del="delete from cms_editorial_fields_global_index where num_obj='".$this->id."' and type = '".$this->type."' and code_champ='".$id."' ";
-						pmb_mysql_query($req_del,$dbh);	
+						pmb_mysql_query($req_del);	
 					}
 				}
 			}
@@ -872,7 +888,7 @@ class cms_editorial extends cms_root {
 			$tab_insert=array();	
 			$tab_field_insert=array();
 			foreach($tab_req as $k=>$v) {	
-				$r=pmb_mysql_query($v["rqt"],$dbh);
+				$r=pmb_mysql_query($v["rqt"]);
 				$tab_mots=array();
 				$tab_fields=array();
 				if (pmb_mysql_num_rows($r)) {
@@ -931,7 +947,7 @@ class cms_editorial extends cms_root {
 				foreach ($tab_fields as $nom_champ=>$tab) {
 					foreach($tab as $order => $values){
        					//$tab_field_insert[]="(".$this->id.",".$tab_code_champ[$v["table"]][$nom_champ][0].",".$tab_code_champ[$v["table"]][$nom_champ][1].",".$order.",'".addslashes($values['value'])."','".addslashes($values['lang'])."',".$tab_code_champ[$v["table"]][$nom_champ][2].")";
-       					$tab_field_insert[]="(".$this->id.",'".$this->type."',".$tab_code_champ[$k][$nom_champ]['champ'].",".$tab_code_champ[$k][$nom_champ]['ss_champ'].",".$order.",'".addslashes($values['value'])."','".addslashes($values['lang'])."',".$tab_code_champ[$k][$nom_champ]['pond'].")";
+       					$tab_field_insert[]="(".$this->id.",'".$this->type."',".$tab_code_champ[$k][$nom_champ]['champ'].",".$tab_code_champ[$k][$nom_champ]['ss_champ'].",".$order.",'".addslashes($values['value'])."','".addslashes($values['lang'])."',".$tab_code_champ[$k][$nom_champ]['pond'].",0)";
 					}
 				}
 			}
@@ -1005,7 +1021,7 @@ class cms_editorial extends cms_root {
        					$tab_mots=array();
        					$tab_tmp=explode(' ',strip_empty_words($value));
        					//la table pour les recherche exacte
-       					$tab_field_insert[]="(".$this->id.",'".$this->type."',".$code_champ.",".$code_ss_champ.",".$j.",'".addslashes(trim($value))."','',".$p_perso->get_pond($code_ss_champ).")";
+       					$tab_field_insert[]="(".$this->id.",'".$this->type."',".$code_champ.",".$code_ss_champ.",".$j.",'".addslashes(trim($value))."','',".$p_perso->get_pond($code_ss_champ).",0)";
        					$j++;
 						foreach($tab_tmp as $mot) {
 							if(trim($mot)){
@@ -1022,10 +1038,10 @@ class cms_editorial extends cms_root {
 				}
 			}
 			$req_insert="insert ignore into cms_editorial_words_global_index(num_obj,type,code_champ,code_ss_champ,num_word,pond,position) values ".implode(',',$tab_insert);
-			pmb_mysql_query($req_insert,$dbh);
+			pmb_mysql_query($req_insert);
 			//la table pour les recherche exacte
-			$req_insert="insert ignore into cms_editorial_fields_global_index(num_obj,type,code_champ,code_ss_champ,ordre,value,lang,pond) values ".implode(',',$tab_field_insert);
-			pmb_mysql_query($req_insert,$dbh);
+			$req_insert="insert ignore into cms_editorial_fields_global_index(num_obj,type,code_champ,code_ss_champ,ordre,value,lang,pond,authority_num) values ".implode(',',$tab_field_insert);
+			pmb_mysql_query($req_insert);
 		}
 	}
 	
@@ -1213,8 +1229,7 @@ class cms_editorial extends cms_root {
 	public function save_documents(){
 		//on commence par tout virer
 		$query = "delete from cms_documents_links where document_link_type_object = '".$this->type."' and document_link_num_object = ".$this->id;
-		$result = pmb_mysql_query($query);
-		
+		pmb_mysql_query($query);
 		if(count($this->get_documents())){
 			$query = "insert into cms_documents_links (document_link_type_object,document_link_num_object,document_link_num_document) values";
 			$documents ="";
@@ -1304,7 +1319,6 @@ class cms_editorial extends cms_root {
 	
 	public function get_social_media_block(){
 		global $opac_url_base;
-		global $charset;
 	
 		return "
 			<div id='el".$this->type.$this->id."addthis' class='addthis_toolbox addthis_default_style '

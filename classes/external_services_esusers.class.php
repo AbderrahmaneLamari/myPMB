@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: external_services_esusers.class.php,v 1.6.2.1 2022/01/03 15:49:26 dgoron Exp $
+// $Id: external_services_esusers.class.php,v 1.7.4.1 2023/07/07 09:43:32 dgoron Exp $
 
 //Gestion des utilisateurs et des groupes externes des services externes
 
@@ -79,23 +79,16 @@ class es_esuser extends es_base {
 		}
 	}
 	
-	public function get_form() {
+	public function get_content_form() {
 		global $msg, $charset;
 		
-		//username
-		$content_form = '<div class=row><label class="etiquette" for="esuser_username">'.$msg["es_user_username"].'</label><br />';
-		$content_form .= '<input name="esuser_username" type="text" value="'.htmlentities($this->esuser_username,ENT_QUOTES, $charset).'" class="saisie-80em">
-			</div>';
-		
-		//fullname
-		$content_form .= '<div class=row><label class="etiquette" for="esuser_fullname">'.$msg["es_user_fullname"].'</label><br />';
-		$content_form .= '<input name="esuser_fullname" type="text" value="'.htmlentities($this->esuser_fullname,ENT_QUOTES, $charset).'" class="saisie-80em">
-			</div>';
-		
-		//password
-		$content_form .= '<div class=row><label class="etiquette" for="esuser_password">'.$msg["es_user_password"].'</label><br />';
-		$content_form .= '<input name="esuser_password" type="text" value="'.htmlentities($this->esuser_password,ENT_QUOTES, $charset).'" class="saisie-80em">
-			</div>';
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('esuser_username', 'es_user_username')
+		->add_input_node('text', $this->esuser_username);
+		$interface_content_form->add_element('esuser_fullname', 'es_user_fullname')
+		->add_input_node('text', $this->esuser_fullname);
+		$interface_content_form->add_element('esuser_password', 'es_user_password')
+		->add_input_node('text', $this->esuser_password);
 		
 		//group
 		$esgroups = new es_esgroups();
@@ -105,10 +98,13 @@ class es_esuser extends es_base {
 			$groupselect .= '<option '.($this->esuser_group == $aesgroup->esgroup_id ? 'selected' : '').' value="'.$aesgroup->esgroup_id.'">'.htmlentities($aesgroup->esgroup_name.' ('.$aesgroup->esgroup_fullname.')' ,ENT_QUOTES, $charset).'</option>';
 		}
 		$groupselect .= '</select>';
-		
-		$content_form .= '<div class=row><label class="etiquette" for="esuser_esgroup">'.$msg["es_user_group"].'</label><br />';
-		$content_form .= $groupselect;
-		$content_form .= '</div>';
+		$interface_content_form->add_element('esuser_esgroup', 'es_user_group')
+		->add_html_node($groupselect);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
 		$interface_form = new interface_admin_form('form_esuser');
 		if(!$this->esuser_id){
@@ -116,10 +112,9 @@ class es_esuser extends es_base {
 		}else{
 			$interface_form->set_label($msg['es_users_edit']);
 		}
-		
 		$interface_form->set_object_id($this->esuser_id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->esuser_username." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('es_esusers')
 		->set_field_focus('esuser_username');
 		return $interface_form->get_display();				

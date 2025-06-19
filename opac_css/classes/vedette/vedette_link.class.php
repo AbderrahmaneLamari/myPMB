@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: vedette_link.class.php,v 1.2.10.1 2021/12/28 13:33:54 dgoron Exp $
+// $Id: vedette_link.class.php,v 1.3 2021/12/28 13:30:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

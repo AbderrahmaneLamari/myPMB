@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_transferts_validation_ui.class.php,v 1.5.2.3 2021/12/23 13:55:45 dgoron Exp $
+// $Id: list_transferts_validation_ui.class.php,v 1.10 2022/10/04 09:20:22 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -30,8 +30,22 @@ class list_transferts_validation_ui extends list_transferts_ui {
 		$this->add_column('transfert_ask_user_num');
 		$this->add_column('transfert_send_user_num');
 		if($action == '') {
-			$this->add_column_sel_button();
+			$this->add_column_selection();
 		}
+	}
+	
+	public function init_filters($filters=array()) {
+		global $deflt_docs_location;
+		
+		$this->filters = array(
+				'site_origine' => $deflt_docs_location,
+				'site_destination' => 0,
+		);
+		//Surcharge si les filtres ne sont pas affiches dans ce contexte
+		if(empty($this->selected_filters['site_origine'])) {
+			$filters['site_origine'] = $deflt_docs_location;
+		}
+		parent::init_filters($filters);
 	}
 	
 	protected function init_available_filters() {
@@ -52,12 +66,15 @@ class list_transferts_validation_ui extends list_transferts_ui {
 		$this->add_selected_filter('f_etat_date');
 	}
 	
-	protected function get_display_selection_actions() {
+	protected function init_default_selection_actions() {
 		global $msg;
-		return "<input type='button' class='bouton' name='".$msg["transferts_circ_btValider"]."' value='".$msg["transferts_circ_btValider"]."' onclick='verifChk(document.".$this->get_form_name().",\"aff_val\")'>
-				&nbsp;
-				<input type='button' class='bouton' name='".$msg["transferts_circ_btRefuser"]."' value='".$msg["transferts_circ_btRefuser"]."' onclick='verifChk(document.".$this->get_form_name().",\"aff_refus\")'>
-				";
+		global $action;
+		
+		parent::init_default_selection_actions();
+		if($action == '') {
+			$this->add_selection_action('val', $msg['transferts_circ_btValider'], '');
+			$this->add_selection_action('refus', $msg['transferts_circ_btRefuser'], '');
+		}
 	}
 	
 	protected function get_display_no_results() {

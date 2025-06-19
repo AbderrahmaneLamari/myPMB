@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: func_cnl.inc.php,v 1.20.4.1 2022/01/03 10:28:29 dgoron Exp $
+// $Id: func_cnl.inc.php,v 1.21 2022/01/03 10:20:17 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

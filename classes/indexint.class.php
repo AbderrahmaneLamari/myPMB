@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: indexint.class.php,v 1.108.2.1 2022/01/04 09:32:38 dgoron Exp $
+// $Id: indexint.class.php,v 1.112 2023/02/14 15:47:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+use Pmb\Ark\Entities\ArkEntityPmb;
 // définition de la classe de gestion des 'indexations internes'
 if ( ! defined( 'INDEXINT_CLASS' ) ) {
   define( 'INDEXINT_CLASS', 1 );
@@ -68,6 +69,8 @@ class indexint {
 			$result = pmb_mysql_query($requete);
 			if(pmb_mysql_num_rows($result)) {
 				$temp = pmb_mysql_fetch_object($result);
+				pmb_mysql_free_result($result);
+				
 				$this->indexint_id	= $temp->indexint_id;
 				$this->name			= $temp->indexint_name;
 				$this->comment		= $temp->indexint_comment;
@@ -290,6 +293,7 @@ class indexint {
 	// ---------------------------------------------------------------
 	public function replace($by,$link_save) {
 		global $msg;
+		global $pmb_ark_activate;
 	
 		if(!$by) {
 			// pas de valeur de remplacement !!!
@@ -325,7 +329,15 @@ class indexint {
 		
 		// nettoyage indexation
 		indexation_authority::delete_all_index($this->indexint_id, "authorities", "id_authority", AUT_TABLE_INDEXINT);
-		
+		if ($pmb_ark_activate) {
+		    $idReplaced = authority::get_authority_id_from_entity($this->indexint_id, AUT_TABLE_INDEXINT);
+		    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_INDEXINT);
+		    if ($idReplaced && $idReplacing) {
+		        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+		        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+		        $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+		    }
+		}
 		// effacement de l'identifiant unique d'autorité
 		$authority = new authority(0, $this->indexint_id, AUT_TABLE_INDEXINT);
 		$authority->delete();
@@ -465,13 +477,15 @@ class indexint {
 		$query = "SELECT indexint_id FROM indexint WHERE indexint_name='".rtrim(substr($key,0,255))."' and num_pclass='$num_pclass' LIMIT 1 ";
 		$result = pmb_mysql_query($query);
 		if(!$result) die("can't SELECT indexint ".$query);
-		// résultat
 	
 		// récupération du résultat de la recherche
-		$tindexint = pmb_mysql_fetch_object($result);
-		
-		// du résultat et récupération éventuelle de l'id
-		if ($tindexint->indexint_id) return $tindexint->indexint_id;
+		if(pmb_mysql_num_rows($result)) {
+			$tindexint = pmb_mysql_fetch_object($result);
+			// du résultat et récupération éventuelle de l'id
+			if ($tindexint->indexint_id) {
+				return $tindexint->indexint_id;
+			}
+		}
 	
 		// id non-récupérée >> création
 		if (!$id_pclassement) {
@@ -481,7 +495,7 @@ class indexint {
 		}
 		$query = "INSERT INTO indexint SET indexint_name='$key', indexint_comment='$comment', index_indexint=' ".strip_empty_words($key." ".$comment)." ', num_pclass=$num_pclass ";
 	
-		$result = @pmb_mysql_query($query);
+		$result = pmb_mysql_query($query);
 		if(!$result) die("can't INSERT into indexint ".$query);
 		$id=pmb_mysql_insert_id();
 		audit::insert_creation(AUDIT_INDEXINT,$id);

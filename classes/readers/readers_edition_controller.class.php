@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: readers_edition_controller.class.php,v 1.2 2020/11/05 09:39:48 dgoron Exp $
+// $Id: readers_edition_controller.class.php,v 1.2.6.1 2023/09/20 07:35:05 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -45,6 +45,38 @@ class readers_edition_controller extends readers_controller {
 				break;
 		}
 		return $list_ui_instance;
+	}
+	
+	public static function proceed($id=0) {
+	    global $sub,$action;
+	    global $empr_relance_adhesion;
+	    global $readers_edition_ui_selected_objects;
+	    
+	    parent::proceed($id);
+	    switch($sub) {
+	        case "limite" :
+	        case "depasse" :
+	            switch ($action) {
+	                case 'print_all':
+	                    $list_ui_instance = static::get_list_ui_instance();
+	                    print "<script>openPopUp('./pdf.php?pdfdoc=lettre_relance_adhesion&action=print_all&list_ui_objects_type=".$list_ui_instance->get_objects_type()."', 'lettre');</script>";
+	                    if ($empr_relance_adhesion==1) {
+	                        print "<script>openPopUp('./mail.php?type_mail=mail_relance_adhesion&action=print_all&list_ui_objects_type=".$list_ui_instance->get_objects_type()."', 'mail');</script>";
+	                    }
+	                    break;
+	                case 'print':
+	                    $selected_objects = '';
+	                    if(!empty($readers_edition_ui_selected_objects)) {
+	                        $selected_objects = implode(',', $readers_edition_ui_selected_objects);
+	                    }
+	                    print "<script>openPopUp('./pdf.php?pdfdoc=lettre_relance_adhesion&action=print&selected_objects=".$selected_objects."', 'lettre');</script>";
+	                    if ($empr_relance_adhesion==1) {
+	                        print "<script>openPopUp('./mail.php?type_mail=mail_relance_adhesion&action=print&selected_objects=".$selected_objects."', 'mail');</script>";
+	                    }
+	                    break;
+	            }
+	            break;
+	    }
 	}
 	
 }

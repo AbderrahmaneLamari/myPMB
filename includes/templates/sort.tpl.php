@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sort.tpl.php,v 1.24.2.3 2022/01/03 10:21:11 tsamson Exp $
+// $Id: sort.tpl.php,v 1.27 2022/01/03 10:48:14 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 

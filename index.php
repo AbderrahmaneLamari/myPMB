@@ -24,53 +24,52 @@ titulaire des droits patrimoniaux et les concédants successifs.
 
 A cet égard  l'attention de l'utilisateur est attirée sur les risques
 associés au chargement,  à l'utilisation,  à la modification et/ou au
-développement et à la reproduction du logiciel par l'utilisateur étant 
-donné sa spécificité de logiciel libre, qui peut le rendre complexe à 
+développement et à la reproduction du logiciel par l'utilisateur étant
+donné sa spécificité de logiciel libre, qui peut le rendre complexe à
 manipuler et qui le réserve donc à des développeurs et des professionnels
 avertis possédant  des  connaissances  informatiques approfondies.  Les
 utilisateurs sont donc invités à charger  et  tester  l'adéquation  du
 logiciel à leurs besoins dans des conditions permettant d'assurer la
-sécurité de leurs systèmes et ou de leurs données et, plus généralement, 
-à l'utiliser et l'exploiter dans les mêmes conditions de sécurité. 
+sécurité de leurs systèmes et ou de leurs données et, plus généralement,
+à l'utiliser et l'exploiter dans les mêmes conditions de sécurité.
 
-Le fait que vous puissiez accéder à cet en-tête signifie que vous avez 
+Le fait que vous puissiez accéder à cet en-tête signifie que vous avez
 pris connaissance de la licence CeCILL, et que vous en avez accepté les
 termes.
 
  */
 // +-------------------------------------------------+
-// $Id: index.php,v 1.20.10.2 2021/09/20 08:10:13 dbellamy Exp $
+// $Id: index.php,v 1.23.4.2 2023/07/20 08:14:40 jparis Exp $
 
-// définition du minimum nécéssaire 
+// définition du minimum nécéssaire
 $base_path=".";
 
-include_once ("./includes/error_report.inc.php") ;
-include_once ("./includes/global_vars.inc.php") ;
-include_once ("./includes/config.inc.php");
+include_once "{$base_path}/includes/error_report.inc.php";
+require_once "{$base_path}/includes/pmb_cookie.inc.php";
+include_once "{$base_path}/includes/config.inc.php";
 
-if (!file_exists("$include_path/db_param.inc.php")) { 
-    // Pas de fichier présent, on s'assure quand même qu'il n'y a pas déjà eue une installation
+if (!file_exists("$include_path/db_param.inc.php")) {
+    // Pas de fichier présent, on s'assure quand même qu'il n'y a pas déjà eu une installation
     if(file_exists($base_path."/tables/install.php")){
         // Fichier d'installation présent, on renvoie dessus !
         header("Location: $base_path/tables/install.php");
     }
     // Si on est encore la, on n'a pas été redirigé ;
-    die("Fichier db_param.inc.php absent / Missing file Fichier db_param.inc.php");
+    die("Fichier db_param.inc.php absent / Missing file db_param.inc.php");
 }
-require_once("$include_path/db_param.inc.php") ;
-require_once("$include_path/mysql_connect.inc.php");
+require_once "$include_path/db_param.inc.php";
+require_once "$include_path/mysql_connect.inc.php";
 $dbh = connection_mysql();
 
-require_once("$include_path/sessions.inc.php");
+require_once "$include_path/sessions.inc.php";
 
-require_once("$include_path/misc.inc.php");
-include_once("$javascript_path/misc.inc.php");
+require_once "$include_path/misc.inc.php";
+include_once "$javascript_path/misc.inc.php";
 
 
 // récupération des messages avec localisation
-
 // localisation (fichier XML)
-include_once("$class_path/XMLlist.class.php");
+include_once "$class_path/XMLlist.class.php";
 
 $messages = new XMLlist("$include_path/messages/$lang.xml", 0);
 $messages->analyser();
@@ -79,9 +78,15 @@ $msg = $messages->table;
 // temporaire :
 $inst_language = "";
 $current_module = "";
-	
 
-require_once("$include_path/templates/index.tpl.php");
+// Chargement de l'autoload des librairies externes
+require_once $base_path.'/vendor/autoload.php';
+// Chargement de l'autoload back-office
+require_once __DIR__."/classes/autoloader/classLoader.class.php";
+$al = classLoader::getInstance();
+$al->register();
+
+require_once "$include_path/templates/index.tpl.php";
 if (!$dbh) {
 	header ("Content-Type: text/html; charset=".$charset);
 	print $index_header;
@@ -90,9 +95,9 @@ if (!$dbh) {
 	print $msg["cnx_base_err1"]." <a href='./tables".$inst_language."/install.php'>./tables/install.php</a> ? <br /><br />.".$msg["cnx_base_err2"];
 	print $index_footer;
 	exit ;
-	}
-	
-require_once("$include_path/templates/common.tpl.php");
+}
+
+require_once "$include_path/templates/common.tpl.php";
 
 // affichage du form de login
 if (!isset($demo) || $demo=="") $demo = 0;
@@ -116,14 +121,14 @@ if ($demo) {
 		$login_form_demo = str_replace("!!erreur!!", $login_form_error, $login_form_demo);
 		print $login_form_demo;
 	}
-} else { 
+} else {
 	if (!isset($login_error) || !$login_error) {
 		$login_form = str_replace("!!erreur!!", "&nbsp;", $login_form);
 	} else {
 		$login_form = str_replace("!!erreur!!", $login_form_error, $login_form);
 	}
-	if (isset($login_message) && $login_message) { 
-		$login_form = str_replace("!!login_message!!", $login_message, $login_form); 
+	if (isset($login_message) && $login_message) {
+		$login_form = str_replace("!!login_message!!", $login_message, $login_form);
 	} else {
 		$login_form = str_replace("!!login_message!!", "", $login_form);
 	}

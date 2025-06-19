@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: RegistrationStatusOrm.php,v 1.5 2020/09/03 08:09:02 gneveu Exp $
+// $Id: RegistrationStatusOrm.php,v 1.6 2023/02/22 16:04:07 qvarin Exp $
 
 namespace Pmb\Animations\Orm;
 
@@ -23,7 +23,7 @@ class RegistrationStatusOrm extends Orm
      * @var string
      */
     public static $idTableName = "id_registration_status";
-    
+
     /**
      *
      * @var \ReflectionClass
@@ -43,10 +43,11 @@ class RegistrationStatusOrm extends Orm
     protected $name = "";
 
     /**
-     * @Relation 0n
+     * @Relation n0
      * @Orm Pmb\Animations\Orm\RegistrationOrm
+     * @Table anim_registrations
      * @ForeignKey num_registration_status
-     * @RelatedKey id_registration_status
+     * @RelatedKey id_registration
      */
     protected $registration = null;
 }

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: global_vars.inc.php,v 1.28 2021/03/12 10:08:04 arenou Exp $
+// $Id: global_vars.inc.php,v 1.29.4.4 2023/11/14 15:12:06 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -19,6 +19,27 @@ $forbidden_overload = [
     'class_path',
     'overload_global_parameters',
     'base_auth',
+    'forbidden_overload',
+    'charset',
+    'javascript_path',
+    'SQL_MOTOR_TYPE',
+    'SQL_VARIABLES',
+    '_SERVER',
+    '_SESSION',
+    '_GET',
+    '_POST',
+    '_FILES',
+    '_COOKIE',
+    '_REQUEST',
+    '_ENV',
+    'known_int_variables',
+];
+
+$known_int_variables = [
+    "nbr_lignes",
+    "page",
+    "nb_per_page_custom",
+    "nb_per_page",
 ];
 
 //Corrections des caractères bizarres de M$
@@ -163,27 +184,38 @@ function add_sl(&$var) {
 	}
 }
 
+function format_global($name, $val) {
+    global $known_int_variables;
+    switch (true) {
+        case in_array($name,$known_int_variables) :
+            // cas particuliers de certaines variables censees etre des nombres mais qu'on passe en chaine
+            if ($val === "") {
+                return $val;
+            }
+            return intval($val);
+        default :
+            $val = cp1252_normalize($val);
+            add_sl($val);
+            return $val;
+    }
+}
+
 // on récupère tout sans se poser de question, attention à la sécurité ! 
 foreach ($_GET as $__key__PMB => $val) {
     if (!in_array($__key__PMB,$forbidden_overload)) {
-		$val = cp1252_normalize($val);
-		add_sl($val);
-		$GLOBALS[$__key__PMB] = $val;
+        $GLOBALS[$__key__PMB] = format_global($__key__PMB, $val);
 	}
 }
 
 foreach ($_POST as $__key__PMB => $val) {
     if (!in_array($__key__PMB,$forbidden_overload)) {
-		$val = cp1252_normalize($val);
-		add_sl($val);
-		$GLOBALS[$__key__PMB] = $val;
+        $GLOBALS[$__key__PMB] = format_global($__key__PMB, $val);
 	}
 }
 
 foreach ($_FILES as $__key__PMB => $val) {
     if (!in_array($__key__PMB,$forbidden_overload)) {
-		add_sl($val);
-		$GLOBALS[$__key__PMB] = $val;
+        $GLOBALS[$__key__PMB] = format_global($__key__PMB, $val);
 	}
 }
 
@@ -194,14 +226,14 @@ pt_register ("SERVER", "REMOTE_ADDR","HTTP_USER_AGENT", "PHP_SELF", "REQUEST_URI
 // cookie des recherches Z3950
 if (strstr($REQUEST_URI,"catalog.php") && $categ == 'z3950' && $action == 'search') {
 	$expiration = time() + 30000000; 
-	setcookie ('PMB-Z3950-criterion1', $crit1, $expiration);
-	setcookie ('PMB-Z3950-criterion2', $crit2, $expiration);
-	setcookie ('PMB-Z3950-boolean', $bool1, $expiration);
+	pmb_setcookie ('PMB-Z3950-criterion1', $crit1, $expiration);
+	pmb_setcookie ('PMB-Z3950-criterion2', $crit2, $expiration);
+	pmb_setcookie ('PMB-Z3950-boolean', $bool1, $expiration);
 	if ($clause=="") {
 		for ($i=0; $i<count($bibli); $i++) {
 			if ($clause=="") $clause.=$bibli[$i];
 				else $clause.=",".$bibli[$i];
 		}
 	}
-	setcookie ('PMB-Z3950-clause', $clause, $expiration);
+	pmb_setcookie ('PMB-Z3950-clause', $clause, $expiration);
 }

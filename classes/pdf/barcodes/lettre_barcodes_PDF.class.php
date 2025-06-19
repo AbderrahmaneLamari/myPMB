@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lettre_barcodes_PDF.class.php,v 1.1.2.3 2021/09/21 11:34:17 dgoron Exp $
+// $Id: lettre_barcodes_PDF.class.php,v 1.2 2021/09/21 11:30:59 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

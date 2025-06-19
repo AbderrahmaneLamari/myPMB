@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_itemslist_view_django_by_tags.class.php,v 1.2 2016/02/12 10:13:45 jpermanne Exp $
+// $Id: cms_module_itemslist_view_django_by_tags.class.php,v 1.2.16.1 2023/12/07 15:07:34 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -21,8 +21,8 @@ class cms_module_itemslist_view_django_by_tags extends cms_module_common_view_dj
     {% if item.status!=2 %}
     <div>
         <a href='{{item.url}}' title='Source' target='_blank'><h4>{{item.title}}</h4></a>
-        <blockquote>{{item.publication_date}} / {{item.source.title}}</blockquote>
-        <blockquote>{{item.summary}}</blockquote>
+        <div>{{item.publication_date}} / {{item.source.title}}</div>
+        <div>{{item.summary}}</div>
     </div>
     {% endif %}
     {% endif %}
@@ -37,8 +37,8 @@ class cms_module_itemslist_view_django_by_tags extends cms_module_common_view_dj
     {% if item.status!=2 %}
     <div>
         <a href='{{item.url}}' title='Source' target='_blank'><h4>{{item.title}}</h4></a>
-        <blockquote>{{item.publication_date}} / {{item.source.title}}</blockquote>
-        <blockquote>{{item.summary}}</blockquote>
+        <div>{{item.publication_date}} / {{item.source.title}}</div>
+        <div>{{item.summary}}</div>
     </div>
     {% endif %}
     {% endif %}
@@ -46,7 +46,7 @@ class cms_module_itemslist_view_django_by_tags extends cms_module_common_view_dj
 </div>
 {% endif %}";
 		if ($charset=="utf-8") {
-			$this->default_template = utf8_encode($this->default_template);
+			$this->default_template = encoding_normalize::utf8_normalize($this->default_template);
 		}
 	}
 	

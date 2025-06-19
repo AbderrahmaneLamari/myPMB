@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: out_auth.inc.php,v 1.9 2021/03/15 09:02:52 dgoron Exp $
+// $Id: out_auth.inc.php,v 1.9.6.1 2023/07/11 06:47:31 dgoron Exp $
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path, $action, $id, $authorized_sources;
@@ -13,6 +13,42 @@ function list_esgroups() {
 	print list_configuration_connecteurs_out_auth_ui::get_instance()->get_display_list();
 }
 
+function show_auth_edit_content_form($group_id, $the_group) {
+	$interface_content_form = new interface_content_form();
+	
+	//Nom du groupe
+	$interface_content_form->add_element('esgroup_name', 'admin_connecteurs_outauth_groupname')
+	->add_html_node($the_group->esgroup_name.'<br /><br />');
+	//Nom complet du groupe
+	$interface_content_form->add_element('esgroup_fullname', 'admin_connecteurs_outauth_groupfullname')
+	->add_html_node($the_group->esgroup_fullname.'<br /><br />');
+	
+	$current_sources=array();
+	$current_sql = "SELECT connectors_out_source_esgroup_sourcenum FROM connectors_out_sources_esgroups WHERE connectors_out_source_esgroup_esgroupnum = ".$group_id;
+	$current_res = pmb_mysql_query($current_sql);
+	while($row = pmb_mysql_fetch_assoc($current_res)) {
+		$current_sources[] = $row["connectors_out_source_esgroup_sourcenum"];
+	}
+	$sources_display = '';
+	$data_sql = "SELECT connectors_out_sources_connectornum, connectors_out_source_id, connectors_out_source_name, EXISTS(SELECT 1 FROM connectors_out_sources_esgroups WHERE connectors_out_source_esgroup_sourcenum = connectors_out_source_id AND connectors_out_source_esgroup_esgroupnum = ".$group_id.") AS authorized FROM connectors_out_sources ORDER BY connectors_out_sources_connectornum";
+	$data_res = pmb_mysql_query($data_sql);
+	$current_connid = 0;
+	while($asource=pmb_mysql_fetch_assoc($data_res)) {
+		if ($current_connid != $asource["connectors_out_sources_connectornum"]) {
+			if ($current_connid)
+				$sources_display .= '<br />';
+				$current_connid = $asource["connectors_out_sources_connectornum"];
+		}
+		$sources_display .= '<input '.(in_array($asource["connectors_out_source_id"], $current_sources) ? 'checked' : '').' type="checkbox" name="authorized_sources[]" value="'.$asource["connectors_out_source_id"].'">';
+		$sources_display .= $asource["connectors_out_source_name"];
+		
+		$sources_display .= '<br />';
+	}
+	$interface_content_form->add_element('authorized_sources', 'admin_connecteurs_outauth_usesource')
+	->add_html_node($sources_display);
+	return $interface_content_form->get_display();
+}
+
 function show_auth_edit_form($group_id) {
 	global $msg;
 	
@@ -20,42 +56,7 @@ function show_auth_edit_form($group_id) {
 	if ($the_group->error) {
 		exit();
 	}
-	
-	$content_form = '';
-	//Nom du groupe
-	$content_form .= '<div class=row><label class="etiquette" for="set_caption">'.$msg["admin_connecteurs_outauth_groupname"].'</label><br />';
-	$content_form .= $the_group->esgroup_name;
-	$content_form .= '</div><br />';
-	
-	//Nom complet du groupe
-	$content_form .= '<div class=row><label class="etiquette" for="set_caption">'.$msg["admin_connecteurs_outauth_groupfullname"].'</label><br />';
-	$content_form .= $the_group->esgroup_fullname;
-	$content_form .= '</div><br />';
-
-	$current_sources=array();
-	$current_sql = "SELECT connectors_out_source_esgroup_sourcenum FROM connectors_out_sources_esgroups WHERE connectors_out_source_esgroup_esgroupnum = ".$group_id;
-	$current_res = pmb_mysql_query($current_sql);
-	while($row = pmb_mysql_fetch_assoc($current_res)) {
-		$current_sources[] = $row["connectors_out_source_esgroup_sourcenum"];
-	}
-	
-	$data_sql = "SELECT connectors_out_sources_connectornum, connectors_out_source_id, connectors_out_source_name, EXISTS(SELECT 1 FROM connectors_out_sources_esgroups WHERE connectors_out_source_esgroup_sourcenum = connectors_out_source_id AND connectors_out_source_esgroup_esgroupnum = ".$group_id.") AS authorized FROM connectors_out_sources ORDER BY connectors_out_sources_connectornum";
-	$data_res = pmb_mysql_query($data_sql);
-	$current_connid = 0;
-	$content_form .= '<div class=row><label class="etiquette">'.$msg["admin_connecteurs_outauth_usesource"].'</label><br />';
-	while($asource=pmb_mysql_fetch_assoc($data_res)) {
-		if ($current_connid != $asource["connectors_out_sources_connectornum"]) {
-			if ($current_connid) 
-				$content_form .= '<br />';
-			$current_connid = $asource["connectors_out_sources_connectornum"];
-		}
-		$content_form .= '<input '.(in_array($asource["connectors_out_source_id"], $current_sources) ? 'checked' : '').' type="checkbox" name="authorized_sources[]" value="'.$asource["connectors_out_source_id"].'">';
-		$content_form .= $asource["connectors_out_source_name"];
-		
-		$content_form .= '<br />';
-	}
-	$content_form .= '</div>';
-		
+	$content_form = show_auth_edit_content_form($group_id, $the_group);
 	$interface_form = new interface_admin_form('form_outauth');
 	$interface_form->set_label($msg["admin_connecteurs_outauth_edit"]);
 	$interface_form->set_object_id($group_id)

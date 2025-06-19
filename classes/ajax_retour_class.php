@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_retour_class.php,v 1.23.10.1 2021/12/13 08:38:04 dgoron Exp $
+// $Id: ajax_retour_class.php,v 1.25 2022/04/28 09:24:57 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -15,6 +15,7 @@ require_once("$class_path/audit.class.php");
 require_once("$class_path/emprunteur.class.php");
 require_once("$class_path/amende.class.php");
 require_once("$class_path/calendar.class.php");
+require_once("$class_path/pret.class.php");
 require_once("$base_path/circ/pret_func.inc.php");
 require_once("$include_path/resa_func.inc.php");
 
@@ -385,21 +386,8 @@ class retour {
 					}
 				} else $ndays=0;
 				if ($ndays>0) {
-					//Le lecteur est-il déjà bloqué ?
-					$date_fin_blocage_empr = pmb_mysql_result(pmb_mysql_query("select date_fin_blocage from empr where id_empr='".$this->pret_idempr."'"),0,0);
-					//Calcul de la date de fin
-					if ($pmb_blocage_max!=-1) {
-						$date_fin=calendar::add_days(date("d"),date("m"),date("Y"),$ndays,$loc_calendar);
-					} else {
-						$date_fin=calendar::add_days(date("d"),date("m"),date("Y"),0,$loc_calendar);
-					}
-					if ($date_fin > $date_fin_blocage_empr) {
-						//Mise à jour
-						pmb_mysql_query("update empr set date_fin_blocage='".$date_fin."' where id_empr='".$this->pret_idempr."'");
-						$this->error_message=sprintf($msg["blocage_retard_pret"],formatdate($date_fin));
-					} else {
-						$this->error_message=sprintf($msg["blocage_already_retard_pret"],formatdate($date_fin_blocage_empr));
-					}
+					$informations = pret::update_blocage($this->pret_idempr, $this->pret_idexpl, $ndays, $loc_calendar);
+					$this->error_message=$informations['message'];
 				}
 			}		
 			//Vérification des amendes

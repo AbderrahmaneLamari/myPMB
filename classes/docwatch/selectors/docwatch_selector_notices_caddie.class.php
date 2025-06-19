@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docwatch_selector_notices_caddie.class.php,v 1.9.2.1 2022/01/18 07:42:15 dgoron Exp $
+// $Id: docwatch_selector_notices_caddie.class.php,v 1.10 2022/01/18 07:36:38 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

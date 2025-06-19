@@ -6,6 +6,7 @@ import animationsdnd from "./components/animationsDnD.vue";
 import animationsdaughterlist from "./components/animationsDaughterList.vue";
 import registration from "../registration/components/registration.vue";
 import mailingsendlist from "../mailing/components/mailingSendList.vue";
+import animationcalendar from "./components/animationCalendar.vue";
 
 import { VueNestable, VueNestableHandle } from 'vue-nestable';
 
@@ -23,7 +24,8 @@ new Vue({
 		registrationList : $data.registrationList,
 		registrationWaitingList : $data.registrationWaitingList,
 		animationList : $data.animationList,
-		mailingSendList : $data.mailingSendList
+		mailingSendList : $data.mailingSendList,
+		calendarAnimation : [],
 	},
 	components : {
 		animations : animations,
@@ -32,6 +34,7 @@ new Vue({
 		animationsdnd : animationsdnd,
 		animationsdaughterlist : animationsdaughterlist,
 		registration : registration,
-		mailingsendlist : mailingsendlist
+		mailingsendlist : mailingsendlist,
+		animationcalendar : animationcalendar
 	}
 });

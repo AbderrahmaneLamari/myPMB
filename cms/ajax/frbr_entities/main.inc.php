@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.30.2.2 2022/01/21 13:32:39 tsamson Exp $
+// $Id: main.inc.php,v 1.34 2023/01/11 15:46:26 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -10,16 +10,14 @@ if(!isset($type)) $type = '';
 
 require_once($class_path."/frbr/frbr_place.class.php");
 
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("frbr_entities",true);
-
 $object_id = 0;
 if(!empty($id_element)){
     $object_id = intval($id_element);
 } else if (!empty($id)) {
     $object_id = intval($id);
 }
+
+//TODO vérifier que la classe existe avant de l'instancier !!
 if (!empty($elem)) {
     //cas particulier des autorites perso
     if (strpos($elem, "authperso") !== false) {
@@ -41,8 +39,8 @@ switch($action){
 		break;
 	case "delete" :
 		$status = false;
-		$id_element +=0;
-		if (isset($type) && $type && $id_element) {
+		$id_element = ( isset($id_element) ? intval($id_element) : 0 );
+		if (!empty($type) && $id_element) {
 			switch ($type) {
 				case 'datanode':
 					$status = frbr_entity_common_entity_datanode::delete($id_element, (isset($recursive) ? $recursive : false));
@@ -52,7 +50,7 @@ switch($action){
 					break;
 			}
 		}
-		$num_page += 0;
+		$num_page = ( isset($num_page) ? intval($num_page) : 0 );
 		$frbr_page = new frbr_entity_common_entity_page($num_page);
 		$response = encoding_normalize::json_encode(array('tree_data' => $frbr_page->get_dojo_tree(), 'status' => $status, 'type' => $type));
 		break;	
@@ -76,7 +74,7 @@ switch($action){
 				$response = $frbr_datanode->get_form(true);
 				break;
 			case 'cadre' :				
-				$id*=1;
+				$id = intval($id);
 				if ($id) {
 					$frbr_cadre_name = frbr_entity_common_entity_cadre::get_class_name_from_id($id);
 					$frbr_cadre = new $frbr_cadre_name($id);
@@ -259,8 +257,16 @@ switch($action){
 		}
 		break;
 	case "save_cadres_placement" :
+
+        $num_page = ( isset($num_page) ? intval($num_page) : 0 );
+		$obj_cadres = [];
+		if (isset($cadres)) {
+		  $json_cadres = encoding_normalize::utf8_normalize(stripslashes($cadres));
+		  $obj_cadres = json_decode($json_cadres);
+		}
+		
 		$frbr_place = new frbr_place($num_page);
-		$frbr_place->set_cadres(json_decode(stripslashes($cadres)));
+		$frbr_place->set_cadres($obj_cadres);
 		$response = $frbr_place->save();
 		break;
 	default :

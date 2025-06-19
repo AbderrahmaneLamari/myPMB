@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: opac_mysql_connect.inc.php,v 1.15.4.2 2022/01/13 11:08:38 dbellamy Exp $
+// $Id: opac_mysql_connect.inc.php,v 1.18.4.1 2023/04/07 13:53:58 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -38,7 +38,8 @@ if ( ! defined( 'DB_CONNECT' ) ) {
 	function connection_mysql($er_connec=1, $my_bd='', $bd=1, $er_bd=1) 	{
 	    
 		global $opac_nb_documents;
-		global $charset, $SQL_MOTOR_TYPE, $time_zone, $time_zone_mysql;
+		global $charset, $time_zone, $time_zone_mysql;
+		global $SQL_MOTOR_TYPE, $SQL_VARIABLES;
 		
 		//Pour l'heure PHP
 		if(isset($time_zone) && trim($time_zone)) {
@@ -54,6 +55,7 @@ if ( ! defined( 'DB_CONNECT' ) ) {
 		}
 
 		//Parametrage MySQL
+		pmb_mysql_query("set sql_mode='' ", $my_connec);
 		if ($charset=='utf-8') {
 		    pmb_mysql_query("set names utf8 ", $my_connec);
 		} else {
@@ -65,6 +67,9 @@ if ( ! defined( 'DB_CONNECT' ) ) {
 		//Pour l'heure MySQL
 		if (isset($time_zone_mysql) && trim($time_zone_mysql)) {
 		    pmb_mysql_query("SET time_zone = $time_zone_mysql",$my_connec);
+		}
+		if( !empty($SQL_VARIABLES) ) {
+		    pmb_mysql_query("SET $SQL_VARIABLES", $my_connec);
 		}
 				
 		

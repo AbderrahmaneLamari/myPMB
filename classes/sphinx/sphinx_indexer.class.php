@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sphinx_indexer.class.php,v 1.17.2.1 2021/09/07 10:44:57 arenou Exp $
+// $Id: sphinx_indexer.class.php,v 1.19 2023/01/02 15:25:50 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -143,7 +143,6 @@ index '.$index_name.'
 {
 	type = rt
 	path = '.str_replace('//', '/', $sphinx_indexes_path.'/'.$index_name).'
-	dict = keywords
     expand_keywords = 0;
 
     min_infix_len = '.$sphinx_troncat_min_length.'

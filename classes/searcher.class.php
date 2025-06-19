@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher.class.php,v 1.229.2.1 2021/11/30 09:27:45 dgoron Exp $
+// $Id: searcher.class.php,v 1.233 2022/12/23 10:36:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -453,8 +453,8 @@ class searcher {
     	  				case 9 :
     	  					$this->current_search--;
     				}
-    				if($aut_id )$this->current_search--;
-    				if(isset($page)) $this->current_search--;
+    				if(!empty($aut_id))$this->current_search--;
+    				if(empty($aut_id) && isset($page)) $this->current_search--;
 			    }
 			}
 			if($this->current_search<=0) $this->current_search = 0;
@@ -1929,6 +1929,7 @@ class searcher_subject extends searcher {
 		$pair_impair = "";
 		$parity = 0;
 
+		$human = array();
 		if ($search_subject) $human[]="<b>".$msg["histo_subject"]."</b> ".htmlentities(stripslashes($search_subject),ENT_QUOTES,$charset);
 		if ($search_indexint) $human[]="<b>".$msg["histo_indexint"]."</b> ".htmlentities(stripslashes($search_indexint),ENT_QUOTES,$charset);
 		$this->human_query=implode(", ",$human);

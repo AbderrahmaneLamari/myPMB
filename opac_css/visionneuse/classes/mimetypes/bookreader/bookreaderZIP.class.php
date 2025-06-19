@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: bookreaderZIP.class.php,v 1.5 2019/07/10 06:44:08 btafforeau Exp $
+// $Id: bookreaderZIP.class.php,v 1.6 2022/03/07 14:35:10 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+global $visionneuse_path;
 
 if(!class_exists('zip')) {
 	require_once($visionneuse_path."/../classes/zip.class.php");
@@ -19,7 +21,7 @@ class bookreaderZIP {
  	public $PDFMetadata;
 	public $pagesSizes;
 	
-	public function bookreaderZIP($doc,$parameters){
+	public function __construct($doc,$parameters){
 		$this->doc = $doc;
 		$this->parameters = $parameters;
 		$this->zipClass = new zip($this->doc->driver->get_cached_filename($this->doc->id));
@@ -27,7 +29,6 @@ class bookreaderZIP {
 	}
 	
 	public function getPage($page){
-		$len = strlen($this->getPageCount());
 		if (!file_exists($this->doc->driver->get_cached_filename("page_".$this->doc->id)."-".$page)) {
  			$content = $this->zipClass->get_page_content($page);
  			$this->doc->driver->setInCache("page_".$this->doc->id."-".$page,$content);

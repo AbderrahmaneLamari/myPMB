@@ -2,11 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mono_display_unimarc.class.php,v 1.67.2.2 2022/01/11 08:29:49 qvarin Exp $
+// $Id: mono_display_unimarc.class.php,v 1.75.4.3 2023/10/24 10:10:50 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
-global $class_path, $include_path;
+global $class_path, $include_path, $tdoc, $fonction_auteur;
+
 require_once("$class_path/marc_table.class.php");
 require_once("$class_path/author.class.php");
 require_once("$class_path/editor.class.php");
@@ -24,8 +25,8 @@ require_once($include_path."/isbn.inc.php");
 require_once($include_path."/resa_func.inc.php");
 require_once($class_path."/thumbnail.class.php");
 
-if (!isset($tdoc)) $tdoc = marc_list_collection::get_instance('doctype');
-if (!isset($fonction_auteur)) {
+if (empty($tdoc)) $tdoc = marc_list_collection::get_instance('doctype');
+if (empty($fonction_auteur)) {
 	$fonction_auteur = new marc_list('function');
 	$fonction_auteur = $fonction_auteur->table;
 }
@@ -365,7 +366,6 @@ class mono_display_unimarc {
 		global $tdoc;
 		global $fonction_auteur;
 		global $charset;
-		global $thesaurus_mode_pmb, $thesaurus_categories_categ_in_line, $pmb_keyword_sep, $thesaurus_categories_affichage_ordre;
 		global $pmb_show_notice_id,$pmb_opac_url,$pmb_show_permalink;
 		
 		
@@ -375,9 +375,13 @@ class mono_display_unimarc {
 			if(!empty($this->notice->tnvol))
 				$this->isbd .= ',&nbsp;'.$this->notice->tnvol;
 		}
-		$this->isbd ? $this->isbd .= '.&nbsp;'. htmlentities($this->tit1, ENT_QUOTES, $charset) : $this->isbd = htmlentities($this->tit1, ENT_QUOTES, $charset);
+		if($this->isbd) {
+			$this->isbd .= '.&nbsp;'. htmlentities($this->tit1, ENT_QUOTES, $charset);
+		} else {
+			$this->isbd = htmlentities($this->tit1, ENT_QUOTES, $charset);
+		}
 	
-		$this->isbd .= ' ['.$tdoc->table[$this->notice->typdoc].']';
+		$this->isbd .= !empty($tdoc->table[$this->notice->typdoc]) ? ' ['.$tdoc->table[$this->notice->typdoc].']' : '';
 		$tit2 = !empty($this->notice->tit2) ? htmlentities($this->notice->tit2, ENT_QUOTES, $charset) : '';
 		$tit3 = !empty($this->notice->tit3) ? htmlentities($this->notice->tit3, ENT_QUOTES, $charset) : '';
 		$tit4 = !empty($this->notice->tit4) ? htmlentities($this->notice->tit4, ENT_QUOTES, $charset) : '';
@@ -517,7 +521,7 @@ class mono_display_unimarc {
 		}
 		// Permalink OPAC
 		if ($pmb_show_permalink) {
-			$this->isbd .= "<b>".$msg["notice_permalink_opac"]."&nbsp;</b><a href='".$pmb_opac_url."index.php?lvl=notice_display&id=".$this->notice_id."' target=\"_blank\">".$pmb_opac_url."index.php?lvl=notice_display&id=".$this->notice_id."</a><br />";
+		    $this->isbd .= "<b>".$msg["notice_permalink_opac"]."&nbsp;</b><a href='".$this->get_permalink()."' target=\"_blank\">".$this->get_permalink()."</a><br />";
 		}
 		// niveau 1
 		if($this->level == 1) {
@@ -581,7 +585,7 @@ class mono_display_unimarc {
 			$this->isbd .= "<br /><br />";
 			$this->isbd .= "<b>".$msg["entrepot_notice_docnum"]."</b>";
 			$nb_doc = 0;
-			$display .= "<table>
+			$display = "<table>
 							<tbody>";
 			$i=0;
 			foreach($this->docnums as $docnum) {
@@ -633,7 +637,6 @@ class mono_display_unimarc {
 	public function do_header() {
 		global $charset;
 		global $pmb_notice_reduit_format;
-		global $base_path;
 		global $msg;
 		global $no_aff_doc_num_image;
 		
@@ -641,11 +644,11 @@ class mono_display_unimarc {
 		// récupération du titre de série
 		if (!empty($this->notice->is_article)) {
 			$this->header = $this->notice->serie_name;
-			if($this->notice->bull_num && $this->notice->bull_periode){
+			if(!empty($this->notice->bull_num) && !empty($this->notice->bull_periode)){
 				$this->header.= " (".$this->notice->bull_num." - ".$this->notice->bull_periode.")";
-			}elseif($this->notice->bull_num){
+			}elseif(!empty($this->notice->bull_num)){
 				$this->header.= " (".$this->notice->bull_num.")";
-			}elseif($this->notice->bull_periode){
+			}elseif(!empty($this->notice->bull_periode)){
 				$this->header.= " (".$this->notice->bull_periode.")";
 			}
 		} elseif (!empty($this->notice->serie_name)) {	
@@ -667,10 +670,13 @@ class mono_display_unimarc {
 		$checkbox = "<input type='checkbox' name='external_notice_to_integer[]' value='".$this->notice_id."'";
 		
 		//on commence par regarder si cette notice n'a pas déjà été intégrér
-		$query = "select rid from notices_externes join external_count on external_count.recid = notices_externes.recid where rid=".$this->notice_id;
+		$query = "select rid, notices_externes.num_notice from notices_externes join external_count on external_count.recid = notices_externes.recid where rid=".$this->notice_id;
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)){
-			$checkbox.=" checked='checked' disabled='disabled'";
+		    $row = pmb_mysql_fetch_object($result);
+		    if($row->num_notice) {
+                $checkbox.=" checked='checked' disabled='disabled'";
+		    }
 		}
 		$checkbox.= "/>";
 		//ajout dans le header;
@@ -695,17 +701,17 @@ class mono_display_unimarc {
 		
 		switch ($pmb_notice_reduit_format) {
 			case "1":
-				if ($this->notice->year != '') $this->header.=' ('.htmlentities($this->notice->year, ENT_QUOTES, $charset).')';
+				if (isset($this->notice->year) && $this->notice->year != '') $this->header.=' ('.htmlentities($this->notice->year, ENT_QUOTES, $charset).')';
 				break;
 			case "2":
-				if ($this->notice->year != '') $this->header.=' ('.htmlentities($this->notice->year, ENT_QUOTES, $charset).')';
+				if (isset($this->notice->year) && $this->notice->year != '') $this->header.=' ('.htmlentities($this->notice->year, ENT_QUOTES, $charset).')';
 				if ($this->notice->code != '') $this->header.=' / '.htmlentities($this->notice->code, ENT_QUOTES, $charset);
 				break;
 			default : 
 				break;
 		}
 		if (!empty($this->drag)) {
-			$drag = "<span id=\"NOTI_drag_".$this->notice_id.($this->anti_loop?"_p".$this->anti_loop[count($this->anti_loop)-1]:"")."\"  dragicon='".get_url_icon('icone_drag_notice.png')."' dragtext=\"".$this->header."\" draggable=\"yes\" dragtype=\"notice\" callback_before=\"show_carts\" callback_after=\"\" style=\"padding-left:7px\"><img src=\"".get_url_icon('notice_drag.png')."\"/></span>";
+			$this->drag = "<span id=\"NOTI_drag_".$this->notice_id.($this->anti_loop?"_p".$this->anti_loop[count($this->anti_loop)-1]:"")."\"  dragicon='".get_url_icon('icone_drag_notice.png')."' dragtext=\"".$this->header."\" draggable=\"yes\" dragtype=\"notice\" callback_before=\"show_carts\" callback_after=\"\" style=\"padding-left:7px\"><img src=\"".get_url_icon('notice_drag.png')."\"/></span>";
 		}
 		if($this->action) {
 			$this->header = "<a href=\"".$this->action."\">".$this->header.'</a>';
@@ -721,9 +727,7 @@ class mono_display_unimarc {
 		if(!empty($this->notice->lien)) {
 			// ajout du lien pour les ressourcenotice_parent_useds électroniques
 			$this->header .= "<a href=\"".$this->notice->lien."\" target=\"_blank\">";
-			global $use_opac_url_base, $opac_url_base ;
-			if (!$use_opac_url_base) $this->header .= "<img src='".get_url_icon('globe.gif')."' border=\"0\" class='align_middle' hspace=\"3\"";
-				else $this->header .= "<img src=\"".$opac_url_base."images/globe.gif\" border=\"0\" class='align_middle' hspace=\"3\"";
+			$this->header .= "<img src='".get_url_icon('globe.gif')."' border=\"0\" class='align_middle' hspace=\"3\"";
 			$this->header .= " alt=\"";
 			$this->header .= (isset($this->notice->eformat) ? $this->notice->eformat : '');
 			$this->header .= "\" title=\"";
@@ -735,8 +739,7 @@ class mono_display_unimarc {
 			if (!empty($this->docnums) && count($this->docnums) == 1) {
 				foreach ($this->docnums as $docnum) {
 					$this->header .= "<a href=\"".$docnum['a']."\" target=\"_blank\">";
-					if (!$use_opac_url_base) $this->header .= "<img src=\"".$base_path."/images/globe_orange.png\" border=\"0\" align=\"middle\" hspace=\"3\"";
-					else $this->header .= "<img src=\"".$opac_url_base."images/globe_orange.png\" border=\"0\" align=\"middle\" hspace=\"3\"";
+					$this->header .= "<img src=\"".get_url_icon('globe_orange.png')."\" border=\"0\" align=\"middle\" hspace=\"3\"";
 					$this->header .= " alt=\"";
 					$this->header .= htmlentities($docnum['b'],ENT_QUOTES,$charset);
 					$this->header .= "\" title=\"";
@@ -745,8 +748,7 @@ class mono_display_unimarc {
 					$this->header .='</a>';
 				}
 			} else if (!empty($this->docnums) && count($this->docnums) > 1) {
-				if (!$use_opac_url_base) $this->header .= "<img src=\"".$base_path."/images/globe_rouge.png\" border=\"0\" align=\"middle\" alt=\"".$msg['info_docs_num_notice']."\" title=\"".$msg['info_docs_num_notice']."\" hspace=\"3\">";
-				else $this->header .= "<img src=\"".$opac_url_base."images/globe_rouge.png\" border=\"0\" align=\"middle\" alt=\"".$msg['info_docs_num_notice']."\" title=\"".$msg['info_docs_num_notice']."\" hspace=\"3\">";
+				$this->header .= "<img src=\"".get_url_icon('globe_rouge.png')."\" border=\"0\" align=\"middle\" alt=\"".$msg['info_docs_num_notice']."\" title=\"".$msg['info_docs_num_notice']."\" hspace=\"3\">";
 			}
 		}
 	}
@@ -772,6 +774,7 @@ class mono_display_unimarc {
 		if(pmb_mysql_num_rows($myQuery)) {
 			$notice = new stdClass();
 			$notice->notice_id=$this->notice_id;
+			$notice->is_external = true;
 			while ($l=pmb_mysql_fetch_object($myQuery)) {
 				if (empty($this->source_id)) {
 					$this->source_id=$l->source_id;
@@ -981,6 +984,7 @@ class mono_display_unimarc {
 		if(pmb_mysql_num_rows($result)>0){
 			$row = pmb_mysql_fetch_object($result);
 			$this->permalink = "";
+			$row->num_notice = intval($row->num_notice);
 			switch($row->niveau_biblio){
 				case "m":
 					$this->permalink = $pmb_url_base."catalog.php?categ=isbd&id=".$row->num_notice;
@@ -994,15 +998,15 @@ class mono_display_unimarc {
 					$res = pmb_mysql_query($query);
 					if(pmb_mysql_num_rows($res)){
 						$bull_row = pmb_mysql_fetch_object($res);
-						$this->permalink = $pmb_url_base."catalog.php?categ=serials&sub=view&bul_id=".$bull_row->bulletin_id;
+						$this->permalink = $pmb_url_base."catalog.php?categ=serials&sub=view&bul_id=" . intval($bull_row->bulletin_id);
 					}
 					break;
 				case "a" :
-					$query = "select analysis_bulletin from analysis where analysis_notice = ".$row->num_notice;
+					$query = "select analysis_bulletin from analysis where analysis_notice = " . $row->num_notice;
 					$res = pmb_mysql_query($query);
 					if(pmb_mysql_num_rows($res)){
 						$analysis_row = pmb_mysql_fetch_object($res);
-						$this->permalink = $pmb_url_base."catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=".$analysis_row->analysis_bulletin."&art_to_show=".$row->num_notice;
+						$this->permalink = $pmb_url_base."catalog.php?categ=serials&sub=bulletinage&action=view&bul_id=" . intval($analysis_row->analysis_bulletin) . "&art_to_show=".$row->num_notice;
 					}
 					break;
 			}
@@ -1083,5 +1087,19 @@ class mono_display_unimarc {
 		
 		return $expl_output;
 		
+	}
+	
+	/**
+	 * Retourne le permalink
+	 * @return string
+	 */
+	public function get_permalink() {
+	    global $pmb_ark_activate;
+	    global $pmb_opac_url;
+	    
+	    if ($pmb_ark_activate) {
+	        // report des ARKs pour les notices externes
+	    }
+	    return $pmb_opac_url."index.php?lvl=notice_display&id=".$this->notice_id;
 	}
 }

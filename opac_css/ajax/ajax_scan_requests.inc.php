@@ -2,9 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax_scan_requests.inc.php,v 1.5 2019/07/02 13:16:22 dgoron Exp $
+// $Id: ajax_scan_requests.inc.php,v 1.6 2022/07/12 07:54:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $base_path, $sub, $action, $msg;
+global $record_type, $record_id;
 
 require_once($base_path."/classes/scan_request/scan_request.class.php");
 
@@ -13,8 +16,6 @@ switch($sub){
 		switch ($action){
 			case 'create':
 				$scan_request=new scan_request();
-				$scan_request_deadline_date = extraitdate($scan_request_deadline_date);
-				$scan_request_wish_date = extraitdate($scan_request_wish_date);
 				$scan_request->get_values_from_form();
 				$saved = $scan_request->save();
 				print '<span class="scan_request_submit">';

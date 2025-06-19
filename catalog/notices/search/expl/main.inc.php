@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.30.2.1 2022/01/03 14:13:07 dgoron Exp $
+// $Id: main.inc.php,v 1.33 2022/07/27 10:31:44 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -15,6 +15,10 @@ require_once($class_path."/acces.class.php");
 if(!isset($page)) $page = '';
 $sc=new search(true,"search_fields_expl");
 $sc->init_links();
+
+$option_show_notice_fille = intval($option_show_notice_fille);
+$option_show_expl = intval($option_show_expl);
+
 switch ($sub) {
 	case "launch":
 		if ((string)$page=="") {
@@ -67,13 +71,16 @@ function print_results($sc,$table,$url,$url_to_search_form,$hidden_form=true,$se
 		$ac= new acces();
 		$dom_1= $ac->setDomain(1);
 		$usr_prf = $dom_1->getUserProfile($PMBuserid);
+		if (!is_array($usr_prf)) {
+		    $usr_prf = [$usr_prf];
+		}
 		
 		$requete = "delete from $table using $table, exemplaires, acces_res_1 ";
 		$requete.= "where ";
 		$requete.= "$table.expl_id=exemplaires.expl_id ";
 		$requete.= "and expl_bulletin=0 ";
 		$requete.= "and expl_notice = res_num ";
-		$requete.= "and usr_prf_num=".$usr_prf." and (((res_rights ^ res_mask) & 4)=0) ";
+		$requete.= "and usr_prf_num IN (".implode(",", $usr_prf).") and (((res_rights ^ res_mask) & 4)=0) ";
 		pmb_mysql_query($requete);
 
 		$requete = "delete from $table using $table, exemplaires, bulletins, acces_res_1 ";
@@ -82,7 +89,7 @@ function print_results($sc,$table,$url,$url_to_search_form,$hidden_form=true,$se
 		$requete.= "and expl_notice=0 ";
 		$requete.= "and expl_bulletin=bulletin_id ";
 		$requete.= "and bulletin_notice=res_num ";
-		$requete.= "and usr_prf_num=".$usr_prf." and (((res_rights ^ res_mask) & 4)=0) ";
+		$requete.= "and usr_prf_num IN (".implode(",", $usr_prf).") and (((res_rights ^ res_mask) & 4)=0) ";
 		pmb_mysql_query($requete);
 		
 	}

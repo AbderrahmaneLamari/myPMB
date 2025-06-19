@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: AnimationOrm.php,v 1.20.2.1 2022/01/18 09:12:47 qvarin Exp $
+// $Id: AnimationOrm.php,v 1.26.2.1 2023/03/14 15:22:11 gneveu Exp $
 
 namespace Pmb\Animations\Orm;
 
@@ -98,6 +98,12 @@ class AnimationOrm extends Orm
     protected $num_status = 1;
     
     /**
+     *
+     * @var string
+     */
+    protected $logo = "";
+    
+    /**
      * @Relation 0n
      * @Orm Pmb\Animations\Orm\AnimationStatusOrm
      * @RelatedKey num_status
@@ -140,8 +146,8 @@ class AnimationOrm extends Orm
      * @Relation nn
      * @Orm Pmb\Common\Orm\DocsLocationOrm
      * @TableLink anim_animation_locations
-     * @RelatedKey num_location
-     * @ForeignKey num_animation
+     * @RelatedKey num_animation
+     * @ForeignKey num_location
      */
     protected $location = null;
 
@@ -149,8 +155,8 @@ class AnimationOrm extends Orm
      * @Relation nn
      * @Orm Pmb\Animations\Orm\MailingAnimationOrm
      * @TableLink anim_mailings
-     * @RelatedKey id_mailing
-     * @ForeignKey num_animation
+     * @RelatedKey num_animation
+     * @ForeignKey id_mailing
      */
     protected $mailing = null;
     
@@ -158,8 +164,8 @@ class AnimationOrm extends Orm
      * @Relation nn
      * @Orm Pmb\Autorities\Orm\CategoryOrm
      * @TableLink anim_animation_categories
-     * @RelatedKey num_noeud
-     * @ForeignKey num_animation
+     * @RelatedKey num_animation
+     * @ForeignKey num_noeud
      */
     protected $categories = null;
     
@@ -170,11 +176,24 @@ class AnimationOrm extends Orm
     protected $num_type = 1;
     
     /**
+     *
+     * @var integer
+     */
+    protected $num_calendar = 1;
+    
+    /**
      * Type par défaut
      * 
      * @var integer
      */
     public const DEFAULT_TYPE = 1;
+
+    /**
+     * Calendar par défaut
+     * 
+     * @var integer
+     */
+    public const DEFAULT_CALENDAR = 1;
     
     /**
      * @Relation 0n
@@ -182,4 +201,40 @@ class AnimationOrm extends Orm
      * @RelatedKey num_type
      */
     protected $type = null;
+
+    /**
+     * @Relation 0n
+     * @Orm Pmb\Animations\Orm\AnimationCalendarOrm
+     * @RelatedKey num_calendar
+     */
+    protected $calendar = null;
+    
+    /**
+     * parametre perso
+     *
+     * @var string
+     */
+    protected $custom_champ = null;
+
+    /**
+     * inscription unique
+     *
+     * @var integer
+     */
+    protected $unique_registration = 0;
+
+    /**
+     * formated date
+     *
+     * @var string
+     */
+    protected $animation_format_date = "";
+
+    /**
+     * formated quotas
+     *
+     * @var string
+     */
+    protected $animation_format_quotas = "";
+
 }

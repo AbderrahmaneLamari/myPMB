@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: auth_popup.js,v 1.3.16.1 2021/09/18 13:04:35 dgoron Exp $
+// $Id: auth_popup.js,v 1.4 2021/09/18 13:03:05 dgoron Exp $
 
 function auth_popup(url, mandatory=false){
 	if(url==''){

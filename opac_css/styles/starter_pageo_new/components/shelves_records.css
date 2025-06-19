@@ -1,0 +1,102 @@
+/* Flèches */
+
+.uk-slidenav svg {
+    display: none;
+}
+
+.uk-slidenav {
+    padding: 0;
+}
+
+.uk-slider-items {
+    margin-top: 32px;
+}
+
+.uk-slidenav-previous::before {
+    content: url("../images/arrow-left.png");
+}
+
+.uk-slidenav {
+    top: 40%;
+}
+
+.uk-slidenav-next::before {
+    content: url("../images/arrow-right.png");
+}
+
+.pmb_shelves_art a:hover h3,
+.pmb_record a:hover h3 {
+    text-decoration: underline;
+}
+
+.pmb_list_not_art .pmb_record {
+    padding: 24px 32px;
+}
+
+.pmb_records {
+    margin-top: 32px;
+}
+
+/* dotnav */
+
+.uk-dotnav>*>* {
+    display: block;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    border-radius: 16px;
+    background-color: var(--c-white);
+    text-indent: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    border: 1px solid var(--c-fourthly);
+    transition: .2s ease-in-out;
+    transition-property: all;
+    transition-property: background-color, border-color;
+}
+
+.uk-dotnav>.uk-active>*,
+.uk-dotnav > * > :hover {
+    background-color: var(--c-fourthly);
+}
+
+
+@media (max-width: 1600px) {
+    .uk-slidenav-previous {
+        right: 96%;
+    }
+
+    .uk-slidenav-next {
+        left: 96%;
+    }
+}
+
+@media (max-width: 640px) {
+
+    .pmb_slider_record_home .pmb_arrows.dark {
+        position: inherit;
+        top: inherit;
+        right: inherit;
+        width: inherit;
+    }
+
+    .pmb_arrows.dark .uk-slidenav-previous::before {
+        top: -220px;
+        position: absolute;
+        left: 80px;
+    }
+
+    .pmb_arrows.dark .uk-slidenav-next::before {
+        top: -220px;
+        position: absolute;
+        right: 60px;
+    }
+
+    .uk-slidenav-previous {
+        right: 90%;
+    }
+
+    .uk-slidenav-next {
+        left: 90%;
+    }
+}

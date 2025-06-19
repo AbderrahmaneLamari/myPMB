@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facettes_root.class.php,v 1.53.2.3 2021/10/15 06:43:55 dgoron Exp $
+// $Id: facettes_root.class.php,v 1.57.4.1 2024/01/04 08:57:50 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Common\Opac\Views\VueJsView;
 
 require_once($class_path."/facette_search_compare.class.php");
 require_once($class_path."/encoding_normalize.class.php");
@@ -226,41 +228,43 @@ abstract class facettes_root {
 				<div id='facette_wrapper'>
 					<img src='".get_url_icon('patience.gif')."'/>
 					<script type='text/javascript'>
-						var req = new http_request();
-						req.request(\"".static::get_ajax_url()."\",false,null,true,function(data){
-							var response = JSON.parse(data);
-							document.getElementById('facette_wrapper').innerHTML=response.display;
-						    require(['dojo/query', 'dojo/dom-construct'], function(query, domConstruct){
-    						    query('#facette_wrapper script').forEach(function(node) {
-                					domConstruct.create('script', {
-                						innerHTML: node.innerHTML,
-                						type: 'text/javascript'
-                					}, node, 'replace');
-                				});
-						    });
-							if(!response.exists_with_results) {
-								require(['dojo/ready', 'dojo/dom-construct'], function(ready, domConstruct){
-									ready(function(){
-						                if (document.getElementById('segment_searches')) {
-										    domConstruct.destroy('facette_wrapper');
-						                } else {
-						                    domConstruct.destroy('facette');
-						                }
-						    
-									});
-								});
-							}
-							if(response.map_location) {
-								if(document.getElementById('map_location_search')) {
-									document.getElementById('map_location_search').innerHTML=response.map_location;
-									if(typeof(dojo) == 'object'){
-										dojo.require('dojo.parser');
-										dojo.parser.parse(document.getElementById('map_location_search'));
-									}
-								}
-							}
-                            hide_element_by_its_hidden_children('bandeau');
-						}, '', '', true);
+                        document.addEventListener('DOMContentLoaded', () => {
+    						var req = new http_request();
+    						req.request(\"".static::get_ajax_url()."\",false,null,true,function(data){
+    							var response = JSON.parse(data);
+    							document.getElementById('facette_wrapper').innerHTML=response.display;
+    						    require(['dojo/query', 'dojo/dom-construct'], function(query, domConstruct){
+        						    query('#facette_wrapper script').forEach(function(node) {
+                    					domConstruct.create('script', {
+                    						innerHTML: node.innerHTML,
+                    						type: 'text/javascript'
+                    					}, node, 'replace');
+                    				});
+    						    });
+    							if(!response.exists_with_results) {
+    								require(['dojo/ready', 'dojo/dom-construct'], function(ready, domConstruct){
+    									ready(function(){
+    						                if (document.getElementById('segment_searches')) {
+    										    domConstruct.destroy('facette_wrapper');
+    						                } else {
+    						                    domConstruct.destroy('facette');
+    						                }
+    						    
+    									});
+    								});
+    							}
+    							if(response.map_location) {
+    								if(document.getElementById('map_location_search')) {
+    									document.getElementById('map_location_search').innerHTML=response.map_location;
+    									if(typeof(dojo) == 'object'){
+    										dojo.require('dojo.parser');
+    										dojo.parser.parse(document.getElementById('map_location_search'));
+    									}
+    								}
+    							}
+                                hide_element_by_its_hidden_children('bandeau');
+    						}, '', '', true);
+                        });
 					</script>
 				</div>";
 		}
@@ -403,11 +407,23 @@ abstract class facettes_root {
 	    
 	    return $base_path."/ajax.php?module=ajax&categ=".static::$table_name."&sub=see_more";
 	}
-	
-	public static function get_facette_wrapper() {
-	    global $msg, $base_path;
+	public static function get_modal_data() {
+	    $data = [];
+	    $data['form_name'] = "facettes_multi";
+	    return $data;
 	    
-		$script = "
+	}
+	public static function get_facette_wrapper() {
+	    global $msg, $base_path, $opac_facettes_modal_activate;
+	    
+	    $script = "";
+	    
+	    if (1 == $opac_facettes_modal_activate) {	        
+	        $vueJsView = new VueJsView("facettes/modal", static::get_modal_data());
+    	    $script .= $vueJsView->render();
+	    }
+	    
+	    $script .= "
 		<script src='$base_path/includes/javascript/select.js' type='text/javascript'></script>
 		<script type='text/javascript'> 		
 			function test(elmt_id){
@@ -432,11 +448,22 @@ abstract class facettes_root {
 				}
 			}
 			
-			function facette_see_more(id,json_facette_plus){
+			function facette_see_more(id, json_facette_plus) {
 				
+				const usingModal = '".$opac_facettes_modal_activate."' == 1;
 				var myTable = document.getElementById('facette_list_'+id);
 				
 				if (json_facette_plus == null) {
+
+                    if (usingModal) {
+                        if (typeof openModal == 'function') {
+                            return openModal(id);
+                        } else {
+                            console.error('[facettes_modal] : openModal is not a function !')
+                            return false;
+                        } 
+                    }
+
 					var childs = myTable.childNodes;
 					var nb_childs = childs.length;
 					
@@ -468,71 +495,86 @@ abstract class facettes_root {
 					
 				} else {
 					var req = new http_request();
-					var sended_datas={'json_facette_plus':json_facette_plus};
-					req.request(\"".static::get_ajax_see_more_url()."\",true,'sended_datas='+encodeURIComponent(JSON.stringify(sended_datas)),true,function(data){
-						
-						var jsonArray = JSON.parse(data);
-						//on supprime la ligne '+'
-						myTable.tBodies[0].removeChild(myTable.rows[myTable.rows.length-1]);
-						//on ajoute les lignes au tableau
-						for(var i=0;i<jsonArray.length;i++) {
-							var tr = document.createElement('tr');
-							tr.setAttribute('style','display:block');
-							tr.setAttribute('class', 'facette_tr');
-							tr.setAttribute('expanded','true');
-							tr.setAttribute('facette_ajax_loaded','1');
-				        	var td = tr.appendChild(document.createElement('td'));
-							td.setAttribute('class','facette_col_coche');
-				        	td.innerHTML = \"<span class='facette_coche'><input type='checkbox' name='check_facette[]' value='\" + jsonArray[i]['facette_value'] + \"'></span>\";
-				        	var td2 = tr.appendChild(document.createElement('td'));
-							td2.setAttribute('class','facette_col_info');
-                            var aonclick = td2.appendChild(document.createElement('a'));
-                            aonclick.setAttribute('style', 'cursor:pointer;');
-                            aonclick.setAttribute('rel', 'nofollow');
-                            aonclick.setAttribute('class', 'facet-link');
-                            if(jsonArray[i]['facette_link']) {
-                                aonclick.setAttribute('onclick', jsonArray[i]['facette_link']);
-                            } else {console.log('evt searchSegment', aonclick);
-                                //Evt vers SearchSegmentController pour l'initialisation du clic
-                                require(['dojo/topic'], function(topic){
-            						topic.publish('FacettesRoot', 'FacettesRoot', 'initFacetLink', {elem: aonclick}); 
-            					}); 
-                            }
-                            var span_facette_link = aonclick.appendChild(document.createElement('span'));
-                            span_facette_link.setAttribute('class', 'facette_libelle');
-				        	span_facette_link.innerHTML = jsonArray[i]['facette_libelle'];
-							aonclick.appendChild(document.createTextNode(' '));
-                            var span_facette_number = aonclick.appendChild(document.createElement('span'));
-                            span_facette_number.setAttribute('class', 'facette_number');
-                            span_facette_number.innerHTML = \"[\" + jsonArray[i]['facette_number'] + \"]\";
-				        	myTable.appendChild(tr);
-	
-						}
-						//Ajout du see_less
-						var tr = document.createElement('tr');
-						tr.setAttribute('style','display:block');
-						tr.setAttribute('see_less','1');
-						tr.setAttribute('class','facette_tr_see_more');
-							
-						var td = tr.appendChild(document.createElement('td'));
-						td.setAttribute('colspan','3');
-							
-						var ahref = td.appendChild(document.createElement('a'));
-						ahref.setAttribute('id','facette_see_more_less_'+id);
-						ahref.setAttribute('etat','moins');
-						ahref.setAttribute('onclick','javascript:facette_see_more(' + id + ',null);');
-						ahref.setAttribute('style','cursor:pointer');
-						ahref.innerHTML='';
-							
-						var span = document.createElement('span');
-						span.className='facette_moins_link';
-						span.innerHTML='".$msg["facette_moins_link"]."';								
-						ahref.appendChild(span);
-								
-						myTable.appendChild(tr);
-					});
+					var sended_datas = {'json_facette_plus': json_facette_plus };
+					req.request(\"".static::get_ajax_see_more_url()."\", true, 'sended_datas='+encodeURIComponent(JSON.stringify(sended_datas)), true, function(response) {
+                        if (usingModal) {
+                            if (typeof callback_see_more_modal == 'function') {
+                                callback_see_more_modal(id, myTable, response)
+                            } else {
+                                console.error('[facettes_modal] : callback_see_more_modal is not a function !')
+                            } 
+                        } else {
+                            callback_see_more(id, myTable, response);
+                        }
+                    });
 				}
-			}";
+			}
+
+            function callback_see_more(id, myTable, data) {
+    			var jsonArray = JSON.parse(data);
+    			//on supprime la ligne '+'
+    			myTable.tBodies[0].removeChild(myTable.rows[myTable.rows.length-1]);
+    			//on ajoute les lignes au tableau
+    			for(var i=0;i<jsonArray.length;i++) {
+    				var tr = document.createElement('tr');
+    				tr.setAttribute('style','display:block');
+    				tr.setAttribute('class', 'facette_tr');
+    				tr.setAttribute('expanded','true');
+    				tr.setAttribute('facette_ajax_loaded','1');
+    	        	var td = tr.appendChild(document.createElement('td'));
+    				td.setAttribute('class','facette_col_coche');
+    	        	td.innerHTML = \"<span class='facette_coche'><input type='checkbox' name='check_facette[]' value='\" + jsonArray[i]['facette_value'] + \"'></span>\";
+    	        	var td2 = tr.appendChild(document.createElement('td'));
+    				td2.setAttribute('class','facette_col_info');
+                    var aonclick = td2.appendChild(document.createElement('a'));
+                    aonclick.setAttribute('style', 'cursor:pointer;');
+                    aonclick.setAttribute('rel', 'nofollow');
+                    aonclick.setAttribute('class', 'facet-link');
+                    if (jsonArray[i]['facette_link']) {
+                        aonclick.setAttribute('onclick', jsonArray[i]['facette_link']);
+                    } else {
+                        //Evt vers SearchSegmentController pour l'initialisation du clic
+                        require(['dojo/topic'], function(topic){
+    						topic.publish('FacettesRoot', 'FacettesRoot', 'initFacetLink', {elem: aonclick}); 
+    					}); 
+                    }
+                    var span_facette_link = aonclick.appendChild(document.createElement('span'));
+                    span_facette_link.setAttribute('class', 'facette_libelle');
+    	        	span_facette_link.innerHTML = jsonArray[i]['facette_libelle'];
+    				aonclick.appendChild(document.createTextNode(' '));
+                    var span_facette_number = aonclick.appendChild(document.createElement('span'));
+                    span_facette_number.setAttribute('class', 'facette_number');
+                    span_facette_number.innerHTML = \"[\" + jsonArray[i]['facette_number'] + \"]\";
+    	        	myTable.appendChild(tr);
+    			}
+
+                add_see_less(myTable, id);
+    		}
+            
+            function add_see_less(myTable, id) {
+    			//Ajout du see_less
+    			var tr = document.createElement('tr');
+    			tr.setAttribute('style','display:block');
+    			tr.setAttribute('see_less','1');
+    			tr.setAttribute('class','facette_tr_see_more');
+    				
+    			var td = tr.appendChild(document.createElement('td'));
+    			td.setAttribute('colspan','3');
+    				
+    			var ahref = td.appendChild(document.createElement('a'));
+    			ahref.setAttribute('id','facette_see_more_less_'+id);
+    			ahref.setAttribute('etat','moins');
+    			ahref.setAttribute('onclick','javascript:facette_see_more(' + id + ',null);');
+    			ahref.setAttribute('style','cursor:pointer');
+    			ahref.innerHTML='';
+    				
+    			var span = document.createElement('span');
+    			span.className='facette_moins_link';
+    			span.innerHTML='". ( $opac_facettes_modal_activate ? $msg["facette_plus_link"] : $msg["facette_moins_link"] ) ."';
+    			ahref.appendChild(span);
+				
+    			myTable.appendChild(tr);
+            }";
 		if (static::get_compare_notice_active()) {
 			$compare_class_name = static::$compare_class_name;
 			$script .= $compare_class_name::get_compare_wrapper();

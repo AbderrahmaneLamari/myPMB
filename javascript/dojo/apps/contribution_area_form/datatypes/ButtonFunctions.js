@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ButtonFunctions.js,v 1.1.10.1 2021/07/01 12:13:08 qvarin Exp $
+// $Id: ButtonFunctions.js,v 1.2 2021/07/01 12:20:06 qvarin Exp $
 
 
 define([

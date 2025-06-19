@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_entity_authperso_datanode.class.php,v 1.3.4.3 2022/01/21 14:42:39 rtigero Exp $
+// $Id: frbr_entity_authperso_datanode.class.php,v 1.5 2022/01/21 13:47:24 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -11,7 +11,7 @@ class frbr_entity_authperso_datanode extends frbr_entity_common_entity_datanode 
      * num d'authperso temporaire tant qu'on a pas enregistre la datasource
      * @var int
      */
-    protected $temp_authperso_id = 0;
+    protected $temp_authperso_id;
 	
 	public function __construct($id=0){
 		parent::__construct($id);
@@ -62,7 +62,7 @@ class frbr_entity_authperso_datanode extends frbr_entity_common_entity_datanode 
             }
             $form.="
 				</select>
-			<img src='".get_url_icon('add.png')."' data-pmb-evt='{\"class\":\"EntityForm\", \"type\":\"click\", \"method\":\"loadDialog\", \"parameters\":{\"element\":\"sort\", \"idElement\":\"".$this->id."\", \"manageId\": \"0\", \"quoi\" : \"sorting\", \"className\" : \"".$this->class_name."\", \"authperso_id\" : \"$authperso_id\"}}' title=\"".$this->format_text($this->msg['frbr_entity_common_entity_datanode_sort_create'])."\" />";
+			<img src='".get_url_icon('add.png')."' data-pmb-evt='{\"class\":\"EntityForm\", \"type\":\"click\", \"method\":\"loadDialog\", \"parameters\":{\"element\":\"sort\", \"idElement\":\"".$this->id."\", \"manageId\": \"0\", \"quoi\" : \"sorting\", \"className\" : \"".$this->class_name."\", \"authperso_id\" : $authperso_id}}' title=\"".$this->format_text($this->msg['frbr_entity_common_entity_datanode_sort_create'])."\" />";
 	    } else {
 	        $form .= "<p>".htmlentities($msg['frbr_datasource_choice'], ENT_QUOTES, $charset)."</p>";
 	    }
@@ -90,7 +90,7 @@ class frbr_entity_authperso_datanode extends frbr_entity_common_entity_datanode 
             }
             $form.="
 					</select>";
-            $form.="<img src='".get_url_icon('add.png')."' alt='".$msg["925"]."' data-pmb-evt='{\"class\":\"EntityForm\", \"type\":\"click\", \"method\":\"loadDialog\", \"parameters\":{\"element\":\"filter\", \"idElement\":\"".$this->id."\", \"manageId\": 0, \"quoi\" : \"filters\", \"className\" : \"".$this->class_name."\", \"authperso_id\" : \"$authperso_id\"}}' title=\"".$this->format_text($this->msg['frbr_entity_common_entity_datanode_filter_create'])."\" />";
+            $form.="<img src='".get_url_icon('add.png')."' alt='".$msg["925"]."' data-pmb-evt='{\"class\":\"EntityForm\", \"type\":\"click\", \"method\":\"loadDialog\", \"parameters\":{\"element\":\"filter\", \"idElement\":\"".$this->id."\", \"manageId\": 0, \"quoi\" : \"filters\", \"className\" : \"".$this->class_name."\", \"authperso_id\" : $authperso_id}}' title=\"".$this->format_text($this->msg['frbr_entity_common_entity_datanode_filter_create'])."\" />";
 	    } else {
 	        $form .= "<p>".htmlentities($msg['frbr_datasource_choice'], ENT_QUOTES, $charset)."</p>";
 	    }

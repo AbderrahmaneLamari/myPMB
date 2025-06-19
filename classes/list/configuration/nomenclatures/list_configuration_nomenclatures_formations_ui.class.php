@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_nomenclatures_formations_ui.class.php,v 1.2 2021/04/20 06:44:56 dgoron Exp $
+// $Id: list_configuration_nomenclatures_formations_ui.class.php,v 1.2.6.1 2023/03/07 15:35:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -55,12 +55,11 @@ class list_configuration_nomenclatures_formations_ui extends list_configuration_
 	protected function add_column_types_edition() {
 		global $msg;
 		
-		$this->columns[] = array(
-				'property' => 'types_edition',
-				'label' => '',
-				'html' => "<input type='button' class='bouton' value='".$msg['admin_nomenclature_type_edition']."' onclick=\"document.location='".static::get_types_url_base()."&num_formation=!!id!!'\"  />",
-				'exportable' => false
+		$html_properties = array(
+				'value' => $msg['admin_nomenclature_type_edition'],
+				'link' => static::get_types_url_base()."&num_formation=!!id!!"
 		);
+		$this->add_column_simple_action('types_edition', '', $html_properties);
 	}
 	
 	protected function _get_object_property_nature($object) {

@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_authorities_controller.class.php,v 1.4 2021/02/01 14:17:56 qvarin Exp $
+// $Id: entities_authorities_controller.class.php,v 1.5 2022/02/16 12:38:20 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once ($class_path."/entities/entities_controller.class.php");
 global $pmb_indexation_lang;
 include($include_path."/marc_tables/".$pmb_indexation_lang."/empty_words");
@@ -38,9 +39,6 @@ class entities_authorities_controller extends entities_controller {
 	}
 	
 	protected function get_display_label_column($label='', $infobulle='') {
-		global $charset;
-		
-// 		htmlentities($label, ENT_QUOTES, $charset)
 		$display = "
 			<td style='vertical-align:top' onmousedown=\"document.location='".$this->get_edit_link($this->authority->get_num_object())."&user_input=".rawurlencode($this->user_input)."&nbr_lignes=".$this->nbr_lignes."&page=".$this->page."';\" title='".$infobulle."'>
 				".$this->authority->get_display_statut_class_html().$label."
@@ -116,7 +114,7 @@ class entities_authorities_controller extends entities_controller {
 			$page=1;
 			$this->page = $page; 
 		} else {
-			$this->page = $page+0;
+		    $this->page = (int) $page;
 		}
 		$debut =($this->page-1)*$nb_per_page_gestion;
 		
@@ -145,7 +143,6 @@ class entities_authorities_controller extends entities_controller {
 	
 	public function proceed() {
 		global $sub;
-		global $force_unlock;
 		global $PMBuserid;
 		//parade pour la facto
 		$formatted_sub = $sub;
@@ -253,7 +250,6 @@ class entities_authorities_controller extends entities_controller {
 	
 	public function proceed_duplicate() {
 		$object_instance = $this->get_object_instance();
-		$id = 0;
 		$object_instance->show_form(true);
 	}
 	
@@ -396,7 +392,7 @@ class entities_authorities_controller extends entities_controller {
 	}
 	
 	public function get_msg_from_categ($categ, $id_authperso = 0) {
-		global $msg, $search;
+		global $msg;
 		
 		switch ($categ) {
 			case 'auteurs' :

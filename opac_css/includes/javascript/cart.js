@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2010 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cart.js,v 1.9.2.1 2021/09/27 07:56:06 qvarin Exp $
+// $Id: cart.js,v 1.10 2021/09/27 07:59:21 qvarin Exp $
 
 function getDomNodeBasketImg(img_src, img_title) {
 	var basket_img = window.parent.document.createElement('img');

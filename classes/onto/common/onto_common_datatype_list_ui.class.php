@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_common_datatype_list_ui.class.php,v 1.12.2.1 2022/01/18 09:40:49 gneveu Exp $
+// $Id: onto_common_datatype_list_ui.class.php,v 1.17 2023/01/18 08:19:59 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -136,13 +136,13 @@ class onto_common_datatype_list_ui extends onto_common_datatype_ui {
 				$values[] = $formated_value;
 			}
 		}
-		
-		foreach($options_values as $id => $value){
+
+		foreach($options_values as $id => $label){
 		    $display_none = "";
 		    if (count($list_values_to_display) && !in_array($id, $list_values_to_display)) {
 		        $display_none = 'style="display:none;"';
 			}
-			$options.= '<option value="'.htmlentities($id, ENT_QUOTES, $charset).'" '.(in_array($id, $values) ? 'selected' : '').' '.$display_none.'>'.htmlentities($value, ENT_QUOTES, $charset).'</option>';
+			$options.= '<option value="'.htmlentities($id, ENT_QUOTES, $charset).'" '.(in_array($id, $values) ? 'selected' : '').' '.$display_none.'>'.htmlentities($label, ENT_QUOTES, $charset).'</option>';
 		}
 		/*generate rows *///htmlentities($data->get_formated_value() ,ENT_QUOTES,$charset)
 		$inside_row = str_replace("!!onto_row_content_list_options!!", $options, $inside_row);
@@ -228,8 +228,16 @@ class onto_common_datatype_list_ui extends onto_common_datatype_ui {
 	    
 	    $options_values = array();
 	    if (isset($property->pmb_list_item)) {
+	        
+	        usort($property->pmb_list_item, function ($a, $b) {
+	            if ($a["order"] == ["order"]) {
+	                return 0;
+	            }
+	            return ($a["order"] < $b["order"]) ? - 1 : 1;
+	        });
+	        
 	        foreach ($property->pmb_list_item as $list_item) {
-	            $options_values[$list_item['id']] = $list_item['value'];
+	            $options_values[$list_item["id"]] = $list_item["value"];
 	        }
 	    }
 	    if (isset($property->pmb_list_query)) {
@@ -242,6 +250,7 @@ class onto_common_datatype_list_ui extends onto_common_datatype_ui {
 	            }
 	        }
 	    }
+	    ksort($options_values);
 	    return $options_values;
 	}
 } // end of onto_common_datatype_ui

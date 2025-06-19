@@ -2,7 +2,9 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_subtabs_admin_ui.class.php,v 1.8.2.3 2022/01/18 09:12:47 qvarin Exp $
+// $Id: list_subtabs_admin_ui.class.php,v 1.25.2.5 2024/01/03 08:44:30 gneveu Exp $
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -121,17 +123,36 @@ class list_subtabs_admin_ui extends list_subtabs_ui {
 				$title .= $msg['admin_html_editor'];
 				break;
 			case 'vignette':
+			case 'thumbnail':
 				$title .= $msg['admin_vignette_menu'];
 				break;
 			case 'animations':
 				$title .= $msg['animation_base_title'];
+				break;
+			case 'ark':
+			    $title .= $msg['ark_base_title'];
+			    break;
+			case 'digital_signature':
+				$title .= $msg['digital_signature_base_title'];
+				break;
+			case 'mails':
+				$title .= $msg['mails'];
+				break;
+			case 'interface':
+				$title .= $msg['interface'];
+				break;
+			case 'supervision':
+				$title .= $msg['supervision'];
+				break;
+			case 'acces':
+				$title .= $msg['admin_menu_acces'];
 				break;
 		}
 		return $title;
 	}
 	
 	public function get_sub_title() {
-		global $msg, $sub, $quoi, $elements;
+		global $msg, $sub, $quoi, $elements, $id;
 		
 		$sub_title = "";
 		switch (static::$categ) {
@@ -225,6 +246,35 @@ class list_subtabs_admin_ui extends list_subtabs_ui {
 			    if(!empty($quoi)) {
 			        $sub_title .= " > $quoi";
 			    }
+				break;
+			case 'interface':
+				switch ($sub) {
+					case 'tabs':
+						$sub_title .= $msg['tabs']." > ";
+						break;
+					default:
+						break;
+				}
+				$sub_title .= parent::get_sub_title();
+				break;
+			case 'acces':
+				$ac = acces::get_instance();
+				$t_cat= $ac->getCatalog();
+				foreach($t_cat as $k=>$v) {
+					if ($id==$k) {
+						$sub_title .= $v['comment'];
+						$ac = acces::get_instance();
+						$dom = $ac->setDomain($id);
+						switch ($sub) {
+							case 'user_prf':
+								$sub_title .= ' > '.$dom->getComment('user_prf_lib');
+								break;
+							case 'res_prf':
+								$sub_title .= ' > '.$dom->getComment('res_prf_lib');
+								break;
+						}
+					}
+				}
 				break;
 			default:
 				$sub_title .= parent::get_sub_title();
@@ -410,6 +460,9 @@ class list_subtabs_admin_ui extends list_subtabs_ui {
 				if (($pmb_gestion_financiere)&&($pmb_gestion_financiere_caisses)) {
 					$this->add_subtab('cashdesk', 'cashdesk_admin');
 				}
+				if (($pmb_gestion_financiere)&&($pmb_gestion_financiere_caisses)) {
+					$this->add_subtab('organization_account', 'organization_account_admin');
+				}
 				break;
 			case 'import':
 				//Import
@@ -553,9 +606,61 @@ class list_subtabs_admin_ui extends list_subtabs_ui {
 				//Animations
 				$this->add_subtab('status', 'animation_manage_status', '', '&action=list');
 				$this->add_subtab('types', 'animation_manage_types', '', '&action=list');
+				$this->add_subtab('calendar', 'animation_manage_calendar', '', '&action=list');
 				$this->add_subtab('priceTypes', 'animation_manage_type');
 				$this->add_subtab('perso', 'admin_menu_animations_perso_categ', '', '&type_field=anim_animation');
 				$this->add_subtab('mailing', 'animation_manage_mailing');
+				break;
+			case 'ark':
+			    // Ark
+			    $this->add_subtab('naan', 'ark_manage_naan', '', '&action=edit');
+			    $this->add_subtab('generate', 'ark_manage_generate', '', '');
+			    break;
+			case 'digital_signature':
+				// Signature electronique
+				$this->add_subtab('certificate', 'digital_signature_manage_certificat', '', '');
+				$this->add_subtab('signature', 'digital_signature_manage_signature', '', '');
+				break;
+			case 'mails':
+				$this->add_subtab('configuration', 'mails_configuration');
+				$this->add_subtab('settings', 'mails_settings');
+				break;
+			case 'interface':
+				switch ($sub) {
+					case 'tabs':
+						$this->add_subtab('', '&lt;&lt;', 'bt_retour');
+						$list_modules_ui = new list_modules_ui();
+						$objects = $list_modules_ui->get_objects();
+						foreach ($objects as $object) {
+							$this->add_subtab('tabs', $object->get_label(), '', '&tab_module='.$object->get_name());
+						}
+						break;
+					default:
+						$this->add_subtab('modules', 'admin_menu_modules');
+						//$this->add_subtab('tabs', 'tabs');
+						//$this->add_subtab('lists', 'lists');
+						$this->add_subtab('selectors', 'selectors');
+						break;
+				}
+				break;
+			case 'supervision':
+				$this->add_subtab('mails', 'supervision_mails');
+				$this->add_subtab('logs', 'supervision_logs');
+				break;
+			case 'thumbnail':
+				$this->add_subtab('sources', 'admin_thumbnail_sources');
+				$thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+				foreach ($thumbnailSourcesHandler->getEntitiesList() as $entity) {
+				    $this->add_subtab('pivots', $entity['label_code'], '', '&type=' . $entity['type']);
+				}
+				$this->add_subtab('cache', 'admin_thumbnail_cache');
+				break;
+			case 'acces':
+				$ac = acces::get_instance();
+				$t_cat= $ac->getCatalog();
+				foreach($t_cat as $k=>$v) {
+					$this->add_subtab('domain', $v['comment'], '', '&action=view&id='.$k);
+				}
 				break;
 		}
 	}

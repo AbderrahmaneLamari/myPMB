@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_authorities_caddie_content_ui.class.php,v 1.2 2020/11/05 12:26:40 dgoron Exp $
+// $Id: list_authorities_caddie_content_ui.class.php,v 1.3 2022/10/13 09:38:45 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -176,12 +176,14 @@ class list_authorities_caddie_content_ui extends list_caddie_content_root_ui {
 			case 'AUTHORS':
 			    return array_merge(
 					$this->get_describe_fields('authors', 'authors', 'authors'),
-			    	array('author_concepts' => $this->get_describe_field($msg['list_author_concept'], 'titres_uniformes', 'aut'))
+			    	array('author_concepts' => $this->get_describe_field($msg['list_author_concept'], 'titres_uniformes', 'aut')),
+			    	array('aut_link' => $msg['aut_link'])
 				);
 				break;
 			case 'SUBCOLLECTIONS':
 				return array_merge(
-					$this->get_describe_fields('sub_collections', 'sub_collections', 'sub_collections')
+					$this->get_describe_fields('sub_collections', 'sub_collections', 'sub_collections'),
+					array('aut_link' => $msg['aut_link'])
 				);
 				break;
 			case 'TITRES_UNIFORMES':
@@ -189,7 +191,8 @@ class list_authorities_caddie_content_ui extends list_caddie_content_root_ui {
 				    $this->get_describe_fields('titres_uniformes', 'titres_uniformes', 'titres_uniformes'),
 				    array('tu_performers' => $this->get_describe_field($msg['list_titre_uniforme_interpreter_function'], 'titres_uniformes', 'titres_uniformes')),
 				    array('tu_authors' => $this->get_describe_field($msg['list_titre_uniforme_author_function'], 'titres_uniformes', 'titres_uniformes')),
-				    array('tu_concepts' => $this->get_describe_field($msg['list_titre_uniforme_concept'], 'titres_uniformes', 'titres_uniformes'))
+				    array('tu_concepts' => $this->get_describe_field($msg['list_titre_uniforme_concept'], 'titres_uniformes', 'titres_uniformes')),
+				    array('aut_link' => $msg['aut_link'])
 			    );
 			    break;
 			case 'MIXED':
@@ -202,7 +205,8 @@ class list_authorities_caddie_content_ui extends list_caddie_content_root_ui {
 				break;
 		}
 		return array_merge(
-		    $this->get_describe_fields(strtolower($type_object), strtolower($type_object), strtolower($type_object))
+		    $this->get_describe_fields(strtolower($type_object), strtolower($type_object), strtolower($type_object)),
+			array('aut_link' => $msg['aut_link'])
 	    );
 	}
 	
@@ -379,6 +383,15 @@ class list_authorities_caddie_content_ui extends list_caddie_content_root_ui {
 	        'authorities_statut_label' => 'search_extended_common_statut',
 	        'thumbnail_url' => 'explnum_vignette',
 	    );
+	}
+	
+	protected function _get_object_property_aut_link($object) {
+		$authority = authorities_collection::get_authority(AUT_TABLE_AUTHORITY, $object->id);
+		$aut_link = $authority->get_aut_link();
+		if(!empty($aut_link) && is_object($aut_link)) {
+			return $authority->get_aut_link()->get_display();
+		}
+		return '';
 	}
 	
 	protected function get_cell_content($object, $property) {

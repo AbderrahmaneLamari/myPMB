@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: reset.inc.php,v 1.18.8.1 2021/07/30 14:48:34 dgoron Exp $
+// $Id: reset.inc.php,v 1.19 2021/07/30 14:43:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: term_search.class.php,v 1.35.8.1 2021/12/28 10:10:03 dgoron Exp $
+// $Id: term_search.class.php,v 1.37.2.1 2023/08/31 12:56:45 qvarin Exp $
 //
 // Gestion de la recherche des termes dans le thésaurus
 
@@ -20,7 +20,7 @@ class term_search {
 	public $search_term_name;			//Nom de la variable contenant le terme recherché dans les catégories
 	public $search_term_origin_name;	//Nom de la variable contenant le terme recherché saisi par l'utilisateur
     public $search_term;				//Terme recherché dans les catégories
-	public $search_term_oigin;			//Terme recherché saisi par l'utilisateur
+	public $search_term_origin;			//Terme recherché saisi par l'utilisateur
     public $n_per_page;				//Nombre de résultats par page
     public $base_query;				//Paramètres supplémentaires à passer dans l'url
     public $url_for_term_show;			//Page à appeller pour l'affichage de la fiche du terme
@@ -35,7 +35,7 @@ class term_search {
     public $aq;
 	
     //Constructeur
-    public function __construct($search_term_name,$search_term_origin_name,$n_per_page=200,$base_query,$url_for_term_show,$url_for_term_search,$keep_tilde=0,$id_thes=0) {
+    public function __construct($search_term_name, $search_term_origin_name, $n_per_page=200, $base_query = '', $url_for_term_show = '', $url_for_term_search = '', $keep_tilde = 0, $id_thes = 0) {
 
     	global $page;
     	
@@ -52,8 +52,8 @@ class term_search {
     	global ${$search_term_name};
     	global ${$search_term_origin_name};
     	
-    	$this->search_term=stripslashes(${$search_term_name});
-    	$this->search_term_origin=stripslashes(${$search_term_origin_name});
+    	$this->search_term=stripslashes(${$search_term_name} ?? '');
+    	$this->search_term_origin=stripslashes(${$search_term_origin_name} ?? '');
 		$this->n_per_page=$n_per_page;
     	$this->base_query=$base_query;
     	$this->url_for_term_show=$url_for_term_show;
@@ -113,6 +113,7 @@ class term_search {
     public function get_term_count() {
     	global $lang;
     	global $opac_thesaurus;
+    	global $default_tmp_storage_engine;
 
 		//Comptage du nombre de termes
     	$where_term=$this->get_where_term();
@@ -140,7 +141,7 @@ class term_search {
 				$q = "drop table if exists cattmp ";
 				$r = pmb_mysql_query($q);
 	
-				$q1 = "create temporary table cattmp engine=myisam select ";
+				$q1 = "create temporary table cattmp engine={$default_tmp_storage_engine} select ";
 				$q1.= "if(catlg.num_noeud is null, catdef.libelle_categorie, catlg.libelle_categorie) as categ_libelle ";
 				$q1.= "from categories as catdef "; 
 				$q1.= "left join categories as catlg on catdef.num_noeud = catlg.num_noeud and catlg.langue = '".$lang."' "; 
@@ -162,7 +163,7 @@ class term_search {
 			$q = "drop table if exists cattmp ";
 			$r = pmb_mysql_query($q);
 
-			$q1 = "create temporary table cattmp engine=myisam select ";
+			$q1 = "create temporary table cattmp engine={$default_tmp_storage_engine} select ";
 			$q1.= "id_thesaurus, ";
 			$q1.= "if(catlg.num_noeud is null, catdef.libelle_categorie, catlg.libelle_categorie) as categ_libelle ";
 			$q1.= "from thesaurus ";

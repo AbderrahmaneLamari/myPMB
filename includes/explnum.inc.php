@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: explnum.inc.php,v 1.130.2.3 2021/12/28 14:02:12 dgoron Exp $
+// $Id: explnum.inc.php,v 1.145.2.2 2023/09/22 14:54:40 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+use Pmb\Digitalsignature\Models\DocnumCertifier;
 
 global $class_path;
 require_once("$class_path/curl.class.php");
@@ -252,23 +254,25 @@ function reduire_image ($userfile_name) {
 	         ".swf"=>"4",
 	         ".psd"=>"5",
 	         ".bmp"=>"6");
-		*/	
-		switch ($size[2]) {
-			case 1:
-			    $src_img = imagecreatefromgif($source_file);
-			 	break;
-			case 2:
-			    $src_img = imagecreatefromjpeg($source_file);
-				break;
-			case 3:
-			    $src_img = imagecreatefrompng($source_file);
-				break;
-			case 6:
-			    $src_img = imagecreatefromwbmp($source_file);
-				break;
-			default:
-				break;
-		}
+		*/
+	    if (isset($size[2])) {
+    		switch ($size[2]) {
+    			case 1:
+    			    $src_img = imagecreatefromgif($source_file);
+    			 	break;
+    			case 2:
+    			    $src_img = imagecreatefromjpeg($source_file);
+    				break;
+    			case 3:
+    			    $src_img = imagecreatefrompng($source_file);
+    				break;
+    			case 6:
+    			    $src_img = imagecreatefromwbmp($source_file);
+    				break;
+    			default:
+    				break;
+    		}
+	    }
 		$erreur_vignette = 0 ;
 		if (!empty($src_img)) {
 			$rs=$pmb_vignette_x/$pmb_vignette_y;
@@ -506,7 +510,9 @@ function explnum_update($f_explnum_id, $f_notice, $f_bulletin, $f_nom, $f_url, $
 			}
 			$path = $upfolder->formate_path_to_save($path);
 			$file_name = $upfolder->encoder_chaine($file_name);
-			rename('./temp/'.$userfile_moved,$file_name);
+			if (copy('./temp/'.$userfile_moved,$file_name)) {
+			    unlink('./temp/'.$userfile_moved);
+			}
 			$is_upload = true;
 		} else $file_name = './temp/'.$userfile_moved;
 		$fp = fopen($file_name , "r" ) ;
@@ -691,7 +697,9 @@ function explnum_add_from_url($f_notice_id, $f_bulletin_id, $f_nom, $f_url, $ove
 				}
 				$new_filename = $file."_".$suffix.".".$ext;
 			}
-			rename("$base_path/temp/".$tmp_filename,$upload_folder->encoder_chaine($rep_path.$new_filename));
+			if (copy("$base_path/temp/".$tmp_filename,$upload_folder->encoder_chaine($rep_path.$new_filename))) {
+			    unlink("$base_path/temp/".$tmp_filename);
+			}
 			$path =$upload_folder->formate_path_to_save($upload_folder->formate_path_to_nom($rep_path));
 			$insert_sql = "INSERT INTO explnum (explnum_notice, explnum_bulletin, explnum_nom, explnum_nomfichier, explnum_mimetype, explnum_extfichier, explnum_vignette, explnum_repertoire, explnum_path, explnum_docnum_statut) VALUES (";
 			$insert_sql .= $f_notice_id.",";
@@ -772,15 +780,16 @@ function explnum_add_url($f_notice_id, $f_bulletin_id, $f_nom, $f_url, $overwrit
 
 // fonction retournant les infos d'exemplaires numeriques pour une notice ou un bulletin donne
 function show_explnum_per_notice($no_notice, $no_bulletin, $link_expl='',$param_aff=array(),$return_count = false, $context_dsi_id_bannette = 0) {
-	
+
 	// params :
 	// $link_expl= lien associe a l'exemplaire avec !!explnum_id!! a mettre a jour
 	global $charset;
 	global $use_dsi_diff_mode;
 	global $base_path,$msg;
-	global $pmb_map_activate;
+	global $pmb_docnum_img_folder_id;
 	global $pmb_explnum_order;
-	global $opac_url_base;
+	global $pmb_url_base, $use_opac_url_base, $opac_url_base;
+	global $pmb_digital_signature_activate;
 	
 	if (!$no_notice && !$no_bulletin) return "";
 
@@ -792,7 +801,7 @@ function show_explnum_per_notice($no_notice, $no_bulletin, $link_expl='',$param_
 	create_tableau_mimetype() ;
 
 	// recuperation du nombre d'exemplaires
-	$requete = "SELECT explnum_id, explnum_notice, explnum_bulletin, explnum_nom, explnum_mimetype, explnum_url, explnum_vignette, explnum_nomfichier, explnum_extfichier, explnum_docnum_statut 
+	$requete = "SELECT explnum_id, explnum_notice, explnum_bulletin, explnum_nom, explnum_mimetype, explnum_url, explnum_vignette, explnum_nomfichier, explnum_extfichier, explnum_docnum_statut
 			FROM explnum WHERE ";
 	if ($no_notice) $requete .= "explnum_notice='$no_notice' ";
 		else $requete .= "explnum_bulletin='$no_bulletin' ";
@@ -813,6 +822,13 @@ function show_explnum_per_notice($no_notice, $no_bulletin, $link_expl='',$param_
 		// on recupere les donnees des exemplaires
 		$i = 1 ;
 		$ligne_finale = '';
+
+		global $pmb_digital_signature_activate;
+		if ($pmb_digital_signature_activate) {
+			$ligne_finale .= DocnumCertifier::getJsCheck();
+			$certifier = new DocnumCertifier(null);
+		}
+    	
 		while (($expl = pmb_mysql_fetch_object($res))) {
 			// couleur de l'img en fonction du statut
 			if ($expl->explnum_docnum_statut) {
@@ -847,16 +863,12 @@ function show_explnum_per_notice($no_notice, $no_bulletin, $link_expl='',$param_
 			global $prefix_url_image ;
 			if ($prefix_url_image) $tmpprefix_url_image = $prefix_url_image; 
 				else $tmpprefix_url_image = "./" ;
-	
-			if ($expl->explnum_vignette){
+            
+			if ($expl->explnum_vignette || !empty($pmb_docnum_img_folder_id)) {
 			    $thumbnail_url = explnum::get_thumbnail_url($expl->explnum_vignette, $expl->explnum_id);
-			    $obj="<img src='".$opac_url_base.$thumbnail_url;
-				if ($context_dsi_id_bannette) {
-					$obj.= "&context_dsi_id_bannette=".$context_dsi_id_bannette;
-				}
-				$obj.="' alt='$alt' title='$alt' border='0'>";
-			} else { // trouver l'icone correspondant au mime_type
-				$obj="<img src='".$tmpprefix_url_image."images/mimetype/".icone_mimetype($expl->explnum_mimetype, $expl->explnum_extfichier)."' alt='$alt' title='$alt' border='0'>";
+			    $obj="<img src='".$thumbnail_url."' alt='$alt' title='$alt' border='0'>";
+			}else {// trouver l'icone correspondant au mime_type
+			    $obj="<img src='".$tmpprefix_url_image."images/mimetype/".icone_mimetype($expl->explnum_mimetype, $expl->explnum_extfichier)."' alt='$alt' title='$alt' border='0'>";
 			}
 				
 			$obj_suite="$statut_libelle_div
@@ -871,12 +883,45 @@ function show_explnum_per_notice($no_notice, $no_bulletin, $link_expl='',$param_
 			elseif (isset($_mimetypes_bymimetype_[$expl->explnum_mimetype]["label"]) && $_mimetypes_bymimetype_[$expl->explnum_mimetype]["label"]) $explmime_nom = $_mimetypes_bymimetype_[$expl->explnum_mimetype]["label"] ;
 			else $explmime_nom = $expl->explnum_mimetype ;
 			if(isset($param_aff["mine_type"])) $explmime_nom="";
-			if ($tlink) {
-				$expl_liste_obj .= "<a class='docnum_name_link' href='$tlink'>";
-				$expl_liste_obj .= htmlentities($expl->explnum_nom,ENT_QUOTES, $charset)."</a>";
-			} else {
-				$expl_liste_obj .= htmlentities($expl->explnum_nom,ENT_QUOTES, $charset);
+			
+		    $expl_name = htmlentities($expl->explnum_nom,ENT_QUOTES, $charset);
+		    
+			//test sur la signature de doc num
+			if ($pmb_digital_signature_activate) {
+				$explnum = new explnum($expl->explnum_id);
+				$certifier->setEntity($explnum);
+
+			    if ($certifier->checkSignExists()) {
+			        $file_link = $certifier->getCmsFilePath();
+			        $tlink = "";
+			        $expl_name = "
+                        <span style='cursor: default' title='" . $msg['digital_signature_already_signed_docnum']. "'>"
+                            .$expl_name. "
+                            <span id='docnum_check_sign_" . $expl->explnum_id . "'></span>
+                        </span>
+                        <script>
+                            certifier.chksign(" . $expl->explnum_id . ", 'docnum', false, '" . $file_link . "'); 
+                        </script>
+                    ";
+			    }
 			}
+			
+// 			if ($certifier->checkSignExists() && !$pmb_digital_signature_activate) {
+// 			    $tlink = "";
+// 			    $expl_name = "
+//                     <span style='cursor: default' title='" . $msg['digital_signature_already_signed_docnum']. "'>"
+//                         .$expl_name. "
+//                         <span id='docnum_check_sign_" . $expl->explnum_id . "'></span>
+//                     </span>
+//                 ";
+// 			}
+			
+			if ($tlink) {
+			    $expl_name = "<a class='docnum_name_link' href='$tlink'>" . $expl_name ."</a>";
+			}
+			
+			$expl_liste_obj.= $expl_name;
+			
 			// Regime de licence
 			$expl_liste_obj.= explnum_licence::get_explnum_licence_picto($expl->explnum_id);
 			
@@ -1084,11 +1129,13 @@ function show_explnum_in_relation($no_notice, $link_expl='',$param_aff=array()) 
 			else $tmpprefix_url_image = "./" ;
 
 			if ($expl->explnum_vignette) {
-			    $thumbnail_url = explnum::get_thumbnail_url($expl->explnum_vignette, $expl->explnum_id);
-			    $obj="<img src='".$opac_url_base.$thumbnail_url."' alt='$alt' title='$alt' border='0'>";
+    		    $thumbnail_url = explnum::get_thumbnail_url($expl->explnum_vignette, $expl->explnum_id);
+    		    $obj="<img src='".$thumbnail_url."' alt='$alt' title='$alt' border='0'>";
 			}else {// trouver l'icone correspondant au mime_type
-				$obj="<img src='".$tmpprefix_url_image."images/mimetype/".icone_mimetype($expl->explnum_mimetype, $expl->explnum_extfichier)."' alt='$alt' title='$alt' border='0'>";
+			    $obj="<img src='".$tmpprefix_url_image."images/mimetype/".icone_mimetype($expl->explnum_mimetype, $expl->explnum_extfichier)."' alt='$alt' title='$alt' border='0'>";
 			}
+			
+			    
 			$obj_suite="$statut_libelle_div
 			<a  href='#' onmouseout=\"z=document.getElementById('zoom_statut_docnum".$expl->explnum_id."'); z.style.display='none'; \" onmouseover=\"z=document.getElementById('zoom_statut_docnum".$expl->explnum_id."'); z.style.display=''; \">
 			<div class='vignette_doc_num' ><img $class_img width='10' height='10' src='".get_url_icon('spacer.gif')."'></div>

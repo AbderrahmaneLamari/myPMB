@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_opac_facettes_root_ui.class.php,v 1.3 2021/04/19 07:10:13 dgoron Exp $
+// $Id: list_configuration_opac_facettes_root_ui.class.php,v 1.4.4.1 2023/03/24 07:55:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -62,17 +62,8 @@ class list_configuration_opac_facettes_root_ui extends list_configuration_opac_u
 		return $main_fields;
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		$filters [] = 'facette_type LIKE "'.$this->filters['type'].'%"';
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->query_filters [] = 'facette_type LIKE "'.$this->filters['type'].'%"';
 	}
 	
 	protected function get_cell_content($object, $property) {
@@ -166,20 +157,15 @@ class list_configuration_opac_facettes_root_ui extends list_configuration_opac_u
 		return static::get_controller_url_base().'&action=edit&id='.$object->id;
 	}
 	
-	protected function get_display_cell($object, $property) {
+	protected function get_default_attributes_format_cell($object, $property) {
 		switch($property) {
 			case 'facette_order':
-				$attributes = array();
-				break;
+				return array();
 			default :
-				$attributes = array(
-				'onclick' => "document.location=\"".$this->get_edition_link($object)."\""
-						);
-				break;
+				return array(
+						'onclick' => "document.location=\"".$this->get_edition_link($object)."\""
+				);
 		}
-		$content = $this->get_cell_content($object, $property);
-		$display = $this->get_display_format_cell($content, $property, $attributes);
-		return $display;
 	}
 	
 	protected function get_label_button_add() {

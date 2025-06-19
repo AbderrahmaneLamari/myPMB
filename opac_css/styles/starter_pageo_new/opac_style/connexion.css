@@ -1,0 +1,108 @@
+/*----------------
+- OPAC: CONNEXION -
+ ----------------*/
+
+#connexion {
+  position: fixed;
+  top: 62px;
+  left: 0;
+  background: var(--c-white);
+  height: 100%;
+  width: 100%;
+  z-index: 999;
+  padding: 32px;
+  box-shadow: var(--box-shadow);
+}
+
+#connexion br {
+  display: none;
+}
+
+#login_form > select {
+  width: 100%;
+  background-color: var(--c-primary);
+  color: var(--c-white);
+  border-radius: var(--border-radius);
+  margin-bottom: 12px;
+  padding: 16px 24px;
+}
+
+#login_form form {
+    display: block;
+    position: relative;
+    width: 100%;
+}
+
+#connexion label {
+  display: none;
+}
+
+#connexion h3 {
+  display: none;
+}
+#connexion #login_form>b {
+  display: none;
+}
+
+#connexion input::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  font: normal normal normal 1.6rem/2rem var(--font-2);
+  color: var(--c-text-3);
+}
+
+#connexion input:-ms-input-placeholder { /* Internet Explorer 10-11 */
+  font: normal normal normal 1.6rem/2rem var(--font-2);
+  color: var(--c-text-3);
+}
+
+#connexion input::-ms-input-placeholder { /* Microsoft Edge */
+  font: normal normal normal 1.6rem/2rem var(--font-2);
+  color: var(--c-text-3);
+}
+
+#login_form input[type="submit"] {
+  display: block;
+  text-align: center;
+  color: var(--c-white);
+  background-color: var(--c-primary);
+  border: 5px;
+  padding: 6px 16px 6px;
+  border-radius: var(--border-radius);
+  transition: 0.3s;
+  font: var(--font-link);
+  height: 40px;
+  margin-left: auto;
+  margin-top: 8px;
+}
+
+#login_form input[type="text"] {
+  margin-bottom: 8px;
+}
+
+.mdp_forgotten,
+.subs_not_yet_subscriber,
+.mdp_forgotten:hover,
+.subs_not_yet_subscriber:hover,
+#pmb_help_connexion a,
+#empr_logout_lnk {
+  display: block;
+  font: normal normal normal 1.2rem/1.6rem var(--font);
+  color: var(--c-fourthly);
+  text-decoration: underline;
+  margin: 4px 0;
+}
+
+@media screen and (min-width: 960px) {
+  #connexion {
+      position: fixed;
+      top: 62px;
+      background: var(--c-white);
+      right: 19vw;
+      height: auto;
+      width: 443px;
+      z-index: 999;
+      padding: 32px;
+      box-shadow: var(--box-shadow);
+      border-radius: 0 0 32px 32px;
+      left: inherit;
+    }
+}

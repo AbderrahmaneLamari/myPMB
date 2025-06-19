@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: indexation_record.class.php,v 1.9.8.1 2021/12/23 08:18:10 dgoron Exp $
+// $Id: indexation_record.class.php,v 1.10 2021/12/23 08:16:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

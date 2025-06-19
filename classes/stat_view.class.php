@@ -2,11 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: stat_view.class.php,v 1.28.2.1 2021/09/10 12:24:20 dgoron Exp $
+// $Id: stat_view.class.php,v 1.31.4.1 2023/06/02 06:51:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path, $include_path;
+require_once($class_path.'/interface/admin/interface_admin_opac_form.class.php');
 require_once("$include_path/templates/stat_opac.tpl.php");
 require_once ($class_path . "/parse_format.class.php");
 require_once("$include_path/misc.inc.php");
@@ -31,7 +32,7 @@ class stat_view {
 	 * Execution des différentes actions
 	 */
 	public function proceed(){
-		global $msg, $id_col, $col_name, $expr_col, $expr_filtre, $view_name, $view_comment, $id_view; 
+		global $msg, $id_col, $view_name, $view_comment, $id_view; 
 		global $id, $id_req, $move, $conso, $date_deb,$date_fin,$date_ech, $list_ck,$remove_data, $remove_data_interval, $remove_data_interval_date_deb, $remove_data_interval_date_fin;
 		
 		if($id)
@@ -115,7 +116,7 @@ class stat_view {
 					break;
 					case 'save_col':
 						//Enregistrement/Insertion d'une colonne
-						$this->save_col($id_col,$col_name,$expr_col,$expr_filtre,$id_view);
+						$this->save_col($id_col,$id_view);
 					break;
 					case 'suppr_col':
 						//Suppression d'une colonne
@@ -132,7 +133,7 @@ class stat_view {
 					break;
 					case 'save_col':
 						//Enregistrement/Insertion d'une colonne
-						$this->save_col($id_col,$col_name,$expr_col,$expr_filtre,$id_view);
+						$this->save_col($id_col,$id_view);
 						print $this->do_addview_form($id_view);
 					break;
 					case 'update_col':
@@ -182,65 +183,53 @@ class stat_view {
 	 * On fait appel au formulaire d'ajout d'une vue
 	 */
 	public function do_addview_form($vue_id=''){
-		global $stat_view_addview_form;
+		global $stat_view_addview_content_form;
 		global $msg, $charset;
 		
+		$vue_id = intval($vue_id);
+		$content_form = $stat_view_addview_content_form;
+		
+		$interface_form = new interface_admin_opac_form('addview');
 		if(!$vue_id){
-			$stat_view_addview_form=str_replace("!!name_view!!",'',$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!view_comment!!",'',$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!table_colonne!!",'',$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!bouton_add_col!!",'',$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!bouton_reinit_view!!",'',$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!btn_suppr!!",'',$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!view_title!!",$msg["stat_view_create_title"],$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!id_view!!",'',$stat_view_addview_form);
-						
-			return $stat_view_addview_form;
-			
-		} else {
-			$btn_add_col = "<input class='bouton' type='submit'  value=\"".$msg['stat_add_col']."\" onClick='this.form.act.value=\"add_col\"; document.addview.action=\"./admin.php?categ=opac&sub=stat&section=colonne&action=addcol\";'/>";
-			$bouton_reinit_view="<input class='bouton' type='submit'  value=\"".$msg['stat_reinit_view']."\" onClick='this.form.act.value=\"reinit\";'/>";
-			$btn_suppr = "<input class='bouton' type='submit'  value='$msg[63]' onClick='if(confirm_delete()) this.form.act.value=\"suppr_view\";'/>";
-			
+			$interface_form->set_label($msg['stat_view_create_title']);
+			$content_form=str_replace("!!name_view!!",'',$content_form);
+			$content_form=str_replace("!!view_comment!!",'',$content_form);
+			$content_form=str_replace("!!table_colonne!!",'',$content_form);
+		}else{
+			$interface_form->set_label($msg['stat_view_modif_title']);
 			$requete = "select nom_vue, comment from statopac_vues where id_vue='".addslashes($vue_id)."'";
 			$resultat = pmb_mysql_query($requete);
 			while(($vue=pmb_mysql_fetch_object($resultat))){
-				$stat_view_addview_form=str_replace("!!name_view!!",htmlentities($vue->nom_vue,ENT_QUOTES,$charset),$stat_view_addview_form);
-				$stat_view_addview_form=str_replace("!!view_comment!!",htmlentities($vue->comment,ENT_QUOTES, $charset),$stat_view_addview_form);
-			}			
-			$stat_view_addview_form=str_replace("!!bouton_add_col!!",$btn_add_col,$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!bouton_reinit_view!!",$bouton_reinit_view,$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!btn_suppr!!",$btn_suppr,$stat_view_addview_form);
-			$stat_view_addview_form=str_replace("!!id_view!!",$vue_id,$stat_view_addview_form);
-				
-			$res="";		
+				$content_form=str_replace("!!name_view!!",htmlentities($vue->nom_vue,ENT_QUOTES,$charset),$content_form);
+				$content_form=str_replace("!!view_comment!!",htmlentities($vue->comment,ENT_QUOTES, $charset),$content_form);
+			}
+			
+			$res="";
 			$requete="select id_col, nom_col, expression, filtre, ordre, datatype from statopac_vues_col where num_vue='".$vue_id."' order by ordre";
 			$resultat=pmb_mysql_query($requete);
 			
 			if(pmb_mysql_num_rows($resultat) == 0){
 				$res="<div class='row'>".$msg["stat_no_col_associate"]."</div>";
-				$stat_view_addview_form=str_replace("!!table_colonne!!",$res,$stat_view_addview_form);		
-				$stat_view_addview_form=str_replace("!!view_title!!",$msg["stat_view_modif_title"],$stat_view_addview_form);
-				return $stat_view_addview_form;
+				$content_form=str_replace("!!table_colonne!!",$res,$content_form);
+				$content_form=str_replace("!!view_title!!",$msg["stat_view_modif_title"],$content_form);
 			} else {
 				$res="<table style='width:100%'>\n";
 				$res.="<tr><th>".$msg["stat_col_order"]."</th><th>".$msg["stat_col_name"]."</th><th>".$msg["stat_col_expr"]."</th><th>".$msg["stat_col_filtre"]."</th><th>".$msg['stat_col_type']."</th>";
 				$parity=1;
-				$n=0;
 				while ($r=pmb_mysql_fetch_object($resultat)) {
 					if ($parity % 2) {
 						$pair_impair = "even";
 					} else {
 						$pair_impair = "odd";
 					}
-		
+					
 					$parity+=1;
 					$tr_javascript=" onmouseover=\"this.className='surbrillance'\" onmouseout=\"this.className='$pair_impair'\"  ";
-					$action_td=" onmousedown=\"document.location='./admin.php?categ=opac&sub=stat&section=colonne&act=update_col&id_col=$r->id_col&id_view=$vue_id';\" ";
+					$action_td=" onmousedown=\"document.location='".static::format_url("&section=colonne&act=update_col&id_col=$r->id_col&id_view=$vue_id")."';\" ";
 					$res.="<tr class='$pair_impair' style='cursor: pointer' $tr_javascript>";
 					$res.="<td class='center'>";
-				    $res.="<input type='button' class='bouton_small' value='-' onClick='document.location=\"./admin.php?categ=opac&sub=stat&section=view_gestion&act=update_view&move=down&id_col=".$r->id_col."&id_view=$vue_id\"'/></a>";
-				    $res .= "<input type='button' class='bouton_small' value='+' onClick='document.location=\"./admin.php?categ=opac&sub=stat&section=view_gestion&act=update_view&move=up&id_col=".$r->id_col."&id_view=$vue_id\"'/>";
+					$res.="<input type='button' class='bouton_small' value='-' onClick='document.location=\"".static::format_url("&section=view_gestion&act=update_view&move=down&id_col=".$r->id_col."&id_view=".$vue_id)."\"'/></a>";
+					$res .= "<input type='button' class='bouton_small' value='+' onClick='document.location=\"".static::format_url("&section=view_gestion&act=update_view&move=up&id_col=".$r->id_col."&id_view=".$vue_id)."\"'/>";
 					$res.="</td>";
 					$res.="<td $action_td class='center'><b>".htmlentities($r->nom_col,ENT_QUOTES,$charset)."</b></td>
 						<td $action_td class='center'>".htmlentities($r->expression,ENT_QUOTES,$charset)."</td>
@@ -248,41 +237,40 @@ class stat_view {
 						<td $action_td class='center'>".htmlentities($r->datatype,ENT_QUOTES,$charset)."</td>";
 				}
 				$res.="</tr></table>";
-				$stat_view_addview_form=str_replace("!!table_colonne!!",$res,$stat_view_addview_form);
-				$stat_view_addview_form=str_replace("!!view_title!!",$msg["stat_view_modif_title"],$stat_view_addview_form);
+				$content_form=str_replace("!!table_colonne!!",$res,$content_form);
 			}
 		}
-		return $stat_view_addview_form;
+		
+		$interface_form->set_object_id($vue_id)
+		->set_confirm_delete_msg($msg['confirm_suppr'])
+		->set_content_form($content_form)
+		->set_table_name('statopac_vues')
+		->set_field_focus('view_name');
+		if($vue_id){
+			$interface_form->add_action_extension('add_col_button', $msg['stat_add_col'], static::format_url("&section=colonne&action=addcol&act=add_col&id_view=".$vue_id));
+			$interface_form->add_action_extension('add_reinit_view', $msg['stat_reinit_view'], static::format_url("&section=view_list&act=reinit&id_view=".$vue_id));
+		}
+		return $interface_form->get_display();
 	}
 	
 	/**
 	 * On fait appel au formulaire d'ajout de colonne
 	 */
 	public function do_col_form($id_col=''){
-		global $stat_view_addcol_form, $msg, $charset, $id_view; 
+		global $stat_view_addcol_content_form, $msg, $charset, $id_view; 
 		
-		$datatype_list=array("small_text"=>"Texte","text"=>"Texte large","integer"=>"Entier","date"=>"Date","datetime"=>"Date/Heure","float"=>"Nombre &agrave; virgule");
-		if(!$id_col)	{
-			$stat_view_addcol_form=str_replace("!!col_name!!",'',$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!expr_col!!",'',$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!btn_suppr!!",'',$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!expr_filtre!!",'',$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!id_view!!",$id_view,$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!id_col!!",$id_col,$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!col_title!!",$msg["stat_col_create_title"],$stat_view_addcol_form);
-						
-			//liste des type de données
-			$t_list="<select name='datatype'>\n";
-			reset($datatype_list);
-			foreach ($datatype_list as $key=>$val){
-				$t_list.="<option value='".$key."'";
-				$t_list.=">".$val."</option>\n";
-			}
-			$t_list.="</select>\n";
-			$stat_view_addcol_form=str_replace("!!datatype!!",$t_list,$stat_view_addcol_form);
-			
-			return $stat_view_addcol_form;
-		} else {
+		$id_col = intval($id_col);
+		$content_form = $stat_view_addcol_content_form;
+		
+		$interface_form = new interface_admin_opac_form('addview');
+		$col_name = '';
+		$expr = '';
+		$filtre = '';
+		$datatype = '';
+		if(!$id_col){
+			$interface_form->set_label($msg['stat_col_create_title']);
+		}else{
+			$interface_form->set_label($msg['stat_col_modif_title']);
 			$requete="select nom_col, expression, filtre, datatype from statopac_vues_col where id_col='".$id_col."'";
 			$resultat=pmb_mysql_query($requete);
 			while (($col=pmb_mysql_fetch_object($resultat))){
@@ -291,52 +279,59 @@ class stat_view {
 				$filtre = htmlentities($col->filtre,ENT_QUOTES,$charset);
 				$datatype = htmlentities($col->datatype,ENT_QUOTES,$charset);
 			}
-			$stat_view_addcol_form=str_replace("!!col_name!!",$col_name,$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!expr_col!!",$expr,$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!expr_filtre!!",$filtre,$stat_view_addcol_form);
-			$btn_suppr = "<input class='bouton' type='submit'  value='$msg[63]' onClick='if(confirm_delete()) this.form.act.value=\"suppr_col\"';/>";
-			$stat_view_addcol_form=str_replace("!!btn_suppr!!",$btn_suppr,$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!col_title!!",$msg["stat_col_modif_title"],$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!id_view!!",$id_view,$stat_view_addcol_form);
-			$stat_view_addcol_form=str_replace("!!id_col!!",$id_col,$stat_view_addcol_form);
-			
-			//liste des types de données
-			$t_list="<select name='datatype'>\n";
-			reset($datatype_list);
-			foreach ($datatype_list as $key=>$val){
-				$t_list.="<option value='".$key."'";
-				if ($datatype==$key) $t_list.=" selected";
-				$t_list.=">".$val."</option>\n";
-			}
-			$t_list.="</select>\n";
-			$stat_view_addcol_form=str_replace("!!datatype!!",$t_list,$stat_view_addcol_form);
-			
 		}
+		$content_form=str_replace("!!col_name!!",$col_name,$content_form);
+		$content_form=str_replace("!!expr_col!!",$expr,$content_form);
+		$content_form=str_replace("!!expr_filtre!!",$filtre,$content_form);
 		
-		return $stat_view_addcol_form;
+		//liste des types de données
+		$datatype_list=array("small_text"=>"Texte","text"=>"Texte large","integer"=>"Entier","date"=>"Date","datetime"=>"Date/Heure","float"=>"Nombre &agrave; virgule");
+		reset($datatype_list);
+		$t_list="<select name='datatype'>\n";
+		foreach ($datatype_list as $key=>$val){
+			$t_list.="<option value='".$key."'";
+			if ($datatype==$key) $t_list.=" selected";
+			$t_list.=">".$val."</option>\n";
+		}
+		$t_list.="</select>\n";
+		$content_form=str_replace("!!datatype!!",$t_list,$content_form);
+		
+		$interface_form->set_object_id($id_col)
+		->set_id_view($id_view)
+		->set_confirm_delete_msg($msg['confirm_suppr'])
+		->set_content_form($content_form)
+		->set_table_name('statopac_vues_col')
+		->set_field_focus('col_name');
+		return $interface_form->get_display();
 	}
 	
 	/**
 	 * On insere ou enregistre une colonne
 	 */
-	public function save_col($id_col='', $col_name='',$expr_col='',$expr_filtre='', $vue_id=''){
+	public function save_col($id_col=0, $id_view=0){
 		global $datatype;
+		global $col_name, $expr_col, $expr_filtre;
 		
-		if((!$id_col) && $vue_id){
-			$req_ordre = "select max(ordre) from statopac_vues_col where num_vue='".addslashes($vue_id)."'";
+		$id_col = intval($id_col);
+		$col_name = clean_string_to_base($col_name);
+		$expr_col = trim($expr_col);
+		$expr_filtre = trim($expr_filtre);
+		$id_view = intval($id_view);
+		if((!$id_col) && $id_view){
+			$req_ordre = "select max(ordre) from statopac_vues_col where num_vue='".addslashes($id_view)."'";
 			$resultat = pmb_mysql_query($req_ordre);
 			if($resultat) $order = pmb_mysql_result($resultat,0,0);
 			else $order=0;
 			$ordre = $order+1;
-			$req = "INSERT INTO statopac_vues_col(nom_col,expression,filtre,num_vue, ordre,datatype) VALUES ('".$col_name."', '".$expr_col."','".$expr_filtre."','".$vue_id."','".$ordre."', '".$datatype."')";
+			$req = "INSERT INTO statopac_vues_col(nom_col,expression,filtre,num_vue, ordre,datatype) VALUES ('".$col_name."', '".$expr_col."','".$expr_filtre."','".$id_view."','".$ordre."', '".$datatype."')";
 			$resultat=pmb_mysql_query($req);
 		} else {
-			$rqt="select * from statopac_vues_col where nom_col='".$col_name."' and expression='".$expr_col."' and num_vue='".$vue_id."' and filtre='".$expr_filtre."' and datatype='".$datatype."'";
+			$rqt="select * from statopac_vues_col where nom_col='".$col_name."' and expression='".$expr_col."' and num_vue='".$id_view."' and filtre='".$expr_filtre."' and datatype='".$datatype."'";
 			$res_exist = pmb_mysql_query($rqt);
 			if(pmb_mysql_num_rows($res_exist)){
 				$modif=0;
 			} else $modif=1;
-			$req = "UPDATE statopac_vues_col SET nom_col='".$col_name."', expression='".$expr_col."', num_vue='".$vue_id."', filtre='".$expr_filtre."', datatype='".$datatype."', maj_flag=$modif  WHERE id_col='".$id_col."'";
+			$req = "UPDATE statopac_vues_col SET nom_col='".$col_name."', expression='".$expr_col."', num_vue='".$id_view."', filtre='".$expr_filtre."', datatype='".$datatype."', maj_flag=$modif  WHERE id_col='".$id_col."'";
 			$resultat=pmb_mysql_query($req);
 		}
 	} 
@@ -451,7 +446,7 @@ class stat_view {
 		$ordre=pmb_mysql_result($resultat,0,0);
 		$requete="select min(ordre) as ordre from statopac_vues_col where ordre>".addslashes($ordre);
 		$resultat=pmb_mysql_query($requete);
-		$ordre_min=@pmb_mysql_result($resultat,0,0);
+		$ordre_min=pmb_mysql_result($resultat,0,0);
 		if ($ordre_min) {
 			$requete="select id_col from statopac_vues_col where ordre='".addslashes($ordre_min)."' limit 1";
 			$resultat=pmb_mysql_query($requete);
@@ -486,7 +481,7 @@ class stat_view {
 	public function do_import_req_form($vue_id=''){
 		global $stat_view_import_req_form;
 		
-		$action="./admin.php?categ=opac&sub=stat&section=importsuite&id_view=".$vue_id;
+		$action=static::format_url("&section=importsuite&id_view=".$vue_id);
 		$stat_view_import_req_form=str_replace("!!action!!",$action,$stat_view_import_req_form);
 		
 		return $stat_view_import_req_form;
@@ -524,6 +519,7 @@ class stat_view {
 			$arrayCols=array();
 			$tmpLignes=explode("\n",$contenu);
 			foreach ($tmpLignes as $ligne){
+				$out=array();
 				if(preg_match('`^\#col=(.+)`',$ligne,$out)){
 					$arrayCols[]=unserialize($out[1]);
 				}
@@ -547,6 +543,7 @@ class stat_view {
 					$contenu = str_replace('<?xml version=\"1.0\" encoding=\"utf-8\"?>', '<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>', $contenu) ;
 				}
 				//On distingue les différentes parties, la requête se trouve en $arrayFichier[2]
+				$arrayFichier=array();
 				preg_match('`(.+requete=\')(.+)(\', comment=\'.+)`s',$contenu,$arrayFichier);
 				unset($arrayFichier[0]);
 				//On va vérifier les colonnes de la vue existante
@@ -605,12 +602,12 @@ class stat_view {
 					if($nbColAjout){
 						$add_url='&alert_consolid=1';
 					}
-					print "<script type=\"text/javascript\">document.location='./admin.php?categ=opac&sub=stat&section=view_list&open_view=".$vue_id.$add_url."';</script>";
+					print "<script type=\"text/javascript\">document.location='".static::format_url("&section=view_list&open_view=".$vue_id.$add_url)."';</script>";
 				}
 			
 			} else {
 				print "<h1>".$msg['stat_import_invalide']."</h1>
-						<form class='form-$current_module' name=\"dummy\" method=\"post\" action=\"./admin.php?categ=opac&sub=stat&section=import&id_view=".$vue_id."\" >
+						<form class='form-$current_module' name=\"dummy\" method=\"post\" action=\"".static::format_url("&section=import&id_view=".$vue_id)."\" >
 						Error code = $erreur
 						<input type='submit' class='bouton' name=\"id_form\" value=\"Ok\" />
 						</form>";
@@ -624,7 +621,7 @@ class stat_view {
 		}else{
 			$erreur=1;
 			print "<h1>".$msg['stat_import_invalide']."</h1>
-			<form class='form-$current_module' name=\"dummy\" method=\"post\" action=\"./admin.php?categ=opac&sub=stat&section=import&id_view=".$vue_id."\" >
+			<form class='form-$current_module' name=\"dummy\" method=\"post\" action=\"".static::format_url("&section=import&id_view=".$vue_id)."\" >
 			Error code = $erreur
 			<input type='submit' class='bouton' name=\"id_form\" value=\"Ok\" />
 			</form>";
@@ -639,6 +636,12 @@ class stat_view {
 			return pmb_mysql_result($result, 0, 'id_vue');
 		}
 		return 0;
+	}
+	
+	protected static function format_url($url='') {
+		global $base_path;
+		
+		return $base_path.'/admin.php?categ=opac&sub=stat'.$url;
 	}
 }
 ?>

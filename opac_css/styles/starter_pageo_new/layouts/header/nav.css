@@ -1,0 +1,43 @@
+#pmb_menu_desktop .pmb_menu_item {
+    position: relative;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#pmb_menu_desktop .pmb_title_arrow {
+    padding-right: 24px;
+}
+
+#pmb_menu_desktop .pmb_title_arrow button:after {
+    content: url("../../images/chevron-down.png");
+    position: absolute;
+    right: 0;
+    top: 3px;
+    transition: var(--transition);
+}
+
+#pmb_menu_desktop .pmb_title_arrow button[aria-expanded="true"]:after {
+    transform: rotate(180deg);
+    transition: var(--transition);
+}
+
+#pmb_menu_desktop .pmb_menu_item button {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: block;
+    left: 0;
+    top: 0;
+}
+
+.pmb_menu_dropdown ul {
+    display: flex;
+    flex-direction: column;
+}
+
+.pmb_menu_child_item {
+    font: var(--font-link);
+    color: var(--c-primary);
+    margin: 4px;
+}

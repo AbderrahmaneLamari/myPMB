@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: users_group.class.php,v 1.2 2021/02/19 12:44:46 dgoron Exp $
+// $Id: users_group.class.php,v 1.2.6.1 2023/06/28 08:03:03 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -37,9 +37,15 @@ class users_group {
 		$this->name = $data->grp_name;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_libelle', 'admin_usr_grp_lib')
+		->add_input_node('text', $this->name);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $msg, $charset;
-		global $admin_group_content_form;
+		global $msg;
 		
 		//Evenement publié
 		$evt_handler = events_handler::get_instance();
@@ -47,20 +53,15 @@ class users_group {
 		$event->set_group_id($this->id);
 		$evt_handler->send($event);
 		
-		$content_form = $admin_group_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
-		
 		$interface_form = new interface_admin_form('groupform');
 		if(!$this->id){
 			$interface_form->set_label($msg['admin_usr_grp_add']);
 		}else{
 			$interface_form->set_label($msg['admin_usr_grp_mod']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('users_groups')
 		->set_field_focus('form_libelle');
 		return $interface_form->get_display();

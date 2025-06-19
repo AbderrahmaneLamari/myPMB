@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: demandes_notices.class.php,v 1.8.4.1 2021/12/27 12:55:17 dgoron Exp $
+// $Id: demandes_notices.class.php,v 1.9 2021/12/27 12:52:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

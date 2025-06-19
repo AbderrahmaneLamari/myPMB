@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: extended_search_dnd.tpl.php,v 1.4.2.5 2021/11/03 15:48:49 tsamson Exp $
+// $Id: extended_search_dnd.tpl.php,v 1.9 2021/11/03 15:59:24 tsamson Exp $
 
 global $extended_search_dnd_tpl, $extended_search_dnd_tab_tpl; 
 global $msg, $javascript_path; 

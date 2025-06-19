@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2012 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cms_module_common_datasource_records_similar_cote.class.php,v 1.6.12.1 2022/01/10 08:35:26 dgoron Exp $
+// $Id: cms_module_common_datasource_records_similar_cote.class.php,v 1.7 2022/01/10 08:31:27 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

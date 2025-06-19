@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_serialcirc_ask_ui.class.php,v 1.10.2.2 2022/01/13 10:59:53 dgoron Exp $
+// $Id: list_serialcirc_ask_ui.class.php,v 1.13.4.1 2023/09/28 10:41:08 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -177,47 +177,13 @@ class list_serialcirc_ask_ui extends list_serialcirc_ui {
 		return $filter_join_query;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['location']) {
-			$filters [] = 'empr_location = "'.$this->filters['location'].'"';
-		}
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('location', 'empr_location', 'integer');
 		if($this->filters['type'] !== -1) {
-			$filters [] = 'serialcirc_ask_type = "'.$this->filters['type'].'"';
+			$this->query_filters [] = 'serialcirc_ask_type = "'.$this->filters['type'].'"';
 		}
 		if($this->filters['status'] !== -1) {
-			$filters [] = 'serialcirc_ask_statut = "'.$this->filters['status'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= $this->_get_query_join_filters();
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
-	}
-	
-	/**
-	 * Fonction de callback
-	 * @param object $a
-	 * @param object $b
-	 */
-	protected function _compare_objects($a, $b) {
-		if($this->applied_sort[0]['by']) {
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'serial':
-					//Pour éviter un long traitement
-					break;
-				default :
-					return parent::_compare_objects($a, $b);
-					break;
-			}
+			$this->query_filters [] = 'serialcirc_ask_statut = "'.$this->filters['status'].'"';
 		}
 	}
 			
@@ -241,6 +207,10 @@ class list_serialcirc_ask_ui extends list_serialcirc_ui {
 	protected function _get_object_property_type($object) {
 		global $msg;
 		return $msg['serialcirc_asklist_type_'.$object->ask_info['type']];
+	}
+	
+	protected function _get_object_property_serial($object) {
+	    return $object->ask_info['perio']['header'];
 	}
 	
 	protected function _get_object_property_status($object) {

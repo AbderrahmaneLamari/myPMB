@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment.tpl.php,v 1.12.2.7 2021/11/08 16:18:04 qvarin Exp $
+// $Id: search_segment.tpl.php,v 1.19 2021/11/08 16:21:21 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 

@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: comptabilite.inc.php,v 1.23.2.1 2021/12/22 10:43:26 dgoron Exp $
+// $Id: comptabilite.inc.php,v 1.26 2022/07/08 12:24:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-global $class_path, $include_path, $action, $ent, $id, $libelle, $msg, $date_deb, $date_fin, $def;
+global $class_path, $include_path, $action, $ent, $id_entity, $id_bibli, $id, $libelle, $msg, $date_deb, $date_fin, $def;
 
 // gestion des exercices comptables
 require_once("$class_path/entites.class.php");
@@ -24,7 +24,6 @@ function show_list_biblio() {
 	$user_userid=$row_user[0];
 
 	//Affichage de la liste des etablissements auxquels a acces l'utilisateur
-	$aff = "<table>";
 	$q = entites::list_biblio($user_userid);
 	$res = pmb_mysql_query($q);
 	$nbr = pmb_mysql_num_rows($res);
@@ -45,19 +44,7 @@ function show_list_biblio() {
 		$row = pmb_mysql_fetch_object($res);
 		show_list_exer($row->id_entite);		
 	} else {
-		$parity=1;
-		while($row=pmb_mysql_fetch_object($res)){
-			if ($parity % 2) {
-				$pair_impair = "even";
-			} else {
-				$pair_impair = "odd";
-			}
-			$parity += 1;
-			$tr_javascript=" onmouseover=\"this.className='surbrillance'\" onmouseout=\"this.className='$pair_impair'\" onmousedown=\"document.location='./admin.php?categ=acquisition&sub=compta&action=list&ent=$row->id_entite';\" ";
-	        $aff.= "<tr class='$pair_impair' $tr_javascript style='cursor: pointer'><td><i>$row->raison_sociale</i></td></tr>";
-		}
-		$aff.= "</table>";
-		print $aff;
+		print list_accounting_entites_ui::get_instance(array('num_user' => $user_userid))->get_display_list();
 	}
 }
 
@@ -70,42 +57,12 @@ function show_list_exer($id_entite) {
 	print list_configuration_acquisition_compta_ui::get_instance(array('num_entite' => $id_entite))->get_display_list();
 }
 
-function confirmation_cloture($url) {
-	global $msg;
-	
-	return "<script type='text/javascript'>
-		function confirmation_cloture(param,element) {
-        	result = confirm(\"".$msg['acquisition_compta_confirm_clot']." '\"+element+\"' ?\");
-        	if(result) document.location = \"$url\"+param ;
-		}</script>";
+if(empty($ent) && !empty($id_entity)) {
+	$ent = $id_entity;
 }
-
-function confirmation_suppression($url) {
-	global $msg;
-	
-	return "<script type='text/javascript'>
-		function confirmation_suppression(param,element) {
-        	result = confirm(\"".$msg['acquisition_compta_confirm_suppr']." '\"+element+\"' ?\");
-        	if(result) document.location = \"$url\"+param ;
-		}</script>";
+if(empty($ent) && !empty($id_bibli)) {
+	$ent = $id_bibli;
 }
-?>
-
-<script type='text/javascript'>
-function test_form(form)
-{
-	if(form.libelle.value.length == 0)
-	{
-		alert("<?php echo $msg[98]; ?>");
-		document.forms['exerform'].elements['libelle'].focus();
-		return false;	
-	}
-	return true;
-}
-</script>
-
-<?php
-
 switch($action) {
 	case 'list':
 		show_list_exer($ent);
@@ -122,10 +79,11 @@ switch($action) {
 			show_list_exer($ent);
 		}
 		break;
+	case 'save':
 	case 'update':
 		// vérification validité des données fournies.
 		//Pas deux libelles d'exercices identiques pour la même entité
-		$nbr = exercices::existsLibelle($ent, $libelle, $id);		
+		$nbr = exercices::existsLibelle($ent, stripslashes($libelle), $id);		
 		if ( $nbr > 0 ) {
 			error_form_message($libelle.$msg["acquisition_compta_already_used"]);
 			break;
@@ -144,6 +102,7 @@ switch($action) {
 		show_list_exer($ent);
 		break;
 	case 'del':
+	case 'delete':
 		if($id) {
 			$total1 = exercices::hasBudgetsActifs($id);
 			$total2 = exercices::hasActesACtifs($id);
@@ -163,6 +122,7 @@ switch($action) {
 		}
 		break;
 	case 'clot':
+	case 'cloture':
 		//On vérifie que tous les budgets sont cloturés et toutes les commandes archivées
 		if($id) {
 			$total1 = exercices::hasBudgetsActifs($id);

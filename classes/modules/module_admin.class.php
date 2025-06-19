@@ -2,12 +2,13 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: module_admin.class.php,v 1.18.2.1 2021/11/25 14:31:39 dgoron Exp $
+// $Id: module_admin.class.php,v 1.23.4.1 2023/07/13 12:47:04 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path, $include_path;
 require_once($class_path."/modules/module.class.php");
+require_once($class_path."/parameters/parameter.class.php");
 require_once($include_path."/templates/modules/module_admin.tpl.php");
 
 class module_admin extends module{
@@ -27,7 +28,9 @@ class module_admin extends module{
 				misc_tables_data_controller::proceed($this->object_id);
 				break;
 			case 'mysql':
-				include("./admin/misc/mysql.inc.php");
+				$this->load_class("/misc/misc_mysql_controller.class.php");
+				misc_mysql_controller::proceed_info();
+				misc_mysql_controller::proceed($this->object_id);
 				break;
 			case 'files':
 				$this->load_class("/misc/files/misc_files.class.php");
@@ -165,13 +168,19 @@ class module_admin extends module{
 						print encoding_normalize::utf8_normalize($misc_file->get_form());
 						break;
 					case 'get_contents':
-						$misc_file = misc_files::get_model_instance($path, $filename);
-						$is_writable_dir = 0;
-						if(is_writable($path)) {
-							$is_writable_dir = 1;
+						//On ne permet pas de voir le contenu des fichiers autres que xml
+						if(substr(strtolower($filename),-4,4) != ".xml") {
+							header('Content-type: application/json;charset=utf-8');
+							print encoding_normalize::json_encode(array('contents' => "no access", 'is_writable_dir' => 0));
+						} else {
+							$misc_file = misc_files::get_model_instance($path, $filename);
+							$is_writable_dir = 0;
+							if(is_writable($path)) {
+								$is_writable_dir = 1;
+							}
+							header('Content-type: application/json;charset=utf-8');
+							print encoding_normalize::json_encode(array('contents' => $misc_file->get_contents(), 'is_writable_dir' => $is_writable_dir));
 						}
-						header('Content-type: application/json;charset=utf-8');
-						print encoding_normalize::json_encode(array('contents' => $misc_file->get_contents(), 'is_writable_dir' => $is_writable_dir));
 						break;
 					case 'save_contents':
 						$misc_file = misc_files::get_model_instance($path, $filename);
@@ -221,5 +230,109 @@ class module_admin extends module{
 				print encoding_normalize::json_encode(array());
 				break;
 		}
+	}
+	
+	public function proceed_mails() {
+		global $sub;
+		
+		switch($sub) {
+			case 'configuration':
+				$this->load_class("/mails/mails_configuration_controller.class.php");
+				mails_configuration_controller::proceed($this->object_id);
+				break;
+			case 'settings':
+				$this->load_class("/mails/mails_settings_controller.class.php");
+				mails_settings_controller::proceed($this->object_id);
+				break;
+		}
+	}
+	
+	public function proceed_interface() {
+		global $sub, $action;
+		global $name;
+		
+		switch($sub) {
+			case 'lists':
+				$this->load_class("/list/lists_ui_controller.class.php");
+				lists_ui_controller::proceed($this->object_id);
+				break;
+			case 'modules':
+				$this->load_class("/modules/module_model.class.php");
+				switch($action){
+					case 'edit':
+						if(isset($name) && $name) {
+							$model_instance = new module_model($name);
+							print $model_instance->get_form();
+						}
+						break;
+					case 'save':
+						$model_instance = new module_model($name);
+						$model_instance->set_properties_from_form();
+						$model_instance->save();
+						
+						$list_modules_ui = new list_modules_ui();
+						print $list_modules_ui->get_display_list();
+						break;
+					case 'delete':
+						module_model::delete($name);
+						
+						$list_modules_ui = new list_modules_ui();
+						print $list_modules_ui->get_display_list();
+						break;
+					default :
+						$list_modules_ui = new list_modules_ui();
+						print $list_modules_ui->get_display_list();
+						break;
+				}
+				break;
+			case 'tabs':
+				$this->load_class("/tabs/tab_controller.class.php");
+				tabs_controller::proceed($this->object_id);
+				break;
+			case 'selectors':
+				$this->load_class("/selectors/selectors_controller.class.php");
+				selectors_controller::proceed($this->object_id);
+				break;
+			case 'forms':
+				$this->load_class("/forms/forms_controller.class.php");
+				forms_controller::proceed($this->object_id);
+				break;
+		}
+	}
+	
+	public function proceed_supervision() {
+		global $sub;
+		global $supervision_mails_active;
+		global $supervision_logs_active;
+		
+		switch($sub) {
+			case 'mails':
+				print "
+				<div class='row'>
+					".parameter::get_input_activation('supervision', 'mails_active', $supervision_mails_active)."
+				</div>
+				";
+				$this->load_class("/mails/mails_controller.class.php");
+				mails_controller::proceed($this->object_id);
+				break;
+			case 'mails_waiting':
+				$this->load_class("/mails/mails_waiting_controller.class.php");
+				mails_waiting_controller::proceed($this->object_id);
+				break;
+			case 'logs':
+				print "
+				<div class='row'>
+					".parameter::get_input_activation('supervision', 'logs_active', $supervision_logs_active)."
+				</div>
+				";
+				$this->load_class("/logs/logs_controller.class.php");
+				logs_controller::proceed($this->object_id);
+				break;
+				
+		}
+	}
+	
+	public function proceed_audit() {
+		print list_audit_ui::get_instance()->get_display_list();
 	}
 }

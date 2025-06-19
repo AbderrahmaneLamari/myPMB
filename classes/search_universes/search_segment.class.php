@@ -2,10 +2,13 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: search_segment.class.php,v 1.25.2.7 2021/11/10 10:35:25 gneveu Exp $
+// $Id: search_segment.class.php,v 1.35.4.6 2023/09/07 13:46:40 rtigero Exp $
+
+use Pmb\Common\Helper\HelperEntities;
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path, $include_path;
 require_once($class_path.'/search_universes/search_segment_set.class.php');
 require_once($class_path.'/search_universes/search_segment_search_perso.class.php');
 require_once($class_path.'/search_universes/search_segment_facets.class.php');
@@ -56,6 +59,8 @@ class search_segment {
 	
 	protected $rmc_enabled = 0;
 	
+	protected $search_segment_data = null;
+	
 	public function __construct($id = 0){
 		$this->id = intval($id);
 		$this->fetch_data();
@@ -89,6 +94,9 @@ class search_segment {
 				$this->facets = new search_segment_facets($this->id);
 				$this->facets->set_segment_type($this->type);
 				$this->rmc_enabled = $row["search_segment_rmc_enabled"];
+				if (isset($row["search_segment_data"])) {
+    				$this->search_segment_data = json_decode(stripslashes($row["search_segment_data"]));
+				}
 				$this->get_search_universes_associate();
 			}
 		}
@@ -101,7 +109,7 @@ class search_segment {
 		global $search_segment_content_form;
 		global $universe_id;
 		global $pmb_opac_url;
-	
+
 		$content_form = $search_segment_content_form;
 		$content_form = str_replace('!!segment_label!!', htmlentities($this->label, ENT_QUOTES, $charset), $content_form);
 		$content_form = str_replace('!!segment_logo!!', htmlentities($this->logo, ENT_QUOTES, $charset), $content_form);
@@ -109,8 +117,8 @@ class search_segment {
 		$content_form = str_replace('!!segment_type!!', $this->get_list_entity_options($this->type), $content_form);
 		$content_form = str_replace('!!segment_rmc_enabled!!', (($this->rmc_enabled) ? 'checked':''), $content_form);
 		
-		$interface_form = new interface_form('search_segment_form');
-
+		$interface_form = new interface_admin_segment_form('search_segment_form');
+		$interface_form->set_duplicable(true);
 		if($this->id){
 			$interface_form->set_label($msg['search_segment_edit']);
 			$content_form = str_replace('!!segment_universe_id!!', $this->num_universe, $content_form);
@@ -147,11 +155,20 @@ class search_segment {
 			$content_form = str_replace('!!segment_filter_form!!', "", $content_form);
 		}
 		$content_form = str_replace('!!segment_id!!', $this->id, $content_form);
+		$namespace = HelperEntities::get_entities_namespace();
+		$classname = "search_segment_" . $namespace[$this->type];
+		if (class_exists($classname)) {
+			$content_form = str_replace('!!segment_additional!!', call_user_func([$classname, "get_additional"], $this->search_segment_data), $content_form);
+		} else {
+		    $content_form = str_replace('!!segment_additional!!', "", $content_form);
+		}
 		$interface_form->set_url_base($base_path."/admin.php?categ=search_universes&sub=segment");
 		$interface_form->set_content_form($content_form);
-		$interface_form->set_table_name('search_universes');
+		$interface_form->set_table_name('search_segments');
 		if ($ajax) {
 		    $interface_form->set_url_base($base_path."/ajax.php?module=admin&categ=search_universes&sub=segment");
+			$universes = search_universe::get_universe_list();
+			$interface_form->set_universe_select_data($universes, $this->num_universe);
 		    return $interface_form->get_display_ajax();
 		}
 		return $interface_form->get_display();
@@ -177,13 +194,19 @@ class search_segment {
 		
 		$this->logo = $segment_logo;
 		$this->num_universe = $segment_universe_id;
-		if (method_exists($this->sort, 'get_sort_from_form')){
+		if (is_object($this->sort) && method_exists($this->sort, 'get_sort_from_form')){
     		$this->segment_sort = $this->sort->get_sort_from_form();
 		}
 		
 		$this->search_universes_associate = array();
 		if(!empty($search_universes_associate) && is_array($search_universes_associate)) {
 		    $this->search_universes_associate = $search_universes_associate;
+		}
+		
+		$namespace = HelperEntities::get_entities_namespace();
+		if (class_exists("search_segment_" . $namespace[$this->type])) {
+			$classname = "search_segment_" . $namespace[$this->type];
+			$this->search_segment_data = call_user_func([$classname, "get_properties_from_form"]);
 		}
 	}
 	
@@ -207,7 +230,8 @@ class search_segment {
 				search_segment_order = "'.$this->order.'",
 				search_segment_logo = "'.$this->logo.'",
 				search_segment_sort = "'.$this->segment_sort.'",
-                search_segment_rmc_enabled = '.$this->rmc_enabled;
+                search_segment_rmc_enabled = '.$this->rmc_enabled.',
+                search_segment_data = "' . addslashes(json_encode($this->search_segment_data)) . '"';
 		pmb_mysql_query($query.$query_clause);
 		if(!$this->id){
 			$this->id = pmb_mysql_insert_id();			
@@ -228,16 +252,24 @@ class search_segment {
 		
 		$index = count($this->search_universes_associate);
 		for ($i = 0; $i < $index; $i++) {
+			//On se tire si on associe notre univers à notre univers
+			//Possible en cas de duplication vers un autre univers par ex
+			if($this->search_universes_associate[$i] == $this->num_universe) {
+				continue;
+			}
 		    $query = "INSERT INTO search_segments_associated_universes SET num_segment = '" . $this->id ."', num_universe = '" . $this->search_universes_associate[$i] ."'";
 		    pmb_mysql_query($query);
 		}
+		$translation = new translation($this->id, "search_segments");
+		$translation->update("segment_label", "segment_label");
+		$translation->update("segment_description", "segment_description");
 	}
 	
 	public static function delete($id=0) {
 	    $id = intval($id);
-		if (!isset($id)) {
-		    return;
-		}
+	    if (!$id) {
+	    	return;
+	    }
 		$query = "delete from search_segments where id_search_segment = ".$id;
 		pmb_mysql_query($query);
 		search_segment_facets::delete($id);
@@ -354,9 +386,12 @@ class search_segment {
 	    $entities = $this->get_list_entities();
 	    $html = '';
 	    foreach ($entities as $type => $entity) {
-	        switch ($type) {
-	            case 'authperso':
+	        switch (true) {
+	            case $type == 'authperso':
 	                $html .= "<optgroup label='".htmlentities($msg['authperso_multi_search_title'], ENT_QUOTES, $charset)."'>";
+	                break;
+	            case $type != 'default':
+	                $html .= "<optgroup label='".htmlentities($type, ENT_QUOTES, $charset)."'>";
 	                break;
 	            default:
 	                break;
@@ -373,12 +408,13 @@ class search_segment {
 	
 	public function get_list_entities() {
 	    global $msg, $pmb_use_uniform_title, $thesaurus_concepts_active;
-	    
+	    global $animations_active;
+
 	    $entities = array('default' => array(
 	        TYPE_NOTICE => $msg[130],
 	        TYPE_AUTHOR => $msg[133] 
 	    ));
-	    
+
 	    if (SESSrights & THESAURUS_AUTH) {
 	        $entities['default'][TYPE_CATEGORY] = $msg[134];
 	    }
@@ -393,17 +429,21 @@ class search_segment {
 	    if ($thesaurus_concepts_active==true && (SESSrights & CONCEPTS_AUTH)) {
 	        $entities['default'][TYPE_CONCEPT] = $msg['ontology_skos_menu'];
 	    }
-        
+
 	    $entities['default'][TYPE_EXTERNAL] = $msg['facettes_external_records'];
-	    
+
 	    $authpersos = new authpersos();
 	    foreach ($authpersos->get_authpersos() as $authperso) {
 	        $entities['authperso'][$authperso['id']+1000] = $authperso['name'];
 	    }
-	    
-	    //$entities[TYPE_CMS_SECTION] = $msg['cms_menu_editorial_section'];
-	    //$entities[TYPE_CMS_ARTICLE] = $msg['cms_menu_editorial_article'];
-	    
+	    $ontologies = new ontologies();
+	    $entities = array_merge($entities,$ontologies->get_available_segments());
+
+ 	    $entities['default'][TYPE_CMS_EDITORIAL] = $msg['cms_menu_editorial'];
+
+	    if ($animations_active) {
+	        $entities['default'][TYPE_ANIMATION] = $msg['animation_base_title'];
+	    }
 	    return $entities;
 	}
 	
@@ -418,11 +458,11 @@ class search_segment {
 	}
 	
 	public function get_translated_label() {
-		return translation::get_text($this->id, 'search_segments', 'search_segment_label',  $this->label);
+		return translation::get_translated_text($this->id, 'search_segments', 'segment_label',  $this->label);
 	}
 	
 	public function get_translated_description() {
-		return translation::get_text($this->id, 'search_segments', 'search_segment_description',  $this->description);
+		return translation::get_translated_text($this->id, 'search_segments', 'segment_description',  $this->description);
 	}
 	
 	protected function get_default_segment_from_universe() {
@@ -443,7 +483,6 @@ class search_segment {
 	
 	protected function get_filter_form(){
 	    global $search_segment_filter_form;
-	    
 	    $html = $search_segment_filter_form;
 	    $html = str_replace('!!segment_set_form!!', $this->get_set()->get_form(), $html);
          
@@ -532,5 +571,53 @@ class search_segment {
 	        }
 	    }
 	    return $this->search_universes_associate;
+	}
+	
+    public static function get_additional($search_segments_data)
+    {
+        return "";
+    }
+
+	/**
+	 * Duplique le segment dans le ou les univers passes en parametre
+	 */
+	public function duplicate($universes = array())
+	{
+		global $segment_search_perso;
+
+		$duplicate = clone $this;
+		$facets = $this->facets->get_facets();
+		$set = $this->get_set();
+		$sortQuery = "SELECT search_segment_sort FROM search_segments WHERE id_search_segment = '{$this->get_id()}'";
+		$segmentSort = pmb_mysql_result(pmb_mysql_query($sortQuery), 0, 0);
+		$segment_search_perso = $this->search_perso->get_search_perso();
+		$duplicate->set_segment_sort();
+		$duplicate->id = 0;
+		$duplicate->facets = null;
+		$duplicate->set = null;
+		
+		foreach($universes as $universeId) {
+			global $segment_facets;
+			$segment_facets = $facets;
+			$duplicate->num_universe = $universeId;
+			$duplicate->segment_sort = $segmentSort;
+			$duplicate->save();
+			$newSet = new search_segment_set($duplicate->get_id());
+			$newSet->set_data_set($set->get_data_set());
+			$newSet->update();
+			$newSearchPerso = new search_segment_search_perso($duplicate->get_id());
+			$newSearchPerso->set_search_perso($segment_search_perso);
+			$newSearchPerso->save();
+
+			$duplicate->id = 0;
+			$duplicate->facets = null;
+			$duplicate->set = null;
+		}
+		return $duplicate;
+	}
+
+	public function set_segment_sort($sort = "")
+	{
+		$this->segment_sort = $sort;
 	}
 }

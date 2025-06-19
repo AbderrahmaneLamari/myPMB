@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: nomenclature_musicstand.class.php,v 1.16 2021/01/28 08:04:54 dgoron Exp $
+// $Id: nomenclature_musicstand.class.php,v 1.17.4.2 2023/07/21 12:59:24 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/nomenclature/nomenclature_instrument.class.php");
-
 
 /**
  * class nomenclature_musicstand
@@ -84,6 +84,11 @@ class nomenclature_musicstand {
 	 */
 	protected $order;
 	
+	/**
+	 * Tableau d'instances
+	 * @var array
+	 */
+	protected static $instances = array();
 	
 	/**
 	 * Constructueur
@@ -106,7 +111,7 @@ class nomenclature_musicstand {
 				while($row = pmb_mysql_fetch_object($result)){
 					$this->set_name($row->musicstand_name);
 					if($row->id_instrument){
-						$this->set_standard_instrument(new nomenclature_instrument($row->id_instrument,$row->instrument_code,$row->instrument_name));
+						$this->set_standard_instrument(nomenclature_instrument::get_instance($row->id_instrument));
 					}
 					$this->order = $row->musicstand_order;
 					$this->set_divisable($row->musicstand_division);
@@ -117,22 +122,16 @@ class nomenclature_musicstand {
 		}
 	}
 	
-	public function get_form() {
-		global $nomenclature_family_musicstand_content_form_tpl,$msg,$charset;
+	public function get_content_form() {
+		global $msg;
 		
-		$content_form = $nomenclature_family_musicstand_content_form_tpl;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
-		
-		$interface_form = new interface_admin_nomenclature_form('nomenclature_family_musicstand_form');
-		$family_name = "<a href='./admin.php?categ=family&sub=family&action=form&id=".$this->get_family()->get_id()."'>".$this->get_family()->get_name()."</a>";
-		if(!$this->id){
-			$interface_form->set_label(str_replace('!!famille_name!!',$family_name,$msg['admin_nomenclature_family_musicstand_form_add']));
-		}else{
-			$interface_form->set_label(str_replace('!!famille_name!!',$family_name,$msg['admin_nomenclature_family_musicstand_form_edit']));
-		}
-		$content_form = str_replace('!!name!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		$content_form=str_replace('!!checked!!',($this->divisable ? "checked='checked'" : ""), $content_form);
-		$content_form=str_replace('!!workshop_checked!!',($this->used_by_workshops ? "checked='checked'" : ""), $content_form);
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('name', 'admin_nomenclature_family_musicstand_form_name')
+		->add_input_node('text', $this->name);
+		$interface_content_form->add_element('division', 'admin_nomenclature_family_musicstand_form_division')
+		->add_input_node('boolean', $this->divisable);
+		$interface_content_form->add_element('workshop', 'admin_nomenclature_family_musicstand_form_workshop')
+		->add_input_node('boolean', $this->used_by_workshops);
 		
 		$tpl_instruments="";
 		if($this->id){
@@ -180,12 +179,26 @@ class nomenclature_musicstand {
 			if(!$flag_checked)	$checked="checked";else $checked="";
 			$tpl_instruments=str_replace('!!checked!!',$checked,$tpl_instruments);
 		}
-		$content_form=str_replace('!!instruments!!',$tpl_instruments,$content_form);
+		$interface_content_form->add_element('instruments', 'admin_nomenclature_family_musicstand_form_instruments')
+		->add_html_node($tpl_instruments);
 		
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
+		
+		$interface_form = new interface_admin_nomenclature_form('nomenclature_family_musicstand_form');
+		$family_name = "<a href='./admin.php?categ=family&sub=family&action=form&id=".$this->get_family()->get_id()."'>".$this->get_family()->get_name()."</a>";
+		if(!$this->id){
+			$interface_form->set_label(str_replace('!!famille_name!!',$family_name,$msg['admin_nomenclature_family_musicstand_form_add']));
+		}else{
+			$interface_form->set_label(str_replace('!!famille_name!!',$family_name,$msg['admin_nomenclature_family_musicstand_form_edit']));
+		}
 		$interface_form->set_object_id($this->id)
 		->set_object_type('family_musicstand')
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('nomenclature_musicstands')
 		->set_field_focus('name');
 		return $interface_form->get_display();
@@ -296,7 +309,7 @@ class nomenclature_musicstand {
 	 */
 	public function get_family( ) {
 		if(!isset($this->family) && $this->family_num) {
-			$this->family = new nomenclature_family($this->family_num);
+			$this->family = nomenclature_family::get_instance($this->family_num);
 		}
 		return $this->family;
 	} // end of member function get_family
@@ -374,13 +387,13 @@ class nomenclature_musicstand {
 	 * @return nomenclature_instrument
 	 * @access public
 	 */
-	public function get_instruments( ) {
-		if(!isset($this->instruments)) {
+	public function get_instruments($keepEmpty = false) {
+	    if(!isset($this->instruments) && !$keepEmpty) {
 			$query = "select * from nomenclature_instruments where instrument_musicstand_num=". $this->id." order by instrument_code";
 			$result = pmb_mysql_query($query);
 			if (pmb_mysql_num_rows($result)) {
 				while($row=pmb_mysql_fetch_object($result)){
-					$this->add_instrument(new nomenclature_instrument($row->id_instrument,$row->instrument_code,$row->instrument_name));
+					$this->add_instrument(nomenclature_instrument::get_instance($row->id_instrument));
 				}
 			}
 		}
@@ -586,6 +599,13 @@ class nomenclature_musicstand {
 			$this->set_abbreviation("0");
 		}
 	} // end of member function calc_abbreviation
+	
+	public static function get_instance($id) {
+		if(!isset(static::$instances[$id])) {
+			static::$instances[$id] = new nomenclature_musicstand($id);
+		}
+		return static::$instances[$id];
+	}
 
 } // end of nomenclature_musicstand
 

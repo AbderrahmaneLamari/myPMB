@@ -3,7 +3,7 @@
 ****************************************************************************************
 © 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 ****************************************************************************************
-$Id: manifest.xml,v 1.12 2021/02/25 13:47:42 dbellamy Exp $ -->
+$Id: manifest.xml,v 1.12.6.1 2023/03/15 09:31:54 dbellamy Exp $ -->
 <manifest>
 	<name>pmbesOPACGeneric</name>
 	<description>msg:pmbesOPACGeneric_description</description>
@@ -178,5 +178,28 @@ $Id: manifest.xml,v 1.12 2021/02/25 13:47:42 dbellamy Exp $ -->
 				<result name="result" type="scalar" dataType="array" description="msg:get_marc_table_result"/>
 			</outputs>
 		</method>
+         <method name="selector" rights="" version="1.0" comment="msg:selector_get_description" language_independant="false">
+            <pmb_requirements>
+                <pmb_requirement start_path="class" file="encoding_normalize.class.php"/>
+                <pmb_requirement start_path="class" file="thesaurus.class.php"/>
+                <pmb_requirement start_path="class" file="categories.class.php"/>
+                <pmb_requirement start_path="class" file="search_authorities.class.php"/>
+            </pmb_requirements>
+            <inputs>
+                <description>msg:selector_get_inputs_description</description>
+                <param name="type" type="scalar" dataType="string" description="msg:selector_get_inputs_type" />
+                <param name="search" type="scalar" dataType="string" optional="yes" description="msg:selector_get_inputs_search" />
+                <param name="filter" type="scalar" dataType="string" optional="yes" description="msg:selector_get_inputs_filter" />
+                <param name="exclude" type="scalar" dataType="string" optional="yes" description="msg:selector_get_inputs_exclude" />
+            </inputs>
+            <outputs>
+                <description>msg:selector_get_outputs_description</description>            
+                <result type="array" name="results" description="msg:selector_get_outputs_results">
+                    <result name="id"  type="scalar" dataType="string" description="msg:selector_get_outputs_id"/>
+                    <result name="label" type="scalar" dataType="string" description="msg:selector_get_outputs_label"/>
+                    <result name="short_label" type="scalar" dataType="string" optional="yes" description="msg:selector_get_outputs_short_label"/>
+                </result>
+            </outputs>
+        </method>
 	</methods>
 </manifest>

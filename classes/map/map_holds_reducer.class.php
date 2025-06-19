@@ -3,7 +3,7 @@
 // +-------------------------------------------------+
 // © 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: map_holds_reducer.class.php,v 1.15.4.2 2022/01/07 14:02:04 dgoron Exp $
+// $Id: map_holds_reducer.class.php,v 1.17 2022/01/07 14:00:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php"))
     die("no access");

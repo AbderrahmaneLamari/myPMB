@@ -2,11 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cart.tpl.php,v 1.70.2.2 2021/07/16 08:43:43 dgoron Exp $
+// $Id: cart.tpl.php,v 1.74 2022/05/12 06:53:41 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
-global $quelle, $include_path, $cart_form, $msg, $current_module, $liaison_tpl, $pmb_rfid_activate, $pmb_rfid_serveur_url, $rfid_port, $expl_cb_caddie_tmpl, $begin_result_expl_liste_unique, $cart_procs_form, $cart_proc_view_remote, $notice_linked_suppr_form, $bull_liked_suppr_form, $cart_choix_quoi, $cart_choix_quoi_not_ou_dep, $cart_choix_quoi_action, $cart_transfert_not_movable_expl_table, $cart_choix_quoi_exporter, $cart_choix_quoi_edition, $cart_choix_quoi_impr_cote, $cart_action_selector, $cart_action_selector_line, $cart_transfert_not_movable_expl_table_line;
+global $quelle, $include_path, $cart_content_form, $msg, $current_module, $liaison_tpl, $pmb_rfid_activate, $pmb_rfid_serveur_url, $rfid_port, $expl_cb_caddie_tmpl, $begin_result_expl_liste_unique, $cart_procs_form, $cart_proc_view_remote, $notice_linked_suppr_form, $bull_liked_suppr_form, $cart_choix_quoi, $cart_choix_quoi_not_ou_dep, $cart_choix_quoi_action, $cart_transfert_not_movable_expl_table, $cart_choix_quoi_exporter, $cart_choix_quoi_edition, $cart_choix_quoi_impr_cote, $cart_action_selector, $cart_action_selector_line, $cart_transfert_not_movable_expl_table_line;
 
 if(!isset($quelle)) $quelle = '';
 
@@ -15,89 +15,59 @@ require_once("$include_path/templates/export_param.tpl.php");
 // templates pour la gestion des paniers
 
 // template pour le formulaire d'un panier
-$cart_form = "
-<script type=\"text/javascript\">
-	function test_form(form) {
-		if(form.cart_name.value.length == 0) {
-			alert(\"".$msg['caddie_name_oblig']."\");
-			return false;
-		}
-		return true;
-	}
-</script>
-
-<form class='form-$current_module' name='cart_form' method='post' action='!!formulaire_action!!'>
-	<h3>!!title!!</h3>
-	<div class='form-contenu'>
-		<!--	type	-->
-		<!--memo_contexte-->
-		<div class='row'>
-			<label class='etiquette' for='cart_name'>".$msg['caddie_name']."</label>
-		</div>
-		<div class='row'>
-			<input type='text' class='saisie-80em' id='cart_name' name='cart_name' value='!!name!!' />
-			!!infos_creation!!
-		</div>
-		<div class='row'>
-			<label class='etiquette' for='cart_type'>".$msg['caddie_type']."</label>
-		</div>
-		<div class='row'>
-			!!cart_type!!
-		</div>
-		<div class='row'>
-			<label class='etiquette' for='cart_comment'>".$msg['caddie_comment']."</label>
-		</div>
-		<div class='row'>
-			<input type='text' class='saisie-80em' id='cart_comment' name='cart_comment' value='!!comment!!' />
-		</div>
-		<div class='row'>
-			<label class='etiquette' for='autorisations_all'>".$msg["caddie_autorisations_all"]."</label>
-			<input type='checkbox' id='autorisations_all' name='autorisations_all' value='1' !!autorisations_all!! />
-		</div>
-		<div class='row'>
-			<label class='etiquette' for='form_type'>".$msg['caddie_autorisations']."</label>
-			<input type='button' class='bouton_small align_middle' value='".$msg['tout_cocher_checkbox']."' onclick='check_checkbox(document.getElementById(\"auto_id_list\").value,1);'>
-			<input type='button' class='bouton_small align_middle' value='".$msg['tout_decocher_checkbox']."' onclick='check_checkbox(document.getElementById(\"auto_id_list\").value,0);'>
-		</div>
-		<div class='row'>
-			!!autorisations_users!!
-		</div>
-		<div class='row'>
-			<label class='etiquette' for='classementGen_!!object_type!!'>".$msg['caddie_classement_list']."</label>
-		</div>
-		<div class='row'>
-			<select data-dojo-type='dijit/form/ComboBox' id='classementGen_!!object_type!!' name='classementGen_!!object_type!!'>
-				!!classements_liste!!
-			</select>
-		</div>
-		<div id='div_acces_rapide' class='row'>
-			<label class='etiquette' for='acces_rapide'>".$msg["caddie_fast_access"]."</label>&nbsp;<input type='checkbox' id='acces_rapide' name='acces_rapide' !!acces_rapide!!>
-		</div>
-		<div id='div_favorite_color' class='row'>
-			<label class='etiquette' for='favorite_color'>".$msg["caddie_favorite_color"]."</label>&nbsp;<input type='color' id='favorite_color' name='favorite_color' value='!!favorite_color!!' list='favorite_colors' />
-			<datalist id='favorite_colors'>
-				!!datalist_options_favorite_colors!!
-			</datalist>
-		</div>
-	</div>
-	<!-- liaisons -->
-	<!--	boutons	-->
-	<div class='row'>
-		<div class='left'>
-			<input type='button' class='bouton' value='".$msg['76']."' onClick=\"!!formulaire_annuler!!\">&nbsp;
-			<input type='submit' value='".$msg['77']."' class='bouton' onClick=\"return test_form(this.form)\" />
-            !!button_duplicate!!
-			<input type='hidden' name='form_actif' value='1'>
-		</div>
-		<div class='right'>
-			!!button_delete!!
-		</div>
-	</div>
-	<div class='row'></div>
-</form>
-<script type=\"text/javascript\">
-		document.forms['cart_form'].elements['cart_name'].focus();
-</script>
+$cart_content_form = "
+<!--	type	-->
+<!--memo_contexte-->
+<div class='row'>
+	<label class='etiquette' for='cart_name'>".$msg['caddie_name']."</label>
+</div>
+<div class='row'>
+	<input type='text' class='saisie-80em' id='cart_name' name='cart_name' value='!!name!!' />
+	!!infos_creation!!
+</div>
+<div class='row'>
+	<label class='etiquette' for='cart_type'>".$msg['caddie_type']."</label>
+</div>
+<div class='row'>
+	!!cart_type!!
+</div>
+<div class='row'>
+	<label class='etiquette' for='cart_comment'>".$msg['caddie_comment']."</label>
+</div>
+<div class='row'>
+	<input type='text' class='saisie-80em' id='cart_comment' name='cart_comment' value='!!comment!!' />
+</div>
+<div class='row'>
+	<label class='etiquette' for='autorisations_all'>".$msg["caddie_autorisations_all"]."</label>
+	<input type='checkbox' id='autorisations_all' name='autorisations_all' value='1' !!autorisations_all!! />
+</div>
+<div class='row'>
+	<label class='etiquette' for='form_type'>".$msg['caddie_autorisations']."</label>
+	<input type='button' class='bouton_small align_middle' value='".$msg['tout_cocher_checkbox']."' onclick='check_checkbox(document.getElementById(\"auto_id_list\").value,1);'>
+	<input type='button' class='bouton_small align_middle' value='".$msg['tout_decocher_checkbox']."' onclick='check_checkbox(document.getElementById(\"auto_id_list\").value,0);'>
+</div>
+<div class='row'>
+	!!autorisations_users!!
+</div>
+<div class='row'>
+	<label class='etiquette' for='classementGen_!!object_type!!'>".$msg['caddie_classement_list']."</label>
+</div>
+<div class='row'>
+	<select data-dojo-type='dijit/form/ComboBox' id='classementGen_!!object_type!!' name='classementGen_!!object_type!!'>
+		!!classements_liste!!
+	</select>
+</div>
+<div id='div_acces_rapide' class='row'>
+	<label class='etiquette' for='acces_rapide'>".$msg["caddie_fast_access"]."</label>&nbsp;<input type='checkbox' id='acces_rapide' name='acces_rapide' !!acces_rapide!!>
+</div>
+<div id='div_favorite_color' class='row'>
+	<label class='etiquette' for='favorite_color'>".$msg["caddie_favorite_color"]."</label>&nbsp;<input type='color' id='favorite_color' name='favorite_color' value='!!favorite_color!!' list='favorite_colors' />
+	<datalist id='favorite_colors'>
+		!!datalist_options_favorite_colors!!
+	</datalist>
+</div>
+<!-- liaisons -->
+<input type='hidden' name='form_actif' value='1'>
 ";
 
 $liaison_tpl = "
@@ -410,6 +380,7 @@ if ($quelle=="supprbase" || $quelle=="supprpanier") $cart_choix_quoi .= "&nbsp;<
 				!!bull_not_ou_dep!!
 			</div>
 		</div>
+		<!--sign_list-->
 		<!--suppr_link-->
 		<div class='row'></div>
 	</div>

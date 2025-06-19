@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_affichage.class.php,v 1.538.2.3 2021/12/24 13:23:40 dgoron Exp $
+// $Id: notice_affichage.class.php,v 1.549.2.5 2023/11/16 13:17:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 global $base_path, $class_path, $include_path;
 require_once($base_path."/classes/author.class.php");
@@ -939,7 +941,7 @@ class notice_affichage {
 			}
 			$template_in.="
 			<div id='el!!id!!addthis' class='addthis_toolbox addthis_default_style '
-			addthis:url='".$opac_url_base."fb.php?title=".rawurlencode(strip_tags(($charset != "utf-8" ? utf8_encode($this->notice_header_without_html) : $this->notice_header_without_html)))."&url=".rawurlencode(($charset != "utf-8" ? utf8_encode($this->permalink) : $this->permalink))."'>
+			addthis:url='".$opac_url_base."fb.php?id=" . intval($this->notice_id) . "&type=" . intval(TYPE_NOTICE) . "'>
 			</div>";
 		}
 		$li_tags="";
@@ -1097,42 +1099,42 @@ class notice_affichage {
 		//add tags
 		if (($this->tag_allowed==1)||(($this->tag_allowed==2)&&($_SESSION["user_code"])&&($allow_tag)))
 			$img_tag="<a href='#' onclick=\"openPopUp('addtags.php?noticeid=$this->notice_id','ajouter_un_tag'); return false;\"><img src='".get_url_icon('tag.png', 1)."' align='absmiddle' border='0' title=\"".$msg['notice_title_tag']."\" alt=\"".$msg['notice_title_tag']."\" /></a>";
-			else $img_tag="";
+		else $img_tag="";
 	
-			//Avis
-			if (($opac_avis_display_mode==0)&&(($this->avis_allowed && $this->avis_allowed !=2)|| ($_SESSION["user_code"] && $this->avis_allowed ==2 && $allow_avis)))
-				$img_avis= $this->affichage_avis();
-				else $img_avis="";
+		//Avis
+		if (($opac_avis_display_mode==0)&&(($this->avis_allowed && $this->avis_allowed !=2)|| ($_SESSION["user_code"] && $this->avis_allowed ==2 && $allow_avis)))
+			$img_avis= $this->affichage_avis();
+		else $img_avis="";
 	
-				//Suggestions
-				if (($this->sugg_allowed ==2)|| ($_SESSION["user_code"] && ($this->sugg_allowed ==1) && $allow_sugg))
-					$img_sugg= $this->affichage_suggestion();
-					else $img_sugg="";
+		//Suggestions
+		if (($this->sugg_allowed ==2)|| ($_SESSION["user_code"] && ($this->sugg_allowed ==1) && $allow_sugg))
+			$img_sugg= $this->affichage_suggestion();
+		else $img_sugg="";
 	
-					//Listes de lecture
-					if ($this->liste_lecture_allowed == 1 && $_SESSION["user_code"] && $allow_liste_lecture) {
-						$img_liste_lecture = $this->affichage_liste_lecture();
-					} else $img_liste_lecture="";
+		//Listes de lecture
+		if ($this->liste_lecture_allowed == 1 && $_SESSION["user_code"] && $allow_liste_lecture) {
+			$img_liste_lecture = $this->affichage_liste_lecture();
+		} else $img_liste_lecture="";
 	
-					$display .= $this->get_display_tab_basket();
-					if($opac_notice_enrichment){
-						if($what =='ISBD') $display.="<li id='onglet_isbd!!id!!' class='isbd_public_active'><a href='#' title=\"".$msg['ISBD_info']."\" onclick=\"show_what('ISBD', '!!id!!'); return false;\">".$msg['ISBD']."</a></li>";
-						else $display.="<li id='onglet_public!!id!!' class='isbd_public_active'><a href='#' title=\"".$msg['Public_info']."\" onclick=\"show_what('PUBLIC', '!!id!!'); return false;\">".$msg['Public']."</a></li>";
-					}
-					$display .= $this->get_display_tab($img_tag, 'tags');
-					$display .= $this->get_display_tab($img_avis, 'avis');
-					$display .= $this->get_display_tab($img_sugg, 'sugg');
-					$display .= $this->get_display_tab($img_liste_lecture, 'liste_lecture');
+		$display .= $this->get_display_tab_basket();
+		if($opac_notice_enrichment){
+			if($what =='ISBD') $display.="<li id='onglet_isbd!!id!!' class='isbd_public_active'><a href='#' title=\"".$msg['ISBD_info']."\" onclick=\"show_what('ISBD', '!!id!!'); return false;\">".$msg['ISBD']."</a></li>";
+			else $display.="<li id='onglet_public!!id!!' class='isbd_public_active'><a href='#' title=\"".$msg['Public_info']."\" onclick=\"show_what('PUBLIC', '!!id!!'); return false;\">".$msg['Public']."</a></li>";
+		}
+		$display .= $this->get_display_tab($img_tag, 'tags');
+		$display .= $this->get_display_tab($img_avis, 'avis');
+		$display .= $this->get_display_tab($img_sugg, 'sugg');
+		$display .= $this->get_display_tab($img_liste_lecture, 'liste_lecture');
 	
-					if($display) {
-						$display = "
+		if($display) {
+			$display = "
 			<ul id='onglets_isbd_public!!id!!' class='onglets_isbd_public'>
 				".$display."
 				<!-- onglets_perso_list -->
 			</ul>
 			<div class='row'></div>";
-					}
-					return $display;
+		}
+		return $display;
 	}
 	
 	// génération du de l'affichage simple sans onglet ----------------------------------------------
@@ -1250,7 +1252,7 @@ class notice_affichage {
 			}
 			$template_in.="
 		<div id='el!!id!!addthis' class='addthis_toolbox addthis_default_style '
-			addthis:url='".$opac_url_base."fb.php?title=".rawurlencode(strip_tags(($charset != "utf-8" ? utf8_encode($this->notice_header_without_html) : $this->notice_header_without_html)))."&url=".rawurlencode(($charset != "utf-8" ? utf8_encode($this->permalink) : $this->permalink))."'>
+			addthis:url='".$opac_url_base."fb.php?id=" . intval($this->notice_id) . "&type=" . intval(TYPE_NOTICE) . "'>
 		</div>";
 		}
 		$template_in.=$this->get_display_tabs("simple", $what);
@@ -1837,21 +1839,26 @@ class notice_affichage {
 	} // fin do_public($short=0,$ex=1)
 
 	public function get_authperso_display(){
-		global $charset;
 		$aff="";
 		$authperso_name="";
-		foreach($this->authperso_info as $auth_num => $auth){
+		foreach($this->authperso_info as $auth){
 			if($authperso_name!=$auth['authperso_name']){
-				if($aff)$aff."</td></tr>";
+			    if($aff) {
+			        $aff."</td></tr>";
+			    }
 				$authperso_name=$auth['authperso_name'];
 				$aff.="<tr><td class='bg-grey align_right'><span class='etiq_champ'>".$authperso_name." : </span><td>";
 				$new=1;
 			}
-			if(!$new)	$aff.=", ";
+			if(!$new) {
+			    $aff.=", ";
+			}
 			$aff.=$auth['auth_see'];
 			$new=0;
 		}
-		if($aff)$aff.="</td></tr>";
+		if($aff) {
+		    $aff.="</td></tr>";
+		}
 		return $aff;
 	}
 
@@ -2079,7 +2086,7 @@ class notice_affichage {
 					<a href=\"".$opac_url_base."doc_num.php?explnum_id=".$explnumrow->explnum_id."\" target=\"_blank\">";
 					}
 				}
-				$this->notice_header_doclink .= "<img src=\"".get_url_icon("globe_orange.png", 1)."\" style='border:0px' class='align_middle' hspace=\"3\"";
+				$this->notice_header_doclink .= "<img src=\"".get_url_icon("globe_orange.png")."\" style='border:0px' class='align_middle' hspace=\"3\"";
 				$this->notice_header_doclink .= " alt=\"";
 				$this->notice_header_doclink .= htmlentities($info_bulle,ENT_QUOTES,$charset);
 				$this->notice_header_doclink .= "\" title=\"";
@@ -2088,7 +2095,7 @@ class notice_affichage {
 				$this->notice_header_doclink .= "</a></span>";
 			} elseif ($explnumscount > 1) {
 				$info_bulle=$msg["info_docs_num_notice"];
-				$this->notice_header_doclink .= "<img src=\"".get_url_icon("globe_rouge.png", 1)."\" alt=\"$info_bulle\" title=\"$info_bulle\" style='border:0px' class='align_middle' hspace=\"3\">";
+				$this->notice_header_doclink .= "<img src=\"".get_url_icon("globe_rouge.png")."\" alt=\"$info_bulle\" title=\"$info_bulle\" style='border:0px' class='align_middle' hspace=\"3\">";
 			}
 		}
 		$this->notice_header_doclink.=$this->get_icon_is_new();
@@ -2311,9 +2318,17 @@ class notice_affichage {
 		}
 	} // fin get_bul_info()
 
+	protected function genere_pagination_in_perio () {
+		global $charset ;
+		
+		$retour = '';
+		$pagination = htmlentities($this->notice->npages,ENT_QUOTES, $charset);
+		if ($pagination) $retour .= ".&nbsp;-&nbsp;$pagination";
+		return $retour;
+	}
+	
 	// fonction de génération de ,la mention in titre du pério + numéro
 	public function genere_in_perio () {
-		global $charset ;
 		// serials : si article
 		$retour = '';
 		if($this->notice->niveau_biblio == 'a' && $this->notice->niveau_hierar == 2) {
@@ -2329,8 +2344,7 @@ class notice_affichage {
 			$this->bulletin_date=$date_affichee;
 			$mention_parent = "<b>in</b> $notice_mere > $bulletin ";
 			$retour .= "<br />$mention_parent";
-			$pagination = htmlentities($this->notice->npages,ENT_QUOTES, $charset);
-			if ($pagination) $retour .= ".&nbsp;-&nbsp;$pagination";
+			$retour .= $this->genere_pagination_in_perio();
 		}
 		return $retour ;
 	} // fin genere_in_perio ()
@@ -2638,6 +2652,8 @@ class notice_affichage {
 			$column.="<td class='".$label."'>".nl2br(htmlentities($expl[$label],ENT_QUOTES, $charset))."</td>";
 		} elseif ($label=="expl_cb") {
 			$column.="<td id='expl_" . $expl['expl_id'] . "' class='".$label."'>".htmlentities($expl[$label],ENT_QUOTES, $charset)."</td>";
+		} elseif ($label=="section_libelle") {
+			$column.="<td id='expl_" . $expl['expl_id'] . "' class='".$label."'>".htmlentities((!empty($expl['section_libelle_opac']) ? $expl['section_libelle_opac'] : $expl[$label]),ENT_QUOTES, $charset)."</td>";
 		} else {
 			$column .="<td class='".$label."'>".htmlentities($expl[$label],ENT_QUOTES, $charset)."</td>";
 		}
@@ -2677,24 +2693,17 @@ class notice_affichage {
 	}
 	
 	// fonction de génération du tableau des exemplaires
-	public static function expl_list($type,$id,$bull_id=0,$build_ifempty=1) {
+	public static function expl_list($type, $id, $bull_id = 0, $build_ifempty = 1) {
 		global $msg, $charset;
-		global $expl_list_header, $expl_list_footer;
-		global $pmb_transferts_actif,$transferts_statut_transferts;
-		global $memo_p_perso_expl;
-		global $opac_show_empty_items_block ;
-		global $opac_show_exemplaires_analysis;
-		global $expl_list_header_loc_tpl,$opac_aff_expl_localises;
-		global $memo_expl;
+		global $pmb_transferts_actif, $transferts_statut_transferts;
+		global $memo_p_perso_expl, $memo_expl;
+		global $opac_show_empty_items_block, $opac_show_exemplaires_analysis, $opac_aff_expl_localises;
 		
-		$nb_expl_visible = 0;
-		$expl_liste_all = '';
-		$nb_expl_autre_loc=0;
-		$nb_perso_aff=0;
-		// les dépouillements ou périodiques n'ont pas d'exemplaire
-		if (($type=="a" && !$opac_show_exemplaires_analysis) || $type=="s") return "" ;
-		if(!$memo_p_perso_expl)	$memo_p_perso_expl=new parametres_perso("expl");
-		$header_found_p_perso=0;
+		// Les dépouillements ou périodiques n'ont pas d'exemplaire
+		if (($type=="a" && !$opac_show_exemplaires_analysis) || $type=="s") return "";
+
+		$nb_perso_aff = 0;
+		$found_p_perso = 0;
 
 		if($bull_id) {
 			$exemplaires = new exemplaires(0, $bull_id);
@@ -2703,119 +2712,133 @@ class notice_affichage {
 			$record_datas = record_display::get_record_datas($id);
 			$expls_datas = $record_datas->get_expls_datas();
 		}
-		$expl_list_header_deb="";
-		if(isset($expls_datas['colonnesarray']) && count($expls_datas['colonnesarray'])) {
-		    foreach ($expls_datas['colonnesarray'] as $colonne) {
-		        if (strstr($colonne, "#")) {
-		            if (!$memo_p_perso_expl->no_special_fields) {
-		                $id=substr($colonne,1);
-		                $expl_list_header_deb .= "<th class='expl_header_".$memo_p_perso_expl->t_fields[$id]['NAME']."'>".htmlentities($memo_p_perso_expl->t_fields[$id]['TITRE'],ENT_QUOTES, $charset)."</th>";
-		            }
-		        } else {
-		            $expl_list_header_deb .= "<th class='expl_header_".$colonne."'>".htmlentities($msg['expl_header_'.$colonne],ENT_QUOTES, $charset)."</th>";
-		        }
-    		}
-		}
-		$expl_list_header_deb.="<th class='expl_header_statut'>".$msg['statut']."</th>";
-		$expl_liste="";
-		$header_perso_aff="";
-		if(isset($expls_datas['expls']) && count($expls_datas['expls'])) {
-			$pair_impair="odd";
-			foreach ($expls_datas['expls'] as $expl) {
-				// mémorisation des exemplaires et de leur localisation
-				$memo_expl['expl'][]=array(
-						'expl_id' => $expl['expl_id'],
-						'expl_location'	=> array($expl['expl_location']),
-						'id_notice' => $id,
-						'id_bulletin' => $expl['id_bulletin']
-				);
-				if ($pair_impair=="odd") $pair_impair="even"; else 	$pair_impair="odd";
-				$expl_liste .= "<tr class='$pair_impair item_expl !!class_statut!!'>";
-				foreach ($expls_datas['colonnesarray'] as $colonne) {
-					$expl_liste .= static::get_display_column($colonne, $expl);
-				}
-				if ($expl['flag_resa']) {
-					$class_statut = "expl_reserve";
-				} else {
-					if ($expl['pret_flag']) {
-						if($expl['pret_retour']) { // exemplaire sorti
-							$class_statut = "expl_out";
-						} else { // pas sorti
-							$class_statut = "expl_available";
-						}
-					} else { // pas prêtable
-						// exemplaire pas prêtable, on affiche juste "exclu du pret"
-						if (($pmb_transferts_actif=="1") && ("".$expl['expl_statut'].""==$transferts_statut_transferts)) {
-							$class_statut = "expl_transfert";
-						} else {
-							$class_statut = "expl_unavailable";
-						}
-					}
-				} // fin if else $flag_resa
-				$expl_liste .= "<td class='expl_situation'>".static::get_display_situation($expl)." </td>";
-				$expl_liste = str_replace("!!class_statut!!", $class_statut, $expl_liste);
-				
-				//Champs personalisés
-				$perso_aff = "" ;
-				if (!$memo_p_perso_expl->no_special_fields) {
-					$perso_=$memo_p_perso_expl->show_fields($expl['expl_id']);
-					for ($i=0; $i<count($perso_["FIELDS"]); $i++) {
-						$p=$perso_["FIELDS"][$i];
-						if ($p['OPAC_SHOW'] && !in_array('#'.$p['ID'], $expls_datas['colonnesarray'])) {
-							if(!$header_found_p_perso) {
-								$header_perso_aff.="<th class='expl_header_tdoc_libelle'>".$p["TITRE_CLEAN"]."</th>";
-								$nb_perso_aff++;
-							}
-							if( $p["AFF"] !== '')	{
-								$perso_aff.="<td class='p_perso'>".$p["AFF"]."</td>";
-							}
-							else $perso_aff.="<td class='p_perso'>&nbsp;</td>";
-						}
-					}
-				}
-				$header_found_p_perso=1;
-				$expl_liste.=$perso_aff;
-				
-				$expl_liste .="</tr>";
-				$expl_liste_all.=$expl_liste;
-				
-				if($opac_aff_expl_localises && isset($_SESSION["empr_location"]) && $_SESSION["empr_location"]) {
-					if($expl['expl_location']==$_SESSION["empr_location"]) {
-						$expl_liste_loc.=$expl_liste;
-					} else $nb_expl_autre_loc++;
-				}
-				$expl_liste="";
-				$nb_expl_visible++;
-			}
-		}
-		$expl_list_header_deb="<tr class='thead'>".$expl_list_header_deb;
-		//S'il y a des titres de champs perso dans les exemplaires
-		if($header_perso_aff) {
-			$expl_list_header_deb.=$header_perso_aff;
-		}
-		$expl_list_header_deb.="</tr>";
-	
-		if($opac_aff_expl_localises && isset($_SESSION["empr_location"]) && $_SESSION["empr_location"] && $nb_expl_autre_loc) {
-			// affichage avec onglet selon la localisation
-			if(!$expl_liste_loc) $expl_liste_loc="<tr class=even><td colspan='".(count($expls_datas['colonnesarray'])+1+$nb_perso_aff)."'>".$msg["no_expl"]."</td></tr>";
-			$expl_liste_all=str_replace("!!EXPL!!",$expl_list_header_deb.$expl_liste_all,$expl_list_header_loc_tpl);
-			$expl_liste_all=str_replace("!!EXPL_LOC!!",$expl_list_header_deb.$expl_liste_loc,$expl_liste_all);
-			$expl_liste_all=str_replace("!!mylocation!!",$_SESSION["empr_location_libelle"],$expl_liste_all);
-			$expl_liste_all=str_replace("!!id!!",$id+$bull_id,$expl_liste_all);
-		} else {
-			// affichage de la liste d'exemplaires calculée ci-dessus
-			if (!$expl_liste_all && $opac_show_empty_items_block==1) {
-				$expl_liste_all = $expl_list_header.$expl_list_header_deb."<tr class=even><td colspan='".(count($expls_datas['colonnesarray'])+1)."'>".$msg["no_expl"]."</td></tr>".$expl_list_footer;
-			} elseif (!$expl_liste_all && $opac_show_empty_items_block==0) {
-				$expl_liste_all = "";
-			} else {
-				$expl_liste_all = $expl_list_header.$expl_list_header_deb.$expl_liste_all.$expl_list_footer;
-			}
-		}
-		$expl_liste_all=str_replace("<!--nb_expl_visible-->",($nb_expl_visible ? " (".$nb_expl_visible.")" : ""),$expl_liste_all);
-		return $expl_liste_all;
 
-	} // fin function expl_list
+		$template_path_expl_list = "./includes/templates/expl_list.tpl.html";
+		$template_path_expl_list_subst = "./includes/templates/expl_list_subst.tpl.html";
+
+		if(file_exists($template_path_expl_list_subst)) {
+			$template_path_expl_list = $template_path_expl_list_subst;
+		}
+
+		if(!$memo_p_perso_expl) {
+			$memo_p_perso_expl = new parametres_perso("expl");
+		}
+		
+		//formatting data before sending to view
+		$expls_datas_formatted = array();
+		foreach ($expls_datas["expls"] as $key => $expl) {
+			$expls_datas_formatted["expls"][$key] = $expl;
+
+			// parse all html entities for the data to display
+			foreach ($expls_datas_formatted["expls"][$key] as $index => $value) {
+				if (is_string($value)) {
+					$expls_datas_formatted[$index] = htmlentities($value, ENT_QUOTES, $charset);
+				}
+			}
+
+			// set parity on each expl
+			if(!isset($expls_datas_formatted["expls"][$key-1])) {
+				$expls_datas_formatted["expls"][$key]["parity"] = "odd";
+			}
+			
+			$expls_datas_formatted["expls"][$key]["parity"] = $expls_datas_formatted["expls"][$key-1]["parity"] == "odd" ? "even" : "odd";
+			$expls_datas_formatted["expls"][$key]["expl_situation"] = static::get_display_situation($expl);
+			$expls_datas_formatted["expls"][$key]["expl_p_perso"] = $memo_p_perso_expl->show_fields($expl['expl_id']);
+
+			foreach ($expls_datas_formatted["expls"][$key]["expl_p_perso"]["FIELDS"] as $index => $p) {
+				$expls_datas_formatted["expls"][$key]["expl_p_perso"]["FIELDS"][$index]['NOT_IN_COLUMNS'] = var_export(!in_array('#'.$p['ID'], $expls_datas['colonnesarray']), true);
+			}
+
+			// Mémorisation des exemplaires et de leur localisation
+			$memo_expl['expl'][] = array(
+				'expl_id' => $expl['expl_id'],
+				'expl_location'	=> array($expl['expl_location']),
+				'id_notice' => $id,
+				'id_bulletin' => $expl['id_bulletin']
+			);
+
+			if ($expl['flag_resa']) {
+				$expls_datas_formatted["expls"][$key]["class_statut"] = "expl_reserve";
+			} else {
+				if ($expl['pret_flag']) {
+					if($expl['pret_retour']) { // exemplaire sorti
+						$expls_datas_formatted["expls"][$key]["class_statut"] = "expl_out";
+					} else { // pas sorti
+						$expls_datas_formatted["expls"][$key]["class_statut"] = "expl_available";
+					}
+				} else { // pas prêtable
+					// exemplaire pas prêtable, on affiche juste "exclu du pret"
+					if ($pmb_transferts_actif == "1" && $expl['expl_statut'] == $transferts_statut_transferts) {
+						$expls_datas_formatted["expls"][$key]["class_statut"] = "expl_transfert";
+					} else {
+						$expls_datas_formatted["expls"][$key]["class_statut"] = "expl_unavailable";
+					}
+				}
+			}
+
+			foreach ($expls_datas['colonnesarray'] as $k => $column) {
+				$expls_datas_formatted['columns'][$k] = ["column" => $column];
+				if (strstr($column, "#")) {
+					if (!$memo_p_perso_expl->no_special_fields) {
+						$id=substr($column,1);
+	
+						$expls_datas_formatted['columns'][$k]["name"] = $memo_p_perso_expl->t_fields[$id]['NAME'];
+						$expls_datas_formatted['columns'][$k]["title"] = htmlentities($memo_p_perso_expl->t_fields[$id]['TITRE'], ENT_QUOTES, $charset);
+						$expls_datas_formatted['columns'][$k]["entry"] = htmlentities($expls_datas_formatted["expls"][$key][$expls_datas_formatted['columns'][$key]["column"]], ENT_QUOTES, $charset);
+					}
+				} else {
+					$expls_datas_formatted['columns'][$k]["msg"] = htmlentities($msg['expl_header_' . $column],ENT_QUOTES, $charset);
+					if($expls_datas_formatted['columns'][$k]["column"] == "location_libelle" && $expl['num_infopage']) {
+						$expl['param_surloc'] = $expl['surloc_id'] != "0" ? "&surloc=".$expl['surloc_id'] : "";
+					}
+				}
+			}
+			if($opac_aff_expl_localises && isset($_SESSION["empr_location"]) && $_SESSION["empr_location"]) {
+				if($expl['expl_location'] != $_SESSION["empr_location"]) {
+					if(!isset($expls_datas_formatted["nb_expl_other_loc"])) {
+						$expls_datas_formatted["nb_expl_other_loc"] = 0;
+					}
+					$expls_datas_formatted["nb_expl_other_loc"]++;
+				} else {
+					if(!isset($expls_datas_formatted["expls_loc"])) {
+						$expls_datas_formatted["expls_loc"] = [];
+					}
+					$expls_datas_formatted["expls_loc"][] = $expls_datas_formatted["expls"][$key];
+				}
+			}
+
+			//Champs personalisés
+			if (!$memo_p_perso_expl->no_special_fields) {
+				$perso_ = $expls_datas_formatted["expls"][$key]["expl_p_perso"];
+				for ($i = 0; $i < count($perso_["FIELDS"]); $i++) {
+					$p=$perso_["FIELDS"][$i];
+					if ($p['OPAC_SHOW'] && !in_array('#' . $p['ID'], $expls_datas['colonnesarray'])) {
+						if(!$found_p_perso) {
+							$nb_perso_aff++;
+						}
+					}
+				}
+			}
+			$found_p_perso = 1;
+		}
+
+		$expls_datas_formatted["nb_p_perso"] = count($expls_datas['colonnesarray']) + 1 + $nb_perso_aff;
+		$expls_datas_formatted["nb_colspan"] = count($expls_datas['colonnesarray']) + 1;
+
+		if(count($expls_datas_formatted["expls"]) == 0 && !$opac_show_empty_items_block) {
+			return "";
+		}
+
+		$data = array(
+			'id' => $id + $bull_id,
+			'empr_location_libelle' => $_SESSION["empr_location_libelle"],
+			'expls_datas' => $expls_datas_formatted,
+			'memo_p_perso_expl' => $memo_p_perso_expl
+		);
+
+		$h2o_expl_list = H2o_collection::get_instance($template_path_expl_list);
+		return $h2o_expl_list->render($data);
+	}
 
 	// fontion qui génère le bloc H3 + table des autres lectures
 	public static function autres_lectures ($notice_id=0,$bulletin_id=0) {
@@ -2827,6 +2850,8 @@ class notice_affichage {
 		global $opac_autres_lectures;
 		global $gestion_acces_active,$gestion_acces_empr_notice;
 
+		$notice_id = intval($notice_id);
+		$bulletin_id = intval($bulletin_id);
 		if (!$opac_autres_lectures || (!$notice_id && !$bulletin_id)) return "";
 
 		if (!$opac_autres_lectures_nb_maxi) $opac_autres_lectures_nb_maxi = 999999 ;
@@ -2923,46 +2948,51 @@ class notice_affichage {
 	return $ret;
 	} // fin autres_lectures ($notice_id=0,$bulletin_id=0)
 
-	public function do_image(&$entree,$depliable) {
+	public function get_html_image($depliable, $url_image_ok, $title_image_ok) {
+		global $msg, $opac_url_base;
+		
+		if ($depliable) {
+			return "<img class='vignetteimg align_right' src='".$opac_url_base."images/vide.png' title=\"".$title_image_ok."\" hspace='4' vspace='2' vigurl=\"".$url_image_ok."\" alt='".$msg["opac_notice_vignette_alt"]."' />";
+		} else {
+			return "<img class='vignetteimg align_right' src='".$url_image_ok."' title=\"".$title_image_ok."\" hspace='4' vspace='2' alt='".$msg["opac_notice_vignette_alt"]."' />";
+		}
+	}
+	
+	public function get_image($depliable) {
 		global $charset;
 		global $opac_show_book_pics ;
-		global $opac_book_pics_url ;
 		global $opac_book_pics_msg;
-		global $opac_url_base ;
-		global $opac_notice_is_pdf;
-		global $msg;
+		global $use_opac_url_base ;
 		
-		if ($this->notice->code || $this->notice->thumbnail_url) {
-			if ($opac_show_book_pics=='1' && ($opac_book_pics_url || $this->notice->thumbnail_url)) {
-				$url_image_ok=getimage_url($this->notice->code, $this->notice->thumbnail_url);
-			 /*   if($this->notice->thumbnail_url) {
-			        $url_image_ok = $this->notice->thumbnail_url;
-			    } else {
-			        $url_image_ok = 'vignette.php?type_object=record&id='.$this->notice->notice_id;
-			    }*/
-				$title_image_ok = "";
-				if(!$this->notice->thumbnail_url) {
-					$title_image_ok = htmlentities($opac_book_pics_msg, ENT_QUOTES, $charset);
-				}
-				if(!trim($title_image_ok)){
-					$title_image_ok = htmlentities($this->notice->tit1, ENT_QUOTES, $charset);
-				}
-				if ($depliable) {
-					$image = "<img class='vignetteimg align_right' src='".$opac_url_base."images/vide.png' title=\"".$title_image_ok."\" hspace='4' vspace='2' vigurl=\"".$url_image_ok."\" alt='".$msg["opac_notice_vignette_alt"]."' />";
-				} else {
-					$image = "<img class='vignetteimg align_right' src='".$url_image_ok."' title=\"".$title_image_ok."\" hspace='4' vspace='2' alt='".$msg["opac_notice_vignette_alt"]."' />";
-				}
+		if ($opac_show_book_pics) {
+			$thumbnailSourcesHandler = new ThumbnailSourcesHandler();
+			if($use_opac_url_base) {
+			    $url_image_ok = $thumbnailSourcesHandler->generateSrcBase64(TYPE_NOTICE, $this->notice_id);
 			} else {
-				$image="" ;
+			    $url_image_ok = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $this->notice_id);
 			}
-			if (isset($opac_notice_is_pdf) && $opac_notice_is_pdf == true && $image) {
-			    $entree = "<table style='width:100%'><tr><td style='vertical-align:top;width:80%'>$entree</td><td class='align_right;width:20%' style='vertical-align:top'>$image</td></tr></table>" ;
-			} elseif ($image) {
-				$entree = "<table style='width:100%'><tr><td style='vertical-align:top'>$entree</td><td class='align_right' style='vertical-align:top'>$image</td></tr></table>" ;
-			} else {
-				$entree = "<table style='width:100%'><tr><td>$entree</td></tr></table>" ;
+			
+			$title_image_ok = "";
+			if(!$url_image_ok) {
+				$title_image_ok = htmlentities($opac_book_pics_msg, ENT_QUOTES, $charset);
 			}
-
+			if(!trim($title_image_ok)){
+				$title_image_ok = htmlentities($this->notice->tit1, ENT_QUOTES, $charset);
+			}
+			return $this->get_html_image($depliable, $url_image_ok, $title_image_ok);
+		} else {
+			return "";
+		}
+	}
+	
+	public function do_image(&$entree,$depliable) {
+		global $opac_notice_is_pdf;
+		
+		$image = $this->get_image($depliable);
+		if (isset($opac_notice_is_pdf) && $opac_notice_is_pdf == true && $image) {
+		    $entree = "<table style='width:100%'><tr><td style='vertical-align:top;width:80%'>$entree</td><td class='align_right;width:20%' style='vertical-align:top'>$image</td></tr></table>" ;
+		} elseif ($image) {
+			$entree = "<table style='width:100%'><tr><td style='vertical-align:top'>$entree</td><td class='align_right' style='vertical-align:top'>$image</td></tr></table>" ;
 		} else {
 			$entree = "<table style='width:100%'><tr><td>$entree</td></tr></table>" ;
 		}
@@ -2992,7 +3022,7 @@ class notice_affichage {
 		$icon_is_new="";
 		if (!$this->no_header && $this->notice->notice_is_new){
 				$info_bulle_icon_new=$msg["notice_is_new_gestion"];
-				$icon_is_new.="&nbsp;<img src=\"".get_url_icon("icone_nouveautes.png", 1)."\" alt='".htmlentities($info_bulle_icon_new,ENT_QUOTES, $charset)."' title='".htmlentities($info_bulle_icon_new,ENT_QUOTES, $charset)."'/>";
+				$icon_is_new.="&nbsp;<img src=\"".get_url_icon("icone_nouveautes.png")."\" alt='".htmlentities($info_bulle_icon_new,ENT_QUOTES, $charset)."' title='".htmlentities($info_bulle_icon_new,ENT_QUOTES, $charset)."'/>";
 		}
 		return $icon_is_new;
 	}
@@ -3009,8 +3039,12 @@ class notice_affichage {
 		return $link_see_more;
 	}
 	
+	protected function get_display_title_childs_relation($relation_type) {
+		return "<b>".$relation_type."</b>";
+	}
+	
 	protected function genere_childs_relation($relation_type, $child_notices) {
-		$notice_childs = "<b>".$relation_type."</b>";
+		$notice_childs = $this->get_display_title_childs_relation($relation_type);
 		if (!$this->seule) {
 			$notice_childs .= "<ul>";
 		}
@@ -3220,6 +3254,7 @@ class notice_affichage {
 	 * Retourne les informations sur la notice
 	 */
 	static public function get_infos_notice($id_notice){
+		$id_notice = intval($id_notice);
 		$infos_notice = array();
 		$query ="select notice_id, typdoc, niveau_biblio, index_l, libelle_categorie, name_pclass, indexint_name
 			from notices n
@@ -3239,6 +3274,7 @@ class notice_affichage {
 	 * Retourne les informations d'exemplaires rattachés à la notice
 	 */
 	static public function get_infos_expl($id_notice){
+		$id_notice = intval($id_notice);
 		$infos_expl = array();
 		$query = " select section_libelle, location_libelle, statut_libelle, codestat_libelle, expl_date_depot, expl_date_retour, tdoc_libelle
 				from exemplaires e
@@ -3259,6 +3295,7 @@ class notice_affichage {
 	 * Vérifie que la requête Ajax soit bien envoyée par une action utilisateur
 	 */
 	static public function check_token($id_notice, $datetime, $token) {
+		$id_notice = intval($id_notice);
 		$query = "select notice_id, create_date from notices where notice_id=".$id_notice;
 		$result = pmb_mysql_query($query);
 		if ($result) {
@@ -3422,6 +3459,9 @@ class notice_affichage {
 				    -moz-box-shadow: 1px 1px 5px #666666;
 				    -webkit-box-shadow: 1px 1px 5px #666666;
 				    box-shadow: 1px 1px 5px #666666;
+				}
+				td.align_right {
+					text-align: right;
 				}
 			</style>
 				";

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: docs_location.class.php,v 1.11.2.1 2021/12/27 10:13:08 dgoron Exp $
+// $Id: docs_location.class.php,v 1.12.4.2 2023/11/29 16:39:44 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,9 +22,11 @@ class docs_location {
 	public $pret_flag='';
 	public $locdoc_codage_import="";
 	public $locdoc_owner=0;
+	public $pic='';
 	public $num_infopage=0;
 	public $url_infopage="";
 	public $email='';
+	public $css_style='';
 	
 	/* ---------------------------------------------------------------
 		docs_location($id) : constructeur
@@ -55,11 +57,13 @@ class docs_location {
 		$this->libelle = $data->location_libelle;		
 		$this->locdoc_codage_import = $data->locdoc_codage_import;
 		$this->locdoc_owner = $data->locdoc_owner;
+		$this->pic = $data->location_pic;
 		$this->num_infopage = $data->num_infopage;
 		if ($this->num_infopage) {
 			$this->url_infopage="<a href=\"".$opac_url_base."index.php?lvl=infopages&pagesid=".$this->num_infopage."\" title=\"".$msg['location_more_info']."\">".htmlentities($this->libelle, ENT_QUOTES, $charset)."</a>";
 		}
 		$this->email = $data->email;
+		$this->css_style = $data->css_style;
 	}
 
 	// ---------------------------------------------------------------

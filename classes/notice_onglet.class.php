@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: notice_onglet.class.php,v 1.2 2021/01/12 07:42:45 dgoron Exp $
+// $Id: notice_onglet.class.php,v 1.2.6.1 2023/06/23 07:24:48 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -34,14 +34,15 @@ class notice_onglet {
 		$this->name = $data->onglet_name;
 	}
 
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('form_nom', 'admin_noti_onglet_name')
+		->add_input_node('text', $this->name);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		
 		global $msg;
-		global $admin_onglet_content_form;
-		global $charset;
-		
-		$content_form = $admin_onglet_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
 		
 		$interface_form = new interface_admin_form('ongletform');
 		if(!$this->id){
@@ -49,11 +50,9 @@ class notice_onglet {
 		}else{
 			$interface_form->set_label($msg['admin_noti_onglet_modification']);
 		}
-		$content_form = str_replace('!!nom!!', htmlentities($this->name, ENT_QUOTES, $charset), $content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->name." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('notice_onglet')
 		->set_field_focus('form_nom');
 		return $interface_form->get_display();

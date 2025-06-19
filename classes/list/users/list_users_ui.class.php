@@ -2,17 +2,21 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_users_ui.class.php,v 1.13.2.2 2021/11/05 12:55:26 dgoron Exp $
+// $Id: list_users_ui.class.php,v 1.25.2.4 2023/11/09 07:58:36 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 global $class_path;
+
+use Pmb\Animations\Models\AnimationCalendarModel;
+use Pmb\Animations\Orm\AnimationCalendarOrm;
+
 require_once($class_path.'/user.class.php');
 
 class list_users_ui extends list_ui {
 	
 	protected function _get_query_base() {
-		$query = 'SELECT * FROM users';
+		$query = 'SELECT users.userid as id, users.* FROM users';
 		return $query;
 	}
 	
@@ -23,6 +27,7 @@ class list_users_ui extends list_ui {
 		$this->available_filters =
 		array('main_fields' =>
 				array(
+						'groups' => 'users_groups'
 				)
 		);
 		$this->available_filters['custom_fields'] = array();
@@ -34,12 +39,9 @@ class list_users_ui extends list_ui {
 	public function init_filters($filters=array()) {
 		
 		$this->filters = array(
+				'groups' => array(),
 		);
 		parent::init_filters($filters);
-	}
-	
-	protected function init_default_selected_filters() {
-	    $this->selected_filters = array();
 	}
 	
 	/**
@@ -47,6 +49,7 @@ class list_users_ui extends list_ui {
 	 */
 	protected function init_available_columns() {
 		global $pmb_contribution_area_activate, $acquisition_active, $demandes_active, $opac_websubscribe_show;
+		global $animations_active;
 		
 		$query = "DESC users";
 		$result = pmb_mysql_query($query);
@@ -85,9 +88,16 @@ class list_users_ui extends list_ui {
 		} else {
 			unset($this->available_columns['main_fields']['user_alert_subscribemail']);
 		}
+		if($animations_active) {
+			$this->available_columns['main_fields']['user_alert_animation_mail'] = 'alert_animation_user_mail';
+		} else {
+			unset($this->available_columns['main_fields']['user_alert_animation_mail']);
+		}
 		$this->available_columns['main_fields']['user_alert_serialcircmail'] = 'alert_subscribe_serialcirc_mail';
+		$this->available_columns['main_fields']['group'] = '919';
 		
 		//Retirons les colonnes en trop
+		unset($this->available_columns['main_fields']['param_licence']);
 		unset($this->available_columns['main_fields']['pwd']);
 		unset($this->available_columns['main_fields']['user_digest']);
 		unset($this->available_columns['main_fields']['speci_coordonnees_etab']);
@@ -99,39 +109,118 @@ class list_users_ui extends list_ui {
 	}
 	
 	/**
-	 * Initialisation du tri par défaut appliqué
+	 * Initialisation des colonnes éditables disponibles
 	 */
-	protected function init_default_applied_sort() {
-	    $this->add_applied_sort('username');
-	}
-	
-	protected function init_default_pager() {
-	    parent::init_default_pager();
-	    $this->pager['nb_per_page'] = 0;
+	protected function init_available_editable_columns() {
+		$this->available_editable_columns = array(
+				'nb_per_page_search',
+				'nb_per_page_select',
+				'nb_per_page_gestion',
+				'param_popup_ticket',
+				'param_sounds',
+				'param_rfid_activate',
+				'param_chat_activate',
+				'param_licence',
+				'deflt_notice_statut',
+				'deflt_notice_statut_analysis',
+				'deflt_integration_notice_statut',
+				'xmlta_indexation_lang',
+				'deflt_docs_type',
+				'deflt_serials_docs_type',
+				'deflt_lenders',
+				'deflt_styles',
+				'deflt_docs_statut',
+				'deflt_docs_codestat',
+				'value_deflt_lang',
+				'value_deflt_fonction',
+				'value_deflt_relation',
+				'value_deflt_relation_serial',
+				'value_deflt_relation_bulletin',
+				'value_deflt_relation_analysis',
+				'deflt_docs_location',
+				'deflt_collstate_location',
+				'deflt_bulletinage_location',
+				'deflt_resas_location',
+				'deflt_docs_section',
+				'value_deflt_module',
+				'user_alert_resamail',
+				'user_alert_contribmail',
+				'user_alert_demandesmail',
+				'user_alert_subscribemail',
+				'user_alert_serialcircmail',
+				'user_alert_animation_mail',
+				'deflt2docs_location',
+				'deflt_empr_statut',
+				'deflt_empr_categ',
+				'deflt_empr_codestat',
+				'deflt_thesaurus',
+				'deflt_concept_scheme',
+				'deflt_import_thesaurus',
+				'xmlta_doctype',
+				'xmlta_doctype_serial',
+				'xmlta_doctype_bulletin',
+				'xmlta_doctype_analysis',
+				'value_deflt_antivol',
+				'deflt_arch_statut',
+				'deflt_arch_emplacement',
+				'deflt_arch_type',
+				'deflt_upload_repertoire',
+				'deflt_short_loan_activate',
+				'deflt_cashdesk',
+				'user_alert_suggmail',
+				'deflt_explnum_statut',
+				'deflt_explnum_location',
+				'deflt_explnum_lenders',
+				'deflt_notice_replace_keep_categories',
+				'deflt_notice_is_new',
+				'deflt_agnostic_warehouse',
+				'deflt_cms_article_statut',
+				'deflt_cms_article_type',
+				'deflt_cms_section_type',
+				'deflt_scan_request_status',
+				'xmlta_doctype_scan_request_folder_record',
+				'deflt_camera_empr',
+				'deflt_catalog_expanded_caddies',
+				'deflt_notice_replace_links',
+				'deflt_printer',
+				'deflt_opac_visible_bulletinage',
+				'deflt_scan_request_explnum_status',
+				'deflt_type_abts',
+				'deflt_docwatch_watch_filter_deleted',
+				'deflt_pclassement',
+				'deflt_associated_campaign',
+				'deflt_bypass_isbn_page',
+				'deflt_animation_calendar',
+				'deflt_animation_waiting_list',
+				'deflt_animation_automatic_registration',
+				'deflt_animation_communication_type',
+				'deflt_animation_unique_registration',
+		    	'deflt_notice_catalog_categories_auto',
+		);
 	}
 	
 	/**
-	 * Tri SQL
+	 * Initialisation du tri par défaut appliqué
 	 */
-	protected function _get_query_order() {
-		
-	    if($this->applied_sort[0]['by']) {
-			$order = '';
-			$sort_by = $this->applied_sort[0]['by'];
-			switch($sort_by) {
-				case 'id':
-					$order .= 'userid';
-					break;
-				default :
-					$order .= parent::_get_query_order();
-					break;
-			}
-			if($order) {
-				return $this->_get_query_order_sql_build($order); 
-			} else {
-				return "";
-			}
-		}	
+	protected function init_default_applied_sort() {
+		$this->add_applied_sort('username');
+	}
+	
+	protected function init_default_pager() {
+		parent::init_default_pager();
+		$this->pager['all_on_page'] = true;
+	}
+	
+	/**
+	 * Champ(s) du tri SQL
+	 */
+	protected function _get_query_field_order($sort_by) {
+	    switch($sort_by) {
+	        case 'id':
+	            return 'userid';
+	        default :
+	            return parent::_get_query_field_order($sort_by);
+	    }
 	}
 	
 	protected function get_button_add() {
@@ -144,7 +233,29 @@ class list_users_ui extends list_ui {
 	 * Filtres provenant du formulaire
 	 */
 	public function set_filters_from_form() {
+		$this->set_filter_from_form('groups');
 		parent::set_filters_from_form();
+	}
+	
+	protected function init_default_columns() {
+		$this->add_column('userid');
+		$this->add_column('username');
+		$this->add_column('nom');
+		$this->add_column('prenom');
+		$this->add_column('user_lang');
+		$this->add_column('deflt_styles');
+		$this->add_column('deflt_docs_location');
+		$this->add_column('deflt_bulletinage_location');
+		$this->add_column('deflt_resas_location');
+		$this->add_column('user_email');
+		$this->add_column('deflt2docs_location');
+		$this->add_column('deflt_explnum_location');
+		$this->add_column('deflt_animation_calendar');
+		$this->add_column('deflt_animation_waiting_list');
+		$this->add_column('deflt_animation_automatic_registration');
+		$this->add_column('deflt_animation_communication_type');
+		$this->add_column('deflt_animation_unique_registration');
+		$this->add_column('deflt_notice_catalog_categories_auto');
 	}
 	
 	/**
@@ -155,6 +266,8 @@ class list_users_ui extends list_ui {
 		$this->set_setting_display('search_form', 'visible', false);
 		$this->set_setting_display('search_form', 'export_icons', false);
 		$this->set_setting_display('query', 'human', false);
+		$this->set_setting_display('pager', 'visible', false);
+		$this->set_setting_selection_actions('edit', 'visible', false);
 		
 		$this->set_setting_column('userid', 'datatype', 'integer');
 		$this->set_setting_column('create_dt', 'datatype', 'date');
@@ -185,6 +298,7 @@ class list_users_ui extends list_ui {
 		$this->set_setting_column('user_alert_demandesmail', 'datatype', 'boolean');
 		$this->set_setting_column('user_alert_subscribemail', 'datatype', 'boolean');
 		$this->set_setting_column('user_alert_serialcircmail', 'datatype', 'boolean');
+		$this->set_setting_column('user_alert_animation_mail', 'datatype', 'boolean');
 		$this->set_setting_column('deflt2docs_location', 'datatype', 'integer');
 		$this->set_setting_column('deflt_empr_statut', 'datatype', 'integer');
 		$this->set_setting_column('deflt_empr_categ', 'datatype', 'integer');
@@ -233,6 +347,12 @@ class list_users_ui extends list_ui {
 		$this->set_setting_column('deflt_pclassement', 'datatype', 'integer');
 		$this->set_setting_column('deflt_associated_campaign', 'datatype', 'boolean');
 		$this->set_setting_column('deflt_bypass_isbn_page', 'datatype', 'boolean');
+		$this->set_setting_column('deflt_animation_calendar', 'datatype', 'interger');
+		$this->set_setting_column('deflt_animation_waiting_list', 'datatype', 'boolean');
+		$this->set_setting_column('deflt_animation_automatic_registration', 'datatype', 'boolean');
+		$this->set_setting_column('deflt_animation_communication_type', 'datatype', 'interger');
+		$this->set_setting_column('deflt_animation_unique_registration', 'datatype', 'boolean');
+		$this->set_setting_column('deflt_notice_catalog_categories_auto', 'datatype', 'boolean');
 		
 		$this->set_setting_column('userid', 'edition_type', 'number');
 		$this->set_setting_column('create_dt', 'edition_type', 'date');
@@ -271,6 +391,7 @@ class list_users_ui extends list_ui {
 		$this->set_setting_column('user_alert_demandesmail', 'edition_type', 'radio');
 		$this->set_setting_column('user_alert_subscribemail', 'edition_type', 'radio');
 		$this->set_setting_column('user_alert_serialcircmail', 'edition_type', 'radio');
+		$this->set_setting_column('user_alert_animation_mail', 'edition_type', 'radio');
 		$this->set_setting_column('deflt2docs_location', 'edition_type', 'select');
 		$this->set_setting_column('deflt_empr_statut', 'edition_type', 'select');
 		$this->set_setting_column('deflt_empr_categ', 'edition_type', 'select');
@@ -319,6 +440,12 @@ class list_users_ui extends list_ui {
 		$this->set_setting_column('deflt_pclassement', 'edition_type', 'select');
 		$this->set_setting_column('deflt_associated_campaign', 'edition_type', 'radio');
 		$this->set_setting_column('deflt_bypass_isbn_page', 'edition_type', 'radio');
+		$this->set_setting_column('deflt_animation_calendar', 'edition_type', 'select');
+		$this->set_setting_column('deflt_animation_waiting_list', 'edition_type', 'radio');
+		$this->set_setting_column('deflt_animation_automatic_registration', 'edition_type', 'radio');
+		$this->set_setting_column('deflt_animation_communication_type', 'edition_type', 'select');
+		$this->set_setting_column('deflt_animation_unique_registration', 'edition_type', 'radio');
+		$this->set_setting_column('deflt_notice_catalog_categories_auto', 'edition_type', 'radio');
 	}
 	
 	protected function get_selection_query_fields($type) {
@@ -379,6 +506,9 @@ class list_users_ui extends list_ui {
 			case 'rubriques':
 				$query = 'select id_rubrique as id, concat(budgets.libelle,":", rubriques.libelle) as label from rubriques join budgets on num_budget=id_budget order by label';
 				break;
+			case 'groups':
+				$query = 'select grp_id as id, grp_name as label from users_groups order by label';
+				break;
 			default:
 				$query = parent::get_selection_query($type);
 				break;
@@ -386,19 +516,10 @@ class list_users_ui extends list_ui {
 		return $query;
 	}
 	
-	/**
-	 * Filtre SQL
-	 */
-	protected function _get_query_filters() {
-		$filter_query = '';
+	protected function get_search_filter_groups() {
+		global $msg;
 		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+		return $this->get_search_filter_multiple_selection($this->get_selection_query('groups'), 'groups', $msg['users_groups_all']);
 	}
 	
 	protected function _get_object_property_deflt_notice_statut($object) {
@@ -442,13 +563,19 @@ class list_users_ui extends list_ui {
 	}
 	
 	protected function _get_object_property_value_deflt_lang($object) {
-		$marc_list_collection = marc_list_collection::get_instance('lang');
-		return $marc_list_collection->table[$object->value_deflt_lang];
+		if(!empty($object->value_deflt_lang)) {
+			$marc_list_collection = marc_list_collection::get_instance('lang');
+			return $marc_list_collection->table[$object->value_deflt_lang];
+		}
+		return '';
 	}
 	
 	protected function _get_object_property_value_deflt_fonction($object) {
-		$marc_list_collection = marc_list_collection::get_instance('fonction');
-		return $marc_list_collection->table[$object->value_deflt_fonction];
+		if(!empty($object->value_deflt_fonction)) {
+			$marc_list_collection = marc_list_collection::get_instance('function');
+			return $marc_list_collection->table[$object->value_deflt_fonction];
+		}
+		return '';
 	}
 	
 	protected function _get_object_property_value_deflt_relation($object) {
@@ -566,132 +693,249 @@ class list_users_ui extends list_ui {
 		return $pclassement->get_name();
 	}
 	
+	protected function _get_object_property_group($object) {
+		$users_group = new users_group($object->grp_num);
+		return $users_group->name;
+	}
+	
+	protected function _get_object_property_mail_configuration_is_validated($object) {
+		$mail_configuration = new mail_configuration($object->user_email);
+		return $mail_configuration->is_validated();
+	}
+	
 	protected function get_display_permission_access($permission_access=0) {
-	    if($permission_access) {
-	        return '<img src="'.get_url_icon('coche.gif').'" class="align_top" hspace=3>';
-	    } else {
-	        return '<img src="'.get_url_icon('uncoche.gif').'" class="align_top" hspace=3>';
-	    }
+		if($permission_access) {
+			return '<img src="'.get_url_icon('coche.gif').'" class="align_top" hspace=3>';
+		} else {
+			return '<img src="'.get_url_icon('uncoche.gif').'" class="align_top" hspace=3>';
+		}
 	}
 	
 	protected function get_display_ask_alert_mail($name, $alert_mail=0) {
-	    global $msg;
-	    global $admin_user_alert_row;
-	    
-	    if($alert_mail) {
-	        return str_replace("!!user_alert!!", $msg[$name].'<img src="'.get_url_icon('tick.gif').'" class="align_top" hspace=3>', $admin_user_alert_row);
-	    } else {
-	        return '';
-	    }
+		global $msg;
+		global $admin_user_alert_row;
+		
+		if($alert_mail) {
+			return str_replace("!!user_alert!!", $msg[$name].'<img src="'.get_url_icon('tick.gif').'" class="align_top" hspace=3>', $admin_user_alert_row);
+		} else {
+			return '';
+		}
+	}
+	
+	protected function get_cell_content($object, $property) {
+	    global $msg, $charset;
+	    global $PMBuserid, $base_path;
+		
+		$content = '';
+		switch($property) {
+			case 'mail_configuration_is_validated':
+				if($object->user_email) {
+					if(!$this->_get_object_property_mail_configuration_is_validated($object)) {
+						$content .= "<tr>";
+						$content .= "<td class='brd' colspan='4'>";
+						if($PMBuserid == $object->id) {
+							$content .= "<span class='erreur'>".htmlentities($msg['mail_configuration_myself_is_not_validated'], ENT_QUOTES, $charset)."</span>";
+						} else {
+							$content .= "<span class='erreur'>".htmlentities($msg['mail_configuration_other_is_not_validated'], ENT_QUOTES, $charset)."</span>";
+						}
+						$content .= "</td>";
+						$content .= "</tr>";
+					}
+				}
+				break;
+			case 'rights':
+				$permissions = list_permissions_user_ui::get_instance()->get_objects();
+				$content .= "<tr>";
+				$indice = 0;
+				foreach ($permissions as $indice=>$permission) {
+					if($indice % 4 == 0) {
+						$content .= "</tr><tr>";
+					}
+					$content .= "<td class='brd'>".$this->get_display_permission_access($object->rights & $permission->rights).$permission->label."</td>";
+				}
+				while($indice % 4 != 3) {
+					$content .= "<td class='brd'></td>";
+					$indice++;
+				}
+				$content .= "</tr>";
+				break;
+			case 'group':
+			    $content .= "<a href='".$base_path."/admin.php?categ=users&sub=groups&action=modif&id=".$object->grp_num."'>";
+			    $content .= $this->_get_object_property_group($object);
+			    $content .= "</a>";
+			    break;
+			default :
+				$content .= parent::get_cell_content($object, $property);
+				break;
+		}
+		return $content;
 	}
 	
 	protected function get_display_content_object_list($object, $indice) {
-	    global $msg;
-	    global $admin_user_list;
-	    global $admin_user_link1;
-	    
-	    $ancre = "";
-	    if(!empty($this->object_id) && $this->object_id==$object->userid) {
-	    	if(empty($this->ancre)) {
-	    		$this->ancre = $this->objects_type."_object_list_ancre";
-	    	}
-	    	$ancre = "<a name='".$this->ancre."'></a>";
-	    }
-	    
-	    // réinitialisation des chaînes
-	    $dummy = $admin_user_list;
-	    $dummy1 = $admin_user_link1;
-	    
-	    $flag = "<img src='./images/flags/".$object->user_lang.".gif' width='24' height='16' vspace='3'>";
-	    
-	    $dummy =str_replace('!!user_link!!', $dummy1, $dummy);
-	    $dummy =str_replace('!!user_name!!', "$object->prenom $object->nom", $dummy);
-	    $dummy =str_replace('!!user_login!!', $object->username, $dummy);
-	    
-	    $dummy =str_replace('!!nuseradmin!!', $this->get_display_permission_access($object->rights & ADMINISTRATION_AUTH), $dummy);
-	    $dummy =str_replace('!!nusercatal!!', $this->get_display_permission_access($object->rights & CATALOGAGE_AUTH), $dummy);
-	    $dummy =str_replace('!!nusercirc!!', $this->get_display_permission_access($object->rights & CIRCULATION_AUTH), $dummy);
-	    $dummy =str_replace('!!nuserpref!!', $this->get_display_permission_access($object->rights & PREF_AUTH), $dummy);
-	    $dummy =str_replace('!!nuseracquisition_account_invoice!!', $this->get_display_permission_access($object->rights & ACQUISITION_ACCOUNT_INVOICE_AUTH), $dummy);
-	    $dummy =str_replace('!!nuserauth!!', $this->get_display_permission_access($object->rights & AUTORITES_AUTH), $dummy);
-	    $dummy =str_replace('!!nuseredit!!', $this->get_display_permission_access($object->rights & EDIT_AUTH), $dummy);
-	    $dummy =str_replace('!!nusereditforcing!!', $this->get_display_permission_access($object->rights & EDIT_FORCING_AUTH), $dummy);
-	    $dummy =str_replace('!!nusersauv!!', $this->get_display_permission_access($object->rights & SAUV_AUTH), $dummy);
-	    $dummy =str_replace('!!nuserdsi!!', $this->get_display_permission_access($object->rights & DSI_AUTH), $dummy);
-	    $dummy =str_replace('!!nuseracquisition!!', $this->get_display_permission_access($object->rights & ACQUISITION_AUTH), $dummy);
-	    $dummy =str_replace('!!nuserrestrictcirc!!', $this->get_display_permission_access($object->rights & RESTRICTCIRC_AUTH), $dummy);
-	    $dummy =str_replace('!!nuserthesaurus!!', $this->get_display_permission_access($object->rights & THESAURUS_AUTH), $dummy);
-	    $dummy =str_replace('!!nusertransferts!!', $this->get_display_permission_access($object->rights & TRANSFERTS_AUTH), $dummy);
-	    $dummy =str_replace('!!nuserextensions!!', $this->get_display_permission_access($object->rights & EXTENSIONS_AUTH), $dummy);
-	    $dummy =str_replace('!!nuserdemandes!!', $this->get_display_permission_access($object->rights & DEMANDES_AUTH), $dummy);
-	    $dummy =str_replace('!!nusercms!!', $this->get_display_permission_access($object->rights & CMS_AUTH), $dummy);
-	    $dummy =str_replace('!!nusercms_build!!', $this->get_display_permission_access($object->rights & CMS_BUILD_AUTH), $dummy);
-	    $dummy =str_replace('!!nuserfiches!!', $this->get_display_permission_access($object->rights & FICHES_AUTH), $dummy);
-	    $dummy =str_replace('!!nusermodifcbexpl!!', $this->get_display_permission_access($object->rights & CATAL_MODIF_CB_EXPL_AUTH), $dummy);
-	    $dummy =str_replace('!!nusersemantic!!', $this->get_display_permission_access($object->rights & SEMANTIC_AUTH), $dummy);
-	    $dummy =str_replace('!!nuserconcepts!!', $this->get_display_permission_access($object->rights & CONCEPTS_AUTH), $dummy);
-	    $dummy =str_replace('!!nusermodelling!!', $this->get_display_permission_access($object->rights & MODELLING_AUTH), $dummy);
-	    
-	    
-        $dummy = str_replace('!!lang_flag!!', $flag, $dummy);
-        $dummy = str_replace('!!nuserlogin!!', $object->username, $dummy);
-        $dummy = str_replace('!!nuserid!!', $object->userid, $dummy);
-              
-        $dummy =str_replace('!!user_alert_resamail!!', $this->get_display_ask_alert_mail('alert_resa_user_mail', $object->user_alert_resamail), $dummy);
-        $dummy =str_replace('!!user_alert_contribmail!!', $this->get_display_ask_alert_mail('alert_contrib_user_mail', $object->user_alert_contribmail), $dummy);
-        $dummy =str_replace('!!user_alert_demandesmail!!', $this->get_display_ask_alert_mail('alert_demandes_user_mail', $object->user_alert_demandesmail), $dummy);
-        $dummy =str_replace('!!user_alert_subscribemail!!', $this->get_display_ask_alert_mail('alert_subscribe_user_mail', $object->user_alert_subscribemail), $dummy);
-        $dummy =str_replace('!!user_alert_suggmail!!', $this->get_display_ask_alert_mail('alert_sugg_user_mail', $object->user_alert_suggmail), $dummy);
-        $dummy =str_replace('!!user_alert_serialcircmail!!', $this->get_display_ask_alert_mail('alert_subscribe_serialcirc_mail', $object->user_alert_serialcircmail), $dummy);
-                                                
-        $dummy = str_replace('!!user_created_date!!', $msg['user_created_date'].format_date($object->create_dt), $dummy);
-                    
-        return $ancre.$dummy;
+		global $msg;
+		global $admin_user_list;
+		global $PMBuserid, $base_path;
+		global $display_mode;
+		global $pmb_contribution_area_activate, $demandes_active, $opac_websubscribe_show, $acquisition_active;
+		global $animations_active;
+		
+		if($display_mode == 'flat') {
+			return parent::get_display_content_object_list($object, $indice);
+		} else {
+			$ancre = "";
+			if(!empty($this->object_id) && $this->object_id==$object->userid) {
+				if(empty($this->ancre)) {
+					$this->ancre = $this->objects_type."_object_list_ancre";
+				}
+				$ancre = "<a name='".$this->ancre."'></a>";
+			}
+			
+			// réinitialisation des chaînes
+			$dummy = $admin_user_list;
+			
+			$flag = "<img src='./images/flags/".$object->user_lang.".gif' width='24' height='16' vspace='3'>";
+			
+			if($this->at_least_one_action()) {
+				$dummy =str_replace('!!user_selection!!', "<input type='checkbox' id='".$this->objects_type."_selection_".$object->userid."' name='".$this->objects_type."_selection[".$object->userid."]' class='".$this->objects_type."_selection' value='".$object->userid."' />", $dummy);
+			} else {
+				$dummy =str_replace('!!user_selection!!', "", $dummy);
+			}
+			$user_links = array();
+			$user_links[] = "<input class='bouton' type='button' value=' $msg[62] ' onClick=\"document.location='".static::get_controller_url_base()."&action=modif&id=".$object->userid."'\">";
+			$user_links[] = "<input class='bouton' type='button' value=' $msg[mot_de_passe] ' onClick=\"document.location='".static::get_controller_url_base()."&action=pwd&id=".$object->userid."'\">";
+			if($PMBuserid == $object->userid) {
+				$user_links[] = "<input class='bouton' type='button' value=' $msg[mail_configuration_edit] ' onClick=\"document.location='".$base_path."/admin.php?categ=mails&sub=configuration&action=edit&name=".$object->user_email."'\">";
+			}
+			$dummy =str_replace('!!user_link!!', implode('&nbsp;', $user_links), $dummy);
+			$dummy =str_replace('!!user_name!!', "$object->prenom $object->nom", $dummy);
+			$dummy =str_replace('!!user_login!!', $object->username, $dummy);
+			
+			$content = $this->get_cell_content($object, 'mail_configuration_is_validated');
+			$content .= $this->get_cell_content($object, 'rights');
+			$content .= $this->get_display_ask_alert_mail('alert_resa_user_mail', $object->user_alert_resamail);
+			if ($pmb_contribution_area_activate) {
+				$content .= $this->get_display_ask_alert_mail('alert_contrib_user_mail', $object->user_alert_contribmail);
+			}
+			if ($demandes_active) {
+				$content .= $this->get_display_ask_alert_mail('alert_demandes_user_mail', $object->user_alert_demandesmail);
+			}
+			if ($opac_websubscribe_show) {
+				$content .= $this->get_display_ask_alert_mail('alert_subscribe_user_mail', $object->user_alert_subscribemail);
+			}
+			if ($acquisition_active) {
+				$content .= $this->get_display_ask_alert_mail('alert_sugg_user_mail', $object->user_alert_suggmail);
+			}
+			if ($animations_active) {
+			    $content .= $this->get_display_ask_alert_mail('alert_animation_user_mail', $object->user_alert_animation_mail);
+			}
+			$dummy = str_replace('!!brd_columns!!', $content, $dummy);
+			
+			$dummy = str_replace('!!lang_flag!!', $flag, $dummy);
+			$dummy = str_replace('!!nuserlogin!!', $object->username, $dummy);
+			$dummy = str_replace('!!nuserid!!', $object->userid, $dummy);
+			
+			$dummy = str_replace('!!user_created_date!!', $msg['user_created_date'].format_date($object->create_dt), $dummy);
+			
+			return $ancre.$dummy;
+		}
+	}
+	
+	protected function get_display_group_header_list($group_label, $level=1, $uid='') {
+		global $display_mode;
+		
+		if($display_mode == 'flat') {
+			return parent::get_display_group_header_list($group_label, $level, $uid);
+		} else {
+			$display = "
+			<div id='".$uid."_group_header'>
+				<div class='list_ui_content_list_group list_ui_content_list_group_level_".$level." ".$this->objects_type."_content_list_group ".$this->objects_type."_content_list_group_level_".$level."'>
+					".$this->get_cell_group_label($group_label, ($level-1))."
+				</div>
+			</div>";
+			return $display;
+		}
+	}
+	
+	/**
+	 * Affichage de la liste des objets
+	 * @return string
+	 */
+	public function get_display_objects_list() {
+		global $display_mode;
+		
+		$display = '';
+		if($display_mode == 'flat') {
+			$display .= parent::get_display_objects_list();
+		} else {
+			if(count($this->objects)) {
+				$display .= $this->get_display_content_list();
+				$display .= $this->add_events_on_objects_list();
+			}
+		}
+		return $display;
 	}
 	
 	/**
 	 * Affiche la recherche + la liste
 	 */
 	public function get_display_list() {
-	    $display = '';
-	    //Affichage de la liste des objets
-	    if(count($this->objects)) {
-	        $display .= $this->get_display_content_list();
-	        $display .= $this->add_events_on_objects_list();
-	    }
-	    if(count($this->get_selection_actions())) {
-	        $display .= $this->get_display_selection_actions();
-	    }
-	    $display .= $this->get_display_others_actions();
-	    $display .= $this->pager();
-	    $display .= "
-		<div class='row'>&nbsp;</div>
+		global $msg;
+		
+		$display = "
 		<div class='row'>
-			<div class='left'>
-			</div>
-			<div class='right'>
-			</div>
+			".$this->get_button('add', $msg[85])."
 		</div>";
-	    return $display;
+		$display .= parent::get_display_list();
+		return $display;
 	}
 	
-	protected function get_link_action($action, $act) {
-	    global $msg;
-	    
+	protected function get_display_left_actions() {
+		global $msg;
+		
+		return $this->get_button('add', $msg[85]);
+	}
+	
+	protected function get_default_attributes_format_cell($object, $property) {
 	    return array(
-	        'href' => static::get_controller_url_base()."&action=".$action,
-	        'confirm' => ''
+	        'onclick' => "document.location=\"".static::get_controller_url_base()."&action=modif&id=".$object->id."\""
 	    );
 	}
 	
+	protected function get_link_action($action, $act) {
+		return array(
+				'href' => static::get_controller_url_base()."&action=".$action,
+				'confirm' => ''
+		);
+	}
+	
 	protected function init_default_selection_actions() {
+		global $msg;
+		
 		parent::init_default_selection_actions();
 		//Bouton modifier
-// 		$link = array();
-// 		$this->add_selection_action('edit', $msg['62'], 'b_edit.png', $link);
+		$edit_link = array(
+				'showConfiguration' => static::get_controller_url_base()."&action=list_save"
+		);
+		$this->add_selection_action('edit', $msg['62'], 'b_edit.png', $edit_link);
 		
 		//Bouton supprimer
 // 		$this->add_selection_action('delete', $msg['63'], 'interdit.gif', $this->get_link_action('list_delete', 'delete'));
+	}
+	
+	/**
+	 * Jointure externes SQL pour les besoins des filtres
+	 */
+	protected function _get_query_join_filters() {
+		
+		$filter_join_query = '';
+		if((is_array($this->filters['groups']) && count($this->filters['groups'])) || !empty($this->filters['group'])) {
+			$filter_join_query .= " LEFT JOIN users_groups ON users.grp_num=users_groups.grp_id";
+		}
+		return $filter_join_query;
+	}
+	
+	protected function _add_query_filters() {
+		$this->_add_query_filter_multiple_restriction('groups', 'grp_id', 'integer');
 	}
 	
 	protected function get_options_editable_column($object, $property) {
@@ -816,18 +1060,34 @@ class list_users_ui extends list_ui {
 					$list_printers = explode(";", $pmb_printer_list);
 					foreach ($list_printers as $printer) {
 						$printer = trim($printer);
+						$out=array();
 						if (preg_match('#^ *(\d+) *\_ *(.+?) *(\(([\d\.:]+)\))? *$#',$printer,$out)) {
 							$options[] = array('value' => $out[1], 'label' => $out[2]);
 						}
 					}
 				}
-				return $options; 
+				return $options;
 			case 'deflt_type_abts':
 				return $this->get_options_from_query_selection($this->get_selection_query('type_abts'));
 			case 'deflt_pclassement':
 				return $this->get_options_from_query_selection($this->get_selection_query('pclassement'));
 			default:
 				return parent::get_options_editable_column($object, $property);
+		}
+	}
+	
+	protected function _get_query_property_filter($property) {
+		switch ($property) {
+			case 'groups':
+				return "select grp_name from users_groups where grp_id IN (".implode(',', $this->filters[$property]).")";
+		}
+		return '';
+	}
+	
+	protected function save_object($object, $property, $value) {
+		if (is_object($object)) {
+			$query = "UPDATE users SET ".$property."='".addslashes($value)."' WHERE userid=".$object->id;
+			pmb_mysql_query($query);
 		}
 	}
 	

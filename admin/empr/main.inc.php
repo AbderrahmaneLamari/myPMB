@@ -2,10 +2,15 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.16 2021/02/08 10:30:13 dgoron Exp $
+// $Id: main.inc.php,v 1.17 2022/09/07 15:13:30 dbellamy Exp $
 // supporto ldap by MaxMan
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
+
+global $base_path, $include_path;
+global $msg, $lang;
+global $pmb_import_modele_lecteur;
+global $sub;
 
 switch($sub) {
     case 'categ':
@@ -18,9 +23,10 @@ switch($sub) {
         include("./admin/empr/statut.inc.php");
         break;
     case 'implec':
-        if ($pmb_import_modele_lecteur) $import_modele=$pmb_import_modele_lecteur; else $import_modele="import_empr.inc.php";
+        $import_modele="import_empr.inc.php";
+        if ($pmb_import_modele_lecteur) $import_modele=$pmb_import_modele_lecteur;
         if (file_exists($base_path."/admin/empr/".$import_modele)) {
-        	require_once($base_path."/admin/empr/".$import_modele);
+        	require_once $base_path."/admin/empr/".$import_modele;
         } else {
         	error_message("", sprintf($msg["admin_error_file_import_modele_lecteur"],$import_modele), 1, "./admin.php?categ=param");
         }

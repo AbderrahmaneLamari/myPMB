@@ -2,12 +2,12 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: searcher_autorities.class.php,v 1.14.2.1 2021/07/13 10:24:20 tsamson Exp $
+// $Id: searcher_autorities.class.php,v 1.17 2022/05/17 07:31:52 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path.'/searcher/opac_searcher_generic.class.php');
-
 
 //un jour ca sera utile
 class searcher_autorities extends opac_searcher_generic {
@@ -97,7 +97,6 @@ class searcher_autorities extends opac_searcher_generic {
 
 	// à réécrire au besoin...
 	protected function _sort($start,$number){
-		global $dbh;
 		global $last_param, $tri_param, $limit_param;
 		
 		$order = "";
@@ -128,7 +127,11 @@ class searcher_autorities extends opac_searcher_generic {
 		    if (empty($this->objects_ids)) {
 		        $objects_ids = 0;
 		    }
-		    $query .= " AND authorities.id_authority IN ($objects_ids)";
+		    if (empty($join)) {
+    		    $query .= " WHERE id_authority IN ($objects_ids)";
+		    } else {
+    		    $query .= " AND authorities.id_authority IN ($objects_ids)";
+		    }
 		}
 		$res = pmb_mysql_query($query.$order.$limit);
 		if(pmb_mysql_num_rows($res)){
@@ -189,7 +192,7 @@ class searcher_autorities extends opac_searcher_generic {
 
 		$this->table_tempo = 'search_result'.md5(microtime(true));
 		$rqt = 'create temporary table '.$this->table_tempo.' '.$query;
-		$res = pmb_mysql_query($rqt);
+		pmb_mysql_query($rqt);
 		pmb_mysql_query('alter table '.$this->table_tempo.' add index i_id('.$this->object_key.')');
 	}
 	
@@ -232,7 +235,7 @@ class searcher_autorities extends opac_searcher_generic {
 			while ($row = pmb_mysql_fetch_object($result)) {
 				if(!$first)$display .=", ";
 				$display .=htmlentities($row->authority_number,ENT_QUOTES,$charset);
-				if($tmp=trim($row->origin_authorities_name)){
+				if(trim($row->origin_authorities_name)){
 					$display .=htmlentities(" (".$row->origin_authorities_name.")",ENT_QUOTES,$charset);
 				}
 				$first=false;
@@ -247,6 +250,7 @@ class searcher_autorities extends opac_searcher_generic {
 	*/
 	public function add_fields_restrict($fields_restrict = array()) {
 		if(count($fields_restrict)){
+			$tab = array();
 			$tab[] = array(
 				'op' => "and",
 				'sub' => $fields_restrict

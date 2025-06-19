@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_linked_work_selector.class.php,v 1.6 2021/04/15 08:38:07 qvarin Exp $
+// $Id: onto_contribution_datatype_linked_work_selector.class.php,v 1.8 2022/04/05 14:30:33 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -32,20 +32,30 @@ class onto_contribution_datatype_linked_work_selector  extends onto_common_datat
 		return false;
 	}
 	
-	public function get_value(){
-		return $this->value;
-	} 
+	public function get_raw_value() {
+	    //si c'est un tableau, on retourne la première valeur dans le cas générale
+	    if (is_array($this->value)) {
+	        foreach ($this->value as $key => $value) {
+	            return $value;
+	        }
+	    }
+	    return $this->value;
+	}
 	
 	public function get_formated_value(){
 	    if (isset($this->formated_value)) {
 	        return $this->formated_value;
 	    }
 	    
-	    $this->formated_value = $this->value;
+	    $this->formated_value = array(
+	        'work' => array(
+	            'value' => $this->get_raw_value(),
+	            'display_label' => $this->offsetget_value_property('display_label') ?? "",
+	        )
+	    );
 	    
 	    $assertions = $this->offsetget_value_property("assertions");
 	    if (is_array($assertions)) {
-	        $this->formated_value = array();
 	        /* @var $assertion onto_assertion */
 	        foreach ($assertions as $assertion) {
 	            switch ($assertion->get_predicate()) {
@@ -97,7 +107,7 @@ class onto_contribution_datatype_linked_work_selector  extends onto_common_datat
 	            
 	            $data = stripslashes_array($data);
 	            
-	            if (isset($data["value"])) {
+	            if (!empty($data["value"])) {
 	                
 	                $data_properties = array();
                     $data_properties["lang"] = "";

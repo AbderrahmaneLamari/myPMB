@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lignes_actes_statuts.class.php,v 1.12 2021/01/18 13:16:14 dgoron Exp $
+// $Id: lignes_actes_statuts.class.php,v 1.13.4.1 2023/06/28 07:57:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -36,12 +36,19 @@ class lgstat{
 
 	}
 
-	public function get_form() {
-		global $msg, $charset;
-		global $lgstat_content_form;
+	public function get_content_form() {
+		global $msg;
 		
-		$content_form = $lgstat_content_form;
-		$content_form = str_replace('!!id!!', $this->id_statut, $content_form);
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('libelle', '103')
+		->add_input_node('text', $this->libelle);
+		$interface_content_form->add_element('relance', 'acquisition_lgstat_arelancer')
+		->add_select_node(array(1 => $msg[40], 0 => $msg[39]), $this->relance);
+		return $interface_content_form->get_display();
+	}
+	
+	public function get_form() {
+		global $msg;
 		
 		$interface_form = new interface_admin_form('lgstatform');
 		if(!$this->id_statut){
@@ -49,16 +56,9 @@ class lgstat{
 		}else{
 			$interface_form->set_label($msg['acquisition_lgstat_mod']);
 		}
-		$content_form = str_replace('!!libelle!!', htmlentities($this->libelle, ENT_QUOTES, $charset), $content_form);
-		$sel_relance = "<select id='relance' name ='relance' >";
-		$sel_relance.= "<option value='1' ".($this->relance ? "selected='selected'" : '').">".htmlentities($msg[40],ENT_QUOTES,$charset)."</option>";
-		$sel_relance.= "<option value='0' ".(!$this->relance ? "selected='selected'" : '').">".htmlentities($msg[39],ENT_QUOTES,$charset)."</option>";
-		$sel_relance.= "</select>";
-		$content_form = str_replace('!!sel_relance!!', $sel_relance, $content_form);
-		
 		$interface_form->set_object_id($this->id_statut)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->libelle." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('lignes_actes_statuts')
 		->set_field_focus('libelle');
 		return $interface_form->get_display();
@@ -99,8 +99,6 @@ class lgstat{
 
 	//Retourne une liste des statuts de lignes d'actes (tableau)
 	public static function getList($x='ARRAY_ALL') {
-		
-		global $dbh;
 		$res = array();
 		
 		$q = "select * from lignes_actes_statuts order by libelle ";
@@ -109,7 +107,7 @@ class lgstat{
 			case 'QUERY' :
 				return $q;
 			case 'ARRAY_VALUES' :
-				$r = pmb_mysql_query($q, $dbh);
+				$r = pmb_mysql_query($q);
 				$res = array();
 				while ($row = pmb_mysql_fetch_object($r)){
 					$res[] = $row->id_statut;
@@ -117,7 +115,7 @@ class lgstat{
 				break;
 			case 'ARRAY_ALL':
 			default :
-				$r = pmb_mysql_query($q, $dbh);
+				$r = pmb_mysql_query($q);
 				$res = array();
 				while ($row = pmb_mysql_fetch_object($r)){
 					$res[$row->id_statut] = array();

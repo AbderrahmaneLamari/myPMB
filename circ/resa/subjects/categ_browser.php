@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: categ_browser.php,v 1.10 2017/11/22 11:07:35 dgoron Exp $
+// $Id: categ_browser.php,v 1.11 2022/02/24 08:46:30 dgoron Exp $
 
 // affichage du browser de catégories
 
@@ -12,10 +12,16 @@ $base_auth = "CIRCULATION_AUTH";
 $base_title = "\$msg[6]";
 require_once ("$base_path/includes/init.inc.php");
 
+global $class_path, $id_empr, $groupID, $id_thes, $parent;
+
 include("$class_path/categ_browser.class.php");
 
-// url du présent browser
+$id_empr = intval($id_empr);
+$groupID = intval($groupID);
+$id_thes = intval($id_thes);
+$parent = intval($parent);
 
+// url du présent browser
 $browser_url = "./categ_browser.php?id_empr=$id_empr&groupID=$groupID";
 
 print "<div id='contenu-frame'>";
@@ -57,7 +63,7 @@ if ($id_thes != -1) {
 } else {
 //	Afficher ici la liste des thesaurus si besoin en mode tous les thesaurus
 }
-pmb_mysql_close($dbh);
+pmb_mysql_close();
 
 // affichage du footer
 print "</div></body></html>";

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mails_waiting_controller.class.php,v 1.1.2.2 2021/10/18 13:36:00 dgoron Exp $
+// $Id: mails_waiting_controller.class.php,v 1.1 2021/10/18 13:32:18 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scan_request_priority.class.php,v 1.2 2021/01/20 07:27:21 dgoron Exp $
+// $Id: scan_request_priority.class.php,v 1.2.6.1 2023/07/04 15:31:47 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -47,11 +47,20 @@ class scan_request_priority {
 		}
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->set_grid_model('flat_column_3');
+		
+		$interface_content_form->add_element('scan_request_priority_label', 'editorial_content_publication_state_label')
+		->add_input_node('text', $this->label)
+		->set_class('saisie-20em');
+		$interface_content_form->add_element('scan_request_priority_weight', 'scan_request_priority_weight')
+		->add_input_node('integer', $this->weight);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form(){
-		global $msg,$charset;
-		global $scan_request_priority_content_form;
-		$content_form = $scan_request_priority_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $msg;
 		
 		$interface_form = new interface_admin_form('scan_request_priority_form');
 		if(!$this->id){
@@ -59,12 +68,9 @@ class scan_request_priority {
 		}else{
 			$interface_form->set_label($msg['scan_request_priorities_update']);
 		}
-		$content_form = str_replace("!!label!!",htmlentities($this->label,ENT_QUOTES,$charset),$content_form);
-		$content_form = str_replace("!!weight!!",htmlentities($this->weight,ENT_QUOTES,$charset),$content_form);
-		
 		$interface_form->set_object_id($this->id)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->label." ?")
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('scan_request_priorities')
 		->set_field_focus('scan_request_priority_label');
 		return $interface_form->get_display();

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: lettre_suggestions_PDF.class.php,v 1.3 2019/08/09 10:49:04 dgoron Exp $
+// $Id: lettre_suggestions_PDF.class.php,v 1.4 2022/09/20 08:13:31 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -52,12 +52,6 @@ class lettre_suggestions_PDF extends lettre_PDF {
 		$this->_init_tab();
 		$this->x_tab = $this->marge_gauche;
 		$this->y_tab = $this->marge_haut;
-		
-		$pos_footer = explode(',', $this->get_parameter_value('pos_footer'));
-		if ($pos_footer[0]) $this->PDF->y_footer = $pos_footer[0];
-		else $this->PDF->y_footer=$this->y_footer;
-		if ($pos_footer[1]) $this->PDF->fs_footer = $pos_footer[1];
-		else $this->PDF->fs_footer=$this->fs_footer;
 	}
 	
 	protected function _init_PDF() {

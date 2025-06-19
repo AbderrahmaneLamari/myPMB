@@ -2,20 +2,30 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: cache_apcu.class.php,v 1.3 2021/04/15 13:55:00 dgoron Exp $
+// $Id: cache_apcu.class.php,v 1.6.4.1 2023/08/03 15:34:10 jparis Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class cache_apcu extends cache_factory {
 
-	public function setInCache($key, $value) {
+	public function setInCache($key, $value, $cache_time = 0) {
 		global $CACHE_MAXTIME;
 		
-		return apcu_store($key, $value, $CACHE_MAXTIME);
+		$cache_time = intval($cache_time);
+	    if(!$cache_time) {
+	        $cache_time = $CACHE_MAXTIME;
+	    }
+		
+	    return apcu_store($key, $value, $cache_time);
 	}
 
 	public function getFromCache($key) {
 		return apcu_fetch($key);
+	}
+	
+	public function deleteFromCache($key) {
+	    return apcu_delete($key);
+
 	}
 
 	public function clearCache() {
@@ -24,6 +34,10 @@ class cache_apcu extends cache_factory {
 	
 	public function deleteCache() {
 		global $KEY_CACHE_FILE_XML;
-		return apcu_delete(new APCUIterator('#^'.$KEY_CACHE_FILE_XML.'#'));
+		if(class_exists('APCuIterator', false) && ('cli' !== \PHP_SAPI || filter_var(ini_get('apc.enable_cli'), \FILTER_VALIDATE_BOOLEAN))) {
+			return apcu_delete(new APCUIterator('#^'.$KEY_CACHE_FILE_XML.'#'));
+		} else {
+			return false;
+		}
 	}
 }

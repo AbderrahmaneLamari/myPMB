@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sur_location.tpl.php,v 1.9 2021/02/03 08:28:01 dgoron Exp $
+// $Id: sur_location.tpl.php,v 1.10 2022/10/10 11:47:02 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -103,7 +103,7 @@ $tpl_sur_location_content_form = "
 		</div>
 	</div>
 	<div class='row'><label class='etiquette'>".$msg['sur_location_details_phone']."</label></div><div class='row'><input type='text' name='form_locdoc_phone' value='!!loc_phone!!' maxlength='100' class='saisie-20em' /></div>
-	<div class='row'><label class='etiquette'>".$msg['sur_location_details_email']."</label></div><div class='row'><input type='text' name='form_locdoc_email' value='!!loc_email!!' maxlength='100' class='saisie-20em' /></div>
+	<div class='row'><label class='etiquette'>".$msg['sur_location_details_email']."</label></div><div class='row'><input type='text' name='form_locdoc_email' value='!!loc_email!!' maxlength='255' class='saisie-50em' /></div>
 	<div class='row'><label class='etiquette'>".$msg['sur_location_details_website']."</label></div><div class='row'><input type='text' name='form_locdoc_website' value='!!loc_website!!' maxlength='100' class='saisie-50em' /></div>
 	<div class='row'><label class='etiquette'>".$msg['sur_location_details_logo']."</label></div><div class='row'><input type='text' name='form_locdoc_logo', ' value='!!loc_logo!!' maxlength='255' class='saisie-50em' /></div>
 	<div class='row'><label class='etiquette'>".$msg['sur_location_comment']."</label></div><div class='row'><textarea class='saisie-50em' name='form_locdoc_commentaire' id='form_locdoc_commentaire' cols='55' rows='5'>!!loc_commentaire!!</textarea></div>

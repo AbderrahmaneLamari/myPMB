@@ -1,0 +1,24 @@
+.pmb_breadcrumb li:not(:last-child):after {
+    content: ">";
+    margin: 0px 5px;
+}
+
+.cms_module_breadcrumb {
+    padding: 0!important;
+    margin-bottom : 24px!important;
+}
+
+.cms_module_breadcrumb li {
+    color: var(--c-primary);
+}
+
+.cms_module_breadcrumb li a {
+    text-decoration: underline;
+    color: var(--c-fourthly);
+}
+
+.cms_module_breadcrumb li:last-of-type a {
+    text-decoration: none;
+    color: var(--c-black);
+    pointer-events: none;
+}

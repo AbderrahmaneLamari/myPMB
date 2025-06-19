@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: tab.class.php,v 1.4.2.1 2021/10/26 09:33:36 dgoron Exp $
+// $Id: tab.class.php,v 1.7.4.2 2023/08/29 14:19:36 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -74,28 +74,34 @@ class tab {
 		$this->order = $data->tab_order;
 	}
 	
+	public function get_content_form() {
+		$interface_content_form = new interface_content_form(static::class);
+		$interface_content_form->add_element('tab_visible', 'tab_visible', 'flat')
+		->add_input_node('boolean', $this->visible);
+		$interface_content_form->add_element('tab_autorisations_all', 'tab_autorisations_all', 'flat')
+		->add_input_node('boolean', $this->autorisations_all);
+		
+		$interface_content_form->add_inherited_element('permissions_users', 'tab_autorisations', 'tab_autorisations')
+		->set_autorisations($this->autorisations);
+		
+		$interface_content_form->add_element('tab_shortcut', 'tab_shortcut')
+		->add_input_node('char', $this->get_shortcut());
+		$interface_content_form->add_element('tab_module')
+		->add_input_node('hidden', $this->module);
+		$interface_content_form->add_element('tab_categ')
+		->add_input_node('hidden', $this->categ);
+		$interface_content_form->add_element('tab_sub')
+		->add_input_node('hidden', $this->sub);
+		return $interface_content_form->get_display();
+	}
+	
 	public function get_form() {
-		global $msg, $charset;
-		global $tab_content_form;
+		global $msg;
 		
-		$content_form = $tab_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
-		
-		$interface_form = new interface_account_form('tab_form');
+		$interface_form = new interface_form('tab_form');
 		$interface_form->set_label($msg['tab_form_edit']." : ".$this->label);
-		
-		$content_form = str_replace('!!label!!', htmlentities($this->label, ENT_QUOTES, $charset), $content_form);
-		$content_form = str_replace('!!visible!!', ($this->visible ? "checked='checked'" : ""), $content_form);
-		$content_form = str_replace('!!autorisations_users!!', users::get_form_autorisations($this->autorisations,0), $content_form);
-		$content_form = str_replace('!!autorisations_all!!', ($this->autorisations_all ? "checked='checked'" : ""), $content_form);
-		$content_form = str_replace('!!shortcut!!', htmlentities($this->get_shortcut(), ENT_QUOTES, $charset), $content_form);
-		
-		$content_form = str_replace('!!module!!', $this->module, $content_form);
-		$content_form = str_replace('!!categ!!', $this->categ, $content_form);
-		$content_form = str_replace('!!sub!!', $this->sub, $content_form);
-		
 		$interface_form->set_object_id($this->id)
-		->set_content_form($content_form)
+		->set_content_form($this->get_content_form())
 		->set_table_name('tabs');
 		return $interface_form->get_display();
 	}
@@ -154,7 +160,10 @@ class tab {
 	}
 	
 	public function get_id() {
-		return $this->id;
+	    if(!empty($this->id)) {
+	        return $this->id;
+	    }
+	    return $this->module."_".$this->categ.(!empty($this->sub) ? "_".$this->sub : "");
 	}
 	
 	public function get_module() {
@@ -305,6 +314,7 @@ class tab {
 		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)) {
 			$data = pmb_mysql_fetch_object($result);
+			pmb_mysql_free_result($result);
 			$this->id = $data->id_tab;
 			$this->fetch_data();
 			return true;

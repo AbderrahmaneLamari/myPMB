@@ -2,10 +2,13 @@
 // +-------------------------------------------------+
 // e 2002-2014 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_skos_controler.class.php,v 1.101.2.1 2021/08/04 09:48:55 dgoron Exp $
+// $Id: onto_skos_controler.class.php,v 1.105.4.1 2023/06/14 14:59:25 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+use Pmb\Ark\Entities\ArkEntityPmb;
+
+global $class_path;
 require_once($class_path."/vedette/vedette_composee.class.php");
 require_once($class_path."/authority.class.php");
 require_once($class_path."/aut_pperso.class.php");
@@ -103,8 +106,6 @@ class onto_skos_controler extends onto_common_controler {
 	}
 	
 	public function get_list($class_uri,$params){
-		global $lang;
-
 		switch($class_uri){
 			case self::$concept_uri :
 				return $this->get_hierarchized_list($class_uri,$params);
@@ -265,7 +266,7 @@ class onto_skos_controler extends onto_common_controler {
     		
     		if(is_array($results)){
     			$return=array();
-    			foreach ($results as $key=>$result){
+    			foreach ($results as $result){
     				$return[] = $result->broader;
     			}
     			return $return;
@@ -290,7 +291,7 @@ class onto_skos_controler extends onto_common_controler {
     		
     		if(is_array($results)){
     			$return=array();
-    			foreach ($results as $key=>$result){
+    			foreach ($results as $result){
     				$return[] = $result->narrower;
     			}
     			return $return;
@@ -708,7 +709,6 @@ class onto_skos_controler extends onto_common_controler {
 	 * On hook la sauvegarde pour declencher la reindexation des elements impactes
 	 */
 	protected function proceed_save($list=true){
-	    global $dbh;
 	    global $pmb_map_activate;
 	    
 		$this->item->get_values_from_form();
@@ -819,7 +819,7 @@ class onto_skos_controler extends onto_common_controler {
 
 		// Mise e jour des vedettes composees contenant cette autorite
 		vedette_composee::update_vedettes_built_with_element($this->item->get_id(), TYPE_CONCEPT);
-			
+		indexation_stack::push($this->item->get_id(), TYPE_CONCEPT);
 		//reindexation des notices indexes avec le concepts
 		index_concept::update_linked_elements($this->item->get_id());
 		
@@ -858,7 +858,7 @@ class onto_skos_controler extends onto_common_controler {
 	 * On hook la suppression pour verifier l'utilisation au prealable
 	 */
 	protected function proceed_delete($force_delete = false, $print = true){
-		global $dbh,$msg;
+		global $msg;
 		
 		// On declare un flag pour savoir si on peut continuer la suppression
 		$deletion_allowed = true;
@@ -867,7 +867,7 @@ class onto_skos_controler extends onto_common_controler {
 		
 		// On regarde si le concdept est utilise pour indexer d'autres elements (tbl index_concept)
 		$query = "select num_object from index_concept where num_concept = ".onto_common_uri::get_id($this->item->get_uri());
-		$result = pmb_mysql_query($query,$dbh);
+		$result = pmb_mysql_query($query);
 		if(pmb_mysql_num_rows($result)){
 			$deletion_allowed = false;
 			$message.= "<br/>".$msg['concept_use_cant_delete'];
@@ -1042,7 +1042,7 @@ class onto_skos_controler extends onto_common_controler {
 		global $lang;
 		
 		$page=$this->params->page-1;
-		$query = "select SQL_CALC_FOUND_ROWS uri, id_item, value, lang from skos_fields_global_index join onto_uri on id_item = uri_id where code_champ='1' order by id_item desc ";
+		$query = "select uri, id_item, value, lang from skos_fields_global_index join onto_uri on id_item = uri_id where code_champ='1' order by id_item desc ";
 		if ($page > 0) {
 			$query.= " limit ".($page*$this->params->nb_per_page).", ".$this->params->nb_per_page;
 		} elseif ($this->params->nb_per_page > 0) {
@@ -1066,15 +1066,16 @@ class onto_skos_controler extends onto_common_controler {
 				}
 			}
 		}
-		$query = 'select FOUND_ROWS()';
+		$query = "SELECT DISTINCT id_item FROM skos_fields_global_index JOIN onto_uri ON id_item = uri_id WHERE code_champ='1'";
 		$result = pmb_mysql_query($query);
-		$list['nb_total_elements'] = pmb_mysql_result($result, 0, 0);
+		$list['nb_total_elements'] = pmb_mysql_num_rows($result);
 		return $list;
 	}
 	
 	protected function proceed_replace() {
 	    global $pmb_synchro_rdf;
 	    global $msg;
+	    global $pmb_ark_activate;
 	    
 		$by = $this->params->by;
 		if (!$by) {
@@ -1124,9 +1125,15 @@ class onto_skos_controler extends onto_common_controler {
     		//Remplacement dans les champs persos selecteur d'autorite
     		aut_pperso::replace_pperso(AUT_TABLE_CONCEPT, $this->item->get_id(), $by);
     		
-    		// effacement de l'identifiant unique d'autorite
-    		$authority = new authority(0, $this->item->get_id(), AUT_TABLE_CONCEPT);
-    		$authority->delete();
+    		if ($pmb_ark_activate) {
+    		    $idReplaced = authority::get_authority_id_from_entity($this->item->get_id(), AUT_TABLE_CONCEPT);
+    		    $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_CONCEPT);
+    		    if ($idReplaced && $idReplacing) {
+    		        $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+    		        $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+        		    $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+    		    }
+    		}
     		
     		$onto_index = onto_index::get_instance($this->get_onto_name());
     		$onto_index->set_handler($this->handler);
@@ -1153,7 +1160,7 @@ class onto_skos_controler extends onto_common_controler {
 	/**
 	 * Retourne le label d'un data en fonction de son uri.
 	 *
-	 * @param unknown_type $uri
+	 * @param string $uri
 	 */
 	public function get_data_label($uri){
 		if(!empty($this->params->att_id_filter) && ($this->params->att_id_filter == self::$concept_uri)){
@@ -1220,7 +1227,7 @@ class onto_skos_controler extends onto_common_controler {
 	}
 	
 	protected function _get_human_queries() {
-		global $authority_statut, $msg;
+		global $msg;
 		
 		$human_queries = array();
 		if ($this->params->user_input) {
@@ -1270,6 +1277,7 @@ class onto_skos_controler extends onto_common_controler {
 	
 	protected function proceed_merge() {
 	    global $msg, $id, $pmb_synchro_rdf;
+	    global $pmb_ark_activate;
 	    
 	    $by = $this->params->by;
 	    if (!$by) {
@@ -1338,9 +1346,15 @@ class onto_skos_controler extends onto_common_controler {
 	    //Remplacement dans les champs persos selecteur d'autorite
 	    aut_pperso::replace_pperso(AUT_TABLE_CONCEPT, $this->item->get_id(), $by);
 	    
-	    // effacement de l'identifiant unique d'autorite
-	    $authority = new authority(0, $this->item->get_id(), AUT_TABLE_CONCEPT);
-	    $authority->delete();
+	    if ($pmb_ark_activate) {
+	        $idReplaced = authority::get_authority_id_from_entity($this->item->get_id(), AUT_TABLE_CONCEPT);
+	        $idReplacing = authority::get_authority_id_from_entity($by, AUT_TABLE_CONCEPT);
+	        if ($idReplaced && $idReplacing) {
+	            $arkEntityReplaced = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplaced);
+	            $arkEntityReplacing = ArkEntityPmb::getEntityClassFromType(TYPE_AUTHORITY, $idReplacing);
+	            $arkEntityReplaced->markAsReplaced($arkEntityReplacing);
+	        }
+	    }
 	    
 	    //Remplacement de l'identifiant du concept source dans la table index concept
 	    $query = "update index_concept set num_concept=".$by." where num_concept=".$this->item->get_id();

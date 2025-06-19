@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: interface_account_form.class.php,v 1.1.2.2 2021/10/26 09:33:37 dgoron Exp $
+// $Id: interface_account_form.class.php,v 1.2.4.1 2023/03/24 09:28:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -18,9 +18,19 @@ class interface_account_form extends interface_form {
 			case 'modules':
 			case 'selectors':
 			case 'tabs':
+			case 'forms':
 				return $msg['initialize'];
 			default:
 				return parent::get_action_delete_label();
+		}
+	}
+	
+	protected function get_display_cancel_action() {
+		switch ($this->table_name) {
+			case 'mails_configuration':
+				return '';
+			default:
+				return parent::get_display_cancel_action();
 		}
 	}
 }

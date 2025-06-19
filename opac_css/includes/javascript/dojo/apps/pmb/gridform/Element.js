@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: Element.js,v 1.1.10.1 2021/11/16 15:49:25 dgoron Exp $
+// $Id: Element.js,v 1.2 2021/11/16 15:48:32 dgoron Exp $
 
 
 define(['dojo/_base/declare', 

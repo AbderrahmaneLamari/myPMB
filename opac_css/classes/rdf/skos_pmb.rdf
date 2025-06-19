@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- $Id: skos_pmb.rdf,v 1.11 2019/11/26 13:21:21 tsamson Exp $ -->
+<!-- $Id: skos_pmb.rdf,v 1.12 2022/03/02 16:12:18 tsamson Exp $ -->
 
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   xmlns:dct="http://purl.org/dc/terms/"
@@ -310,6 +310,7 @@
     <rdfs:range rdf:resource="http://www.w3.org/2004/02/skos/core#Concept"/>
     <pmb:datatype rdf:resource="http://www.pmbservices.fr/ontology#resource_selector"/>
     <pmb:name>semanticrelation</pmb:name>
+    <pmb:undisplayed>1</pmb:undisplayed>
     <pmb:formOrder>12</pmb:formOrder>
   </rdf:Description>
 

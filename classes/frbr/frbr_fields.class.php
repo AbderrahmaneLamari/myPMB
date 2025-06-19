@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: frbr_fields.class.php,v 1.16 2019/09/19 10:32:09 tsamson Exp $
+// $Id: frbr_fields.class.php,v 1.16.6.1 2023/08/31 12:56:46 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -23,8 +23,13 @@ class frbr_fields {
 	
 	protected $details;
 	protected static $pp;
-
+	
+	public $current_engine;
+	
 	public function __construct($type='', $xml_indexation="", $details = []) {
+	    global $default_tmp_storage_engine;
+	    
+	    $this->current_engine = $default_tmp_storage_engine;
     	$this->type = $type;
 		$this->xml_indexation=$xml_indexation;
 		$this->details = $details;

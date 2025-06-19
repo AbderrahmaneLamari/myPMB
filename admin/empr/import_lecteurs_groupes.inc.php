@@ -2,13 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: import_lecteurs_groupes.inc.php,v 1.18.4.1 2021/12/27 14:05:14 dgoron Exp $
+// $Id: import_lecteurs_groupes.inc.php,v 1.20 2022/09/07 15:13:30 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
 global $class_path;
-require_once("$class_path/emprunteur.class.php");
-require_once($class_path."/import/import_empr.class.php");
+global $action, $import_launch, $Sep_Champs, $type_import;
+
+require_once $class_path."/emprunteur.class.php";
+require_once $class_path."/import/import_empr.class.php";
 
 //La structure du fichier texte doit être la suivante : 
 //Numéro identifiant/Nom/Prénom/Rue/Complément de rue/Code postal/Commune/Téléphone/Année de date de naissance/Classe/Sexe/Tel2/Mail/Profession/Message
@@ -16,7 +18,6 @@ require_once($class_path."/import/import_empr.class.php");
 function show_import_choix_fichier() {
 	global $msg, $charset;
 	global $current_module ;
-	global $pmb_lecteurs_localises, $deflt2docs_location;
 
 print "
 <form class='form-$current_module' name='form1' ENCTYPE=\"multipart/form-data\" method='post' action=\"./admin.php?categ=empr&sub=implec&action=1\">
@@ -70,32 +71,38 @@ print "
 }
 
 function import($separateur, $type_import){
-	global $categorie, $codestat, $localisation;
-	global $pmb_lecteurs_localises;
-
+    
     //La structure du fichier texte doit être la suivante : 
     //Code-barres ; Nom ; Prénom ; Rue ; Complément de rue ; Code postal ; Commune ; Téléphone ; Année de date de naissance ; Classe ; Sexe ; Téléphone 2 ; Mail ; Profession ; Message
+
+    global $categorie, $codestat, $localisation;
+	global $pmb_lecteurs_localises;
+	
+	$cpt_maj = 0;
+	$cpt_insert = 0;
+	$cpt_delete = 0;
+	
 	$requete = "SELECT duree_adhesion FROM empr_categ WHERE id_categ_empr='".$categorie."'";
 	$resultat = pmb_mysql_query($requete);
-	if(pmb_mysql_num_rows($resultat))
+	if(pmb_mysql_num_rows($resultat)) {
 		 $duree = pmb_mysql_result($resultat,0,0);
-	else $duree=365;
+	} else {
+	    $duree=365;
+	}
     $eleve_abrege = array("Num&eacute;ro identifiant","Nom","Prénom");
     $date_auj = date("Y-m-d", time());
     $date_an_proch = date("Y-m-d", time()+3600*24*$duree);
     
     //Upload du fichier
-    if (!($_FILES['import_lec']['tmp_name']))
+    if (!($_FILES['import_lec']['tmp_name'])) {
         print "Cliquez sur Pr&eacute;c&eacute;dent et choisissez un fichier";
-    elseif (!(move_uploaded_file($_FILES['import_lec']['tmp_name'], "./temp/".basename($_FILES['import_lec']['tmp_name'])))) {
+    } elseif (!(move_uploaded_file($_FILES['import_lec']['tmp_name'], "./temp/".basename($_FILES['import_lec']['tmp_name'])))) {
         print "Le fichier n'a pas pu &ecirc;tre t&eacute;l&eacute;charg&eacute;. Voici plus d'informations :<br />";
         print_r($_FILES)."<p>";
     }
     $fichier = @fopen( "./temp/".basename($_FILES['import_lec']['tmp_name']), "r" );
        
     if ($fichier) {
-    	$cpt_maj = 0;
-    	$j = 0;
         while (!feof($fichier)) {
 			//initialise la variable tableau, au cas où on ait pas toutes les colonnes dans le fichier csv
 			$buffer = fgets($fichier, 4096);
@@ -123,7 +130,8 @@ function import($separateur, $type_import){
 			if(isset($tab[14])) $tab[14]=str_replace("\\r\\n","", $tab[14]);
 			 
             // Traitement du lecteur
-            $select = pmb_mysql_query("SELECT id_empr FROM empr WHERE empr_cb = '".$tab[0]."'");
+			$id_empr = 0;
+			$select = pmb_mysql_query("SELECT id_empr FROM empr WHERE empr_cb = '".$tab[0]."'");
             $nb_enreg = pmb_mysql_num_rows($select);
             
             //Test si un numéro id est fourni, rejet si pas d'id avec message si au moins nom ou au moins prénom contient qqch
@@ -136,10 +144,15 @@ function import($separateur, $type_import){
                 print("<br />");
                 $nb_enreg = 2;
             }
+            if($nb_enreg == 1) {
+                $row = pmb_mysql_fetch_assoc($select);
+                $id_empr = $row['id_empr'];
+            }
             
             $login = import_empr::cre_login($tab[1],$tab[2]);
                         
             switch ($nb_enreg) {
+                
                 case 0:
                 	//Ce lecteur n'est pas enregistré 
                     $req_insert = "INSERT INTO empr(empr_cb, empr_nom, empr_prenom, empr_adr1, empr_adr2, empr_cp, empr_ville, ";
@@ -149,20 +162,33 @@ function import($separateur, $type_import){
                     $req_insert .= "'$tab[6]', '$tab[7]', '$tab[8]', $categorie, $codestat, '$date_auj', '$sexe', ";
                     $req_insert .= "'$login', '$password', '$date_auj', '$date_an_proch','$tab[11]','$tab[12]','$tab[13]','$tab[14]','$localisation')";
                     $insert = pmb_mysql_query($req_insert);
+                    
                     if (!$insert) {
+                        
                         print("<b>Echec de la cr&eacute;ation du lecteur suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
                         for ($i=0;$i<3;$i++) {
                             print($eleve_abrege[$i]." : ".$tab[$i].", ");
                         }
                         print("<br />");
-                    }
-                    else {
-                    	emprunteur::update_digest($login,$password);
-                    	emprunteur::hash_password($login,$password);
+                        
+                    } else {
+                        
+                        $id_empr = pmb_mysql_insert_id();
+                        
+                        //Chiffrement du mot de passe
+                        //On verifie que le mot de passe lecteur correspond aux regles de saisie definies
+                        //Si non, encodage dans l'ancien format
+                        $old_hash = false;
+                        $check_password_rules = emprunteur::check_password_rules((int) $id_empr, $password, [], $lang);
+                        if( !$check_password_rules['result'] ) {
+                            $old_hash = true;
+                        }
+                        emprunteur::update_digest($login, $password);
+                        emprunteur::hash_password($login, $password, $old_hash);
+                        
                         $cpt_insert ++;
                     }
                     import_empr::gestion_groupe($tab[9], $tab[0]);
-                    $j++;
                     break;
 
                 case 1:
@@ -176,14 +202,17 @@ function import($separateur, $type_import){
                     $req_update .= "empr_date_adhesion = '$date_auj', empr_date_expiration = '$date_an_proch', empr_tel2 = '$tab[11]', empr_location='$localisation' ";
                     $req_update .= "WHERE empr_cb = '$tab[0]'";
                     $update = pmb_mysql_query($req_update);
+                    
                     if (!$update) {
+                        
                         print("<b>Echec de la modification du lecteur suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
                         for ($i=0;$i<3;$i++) {
                             print($eleve_abrege[$i]." : ".$tab[$i].", ");
                         }
                         print("<br />");
-                    }
-                    else {
+                        
+                    } else {
+                        
                     	if ($tab[12]!="") {
 	                    	$req_update_mail = "UPDATE empr SET empr_mail='$tab[12]' WHERE empr_cb = '$tab[0]'";
 	                    	$update_mail = pmb_mysql_query($req_update_mail);
@@ -219,7 +248,6 @@ function import($separateur, $type_import){
                         $cpt_maj ++;
                     }
                     import_empr::gestion_groupe($tab[9], $tab[0]);
-                    $j++;
                     break;
                 case 2:
                     break;
@@ -245,7 +273,10 @@ function import($separateur, $type_import){
         		WHERE pret_idempr IS NULL and empr_modif != '$date_auj' and empr_categ=$categorie and empr_codestat= $codestat $requete_empr_where ";
         	$list_empr_delete=pmb_mysql_query($requete_list_empr_delete);
         	while (($empr_delete = pmb_mysql_fetch_array($list_empr_delete))) {
-            	emprunteur::del_empr($empr_delete["id_empr"]);
+            	$deleted  = emprunteur::del_empr($empr_delete["id_empr"]);
+            	if(true === $deleted) {
+            	    $cpt_delete++;
+            	}
             }
         }
 		
@@ -273,4 +304,3 @@ switch($action) {
         show_import_choix_fichier();
         break;
 }
-?>

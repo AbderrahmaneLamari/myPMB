@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 //  2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: more_results.class.php,v 1.25.2.2 2021/12/02 13:37:14 qvarin Exp $
+// $Id: more_results.class.php,v 1.27 2021/12/02 13:44:35 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

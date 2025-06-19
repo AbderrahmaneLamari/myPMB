@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: zotero.class.php,v 1.16.2.1 2022/01/03 14:13:07 dgoron Exp $
+// $Id: zotero.class.php,v 1.17 2022/01/03 14:10:34 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

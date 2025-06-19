@@ -4,7 +4,7 @@ use Pmb\Animations\Models\MailingTypeModel;
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: mailtpl.class.php,v 1.20 2021/03/22 15:36:33 btafforeau Exp $
+// $Id: mailtpl.class.php,v 1.21.4.1 2023/09/02 07:29:25 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -17,6 +17,8 @@ class mailtpl {
 	public $info=array();
 	public $users=array();
 	public static $error="";
+	public $all_users;
+	public $all_userid;
 	
 	public function __construct($id=0) {
 		$this->id=intval($id);
@@ -175,12 +177,38 @@ class mailtpl {
 		return $tpl;   
     }   
        
+    public function get_content_form() {
+        global $pdflettreresa_resa_prolong_email;
+        
+        $interface_content_form = new interface_content_form(static::class);
+        $interface_content_form->add_element('name', 'admin_mailtpl_form_name')
+        ->add_input_node('text', $this->info['name']);
+        $interface_content_form->add_element('f_objet_mail', 'empr_mailing_form_obj_mail')
+        ->add_input_node('text', $this->info['objet'])
+        ->set_class('saisie-80em');
+        $interface_content_form->add_element('f_message', 'admin_mailtpl_form_tpl')
+        ->add_textarea_node($this->info['tpl'], 100, 20);
+        $interface_content_form->add_element('selvars', 'admin_mailtpl_form_selvars')
+        ->add_html_node(mailtpl::get_selvars());
+        if($pdflettreresa_resa_prolong_email){
+            $interface_content_form->add_element('resavars', 'admin_mailtpl_form_resa_prolong_selvars')
+            ->add_html_node(mailtpl::get_resavars());
+        }
+        $sel_img=mailtpl::get_sel_img();
+        if($sel_img) {
+            $interface_content_form->add_element('sel_img', 'admin_mailtpl_form_sel_img')
+            ->add_html_node($sel_img);
+        }
+        $interface_content_form->add_inherited_element('permissions_users', 'autorisations', 'procs_autorisations')
+        ->set_autorisations(implode(' ', $this->users))
+        ->set_on_create(($this->id ? 0 : 1));
+        $interface_content_form->add_element('id_mailtpl')
+        ->add_input_node('hidden', $this->id);
+        return $interface_content_form->get_display();
+    }
+    
 	public function get_form() {
-		global $mailtpl_content_form,$msg,$charset;
-		global $pdflettreresa_resa_prolong_email;
-		
-		$content_form = $mailtpl_content_form;
-		$content_form = str_replace('!!id!!', $this->id, $content_form);
+		global $mailtpl_js_content_form,$msg;
 		
 		$interface_form = new interface_admin_form('mailtpl');
 		if(!$this->id){
@@ -188,64 +216,28 @@ class mailtpl {
 		}else{
 			$interface_form->set_label($msg['admin_mailtpl_form_edit']);
 		}
-		$autorisations_users="";
-		$id_check_list="";
-		foreach($this->all_users as $a_user) {
-			$id_check="auto_".$a_user[0];
-			if($a_user[0]==1){
-				$checked=" checked readonly ";
-			}else{
-				if(in_array( $a_user[0],$this->users)){
-					$checked=" checked ";
-				}else $checked="";
-				if($id_check_list)$id_check_list.='|';
-				$id_check_list.=$id_check;
-			}
-			$autorisations_users.="<span class='usercheckbox'><input type='checkbox' $checked name='userautorisation[]' id='$id_check' value='".$a_user[0]."' class='checkbox'><label for='$id_check' class='normlabel'>&nbsp;".$a_user[1]."</label></span>&nbsp;&nbsp;";
-		}
-		$content_form=str_replace('!!name!!',htmlentities($this->info['name'], ENT_QUOTES, $charset),$content_form);
-		$content_form=str_replace('!!selvars!!',mailtpl::get_selvars(),$content_form);
-		
-		if($pdflettreresa_resa_prolong_email){
-			$content_form=str_replace('!!resavars!!',mailtpl::get_resavars(),$content_form);
-		}
-		
-		$sel_img_tpl="";
-		$sel_img=mailtpl::get_sel_img();
-		if($sel_img)$sel_img_tpl="
-		<div class='row'>
-			<label class='etiquette'>".$msg["admin_mailtpl_form_sel_img"]."</label>
-			<div class='row'>
-				$sel_img
-			</div>
-		</div>";
 		
 	    //On vérifie si le mailtpl n'est pas utilisé dans les types de communications en animation
 		$useInMailingType = MailingTypeModel::checkMailtplIsUse(intval($this->id));
-		$interface_form->set_block_delete($useInMailingType);
+		$interface_form->set_no_deletable($useInMailingType);
+		$interface_form->set_no_deletable_msg($msg["animation_mailtpl_use"]);
 		
-		$content_form=str_replace('!!sel_img!!',$sel_img_tpl,$content_form);
-		$content_form=str_replace('!!autorisations_users!!',$autorisations_users,$content_form);
-		$content_form=str_replace('!!id_check_list!!',$id_check_list,$content_form);
-		$content_form=str_replace('!!tpl!!',htmlentities($this->info['tpl'], ENT_QUOTES, $charset),$content_form);
-		$content_form=str_replace('!!objet!!',htmlentities($this->info['objet'],ENT_QUOTES,$charset),$content_form);
-		$content_form=str_replace('!!id_mailtpl!!',$this->id,$content_form);
 		$interface_form->set_object_id($this->id)
 		->set_duplicable(true)
 		->set_confirm_delete_msg($msg['confirm_suppr_de']." ".$this->info['name']." ?")
-		->set_content_form($content_form)
+		->set_content_form($mailtpl_js_content_form.$this->get_content_form())
 		->set_table_name('mailtpl')
 		->set_field_focus('name');
 		return $interface_form->get_display();
 	}
 
 	public function set_properties_from_form() {
-		global $name, $f_objet_mail, $f_message, $userautorisation;
+		global $name, $f_objet_mail, $f_message, $autorisations;
 		
 		$this->info['name']=stripslashes($name);
 		$this->info['objet']=stripslashes($f_objet_mail);
 		$this->info['tpl']=stripslashes($f_message);
-		$this->info['users']=$userautorisation;
+		$this->info['users']=$autorisations;
 	}
 	
 	public function save() {

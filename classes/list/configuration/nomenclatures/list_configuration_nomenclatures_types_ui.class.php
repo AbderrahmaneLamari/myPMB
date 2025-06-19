@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_configuration_nomenclatures_types_ui.class.php,v 1.2 2021/01/28 08:10:35 dgoron Exp $
+// $Id: list_configuration_nomenclatures_types_ui.class.php,v 1.3.4.1 2023/05/05 13:45:14 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -29,7 +29,7 @@ class list_configuration_nomenclatures_types_ui extends list_configuration_nomen
 	}
 	
 	protected function get_object_instance($row) {
-		return new nomenclature_type($row->id_type);
+		return nomenclature_type::get_instance($row->id_type);
 	}
 	
 	public function init_filters($filters=array()) {
@@ -44,19 +44,8 @@ class list_configuration_nomenclatures_types_ui extends list_configuration_nomen
 	    $this->add_applied_sort('order');
 	}
 	
-	protected function _get_query_filters() {
-		$filter_query = '';
-		
-		$this->set_filters_from_form();
-		
-		$filters = array();
-		if($this->filters['num_formation']) {
-			$filters[] = 'type_formation_num = "'.$this->filters['num_formation'].'"';
-		}
-		if(count($filters)) {
-			$filter_query .= ' where '.implode(' and ', $filters);
-		}
-		return $filter_query;
+	protected function _add_query_filters() {
+		$this->_add_query_filter_simple_restriction('num_formation', 'type_formation_num');
 	}
 	
 	protected function get_main_fields_from_sub() {

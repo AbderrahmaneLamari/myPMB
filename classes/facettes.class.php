@@ -2,9 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: facettes.class.php,v 1.15.8.1 2021/12/28 08:51:08 dgoron Exp $
+// $Id: facettes.class.php,v 1.17.4.2 2023/06/09 08:21:08 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
+
+use Pmb\Thumbnail\Models\ThumbnailSourcesHandler;
 
 global $class_path;
 require_once($class_path."/acces.class.php");
@@ -37,10 +39,12 @@ class facettes extends facettes_root {
 	protected function get_query_by_facette($id_critere, $id_ss_critere) {
 		global $lang;
 		
+		$id_critere = intval($id_critere);
+		$id_ss_critere = intval($id_ss_critere);
 		$query = "select value ,count(distinct id_notice) as nb_result from (SELECT value,id_notice FROM notices_fields_global_index
 					WHERE id_notice IN (".$this->objects_ids.")
-					AND code_champ = ".($id_critere+0)."
-					AND code_ss_champ = ".($id_ss_critere+0)."
+					AND code_champ = ".$id_critere."
+					AND code_ss_champ = ".$id_ss_critere."
 					AND lang in ('','".$lang."','".substr($lang,0,2)."')) as sub
 					GROUP BY value
 					ORDER BY ";
@@ -83,7 +87,7 @@ class facettes extends facettes_root {
 		}
 		$search[] = "s_1";
 		$op_0_s_1 = "EQ";
-		$field_0_s_1[] = $_SESSION['last_query']+0; 
+		$field_0_s_1[] = intval($_SESSION['last_query']); 
 		
 		//creation des globales => parametres de recherche
 		if ($_SESSION['facette']) {
@@ -114,23 +118,23 @@ class facettes extends facettes_root {
 // 		} else {
 // 			$link = "document.location=\"".static::format_url('lvl=more_results&mode=extended&facette_test=1&param_delete_facette='.$id)."\";";
 // 		}
-		return $link;
+// 		return $link;
 	}
 	
 	protected static function get_link_not_clicked($name, $label, $code_champ, $code_ss_champ, $id, $nb_result) {
 // 		$link =  "document.location=\"".static::format_url("lvl=more_results&mode=extended&facette_test=1");
 // 		$link .= "&name=".rawurlencode($name)."&value=".rawurlencode($label)."&champ=".$code_champ."&ss_champ=".$code_ss_champ."\";";
-		return $link;
+// 		return $link;
 	}
 	
 	protected static function get_link_reinit_facettes() {
 // 		$link =  "document.location=\"".static::format_url("lvl=more_results&get_last_query=1&reinit_facette=1")."\";";
-		return $link;
+// 		return $link;
 	}
 	
 	protected static function get_link_back($reinit_compare=false) {
 //		$link =  "document.location.href=\"".static::format_url("lvl=more_results&get_last_query=1".($reinit_compare ? "&reinit_compare=1" : ""))."\"";
-		return $link;
+// 		return $link;
 	}
 	
 	public static function get_session_values() {
@@ -287,6 +291,7 @@ class facettes extends facettes_root {
 			$dom_2= $ac->setDomain(2);
 		}
 		$i = 0;
+		$thumbnailSourcesHandler = new ThumbnailSourcesHandler();
 		foreach($notices_list as $notice_id){		
 			$acces_v=TRUE;	
 			if ($gestion_acces_active==1 && $gestion_acces_empr_notice==1) {	
@@ -310,10 +315,7 @@ class facettes extends facettes_root {
 				if (substr($opac_notice_reduit_format_similaire,0,1)!="H" && $opac_show_book_pics=='1') {
 					$image="<a href='".$opac_url_base."index.php?lvl=notice_display&id=".$notice_id."'>"."<img class='vignetteimg_simili' src='".notice::get_picture_url_no_image($r->niveau_biblio, $r->typdoc)."' hspace='4' vspace='2'></a>";
 					
-					$url_image_ok="";
-					if ($r->thumbnail_url || ($r->code && $opac_book_pics_url)) {
-						$url_image_ok=getimage_url($r->code, $r->thumbnail_url);
-					}
+					$url_image_ok = $thumbnailSourcesHandler->generateUrl(TYPE_NOTICE, $notice_id);
 					
 					if ($r->thumbnail_url) {
 						$title_image_ok="";

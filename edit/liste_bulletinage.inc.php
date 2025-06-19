@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: liste_bulletinage.inc.php,v 1.7.22.1 2021/12/08 12:59:06 dgoron Exp $
+// $Id: liste_bulletinage.inc.php,v 1.8 2021/12/08 12:56:22 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

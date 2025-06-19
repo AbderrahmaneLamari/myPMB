@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: types_produits.inc.php,v 1.17.4.1 2022/01/10 10:59:02 dgoron Exp $
+// $Id: types_produits.inc.php,v 1.18 2022/01/10 10:57:13 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

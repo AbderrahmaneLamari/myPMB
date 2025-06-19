@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: empr.inc.php,v 1.38 2020/09/25 07:20:16 dbellamy Exp $
+// $Id: empr.inc.php,v 1.40.4.1 2023/07/07 07:31:20 pmallambic Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 global $class_path;
@@ -60,7 +60,7 @@ while (($line = pmb_mysql_fetch_array($result, PMB_MYSQL_ASSOC))) {
 }
 	
 $empr_identite = "
-<div id='fiche-empr'><h3><span>$empr_prenom $empr_nom</span></h3>
+<div id='fiche-empr'><h3><span><span class='fiche-empr-prenom'>$empr_prenom</span> <span class='fiche-empr-nom'>$empr_nom</span></span></h3>
 	<div id='fiche-empr-container'>
 		<table class='fiche-lecteur'>";
 
@@ -89,9 +89,10 @@ if($empr_tel1 || $empr_tel2){
 	$tab_empr_info[$i++]["val"]=$tel;	
 }
 if($empr_mail){
+    $empr_mail_aff = str_replace(";", "<br>", $empr_mail);
 	$tab_empr_info[$i]["titre"]=$msg["empr_mail"];
 	$tab_empr_info[$i]["class"]="tab_empr_info_mail";
-	$tab_empr_info[$i++]["val"]="<a href='mailto:$empr_mail'>$empr_mail</a>";	
+	$tab_empr_info[$i++]["val"]="<a href='mailto:$empr_mail'>$empr_mail_aff</a>";	
 }
 if ($empr_prof){
 	$tab_empr_info[$i]["titre"]=$msg["empr_tpl_prof"];
@@ -181,10 +182,42 @@ foreach ($tab_empr_info as $ligne){
 	</tr>";
 }
 
+// Mon Compte
+global $pmb_relance_adhesion, $empr_ldap, $allow_pwd, $lvl, $empr_active_opac_renewal, $msg, $charset;
+$my_account_item ='<ul class="empr_subtabs">';
+if (! $empr_ldap && $allow_pwd) {
+    $my_account_item .= "<li " . (($lvl == "change_password") ? "class=\"subTabCurrent\"" : "") . "><a id='change_password' href='./empr.php?lvl=change_password'>" . htmlentities($msg['empr_modify_password'], ENT_QUOTES, $charset) . "</a></li>";
+}
+if(emprunteur_display::is_renewal_form_set() ){
+    $my_account_item .= "<li " . (($lvl == "change_profil" ) ? "class=\"subTabCurrent\"" : "") . "><a id='change_profil' href='./empr.php?lvl=change_profil'>" . htmlentities($msg['empr_change_profil'], ENT_QUOTES, $charset) . "</a></li>";
+}
+$pmb_relance_adhesion = intval($pmb_relance_adhesion);
+//Affichage de la prolongation si on est dans l'intervalle de relance
+if ($empr_active_opac_renewal) {
+    $datetime_empr_renewal_delay = new DateTime($empr_date_expiration);
+    global $opac_empr_renewal_delay;
+    $opac_empr_renewal_delay = intval($opac_empr_renewal_delay);
+    //Autorise-t-on un delai après expiration
+    if($opac_empr_renewal_delay) {
+        $datetime_empr_renewal_delay->modify('+'.$opac_empr_renewal_delay.' days');
+    }
+    $datetime_empr_renewal_delay_format = $datetime_empr_renewal_delay->format('Y-m-d');
+    $datetime_today = new DateTime(date('Y-m-d'));
+    $datetime_today_format = $datetime_today->format('Y-m-d');
+    $datetime_today->modify('+'.$pmb_relance_adhesion.' days');
+    $datetime_relance_delay_format = $datetime_today->format('Y-m-d');
+    //La date de fin d'adhesion (+ délai) doit etre superieure ou egale a la date du jour
+    // && La date de fin d'adhésion doit etre inferieure ou egale a la date du jour incrementee du nombre de jours pour la relance
+    if (strtotime($datetime_empr_renewal_delay_format) >= strtotime($datetime_today_format) && strtotime($empr_date_expiration) <= strtotime($datetime_relance_delay_format)) {
+        $my_account_item .= "<li " . (($lvl == "renewal" ) ? "class=\"subTabCurrent\"" : "") . "><a id='renewal' href='./empr.php?lvl=renewal'>" . htmlentities($msg['empr_renewal'], ENT_QUOTES, $charset) . "</a></li><ul/>";
+    }
+}
+
 $empr_identite .= "
 		</table>
 	<br />
 	</div>
+    " . $my_account_item . "
 </div>
 ";
 

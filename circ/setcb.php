@@ -2,18 +2,18 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: setcb.php,v 1.19 2021/02/10 16:36:12 dbellamy Exp $
+// $Id: setcb.php,v 1.19.6.2 2023/04/07 13:03:10 dbellamy Exp $
 
 // popup de saisie d'un code barre pour emprunteur
 
-$base_path = "..";	
+$base_path = "..";
 $current_module = "circ";
 
 require_once "../includes/error_report.inc.php";
 require_once "../includes/global_vars.inc.php";
 require_once "../includes/config.inc.php";
 
-$include_path      = "../".$include_path; 
+$include_path      = "../".$include_path;
 $class_path        = "../".$class_path;
 $styles_path       = "../".$styles_path;
 
@@ -39,7 +39,7 @@ if( !checkUser('PhpMyBibli') ) {
 	exit;
 	}
 
-if(SESSlang) {
+	if( defined('SESSlang') && SESSlang ) {
 	$lang=SESSlang;
 	$helpdir = $lang;
 }
@@ -53,7 +53,7 @@ require_once $class_path."/html_helper.class.php";
 
 header ("Content-Type: text/html; charset=".$charset);
 
-echo 
+echo
 "<!DOCTYPE html>
 	<html lang='".get_iso_lang_code()."'>
 		<head>
@@ -61,7 +61,7 @@ echo
 			<meta http-equiv='Pragma' content='no-cache'>
 			<meta http-equiv='Cache-Control' content='no-cache'>";
 echo HtmlHelper::getInstance()->getStyle($stylesheet);
-echo 
+echo
 			"<title>setcb</title>
 		</head>
 		<body>";

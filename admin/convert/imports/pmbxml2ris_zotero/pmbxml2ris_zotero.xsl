@@ -26,6 +26,9 @@
 	<xsl:call-template name="doi"/>	
 	<xsl:call-template name="pubmedid"/>
 	<xsl:call-template name="notes"/>
+	<xsl:call-template name="associated_url"/>
+	<xsl:call-template name="permalink"/>
+	<xsl:call-template name="docnum_urls"/>
 	<xsl:text>ER - &#010;</xsl:text>
 	<xsl:text>&#010;</xsl:text>
 </xsl:template>
@@ -370,5 +373,28 @@
 			<xsl:text>&#010;</xsl:text>
 		</xsl:otherwise>
 	</xsl:choose>				
+</xsl:template>
+<xsl:template name="associated_url">
+		<xsl:if test="f[@c='856']/s[@c='u']">	
+			<xsl:text>UR  - </xsl:text>
+			<xsl:value-of select="normalize-space(f[@c='856']/s[@c='u'])"/>		
+			<xsl:text>&#010;</xsl:text>
+		</xsl:if>
+</xsl:template>
+<xsl:template name="permalink">
+		<xsl:for-each select="f[@c='001']">
+			<xsl:text>UR  - </xsl:text>
+			<xsl:value-of select="$opac_url_base"/>
+			<xsl:text>index.php?lvl=notice_display&amp;id=</xsl:text>
+			<xsl:value-of select='.'/>
+			<xsl:text>&#010;</xsl:text>
+		</xsl:for-each>
+</xsl:template>
+<xsl:template name="docnum_urls">
+		<xsl:for-each select="f[@c='897']/s[@c='a']">
+			<xsl:text>L3  - </xsl:text>
+			<xsl:value-of select="."/>
+			<xsl:text>&#010;</xsl:text>
+		</xsl:for-each>
 </xsl:template>
 </xsl:stylesheet>

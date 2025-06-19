@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // ï¿½ 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: admin.tpl.php,v 1.329.2.1 2021/06/30 07:52:49 dgoron Exp $
+// $Id: admin.tpl.php,v 1.335.2.6 2024/01/05 11:19:04 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -13,15 +13,16 @@ global $acquisition_active, $demandes_active, $pmb_map_activate;
 global $charset;
 global $admin_layout, $current_module, $admin_layout_end, $admin_user_javascript;
 global $admin_npass_form, $admin_user_form, $fiches_active, $thesaurus_concepts_active, $dsi_active, $semantic_active, $pmb_extension_tab, $frbr_active, $modelling_active;
-global $user_acquisition_adr_form, $admin_param_form, $password_field, $admin_user_list, $cms_active, $admin_user_alert_row, $admin_user_link1, $admin_codstat_content_form, $location_map_tpl;
-global $admin_location_form_sur_loc_part, $admin_location_content_form, $admin_section_content_form, $admin_statut_content_form, $admin_orinot_content_form, $admin_onglet_content_form, $admin_notice_usage_content_form;
-global $admin_map_echelle_content_form, $admin_map_projection_content_form, $admin_map_ref_content_form, $admin_typdoc_content_form, $admin_lender_content_form, $admin_support_content_form, $admin_emplacement_content_form, $admin_categlec_content_form;
-global $admin_statlec_content_form, $admin_empr_statut_content_form, $admin_proc_content_form, $admin_proc_view_remote, $admin_zbib_content_form, $admin_zattr_form, $admin_convert_end, $noimport, $n_errors, $errors_msg;
-global $admin_calendrier_form, $admin_calendrier_form_mois_start, $admin_calendrier_form_mois_commentaire, $admin_calendrier_form_mois_end, $admin_notice_statut_content_form;
-global $admin_collstate_statut_content_form, $admin_abonnements_periodicite_content_form, $admin_procs_clas_content_form, $admin_infopages_content_form, $admin_group_content_form;
-global $admin_liste_jscript, $admin_docnum_statut_content_form, $admin_authorities_statut_content_form;
+global $user_acquisition_adr_form, $admin_param_form, $password_field, $admin_user_list, $cms_active, $admin_user_alert_row, $location_map_tpl;
+global $admin_location_form_sur_loc_part, $admin_location_content_form, $admin_section_content_form, $admin_statut_content_form;
+global $admin_typdoc_js_content_form;
+global $admin_proc_view_remote, $admin_zattr_form, $admin_convert_end, $noimport, $n_errors, $errors_msg;
+global $admin_calendrier_form, $admin_calendrier_form_mois_start, $admin_calendrier_form_mois_commentaire, $admin_calendrier_form_mois_end;
+global $admin_infopages_content_form;
+global $admin_liste_jscript, $admin_authorities_statut_content_form;
 global $acquisition_rent_requests_activate;
 global $pmb_contribution_area_activate;
+global $animations_active;
 
 if(!isset($file_in)) $file_in = '';
 if(!isset($suffix)) $suffix = '';
@@ -49,14 +50,6 @@ $admin_menu_new."
 <div id='contenu'>
 !!menu_contextuel!!
 ";
-
-// $admin_layout_end : layout page administration (fin)
-$admin_layout_end = '
-</div>
-<!-- /conteneur -->
-</div>
-';
-
 
 // $admin_user_Javascript : scripts pour la gestion des utilisateurs
 $admin_user_javascript = "
@@ -178,21 +171,21 @@ function account_calcule_section(selectBox) {
 }
 -->
 </script>
-<form class='form-$current_module' name='userform' method='post' action='./admin.php?categ=users&sub=users&action=update&id=!!id!!'>
+<form class='form-$current_module' name='userform' method='post' action='./admin.php?categ=users&sub=users&action=update&id=!!id!!' data-csrf='true'>
 <h3><span onclick='menuHide(this,event)'>!!title!!</span></h3>
 <div class='form-contenu'>
 	<div class='row'>
 		<div class='colonne3'>
-			<label class='etiquette'>$msg[91] &nbsp;</label><br />
-			<input type='text' class='saisie-20em' name='form_login' value='!!login!!' />
+			<label class='etiquette' for='form_login'>$msg[91] &nbsp;</label><br />
+			<input type='text' class='saisie-20em' id='form_login' name='form_login' value='!!login!!' />
 		</div>
 		<div class='colonne3'>
-			<label class='etiquette'>$msg[67] &nbsp;</label><br />
-			<input type='text' class='saisie-20em' name='form_nom' value='!!nom!!' />
+			<label class='etiquette' for='form_nom'>$msg[67] &nbsp;</label><br />
+			<input type='text' class='saisie-20em' id='form_nom' name='form_nom' value='!!nom!!' />
 		</div>
 		<div class='colonne3'>
-			<label class='etiquette'>$msg[68] &nbsp;</label><br />
-			<input type='text' class='saisie-20em' name='form_prenom' value='!!prenom!!' />
+			<label class='etiquette' for='form_prenom'>$msg[68] &nbsp;</label><br />
+			<input type='text' class='saisie-20em' id='form_prenom' name='form_prenom' value='!!prenom!!' />
 		</div>
 	</div>
 
@@ -208,31 +201,47 @@ function account_calcule_section(selectBox) {
 	<div class='row'><span class='space-wide-space'>&nbsp;</span><hr /></div>
 	<div class='row'>
 		<div class='colonne3'>
-			<label class='etiquette'>".$msg['email']." &nbsp;</label><br />
-			<input type='text' class='saisie-20em' name='form_user_email' value='!!user_email!!' />
+    		<div class='colonne2'>
+    			<span class='ui-panel-display'>
+        			<label class='etiquette' for='form_user_email'>".$msg['email_user']." &nbsp;</label><br />
+        			<input type='text' class='saisie-20em' id='form_user_email' name='form_user_email' value='!!user_email!!' />
+    			</span>
+			</div>
+    		<div class='colonne2'>
+    			<span class='ui-panel-display'>
+        			<label class='etiquette' for='form_user_email_recipient'>".$msg['email_recipient']." &nbsp;<i class='fa fa-info-circle' title='" . $msg['email_recipient_info'] . "'></i>&nbsp;</label>
+        			<input type='text' class='saisie-20em' id='form_user_email_recipient' name='form_user_email_recipient' value='!!user_email_recipient!!' />
+    			</span>
+			</div>
 		</div>
 		<div class='colonne3'>
 			<span class='ui-panel-display'>
-				<input type='checkbox' class='checkbox' !!alter_resa_mail!! value='1' name='form_user_alert_resamail' />
-				<label class='etiquette'>".$msg['alert_resa_user_mail']." &nbsp;</label>
+				<input type='checkbox' class='checkbox' !!alter_resa_mail!! value='1' id='form_user_alert_resamail' name='form_user_alert_resamail' />
+				<label class='etiquette' for='form_user_alert_resamail'>".$msg['alert_resa_user_mail']." &nbsp;</label>
 			</span>
 			<span class='ui-panel-display'>
-				".($pmb_contribution_area_activate ? "<input type='checkbox' class='checkbox' !!alert_contrib_mail!! value='1' name='form_user_alert_contribmail' />
-				<label class='etiquette'>".$msg['alert_contrib_user_mail']." &nbsp;</label>" : "")."
+				".($pmb_contribution_area_activate ? "<input type='checkbox' class='checkbox' !!alert_contrib_mail!! value='1' id='form_user_alert_contribmail' name='form_user_alert_contribmail' />
+				<label class='etiquette' for='form_user_alert_contribmail'>".$msg['alert_contrib_user_mail']." &nbsp;</label>" : "")."
 			</span>
 			<span class='ui-panel-display'>
-				".($acquisition_active ? "<input type='checkbox' class='checkbox' !!alert_sugg_mail!! value='1' name='form_user_alert_suggmail' />
-				<label class='etiquette'>".$msg['alert_sugg_user_mail']." &nbsp;</label>" : "")."
+				".($acquisition_active ? "<input type='checkbox' class='checkbox' !!alert_sugg_mail!! value='1' id='form_user_alert_suggmail' name='form_user_alert_suggmail' />
+				<label class='etiquette' for='form_user_alert_suggmail'>".$msg['alert_sugg_user_mail']." &nbsp;</label>" : "")."
 			</span>
 		</div>
 		<div class='colonne3'>
 			<span class='ui-panel-display'>
-				".($demandes_active ? "<input type='checkbox' class='checkbox' !!alert_demandes_mail!! value='1' name='form_user_alert_demandesmail' />
-				<label class='etiquette'>".$msg['alert_demandes_user_mail']." &nbsp;</label>" : "")."
+				".($demandes_active ? "<input type='checkbox' class='checkbox' !!alert_demandes_mail!! value='1' id='form_user_alert_demandesmail' name='form_user_alert_demandesmail' />
+				<label class='etiquette' for='form_user_alert_demandesmail'>".$msg['alert_demandes_user_mail']." &nbsp;</label>" : "")."
 			</span>
 			<span class='ui-panel-display'>
-				".($opac_websubscribe_show ? "<input type='checkbox' class='checkbox' !!alert_subscribe_mail!! value='1' name='form_user_alert_subscribemail' />
-				<label class='etiquette'>".$msg['alert_subscribe_user_mail']." &nbsp;</label>" : "")."
+				".($opac_websubscribe_show ? "<input type='checkbox' class='checkbox' !!alert_subscribe_mail!! value='1' id='form_user_alert_subscribemail' name='form_user_alert_subscribemail' />
+				<label class='etiquette' for='form_user_alert_subscribemail'>".$msg['alert_subscribe_user_mail']." &nbsp;</label>" : "")."
+			</span>
+		</div>
+		<div class='colonne3'>
+			<span class='ui-panel-display'>
+				".($animations_active ? "<input type='checkbox' class='checkbox' !!alert_user_alert_animation_mail!! value='1' id='form_alert_user_alert_animation_mail' name='form_alert_user_alert_animation_mail' />
+				<label class='etiquette' for='form_alert_user_alert_animation_mail'>".$msg['alert_animation_user_mail']." &nbsp;</label>" : "")."
 			</span>
 		</div>
 	</div>
@@ -248,8 +257,8 @@ function account_calcule_section(selectBox) {
 			<span class='space-wide-space'>&nbsp;</span>
 		</div>
 		<div class='colonne3'>
-			<input type='checkbox' class='checkbox' !!alert_serialcirc_mail!! value='1' name='form_user_alert_serialcircmail' />
-			<label class='etiquette'>".$msg['alert_subscribe_serialcirc_mail']." &nbsp;</label>
+			<input type='checkbox' class='checkbox' !!alert_serialcirc_mail!! value='1' id='form_user_alert_serialcircmail' name='form_user_alert_serialcircmail' />
+			<label class='etiquette' for='form_user_alert_serialcircmail'>".$msg['alert_subscribe_serialcirc_mail']." &nbsp;</label>
 		</div>
 		<div class='row'><span class='space-wide-space'>&nbsp;</span><hr /></div>
 	</div>
@@ -258,16 +267,16 @@ function account_calcule_section(selectBox) {
 
 <div class='row'>
 	<div class='row'>
-		<label class='etiquette' for='form_nb_per_page_search'>$msg[nb_enreg_par_page]</label>
+		<label class='etiquette'>$msg[nb_enreg_par_page]</label>
 	</div>
 	<div class='colonne4'>
 	<!--	Nombre d'enregistrements par page en recherche	-->
 		<label class='etiquette' for='form_nb_per_page_search'>$msg[900]</label><br />
-		<input type='text' class='saisie-10em' name='form_nb_per_page_search' value='!!nb_per_page_search!!' size='4' />
+		<input type='text' class='saisie-10em' id='form_nb_per_page_search' name='form_nb_per_page_search' value='!!nb_per_page_search!!' size='4' />
 	</div>
 	<div class='colonne4'>
 	<!--	Nombre d'enregistrements par page en sélection d'autorités	-->
-		<label class='etiquette'>${msg[901]}</label><br />
+		<label class='etiquette' for='form_nb_per_page_select'>${msg[901]}</label><br />
 		<input class='saisie-10em' type='text' id='form_nb_per_page_select' name='form_nb_per_page_select' value='!!nb_per_page_select!!' size='4' />
 	</div>
 	<div class='colonne_suite'>
@@ -340,8 +349,8 @@ function account_calcule_section(selectBox) {
 $user_acquisition_adr_form = "
 <div class='row'>
 	<div class='child'>
-		<div class='colonne2'>".htmlentities($msg['acquisition_adr_liv'], ENT_QUOTES, $charset)."</div>
-		<div class='colonne2'>".htmlentities($msg['acquisition_adr_fac'], ENT_QUOTES, $charset)."</div>
+		<div class='colonne2'><label for='adr_liv[!!id_bibli!!]' style='all:unset'>".htmlentities($msg['acquisition_adr_liv'], ENT_QUOTES, $charset)."</label></div>
+		<div class='colonne2'><label for='adr_fac[!!id_bibli!!]' style='all:unset'>".htmlentities($msg['acquisition_adr_fac'], ENT_QUOTES, $charset)."</label></div>
 	</div>
 </div>
 <div class='row'>
@@ -441,133 +450,20 @@ $admin_user_list = "
 <div class='row'>&nbsp;</div>
 <div class='row'>
 	<div class='colonne4'>
+		!!user_selection!!
 		<label class='etiquette'>!!user_name!! (!!user_login!!)</label>
-		</div>
+	</div>
 	<div class='colonne_suite'>
 		!!user_link!!
-		</div>
+	</div>
 	<div class='colonne_suite' style='float:right;'>
 		!!user_created_date!!
 	</div>
-	</div>
+</div>
 <div class='row'>
-	<table class='brd'>";
-
-// Première ligne
-$admin_user_list .= "
-		<tr >
-			<td class='brd'>!!nusercirc!!$msg[5]</td>
-			<td class='brd'>!!nusercatal!!$msg[93]</td>
-			<td class='brd'>!!nuserauth!!$msg[132]</td>
-			<td class='brd'>!!nuserthesaurus!!".$msg["thesaurus_auth"]."</td>
-		</tr>";
-
-// Deuxième ligne
-$admin_user_list .= "
-		<tr>
-			<td class='brd'>!!nusermodifcbexpl!!<i>".$msg['catal_modif_cb_expl_droit']."</i></td>
-			<td class='brd'>!!nuseredit!!$msg[1100]</td>
-			<td class='brd'>";
-					if ($dsi_active) $admin_user_list .= "!!nuserdsi!!$msg[dsi_droit]</td>";
-					else $admin_user_list .= "&nbsp;</td>";
-$admin_user_list .= "<td class='brd'>";
-					if ($acquisition_active) $admin_user_list .= "!!nuseracquisition!!$msg[acquisition_droit]</td>";
-					else $admin_user_list .= "&nbsp;</td>";
-$admin_user_list .= "
-		</tr>";
-
-// Troisième ligne
-$admin_user_list .= "
-		<tr>
-			<td class='brd'>!!nuserrestrictcirc!!<i>".$msg["restrictcirc_auth"]."</i></td>
-			<td class='brd'>!!nusereditforcing!!$msg[edit_droit_forcing]</td>
-			<td class='brd'>!!nuserpref!!$msg[933]</td>
-			<td class='brd'>";
-				if ($pmb_transferts_actif)
-					$admin_user_list .= "!!nusertransferts!!$msg[transferts_droit]</td>";
-				else $admin_user_list .= "&nbsp;</td>";
-$admin_user_list .= "
-		</tr>";
-
-// Quatrième ligne
-$admin_user_list .= "
-		<tr>
-			<td class='brd'>!!nuseradmin!!$msg[7]</td>";
-		$admin_user_list .= "<td class='brd'>!!nusersauv!!$msg[28]</td>";
-			$admin_user_list .= "<td class='brd'>";
-			if ($cms_active)
-				$admin_user_list .= "!!nusercms!!$msg[cms_onglet_title]</td>";
-			else $admin_user_list .= "&nbsp;</td>";
-$admin_user_list .= "
-			<td class='brd'>";
-			if ($cms_active)
-				$admin_user_list .= "!!nusercms_build!!$msg[cms_build_tab]</td>";
-			else $admin_user_list .= "&nbsp;</td>";
-$admin_user_list .= "
-		</tr>";
-
-// Cinquième ligne
-$admin_user_list .= "
-		<tr>
-		<td class='brd'>";
-			if ($pmb_extension_tab) $admin_user_list .="!!nuserextensions!!$msg[extensions_droit]</td>";
-			else $admin_user_list .= "&nbsp;</td>";
-$admin_user_list .= "<td class='brd'>";
-			if ($demandes_active)
-				$admin_user_list .= "!!nuserdemandes!!$msg[demandes_droit]</td>";
-			else $admin_user_list .= "&nbsp;</td>";
-			$admin_user_list .= "<td class='brd'>";
-			if ($fiches_active)
-				$admin_user_list .= "!!nuserfiches!!$msg[onglet_fichier]</td>";
-			else $admin_user_list .= "&nbsp;</td>";
-			$admin_user_list .= "<td class='brd'>";
-			if ($acquisition_active && $acquisition_rent_requests_activate)
-				$admin_user_list .= "!!nuseracquisition_account_invoice!!".$msg['acquisition_account_invoice_flg']."</td>";
-			else $admin_user_list .= "&nbsp;</td>";
-			$admin_user_list .= "
-		</tr>";
-
-// Sixième  ligne
-$admin_user_list .= "
-		<tr>
-			<td class='brd'>";
-if($semantic_active){
-	$admin_user_list .= "!!nusersemantic!!<i>".$msg["semantic_flg"]."</i>";
-}
-$admin_user_list .= "</td>
-			<td class='brd'>";
-if($thesaurus_concepts_active){
-	$admin_user_list .= "!!nuserconcepts!!<i>".$msg["ontology_skos_menu"]."</i>";
-}
-$admin_user_list .= "</td>
-			<td class='brd'>";
-if($modelling_active){
-	$admin_user_list .= "!!nusermodelling!!".$msg["modelling"];
-}
-$admin_user_list .= "</td>
-			<td class='brd'></td>
-		</tr>";
-// Septième ligne
-$admin_user_list .= "
-		!!user_alert_resamail!!";
-
-// Septième ligne Bis
-if ($pmb_contribution_area_activate) $admin_user_list .= "
-		!!user_alert_contribmail!!";
-
-// Huitième ligne
-if ($demandes_active) $admin_user_list .= "
-		!!user_alert_demandesmail!!";
-
-// Neuvième ligne
-if ($opac_websubscribe_show) $admin_user_list .= "
-		!!user_alert_subscribemail!!";
-
-// 10eme ligne
-if ($acquisition_active) $admin_user_list .= "
-		!!user_alert_suggmail!!";
-
-$admin_user_list .= "</table>
+	<table class='brd'>
+		!!brd_columns!!
+	</table>
 </div>
 <div class='row'>&nbsp;</div>
 <hr />
@@ -580,36 +476,9 @@ $admin_user_alert_row = "
 				</td>
 		</tr>";
 
-$admin_user_link1 = "
-	<input class='bouton' type='button' value=' $msg[62] ' onClick=\"document.location='./admin.php?categ=users&sub=users&action=modif&id=!!nuserid!!'\">&nbsp;
-	<input class='bouton' type='button' value=' $msg[mot_de_passe] ' onClick=\"document.location='./admin.php?categ=users&sub=users&action=pwd&id=!!nuserid!!'\">
-	";
-	
 // commented because now use the confirmation_delete function used also from the other submodules
 // so we show also the name we want to delete - Marco Vaninetti
 
-
-// $admin_codstat_content_form : template form code stat
-$admin_codstat_content_form = "
-<div class='row'>
-		<label class='etiquette' for='form_cb'>$msg[103]</label>
-</div>
-<div class='row'>
-	<input type=text id='form_libelle' name='form_libelle' value='!!libelle!!' class='saisie-50em' data-translation-fieldname='codestat_libelle' />
-</div>
-<div class='row'>
-	<label class='etiquette'>$msg[proprio_codage_interne]</label>
-</div>
-<div class='row'>
-	<input type='text' name='form_statisdoc_codage_import' value='!!statisdoc_codage_import!!' class='saisie-20em' />
-</div>
-<div class='row'>
-	<label class='etiquette'>$msg[proprio_codage_proprio]</label>
-</div>
-<div class='row'>
-	!!lender!!
-</div>
-";
 
 $admin_location_form_sur_loc_part="";
 if($pmb_sur_location_activate)
@@ -713,220 +582,30 @@ $admin_location_form_sur_loc_part
 	</div>
 </div>
 <div class='row'><label class='etiquette'>$msg[location_details_phone]</label></div><div class='row'><input type='text' name='form_locdoc_phone' value='!!loc_phone!!' maxlength='100' class='saisie-20em' /></div>
-<div class='row'><label class='etiquette'>$msg[location_details_email]</label></div><div class='row'><input type='text' name='form_locdoc_email' value='!!loc_email!!' maxlength='100' class='saisie-20em' /></div>
+<div class='row'><label class='etiquette'>$msg[location_details_email]</label></div><div class='row'><input type='text' name='form_locdoc_email' value='!!loc_email!!' maxlength='255' class='saisie-50em' /></div>
 <div class='row'><label class='etiquette'>$msg[location_details_website]</label></div><div class='row'><input type='text' name='form_locdoc_website' value='!!loc_website!!' maxlength='100' class='saisie-50em' /></div>
 <div class='row'><label class='etiquette'>$msg[location_details_logo]</label></div><div class='row'><input type='text' name='form_locdoc_logo', ' value='!!loc_logo!!' maxlength='255' class='saisie-50em' /></div>
 <div class='row'><label class='etiquette'>$msg[location_details_commentaire]</label></div><div class='row'><textarea class='saisie-50em' name='form_locdoc_commentaire' id='form_locdoc_commentaire' cols='55' rows='5'>!!loc_commentaire!!</textarea></div>
 <input type='hidden' name='form_actif' value='1'>
 ";
-
-// $admin_section_content_form : template form section
-$admin_section_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>$msg[103]</label>
-</div>
-<div class='row'>
-	<input type=text id='form_libelle' name='form_libelle' value='!!libelle!!' class='saisie-50em' data-translation-fieldname='section_libelle' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_libelle_opac'>".$msg['docs_section_libelle_opac']."</label>
-</div>
-<div class='row'>
-	<input type=text id='form_libelle_opac' name='form_libelle_opac' value='!!libelle_opac!!' class='saisie-50em' data-translation-fieldname='section_libelle_opac' />
-</div>
-<div class='row'>
-	<label class='etiquette' >$msg[docs_section_pic]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_section_pic' value='!!section_pic!!' maxlength='255' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' >$msg[opac_object_visible]</label>
-	<input type=checkbox name='form_section_visible_opac' value='1' !!checkbox!! class='checkbox' />
-</div>
-<div class='row'>
-	<div class='colonne2'>
-		<div class='row'>
-			<label class='etiquette'>$msg[proprio_codage_interne]</label>
-		</div>
-		<div class='row'>
-			<input type='text' name='form_sdoc_codage_import' value='!!sdoc_codage_import!!' class='saisie-20em' />
-		</div>
-		<div class='row'>
-			<label class='etiquette'>$msg[proprio_codage_proprio]</label>
-		</div>
-		<div class='row'>
-			!!lender!!
-		</div>
-	</div>
-	<div class='colonne_suite'>
-		<div class='row'>
-			<label class='etiquette'>$msg[section_visible_loc]</label>
-		</div>
-		<div class='row'>
-			!!num_locations!!
-		</div>
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-";
-
-// $admin_statut_form : template form statuts
-$admin_statut_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>$msg[103]</label>
-</div>
-<div class='row'>
-	<input type=text id='form_libelle' name='form_libelle' value='!!libelle!!' class='saisie-50em' data-translation-fieldname='statut_libelle' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_libelle_opac'>".$msg["docs_statut_form_libelle_opac"]."</label>
-</div>
-<div class='row'>
-	<input type=text id='form_libelle_opac' name='form_libelle_opac' value='!!libelle_opac!!' class='saisie-50em' data-translation-fieldname='statut_libelle_opac' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_pret'>$msg[117]</label>
-	<input type=checkbox name=form_pret value='!!pret!!' !!checkbox!! class='checkbox' onClick=\"test_check(this.form)\" />
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_allow_resa'>".$msg["statut_allow_resa_title"]."</label>
-	<input type=checkbox name=form_allow_resa value='1' !!checkbox_allow_resa!! class='checkbox'  />
-</div>";
-
-if ($pmb_transferts_actif=="1")
-	$admin_statut_content_form .= "
-	<div class='row'>
-		<label class='etiquette' for='form_trans'>".$msg["transferts_statut_lib_transferable"]."</label>
-		<input type=checkbox name=form_trans value='!!trans!!' !!checkbox_trans!! class='checkbox' onClick=\"test_check_trans(this.form)\" />
-	</div>";
-$admin_statut_content_form .= "
-	<div class='row'>
-		<label class='etiquette' for='form_visible_opac'>".$msg["opac_object_visible"]."</label>
-		<input type=checkbox name=form_visible_opac value='!!visible_opac!!' !!checkbox_visible_opac!! class='checkbox' onClick=\"test_check_visible_opac(this.form)\" />
-		</div>
-	<div class='row'>
-		<label class='etiquette'>$msg[proprio_codage_interne]</label>
-		</div>
-	<div class='row'>
-		<input type='text' name='form_statusdoc_codage_import' value='!!statusdoc_codage_import!!' class='saisie-20em' />
-		</div>
-	<div class='row'>
-		<label class='etiquette'>$msg[proprio_codage_proprio]</label>
-		</div>
-	<div class='row'>
-		!!lender!!
-	</div>
-";
-
-// $admin_orinot_content_form : template form origine notice
-$admin_orinot_content_form = "
-<div class='row'>
-	<label class='etiquette' >$msg[orinot_nom]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_nom' value='!!nom!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' >$msg[orinot_pays]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_pays' value='!!pays!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' >$msg[orinot_diffusable]</label>
-	<input type=checkbox name=form_diffusion value='1' !!checkbox!! class='checkbox' />
-</div>
-";
-
-// $admin_onglet_content_form : Onglet personalisé de la notice
-$admin_onglet_content_form = "
-<div class='row'>
-	<label class='etiquette' >$msg[admin_noti_onglet_name]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_nom' value='!!nom!!' class='saisie-50em' />
-</div>
-";
-
-// $admin_notice_usage_content_form : template form droit d'usage notice
-$admin_notice_usage_content_form = "
-<div class='row'>
-	<label class='etiquette' >".$msg['notice_usage_libelle']."</label>
-</div>
-<div class='row'>
-	<input type=text id='usage_libelle' name='usage_libelle' value='!!usage_libelle!!' class='saisie-50em' data-translation-fieldname='usage_libelle' />
-</div>
-";
-
-$admin_map_echelle_content_form = "
-<div class='row'>
-	<label class='etiquette' >$msg[admin_noti_map_echelle_name]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_nom' value='!!nom!!' class='saisie-50em' />
-</div>
-";
-
-$admin_map_projection_content_form = "
-<div class='row'>
-	<label class='etiquette' >$msg[admin_noti_map_projection_name]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_nom' value='!!nom!!' class='saisie-50em' />
-</div>
-";
-
-$admin_map_ref_content_form = "
-<div class='row'>
-	<label class='etiquette' >$msg[admin_noti_map_ref_name]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_nom' value='!!nom!!' class='saisie-50em' />
-</div>
-";
-
-// $admin_typdoc_content_form : template form types doc
-$admin_typdoc_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>".$msg[103]."</label>
-</div>
-<div class='row'>
-	<input type='text' id='form_libelle' name='form_libelle' value='!!libelle!!' class='saisie-50em' data-translation-fieldname='tdoc_libelle' />
-</div>
-
-<!-- form_pret -->
-<!-- form_short_loan_duration -->
-<!-- form_resa -->
-<!-- tarif_pret -->
-
-<div class='row'>
-	<label class='etiquette' for='form_tdoc_codage_import' >".$msg['proprio_codage_interne']."</label>
-</div>
-<div class='row'>
-	<input type='text' id='form_tdoc_codage_import' name='form_tdoc_codage_import' value='!!tdoc_codage_import!!' class='saisie-20em' />
-</div>
-<div class='row'>
-	<label class='etiquette'>".$msg['proprio_codage_proprio']."</label>
-</div>
-<div class='row'>
-	<!-- lender -->
-</div>
+    
+// $admin_typdoc_js_content_form : template form types doc
+$admin_typdoc_js_content_form = "
 <script type='text/javascript'>
 function test_form(form) {
 	if(form.form_libelle.value.length == 0) {
 		alert('".$msg[98]."');
 		return false;
 	}
-	if(isNaN(form.form_pret.value) || form.form_pret.value.length == 0) {
+	if(form.form_pret && (isNaN(form.form_pret.value) || form.form_pret.value.length == 0)) {
 		alert('".$msg[119]."');
 		return false;
 	}
-	if(isNaN(form.form_short_loan_duration.value) || form.form_short_loan_duration.value.length == 0) {
+	if(form.form_short_loan_duration && (isNaN(form.form_short_loan_duration.value) || form.form_short_loan_duration.value.length == 0)) {
 		alert('".$msg['short_loan_duration_error']."');
 		return false;
 	}
-	if(isNaN(form.form_resa.value) || form.form_resa.value.length == 0) {
+	if(form.form_resa && (isNaN(form.form_resa.value) || form.form_resa.value.length == 0)) {
 		alert('".$msg['resa_duration_error']."');
 		return false;
 	}
@@ -934,208 +613,6 @@ function test_form(form) {
 }
 </script>
 ";
-
-// $admin_lender_content_form : template form lenders
-$admin_lender_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>$msg[558]</label>
-</div>
-<div class='row'>
-	<input type='text' id='form_libelle' name='form_libelle' value='!!libelle!!' class='saisie-50em' />
-</div>
-";
-// $admin_support_content_form : template form supports
-$admin_support_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>".$msg["admin_collstate_support_nom"]."</label>
-</div>
-<div class='row'>
-	<input type='text' id='form_libelle' name='form_libelle' value='!!libelle!!' class='saisie-50em' />
-</div>
-";
-// $admin_emplacement_content_form : template form emplacements
-$admin_emplacement_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>".$msg["admin_collstate_emplacement_nom"]."</label>
-</div>
-<div class='row'>
-	<input type='text' id='form_libelle' name='form_libelle' value='!!libelle!!' class='saisie-50em' />
-</div>
-";
-
-// $admin_categlec_content_form : template form categ lecteurs
-$admin_categlec_content_form = "
-<div class='row'>
-		<label class='etiquette' for='form_cb'>$msg[103]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_libelle' value='!!libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_duree_adhesion'>$msg[1400]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_duree_adhesion' value='!!duree_adhesion!!' maxlength='10' class='saisie-5em' />
-</div>
-!!tarif_adhesion!!
-<div class='row'>
-	<label class='etiquette' for='form_age_min'>$msg[empr_categ_age_min]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_age_min' value='!!age_min!!' maxlength='3' class='saisie-5em' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_age_max'>$msg[empr_categ_age_max]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_age_max' value='!!age_max!!' maxlength='3' class='saisie-5em' />
-</div>
-";
-
-// $admin_statlec_content_form : template form codestat lecteurs
-$admin_statlec_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_cb'>$msg[103]</label>
-</div>
-<div class='row'>
-	<input type='text' name='form_libelle' value='!!libelle!!' class='saisie-50em' />
-</div>
-";
-
-// $admin_empr_statut_content_form : template formulaire statuts emprunteurs
-$admin_empr_statut_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_cb'>$msg[103]</label>
-</div>
-<div class='row'>
-	<input type=text name='statut_libelle' value='!!libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_loan value='1' id=allow_loan !!checkbox_loan!! class='checkbox' />
-	<label class='etiquette' for='allow_loan'>".$msg['empr_allow_loan']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_loan_hist value='1' id=allow_loan_hist !!checkbox_loan_hist!! class='checkbox'/>
-	<label class='etiquette' for='allow_loan_hist'>".$msg['empr_allow_loan_hist']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_book value='1' id=allow_book !!checkbox_book!! class='checkbox' />
-	<label class='etiquette' for='allow_book'>".$msg['empr_allow_book']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_opac value='1' id=allow_opac !!checkbox_opac!! class='checkbox' />
-	<label class='etiquette' for='allow_opac'>".$msg['empr_allow_opac']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_dsi value='1' id=allow_dsi !!checkbox_dsi!! class='checkbox' />
-	<label class='etiquette' for='allow_dsi'>".$msg['empr_allow_dsi']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_dsi_priv value='1' id=allow_dsi_priv !!checkbox_dsi_priv!! class='checkbox' />
-	<label class='etiquette' for='allow_dsi_priv'>".$msg['empr_allow_dsi_priv']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_sugg value='1' id=allow_sugg !!checkbox_sugg!! class='checkbox' />
-	<label class='etiquette' for='allow_sugg'>".$msg['empr_allow_sugg']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_dema value='1' id=allow_dema !!checkbox_dema!! class='checkbox' />
-	<label class='etiquette' for='allow_dema'>".$msg['empr_allow_dema']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_liste_lecture value='1' id=allow_liste_lecture !!checkbox_liste_lecture!! class='checkbox' />
-	<label class='etiquette' for='allow_liste_lecture'>".$msg['empr_allow_liste_lecture']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_prol value='1' id=allow_prol !!checkbox_prol!! class='checkbox' />
-	<label class='etiquette' for='allow_prol'>".$msg['empr_allow_prol']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_avis value='1' id=allow_avis !!checkbox_avis!! class='checkbox' />
-	<label class='etiquette' for='allow_avis'>".$msg['empr_allow_avis']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_tag value='1' id=allow_tag !!checkbox_tag!! class='checkbox' />
-	<label class='etiquette' for='allow_tag'>".$msg['empr_allow_tag']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_pwd value='1' id=allow_pwd !!checkbox_pwd!! class='checkbox' />
-	<label class='etiquette' for='allow_pwd'>".$msg['empr_allow_pwd']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_self_checkout value='1' id=allow_self_checkout !!allow_self_checkout!! class='checkbox' />
-	<label class='etiquette' for='allow_self_checkout'>".$msg['empr_allow_self_checkout']."</label>
-</div>
-<div class='row'>
-	<input type=checkbox name=allow_self_checkin value='1' id=allow_self_checkin !!allow_self_checkin!! class='checkbox' />
-	<label class='etiquette' for='allow_self_checkin'>".$msg['empr_allow_self_checkin']."</label>
-</div>
-<div class='row'>
-	<input type='checkbox' name='allow_serialcirc' value='1' id='allow_serialcirc' !!allow_serialcirc!! class='checkbox' />
-	<label class='etiquette' for='allow_serialcirc'>".$msg['empr_allow_serialcirc']."</label>
-</div>
-<div class='row'>
-	<input type='checkbox' name='allow_scan_request' value='1' id='allow_scan_request' !!allow_scan_request!! class='checkbox' />
-	<label class='etiquette' for='allow_scan_request'>".$msg['empr_allow_scan_request']."</label>
-</div>
-<div class='row'>
-	<input type='checkbox' name='allow_contribution' value='1' id='allow_contribution' !!allow_contribution!! class='checkbox' />
-	<label class='etiquette' for='allow_contribution'>".$msg['empr_allow_contribution']."</label>
-</div>
-<div class='row'>
-	<input type='checkbox' name='allow_pnb' value='1' id='allow_pnb' !!allow_pnb!! class='checkbox' />
-	<label class='etiquette' for='allow_pnb'>".$msg['empr_allow_pnb']."</label>
-</div>
-";
-
-// $admin_proc_content_form : template form procédures stockées
-$admin_proc_content_form = "
-<div class=colonne2>
-	<div class='row'>
-		<label class='etiquette' for='form_name'>$msg[705]</label>
-	</div>
-	<div class='row'>
-		<input type='text' name='f_proc_name' value='!!name!!' maxlength='255' class='saisie-50em' />
-	</div>
-</div>
-<div class=colonne_suite>
-	<div class='row'>
-		<label class='etiquette' for='form_classement'>$msg[proc_clas_proc]</label>
-	</div>
-	<div class='row'>
-		!!classement!!
-	</div>
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_code'>$msg[706]</label>
-</div>
-<div class='row'>
-	<textarea cols='80' rows='8' name='f_proc_code'>!!code!!</textarea>
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_comment'>$msg[707]</label>
-</div>
-<div class='row'>
-	<input type='text' name='f_proc_comment' value='!!comment!!' maxlength='255' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_notice_tpl'>".$msg['notice_tpl_notice_id']."</label>
-</div>
-<div class='row'>
-	!!notice_tpl!!
-</div>
-<div class='row'>
-	<label class='etiquette' for='autorisations_all'>".$msg["procs_autorisations_all"]."</label>
-	<input type='checkbox' id='autorisations_all' name='autorisations_all' value='1' !!autorisations_all!! />
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_comment'>$msg[procs_autorisations]</label>
-	<input type='button' class='bouton_small align_middle' value='".$msg['tout_cocher_checkbox']."' onclick='check_checkbox(document.getElementById(\"auto_id_list\").value,1);'>
-	<input type='button' class='bouton_small align_middle' value='".$msg['tout_decocher_checkbox']."' onclick='check_checkbox(document.getElementById(\"auto_id_list\").value,0);'>
-</div>
-<div class='row'>
-	!!autorisations_users!!
-</div>";
 
 // $admin_proc_view_remote : template form procédures stockées
 $admin_proc_view_remote = "
@@ -1147,23 +624,23 @@ $admin_proc_view_remote = "
 	</div>
 	<div class=colonne2>
 		<div class='row'>
-		<label class='etiquette' for='form_name'>$msg[remote_procedures_procedure_name]</label>
+		<label class='etiquette' for='f_proc_name'>$msg[remote_procedures_procedure_name]</label>
 		</div>
 		<div class='row'>
-		<input type='text' readonly name='f_proc_name' value='!!name!!' maxlength='255' class='saisie-50em' />
+		<input type='text' readonly id='f_proc_name' name='f_proc_name' value='!!name!!' maxlength='255' class='saisie-50em' />
 		</div>
 	</div>
 	<div class='row'>
-		<label class='etiquette' for='form_code'>$msg[remote_procedures_procedure_sql]</label>
+		<label class='etiquette' for='f_proc_code'>$msg[remote_procedures_procedure_sql]</label>
 		</div>
 	<div class='row'>
-		<textarea cols='80' readonly rows='8' name='f_proc_code'>!!code!!</textarea>
+		<textarea cols='80' readonly rows='8' id='f_proc_code' name='f_proc_code'>!!code!!</textarea>
 		</div>
 	<div class='row'>
-		<label class='etiquette' for='form_comment'>$msg[remote_procedures_procedure_comment]</label>
+		<label class='etiquette' for='f_proc_comment'>$msg[remote_procedures_procedure_comment]</label>
 		</div>
 	<div class='row'>
-		<input type='text' readonly name='f_proc_comment' value='!!comment!!' maxlength='255' class='saisie-50em' />
+		<input type='text' readonly id='f_proc_comment' name='f_proc_comment' value='!!comment!!' maxlength='255' class='saisie-50em' />
 	</div>
 	<div class='row'>
 		!!parameters_title!!
@@ -1181,98 +658,6 @@ $admin_proc_view_remote = "
 </div>
 <div class='row'></div>
 <script type='text/javascript'>document.forms['maj_proc'].elements['f_proc_name'].focus();</script>";
-
-// $admin_zbib_content_form : template form zbib
-$admin_zbib_content_form = "
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[admin_Nom] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_nom value='!!nom!!' size=50 />
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[admin_Utilisation] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_search_type value='!!search_type!!' size=50/>
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[admin_Base] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_base value='!!base!!' size=50 />
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[admin_URL] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_url value='!!url!!' size=50>
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[admin_NumPort] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_port value='!!port!!' size='10' />
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[admin_Format] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_format value='!!format!!' size='50' />
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[z3950_sutrs] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_sutrs value='!!sutrs!!' size=50>
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[admin_user] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_user value='!!user!!' size='50' />
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[admin_password] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_password value='!!password!!' size=50>
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne4 align_right'>
-		<label class='etiquette'>$msg[zbib_zfunc] &nbsp;</label>
-	</div>
-	<div class='colonne_suite'>
-		<input type=text name=form_zfunc value='!!zfunc!!' size=50>
-	</div>
-</div>";
 
 // $admin_zattr_form : template form attributs zbib - changed by martizva
 $admin_zattr_form = "
@@ -1413,180 +798,6 @@ $admin_calendrier_form_mois_end = "	</div>
 </form>
 ";
 
-// $admin_notice_statut_content_form : template form statuts de notices
-$admin_notice_statut_content_form = "
-<div class='row'>
-	<label class='etiquette' ><strong>$msg[noti_statut_gestion]</strong></label>
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>$msg[noti_statut_libelle]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_gestion_libelle' value='!!gestion_libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_visible_gestion'>$msg[noti_statut_visu_gestion]</label>
-	<input type=checkbox name=form_visible_gestion value='1' !!checkbox_visible_gestion!! class='checkbox' />&nbsp;
-</div>
-<div class='row'>
-	<div class='colonne5'>
-		<label class='etiquette' for='form_class_html'>$msg[noti_statut_class_html]</label>
-	</div>
-	<div class='colonne_suite'>
-		!!class_html!!
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<label class='etiquette' ><strong>$msg[noti_statut_opac]</strong></label>
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>$msg[noti_statut_libelle]</label>
-</div>
-<div class='row'>
-	<input type=text name='form_opac_libelle' value='!!opac_libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='colonne2'>
-	<label class='etiquette'>$msg[notice_statut_visibilite_generale]</label>
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette'>$msg[notice_statut_visibilite_restrict]</label>
-</div>
-<div class='colonne2'>
-	<label class='etiquette' for='form_visible_opac'>$msg[noti_statut_visu_opac_form]</label>
-	<input type=checkbox name=form_visible_opac value='1' !!checkbox_visible_opac!! class='checkbox' />
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette' for='form_visu_abon'>$msg[noti_statut_visible_opac_abon]</label>
-	<input type=checkbox name=form_visu_abon value='1' !!checkbox_visu_abon!! class='checkbox' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='colonne2'>
-	<label class='etiquette' for='form_expl_visu_expl'>$msg[noti_statut_visu_expl]</label>
-	<input type=checkbox name=form_visu_expl value='1' !!checkbox_visu_expl!! class='checkbox' />
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette' for='form_expl_visu_abon'>$msg[noti_statut_expl_visible_opac_abon]</label>
-	<input type=checkbox name=form_expl_visu_abon value='1' !!checkbox_expl_visu_abon!! class='checkbox' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='colonne2'>
-	<label class='etiquette' for='form_explnum_visu_expl'>$msg[noti_statut_visu_explnum]</label>
-	<input type=checkbox name=form_explnum_visu value='1' !!checkbox_explnum_visu!! class='checkbox' />
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette' for='form_expl_visu_abon'>$msg[noti_statut_explnum_visible_opac_abon]</label>
-	<input type=checkbox name=form_explnum_visu_abon value='1' !!checkbox_explnum_visu_abon!! class='checkbox' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='colonne2'>
-	<label class='etiquette' for='form_scan_request_opac'>".$msg['noti_statut_scan_request_opac']."</label>
-	<input type='checkbox' name='form_scan_request_opac' value='1' !!checkbox_scan_request_opac!! class='checkbox' />
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette' for='form_scan_request_opac_abon'>".$msg['noti_statut_scan_request_opac_abon']."</label>
-	<input type='checkbox' name='form_scan_request_opac_abon' value='1' !!checkbox_scan_request_opac_abon!! class='checkbox' />
-</div>
-<div class='row'></div>
-";
-
-// $admin_notice_statut_content_form : template form statuts des etats de collections
-$admin_collstate_statut_content_form = "
-<div class='row'>
-	<label class='etiquette' ><strong>".$msg["collstate_statut_gestion"]."</strong></label>
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_gestion_libelle'>".$msg["collstate_statut_libelle"]."</label>
-</div>
-<div class='row'>
-	<input type=text name='form_gestion_libelle' value='!!gestion_libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<div class='colonne5'>
-		<label class='etiquette' for='form_class_html'>".$msg["collstate_statut_class_html"]."</label>
-	</div>
-	<div class='colonne_suite'>
-		!!class_html!!
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<label class='etiquette' ><strong>".$msg["collstate_statut_opac"]."</strong></label>
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_opac_libelle'>".$msg["collstate_statut_libelle"]."</label>
-</div>
-<div class='row'>
-	<input type=text name='form_opac_libelle' value='!!opac_libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='colonne2'>
-	<label class='etiquette'>".$msg["collstate_statut_visibilite_generale"]."</label>
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette'>".$msg["collstate_statut_visibilite_restrict"]."</label>
-</div>
-<div class='colonne2'>
-	<label class='etiquette' for='form_visible_opac'>".$msg["collstate_statut_visu_opac_form"]."</label>
-	<input type=checkbox name=form_visible_opac value='1' !!checkbox_visible_opac!! class='checkbox' />
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette' for='form_visu_abon'>".$msg["collstate_statut_visible_opac_abon"]."</label>
-	<input type=checkbox name=form_visu_abon value='1' !!checkbox_visu_abon!! class='checkbox' />
-</div>
-<div class='row'></div>
-";
-
-$admin_abonnements_periodicite_content_form = "
-<div class='row'>
-	<label class='etiquette' for='libelle'>$msg[abonnements_periodicite_libelle]</label>
-</div>
-<div class='row'>
-	<input type=text name='libelle' value='!!libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='duree'>$msg[abonnements_periodicite_duree]</label>
-</div>
-<div class='row'>
-	<input type=text name='duree' value='!!duree!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='unite'>$msg[abonnements_periodicite_unite]</label>
-</div>
-<div class='row'>
-	!!unite!!
-</div>
-<div class='row'>
-	<label class='etiquette' for='seuil_periodicite'>$msg[seuil_periodicite]</label>
-</div>
-<div class='row'>
-	<input type=text name='seuil_periodicite' value='!!seuil_periodicite!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='retard_periodicite'>$msg[retard_periodicite]</label>
-</div>
-<div class='row'>
-	<input type=text name='retard_periodicite' value='!!retard_periodicite!!' class='saisie-50em' />
-</div>
-<div class='row'>
-	<label class='etiquette' for='consultation_duration'>".$msg["serialcirc_consultation_duration"]."</label>
-</div>
-<div class='row'>
-	<input type=text name='consultation_duration' value='!!consultation_duration!!' class='saisie-50em' />
-</div>
-";
-
-// $admin_procs_clas_content_form : template form classements de procédures
-$admin_procs_clas_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_libproc_classement'>$msg[proc_clas_lib]</label>
-</div>
-<div class='row'>
-	<input type=text name=form_libproc_classement value='!!libelle!!' class='saisie-50em' />
-</div>
-";
-
 // $admin_infopages_content_form : template form des pages d'info
 $admin_infopages_content_form = "
 <div class='row'>
@@ -1621,17 +832,6 @@ $admin_infopages_content_form = "
 		!!classements_liste!!
 	</select>
 </div>";
-
-
-// $admin_group_content_form : template groupe
-$admin_group_content_form = "
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>".$msg['admin_usr_grp_lib']."</label>
-</div>
-<div class='row'>
-	<input type=text id='form_libelle' name='form_libelle' value='!!libelle!!' class='saisie-50em' />
-</div>
-";
 
 $admin_liste_jscript = "
 	<script type='text/javascript' src='./javascript/ajax.js'></script>
@@ -1669,77 +869,6 @@ $admin_liste_jscript = "
 				list_view.parentNode.removeChild(list_view);
 		}
 		</script>
-";
-
-// $admin_docnum_statut_content_form : template form statuts des documents numériques
-$admin_docnum_statut_content_form = "
-<div class='row'>
-	<label class='etiquette' ><strong>".$msg["docnum_statut_gestion"]."</strong></label>
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>".$msg["docnum_statut_libelle"]."</label>
-</div>
-<div class='row'>
-	<input type=text id='form_gestion_libelle' name='form_gestion_libelle' value='!!gestion_libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<div class='colonne5'>
-		<label class='etiquette' for='form_class_html'>".$msg["docnum_statut_class_html"]."</label>
-	</div>
-	<div class='colonne_suite'>
-		!!class_html!!
-	</div>
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<label class='etiquette' ><strong>".$msg["docnum_statut_opac"]."</strong></label>
-</div>
-<div class='row'>
-	<label class='etiquette' for='form_libelle'>".$msg["docnum_statut_libelle"]."</label>
-</div>
-<div class='row'>
-	<input type=text id='form_opac_libelle' name='form_opac_libelle' value='!!opac_libelle!!' class='saisie-50em' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='colonne2'>
-	<label class='etiquette'>".$msg["docnum_statut_visibilite_generale"]."</label>
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette'>".$msg["docnum_statut_visibilite_restrict"]."</label>
-</div>
-<div class='colonne2'>
-	<label class='etiquette' for='form_visible_opac'>".$msg["docnum_statut_visu_opac_form"]."</label>
-	<input type=checkbox name=form_visible_opac value='1' !!checkbox_visible_opac!! class='checkbox' />
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette' for='form_visible_opac_abon'>".$msg["docnum_statut_visu_opac_abon"]."</label>
-	<input type=checkbox name=form_visible_opac_abon value='1' !!checkbox_visible_opac_abon!! class='checkbox' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='colonne2'>
-	<label class='etiquette' for='form_consult_opac'>".$msg["docnum_statut_cons_opac_form"]."</label>
-	<input type=checkbox name=form_consult_opac value='1' !!checkbox_consult_opac!! class='checkbox' />
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette' for='form_consult_opac_abon'>".$msg["docnum_statut_cons_opac_abon"]."</label>
-	<input type=checkbox name=form_consult_opac_abon value='1' !!checkbox_consult_opac_abon!! class='checkbox' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='colonne2'>
-	<label class='etiquette' for='form_visible_opac'>".$msg["docnum_statut_down_opac_form"]."</label>
-	<input type=checkbox name=form_download_opac value='1' !!checkbox_download_opac!! class='checkbox' />
-</div>
-<div class='colonne_suite'>
-	<label class='etiquette' for='form_download_opac_abon'>".$msg["docnum_statut_down_opac_abon"]."</label>
-	<input type=checkbox name=form_download_opac_abon value='1' !!checkbox_download_opac_abon!! class='checkbox' />
-</div>
-<div class='row'>&nbsp;</div>
-<div class='row'>
-	<label class='etiquette' for='form_thumbnail_visible_opac_override'>".$msg["docnum_statut_thumbnail_visible_opac_override"]."</label>
-	<input type=checkbox name='form_thumbnail_visible_opac_override' value='1' !!checkbox_thumbnail_visible_opac_override!! class='checkbox' />
-</div>
-<div class='row'>&nbsp;</div>
 ";
 
 $admin_authorities_statut_content_form = "

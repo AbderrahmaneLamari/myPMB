@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: applimobile.class.php,v 1.7.2.2 2021/10/15 13:17:47 rtigero Exp $
+// $Id: applimobile.class.php,v 1.12 2022/05/13 10:12:06 rtigero Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -92,6 +92,7 @@ class applimobile extends connecteur_out {
 		
 		//Parametres appli
 	    global $opac_empr_password_salt, $opac_resa_dispo, $opac_default_sort, $opac_pret_prolongation;
+	    global $opac_cart_allow;
 		
  		$param = $source->config;
 		if(false === $this->check_token($param)) {
@@ -120,6 +121,7 @@ class applimobile extends connecteur_out {
 		$param['opac_resa_dispo'] = $opac_resa_dispo;
 		$param['opac_default_sort'] = $opac_default_sort;
 		$param['opac_pret_prolongation'] = $opac_pret_prolongation;
+		$param['opac_cart_allow'] = $opac_cart_allow;
 		
 		if(count($param['applimobile_carousel_shelves'])) {
 			$shelf_list =  etagere::get_etagere_list(true);
@@ -145,6 +147,11 @@ class applimobile extends connecteur_out {
 							'label'				=> $facet['facette_name'],
 							'code_champ'		=> $facet['facette_critere'],
 							'code_ss_champ'		=> $facet['facette_ss_critere'],
+							'nb_result'         => $facet['facette_nb_result'],
+							'limit_plus'		=> $facet['facette_limit_plus'],
+							'type_sort'		    => $facet['facette_type_sort'],
+							'order_sort'		=> $facet['facette_order_sort'],
+							'datatype_sort'		=> $facet['facette_datatype_sort'],
 					];
 				}
 			}
@@ -281,7 +288,25 @@ class applimobile extends connecteur_out {
 
 class applimobile_source extends connecteur_out_source {
 	
-	
+    const APP_FONCTIONS = [
+        "loans",
+        "cart",
+        "bookmarkedrecords",
+        "simplesearch",
+        "advancedsearch",
+        "suggestionlist",
+        "sections",
+        "barcodescanner",
+        "barcodeinfo",
+        "library"
+    ];
+    public function get_app_fonctions(){
+        $result = array();
+        foreach(self::APP_FONCTIONS as $fonction){
+            $result[$fonction] = $this->msg["applimobile_".$fonction] ?? $fonction;
+        }
+        return $result;
+    }
 	public function get_config_form() {
 		
 		global $charset, $lang, $pmb_url_base;
@@ -303,6 +328,9 @@ class applimobile_source extends connecteur_out_source {
 			$this->config['applimobile_allow_booking'] = 0;
 			$this->config['applimobile_allow_password_change'] = 0;
 			$this->config['applimobile_keys'] = [];
+			$this->config['applimobile_associated_accounts_activate'] = 0;
+			$this->config['applimobile_rapid_search_localised'] = 0;
+			$this->config['applimobile_func'] = [];
 		}
 		
 		//Adresse du Web service de paramétrage
@@ -488,7 +516,31 @@ class applimobile_source extends connecteur_out_source {
 			<label >".$this->msg["applimobile_advanced_search_fields"]."</label><br />
 			$search_fields_selector
 		</div><hr />";
-
+        //Paramétrage des comptes associés
+        $result .= "<div class=\"row\">";
+        $result .= "<label >".$this->msg["applimobile_associated_accounts_activate"]."</label><br />";
+        $checked = $this->config['applimobile_associated_accounts_activate'] == '1' ? 'checked' : '';
+        $result .="<input type='checkbox' id='applimobile_associated_accounts_activate' name='applimobile_associated_accounts_activate' value='1' ".$checked."/>&nbsp;";
+        $result .="</div><hr />";
+        //Paramétrage de la recherche rapide
+        $result .= "<div class=\"row\">";
+        $result .= "<label >".$this->msg["applimobile_rapid_search"]."</label><br />";
+        $checked = $this->config['applimobile_rapid_search_localised'] == '1' ? 'checked' : '';
+        $result .="<input type='checkbox' id='applimobile_rapid_search_localised' name='applimobile_rapid_search_localised' value='1' ".$checked."/>&nbsp;";
+        $result .="</div><hr />";
+        //Paramétrage des modules
+        $fonctions = $this->get_app_fonctions();
+        $result .= "<div class=\"row\">";
+        $result .= "<label >".$this->msg["applimobile_disable_func"]."</label><br />";
+        $fonctions_selector = "<select id='applimobile_func' name='applimobile_func[]' multiple size='5'>";
+        foreach($fonctions as $name => $label) {
+            $selected = ( in_array($name, $this->config['applimobile_func']) ? 'selected' : '');
+            $fonctions_selector.= "
+				<option value='".$name."' $selected >".htmlentities($label, ENT_QUOTES, $charset)."</option>";
+        }
+        $fonctions_selector.= "</select>";
+        $result .= $fonctions_selector;
+        $result .="</div>";
 		$result.= "<div class='row'>&nbsp;</div>";
 		return $result;
 	}
@@ -502,6 +554,8 @@ class applimobile_source extends connecteur_out_source {
 		global $applimobile_contact_template;
 		global $applimobile_carousel_shelves, $applimobile_carousel_first_shelf_id; 
 		global $applimobile_facets, $applimobile_sorts, $applimobile_simple_search_types, $applimobile_advanced_search_fields;
+		global $applimobile_associated_accounts_activate, $applimobile_rapid_search_localised;
+		global $applimobile_func;
 
 		parent::update_config_from_form();
 		
@@ -548,6 +602,11 @@ class applimobile_source extends connecteur_out_source {
 				}
 			}
 		}
+		if(is_array($applimobile_func) && count($applimobile_func)) {
+		    foreach($applimobile_func as $func) {
+		        $this->config['applimobile_func'][] = $func;
+			}
+		}
 		$this->config['applimobile_sorts'] = [];
 		if(is_array($applimobile_sorts) && count($applimobile_sorts)) {
 			foreach($applimobile_sorts as $sort_name) {
@@ -571,6 +630,8 @@ class applimobile_source extends connecteur_out_source {
 		} else {
 			$this->config['keys'] = $keys;
 		}
+		$this->config['applimobile_associated_accounts_activate'] = isset($applimobile_associated_accounts_activate) ? '1' : '0';
+		$this->config['applimobile_rapid_search_localised'] = isset($applimobile_rapid_search_localised) ? '1' : '0';
 		
 	}
 	

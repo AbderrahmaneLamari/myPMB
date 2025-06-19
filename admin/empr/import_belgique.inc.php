@@ -2,12 +2,16 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: import_belgique.inc.php,v 1.14.4.1 2021/12/27 14:05:14 dgoron Exp $
+// $Id: import_belgique.inc.php,v 1.16 2022/09/07 15:13:30 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
-require_once("$class_path/emprunteur.class.php");
-require_once($class_path."/import/import_empr.class.php");
+global $class_path;
+global $action, $imp_elv, $imp_prof, $Sep_Champs, $type_import;
+
+require_once $class_path."/emprunteur.class.php";
+require_once $class_path."/import/import_empr.class.php";
+
 //import_belgique - Version modifiée par A.-M Cubat en avril 2006
 //Ecole N.-D. de la Sagesse - Avenue Van Overbeke, 10 - B-1083 Bruxelles (Belgique)
 
@@ -106,6 +110,7 @@ require_once($class_path."/import/import_empr.class.php");
 
 
 function show_import_choix_fichier() {
+    
 	global $msg;
 	global $current_module ;
 
@@ -148,7 +153,11 @@ function import_eleves($separateur, $type_import){
 
     //La structure du fichier texte doit être la suivante : 
     //Numéro identifiant/Nom/Prénom/Rue/Complément de rue/Code postal/Commune/Téléphone/Date de naissance/Classe/Sexe
-
+    
+    global $lang;
+    $cpt_insert = 0;
+    $cpt_maj = 0;
+    
     $eleve_abrege = array("Numéro identifiant","Nom","Prénom");
     $date_auj = date("Y-m-d", time());
     $date_an_proch = date("Y-m-d", time()+3600*24*30.42*12);
@@ -176,7 +185,6 @@ function import_eleves($separateur, $type_import){
             }
         }
         
-        
         while (!feof($fichier)) {
             $buffer = fgets($fichier, 4096);
             $buffer = import_empr::get_encoded_buffer($buffer);
@@ -197,6 +205,7 @@ function import_eleves($separateur, $type_import){
             }
 
             // Traitement de l'élève
+            $id_empr = 0;
             $select = pmb_mysql_query("SELECT id_empr FROM empr WHERE empr_cb = '".$tab[0]."'");
             $nb_enreg = pmb_mysql_num_rows($select);
             
@@ -209,38 +218,56 @@ function import_eleves($separateur, $type_import){
                 print("<br />");
                 $nb_enreg = 2;
             }
+            if($nb_enreg == 1) {
+                $row = pmb_mysql_fetch_assoc($select);
+                $id_empr = $row['id_empr'];
+            }
             
             $login = import_empr::cre_login($tab[1],$tab[2]);
             
             switch ($nb_enreg) {
+                
                 case 0:
-                	//Ce élève n'est pas enregistré 
+                	//Cet élève n'est pas enregistré 
                     $req_insert = "INSERT INTO empr(empr_cb, empr_nom, empr_prenom, empr_adr1, empr_adr2, empr_cp, empr_ville, ";
                     $req_insert .= "empr_tel1, empr_year, empr_categ, empr_codestat, empr_creation, empr_sexe,  ";
                     $req_insert .= "empr_login, empr_password, empr_date_adhesion, empr_date_expiration) ";
                     $req_insert .= "VALUES ('$tab[0]','$tab[1]','$tab[2]','$tab[3]', '$tab[4]', '$tab[5]', ";
-	//Vérifier dans la table empr_categ si id_categ_empr 1 = élèves    Vérifier dans la table empr_codestat si idcode 2 = école    Sinon, changer les valeurs
+	               //Vérifier dans la table empr_categ si id_categ_empr 1 = élèves    Vérifier dans la table empr_codestat si idcode 2 = école    Sinon, changer les valeurs
                     $req_insert .= "'$tab[6]', '$tab[7]', '$tab[8]', 1, 2, '$date_auj', '$sexe', ";
                     $req_insert .= "'$login', '$tab[8]', '$date_auj', '$date_an_proch')";
                     $insert = pmb_mysql_query($req_insert);
+                    
                     if (!$insert) {
+                        
                         print("<b>Echec de la création de l'élève suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
                         for ($i=0;$i<3;$i++) {
                             print($eleve_abrege[$i]." : ".$tab[$i].", ");
                         }
                         print("<br />");
-                    }
-                    else {
-                    	emprunteur::update_digest($login,$tab[8]);
-                    	emprunteur::hash_password($login,$tab[8]);
+                        
+                    } else {
+                        
+                        $id_empr = pmb_mysql_insert_id();
+                        
+                        //Chiffrement du mot de passe
+                        //On verifie que le mot de passe lecteur correspond aux regles de saisie definies
+                        //Si non, encodage dans l'ancien format
+                        $old_hash = false;
+                        $check_password_rules = emprunteur::check_password_rules((int) $id_empr, $tab[8], [], $lang);
+                        if( !$check_password_rules['result'] ) {
+                            $old_hash = true;
+                        }
+                        emprunteur::update_digest($login,$tab[8]);
+                    	emprunteur::hash_password($login,$tab[8], $old_hash);
+                    	
                         $cpt_insert ++;
                     }
                     import_empr::gestion_groupe($tab[9], $tab[0]);
-                    $j++;
                     break;
 
                 case 1:
-                	//Ce élève est déjà enregistré 
+                	//Cet élève est déjà enregistré 
                     $req_update = "UPDATE empr SET empr_nom = '$tab[1]', empr_prenom = '$tab[2]', empr_adr1 = '$tab[3]', ";
                     $req_update .= "empr_adr2 = '$tab[4]', empr_cp = '$tab[5]', empr_ville = '$tab[6]', ";
 					//Vérifier dans la table empr_categ si id_categ_empr 1 = élèves    Vérifier dans la table empr_codestat si idcode 2 = école    Sinon, changer les valeurs
@@ -249,20 +276,31 @@ function import_eleves($separateur, $type_import){
                     $req_update .= "empr_date_adhesion = '$date_auj', empr_date_expiration = '$date_an_proch' ";
                     $req_update .= "WHERE empr_cb = '$tab[0]'";
                     $update = pmb_mysql_query($req_update);
+                    
                     if (!$update) {
+                        
                         print("<b>Echec de la modification de l'élève suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
                         for ($i=0;$i<3;$i++) {
                             print($eleve_abrege[$i]." : ".$tab[$i].", ");
                         }
                         print("<br />");
-                    }
-                    else {
-                    	emprunteur::update_digest($login,$tab[8]);
-                    	emprunteur::hash_password($login,$tab[8]);
+                        
+                    } else {
+                        
+                        //Chiffrement du mot de passe
+                        //On verifie que le mot de passe lecteur correspond aux regles de saisie definies
+                        //Si non, encodage dans l'ancien format
+                        $old_hash = false;
+                        $check_password_rules = emprunteur::check_password_rules((int) $id_empr, $tab[8], [], $lang);
+                        if( !$check_password_rules['result'] ) {
+                            $old_hash = true;
+                        }
+                        emprunteur::update_digest($login,$tab[8]);
+                        emprunteur::hash_password($login,$tab[8], $old_hash);
+                        
                         $cpt_maj ++;
                     }
                     import_empr::gestion_groupe($tab[9], $tab[0]);
-                    $j++;
                     break;
                 case 2:
                     break;
@@ -290,14 +328,18 @@ function import_profs($separateur, $type_import){
     //La structure du fichier texte doit être la suivante : 
     //Numéro identifiant/Nom/Prénom/Rue/Complément de rue/Code postal/Commune/Téléphone/Date de naissance/Classe/Sexe
  
+    global $lang;
+    $cpt_insert = 0;
+    $cpt_maj = 0;
+    
     $prof_abrege = array("Numéro identifiant","Nom","Prénom");
     $date_auj = date("Y-m-d", time());
     $date_an_proch = date("Y-m-d", time()+3600*24*30.42*12);
     
     //Upload du fichier
-    if (!($_FILES['import_lec']['tmp_name']))
+    if (!($_FILES['import_lec']['tmp_name'])) {
         print "Cliquez sur Pr&eacute;c&eacute;dent et choisissez un fichier";
-    elseif (!(move_uploaded_file($_FILES['import_lec']['tmp_name'], "./temp/".basename($_FILES['import_lec']['tmp_name'])))) {
+    } elseif (!(move_uploaded_file($_FILES['import_lec']['tmp_name'], "./temp/".basename($_FILES['import_lec']['tmp_name'])))) {
         print "Le fichier n'a pas pu être téléchargé. Voici plus d'informations :<br />";
         print_r($_FILES)."<p>";
     }
@@ -316,7 +358,6 @@ function import_profs($separateur, $type_import){
                 emprunteur::del_empr($verif_pret["id_empr"]);
             }
         }
-        
         
         while (!feof($fichier)) {
             $buffer = fgets($fichier, 4096);
@@ -338,9 +379,9 @@ function import_profs($separateur, $type_import){
             }
 
             // Traitement du prof
+            $id_empr = 0;
             $select = pmb_mysql_query("SELECT id_empr FROM empr WHERE empr_cb = '".$tab[0]."'");
             $nb_enreg = pmb_mysql_num_rows($select);
-            
             //Test si un numéro id est fourni
             if (!$tab[0] || $tab[0] == "") {
                 print("<b> Prof non pris en compte car \"Numéro identifiant\" non renseigné : </b><br />");
@@ -350,10 +391,15 @@ function import_profs($separateur, $type_import){
                 print("<br />");
                 $nb_enreg = 2;
             }
+            if($nb_enreg == 1) {
+                $row = pmb_mysql_fetch_assoc($select);
+                $id_empr = $row['id_empr'];
+            }
             
             $login = import_empr::cre_login($tab[1],$tab[2]);
             
             switch ($nb_enreg) {
+                
                 case 0:
                 	//Ce prof n'est pas enregistre 
                     $req_insert = "INSERT INTO empr(empr_cb, empr_nom, empr_prenom, empr_adr1, empr_adr2, empr_cp, empr_ville, ";
@@ -364,20 +410,32 @@ function import_profs($separateur, $type_import){
                     $req_insert .= "'$tab[6]', '$tab[7]', '$tab[8]', 2, 2, '$date_auj', '$sexe', ";
                     $req_insert .= "'$login', '$tab[8]', '$date_auj', '$date_an_proch')";
                     $insert = pmb_mysql_query($req_insert);
+                    
                     if (!$insert) {
+                        
                         print("<b>Echec de la création du prof suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
                         for ($i=0;$i<3;$i++) {
                             print($prof_abrege[$i]." : ".$tab[$i].", ");
                         }
                         print("<br />");
-                    }
-                    else {
+                        
+                    } else {
+                        
+                        $id_empr = pmb_mysql_insert_id();
+                        
+                        //Chiffrement du mot de passe
+                        //On verifie que le mot de passe lecteur correspond aux regles de saisie definies
+                        //Si non, encodage dans l'ancien format
+                        $old_hash = false;
+                        $check_password_rules = emprunteur::check_password_rules((int) $id_empr, $tab[8], [], $lang);
+                        if( !$check_password_rules['result'] ) {
+                            $old_hash = true;
+                        }
                     	emprunteur::update_digest($login,$tab[8]);
-                    	emprunteur::hash_password($login,$tab[8]);
+                    	emprunteur::hash_password($login,$tab[8], $old_hash);
                         $cpt_insert ++;
                     }
                     import_empr::gestion_groupe($tab[9], $tab[0]);
-                    $j++;
                     break;
 
                 case 1:
@@ -390,20 +448,31 @@ function import_profs($separateur, $type_import){
                     $req_update .= "empr_date_adhesion = '$date_auj', empr_date_expiration = '$date_an_proch' ";
                     $req_update .= "WHERE empr_cb = '$tab[0]'";
                     $update = pmb_mysql_query($req_update);
+                    
                     if (!$update) {
+                        
                         print("<b>Echec de la modification du prof suivant (Erreur : ".pmb_mysql_error().") : </b><br />");
                         for ($i=0;$i<3;$i++) {
                             print($prof_abrege[$i]." : ".$tab[$i].", ");
                         }
                         print("<br />");
-                    }
-                    else {
-                    	emprunteur::update_digest($login,$tab[8]);
-                    	emprunteur::hash_password($login,$tab[8]);
+                        
+                    } else {
+                        
+                        //Chiffrement du mot de passe
+                        //On verifie que le mot de passe lecteur correspond aux regles de saisie definies
+                        //Si non, encodage dans l'ancien format
+                        $old_hash = false;
+                        $check_password_rules = emprunteur::check_password_rules((int) $id_empr, $tab[8], [], $lang);
+                        if( !$check_password_rules['result'] ) {
+                            $old_hash = true;
+                        }
+                        emprunteur::update_digest($login,$tab[8]);
+                        emprunteur::hash_password($login,$tab[8], $old_hash);
+
                         $cpt_maj ++;
                     }
                     import_empr::gestion_groupe($tab[9], $tab[0]);
-                    $j++;
                     break;
                 case 2:
                     break;
@@ -447,4 +516,3 @@ switch($action) {
         show_import_choix_fichier();
         break;
 }
-?>

@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: list_tabs_circ_ui.class.php,v 1.3.2.1 2021/06/17 07:01:48 dgoron Exp $
+// $Id: list_tabs_circ_ui.class.php,v 1.4 2021/06/17 07:00:20 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 

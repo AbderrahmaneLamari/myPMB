@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: group_main.inc.php,v 1.12.2.1 2021/10/22 13:13:10 dgoron Exp $
+// $Id: group_main.inc.php,v 1.13 2021/10/22 13:11:23 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

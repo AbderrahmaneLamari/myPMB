@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ajax.php,v 1.34.2.2 2021/11/26 15:27:06 qvarin Exp $
+// $Id: ajax.php,v 1.38.4.1 2023/08/02 06:43:48 dgoron Exp $
 /*
 Mode d'emploi des transactions client - serveur utilisant les requettes Ajax.
 Cette technique permet d'interroger le serveur dynamiquement sans recharger toute la page.
@@ -112,11 +112,16 @@ switch($_GET['module']){
 	case 'account':
 		$base_auth = "PREF_AUTH|ADMINISTRATION_AUTH";
 		break;
+	case 'audit':
+	    $base_auth = "CATALOGAGE_AUTH";
+	    break;
 }
 
 require_once ($base_path . "/includes/init.inc.php");
 
 if(!SESSrights) exit;
+
+global $module, $is_iframe, $charset, $object_type, $user_input;
 
 // inclusion des fonctions utiles pour renvoyer la réponse à la requette recu 
 require_once ($base_path . "/includes/ajax.inc.php");
@@ -148,7 +153,11 @@ function array_uft8_decode($tab){
 	return $tab;
 }
 
-if(!isset($is_iframe)) $is_iframe = 0;
+if(!isset($is_iframe)) {
+    $is_iframe = 0;
+} else {
+    $is_iframe = intval($is_iframe);
+}
 
 if (strtoupper($charset)!="UTF-8" && !$is_iframe) {
 	$t=array_keys($_POST);	
@@ -205,7 +214,6 @@ switch($module) {
 		include($main_file);
 		break;
 	case "selectors":
-		$autoloader->add_register("selectors_class",true);
 		global $what,$concept_scheme;
 		if($what == 'ontology'){
     		if(!is_array($concept_scheme) && $concept_scheme != ''){
@@ -232,6 +240,12 @@ switch($module) {
 	case "account" :
 		include($main_file);
 		break;
+	case "semantic" :
+	    include($main_file);
+	    break;
+	case "audit":
+	    lists_controller::proceed_ajax($object_type);
+	    break;
 	default:
 		//tbd
 	break;	

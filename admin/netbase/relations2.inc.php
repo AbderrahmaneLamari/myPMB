@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: relations2.inc.php,v 1.16.2.2 2021/12/15 08:53:05 dgoron Exp $
+// $Id: relations2.inc.php,v 1.19 2022/04/11 12:32:38 tsamson Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -77,6 +77,27 @@ $affected += pmb_mysql_affected_rows();
 
 pmb_mysql_query("delete cms_sections_descriptors from cms_sections_descriptors left join noeuds on num_noeud=id_noeud where id_noeud is null");
 $affected += pmb_mysql_affected_rows();
+
+$query = "SELECT N1.id_noeud AS id, N1.num_parent AS parent, N3.id_noeud AS top_thes
+FROM noeuds N1
+JOIN noeuds N2
+ON N1.num_parent = N2.id_noeud
+JOIN thesaurus T
+ON T.id_thesaurus = N1.num_thesaurus
+JOIN noeuds N3
+ON N3.num_thesaurus = T.id_thesaurus
+AND N3.autorite = 'TOP'
+WHERE N2.autorite = 'TOP' AND N1.autorite != 'TOP'
+AND N1.num_thesaurus != N2.num_thesaurus";
+$result = pmb_mysql_query($query);
+if (pmb_mysql_num_rows($result)) {
+    while ($row = pmb_mysql_fetch_assoc($result)) {
+        if ($row["parent"] != $row["top_thes"]) {
+            pmb_mysql_query("UPDATE noeuds SET num_parent = ".$row["top_thes"]." WHERE id_noeud = ".$row["id"]);
+            $affected++;
+        }
+    }
+}
 
 $v_state .= "<br /><img src='".get_url_icon('d.gif')."' hspace=3>".htmlentities($msg["nettoyage_suppr_relations"], ENT_QUOTES, $charset)." : ";
 $v_state .= $affected." ".htmlentities($msg["nettoyage_res_suppr_relations_cat"], ENT_QUOTES, $charset);

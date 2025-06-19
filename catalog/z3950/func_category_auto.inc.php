@@ -4,7 +4,7 @@
 // | creator : Eric ROBERT                                                    |
 // | modified : ...                                                           |
 // +-------------------------------------------------+
-// $Id: func_category_auto.inc.php,v 1.6 2019/08/01 13:16:34 btafforeau Exp $
+// $Id: func_category_auto.inc.php,v 1.6.8.1 2023/10/11 10:11:28 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -18,25 +18,8 @@ $thes = new thesaurus($thesaurus_defaut);
 $rac = $thes->num_noeud_racine;*/
 
 function traite_categories_enreg($notice_retour,$categories,$thesaurus_traite=0) {
-	// si $thesaurus_traite fourni, on ne delete que les catégories de ce thesaurus, sinon on efface toutes
-	//  les indexations de la notice sans distinction de thesaurus
-    if (empty($thesaurus_traite)) {
-        $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' ";
-    } else {
-        $rqt_del = "delete from notices_categories where notcateg_notice='$notice_retour' and num_noeud in (select id_noeud from noeuds where num_thesaurus='$thesaurus_traite' and id_noeud=notices_categories.num_noeud) ";
-    }
-	$res_del = @pmb_mysql_query($rqt_del);
-	$rqt_ins = "insert into notices_categories (notcateg_notice, num_noeud,ordre_categorie) VALUES ";
-	$nb_categories = count($categories);
-	for($i = 0; $i < $nb_categories; $i++) {
-		$id_categ = $categories[$i]['categ_id'];
-		if (!empty($id_categ)) {
-			$rqt = $rqt_ins . " ('$notice_retour','$id_categ',$i) "; 
-			$res_ins = @pmb_mysql_query($rqt);
-		}
-	}
+	z3950_notice::traite_categories_enreg($notice_retour, $categories, $thesaurus_traite);
 }
-
 
 function traite_categories_for_form($tableau_600="",$tableau_601="",$tableau_602="",$tableau_605="",$tableau_606="",$tableau_607="",$tableau_608="") {
 	
@@ -132,9 +115,7 @@ function traite_categories_for_form($tableau_600="",$tableau_601="",$tableau_602
 
 
 function traite_categories_from_form() {
-		
 	global $rameau ;
-	global $dbh;
 	
 	$tabl_build = unserialize(stripslashes($rameau)) ;
 	

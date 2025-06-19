@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2011 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: main.inc.php,v 1.31 2021/02/19 14:49:31 btafforeau Exp $
+// $Id: main.inc.php,v 1.35 2022/07/22 08:03:57 qvarin Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 
@@ -10,10 +10,6 @@ global $var, $in_page, $include_path, $class_path, $cms_module_class, $elem, $id
 global $callback, $cancel_callback, $delete_callback, $id_cadre, $classement, $pageid, $name;
 
 require_once($include_path.'/misc.inc.php');
-require_once($class_path."/autoloader.class.php");
-$autoloader = new autoloader();
-$autoloader->add_register("cms_modules",true);
-$autoloader->add_register("frbr_entities",true);
 
 //si l'id n'est pas passé en GET, on récupère le hidden qui se balade dans les posts...
 if(!$id){
@@ -26,13 +22,17 @@ if(!$id){
 switch($action){
 	case "save_form" :
 		$element = new $elem($id);
-		$cms_build_info = unserialize(rawurldecode(stripslashes($cms_build_info)));
+		$cms_build_info = @unserialize(rawurldecode(stripslashes($cms_build_info)));
 		$element->set_cms_build_env($cms_build_info);				
 		$response = $element->save_form();
 		break;
 	case "delete" :
 		$element = new $elem($id);
 		$response = $element->delete();
+		break;	
+	case "confirm_delete" :
+		$element = new $elem($id);
+		$response = $element->confirm_delete();
 		break;	
 	case "cadres_list_in_page" :
 		$cms= new cms_build();

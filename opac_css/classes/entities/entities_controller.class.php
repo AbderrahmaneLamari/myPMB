@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: entities_controller.class.php,v 1.2 2018/10/11 08:08:20 vtouchard Exp $
+// $Id: entities_controller.class.php,v 1.3 2022/02/16 12:38:19 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/acces.class.php");
 require_once($class_path."/onto/onto_pmb_entities_mapping.class.php");
 
@@ -28,7 +29,7 @@ class entities_controller {
 	protected $delete_url = '';
 	
 	public function __construct($id=0) {
-		$this->id = $id+0;
+	    $this->id = intval($id);
 	}
 	
 	public function get_model_class_name() {

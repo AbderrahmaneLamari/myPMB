@@ -2,10 +2,11 @@
 // +-------------------------------------------------+
 // | 2002-2007 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: pmbesOPACAnonymous.class.php,v 1.22 2019/08/28 06:48:51 ngantier Exp $
+// $Id: pmbesOPACAnonymous.class.php,v 1.22.8.1 2023/03/16 11:03:09 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
+global $class_path;
 require_once($class_path."/external_services.class.php");
 
 define("LIST_LOAN_LATE",0);
@@ -14,18 +15,6 @@ define("LIST_LOAN_PRECEDENT",2);
 
 class pmbesOPACAnonymous extends external_services_api_class{
 	
-	public function restore_general_config() {
-		
-	}
-	
-	public function form_general_config() {
-		return false;
-	}
-	
-	public function save_general_config() {
-		
-	}
-
 	public function simpleSearch($searchType=0,$searchTerm="",$PMBUserId=-1, $OPACEmprId=-1) {
 		return $this->proxy_parent->pmbesSearch_simpleSearch($searchType, $searchTerm, -1, 0);
 	}
@@ -74,16 +63,19 @@ class pmbesOPACAnonymous extends external_services_api_class{
 	}
 
 	public function fetch_notice_items($notice_id) {
+		$notice_id = intval($notice_id);
 		$this->proxy_parent->isOPAC=true;//Je sauvegarde dans le parent que je viens de l'OPAC pour les droits d'affichage
 		return $this->proxy_parent->pmbesItems_fetch_notice_items($notice_id, 0);
 	}
 	
 	public function listNoticeExplNums($notice_id) {
+		$notice_id = intval($notice_id);
 		$this->proxy_parent->isOPAC=true;//Je sauvegarde dans le parent que je viens de l'OPAC pour les droits d'affichage
 		return $this->proxy_parent->pmbesNotices_listNoticeExplNums($notice_id, 0);
 	}
 	
 	public function listBulletinExplNums($bulletinId) {
+		$bulletinId = intval($bulletinId);
 		$this->proxy_parent->isOPAC=true;//Je sauvegarde dans le parent que je viens de l'OPAC pour les droits d'affichage
 		return $this->proxy_parent->pmbesNotices_listBulletinExplNums($bulletinId, 0);
 	}
@@ -135,31 +127,34 @@ class pmbesOPACAnonymous extends external_services_api_class{
 	}
 	
 	public function fetchNoticeByExplCb($explCb, $recordFormat, $recordCharset) {
-		global $dbh;
 		$this->proxy_parent->isOPAC=true;//Je sauvegarde dans le parent que je viens de l'OPAC
 		
 		return $this->proxy_parent->pmbesNotices_fetchNoticeByExplCb(0,$explCb, $recordFormat, $recordCharset, true, true);
 	}
 	
 	public function get_author_information_and_notices($author_id) {
+		$author_id = intval($author_id);
 		$this->proxy_parent->isOPAC=true;//Je sauvegarde dans le parent que je viens de l'OPAC
 		
 		return $this->proxy_parent->pmbesAuthors_get_author_information_and_notices($author_id, 0);
 	}
 
 	public function get_collection_information_and_notices($collection_id) {
+		$collection_id = intval($collection_id);
 		$this->proxy_parent->isOPAC=true;//Je sauvegarde dans le parent que je viens de l'OPAC
 		
 		return $this->proxy_parent->pmbesCollections_get_collection_information_and_notices($collection_id, 0);
 	}
 	
 	public function get_subcollection_information_and_notices($subcollection_id) {
+		$subcollection_id = intval($subcollection_id);
 		$this->proxy_parent->isOPAC=true;//Je sauvegarde dans le parent que je viens de l'OPAC
 		
 		return $this->proxy_parent->pmbesCollections_get_subcollection_information_and_notices($subcollection_id, 0);
 	}
 	
 	public function get_publisher_information_and_notices($publisher_id) {
+		$publisher_id = intval($publisher_id);
 		$this->proxy_parent->isOPAC=true;//Je sauvegarde dans le parent que je viens de l'OPAC
 		
 		return $this->proxy_parent->pmbesPublishers_get_publisher_information_and_notices($publisher_id, 0);

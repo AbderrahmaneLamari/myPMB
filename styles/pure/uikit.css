@@ -2,7 +2,7 @@
 /* ========================================================================
    Component: Base
  ========================================================================== */
-/* $Id: uikit.css,v 1.6.8.1 2021/11/26 13:26:42 lbeguin Exp $ */ 
+/* $Id: uikit.css,v 1.7 2021/11/26 13:31:45 lbeguin Exp $ */ 
 /*
  * 1. Set `font-size` to support `rem` units
  *    Not using `font` property because a leading hyphen (e.g. -apple-system) causes the font to break in IE11 and Edge

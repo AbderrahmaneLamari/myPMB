@@ -2,15 +2,15 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: file_uploader.class.php,v 1.1.2.2 2021/11/24 19:54:21 dgoron Exp $
+// $Id: file_uploader.class.php,v 1.2.4.1 2023/04/28 09:58:44 dbellamy Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
 class file_uploader {
-	
+
 	public function __construct() {
 	}
-	
+
 	public static function getBytes($val) {
 		$last = strtolower($val[strlen($val) - 1]);
 		$Bytes = intval(trim($val));
@@ -24,35 +24,35 @@ class file_uploader {
 		}
 		return $Bytes;
 	}
-	
+
 	/*
 	 * Fonction qui dézippe dans le bon répertoire
 	 */
 	public static function unzip($filename, $up_place, $path, $id_rep) {
 		global $charset, $base_path;
-		
+
 		$unzipped_files = array();
-		
+
 		$zip = new zip($filename);
 		$zip->readZip();
 		$cpt = 0;
 		if ($up_place && $path != '') {
 			$up = new upload_folder($id_rep);
 		}
-		
+
 		if (is_array($zip->entries) && count($zip->entries)) {
 			foreach ( $zip->entries as $file ) {
 				$file_name_for_get_file_content = $file['fileName'];
-				
+
 				$encod = mb_detect_encoding($file['fileName'], "UTF-8,ISO-8859-1");
 				if ($encod && ($encod == 'UTF-8') && ($charset == "iso-8859-1")) {
 					$file['fileName'] = utf8_decode($file['fileName']);
 				} elseif ($encod && ($encod == 'ISO-8859-1') && ($charset == "utf-8")) {
 					$file['fileName'] = utf8_encode($file['fileName']);
 				}
-				
-				$file['fileName'] = static::clean_explnum_file_name($file['fileName']);
-				
+
+				$file['fileName'] = static::clean_file_name($file['fileName']);
+
 				if ($up_place && $path != '') {
 					$chemin = $path;
 					if ($up->isHashing()) {
@@ -94,9 +94,10 @@ class file_uploader {
 					$chemin = $base_path . '/temp/' . $file['fileName'];
 					$fh = fopen($chemin, 'w');
 					fwrite($fh, $zip->getFileContent($file['fileName']));
+					fclose($fh);
 					$base = true;
 				}
-				
+
 				$unzipped_files[$cpt]['chemin'] = $chemin;
 				$unzipped_files[$cpt]['nom'] = $file['fileName'];
 				$unzipped_files[$cpt]['base'] = $base;
@@ -105,15 +106,15 @@ class file_uploader {
 		}
 		return $unzipped_files;
 	}
-	
+
 	public static function clean_file_name($filename){
-		
+
 		$filename = convert_diacrit($filename);
 		$filename = preg_replace('/[^\x20-\x7E]/','_', $filename);
 		$filename = str_replace(',', '_', $filename);
 		return $filename;
 	}
-	
+
 	public static function get_limit() {
 		$maxUpload = static::getBytes(ini_get('upload_max_filesize')); // can only be set in php.ini and not by ini_set()
 		$maxPost = static::getBytes(ini_get('post_max_size'));         // can only be set in php.ini and not by ini_set()
@@ -124,10 +125,10 @@ class file_uploader {
 			return min($maxUpload, $maxPost);
 		}
 	}
-	
+
 	public static function get_file(){
 		global $charset;
-		
+
 		$headers = getallheaders();
 		//Uniformisons les retours en minuscules pour la compatibilité sur tous les environnements
 		$headers = array_change_key_case($headers, CASE_LOWER);
@@ -135,7 +136,7 @@ class file_uploader {
 			$headers['x-file-name'] = utf8_encode($headers['x-file-name']);
 		}
 		$protocol = $_SERVER["SERVER_PROTOCOL"];
-		
+
 		if (!isset($headers['content_length'])) {
 			if (!isset($headers['x-file-size'])) {
 				header($protocol.' 411 Length Required');
@@ -144,20 +145,20 @@ class file_uploader {
 				$headers['content-length']=preg_replace('/\D*/', '', $headers['x-file-size']);
 			}
 		}
-		
+
 		if (isset($headers['x-file-size'], $headers['x-file-name'])) {
-			
+
 			$file = new stdClass();
 			$file->name = basename($headers['x-file-name']);
 			$file->filename = preg_replace('/[^ \.\w_\-\(\)]*/', '', basename(reg_diacrit($headers['x-file-name'])));
 			$file->size = preg_replace('/\D*/', '', $headers['x-file-size']);
-			
+
 			$limit = static::get_limit();
 			if ($headers['content-length'] > $limit) {
 				header($protocol.' 403 Forbidden');
 				exit('File size to big. Limit is '.$limit. ' bytes.');
 			}
-			
+
 			$i=1;
 			while(file_exists("./temp/".$file->filename)){
 				if($i==1){
@@ -174,10 +175,10 @@ class file_uploader {
 			exit('Correct headers are not set.');
 		}
 	}
-	
+
 	public static function debug($tab){
 		//FROM STORAGE
 		highlight_string(print_r($tab,true));
 	}
-	
+
 } /* fin de définition de la classe */

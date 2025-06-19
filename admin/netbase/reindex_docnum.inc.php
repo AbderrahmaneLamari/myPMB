@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: reindex_docnum.inc.php,v 1.5.8.1 2021/12/13 15:31:04 dgoron Exp $
+// $Id: reindex_docnum.inc.php,v 1.6 2021/12/13 15:23:46 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".inc.php")) die("no access");
 

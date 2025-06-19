@@ -1,7 +1,7 @@
 // +-------------------------------------------------+
 // � 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: ItemsListUI.js,v 1.49.2.1 2021/08/10 09:57:00 dgoron Exp $
+// $Id: ItemsListUI.js,v 1.50 2021/08/10 09:53:05 dgoron Exp $
 
 
 define(["dojo/_base/declare", "dijit/layout/ContentPane", "dojo/_base/lang", "dojo/topic", "dojox/grid/DataGrid", "dojo/data/ObjectStore", "dojo/store/Memory", "dojo/ready", "apps/docwatch/ItemsStore", "dojo/date/locale", "dojo/dom-construct", "dojo/on", 'dijit/form/Button', 'dijit/form/RadioButton',  'dojox/widget/Standby', "dojo/dom"], function(declare,ContentPane,lang,topic,DataGrid,ObjectStore,Memory,ready,ItemsStore,locale, domConstruct, on, Button, RadioButton, standby, dom){

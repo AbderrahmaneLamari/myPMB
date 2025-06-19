@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2005 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: scheduler_log.class.php,v 1.1 2017/07/10 15:50:01 dgoron Exp $
+// $Id: scheduler_log.class.php,v 1.2 2023/02/08 13:17:53 dgoron Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".class.php")) die("no access");
 
@@ -22,7 +22,7 @@ class scheduler_log {
 		ini_set('error_log', $base_path.'/temp/'.$filename);
     }
     
-    public static function add_content($filename='log_errors.log', $content){
+    public static function add_content($filename='log_errors.log', $content=''){
     	global $base_path;
     	
     	file_put_contents($base_path.'/temp/'.$filename, "\r\n".$content, FILE_APPEND);

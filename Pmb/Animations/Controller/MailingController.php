@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: MailingController.php,v 1.10 2021/03/22 15:36:35 btafforeau Exp $
+// $Id: MailingController.php,v 1.11 2022/10/25 08:17:00 gneveu Exp $
 namespace Pmb\Animations\Controller;
 
 use Pmb\Animations\Models\AnimationModel;
@@ -84,15 +84,6 @@ class MailingController
             $this->animation = AnimationModel::getAnimationForMailing($this->data->id_animation);
         }
         return $this->animation;
-    }
-
-    public function getListRegistredPersons()
-    {
-        $listRegistredPersons = "";
-        if ($this->data->emprunteur_datas->id && $this->data->id_animation) {
-            $listRegistredPersons = RegistredPersonModel::getListRegistredPersons($this->data->emprunteur_datas->id, $this->data->id_animation);
-        }
-        return $listRegistredPersons;
     }
 
     public function getUnsubscribeLink()

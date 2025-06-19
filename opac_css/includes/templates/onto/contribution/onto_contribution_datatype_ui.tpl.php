@@ -2,7 +2,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: onto_contribution_datatype_ui.tpl.php,v 1.17.2.5 2021/08/19 12:00:28 qvarin Exp $
+// $Id: onto_contribution_datatype_ui.tpl.php,v 1.30.4.1 2023/11/16 14:51:13 gneveu Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], ".tpl.php")) die("no access");
 
@@ -21,8 +21,9 @@ $ontology_tpl['onto_contribution_datatype_docnum_file_script'] = '
 					"dojo/dom",
 					"dojo/dom-style",
 					"dojo/ready",
-					"dojox/widget/Standby"
-				], function (iframe, query, on, domAttr, domConstruct, dom, domStyle, ready, Standby) {
+					"dojox/widget/Standby",
+                    "dojo/topic"
+				], function (iframe, query, on, domAttr, domConstruct, dom, domStyle, ready, Standby, topic) {
 			        ready(function () {
 			            query("#!!instance_name!!_!!property_name!! input[type=\'file\']").forEach(function (node) {
 			                on(node, "change", function (e) {
@@ -79,6 +80,11 @@ $ontology_tpl['onto_contribution_datatype_docnum_file_script'] = '
 			                            	} else { 
 			                            		labelNode.value = node.value;
 			                            	}
+
+                                            var container = dom.byId(labelNode.id.replace("_0_value", ""));
+                                            if (container && container.attributes["data-pmb-uniqueid"]) {                                                
+                                                topic.publish("form/change", container.attributes["data-pmb-uniqueid"].value);
+                                            }
 			                           	}
 			                        }
 									standby.hide();
@@ -113,8 +119,9 @@ $ontology_tpl['form_row_content_upload_directories'] = '
 		"dojo/_base/lang",
 		"apps/pmb/PMBDialog",
 		"dijit/form/Button",
+        "dojo/topic",
 		"dojo/domReady!"
-	], function (Memory, ObjectStoreModel, Tree, dom, registry, on, lang, Dialog, Button) {
+	], function (Memory, ObjectStoreModel, Tree, dom, registry, on, lang, Dialog, Button, topic) {
 		// Si déjà fait une fois, ça ne sert à rien de le refaire !
 		let alreadyParse = false;
 		if (registry.byId("!!onto_row_id!!_!!onto_row_order!!_dialog")) {
@@ -166,6 +173,11 @@ $ontology_tpl['form_row_content_upload_directories'] = '
 				dialog.hide();
 				dom.byId("!!onto_row_id!!_!!onto_row_order!!_display_label").value = node.formatted_path_name;
 				dom.byId("!!onto_row_id!!_!!onto_row_order!!_value").value = node.formatted_path_id;
+                var container = dom.byId("!!onto_row_id!!");
+                if (container && container.attributes["data-pmb-uniqueid"]) {                                                
+                    topic.publish("form/change", container.attributes["data-pmb-uniqueid"].value);
+                }
+
 				//on empeche le changement de page tant que l\'utilisateur n\'a pas ré-enregistré
         		if (typeof unloadOn == "function"){
                 	unloadOn();
@@ -186,8 +198,9 @@ $ontology_tpl['form_row_content_upload_directories'] = '
  */
 $ontology_contribution_tpl['form_row'] = '
 <div id="!!onto_row_id!!" data-pmb-uniqueId="!!data_pmb_uniqueid!!">
-	<div class="row">	
+	<div class="row"  title="!!form_row_label_tooltip!!">	
 		<label class="etiquette" for="!!onto_row_id!!">!!onto_row_label!!</label>
+        !!form_row_content_comment!! !!form_row_content_tooltip!!
 	</div>
 	<input type="hidden" id="!!onto_row_id!!_new_order" value="!!onto_new_order!!"/>
 	!!onto_rows!!
@@ -225,7 +238,7 @@ $ontology_contribution_tpl['form_row_content_input_del']='
  * Text
  */
 $ontology_contribution_tpl['form_row_content_text']='
-<textarea cols="80" rows="4" wrap="virtual" name="!!onto_row_id!![!!onto_row_order!!][value]" id="!!onto_row_id!!_!!onto_row_order!!_value">!!onto_row_content_text_value!!</textarea>
+<textarea cols="80" rows="4" wrap="virtual" name="!!onto_row_id!![!!onto_row_order!!][value]" id="!!onto_row_id!!_!!onto_row_order!!_value" !!onto_input_props!!>!!onto_row_content_text_value!!</textarea>
 !!onto_row_combobox_lang!!
 <input type="hidden" value="!!onto_row_content_text_range!!" name="!!onto_row_id!![!!onto_row_order!!][type]" id="!!onto_row_id!!_!!onto_row_order!!_type"/>
 ';
@@ -244,7 +257,9 @@ $ontology_contribution_tpl['form_row_content_small_text']='
  */
 $ontology_contribution_tpl['form_row_card'] = '
 <div id="!!onto_row_id!!">
-	<div class="row"><label class="etiquette" for="!!onto_row_id!!">!!onto_row_label!!</label></div>
+	<div class="row" title="!!form_row_label_tooltip!!">
+        <label class="etiquette" for="!!onto_row_id!!">!!onto_row_label!!</label>
+    </div>
 	<input type="hidden" id="!!onto_row_id!!_new_order" value="!!onto_new_order!!"/>
 	<input type="hidden" id="!!onto_row_id!!_input_type" value="!!onto_input_type!!">
 	!!onto_rows!!
@@ -482,6 +497,29 @@ $ontology_contribution_tpl['form_row_content_hidden']='
 ';
 
 /*
+ * Row Responsability
+ * On derive la ligne de base pour pouvoir charter correctement les vedettes
+ */
+$ontology_contribution_tpl['form_row_responsability'] = '
+<div id="!!onto_row_id!!"  data-pmb-uniqueId="!!data_pmb_uniqueid!!" class="form_row_responsability">
+	<div class="row" title="!!form_row_label_tooltip!!">
+		<hr />
+		<label class="etiquette !!form_row_content_mandatory_class!!" for="!!onto_row_id!!">
+            !!onto_row_label!! !!form_row_content_mandatory_sign!!
+        </label>
+		!!form_row_content_comment!! !!form_row_content_tooltip!!
+	</div>
+	<input type="hidden" id="!!onto_row_id!!_new_order" value="!!onto_new_order!!" autocomplete="off" />
+    <div class="onto_rows_responsability">
+    	!!onto_rows!!
+    </div>
+</div>
+<script type="text/javascript">
+	!!onto_row_scripts!!
+</script>
+';
+
+/*
  * Responsability selector
  */
 $ontology_contribution_tpl['form_row_content_responsability_selector']='
@@ -503,14 +541,14 @@ $ontology_contribution_tpl['form_row_content_responsability_selector']='
  * Vedette selector
  */
 $ontology_contribution_tpl['form_row_content_vedette'] = '
-<span id="contribution_vedette_title" class="etiquette">'.$msg['contribution_vedette_title'].'</span>
-<div class="row contribution_area_flex">
+<div class="row contribution_area_flex contribution_vedette" >
+	<span id="contribution_vedette_title" class="etiquette">'.$msg['contribution_vedette_title'].'</span>
 	<img class="img_plus" hspace="3" border="0" onclick="expand_vedette(this,\'!!onto_row_id!!_!!onto_row_order!!_vedette_selector\'); return false;" title="'.$msg['plus_detail'].'" name="imEx" src="'.get_url_icon('plus.gif').'">
 	<input type="text" class="saisie-30emr" readonly="readonly" name="!!onto_row_id!![!!onto_row_order!!][assertions][author_qualification][apercu_vedette]" id="!!onto_row_id!!_composed_!!onto_row_order!!_vedette_composee_apercu_autre" data-form-name="vedette_composee" value="!!vedette_value!!" />
 	<input type="button" class="bouton" value="'.$msg['raz'].'" onclick="del_vedette(\'!!onto_row_id!!\', !!onto_row_order!!);" />
 </div>
 <div class="row contribution_area_flex" id="!!onto_row_id!!_!!onto_row_order!!_vedette_selector" style="margin-bottom:6px;display:none">
-	!!vedette_author!!
+    	!!vedette_author!!
 </div>
 <script type="text/javascript" src="'.$javascript_path.'/vedette_composee_drag_n_drop.js"></script>
 <script type="text/javascript">
@@ -519,6 +557,7 @@ $ontology_contribution_tpl['form_row_content_vedette'] = '
 		var obj = document.getElementById(what);
 		if (obj.style.display == "none") {
 			obj.style.display = "block";
+			obj.classList.add("container_vedette");
 	    	el.src = "'.get_url_icon('minus.gif').'";
 			init_drag();
             ajax_resize_elements();
@@ -533,6 +572,17 @@ $ontology_contribution_tpl['form_row_content_vedette'] = '
 		init_drag();
 	}
 </script>
+';
+
+$ontology_contribution_tpl['form_row_content_with_flex_responsability']='
+<div class="row !!onto_row_is_draft!!" id="!!onto_row_id!!_!!onto_row_order!!">
+    <div class="contribution_area_flex">
+    	!!onto_inside_row!!
+    	!!onto_row_inputs!!
+    </div>
+    !!onto_row_resource_selector!!
+	!!onto_row_inputs_add!!
+</div>
 ';
 
 /*

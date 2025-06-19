@@ -4,7 +4,7 @@
 // +-------------------------------------------------+
 // © 2002-2004 PMB Services / www.sigb.net pmb@sigb.net et contributeurs (voir www.sigb.net)
 // +-------------------------------------------------+
-// $Id: sel_ontology.tpl.php,v 1.28 2020/10/27 08:50:55 jlaurent Exp $
+// $Id: sel_ontology.tpl.php,v 1.29 2022/11/02 12:01:20 arenou Exp $
 
 if (stristr($_SERVER['REQUEST_URI'], "tpl.php")) die("no access");
 
@@ -267,7 +267,7 @@ $sel_search_form ="
 <form name='search_form' method='post' action='!!base_url!!'>
 	<input type='text' name='deb_rech' value=\"!!deb_rech!!\">
 	&nbsp;
-	<input type='submit' class='bouton_small' value='$msg[142]' />
+	<input type='submit' class='bouton_small' value='$msg[142]' />&nbsp;<input type='button' class='bouton' value='!!add_button_label!!' onclick='!!add_button_onclick!!'/>
 </form>
 <script type='text/javascript'>
 	if(document.forms['search_form'].elements['deb_rech']){
