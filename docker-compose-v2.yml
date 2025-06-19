@@ -17,7 +17,7 @@ services:
       PMB_DB_PASS: pmb
 
   db:
-    image: mysql:5.6
+    image: mysql:8.0
     container_name: pmb_db
     restart: always
     environment:
